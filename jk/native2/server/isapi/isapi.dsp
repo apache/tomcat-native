@@ -145,6 +145,10 @@ SOURCE=.\jk_isapi_plugin.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\jk_iis_thread_pool.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\jni\jk_jni_aprImpl.c
 # End Source File
 # Begin Source File
