@@ -99,7 +99,7 @@ AC_DEFUN(
             APR_CLEAN="apr-clean"
             APR_DIR=${tempval}
             APR_INCDIR="${tempval}/include"
-            APR_LDFLAGS="${tempval}/.libs/libapr.a"
+            APR_LDFLAGS="${tempval}/.libs/libapr-0.a"
             APR_LIBDIR=""
 			use_apr=true
             COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
@@ -189,7 +189,7 @@ AC_DEFUN(
               APR_CLEAN=""
               APR_DIR=""
               APR_LIBDIR=${tempval}
-              APR_LDFLAGS="-lapr -L${tempval}"
+              APR_LDFLAGS="-lapr-0 -L${tempval}"
               COMMON_APR_OBJECTS="\${COMMON_APR_OBJECTS}"
 			  use_apr=true
             fi
