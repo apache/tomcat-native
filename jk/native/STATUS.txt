@@ -3,6 +3,7 @@ Last modified at [$Date$]
 
 Release:
 
+    1.2.7   : in progress
     1.2.6   : released July 23, 2004
     1.2.5   : released September 30, 2003 
     1.2.4   : released May 27, 2003

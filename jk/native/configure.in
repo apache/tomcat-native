@@ -11,7 +11,7 @@ AC_CANONICAL_SYSTEM
 
 dnl package and version. (synchronization with common/jk_version.h ?)
 PACKAGE=mod_jk
-VERSION=1.2.6
+VERSION=1.2.7
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})
 
