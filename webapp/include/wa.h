@@ -73,7 +73,9 @@
 #include <apr_pools.h>
 #include <apr_strings.h>
 #include <apr_tables.h>
+#include <apr_tables.h>
 #include <apr_time.h>
+#include <apr_network_io.h>
 
 /* WebApp Library type definitions. */
 typedef int boolean;
@@ -92,6 +94,8 @@ typedef struct wa_provider wa_provider;
 
 /* All declared providers */
 extern wa_provider wa_provider_info;
+//extern wa_provider wa_provider_warp;
+//extern wa_provider wa_provider_jni;
 
 /* WebApp Library includes */
 #include <wa_main.h>
