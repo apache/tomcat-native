@@ -102,11 +102,74 @@ static jk_env_objectFactory_t JK_METHOD jk2_env_getFactory(jk_env_t *env,
   return (jk_env_objectFactory_t)env->_registry->get( env, env->_registry, type);
 }
 
+/** Create a jk component, using only the name.
+ *  Now things are simpler - the 'type' is the prefix, separated by ':' - no
+ *  guessing involved.
+ */
+static jk_bean_t *jk2_env_createBean( jk_env_t *env, jk_pool_t *pool, char *objName )
+{
+    jk_bean_t *w=NULL;
+    int i;
+    char *type=NULL;
+    void *obj;
+    char *localName;
+
+    localName=strchr( objName, ':' );
+    if( localName==NULL ) {
+        type=objName;
+    } else {
+        /* Funny pointer arithmetic. I hope I got it right */
+        type=pool->calloc( env, pool, localName - objName + 2 );
+        strncpy( type, objName, localName - objName );
+    }
+    
+/*     for( i=0; i< env->_registry->size( env, env->_registry ) ; i++ ) { */
+/*         char *factName=env->_registry->nameAt( env, env->_registry, i ); */
+/*         int len=strlen(factName ); */
+        
+/*         if( (strncmp( objName, factName, len) == 0) && */
+/*             ( (objName[len] == '.') || */
+/*               (objName[len] == ':') || */
+/*               (objName[len] == '_') || */
+/*               (objName[len] == '\0') )  ) { */
+            /* We found the factory. */
+/*             type=factName; */
+            /*             env->l->jkLog(env, env->l, JK_LOG_INFO, */
+            /*                               "Found %s  %s %s %d %d\n", type, objName, */
+            /*                           factName, len, strncmp( objName, factName, len)); */
+/*             break; */
+/*         } */
+/*     } */
+/*     if( type==NULL ) { */
+/*         env->l->jkLog(env, env->l, JK_LOG_ERROR, */
+/*                       "env.createBean(): Can't find type for %s \n", objName); */
+/*         return NULL; */
+/*     }  */
+    
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "env.createBean(): Create [%s] %s\n", type, objName);
+
+    obj=env->createInstance( env, pool, type, objName );
+
+    /* This is a bit twisted, createInstance should be replaced with a method
+       returning jk_bean
+     */
+    w=env->getMBean( env, objName );
+    if( (obj==NULL) || (w==NULL) ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "env.createBean(): Error creating  [%s] %s\n", objName, type);
+        return NULL;
+    }
+    return w;
+}
+
+
 static void *jk2_env_createInstance(jk_env_t *env, jk_pool_t *pool,
                                     const char *type, const char *name)
 {
     jk_env_objectFactory_t fac;
     jk_bean_t *result;
+    jk_pool_t *workerPool;
 
     if( type==NULL  ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -114,9 +177,11 @@ static void *jk2_env_createInstance(jk_env_t *env, jk_pool_t *pool,
         return NULL;
     }
 
+    /** Generate a unique name if none is specified
+     */
     if( name==NULL ) {
-        name=pool->calloc( env, pool, 10 );
-        snprintf( (char *)name, 10, "%s.%d", type, env->id++ );
+        name=pool->calloc( env, pool, strlen( type ) + 6 );
+        sprintf( (char *)name, "%s.%d", type, env->id++ );
     }
 
     fac=jk2_env_getFactory( env, type);
@@ -137,7 +202,9 @@ static void *jk2_env_createInstance(jk_env_t *env, jk_pool_t *pool,
     result->getAttributeInfo=NULL;
     result->setAttributeInfo=NULL;
     
-    fac( env, pool, result, type, name );
+    workerPool=pool->create(env, pool, HUGE_POOL_SIZE);
+    
+    fac( env, workerPool, result, type, name );
     if( result->object==NULL ) {
         if( env->l )
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -197,6 +264,7 @@ static void jk2_env_initEnv( jk_env_t *env, char *id ) {
   env->getByName= jk2_env_getByName; 
   env->getMBean= jk2_env_getBean; 
   env->createInstance= jk2_env_createInstance;
+  env->createBean= jk2_env_createBean;
   env->id=0;
   jk2_map_default_create( env, & env->_registry, env->globalPool );
   jk2_map_default_create( env, & env->_objects, env->globalPool );

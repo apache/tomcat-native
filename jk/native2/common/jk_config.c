@@ -229,58 +229,6 @@ static int jk2_config_processBeanPropertyString( jk_env_t *env,
     return JK_TRUE;
 }
 
-/** Create a jk component using the name prefix
- */
-static jk_bean_t *jk2_config_createInstance( jk_env_t *env, jk_config_t *cfg,
-                                             char *objName )
-{
-    jk_pool_t *workerPool;
-    jk_bean_t *w=NULL;
-    int i;
-    char *type=NULL;
-        
-    /** New object. Create it using the prefix
-     */
-    for( i=0; i< env->_registry->size( env, env->_registry ) ; i++ ) {
-        char *factName=env->_registry->nameAt( env, env->_registry, i );
-        int len=strlen(factName );
-        
-        if( (strncmp( objName, factName, len) == 0) &&
-            ( (objName[len] == '.') ||
-              (objName[len] == ':') ||
-              (objName[len] == '_') ||
-              (objName[len] == '\0') )  ) {
-            /* We found the factory. */
-            type=factName;
-            /*             env->l->jkLog(env, env->l, JK_LOG_INFO, */
-            /*                               "Found %s  %s %s %d %d\n", type, objName, */
-            /*                           factName, len, strncmp( objName, factName, len)); */
-            break;
-        }
-    }
-    if( type==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.createInstance(): Can't find type for %s \n", objName);
-        return NULL;
-    } 
-    
-    workerPool=cfg->pool->create(env, cfg->pool, HUGE_POOL_SIZE);
-    
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "config.createInstance(): Create [%s] %s\n", type, objName);
-    env->createInstance( env, workerPool, type, objName );
-    w=env->getMBean( env, objName );
-    if( w==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "config.createInstance(): Error creating  [%s] %s\n", objName, type);
-        return NULL;
-    }
-    if( w->settings == NULL )
-        jk2_map_default_create(env, &w->settings, cfg->pool);
-
-    return w;
-}
-
 
 /** Set a property on a bean. Call this when you know the bean.
     The name and values will be saved in the config tables.
@@ -350,14 +298,18 @@ static int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
     
     mbean=env->getMBean( env, objName );
     if( mbean==NULL ) {
-        mbean=jk2_config_createInstance( env, cfg, objName );
+        mbean=env->createBean( env, cfg->pool, objName );
     }
+
     if( mbean == NULL ) {
         /* Can't create it, save the value in our map */
         jk2_config_setProperty( env, cfg, cfg->mbean, name, value );
         return JK_FALSE;
     }
 
+    if( mbean->settings == NULL )
+        jk2_map_default_create(env, &mbean->settings, cfg->pool);
+    
     return jk2_config_setProperty( env, cfg, mbean, propName, value );
 }
 
