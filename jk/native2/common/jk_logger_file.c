@@ -71,7 +71,7 @@
 
 #include "jk_registry.h"
 
-#define LOG_FORMAT		    ("log_format")
+#define LOG_FORMAT          ("log_format")
 
 #define HUGE_BUFFER_SIZE (8*1024)
 #define LOG_LINE_SIZE    (1024)
@@ -91,8 +91,8 @@ static const char * jk2_logger_file_logFmt = JK_TIME_FORMAT;
 
 static void jk2_logger_file_setTimeStr(jk_env_t *env,char * str, int len)
 {
-	time_t		t = time(NULL);
-    struct tm 	*tms;
+    time_t      t = time(NULL);
+    struct tm   *tms;
 
     tms = gmtime(&t);
 
@@ -163,9 +163,9 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
     } else {
     
 #ifdef AS400
-     	f = fopen(_this->name, "a+, o_ccsid=0");
+        f = fopen(_this->name, "a+, o_ccsid=0");
 #else
-     	f = fopen(_this->name, "a+");
+        f = fopen(_this->name, "a+");
 #endif        
         
         if(f==NULL) {
@@ -225,10 +225,8 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
                           "Level %s %d \n", value, _this->level );
         }
     }
-	return JK_OK;
+    return JK_OK;
 }
-
-#ifdef HAS_APR
 
 static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
                                   const char *file,
@@ -286,95 +284,6 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
     
     return rc;
 }
-
-
-#else
-
-static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
-                                  const char *file,
-                                  int line,
-                                  int level,
-                                  const char *fmt,
-                                  va_list args)
-{
-    int rc = 0;
-    
-    if( !file || !args) {
-        return -1;
-    }
-
-    if(l->logger_private==NULL ||
-       l->level <= level) {
-#ifdef NETWARE
-/* On NetWare, this can get called on a thread that has a limited stack so */
-/* we will allocate and free the temporary buffer in this function         */
-        char *buf;
-#else
-        char buf[HUGE_BUFFER_SIZE];
-#endif
-        char *slevel;
-        char *f = (char *)(file + strlen(file) - 1);
-        int used = 0;
-
-        switch (level){
-            case JK_LOG_INFO_LEVEL : 
-                slevel=JK_LOG_INFO_VERB;
-                break;
-            case JK_LOG_ERROR_LEVEL : 
-                slevel=JK_LOG_ERROR_VERB;
-                break;
-            case JK_LOG_EMERG_LEVEL : 
-                slevel=JK_LOG_EMERG_VERB;
-                break;
-            case JK_LOG_DEBUG_LEVEL : 
-            default:
-                slevel=JK_LOG_DEBUG_VERB;
-                break;
-
-        }
-
-        while(f != file && '\\' != *f && '/' != *f) {
-            f--;
-        }
-        if(f != file) {
-            f++;
-        }
-
-#if defined(NETWARE) && !defined(__NOVELL_LIBC__) /* until we get a snprintf function */
-        buf = (char *) malloc(HUGE_BUFFER_SIZE);
-        if (NULL == buf)
-           return -1;
-
-        jk2_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
-        used = strlen(buf);
-        if( level >= JK_LOG_DEBUG_LEVEL )
-            used += sprintf(&buf[used], " (%5s) [%s (%d)]: ", slevel,  f, line);
-#else 
-        jk2_logger_file_setTimeStr(env, buf, HUGE_BUFFER_SIZE);
-        used = strlen(buf);
-        if( level >= JK_LOG_DEBUG_LEVEL )
-            used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " (%5s) [%s (%d)]: ", slevel,  f, line);
-#endif
-        if(used < 0) {
-            return -1; /* [V] not sure what to return... */
-        }
-    
-#if defined(NETWARE) && !defined(__NOVELL_LIBC__) /* until we get a vsnprintf function */
-        rc = vsprintf(buf + used, fmt, args);
-#else 
-        rc = vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
-#endif
-
-        l->log(env, l , level, buf);
-#if defined(NETWARE) && !defined(__NOVELL_LIBC__)
-        free(buf);
-#endif
-    }
-    
-    return rc;
-}
-
-#endif
 
 
 static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,

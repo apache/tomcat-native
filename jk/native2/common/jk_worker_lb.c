@@ -70,7 +70,7 @@
 #include "jk_env.h"
 #include "jk_requtil.h"
 
-#ifdef HAS_APR
+#if APR_HAS_THREADS
 #include "apr_thread_proc.h"
 #endif
 
@@ -90,7 +90,7 @@ typedef struct {
     int     attempts;
     int     recovery;
     int     timeout;
-    int     sticky_session;	
+    int     sticky_session; 
     time_t  error_time;
 
 } jk_worker_lb_private_t;

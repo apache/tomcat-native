@@ -66,8 +66,6 @@
 #include "jk_pool.h"
 #include "jk_mutex.h"
 
-#ifdef HAS_APR
-
 #include "apr_proc_mutex.h"
 
 
@@ -142,11 +140,11 @@ static int JK_METHOD jk2_mutex_proc_setAttribute( jk_env_t *env, jk_bean_t *mbea
     char *value=(char *)valueP;
     
     if( strcmp( "file", name ) == 0 ) {
-	mutex->fname=value;
+    mutex->fname=value;
     } else if( strcmp( "mechanism", name ) == 0 ) {
-	mutex->mechanism=atoi(value);
+    mutex->mechanism=atoi(value);
     } else {
-	return JK_ERR;
+    return JK_ERR;
     }
     return JK_OK;   
 
@@ -181,14 +179,3 @@ int JK_METHOD jk2_mutex_proc_factory( jk_env_t *env ,jk_pool_t *pool,
     
     return JK_OK;
 }
-
-#else
-
-int JK_METHOD jk2_mutex_proc_factory( jk_env_t *env ,jk_pool_t *pool,
-                                      jk_bean_t *result,
-                                      const char *type, const char *name)
-{
-    result->disabled=1;
-    return JK_OK;
-}
-#endif

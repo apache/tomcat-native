@@ -88,6 +88,7 @@ static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
     int totalErr=*totalErrP;
     unsigned long totalTime=*totalTimeP;
     unsigned long maxTime=*maxTimeP;
+    char ctimeBuf[APR_CTIME_LEN];
     
     s->jkprintf(env, s, "<tr><td>%d</td><td>%d</td><td>%d</td>\n",
                 stat->workerId, stat->reqCnt, stat->errCnt );
@@ -95,32 +96,28 @@ static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
 
     totalReq+=stat->reqCnt;
     totalErr+=stat->errCnt;
-#ifdef HAS_APR
-    {
-        char ctimeBuf[APR_CTIME_LEN];
-        apr_ctime( ctimeBuf, stat->connectedTime );
-        s->jkprintf(env, s, "<td>%s</td>\n", ctimeBuf );
-        
-        s->jkprintf(env, s, "<td>%ld</td>\n", (long)stat->totalTime );
-        s->jkprintf(env, s, "<td>%ld</td>\n", (long)stat->maxTime );
-        
-        if( stat->reqCnt + stat->errCnt > 0 ) 
-            s->jkprintf(env, s, "<td>%ld</td>\n",
-                        (long)(stat->totalTime / ( stat->reqCnt + stat->errCnt )) );
-        else
-            s->jkprintf(env, s, "<td>-</td>\n");
-        
-        s->jkprintf(env, s, "<td>%lu</td>\n", (long)stat->startTime );
+
+    apr_ctime( ctimeBuf, stat->connectedTime );
+    s->jkprintf(env, s, "<td>%s</td>\n", ctimeBuf );
+
+    s->jkprintf(env, s, "<td>%ld</td>\n", (long)stat->totalTime );
+    s->jkprintf(env, s, "<td>%ld</td>\n", (long)stat->maxTime );
+
+    if( stat->reqCnt + stat->errCnt > 0 ) 
         s->jkprintf(env, s, "<td>%ld</td>\n",
-                    (long)(stat->jkStartTime - stat->startTime) );
-        s->jkprintf(env, s, "<td>%ld</td>\n",
-                    (long)(stat->endTime - stat->startTime) );
-        
-        totalTime += (long)stat->totalTime;
-        if( maxTime < stat->maxTime )
-            maxTime = (long)stat->maxTime;
-    }
-#endif
+                    (long)(stat->totalTime / ( stat->reqCnt + stat->errCnt )) );
+    else
+        s->jkprintf(env, s, "<td>-</td>\n");
+
+    s->jkprintf(env, s, "<td>%lu</td>\n", (long)stat->startTime );
+    s->jkprintf(env, s, "<td>%ld</td>\n",
+                (long)(stat->jkStartTime - stat->startTime) );
+    s->jkprintf(env, s, "<td>%ld</td>\n",
+                (long)(stat->endTime - stat->startTime) );
+
+    totalTime += (long)stat->totalTime;
+    if( maxTime < stat->maxTime )
+        maxTime = (long)stat->maxTime;
     s->jkprintf(env, s, "</tr>\n");
 
     *maxTimeP=maxTime;
@@ -173,12 +170,10 @@ static void jk2_worker_status_displayEndpointInfo(jk_env_t *env, jk_ws_service_t
     s->jkprintf(env, s, "<table border>\n");
 
     s->jkprintf(env, s, "<tr><th>Worker</th><th>Req</th><th>Err</th>");
-    s->jkprintf(env, s,"<th>LastReq</th>\n" );
-    
-#ifdef HAS_APR
+    s->jkprintf(env, s,"<th>LastReq</th>\n" );    
     s->jkprintf(env, s, "<th>ConnectionTime</th><th>TotalTime</th><th>MaxTime</th><th>AvgTime</th>" );
     s->jkprintf(env, s, "<th>ReqStart</th><th>+jk</th><th>+end</th>" );
-#endif
+
     for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
         char *name=env->_objects->nameAt( env, env->_objects, i );
         jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
@@ -244,11 +239,8 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
             
             s->jkprintf(env, s, "<tr><th>Worker</th><th>Req</th><th>Err</th>");
             s->jkprintf(env, s,"<th>LastReq</th>\n" );
-            
-#ifdef HAS_APR
             s->jkprintf(env, s, "<th>ConnectionTime</th><th>TotalTime</th><th>MaxTime</th><th>AvgTime</th>" );
             s->jkprintf(env, s, "<th>ReqStart</th><th>+jk</th><th>+end</th>" );
-#endif
             
             /* XXX Add info about number of slots */
             for( j=0; j<slot->structCnt ; j++ ) {
@@ -349,10 +341,8 @@ static void jk2_worker_status_resetScoreboard(jk_env_t *env, jk_ws_service_t *s,
 
                 stat->reqCnt=0;
                 stat->errCnt=0;
-#ifdef HAS_APR
                 stat->totalTime=0;
                 stat->maxTime=0;
-#endif
             }
         }
     }    
@@ -507,6 +497,7 @@ static void jk2_worker_status_dmpEndpoints(jk_env_t *env, jk_ws_service_t *s,
             /* This is an endpoint slot */
             void *data=slot->data;
             char *name=JK_CHECK_NULL(slot->name);
+            char ctimeBuf[APR_CTIME_LEN];
 
             /* XXX Add info about number of slots */
             for( j=0; j<slot->structCnt ; j++ ) {
@@ -520,22 +511,17 @@ static void jk2_worker_status_dmpEndpoints(jk_env_t *env, jk_ws_service_t *s,
                 s->jkprintf(env, s, "requests=%d\n", stat->reqCnt);
                 s->jkprintf(env, s, "errors=%d\n", stat->errCnt);
                 s->jkprintf(env, s, "lastRequest=%s\n", JK_CHECK_NULL(stat->active)); 
-#ifdef HAS_APR
-                {
-                    char ctimeBuf[APR_CTIME_LEN];
-                    apr_ctime( ctimeBuf, stat->connectedTime );
-                    s->jkprintf(env, s, "lastConnectionTime=%s\n", ctimeBuf);
-                    
-                    s->jkprintf(env, s, "totalTime=%ld\n", (long)stat->totalTime );
-                    s->jkprintf(env, s, "maxTime=%ld\n", (long)stat->maxTime ); 
+                apr_ctime( ctimeBuf, stat->connectedTime );
+                s->jkprintf(env, s, "lastConnectionTime=%s\n", ctimeBuf);
 
-                    s->jkprintf(env, s, "requestStart=%lu\n", (long)stat->startTime); 
-                    s->jkprintf(env, s, "jkTime=%ld\n", 
-                                (long)(stat->jkStartTime - stat->startTime) );
-                    s->jkprintf(env, s, "requestEnd=%ld\n", 
-                                (long)(stat->endTime - stat->startTime) );
-                }
-#endif
+                s->jkprintf(env, s, "totalTime=%ld\n", (long)stat->totalTime );
+                s->jkprintf(env, s, "maxTime=%ld\n", (long)stat->maxTime ); 
+
+                s->jkprintf(env, s, "requestStart=%lu\n", (long)stat->startTime); 
+                s->jkprintf(env, s, "jkTime=%ld\n", 
+                            (long)(stat->jkStartTime - stat->startTime) );
+                s->jkprintf(env, s, "requestEnd=%ld\n", 
+                            (long)(stat->endTime - stat->startTime) );
                 s->jkprintf(env, s, "\n"); 
             }
 

@@ -91,9 +91,6 @@
 #include <bits/signum.h>
 #endif
 
-#if !defined(WIN32) && !defined(NETWARE)
-#include <dlfcn.h>
-#endif
 #ifdef NETWARE
 #include <nwthread.h>
 #include <nwadv.h>
@@ -103,6 +100,8 @@
 
 #ifdef APR_HAS_DSO
 #include "apr_dso.h"
+#else
+#error "You will need the APR's dso support for JNI"
 #endif
 
 
@@ -179,7 +178,7 @@ static void jk2_linux_signal_hack()
 static void jk2_print_signals( sigset_t *sset) {
     int sig;
     for (sig = 1; sig < 20; sig++) 
-	{ if (sigismember(sset, sig)) {printf( " %d", sig);} }
+    { if (sigismember(sset, sig)) {printf( " %d", sig);} }
     printf( "\n");
 }
 #endif
@@ -214,7 +213,6 @@ static void jk2_jni_abort_hook()
 static int jk2_vm_loadJvm(jk_env_t *env, jk_vm_t *jkvm)
 {
 
-#if defined(HAS_APR) && defined(APR_HAS_DSO)
     apr_dso_handle_t *dsoHandle;
     apr_status_t rc;
     apr_pool_t *aprPool;
@@ -266,12 +264,6 @@ static int jk2_vm_loadJvm(jk_env_t *env, jk_vm_t *jkvm)
                       jkvm->jvm_dll_path); 
     
     return JK_OK;
-#else
-    env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                  "Can't load jvm, no apr support %s\n");
-
-    return JK_ERR;
-#endif
     
 }
 
@@ -527,7 +519,7 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
     vm_args11.version = JNI_VERSION_1_2;
 
     if(0 != jni_get_default_java_vm_init_args(&vm_args11)) {
-    	env->l->jkLog(env, env->l, JK_LOG_EMERG,
+        env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "vm.detect() Fail-> can't get default vm init args\n"); 
         return JK_ERR;
     }
@@ -597,7 +589,7 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
         jkvm->jvm=(void *)jvm;
         return JK_OK;
     } else if( err!=0 ) {
-    	env->l->jkLog(env, env->l, JK_LOG_EMERG,
+        env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "Fail-> could not create JVM, code: %d \n", err); 
         return JK_ERR;
     }

@@ -121,10 +121,8 @@ static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
 
     ep->stats->reqCnt=0;
     ep->stats->errCnt=0;
-#ifdef HAS_APR
     ep->stats->maxTime=0;
     ep->stats->totalTime=0;
-#endif
 
     bean->state=JK_STATE_INIT;
 

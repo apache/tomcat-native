@@ -68,17 +68,7 @@
 #include "jk_env.h"
 #include "jk_channel.h"
 #include "jk_global.h"
-
-#include <string.h>
 #include "jk_registry.h"
-
-
-#ifdef HAS_APR
-#include "apr_network_io.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_version.h"
-
 
 #define DEFAULT_HOST "127.0.0.1"
 
@@ -112,9 +102,9 @@ static int JK_METHOD jk2_channel_apr_close(jk_env_t *env, jk_channel_t *_this,
 
 
 static char *jk2_channel_apr_socket_getAttributeInfo[]={"host", "port", "keepalive", "timeout", "nodelay", "graceful",
-	                                                    "debug", "disabled", NULL };
+                                                        "debug", "disabled", NULL };
 static char *jk2_channel_apr_socket_setAttributeInfo[]={"host", "port", "keepalive", "timeout", "nodelay", "graceful",
-	                                                    "debug", "disabled", NULL };
+                                                        "debug", "disabled", NULL };
 
 static int JK_METHOD jk2_channel_apr_setProperty(jk_env_t *env,
                                                     jk_bean_t *mbean, 
@@ -226,13 +216,13 @@ static int JK_METHOD jk2_channel_apr_init(jk_env_t *env,
 static int JK_METHOD jk2_channel_apr_hasinput(jk_env_t *env,
                                               jk_channel_t *ch,
                                               jk_endpoint_t *endpoint,
-											  int timeout)
+                                              int timeout)
 
 {
-	/*
-	 * Should implements the APR select/poll for socket here
-	 */
-	return (JK_TRUE) ;
+    /*
+     * Should implements the APR select/poll for socket here
+     */
+    return (JK_TRUE) ;
 }
 
 
@@ -568,18 +558,3 @@ int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
 
     return JK_OK;
 }
-#else /* HAS_APR */
-
-int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
-                                             jk_pool_t *pool, 
-                                             jk_bean_t *result,
-                                             const char *type, const char *name)
-{
-
-    result->disabled=1;
-    result->object= NULL;
-
-    return JK_OK;
-}
-
-#endif

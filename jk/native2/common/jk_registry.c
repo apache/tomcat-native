@@ -125,10 +125,9 @@ void JK_METHOD jk2_registry_init(jk_env_t *env) {
 
   env->registerFactory( env, "channel.un", jk2_channel_un_factory );
 
-  env->registerFactory( env, "channel.apr",jk2_channel_apr_socket_factory );
+  env->registerFactory( env, "channel.socket",jk2_channel_apr_socket_factory );
 
   env->registerFactory( env, "shm", jk2_shm_factory );
-  env->registerFactory( env, "channel.socket", jk2_channel_socket_factory );
 
   
   env->registerFactory( env, "handler.response", jk2_handler_response_factory );

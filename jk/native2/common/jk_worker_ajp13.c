@@ -192,7 +192,7 @@ jk2_worker_ajp13_setAttribute(jk_env_t *env, jk_bean_t *mbean,
 #define JK_AJP13_CPING              (unsigned char)10
 
 /* Container response to cping request */
-#define JK_AJP13_CPONG				(unsigned char)9
+#define JK_AJP13_CPONG              (unsigned char)9
 
 /* 
  * Build the ping cmd. Tomcat will get control and will be able 
@@ -281,38 +281,38 @@ static int jk2_check_alive(jk_env_t *env, jk_endpoint_t *ae, int timeout) {
     jk_channel_t *channel=ae->worker->channel;
     jk_msg_t * msg=ae->reply;
 
-	jk2_serialize_cping( env, msg, ae );
-	err = ae->worker->channel->send( env, ae->worker->channel, ae, msg );
+    jk2_serialize_cping( env, msg, ae );
+    err = ae->worker->channel->send( env, ae->worker->channel, ae, msg );
 
-	if (err != JK_OK) {
+    if (err != JK_OK) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp13.checkalive() can't send cping request to %s\n", 
                       ae->worker->mbean->name);
 
-		return JK_ERR;
-	}
-	
-	if (ae->worker->channel->hasinput(env, ae->worker->channel, ae, 
-	                                  timeout) != JK_TRUE) {
-	                                  
+        return JK_ERR;
+    }
+    
+    if (ae->worker->channel->hasinput(env, ae->worker->channel, ae, 
+                                      timeout) != JK_TRUE) {
+                                      
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp13.checkalive() can't get cpong reply from %s in %d ms\n", 
                       ae->worker->mbean->name, timeout);
 
-		return JK_ERR;
-	}
-	
-	err = ae->worker->channel->recv( env, ae->worker->channel, ae, msg );
+        return JK_ERR;
+    }
+    
+    err = ae->worker->channel->recv( env, ae->worker->channel, ae, msg );
 
-	if (err != JK_OK) {
+    if (err != JK_OK) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp13.checkalive() can't read cpong reply from %s\n", 
                       ae->worker->mbean->name);
 
-		return JK_ERR;
-	}
-	
-	return JK_OK;
+        return JK_ERR;
+    }
+    
+    return JK_OK;
 }
 
 /** Connect a channel, implementing the logging protocol if ajp13
@@ -345,17 +345,15 @@ static int jk2_worker_ajp13_connect(jk_env_t *env, jk_endpoint_t *ae) {
      */
     ae->worker->in_error_state=JK_FALSE;
 
-#ifdef HAS_APR
     ae->stats->connectedTime=apr_time_now();
-#endif
     
     /** XXX use a 'connected' field */
     if( ae->sd == -1 ) ae->sd=0;
     
-	if (ae->worker->connect_timeout != 0 ) {
-		if (jk2_check_alive(env, ae, ae->worker->connect_timeout) != JK_OK)
-    		return JK_ERR;
-	}
+    if (ae->worker->connect_timeout != 0 ) {
+        if (jk2_check_alive(env, ae, ae->worker->connect_timeout) != JK_OK)
+            return JK_ERR;
+    }
 
     /* Check if we must execute a logon after the physical connect */
     if (ae->worker->secret == NULL)
@@ -369,10 +367,10 @@ static int jk2_worker_ajp13_connect(jk_env_t *env, jk_endpoint_t *ae) {
     is a reconnect */
     msg=ae->reply;
 
-	/* send a ping message to told container to take control (logon phase) */
-	jk2_serialize_ping( env, msg, ae );
-	err = ae->worker->channel->send( env, ae->worker->channel, ae, msg );
-	
+    /* send a ping message to told container to take control (logon phase) */
+    jk2_serialize_ping( env, msg, ae );
+    err = ae->worker->channel->send( env, ae->worker->channel, ae, msg );
+    
     /* Move to 'slave' mode, listening to messages */
     err=ae->worker->workerEnv->processCallbacks( env, ae->worker->workerEnv,
                                                  ae, NULL);
@@ -449,12 +447,12 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
            need to delay - we can do that in paralel. ( not very sure this is
            very usefull, and it brakes the protocol ) ! */
 
-	/* || s->is_chunked - this can't be done here. The original protocol sends the first
-	   chunk of post data ( based on Content-Length ), and that's what the java side expects.
-	   Sending this data for chunked would break other ajp13 serers.
+    /* || s->is_chunked - this can't be done here. The original protocol sends the first
+       chunk of post data ( based on Content-Length ), and that's what the java side expects.
+       Sending this data for chunked would break other ajp13 serers.
 
-	   Note that chunking will continue to work - using the normal read.
-	*/
+       Note that chunking will continue to work - using the normal read.
+    */
         if (has_post_body  || s->left_bytes_to_send > 0) {
             /* We never sent any POST data and we check it we have to send at
              * least of block of data (max 8k). These data will be kept in reply
@@ -552,9 +550,9 @@ jk2_worker_ajp13_service1(jk_env_t *env, jk_worker_t *w,
     int err;
 
     if( ( e== NULL ) || ( s == NULL ) ) {
-	env->l->jkLog(env, env->l, JK_LOG_ERROR,
+    env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp13.service() NullPointerException\n");
-	return JK_ERR;
+    return JK_ERR;
     }
     
     if( w->channel==NULL ) {
@@ -580,20 +578,20 @@ jk2_worker_ajp13_service1(jk_env_t *env, jk_worker_t *w,
     s->left_bytes_to_send = s->content_length;
     s->content_read=0;
 
-	if (w->prepost_timeout != 0) {
-		if (jk2_check_alive(env, e, e->worker->prepost_timeout) != JK_OK)
-    		return JK_ERR;
-	}
-	
+    if (w->prepost_timeout != 0) {
+        if (jk2_check_alive(env, e, e->worker->prepost_timeout) != JK_OK)
+            return JK_ERR;
+    }
+    
     /* 
      * We get here initial request (in reqmsg)
      */
     err=jk2_serialize_request13(env, e->request, s, e);
     if (err!=JK_OK) {
-	s->is_recoverable_error = JK_FALSE;                
-	env->l->jkLog(env, env->l, JK_LOG_ERROR,
+    s->is_recoverable_error = JK_FALSE;                
+    env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp13.service(): error marshaling\n");
-	return JK_ERR;
+    return JK_ERR;
     }
 
     if( w->mbean->debug > 0 ) 
@@ -768,14 +766,12 @@ jk2_worker_ajp13_service(jk_env_t *env, jk_worker_t *w,
         }
     }
 
-#ifdef HAS_APR
     if( s->uriEnv!=NULL && s->uriEnv->timing == JK_TRUE ) {
         e->stats->startTime=s->startTime;
         e->stats->jkStartTime=e->stats->connectedTime=apr_time_now();
         if(e->stats->startTime==0)
             e->stats->startTime=e->stats->jkStartTime;
     }
-#endif
     e->stats->workerId=w->mbean->id;
     
     err=jk2_worker_ajp13_service1( env, w, s, e );
@@ -788,7 +784,6 @@ jk2_worker_ajp13_service(jk_env_t *env, jk_worker_t *w,
         e->stats->errCnt++;
     }
 
-#ifdef HAS_APR
     if( s->uriEnv!=NULL && s->uriEnv->timing == JK_TRUE ) {
         apr_time_t reqTime;
 
@@ -799,7 +794,6 @@ jk2_worker_ajp13_service(jk_env_t *env, jk_worker_t *w,
         if( e->stats->maxTime < reqTime )
             e->stats->maxTime=reqTime;
     }
-#endif
     jk2_worker_ajp13_done( env, w, e);
     return err;
 }
