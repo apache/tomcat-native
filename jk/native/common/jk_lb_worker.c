@@ -482,6 +482,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
             }
             /* Try next partial sessionid if present */
             sessionid = next;
+            rc = NULL;
         }
         if (!rc && p->s->sticky_session_force) {
            JK_LEAVE_CS(&(p->cs), r);
