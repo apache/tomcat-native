@@ -289,6 +289,14 @@ In fine some native make didn't works as expect so you should use a GNU make <b>
 </p>
 </subsection>
 
+<subsection name="JK2 build report error about missing FIONBIO on Solaris 8">
+<p>
+In JK2 before v2.0.2, you should add <source>#define BSD_COMP</source> in top
+of jk/native2/common/jk_channel_socket.c to have Solaris build succeed.
+</p>
+</subsection>
+
+
 </section>
 
 <section name="IIS">
