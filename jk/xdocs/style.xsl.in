@@ -75,7 +75,7 @@
               <img src="images/pixel.gif" border="0" width="150" height="1" vspace="0" hspace="0"/>
             </td>
             <td width="*" bgcolor="{$body-bg}" height="1" class="nil">
-              <img src="images/pixel.gif" border="0" width="570" height="1" vspace="0" hspace="0"/>
+              <img src="images/pixel.gif" border="0" width="370" height="1" vspace="0" hspace="0"/>
             </td>
           </tr>
 
@@ -144,7 +144,7 @@
                   name with the current URL, and then we process each "document"
                   within the index.
                 -->
-                <xsl:variable name="root" select="document-location(.)"/>
+                <xsl:variable name="root" select="/"/>
                 <xsl:for-each select="document('menu.idx')/index/document">
                   <tr>
                     <td bgcolor="#cccccc" width="150" colspan="2">
@@ -163,12 +163,12 @@
                     and compare against it to see whether we are in the same file or
                     not. If we actually are, we expand to the "section" level.
                   -->
-                  <xsl:if test="$root = document-location(document(@href))">
+                  <xsl:if test="$root/document/properties/title = document(@href)/document/properties/title">
                     <xsl:for-each select="document(@href)/document/section">
                       <tr>
                         <td bgcolor="#cccccc" width="10"/>
                         <td bgcolor="#cccccc" width="140">
-                          <a class="menu" href="#section_{position()}">
+                          <a class="menu" href="#section_{generate-id(.)}">
                             <xsl:value-of select="@name"/>
                           </a>
                         </td>
@@ -227,7 +227,7 @@
   </xsl:template>
 
   <xsl:template match="section">
-    <a name="section_{position()}">
+    <a name="section_{generate-id(.)}">
       <table border="0" cellspacing="0" cellpadding="0" width="100%">
         <tr>
           <td bgcolor="{$banner-bg}" class="section" valign="top" align="left">
@@ -245,7 +245,7 @@
   </xsl:template>
 
   <xsl:template match="subsection">
-    <a name="subsection_{position()}">
+    <a name="subsection_{generate-id(.)}">
       <table border="0" cellspacing="0" cellpadding="0" width="100%">
         <tr>
           <td bgcolor="{$sub-banner-bg}" class="subsection" valign="top" align="left">
@@ -258,7 +258,7 @@
         </tr>
       </table>
     </a>
-    <xsl:apply-templates select="p|ul|img|screen|todo"/>
+    <xsl:apply-templates select="subsection|p|ul|img|screen|todo"/>
     <br/>
   </xsl:template>
 
@@ -303,7 +303,7 @@
 
   <!-- JFC added -->
   <xsl:template match="table">
-    <table border="1"><xsl:apply-templates select="tr"/></table>
+    <table border="0"><xsl:apply-templates select="tr"/></table>
   </xsl:template>
 
   <xsl:template match="tr">

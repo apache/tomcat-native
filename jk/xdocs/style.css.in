@@ -91,6 +91,16 @@ td.section {
   font-weight: bold;
   font-size: bigger;
   color: @banner-fg@;
+  padding: 1px;
+  text-align: left;
+}
+
+td.subsection {
+  background-color: @banner-bg@;
+  border-style: none;
+  font-weight: bold;
+  font-size: smaller;
+  color: @banner-fg@;
   padding: 0px;
   text-align: left;
 }

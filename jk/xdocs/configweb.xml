@@ -1,79 +1,438 @@
 <?xml version="1.0"?>
 <document>
-  <properties>
-    <title>Configuration in the Web Server</title>
-    <author email="cmanolache@yahoo.com">Costin Manolache</author>
-    <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
-  </properties>
-
-<section name="Intro">
-<p>
+    <properties>
+        <title>Configuration in the Web Server</title>
+        <author email="cmanolache@yahoo.com">Costin Manolache</author>
+        <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+    </properties>
+    <section name="Intro">
+        <p>
   This document describes the configuration file used by mod_jk2 on the
   Web Server site. Its default name is ${serverRoot}/conf/workers2.properties,
   where ${serverRoot} is something like /opt/apache.
 </p>
-</section>
-
-<section name="Config options">
-<p>
+    </section>
+    <section name="Installation">
+        <subsection name="Apache 1"/>
+        <subsection name="Apache 2"/>
+        <subsection name="IIS"/>
+    </section>
+    <section name="Config file"/>
+    <section name="Components">
+        <p>Common properties for all components</p>
+        <p>
+            <table>
+                <tr>
+                    <th>Property name</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>disabled</td>
+                    <td>0 (false)</td>
+                    <td>"disabled" state for the component, 1=true 0=false</td>
+                </tr>
+                <tr>
+                    <td>debug</td>
+                    <td>0 (false)</td>
+                    <td>"debug" state for the component, 1=true 0=false</td>
+                </tr>
+            </table>
+        </p>
+        <subsection name="workerEnv">
+            <p>This component represent the core jk2, this has the default logger for all other components</p>
+            <p>
+                <table>
+                    <tr>
+                        <th>Property name</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td>logger</td>
+                        <td>logger</td>
+                        <td>Default loger used by jk2 components, can be changed in the config file, normally it defaults to "logger" the Alias for the default logger for the Server/platform.</td>
+                    </tr>
+                    <tr>
+                        <td>timing</td>
+                        <td>0</td>
+                        <td>Will jk2 get request timing (needs APR?)</td>
+                    </tr>
+                </table>
+            </p>
+        </subsection>
+        <subsection name="config">
+            <p>The config component, hold the detail of the conifg system, such config file name, create global defines</p>
+            <p>
+                <table>
+                    <tr>
+                        <th>Property name</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td>debugEnv</td>
+                        <td>0</td>
+                        <td>Set the debug level of the hidden env component </td>
+                    </tr>
+                </table>
+            </p>
+        </subsection>
+        <subsection name="uriMap"/>
+        <subsection name="shm">
+            <p>Shared memory descriptor</p>
+            <p>
+                <table>
+                    <tr>
+                        <th>Property name</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td>file</td>
+                        <td>No default value</td>
+                        <td>Name of the file that will be mmapped to use as shared memory.</td>
+                    </tr>
+                    <tr>
+                        <td>size</td>
+                        <td>No default value</td>
+                        <td>Size of the file.</td>
+                    </tr>
+                </table>
+            </p>
+        </subsection>
+        <subsection name="uri">
+            <p>Maps a resource to a worker</p>
+            <p>
+                <table>
+                    <tr>
+                        <th>Property name</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td>worker</td>
+                        <td>lb:0 (The default loadbalancer)</td>
+                        <td>Name of the worker that process the request corresponding to the uri</td>
+                    </tr>
+                    <tr>
+                        <td>context</td>
+                        <td/>
+                        <td>the context that will be served by this uri component (webapp style)</td>
+                    </tr>
+                </table>
+            </p>
+        </subsection>
+        <subsection name="vm">
+            <p>Represents the JVM when used as inprocess container
+            </p>
+            <p>
+                <table>
+                    <tr>
+                        <th>Property name</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td>JVM</td>
+                        <td>(Autoguess)</td>
+                        <td>JVM to use for this vm</td>
+                    </tr>
+                    <tr>
+                        <td>OPT</td>
+                        <td/>
+                        <td>Option to pass to this vm, this is a multivalued property</td>
+                    </tr>
+                </table>
+            </p>
+        </subsection>
+        <subsection name="channels">
+            <subsection name="channel.un">
+                <p>
+    AF_UNIX socket. Only on UNIX like platform. These sockets are faster
+    than "normal" sockets but they are limited to the machine. 
+</p>
+                <p>
+                    <table>
+                        <tr>
+                            <th>Property name</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>file</td>
+                            <td>Name of socket</td>
+                            <td>Name of the socket file (It is created by the Tomcat ChannelUn)</td>
+                        </tr>
+                    </table>
+                </p>
+            </subsection>
+            <subsection name="channel.socket">
+                <p>
+    A communication transport to a remote Engine
+    <b>Magic:</b> The local part of the name will be the Engine name,
+    to use when defining the uri mappings. For example
+    channel.socket.local_9009 will automatically define an engine named
+    local_9009, and if no other setting is set ajp13 will be used for
+    communication.
+    <b>Magic:</b> If no channel is defined in the config, a default channel
+    will be constructed with port=8009, engine=DEFAULT, worker=ajp13 -
+    named 'channel.socket.DEFAULT'
+</p>
+                <p>
+                    <table>
+                        <tr>
+                            <th>Property name</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>port</td>
+                            <td>8009</td>
+                            <td>Port where Tomcat is listening</td>
+                        </tr>
+                        <tr>
+                            <td>host</td>
+                            <td>localhost</td>
+                            <td>Remote host</td>
+                        </tr>
+                        <tr>
+                            <td>keepalive</td>
+                            <td>0</td>
+                            <td>? </td>
+                        </tr>
+                        <tr>
+                            <td>lbfactor</td>
+                            <td>1</td>
+                            <td>
+    Load balancing factor to use. At this moment, it'll be set on the worker,
+    but in future it should be possible to use lb on a channel level.
+  </td>
+                        </tr>
+                        <tr>
+                            <td>group</td>
+                            <td>lb:0</td>
+                            <td>loadbalanced groups to which this channel and the associated worker will be added, multivalued</td>
+                        </tr>
+                        <tr>
+                            <td>tomcatId</td>
+                            <td>?</td>
+                            <td>?</td>
+                        </tr>
+                    </table>
+                </p>
+            </subsection>
+            <subsection name="channel.jni">
+                <p>The jni channel, used if tomcat is started inprocess</p>
+            </subsection>
+        </subsection>
+        <subsection name="workers">
+            <subsection name="jni">
+                <p>worker used in inprocess, holds the details of the Tomcat class to startup, and paramters to pass</p>
+                <p>
+                    <table>
+                        <tr>
+                            <th>Property name</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>class</td>
+                            <td>org/apache/jk/apr/TomcatStarter</td>
+                            <td>class that holds the main method called to start tomcat</td>
+                        </tr>
+                        <tr>
+                            <td>ARG</td>
+                            <td/>
+                            <td>Arguments to pass to main method when called</td>
+                        </tr>
+                        <tr>
+                            <td>stdout</td>
+                            <td>NULL</td>
+                            <td>file to redirect Standard output from the java process</td>
+                        </tr>
+                        <tr>
+                            <td>stderr</td>
+                            <td>NULL</td>
+                            <td>file to redirect Standard output from the java process </td>
+                        </tr>
+                    </table>
+                </p>
+            </subsection>
+            <subsection name="ajp13">
+                <p>Default worker</p>
+                <p>
+                    <table>
+                        <tr>
+                            <th>Property name</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>secretkey</td>
+                            <td>NULL</td>
+                            <td>
+                                <b>Magic:</b> The secret key will be set automatically on the associated
+    worker.
+  </td>
+                        </tr>
+                        <tr>
+                            <td>tomcatId</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>route</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>group</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>level</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>channel</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
+            </p>
+            </subsection>
+            <subsection name="status">
+                <p>Worker that outputs a page with usefull information to monitor JK2</p>
+                <p>To use it add a uri component assigned to this worker</p>
+            </subsection>
+            <subsection name="lb">
+                <p>Loadbalanced worker</p>
+                <p>
+                    <table>
+                        <tr>
+                            <th>Property name</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>worker</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>noWorkerMsg</td>
+                            <td/>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>noWorkerCode</td>
+                            <td>503</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>hwBalanceErr</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </p>
+            </subsection>
+        </subsection>
+        <subsection name="loggers">
+            <p>Any connector based on jk2, at least has a default logger, that can be reached using the "logger" alias, the logger used is the more appropiate for the plataform/server combination, Apache2 under in any platform has logger.apache2 as default, IIS on his only platform uses logger.win32, and Any apache 1 install uses logger.file as default.., the config file lets you change that defaults, you can end using logger.file in IIs i.e</p>
+            <p>The properties shared by all loggers are:
 <table>
-
-  <tr>
-  <th>Property name</th>
-  <th>Default</th>
-  <th>Description</th>
-  </tr>
-
-  <tr>
-  <th colspan="2">logger</th>
-  <td>Log jk messages to a file. Name: 'logger'</td>
-  </tr>
-
-  <tr>
-  <td>level</td>
-  <td>INFO</td>
-  <td>Log level. Supported: ERROR, INFO, DEBUG</td>
-  </tr>
-
-  <tr>
-  <td>file</td>
-  <td>${serverRoot}/logs/jk2.log</td>
-  <td>
+                    <tr>
+                        <th>Property name</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td>level</td>
+                        <td>INFO</td>
+                        <td>Log level. Supported: EMERG, ERROR, INFO, DEBUG</td>
+                    </tr>
+                </table>
+            </p>
+            <subsection name="logger.file">
+                <p>
+                    <table>
+                        <tr>
+                            <th>Property name</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>file</td>
+                            <td>${serverRoot}/logs/jk2.log</td>
+                            <td>
     Log file.  XXX you may be able to change this at runtime,
                to implement rolling.
   </td>
-  </tr>
-
-  <tr>
-  <th colspan="2">shm</th>
-  <td>Shared memory descriptor</td>
-  </tr>
-
-  <tr>
-  <td>file</td>
-  <td>No default value</td>
-  <td>Name of the file that will be mmapped to use as shared memory.</td>
-  </tr>
-
-  <tr>
-  <td>size</td>
-  <td>No default value</td>
-  <td>Size of the file.</td>
-  </tr>
-
-  <tr>
-  <th colspan="3">Channels</th>
-  </tr>
-
-  <tr>
-  <td>debug</td>
-  <td>0</td>
-  <td>1 activates the debug of channel.</td>
-  </tr>
-
-  <tr>
-  <th colspan="2">channel.socket</th>
-  <td>
+                        </tr>
+                    </table>
+                </p>
+            </subsection>
+            <subsection name="logger.win32">
+                <p>logger used in the IIS server by default, it ends at native Application Event Log.</p>
+            </subsection>
+            <subsection name="logger.apache2">
+                <p>Logger used in Apache2 servers, it normally in ends in error.log </p>
+            </subsection>
+        </subsection>
+        <subsection name="old docs">
+            <p>
+                <table>
+                    <tr>
+                        <th>Property name</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <th colspan="2" name="logger"/>
+                        <td>Log jk messages to a file. Name: 'logger'</td>
+                    </tr>
+                    <tr>
+                        <td>level</td>
+                        <td>INFO</td>
+                        <td>Log level. Supported: ERROR, INFO, DEBUG</td>
+                    </tr>
+                    <tr>
+                        <td>file</td>
+                        <td>${serverRoot}/logs/jk2.log</td>
+                        <td>
+    Log file.  XXX you may be able to change this at runtime,
+               to implement rolling.
+  </td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">shm</th>
+                        <td>Shared memory descriptor</td>
+                    </tr>
+                    <tr>
+                        <td>file</td>
+                        <td>No default value</td>
+                        <td>Name of the file that will be mmapped to use as shared memory.</td>
+                    </tr>
+                    <tr>
+                        <td>size</td>
+                        <td>No default value</td>
+                        <td>Size of the file.</td>
+                    </tr>
+                    <tr>
+                        <th colspan="3">Channels</th>
+                    </tr>
+                    <tr>
+                        <td>debug</td>
+                        <td>0</td>
+                        <td>1 activates the debug of channel.</td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">channel.socket</th>
+                        <td>
     A communication transport to a remote Engine
     <b>Magic:</b> The local part of the name will be the Engine name,
     to use when defining the uri mappings. For example
@@ -84,157 +443,136 @@
     will be constructed with port=8009, engine=DEFAULT, worker=ajp13 -
     named 'channel.socket.DEFAULT'
   </td>
-  </tr>
-
-  <tr>
-  <td>port</td>
-  <td>8009</td>
-  <td>Port where Tomcat is listening</td>
-  </tr>
-
-  <tr>
-  <td>host</td>
-  <td>localhost</td>
-  <td>Remote host</td>
-  </tr>
-
-  <tr>
-  <td>protocol</td>
-  <td>ajp13</td>
-  <td>
+                    </tr>
+                    <tr>
+                        <td>port</td>
+                        <td>8009</td>
+                        <td>Port where Tomcat is listening</td>
+                    </tr>
+                    <tr>
+                        <td>host</td>
+                        <td>localhost</td>
+                        <td>Remote host</td>
+                    </tr>
+                    <tr>
+                        <td>protocol</td>
+                        <td>ajp13</td>
+                        <td>
     The protocol to be used to forward the requests.
     No other value is supported at this moment.
   </td>
-  </tr>
-
-  <tr>
-  <td>api</td>
-  <td>ajp13</td>
-  <td>
+                    </tr>
+                    <tr>
+                        <td>api</td>
+                        <td>ajp13</td>
+                        <td>
     API to be used when forwarding the requests.
     No other value is supported at this moment, ajp14 will be used to indicate
     that the Engine supports additional API methods like autoconfig.
   </td>
-  </tr>
-
-  <tr>
-  <td>secretkey</td>
-  <td>NULL</td>
-  <td>
-    <b>Magic:</b> The secret key will be set automatically on the associated
+                    </tr>
+                    <tr>
+                        <td>secretkey</td>
+                        <td>NULL</td>
+                        <td>
+                            <b>Magic:</b> The secret key will be set automatically on the associated
     worker.
   </td>
-  </tr>
-
-  <tr>
-  <td>lbfactor</td>
-  <td>1</td>
-  <td>
+                    </tr>
+                    <tr>
+                        <td>lbfactor</td>
+                        <td>1</td>
+                        <td>
     Load balancing factor to use. At this moment, it'll be set on the worker,
     but in future it should be possible to use lb on a channel level.
   </td>
-  </tr>
-
-  <tr>
-  <th colspan="2">channel.un</th>
-  <td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">channel.un</th>
+                        <td>
     AF_UNIX socket. Only on UNIX like platform. These sockets are faster
     than "normal" sockets but they are limited to the machine. 
   </td>
-  </tr>
-
-  <tr>
-  <td>file</td>
-  <td>Name of socket</td>
-  <td>Name of the socket file (It is created by the Tomcat ChannelUn)</td>
-  </tr>
-
-  <tr>
-  <th colspan="3">Workers</th>
-  </tr>
-
-  <tr>
-  <td>channel</td>
-  <td>Name of channel</td>
-  <td>Name of the channel used by the worker</td>
-  </tr>
-
-  <tr>
-  <td>debug</td>
-  <td>0</td>
-  <td>1 activates the debug of worker.</td>
-  </tr>
-
-  <tr>
-  <th colspan="2">ajp13</th>
-  <td>
+                    </tr>
+                    <tr>
+                        <td>file</td>
+                        <td>Name of socket</td>
+                        <td>Name of the socket file (It is created by the Tomcat ChannelUn)</td>
+                    </tr>
+                    <tr>
+                        <th colspan="3">Workers</th>
+                    </tr>
+                    <tr>
+                        <td>channel</td>
+                        <td>Name of channel</td>
+                        <td>Name of the channel used by the worker</td>
+                    </tr>
+                    <tr>
+                        <td>debug</td>
+                        <td>0</td>
+                        <td>1 activates the debug of worker.</td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">ajp13</th>
+                        <td>
     The forwarding worker using the ajp13 RPC protocol.
     It supports the basic ajp13 API and may support additional functions/APIs
     in future like ajp14 API.
   </td>
-  </tr>
-
-  <tr>
-  <td>secretkey</td>
-  <td>NULL</td>
-  <td>
+                    </tr>
+                    <tr>
+                        <td>secretkey</td>
+                        <td>NULL</td>
+                        <td>
     XXX deprecated - set it on channel ( socket needs it, jni doesn't,
     with unix we can use smarter things ).
     Special attribute to be sent with the first request, used to authenticate.
     Supported by Tomcat3.3 and Tomcat4.x if the authentication is configured,
     leave it NULL for Tomcat3.2.
   </td>
-  </tr>
-
-  <tr>
-  <td>lbfactor</td>
-  <td>1</td>
-  <td>XXX deprecated - set it on channel. Load balancing factor to use.</td>
-  </tr>
-
-  <tr>
-  <th colspan="2">status</th>
-  <td>Status report worker. The status worker does not need a channel.</td>
-  </tr>
-
-  <tr>
-  <th colspan="3">Uri mapping.</th>
-  </tr>
-
-  <tr>
-  <th colspan="2">uri</th>
-  <td>The string to map to the worker define in the uri entry.</td>
-  </tr>
-
-  <tr>
-  <td>worker</td>
-  <td>No default value</td>
-  <td>Name of the worker that process the request corresponding to the uri</td>
-  </tr>
-
-  <tr>
-  <td>debug</td>
-  <td>0</td>
-  <td>1 activates the logic associated with the mapping.</td>
-  </tr>
-
-</table>
-</p>
-</section>
-  
-<section name="Examples">
-<p>
+                    </tr>
+                    <tr>
+                        <td>lbfactor</td>
+                        <td>1</td>
+                        <td>XXX deprecated - set it on channel. Load balancing factor to use.</td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">status</th>
+                        <td>Status report worker. The status worker does not need a channel.</td>
+                    </tr>
+                    <tr>
+                        <th colspan="3">Uri mapping.</th>
+                    </tr>
+                    <tr>
+                        <th colspan="2">uri</th>
+                        <td>The string to map to the worker define in the uri entry.</td>
+                    </tr>
+                    <tr>
+                        <td>worker</td>
+                        <td>No default value</td>
+                        <td>Name of the worker that process the request corresponding to the uri</td>
+                    </tr>
+                    <tr>
+                        <td>debug</td>
+                        <td>0</td>
+                        <td>1 activates the logic associated with the mapping.</td>
+                    </tr>
+                </table>
+            </p>
+        </subsection>
+    </section>
+    <section name="Examples">
+        <p>
 The examples below are working when the Tomcat is configured according the 
 examples described in the configtc file.
 </p>
-<subsection name="/example using normal socket">
-<p> 
+        <subsection name="/example using normal socket">
+            <p> 
 Map /examples to the Tomcat /examples context using a normal socket. Note the 
 IP instead localhost (The JVM listens on the IPV4 address not no the IPV6).
 </p>
-
-<p>
-<source>
+            <p>
+                <source>
 [shm]
 file=${serverRoot}/logs/shm.file
 size=1048576
@@ -252,16 +590,14 @@ channel=channel.socket:localhost:8019
 [uri:/examples/*]
 worker=ajp13:localhost:8019
 </source>
-</p>
-</subsection>
-
-<subsection name="/jkstatus">
-<p>
+            </p>
+        </subsection>
+        <subsection name="/jkstatus">
+            <p>
 Map /jkstatus to the status worker.
 </p>
-
-<p>
-<source>
+            <p>
+                <source>
 [shm]
 file=${serverRoot}/logs/shm.file
 size=1048576
@@ -273,12 +609,10 @@ size=1048576
 [uri:/jkstatus/*]
 worker=status:status
 </source>
-</p>
-</subsection>
-
-
-<subsection name="/example using AF_UNIX socket">
-<p>
+            </p>
+        </subsection>
+        <subsection name="/example using AF_UNIX socket">
+            <p>
 Map /examples to the Tomcat /examples context using a AF_UNIX socket.
 Socket file is create by the Tomcat becarefull when the Web Server runs in
 a different user than the Tomcat with the permission of the socket file:
@@ -288,9 +622,8 @@ srw-rw----    1 jakarta  jakarta         0 Jun 20 08:27 /home1/jakarta/jakarta-t
 </source>
 Here the Tomcat user and the Web Server user must be in the same group.
 </p>
-
-<p>
-<source>
+            <p>
+                <source>
 [shm]
 file=${serverRoot}/logs/shm.file
 size=1048576
@@ -307,7 +640,7 @@ channel=channel.un:unixsocket
 [uri:/examples/*]
 worker=ajp13:unixsocket
 </source>
-</p>
-</subsection>
-</section>
+            </p>
+        </subsection>
+    </section>
 </document>
