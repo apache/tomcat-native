@@ -119,11 +119,17 @@ AC_DEFUN(
 
             dnl check if we have an apxs for Apache 1.3 or 2.0
             if ${TEST} -z "$APA" ; then
+	      if ${TEST} ! -z "$1" ; then
+                AC_MSG_ERROR(Do not use --with-apxs$1 but --with-apxs)
+	      fi
               WEBSERVERS="${WEBSERVERS} server/apache13"
               RWEBSERVER="apache-1.3"
               APXS$1_CFLAGS="`${APXS$1} -q CFLAGS`"
               APXS$1_CPPFLAGS=""
             else
+	      if ${TEST} -z "$1" ; then
+                AC_MSG_ERROR(Do not use --with-apxs but --with-apxs2)
+	      fi
               WEBSERVERS="${WEBSERVERS} server/apache2"
               RWEBSERVER="apache-2.0"
               APACHE2_CONFIG_VARS=${apache_dir}/build/config_vars.mk
