@@ -153,10 +153,12 @@ static int jk_logger_apache2_jkLog(jk_logger_t *l,
     if( buf[rc-1] == '\n' )
         buf[rc-1]='\0';
     
-    if( level >= JK_LOG_ERROR_LEVEL ) {
-        ap_log_error( file, line, APLOG_EMERG | APLOG_NOERRNO, 0, s, buf);
-    } else {
+    if( level == JK_LOG_DEBUG_LEVEL ) {
         ap_log_error( file, line, APLOG_DEBUG | APLOG_NOERRNO, 0, s, buf);
+    } else if( level == JK_LOG_INFO_LEVEL ) {
+        ap_log_error( file, line, APLOG_WARNING | APLOG_NOERRNO, 0, s, buf);
+    } else {
+        ap_log_error( file, line, APLOG_ERR | APLOG_NOERRNO, 0, s, buf);
     }
     return rc ;
 }
