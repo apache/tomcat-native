@@ -179,6 +179,10 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
       ($mon, $day, $time, $year) = (split /\s+/,$line)[1..4];
       ($hour, $min, $sec) = split /:/,$time;
       $year =~ s/\]$//;
+      if( $day !~ /^\d+/ || $hour !~ /^\d+/ || $min!~ /^\d+/ || $sec !~ /^\d+/ ) {
+         print "Unknown log entry: $origline\n" unless $origline =~ /\.c /;
+         next;
+      }
       # print "$mon $day $time $year $hour $min $sec\n";
       $logtime = timelocal($sec,$min,$hour,$day,$MON{$mon},$year-1900);
 
