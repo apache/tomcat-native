@@ -360,7 +360,7 @@ public final class CoyoteConnector
      /**
       * URI encoding as body.
       */
-     private boolean useBodyEncodingForURI = false;
+     private boolean useBodyEncodingForURI = true;
 
 
     // ------------------------------------------------------------- Properties
