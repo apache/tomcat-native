@@ -340,23 +340,18 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
             f++;
         }
 
-#ifdef WIN32
-	    jk2_logger_file_setTimeStr(env,buf, HUGE_BUFFER_SIZE);
-	    used = strlen(buf);
-        if( level >= JK_LOG_DEBUG_LEVEL )
-            used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " (%5s) [%s (%d)]: ", slevel,  f, line);        
-#elif defined(NETWARE) /* until we get a snprintf function */
+#if defined(NETWARE) && !defined(__NOVELL_LIBC__) /* until we get a snprintf function */
         buf = (char *) malloc(HUGE_BUFFER_SIZE);
         if (NULL == buf)
            return -1;
 
-	    jk2_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
-	    used = strlen(buf);
+        jk2_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
+        used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
             used += sprintf(&buf[used], " (%5s) [%s (%d)]: ", slevel,  f, line);
 #else 
-	    jk2_logger_file_setTimeStr(env, buf, HUGE_BUFFER_SIZE);
-	    used = strlen(buf);
+        jk2_logger_file_setTimeStr(env, buf, HUGE_BUFFER_SIZE);
+        used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
             used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " (%5s) [%s (%d)]: ", slevel,  f, line);
 #endif
@@ -364,16 +359,14 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
             return -1; /* [V] not sure what to return... */
         }
     
-#ifdef WIN32
-        rc = vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
-#elif defined(NETWARE) /* until we get a vsnprintf function */
+#if defined(NETWARE) && !defined(__NOVELL_LIBC__) /* until we get a vsnprintf function */
         rc = vsprintf(buf + used, fmt, args);
 #else 
         rc = vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
 #endif
 
         l->log(env, l , level, buf);
-#ifdef NETWARE
+#if defined(NETWARE) && !defined(__NOVELL_LIBC__)
         free(buf);
 #endif
     }
