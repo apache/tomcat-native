@@ -168,7 +168,7 @@ public class MapperListener
             mBeanServer.addNotificationListener(objectName, this, null, null);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Error registering contexts",e);
         }
 
     }
@@ -191,13 +191,13 @@ public class MapperListener
                         try {
                             registerContext(objectName);
                         } catch (Throwable t) {
-                            t.printStackTrace();
+                            log.warn("Error registering Context " + objectName,t);
                         }
                     } else if (j2eeType.equals("Servlet")) {
                         try {
                             registerWrapper(objectName);
                         } catch (Throwable t) {
-                            t.printStackTrace();
+                            log.warn("Error registering Wrapper " + objectName,t);
                         }
                     }
                 }
@@ -209,7 +209,7 @@ public class MapperListener
                         try {
                             unregisterContext(objectName);
                         } catch (Throwable t) {
-                            t.printStackTrace();
+                            log.warn("Error unregistering webapp " + objectName,t);
                         }
                     }
                 }
