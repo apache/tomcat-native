@@ -4,4 +4,5 @@ Windows Registry Editor Version 5.00
 "serverRoot"="E:\\tomcat\\jakarta-tomcat\\build\\tomcat"
 "extensionUri"="/jakarta/isapi_redirector2.dll"
 "workersFile"="E:\\tomcat\\jakarta-tomcat\\build\\tomcat\\conf\\workers2.properties"
-"authComplete"=dword:00000000
+"authComplete"="0"
+"threadPool"="20"
