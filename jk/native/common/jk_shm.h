@@ -71,14 +71,7 @@ struct jk_shm_worker
     /* Current lb factor */
     int     lb_factor;
     /* Current lb value  */
-    int     lb_value;    
-
-    /* Those are going to be deprecated */
-    int     is_local_worker;
-    int     is_local_domain;
-    int     in_local_worker_mode;
-    int     local_worker_only;
-
+    int     lb_value;
     int     in_error_state;
     int     in_recovering;
     int     sticky_session;
