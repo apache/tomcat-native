@@ -366,7 +366,7 @@ static int wam_match(request_rec *r) {
     wa_chain *elem=NULL;
 
     /* Paranoid check */
-    if (!wam_initialized) return;
+    if (!wam_initialized) return(DECLINED);
 
     /* Check if this host was recognized */
     host=ap_get_module_config(r->server->module_config,&webapp_module);
@@ -391,7 +391,6 @@ static int wam_match(request_rec *r) {
     return(OK);
 }
 
-
 /* Handle the current request */
 static int wam_invoke(request_rec *r) {
     server_rec *svr=r->server;
@@ -404,7 +403,7 @@ static int wam_invoke(request_rec *r) {
     int ret=0;
 
     /* Paranoid check */
-    if (!wam_initialized) return;
+    if (!wam_initialized) return(DECLINED);
 
     /* Try to get a hold on the webapp request structure */
     appl=(wa_application *)ap_get_module_config(r->request_config,
