@@ -72,7 +72,7 @@ AC_DEFUN(
     AC_MSG_CHECKING([for apxs name])
     AC_ARG_WITH(
       [apxs],
-      [  --with-apxs[[=apxs]]      the Apache "apxs" utility to use.],
+      [  --with-apxs[[=apxs]]      the Apache APXS utility to use],
       [
         case "${withval}" in
         ""|"yes"|"YES"|"true"|"TRUE")

@@ -76,7 +76,7 @@ AC_DEFUN(
     AC_MSG_CHECKING([for apr sources])
     AC_ARG_WITH(
       [apr],
-      [  --with-apr[[=apr]]        the Apache Portable Runtime library to use.],
+      [  --with-apr[[=apr]]        the Apache Portable Runtime library to use],
       [
         case "${withval}" in
         ""|"yes"|"YES"|"true"|"TRUE")
