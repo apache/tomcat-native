@@ -98,7 +98,9 @@ AC_DEFUN(LOCAL_FILTEREXEC,[
     done
     unset first
     unset line
+    exit $ret
   }
+  ret=$?
 ])
 
 dnl --------------------------------------------------------------------------
