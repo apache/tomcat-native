@@ -101,8 +101,8 @@ public class JkCoyoteHandler extends JkHandler implements
     public final int JK_STATUS_CLOSED=2;
     
     public void setProperty( String name, String value ) {
-        if( log.isDebugEnabled())
-            log.debug("setProperty " + name + " " + value );
+        if( log.isTraceEnabled())
+            log.trace("setProperty " + name + " " + value );
         jkMain.setProperty( name, value );
         properties.put( name, value );
     }
@@ -114,6 +114,8 @@ public class JkCoyoteHandler extends JkHandler implements
     /** Pass config info
      */
     public void setAttribute( String name, Object value ) {
+        if( log.isDebugEnabled())
+            log.debug("setAttribute " + name + " " + value );
         if( value instanceof String )
             this.setProperty( name, (String)value );
     }
@@ -297,6 +299,7 @@ public class JkCoyoteHandler extends JkHandler implements
         if( contentLanguage != null ) {
             headers.setValue("Content-Language").setString(contentLanguage);
         }
+
         int contentLength = res.getContentLength();
         if( contentLength >= 0 ) {
             headers.setValue("Content-Length").setInt(contentLength);
