@@ -65,22 +65,34 @@
 #include "apr.h"
 #include "apr_pools.h"
 
+#include "apr_network_io.h"
+#include "apr_errno.h"
+#include "apr_general.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
+#include "org_apache_jk_apr_AprImpl.h"
+
 JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *env, jobject _jthis)
+Java_org_apache_jk_apr_AprImpl_initialize(JNIEnv *jniEnv, jobject _jthis)
 {
-    apr_initialize();
+/*     apr_initialize(); */
     return 0;
 }
 
 JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_terminate(JNIEnv *env, jobject _jthis)
+Java_org_apache_jk_apr_AprImpl_terminate(JNIEnv *jniEnv, jobject _jthis)
 {
-    apr_terminate();
+/*     apr_terminate(); */
     return 0;
 }
 
 JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_poolCreate(JNIEnv *env, jobject _jthis, jlong parentP)
+Java_org_apache_jk_apr_AprImpl_poolCreate(JNIEnv *jniEnv, jobject _jthis, jlong parentP)
 {
     apr_pool_t *parent;
     apr_pool_t *child;
@@ -90,34 +102,56 @@ Java_org_apache_jk_apr_AprImpl_poolCreate(JNIEnv *env, jobject _jthis, jlong par
     return (jlong)(long)child;
 }
 
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_poolClear(JNIEnv *env, jobject _jthis,
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_poolClear(JNIEnv *jniEnv, jobject _jthis,
                                          jlong poolP)
 {
     apr_pool_t *pool;
 
-    pool=(apr_pool_t *)(void *)poolP;
+    pool=(apr_pool_t *)(void *)(long)poolP;
     apr_pool_clear( pool );
     return 0;
 }
 
+static void jkSigAction(int signal) {
+
+}
+
+static struct sigaction jkAction;
+
+/* XXX We need to: - preserve the old signal ( or get them ) - either
+     implement "waitSignal" or use invocation in jkSigAction
+
+     Probably waitSignal() is better ( we can have a thread that waits )
+*/
+
 JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *env, jobject _jthis, jint signo,
+Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *jniEnv, jobject _jthis, jint bitMask,
                                       jobject func)
 {
-
+    memset(& jkAction, 0, sizeof(jkAction));
+    jkAction.sa_handler=jkSigAction;
+    sigaction((int)bitMask, &jkAction, (void *) NULL);
     return 0;
 }
 
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_userId(JNIEnv *env, jobject _jthis, jlong pool)
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_sendSignal(JNIEnv *jniEnv, jobject _jthis, jint signo,
+                                          jlong target)
 {
 
     return 0;
 }
 
 JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmInit(JNIEnv *env, jobject _jthis, jlong pool,
+Java_org_apache_jk_apr_AprImpl_userId(JNIEnv *jniEnv, jobject _jthis, jlong pool)
+{
+    
+    return 0;
+}
+
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_shmInit(JNIEnv *jniEnv, jobject _jthis, jlong pool,
                                        jlong size, jstring file)
 {
 
@@ -125,7 +159,7 @@ Java_org_apache_jk_apr_AprImpl_shmInit(JNIEnv *env, jobject _jthis, jlong pool,
 }
 
 JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *env, jobject _jthis, jlong pool,
+Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *jniEnv, jobject _jthis, jlong pool,
                                           jlong size, jstring file)
 {
 
@@ -133,35 +167,182 @@ Java_org_apache_jk_apr_AprImpl_shmDestroy(JNIEnv *env, jobject _jthis, jlong poo
 }
 
 
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_socketCreate(JNIEnv *env, jobject _jthis, jint fam,
-                                            jint type, jlong pool)
-{
+/* ==================== Unix sockets ==================== */
+/* It seems apr doesn't support them yet, so this code will use the
+   'native' calls. For 'tcp' sockets we just use what java provides.
+*/
 
-    return 0;
+   
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_unSocketClose(JNIEnv *jniEnv, jobject _jthis, 
+                                             jlong poolJ, jlong socketJ, jint typeJ )
+{
+    int socket=(int)socketJ;
+    int type=(int)typeJ;
+    shutdown( socket, type );
+    return 0L;
 }
 
 JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_socketBind(JNIEnv *env, jobject _jthis,
-                                          jlong socket, jlong sa )
+Java_org_apache_jk_apr_AprImpl_unSocketListen(JNIEnv *jniEnv, jobject _jthis, 
+                                              jlong poolJ, jstring hostJ, jint backlog )
 {
+    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
+    char *host;
+    int status;
+    int unixSocket;
+    struct sockaddr_un unixAddr;
 
-    return 0;
+    memset(& unixAddr, 0, sizeof(struct sockaddr_un));
+    unixAddr.sun_family=AF_UNIX;
+
+    host=(*jniEnv)->GetStringUTFChars(jniEnv, hostJ, 0);
+    strcpy(unixAddr.sun_path, host);
+    
+    unixSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    (*jniEnv)->ReleaseStringUTFChars(jniEnv, hostJ, host);
+
+    if (unixSocket<0) {
+        return 0L;
+    }
+
+    bind(unixSocket,
+         (struct sockaddr *)& unixAddr,
+         strlen( unixAddr.sun_path ) +
+         sizeof( unixAddr.sun_family) );
+
+    listen( unixSocket, (int)backlog );
+    
+/*     fprintf(stderr, "Listening on %d \n", */
+/*             unixSocket); */
+    return (jlong)unixSocket;
 }
 
 JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_socketListen(JNIEnv *env, jobject _jthis,
-                                            jlong socket, jint bl )
+Java_org_apache_jk_apr_AprImpl_unSocketConnect(JNIEnv *jniEnv, jobject _jthis, 
+                                               jlong poolJ, jstring hostJ )
 {
+    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
+    char *host;
+    int status;
+    int unixSocket;
+    struct sockaddr_un unixAddr;
 
-    return 0;
+    memset(& unixAddr, 0, sizeof(struct sockaddr_un));
+    unixAddr.sun_family=AF_UNIX;
+
+    host==(*jniEnv)->GetStringUTFChars(jniEnv, hostJ, 0);
+    strcpy(unixAddr.sun_path, host);
+    (*jniEnv)->ReleaseStringUTFChars(jniEnv, hostJ, host);
+    
+    unixSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    if (unixSocket<0) {
+        return 0L;
+    }
+
+    status=connect(unixSocket,
+                   (struct sockaddr *)& unixAddr,
+                   strlen( unixAddr.sun_path ) +
+                   sizeof( unixAddr.sun_family) );
+    
+    if( status < 0 ) {
+        // Return error
+        return -1;
+    }
+
+    return (jlong)(long)(void *)unixSocket;
 }
 
 
+JNIEXPORT jlong JNICALL 
+Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis, 
+                                      jlong poolJ, jlong unSocketJ)
+{
+    int listenUnSocket=(int)unSocketJ;
+    struct sockaddr_un client;
+    int clientlen;
+    
+    /* What to do with the address ? We could return an object, or do more.
+       For now we'll ignore it */
+    
+    while( 1 ) {
+        int connfd;
 
+        clientlen=sizeof( client );
+        connfd=accept( listenUnSocket, (struct sockaddr *)&client, &clientlen );
+        if( connfd < 0 ) {
+            if( errno==EINTR ) {
+                fprintf(stderr, "EINTR\n");
+                continue;
+            } else {
+                fprintf(stderr, "Error accepting %d %d %s\n",
+                        listenUnSocket, errno, strerror(errno));
+                return -1;
+            }
+        }
+        return (jlong)connfd;
+    }
+    return 0L;
+}
 
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_unRead(JNIEnv *jniEnv, jobject _jthis, 
+                                      jlong poolJ, jlong unSocketJ, jbyteArray bufJ, jint from, jint cnt)
+{
+    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
+    jbyte *nbuf;
+    int rd;
+    jboolean iscommit;
 
+    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, bufJ, &iscommit);
+    if( ! nbuf ) {
+        return -1;
+    }
 
+    while( 1 ) {
+        /* Read */
+        rd=read( (int)unSocketJ, nbuf + from, cnt );
+        if( rd < 0 ) {
+            if( errno==EINTR ) {
+                fprintf(stderr, "EINTR\n");
+                continue;
+            } else {
+                fprintf(stderr, "Error reading %d %d %s\n",
+                        (int)unSocketJ, errno, strerror(errno));
+                (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
+                return -1;
+            }
+        }
+/*         fprintf(stderr, "Read %d from %d\n", */
+/*                 rd, unSocketJ); */
+    
+        (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
+        return (jint)rd;
+    }
+}
 
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_unWrite(JNIEnv *jniEnv, jobject _jthis, 
+                                     jlong poolJ, jlong unSocketJ, jbyteArray bufJ, jint from, jint cnt)
+{
+    apr_status_t status;
+    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
+    jbyte *nbuf;
+    int rd;
+    jboolean iscommit;
+
+    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, bufJ, &iscommit);
+    if( ! nbuf ) {
+        return -1;
+    }
+
+    /* write */
+    write( (int) unSocketJ, nbuf + from, cnt );
+    
+    (*jniEnv)->ReleaseByteArrayElements(jniEnv, bufJ, nbuf, 0);
+    return (jint)rd;
+}
 
 
