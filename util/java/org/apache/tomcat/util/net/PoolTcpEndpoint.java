@@ -350,6 +350,7 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
             if (!lf) {
                 threadStop();
             }
+            initialized=false ;
         }
     }
 
