@@ -68,7 +68,7 @@ SRCS =  pr_info.c \
 	pr_warp_packet.c \
 	wa_config.c \
 	wa_main.c \
-	wa_request.c \
+	wa_request.c
 
 OBJS =  wa_main.o \
 	wa_config.o \
@@ -95,8 +95,8 @@ $(LIB): $(SRCS) $(WARPH) $(OBJS) $(PROVS)
 	$(RANLIB) $@
 
 pr_warp_defs.h: $(TGTDIR)/java/Constants.java
-	@$(MECHO) "Generating \"$@\""
-	@$(CAT) "$<" | \
+	@$(MECHO) "Generating \"$@\" from \"$?\""
+	@$(CAT) "$?" | \
 	    $(GREP) "TYPE_" | \
 	    $(SED) "s/public static final int/#define/g" | \
 	    $(SED) "y/=;/  /" > $@

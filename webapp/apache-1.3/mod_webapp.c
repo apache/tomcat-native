@@ -87,7 +87,7 @@ static server_rec *server=NULL;
 /* ************************************************************************* */
 
 /* Destroy the module and the WebApp Library */
-static void wam_shutdown(server_rec *s, pool *p) {//void *nil) {
+static void wam_shutdown(server_rec *s, pool *p) {/*void *nil) { */
     if (!wam_initialized) return;
     wa_shutdown();
     wam_initialized=wa_false;

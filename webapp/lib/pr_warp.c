@@ -214,15 +214,15 @@ static int warp_handle(wa_request *r, wa_application *appl) {
     warp_packet *pack=p_create(r->pool);
     int status=0;
 
-    // Check packet
+    /* Check packet */
     if (pack==NULL)
         return(wa_rerror(WA_MARK,r,500,"Cannot create WARP packet"));
 
-    // Check application
+    /* Check application */
     if (((int)(appl->conf))==-1)
         return(wa_rerror(WA_MARK,r,404,"Application not deployed"));
 
-    // Attempt to reconnect if disconnected
+    /* Attempt to reconnect if disconnected */
     if (conf->sock==NULL) {
         if (n_connect(conn)==wa_true) {
             wa_debug(WA_MARK,"Connection \"%s\" opened",conn->name);
@@ -241,7 +241,7 @@ static int warp_handle(wa_request *r, wa_application *appl) {
         }
     }
 
-    // Let's do it
+    /* Let's do it */
     pack->type=TYPE_REQ_INIT;
     p_write_int(pack,(int)(appl->conf));
     p_write_string(pack,r->meth);

@@ -122,7 +122,7 @@ dnl Upd vars: N/A
 dnl -------------------------------------------------------------------------
 LOCAL_HEADER([C-Language compilation tools])
 LOCAL_CHECK_PROG(AR,ar)
-LOCAL_CHECK_PROG(RANLIB,ranlib)
+AC_CHECK_TOOL(RANLIB, ranlib, true)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_PROG_CC()
