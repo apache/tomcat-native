@@ -77,6 +77,7 @@ of existing workers/uris. Then it'll access the jk_status page, which will detec
 file changes and reload the config in the current server process, and use the scoreboard to 
 inform other server processes of the change. </p>
 
+</section>
     <section name="Server-specific configuration">
 
 <p>Since the config is abstracted, some servers ( Apache2 only at this moment ) may support a 
@@ -105,13 +106,14 @@ could be better used in this mode.</p>
 You can still enable/disable/add workers if you use workers2.properties, and 
 you could add or change uri properties in that file. </p>
 
-
+</section>
     <section name="Config generators">
  
 <p>There is work in progress to support automatic generation of the config file. The code is
 included in org.apache.jk.config and consist of a number of ant tasks ( that work from CLI as well)
  that process web.xml files and generate worker2.properties or server-specific config files</p>
 
+</section>
 
 
 </document>
