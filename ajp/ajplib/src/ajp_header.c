@@ -41,71 +41,174 @@ static const char *long_res_header_for_sc(int sc)
     return rc;
 }
 
+#define UNKNOWN_METHOD (-1)
 
-static apr_status_t sc_for_req_method(const char *method,
-                                      unsigned char *sc) 
+static int sc_for_req_method(const char *method)
 {
-    apr_status_t rc = APR_SUCCESS;
-    if(0 == strcmp(method, "GET")) {
-        *sc = SC_M_GET;
-    } else if(0 == strcmp(method, "POST")) {
-        *sc = SC_M_POST;
-    } else if(0 == strcmp(method, "HEAD")) {
-        *sc = SC_M_HEAD;
-    } else if(0 == strcmp(method, "PUT")) {
-        *sc = SC_M_PUT;
-    } else if(0 == strcmp(method, "DELETE")) {
-        *sc = SC_M_DELETE;
-    } else if(0 == strcmp(method, "OPTIONS")) {
-        *sc = SC_M_OPTIONS;
-    } else if(0 == strcmp(method, "TRACE")) {
-        *sc = SC_M_TRACE;
-    } else if(0 == strcmp(method, "PROPFIND")) {
-        *sc = SC_M_PROPFIND;
-    } else if(0 == strcmp(method, "PROPPATCH")) {
-        *sc = SC_M_PROPPATCH;
-    } else if(0 == strcmp(method, "MKCOL")) {
-        *sc = SC_M_MKCOL;
-    } else if(0 == strcmp(method, "COPY")) {
-        *sc = SC_M_COPY;
-    } else if(0 == strcmp(method, "MOVE")) {
-        *sc = SC_M_MOVE;
-    } else if(0 == strcmp(method, "LOCK")) {
-        *sc = SC_M_LOCK;
-    } else if(0 == strcmp(method, "UNLOCK")) {
-        *sc = SC_M_UNLOCK;
-    } else if(0 == strcmp(method, "ACL")) {
-        *sc = SC_M_ACL;
-    } else if(0 == strcmp(method, "REPORT")) {
-        *sc = SC_M_REPORT;
-    } else if(0 == strcmp(method, "VERSION-CONTROL")) {
-        *sc = SC_M_VERSION_CONTROL;
-    } else if(0 == strcmp(method, "CHECKIN")) {
-        *sc = SC_M_CHECKIN;
-    } else if(0 == strcmp(method, "CHECKOUT")) {
-        *sc = SC_M_CHECKOUT;
-    } else if(0 == strcmp(method, "UNCHECKOUT")) {
-        *sc = SC_M_UNCHECKOUT;
-    } else if(0 == strcmp(method, "SEARCH")) {
-        *sc = SC_M_SEARCH;
-    } else if(0 == strcmp(method, "MKWORKSPACE")) {
-        *sc = SC_M_MKWORKSPACE;
-    } else if(0 == strcmp(method, "UPDATE")) {
-        *sc = SC_M_UPDATE;
-    } else if(0 == strcmp(method, "LABEL")) {
-        *sc = SC_M_LABEL;
-    } else if(0 == strcmp(method, "MERGE")) {
-        *sc = SC_M_MERGE;
-    } else if(0 == strcmp(method, "BASELINE-CONTROL")) {
-        *sc = SC_M_BASELINE_CONTROL;
-    } else if(0 == strcmp(method, "MKACTIVITY")) {
-        *sc = SC_M_MKACTIVITY;
-    } else {
-        rc = APR_EGENERAL;
+    apr_ssize_t len = strlen(method);
+
+    switch (len)
+    {
+    case 3:
+        switch (method[0])
+        {
+        case 'P':
+            return (method[1] == 'U'
+                    && method[2] == 'T'
+                    ? SC_M_PUT : UNKNOWN_METHOD);
+        case 'G':
+            return (method[1] == 'E'
+                    && method[2] == 'T'
+                    ? SC_M_GET : UNKNOWN_METHOD);
+        case 'A':
+            return (method[1] == 'C'
+                    && method[2] == 'L'
+                    ? SC_M_ACL : UNKNOWN_METHOD);
+        default:
+            return UNKNOWN_METHOD;
+        }
+
+    case 4:
+        switch (method[0])
+        {
+        case 'H':
+            return (method[1] == 'E'
+                    && method[2] == 'A'
+                    && method[3] == 'D'
+                    ? SC_M_HEAD : UNKNOWN_METHOD);
+        case 'P':
+            return (method[1] == 'O'
+                    && method[2] == 'S'
+                    && method[3] == 'T'
+                    ? SC_M_POST : UNKNOWN_METHOD);
+        case 'M':
+            return (method[1] == 'O'
+                    && method[2] == 'V'
+                    && method[3] == 'E'
+                    ? SC_M_MOVE : UNKNOWN_METHOD);
+        case 'L':
+            return (method[1] == 'O'
+                    && method[2] == 'C'
+                    && method[3] == 'K'
+                    ? SC_M_LOCK : UNKNOWN_METHOD);
+        case 'C':
+            return (method[1] == 'O'
+                    && method[2] == 'P'
+                    && method[3] == 'Y'
+                    ? SC_M_COPY : UNKNOWN_METHOD);
+        default:
+            return UNKNOWN_METHOD;
+        }
+
+    case 5:
+        switch (method[2])
+        {
+        case 'R':
+            return (memcmp(method, "MERGE", 5) == 0
+                    ? SC_M_MERGE : UNKNOWN_METHOD);
+        case 'C':
+            return (memcmp(method, "MKCOL", 5) == 0
+                    ? SC_M_MKCOL : UNKNOWN_METHOD);
+        case 'B':
+            return (memcmp(method, "LABEL", 5) == 0
+                    ? SC_M_LABEL : UNKNOWN_METHOD);
+        case 'A':
+            return (memcmp(method, "TRACE", 5) == 0
+                    ? SC_M_TRACE : UNKNOWN_METHOD);
+        default:
+            return UNKNOWN_METHOD;
+        }
+
+    case 6:
+        switch (method[0])
+        {
+        case 'U':
+            switch (method[5])
+            {
+            case 'K':
+                return (memcmp(method, "UNLOCK", 6) == 0
+                        ? SC_M_UNLOCK : UNKNOWN_METHOD);
+            case 'E':
+                return (memcmp(method, "UPDATE", 6) == 0
+                        ? SC_M_UPDATE : UNKNOWN_METHOD);
+            default:
+                return UNKNOWN_METHOD;
+            }
+        case 'R':
+            return (memcmp(method, "REPORT", 6) == 0
+                    ? SC_M_REPORT : UNKNOWN_METHOD);
+        case 'D':
+            return (memcmp(method, "DELETE", 6) == 0
+                    ? SC_M_DELETE : UNKNOWN_METHOD);
+        case 'S':
+            return (memcmp(method, "SEARCH", 6) == 0
+                    ? SC_M_SEARCH : UNKNOWN_METHOD);
+        default:
+            return UNKNOWN_METHOD;
+        }
+
+    case 7:
+        switch (method[1])
+        {
+        case 'P':
+            return (memcmp(method, "OPTIONS", 7) == 0
+                    ? SC_M_OPTIONS : UNKNOWN_METHOD);
+        case 'H':
+            return (memcmp(method, "CHECKIN", 7) == 0
+                    ? SC_M_CHECKIN : UNKNOWN_METHOD);
+        default:
+            return UNKNOWN_METHOD;
+        }
+
+    case 8:
+        switch (method[0])
+        {
+        case 'P':
+            return (memcmp(method, "PROPFIND", 8) == 0
+                    ? SC_M_PROPFIND : UNKNOWN_METHOD);
+        case 'C':
+            return (memcmp(method, "CHECKOUT", 8) == 0
+                    ? SC_M_CHECKOUT : UNKNOWN_METHOD);
+        default:
+            return UNKNOWN_METHOD;
+        }
+
+    case 9:
+        return (memcmp(method, "PROPPATCH", 9) == 0
+                ? SC_M_PROPPATCH : UNKNOWN_METHOD);
+
+    case 10:
+        switch (method[0])
+        {
+        case 'U':
+            return (memcmp(method, "UNCHECKOUT", 10) == 0
+                    ? SC_M_UNCHECKOUT : UNKNOWN_METHOD);
+        case 'M':
+            return (memcmp(method, "MKACTIVITY", 10) == 0
+                    ? SC_M_MKACTIVITY : UNKNOWN_METHOD);
+        default:
+            return UNKNOWN_METHOD;
+        }
+
+    case 11:
+        return (memcmp(method, "MKWORKSPACE", 11) == 0
+                ? SC_M_MKWORKSPACE : UNKNOWN_METHOD);
+
+    case 15:
+        return (memcmp(method, "VERSION-CONTROL", 15) == 0
+                ? SC_M_VERSION_CONTROL : UNKNOWN_METHOD);
+
+    case 16:
+        return (memcmp(method, "BASELINE-CONTROL", 16) == 0
+                ? SC_M_BASELINE_CONTROL : UNKNOWN_METHOD);
+
+    default:
+        return UNKNOWN_METHOD;
     }
 
-    return rc;
-}
+    /* NOTREACHED */
+} 
+
 
 static apr_status_t sc_for_req_header(const char *header_name,
                                       apr_uint16_t *sc) 
@@ -230,7 +333,7 @@ AJPV13_REQUEST/AJPV14_REQUEST=
 static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
                                  request_rec *r)
 {
-    unsigned char method;
+    int method;
     apr_uint32_t i, num_headers = 0;
     apr_byte_t is_ssl;
     char *remote_host;
@@ -239,7 +342,7 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
                          "Into ajp_marshal_into_msgb");
 
-    if (!sc_for_req_method(r->method, &method)) { 
+    if ((method = sc_for_req_method(r->method)) == UNKNOWN_METHOD) { 
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "Error ajp_marshal_into_msgb - No such method %s",
                r->method);
