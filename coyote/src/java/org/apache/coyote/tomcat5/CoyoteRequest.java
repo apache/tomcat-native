@@ -1167,8 +1167,9 @@ public class CoyoteRequest
             try {
                 listener.attributeRemoved(event);
             } catch (Throwable t) {
-                // FIXME - should we do anything besides log these?
                 log(sm.getString("coyoteRequest.attributeEvent"), t);
+                // Error valve will pick this execption up and display it to user
+                attributes.put( Globals.EXCEPTION_ATTR, t );
             }
         }
     }
@@ -1235,8 +1236,9 @@ public class CoyoteRequest
                     listener.attributeAdded(event);
                 }
             } catch (Throwable t) {
-                // FIXME - should we do anything besides log these?
                 log(sm.getString("coyoteRequest.attributeEvent"), t);
+                // Error valve will pick this execption up and display it to user
+                attributes.put( Globals.EXCEPTION_ATTR, t );
             }
         }
     }
