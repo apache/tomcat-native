@@ -61,7 +61,11 @@
 include @SRCDIR@/Makedefs
 
 OBJS = wa_main.lo wa_config.lo wa_request.lo
-PROVS = pr_info.lo pr_warp.lo
+PROVS = pr_info.lo \
+	pr_warp.lo \
+	pr_warp_packet.lo \
+	pr_warp_network.lo \
+	pr_warp_config.lo
 
 LIB = libwebapp.la
 

@@ -7,6 +7,12 @@ pr_info.lo
 pr_info.o
 pr_warp.lo
 pr_warp.o
+pr_warp_config.lo
+pr_warp_config.o
+pr_warp_network.lo
+pr_warp_network.o
+pr_warp_packet.lo
+pr_warp_packet.o
 wa_config.lo
 wa_config.o
 wa_main.lo
