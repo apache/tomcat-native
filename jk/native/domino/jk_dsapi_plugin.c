@@ -123,14 +123,11 @@ static jk_logger_t			*logger		= NULL;
 static int					logLevel	= JK_LOG_EMERG_LEVEL;
 static jk_pool_t			cfgPool;
 
-
-
 static const char *logFile;
 static const char *workerFile;
 static const char *workerMountFile;
 static const char *tomcatStart;
 static const char *tomcatStop;
-
 
 #if defined(JK_VERSION) && JK_VERSION >= MAKEVERSION(1, 2, 0, 1)
 static jk_worker_env_t   worker_env;
@@ -170,6 +167,7 @@ static int JK_METHOD StartResponse(jk_ws_service_t * s, int status, const char *
 /* Read() is called by Tomcat to read from the request body (if any).
  */
 static int JK_METHOD Read(jk_ws_service_t * s, void *b, unsigned l, unsigned *a);
+
 /* Write() is called by Tomcat to send data back to the client.
  */
 static int JK_METHOD Write(jk_ws_service_t * s, const void *b, unsigned l);
@@ -265,11 +263,8 @@ static void AddInLogMessageText(char *msg, unsigned short code, ...)
 }
 #endif
 
-
 /* Get the value of a server (CGI) variable as a string
-
  */
-
 static int GetVariable(private_ws_t *ws, char *hdrName,
 					 char *buf, DWORD bufsz, char **dest, const char *dflt)
 {

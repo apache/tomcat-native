@@ -95,10 +95,10 @@ extern "C"
 		unsigned int securePort;
 		void *privateContext;
 
-		int (*GetRequest) (struct _FilterContext * context, FilterRequest * request,
+		int (*GetRequest) (struct _FilterContext *context, FilterRequest * request,
 						   unsigned int *errID);
 
-		int (*GetRequestContents) (struct _FilterContext * context, char **contents,
+		int (*GetRequestContents) (struct _FilterContext *context, char **contents,
 								   unsigned int *errID);
 
 		int (*GetServerVariable) (struct _FilterContext * context, char *name, void *buffer,
@@ -143,7 +143,7 @@ extern "C"
 	}
 	ServerSupportTypes;
 
-/*--- 
+/*---
  *      'data1' for server support function 'kWriteResponseHeaders'
  */
 	typedef struct

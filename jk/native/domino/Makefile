@@ -2,8 +2,7 @@
 
 CC=gcc
 LD=gcc -shared
-
-CCFLAGS=-Wall -O3
+CCFLAGS=-fPIC -Wall -O3
 LDFLAGS=-shared
 
 #################################################################################
