@@ -36,7 +36,7 @@ diff -c -w -r1.9 jk_version.h
   #define JK_VERMAJOR     1
   #define JK_VERMINOR     2
 ! #define JK_VERFIX       2
-  #define JK_VERSTRING    "1.2.3"
+  #define JK_VERSTRING    "1.2.5"
   
   /* Beta number */
   #define JK_VERBETA      0
@@ -51,7 +51,7 @@ diff -c -w -r1.9 jk_version.h
   #define JK_VERMAJOR     1
   #define JK_VERMINOR     2
 ! #define JK_VERFIX       3
-  #define JK_VERSTRING    "1.2.3"
+  #define JK_VERSTRING    "1.2.5"
   
   /* Beta number */
   #define JK_VERBETA      0
@@ -72,9 +72,9 @@ Use the pattern below for branching and tagging the jk directory.
 
 cvs tag -b JK_{MAJOR_REVISION}_{MINOR_REVISION}_{RELEASE}
 
-Here is an example for mod_jk 1.2.3
+Here is an example for mod_jk 1.2.5
 
-cvs tag -b JK_1_2_3
+cvs tag -b JK_1.2.5
 
 Build the mod_jk 1.2 documentation
 ----------------------------------
@@ -88,79 +88,75 @@ Create the new source distribution
 Create the directory
 jakarta-tomcat-connectors-jk-{MAJOR_REVISION}-{MINOR_REVISION}-{RELEASE}-src
 
-For this example mkdir jakarta-tomcat-connectors-jk-1.2.3-src
+For this example mkdir jakarta-tomcat-connectors-jk-1.2.5-src
 
 Copy the files KEYS and LICENSE from jakarta-tomcat-conectors to
 the source distribution directory.
 
-cp jakarta-tomcat-connectors/KEYS jakarta-tomcat-connectors-jk-1.2.3-src
-cp jakarta-tomcat-connectors/LICENSE jakarta-tomcat-connectors-jk-1.2.3-src
+cp jakarta-tomcat-connectors/KEYS jakarta-tomcat-connectors-jk-1.2.5-src
+cp jakarta-tomcat-connectors/LICENSE jakarta-tomcat-connectors-jk-1.2.5-src
 
 Copy the directory jakarta-tomcat-connectors/scandoc to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/scandoc jakarta-tomcat-connectors-jk-1.2.3-src
+cp -pr jakarta-tomcat-connectors/scandoc jakarta-tomcat-connectors-jk-1.2.5-src
 
 Copy the directory jakarta-tomcat-connectors/common to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/common jakarta-tomcat-connectors-jk-1.2.3-src
+cp -pr jakarta-tomcat-connectors/common jakarta-tomcat-connectors-jk-1.2.5-src
 
 Make the jk directory in the source distribution.
 
-mkdir jakarta-tomcat-connectors-jk-1.2.3-src/jk
+mkdir jakarta-tomcat-connectors-jk-1.2.5-src/jk
 
-Copy the file README.txt from jakarta-tomcat-conectors/jk to 
+Copy the file BUILD.txt from jakarta-tomcat-conectors/jk to 
 the source distribution jk directory.
 
-cp -p jakarta-tomcat-connectors/jk/README.txt jakarta-tomcat-connectors-jk-1.2.3-src/jk
-
-Copy the build files to the source distribution jk directory.
-
-cp -p jakarta-tomcat-connectors/jk/build.* jakarta-tomcat-connectors-jk-1.2.3-src/jk
+cp -p jakarta-tomcat-connectors/jk/BUILD.txt jakarta-tomcat-connectors-jk-1.2.5-src/README.txt
 
 Copy the directory jakarta-tomcat-connectors/build/docs to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/jk/build/docs jakarta-tomcat-connectors-jk-1.2.3-src/jk
+cp -pr jakarta-tomcat-connectors/jk/build/docs jakarta-tomcat-connectors-jk-1.2.5-src/jk
 
 Copy the directory jakarta-tomcat-connectors/tools to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/jk/tools jakarta-tomcat-connectors-jk-1.2.3-src/jk
+cp -pr jakarta-tomcat-connectors/jk/tools jakarta-tomcat-connectors-jk-1.2.5-src/jk
 
 Copy the directory jakarta-tomcat-connectors/conf to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/jk/conf jakarta-tomcat-connectors-jk-1.2.3-src/jk
+cp -pr jakarta-tomcat-connectors/jk/conf jakarta-tomcat-connectors-jk-1.2.5-src/jk
 
 Copy the directory jakarta-tomcat-connectors/support to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/jk/support jakarta-tomcat-connectors-jk-1.2.3-src/jk
+cp -pr jakarta-tomcat-connectors/jk/support jakarta-tomcat-connectors-jk-1.2.5-src/jk
 
 Copy the directory jakarta-tomcat-connectors/native to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/jk/native jakarta-tomcat-connectors-jk-1.2.3-src/jk
+cp -pr jakarta-tomcat-connectors/jk/native jakarta-tomcat-connectors-jk-1.2.5-src/jk
 
 Remove all the CVS directories from the new source distribution.
 
-find jakarta-tomcat-connectors-jk-1.2.3-src -type d -name CVS | xargs rm -rf
+find jakarta-tomcat-connectors-jk-1.2.5-src -type d -name CVS | xargs rm -rf
 
 Create a tar gzip'd archive
 
-tar zcf jakarta-tomcat-connectors-jk-1.2.3-src.tar.gz jakarta-tomcat-connectors-jk-1.2.3-src
+tar zcf jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz jakarta-tomcat-connectors-jk-1.2.5-src
 
 Sign the release using PGP. Here is an example using gpg:
 
-gpg -abs -o jakarta-tomcat-connectors-jk-1.2.3-src.tar.gz.asc jakarta-tomcat-connectors-jk-1.2.3-src.tar.gz
+gpg -abs -o jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz.asc jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz
 
 Upload source distribution and documentation to daedalus.apache.org
 -------------------------------------------------------------------
 ssh to daedalus.apache.org and create the release directory.
 
-mkdir /www/jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/jk/v1.2.3
+mkdir /www/jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/jk/v1.2.5
 
 scp jakarta-tomcat-connectors/KEYS to the release directory on daedalus.
 
@@ -177,15 +173,15 @@ mkdir aix freebsd iseries linus macosx netware solaris6 solaris7 solaris8 win32
 
 scp jakarta-tomcat-connectors/jk/build/docs to the release doc directory.
 
-scp ~/jakarta-tomcat-connectors-jk-1.2.3-src.tar.gz* to the release src
+scp ~/jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz* to the release src
 directory.
 
-scp -r jakarta-tomcat-connectors/jk/build/docs/* daedalus.apache.org:/www/jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.3/doc
+scp -r jakarta-tomcat-connectors/jk/build/docs/* daedalus.apache.org:/www/jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.5/doc
 
 Make sure the group write bit is set on all files and directories
 in the new release directory.
 
-chmod -R g+w /www/jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/jk/v1.2.3
+chmod -R g+w /www/jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/jk/v1.2.5
 
 Build binaries and upload distributions to daedalus.apache.org
 --------------------------------------------------------------
