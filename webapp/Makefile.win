@@ -60,19 +60,10 @@
 
 # Analyze and normalyze the DEBUG compilation flag
 !IF "$(DEBUG)" == "true"
-DEBUG = true
-APRCFG = apr - Win32 Debug
-APRDIR = LibD
-!ELSE
-!IF "$(DEBUG)" == "TRUE"
-DEBUG = true
-APRCFG = apr - Win32 Debug
-APRDIR = LibD
+APRCFG = libapr - Win32 Debug
 !ELSE
 DEBUG = false
-APRCFG = apr - Win32 Release
-APRDIR = LibR
-!ENDIF
+APRCFG = libapr - Win32 Release
 !ENDIF
 
 # Makefile rules
@@ -82,14 +73,17 @@ clean: apr-clean local-clean
     -@erase localmake.bat
 
 apr-all: localmake.bat
-    @localmake.bat .\apr /f apr.mak "CFG=$(APRCFG)" all
-    copy .\apr\$(APRDIR)\apr.lib .\apr\apr.lib
-    copy .\apr\$(APRDIR)\apr.idb .\apr\apr.idb
+    @localmake.bat .\apr /f libapr.mak "CFG=$(APRCFG)" all
+    @echo DEBUG IS -$(DEBUG)-
+!IF "$(DEBUG)" == "true"
+    copy .\apr\Debug\libapr.dll .\apr\libapr.dll
+!ELSE
+    copy .\apr\Release\libapr.dll .\apr\libapr.dll
+!ENDIF
 
 apr-clean: localmake.bat
-    @localmake.bat .\apr /f apr.mak "CFG=$(APRCFG)" clean
+    @localmake.bat .\apr /f libapr.mak "CFG=$(APRCFG)" clean
     -@erase .\apr\apr.lib
-    -@erase .\apr\apr.idb
 
 local-all: localmake.bat
     @localmake.bat .\lib /f Makefile.win "DEBUG=$(DEBUG)" all

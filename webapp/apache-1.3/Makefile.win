@@ -62,7 +62,7 @@
 OBJS =   mod_webapp.obj
 
 # Files created by this script (for removal only)
-GENS =   webapp.idb
+GENS =   mod_webapp.idb
 
 # The target library
 LIBS =   mod_webapp.dll
@@ -73,20 +73,59 @@ LINK =   link.exe
 
 # Flags for the C compiler
 CFLAGS = /nologo \
+         /W3 \
+!IF "$(DEBUG)" == "true"
+         /MDd \
+         /GX \
+         /Zi \
+         /Od \
+         /Yd \
+         /D"DEBUG" \
+!ELSE
 	     /MD \
-	     /W3 \
 	     /O2 \
-	     /I"." \
-	     /I"..\include" \
-	     /I"..\apr\include" \
-	     /I"$(APACHE)\Include" \
+!ENDIF
+	     /I "." \
+	     /I "..\include" \
+	     /I "..\apr\include" \
+	     /I "$(APACHE)\include" \
 	     /D"WIN32" \
-	     /Fd".\webapp" \
+	     /Fd".\mod_webapp" \
 	     /FD
 
 # Flags for the library linker
-LFLAGS = -lib \
-         /nologo
+LFLAGS = /nologo \
+         apachecore.lib \
+         libapr.lib \
+         webapp.lib \
+         advapi32.lib \
+         comdlg32.lib \
+         gdi32.lib \
+         kernel32.lib \
+         odbc32.lib \
+         odbccp32.lib \
+         ole32.lib \
+         oleaut32.lib \
+         shell32.lib \
+         user32.lib \
+         uuid.lib \
+         winspool.lib \
+         ws2_32.lib \
+         /nologo \
+         /dll \
+         /pdb:"mod_webapp.pdb" \
+         /machine:I386 \
+         /implib:"mod_webapp.lib" \
+         /libpath:"..\lib" \
+         /libpath:"$(APACHE)\libexec" \
+!IF "$(DEBUG)" == "true"
+         /libpath:"..\apr\Debug" \
+         /debug \
+         /pdbtype:sept \
+!ELSE
+         /libpath:"..\apr\Release" \
+!ENDIF
+         /incremental:no
 
 # Makefile rules
 all: $(LIBS)

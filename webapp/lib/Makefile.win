@@ -70,6 +70,7 @@ OBJS =   wa_config.obj \
 
 # Files created by this script (for removal only)
 GENS =   webapp.idb \
+         webapp.pdb \
          pr_warp_defs.h
 
 # The target library
@@ -82,12 +83,12 @@ LINK =   link.exe
 # Flags for the C compiler
 CFLAGS = /nologo \
          /W3 \
-!IF "$(DEBUG)" == "TRUE"
+!IF "$(DEBUG)" == "true"
          /MDd \
          /GX \
          /Zi \
          /Od \
-         /Yd
+         /Yd \
          /D"DEBUG" \
 !ELSE
 	     /MD \
