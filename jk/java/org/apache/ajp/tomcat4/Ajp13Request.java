@@ -73,7 +73,10 @@ import org.apache.catalina.Globals;
 import org.apache.catalina.util.RequestUtil;
 
 import org.apache.ajp.AjpRequest;
-import org.apache.ajp.MessageBytes;
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.Cookies;
+import org.apache.tomcat.util.http.ServerCookie;
+import org.apache.tomcat.util.http.MimeHeaders;
 
 public class Ajp13Request extends HttpRequestBase {
 
@@ -101,51 +104,45 @@ public class Ajp13Request extends HttpRequestBase {
         // we're more efficient (that's the whole point of
         // all of the MessageBytes in AjpRequest)
 
-        setMethod(ajp.getMethod().getString());
-        setProtocol(ajp.getProtocol().getString());
-        setRequestURI(ajp.getRequestURI().getString());
-        setRemoteAddr(ajp.getRemoteAddr().getString());
-        setRemoteHost(ajp.getRemoteHost().getString());
-        setServerName(ajp.getServerName().getString());
+        setMethod(ajp.getMethod().toString());
+        setProtocol(ajp.getProtocol().toString());
+        setRequestURI(ajp.getRequestURI().toString());
+        setRemoteAddr(ajp.getRemoteAddr().toString());
+        setRemoteHost(ajp.getRemoteHost().toString());
+        setServerName(ajp.getServerName().toString());
         setServerPort(ajp.getServerPort());
 
-        String remoteUser = ajp.getRemoteUser().getString();
+        String remoteUser = ajp.getRemoteUser().toString();
         if (remoteUser != null) {
             setUserPrincipal(new Ajp13Principal(remoteUser));
         }
 
-        setAuthType(ajp.getAuthType().getString());
-        setQueryString(ajp.getQueryString().getString());
+        setAuthType(ajp.getAuthType().toString());
+        setQueryString(ajp.getQueryString().toString());
         setScheme(ajp.getScheme());
         setSecure(ajp.getSecure());
         setContentLength(ajp.getContentLength());
 
-        String contentType = ajp.getContentType().getString();
+        String contentType = ajp.getContentType().toString();
         if (contentType != null) {
             setContentType(contentType);
         }
 
-        Iterator itr = ajp.getHeaderNames();
-        while (itr.hasNext()) {
-            String name = (String)itr.next();            
-            Iterator itr2 = ajp.getHeaders(name);
-            while (itr2.hasNext()) {
-                MessageBytes value = (MessageBytes)itr2.next();
-                addHeader(name, value.getString());
-            }
+        MimeHeaders mheaders = ajp.getHeaders();
+        int nheaders = mheaders.size();
+        for (int i = 0; i < nheaders; ++i) {
+            MessageBytes name = mheaders.getName(i);
+            MessageBytes value = mheaders.getValue(i);
+            addHeader(name.toString(), value.toString());
         }
 
-        itr = ajp.getAttributeNames();
+        Iterator itr = ajp.getAttributeNames();
         while (itr.hasNext()) {
             String name = (String)itr.next();
             setAttribute(name, ajp.getAttribute(name));
         }
 
-        itr = ajp.getCookies();
-        while (itr.hasNext()) {
-            MessageBytes cookies = (MessageBytes)itr.next();
-            addCookies(cookies.getString());
-        }
+        addCookies(ajp.getCookies());
     }
 
 //      public Object getAttribute(String name) {
@@ -182,10 +179,12 @@ public class Ajp13Request extends HttpRequestBase {
         super.setRequestURI(uri);
     }
 
-    private void addCookies(String cookiesHeader) {
-        Cookie cookies[] = RequestUtil.parseCookieHeader(cookiesHeader);
-        for (int j = 0; j < cookies.length; j++) {
-            Cookie cookie = cookies[j];
+    private void addCookies(Cookies cookies) {
+        int ncookies = cookies.getCookieCount();
+        for (int j = 0; j < ncookies; j++) {
+            ServerCookie scookie = cookies.getCookie(j);
+            Cookie cookie = new Cookie(scookie.getName().toString(),
+                                       scookie.getValue().toString());
             if (cookie.getName().equals(Globals.SESSION_COOKIE_NAME)) {
                 // Override anything requested in the URL
                 if (!isRequestedSessionIdFromCookie()) {

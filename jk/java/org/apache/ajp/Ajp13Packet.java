@@ -60,6 +60,9 @@ package org.apache.ajp;
 
 import java.io.UnsupportedEncodingException;
 
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.MimeHeaders;
+
 /**
  * A single packet for communication between the web server and the
  * container.  Designed to be reused many times with no creation of
@@ -302,18 +305,18 @@ public class Ajp13Packet {
         pos += length;
         pos++; // Skip the terminating \0
     }
-
-//      public MessageBytes addHeader( MimeHeaders headers ) {
-//          int length = getInt();
-//          if( (length == 0xFFFF) || (length == -1) ) {
-//              return null;
-//          }
-//          MessageBytes vMB=headers.addValue( buff, pos, length );
-//          pos += length;
-//          pos++; // Skip the terminating \0
+    
+    public MessageBytes addHeader(MimeHeaders headers) {
+        int length = getInt();
+        if( (length == 0xFFFF) || (length == -1) ) {
+            return null;
+        }
+        MessageBytes vMB=headers.addValue( buff, pos, length );
+        pos += length;
+        pos++; // Skip the terminating \0
 	    
-//          return vMB;
-//      }
+        return vMB;
+    }
 	
     /**
      * Read a String from the packet, and advance the read position

@@ -66,6 +66,9 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Enumeration;
 
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.http.MimeHeaders;
 
 /**
  * Represents a single, persistent connection between the web server and
@@ -303,25 +306,26 @@ public class Ajp13 {
 	// XXX Awful return values
 
         boolean isSSL = false;
-        int contentLength = -1;
 
         // Translate the HTTP method code to a String.
         byte methodCode = msg.getByte();
-        req.method.setString(methodTransArray[(int)methodCode - 1]);
+        req.method.setString( methodTransArray[(int)methodCode - 1] );
 
-        msg.getMessageBytes(req.protocol);
+        msg.getMessageBytes(req.protocol); 
         msg.getMessageBytes(req.requestURI);
+
         msg.getMessageBytes(req.remoteAddr);
         msg.getMessageBytes(req.remoteHost);
         msg.getMessageBytes(req.serverName);
         req.serverPort = msg.getInt();
+
 	isSSL = msg.getBool();
 
 	// Decode headers
+	MimeHeaders headers = req.headers;
 	int hCount = msg.getInt();
         for(int i = 0 ; i < hCount ; i++) {
-            MessageBytes hName = new MessageBytes();
-            MessageBytes hValue = new MessageBytes();
+            String hName = null;
 
 	    // Header names are encoded as either an integer code starting
 	    // with 0xA0, or as a normal string (in which case the first
@@ -329,38 +333,28 @@ public class Ajp13 {
             int isc = msg.peekInt();
             int hId = isc & 0xFF;
 
+	    MessageBytes vMB=null;
             isc &= 0xFF00;
             if(0xA000 == isc) {
                 msg.getInt(); // To advance the read position
-                hName.setString(headerTransArray[hId - 1]);
+                hName = headerTransArray[hId - 1];
+		vMB= headers.addValue( hName );
             } else {
-                msg.getMessageBytes(hName);
-                hId = -1;
+		// XXX Not very elegant
+		vMB=msg.addHeader( headers );
+		if( vMB==null) return 500; // wrong packet
             }
 
-            switch (hId) {
-            case SC_REQ_CONTENT_TYPE:
-                    msg.getMessageBytes(req.contentType);
-                    break;
+            msg.getMessageBytes(vMB);
 
-            case SC_REQ_CONTENT_LENGTH:
-                    try {
-                        contentLength = Integer.parseInt(msg.getString());
-                    } catch (Exception e) {
-                        logger.log("parse content-length", e);
-                    }
-                    break;
-
-            case SC_REQ_COOKIE:
-            case SC_REQ_COOKIE2:
-                    msg.getMessageBytes(hValue);
-                    req.addCookies(hValue);
-                    break;
-
-            default:
-                    msg.getMessageBytes(hValue);
-                    req.addHeader(hName.getString(), hValue);
-                    break;
+            // set content length, if this is it...
+            if (hId == SC_REQ_CONTENT_LENGTH) {
+                req.contentLength = (vMB == null) ? -1 : vMB.getInt();
+            } else if (hId == SC_REQ_CONTENT_TYPE) {
+                ByteChunk bchunk = vMB.getByteChunk();
+                req.contentType.setBytes(bchunk.getBytes(),
+                                         bchunk.getOffset(),
+                                         bchunk.getLength());
             }
         }
 
@@ -369,22 +363,22 @@ public class Ajp13 {
             attributeCode != SC_A_ARE_DONE ;
             attributeCode = msg.getByte()) {
             switch(attributeCode) {
-            case SC_A_CONTEXT      :
+	    case SC_A_CONTEXT      :
                 break;
 		
-            case SC_A_SERVLET_PATH :
+	    case SC_A_SERVLET_PATH :
                 break;
-                
-            case SC_A_REMOTE_USER  :
+		
+	    case SC_A_REMOTE_USER  :
                 msg.getMessageBytes(req.remoteUser);
                 break;
-                
-            case SC_A_AUTH_TYPE    :
+		
+	    case SC_A_AUTH_TYPE    :
                 msg.getMessageBytes(req.authType);
                 break;
 		
 	    case SC_A_QUERY_STRING :
-                msg.getMessageBytes(req.queryString);
+		msg.getMessageBytes(req.queryString);
                 break;
 		
 	    case SC_A_JVM_ROUTE    :
@@ -406,11 +400,12 @@ public class Ajp13 {
 	    case SC_A_SSL_SESSION  :
 		isSSL = true;
 		req.setAttribute("javax.servlet.request.ssl_session",
-                                 msg.getString());
+				  msg.getString());
                 break;
 		
 	    case SC_A_REQ_ATTRIBUTE :
-                req.setAttribute(msg.getString(), msg.getString());
+		req.setAttribute(msg.getString(), 
+				 msg.getString());
                 break;
 
 	    default:
@@ -418,21 +413,18 @@ public class Ajp13 {
             }
         }
 
-        req.secure = isSSL;
         if(isSSL) {
             req.scheme = req.SCHEME_HTTPS;
-        } else {
-            req.scheme = req.SCHEME_HTTP;
+            req.secure = true;
         }
+
+        // set cookies on request now that we have all headers
+        req.cookies.setHeaders(req.headers);
 
 	// Check to see if there should be a body packet coming along
 	// immediately after
-    	if(contentLength > 0) {
-            if (debug > 0) {
-                logger.log("contentLength = " + contentLength +
-                           ", reading data ...");
-            }
-	    req.contentLength = contentLength;
+    	if(req.contentLength > 0) {
+
 	    /* Read present data */
 	    int err = receive(inBuf);
             if(err < 0) {

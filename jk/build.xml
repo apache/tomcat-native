@@ -3,9 +3,11 @@
     <!-- ===================== Initialize Property Values =================== -->
     <property name="tomcat4.home" value="../../jakarta-tomcat-4.0/build"/>
     <property name="servletapi.home"   value="../../jakarta-servletapi-4/dist"/>
+    <property name="tomcat-util.home" value="../util/build"/>
     
     <property name="catalina.jar" value="${tomcat4.home}/server/lib/catalina.jar"/>
     <property name="servlet.jar" value="${servletapi.home}/lib/servlet.jar"/>
+    <property name="tomcat-util.jar" value="${tomcat-util.home}/lib/tomcat-util.jar"/>
 
     <property name="jk.build" value="${basedir}/build"/>
 
@@ -19,7 +21,7 @@
     
         <javac srcdir="src/java"
 	       destdir="${jk.build}/classes"
-	       classpath="${catalina.jar}:${servlet.jar}"
+	       classpath="${tomcat-util.jar}:${catalina.jar}:${servlet.jar}"
 	       deprecation="on"
 	       debug="on"
 	       optimize="off"
@@ -39,6 +41,22 @@
 	     basedir="${jk.build}/classes"
 	     />
     </target>
+
+    <!-- ================ BUILD: Create Jk Javadocs =================== -->
+    <target name="javadoc">
+        <delete dir="${jk.build}/javadoc"/>
+	<mkdir dir="${jk.build}/javadoc"/>
+	<javadoc packagenames="org.apache.tomcat.util.*"
+               sourcepath="src/java"
+                  destdir="${jk.build}/javadoc"
+                   author="true"
+                  version="true"
+              windowtitle="Jk Connector Documentation"
+                 doctitle="Jk Connector"
+                   bottom="Copyright &#169; 2001 Apache Software Foundation.  All Rights Reserved."
+	/>
+    </target>
+
 
     <target name="clean">
         <delete dir="${jk.build}"/>

@@ -65,6 +65,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Iterator;
 
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.http.Cookies;
+
 /**
  * Encapsulates an ajp request.
  *
@@ -97,9 +101,9 @@ public class AjpRequest {
     boolean secure = false;
     int contentLength = 0;
     MessageBytes contentType = new MessageBytes();
-    HashMap headers = new HashMap();
+    MimeHeaders headers = new MimeHeaders();
+    Cookies cookies = new Cookies();
     HashMap attributes = new HashMap();
-    LinkedList cookies = new LinkedList();
     
     /**
      * Recycles this object and readies it further use.
@@ -120,9 +124,9 @@ public class AjpRequest {
         secure = false;
         contentLength = 0;
         contentType.recycle();
-        headers.clear();
+        headers.recycle();
+        cookies.recycle();
         attributes.clear();
-        cookies.clear();
     }
 
     /**
@@ -245,48 +249,27 @@ public class AjpRequest {
         return contentType;
     }
 
-    public void addHeader(String name, MessageBytes value) {
-        if (name == null || value == null) {
-            return;
-        }
-
-        String lname = name.toLowerCase();
-
-        LinkedList values = (LinkedList)headers.get(lname);
-        if (values == null) {
-            values = new LinkedList();
-            headers.put(lname, values);
-        }
-        values.add(value);
+    /**
+     * Get this request's headers
+     * @return request headers
+     */
+    public MimeHeaders getHeaders() {
+        return headers;
     }
 
-    public Iterator getHeaders(String name) {
-        if (name == null) {
-            return emptyItr;
-        }
-
-        String lname = name.toLowerCase();
-
-        LinkedList values = (LinkedList)headers.get(lname);
-        if (values == null) {
-            return emptyItr;
-        }
-        
-        return values.iterator();
+    /**
+     * Get cookies.
+     * @return request cookies.
+     */
+    public Cookies getCookies() {
+        return cookies;
     }
 
-    public Iterator getHeaderNames() {
-        return headers.keySet().iterator();
-    }
-
-    public void addCookies(MessageBytes cookies) {
-        this.cookies.add(cookies);
-    }
-
-    public Iterator getCookies() {
-        return cookies.iterator();
-    }
-
+    /**
+     * Set an attribute on the request
+     * @param name attribute name
+     * @param value attribute value
+     */
     public void setAttribute(String name, Object value) {
         if (name == null || value == null) {
             return;
@@ -294,6 +277,11 @@ public class AjpRequest {
         attributes.put(name, value);
     }
 
+    /**
+     * Get an attribute on the request
+     * @param name attribute name
+     * @return attribute value
+     */
     public Object getAttribute(String name) {
         if (name == null) {
             return null;
@@ -302,6 +290,10 @@ public class AjpRequest {
         return attributes.get(name);
     }
 
+    /**
+     * Get iterator over attribute names
+     * @return iterator over attribute names
+     */
     public Iterator getAttributeNames() {
         return attributes.keySet().iterator();
     }
