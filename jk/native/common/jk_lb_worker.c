@@ -372,7 +372,9 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
              * balancer. Of course you will need a some kind of
              * session replication between those two remote.
              */
-            if (*candidate->s->redirect)
+            if (p->s->sticky_session_force)
+                candidate = NULL;
+            else if (*candidate->s->redirect)
                 candidate = find_by_session(p, candidate->s->redirect, l);
             else if (*candidate->s->domain && !uses_domain) {
                 uses_domain = 1;
