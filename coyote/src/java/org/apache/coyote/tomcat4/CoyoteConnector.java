@@ -308,12 +308,6 @@ public final class CoyoteConnector
 
 
     /**
-     * Is chunking allowed ?
-     */
-    private boolean allowChunking = true;
-
-
-    /**
      * Use TCP no delay ?
      */
     private boolean tcpNoDelay = true;
@@ -397,38 +391,6 @@ public final class CoyoteConnector
     public void setAcceptCount(int count) {
 
         this.acceptCount = count;
-
-    }
-
-
-    /**
-     * Get the allow chunking flag.
-     */
-    public boolean isChunkingAllowed() {
-
-        return (allowChunking);
-
-    }
-
-
-    /**
-     * Get the allow chunking flag.
-     */
-    public boolean getAllowChunking() {
-
-        return isChunkingAllowed();
-
-    }
-
-
-    /**
-     * Set the allow chunking flag.
-     *
-     * @param allowChunking Allow chunking flag
-     */
-    public void setAllowChunking(boolean allowChunking) {
-
-        this.allowChunking = allowChunking;
 
     }
 
