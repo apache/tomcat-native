@@ -285,9 +285,19 @@ public class Ajp13 {
             logger.log("receiveNextRequest()");
         }
         
-	// XXX The return values are awful.
+        // XXX The return values are awful.
 
-	int err = receive(hBuf);
+        int err = 0;
+
+        // if we receive an IOException here, it must be because
+        // the remote just closed the ajp13 connection, and it's not
+        // an error, we just need to close the AJP13 connection
+        try {
+            err = receive(hBuf);
+        } catch (IOException ioe) {
+            return -1;  // Indicate it's a disconnection from the remote end
+        }
+        
 	if(err < 0) {
 	    return 500;
 	}
