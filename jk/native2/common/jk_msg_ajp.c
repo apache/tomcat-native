@@ -253,8 +253,8 @@ static int jk2_msg_ajp_getMap(jk_env_t *env, jk_msg_t *msg,
 }
 
 
-static int jk2_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg, 
-                                    const char *param) 
+static int jk2_msg_ajp_appendAString(jk_env_t *env, jk_msg_t *msg, 
+                                     const char *param, int convert) 
 {
     int len;
 
@@ -273,10 +273,28 @@ static int jk2_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg,
 
     /* We checked for space !!  */
     strncpy((char *)msg->buf + msg->len , param, len+1);    /* including \0 */
-    jk_xlate_to_ascii((char *)msg->buf + msg->len, len+1);  /* convert from EBCDIC if needed */
+#if defined(AS400) || defined(_OSD_POSIX)
+    if (convert)
+    	jk_xlate_to_ascii((char *)msg->buf + msg->len, len+1);  /* convert from EBCDIC if needed */
+#endif
     msg->len += len + 1;
 
     return JK_OK;
+}
+
+
+
+static int jk2_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg, 
+                                    const char *param) 
+{
+    return jk2_msg_ajp_appendAString(env, msg, param, 1);
+}
+
+
+static int jk2_msg_ajp_appendAsciiString(jk_env_t *env, jk_msg_t *msg, 
+                                         const char *param) 
+{
+    return jk2_msg_ajp_appendAString(env, msg, param, 0);
 }
 
 
@@ -516,6 +534,7 @@ static void jk2_msg_ajp_init(jk_env_t *env, jk_msg_t *msg, int buffSize)
     msg->appendInt=jk2_msg_ajp_appendInt;
     msg->appendLong=jk2_msg_ajp_appendLong;
     msg->appendString=jk2_msg_ajp_appendString;
+    msg->appendAsciiString=jk2_msg_ajp_appendAsciiString;
     msg->appendMap=jk2_msg_ajp_appendMap;
 
     msg->appendFromServer=jk2_msg_ajp_appendFromServer;
