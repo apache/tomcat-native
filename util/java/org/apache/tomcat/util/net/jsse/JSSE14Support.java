@@ -140,10 +140,21 @@ class JSSE14Support extends JSSESupport {
         }
     }
 
+    /** Return the X509certificates or null if we can't get them.
+     *  XXX We should allow unverified certificates 
+     */ 
     protected X509Certificate [] getX509Certificates(SSLSession session) 
-	throws IOException {
-	Certificate [] certs = session.getPeerCertificates();
-	X509Certificate [] x509Certs = new X509Certificate[certs.length];
+	throws IOException 
+    {
+        Certificate [] certs=null;
+        try {
+	    certs = session.getPeerCertificates();
+        } catch( Throwable t ) {
+            return null;
+        }
+        if( certs==null ) return null;
+        
+        X509Certificate [] x509Certs = new X509Certificate[certs.length];
 	for(int i=0; i < certs.length; i++) {
 	    if( certs[i] instanceof X509Certificate ) {
 		// always currently true with the JSSE 1.1.x
