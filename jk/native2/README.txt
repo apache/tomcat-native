@@ -32,13 +32,13 @@ download the  APR (Apache  Portable Runtime)  sources. To  do this  simply use a
 release version of APR:
 
     - You can download it from http://www.apache.org/dist/apr/.
-    - The file is called the file is apr-X.X.X.tar.gz
+    - The file is called apr-X.X.X.tar.gz
 
 You will also need the APR-UTIL (a companion library to APR). To do this  simply
 use a release version of APR:
 
     - You can download it from http://www.apache.org/dist/apr/.
-    - The file is called the file is apr-util-X.X.X.tar.gz
+    - The file is called apr-util-X.X.X.tar.gz
 
 When the APR sources are in place,  we need to create the configure scripts.  It
 is done by running the command:
