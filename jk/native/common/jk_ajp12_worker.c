@@ -91,9 +91,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     if (e && e->endpoint_private && s && is_error) {
         ajp12_endpoint_t *p = e->endpoint_private;
-        unsigned attempt;
-
-        *is_error = 0;
+        unsigned int attempt;
+        /*
+         * AJP12 protocol is not recoverable.
+         */
+        *is_error = JK_HTTP_SERVER_ERROR;
 
         for (attempt = 0; attempt < p->worker->connect_retry_attempts;
              attempt++) {
@@ -109,11 +111,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
         }
         if (p->sd >= 0) {
 
-            /*
-             * After we are connected, each error that we are going to
-             * have is probably unrecoverable
-             */
-            *is_error = JK_HTTP_SERVER_ERROR;
             jk_sb_open(&p->sb, p->sd);
             if (ajpv12_handle_request(p, s, l)) {
                 jk_log(l, JK_LOG_DEBUG,
