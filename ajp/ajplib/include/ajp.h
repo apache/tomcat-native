@@ -16,8 +16,10 @@
 #ifndef AJP_H
 #define AJP_H
 
-#include "apr_hooks.h"
+#include "apr_version.h"
 #include "apr.h"
+
+#include "apr_hooks.h"
 #include "apr_lib.h"
 #include "apr_strings.h"
 #include "apr_buckets.h"
