@@ -153,11 +153,11 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
     FILE *f=NULL;
     jk_workerEnv_t *workerEnv=env->getByName( env, "workerEnv" );
     if( _this->name==NULL ) {
-        _this->name="${serverRoot}/logs/mod_jk.log";
+        _this->name="${serverRoot}/logs/jk2.log";
     }
-    jk2_config_replaceProperties( env, workerEnv->initData,
-                                                  _this->mbean->pool,_this->name);
-    if( strcmp( "stderr", _this->name )==0 ) {
+    _this->name = jk2_config_replaceProperties(env, workerEnv->initData,
+                                               _this->mbean->pool, _this->name);
+    if( !_this->name || strcmp( "stderr", _this->name )==0 ) {
         _this->logger_private = stderr;
     } else {
     
@@ -176,7 +176,7 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
     } 
     _this->jkLog(env, _this,JK_LOG_INFO,
                  "Initializing log file %s\n", _this->name );
-    if( oldF!=NULL ) {
+    if( oldF!=NULL && oldF != stderr) {
         fclose( oldF );
     }
     return JK_OK;
@@ -185,7 +185,8 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
 static int jk2_logger_file_close(jk_env_t *env,jk_logger_t *_this)
 {
     FILE *f = _this->logger_private;
-    if( f==NULL ) return JK_OK;
+    if (f == NULL || f != stderr)
+        return JK_OK;
     
     fflush(f);
     fclose(f);
