@@ -118,7 +118,7 @@ public class Http11Processor implements Processor, ActionHook {
         response.setHook(this);
         outputBuffer = new InternalOutputBuffer(response);
         response.setOutputBuffer(outputBuffer);
-	request.setResponse(response);
+        request.setResponse(response);
 
         initializeFilters();
 
@@ -263,6 +263,18 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * List of user agents to not use gzip with
+     */
+    protected String[] noCompressionUserAgents = null;
+
+
+    /**
+     * List of MIMES which could be gzipped
+     */
+    protected String[] compressableMimeTypes = null;
+
+
+    /**
      * Host name (used to avoid useless B2C conversion on the host name).
      */
     protected char[] hostNameC = new char[0];
@@ -310,6 +322,67 @@ public class Http11Processor implements Processor, ActionHook {
     }
 
 
+    /**
+     * Add user-agent for which gzip compression didn't works
+     * The user agent String given will be exactly matched
+     * to the user-agent header submitted by the client.
+     * 
+     * @param userAgent user-agent string
+     */
+    public void addNoCompressionUserAgent(String userAgent) {
+    	addStringArray(noCompressionUserAgents, userAgent);
+    }
+
+
+    /**
+     * Set no compression user agent list (this method is best when used with 
+     * a large number of connectors, where it would be better to have all of 
+     * them referenced a single array).
+     */
+    public void setNoCompressionUserAgents(String[] noCompressionUserAgents) {
+        this.noCompressionUserAgents = noCompressionUserAgents;
+    }
+
+
+    /**
+     * Return the list of no compression user agents.
+     */
+    public String[] findNoCompressionUserAgents() {
+        return (noCompressionUserAgents);
+    }
+
+
+    /**
+     * Add a mime-type which will be compressable
+     * The mime-type String will be exactly matched
+     * in the response mime-type header .
+     * 
+     * @param userAgent user-agent string
+     */
+    public void addCompressableMimeType(String mimeType) {
+    	addStringArray(compressableMimeTypes, mimeType);
+    }
+
+
+    /**
+     * Set compressable mime-type list (this method is best when used with 
+     * a large number of connectors, where it would be better to have all of 
+     * them referenced a single array).
+     */
+    public void setCompressableMimeType(String[] compressableMimeTypes) {
+        this.compressableMimeTypes = compressableMimeTypes;
+    }
+
+
+    /**
+     * Return the list of restricted user agents.
+     */
+    public String[] findCompressableMimeTypes() {
+        return (compressableMimeTypes);
+    }
+
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -336,6 +409,38 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * General use method
+     * 
+     * @param sArray the StringArray 
+     * @param value string
+     */
+    private void addStringArray(String sArray[], String value) {
+        if (sArray == null)
+            sArray = new String[0];
+        String[] results = new String[sArray.length + 1];
+        for (int i = 0; i < sArray.length; i++)
+            results[i] = sArray[i];
+        results[sArray.length] = value;
+        sArray = results;
+    }
+
+    /**
+     * General use method
+     * 
+     * @param sArray the StringArray 
+     * @param value string
+     */
+    private boolean inStringArray(String sArray[], String value) {
+        for (int i = 0; i < sArray.length; i++) {
+            if (sArray[i].equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /**
      * Add restricted user-agent (which will downgrade the connector 
      * to HTTP/1.0 mode). The user agent String given will be exactly matched
      * to the user-agent header submitted by the client.
@@ -343,13 +448,7 @@ public class Http11Processor implements Processor, ActionHook {
      * @param userAgent user-agent string
      */
     public void addRestrictedUserAgent(String userAgent) {
-        if (restrictedUserAgents == null)
-            restrictedUserAgents = new String[0];
-        String[] results = new String[restrictedUserAgents.length + 1];
-        for (int i = 0; i < restrictedUserAgents.length; i++)
-            results[i] = restrictedUserAgents[i];
-        results[restrictedUserAgents.length] = userAgent;
-        restrictedUserAgents = results;
+    	addStringArray(restrictedUserAgents, userAgent);
     }
 
 
@@ -944,7 +1043,58 @@ public class Http11Processor implements Processor, ActionHook {
 
     }
 
+    /*
+     * Check for compression
+     *
+     */
+	private boolean isCompressable()
+	{
+        // Compression only since HTTP 1.1
+        if (! http11)
+            return false;
 
+        // Check if browser support gzip encoding
+        MessageBytes acceptEncodingMB = 
+            request.getMimeHeaders().getValue("accept-encoding");
+            
+        if ((acceptEncodingMB == null) 
+            || (acceptEncodingMB.indexOf("gzip") == -1))
+            return false;
+
+        // Check if content is not allready gzipped
+        MessageBytes contentEncodingMB =
+            response.getMimeHeaders().getValue("Content-Encoding");
+
+        if ((contentEncodingMB != null) 
+            && (contentEncodingMB.indexOf("gzip") != -1))
+            return false;
+
+        // If force mode, allways compress (test purposes only)
+        if (compressionLevel == 2)
+           return true;
+
+        // Check for incompatible Browser
+        if (noCompressionUserAgents != null) {
+            MessageBytes userAgentValueMB =  
+                request.getMimeHeaders().getValue("user-agent");
+            String userAgentValue = userAgentValueMB.toString();
+
+        	if (inStringArray(noCompressionUserAgents, userAgentValue))
+        		return false;
+        }
+
+        // Check if suffisant len to trig the compression        
+        int contentLength = response.getContentLength();
+        if ((contentLength == -1) 
+            || (contentLength > compressionMinSize)) {
+            // Check for compatible MIME-TYPE
+            if (compressableMimeTypes != null)
+                return (inStringArray(compressableMimeTypes, response.getContentType()));
+        }
+
+		return false;
+	}
+	
     /**
      * When committing the response, we have to validate the set of headers, as
      * well as setup the response filters.
@@ -984,38 +1134,11 @@ public class Http11Processor implements Processor, ActionHook {
         // Check for compression
         boolean useCompression = false;
         if (entityBody && (compressionLevel > 0)) {
-            // Check accept-encoding
-            // FIXME: write a comma parser; also reuse 
-            // for transfer-encoding parsing
-            MessageBytes acceptEncodingMB = 
-                request.getMimeHeaders().getValue("accept-encoding");
-            if ((acceptEncodingMB != null) 
-                && (acceptEncodingMB.indexOf("gzip") != -1)) {
-
-                // Check in content is not allready gzipped
-                MessageBytes contentEncodingMB =
-                    response.getMimeHeaders().getValue("Content-Encoding");
-
-                if ((contentEncodingMB == null) 
-                    || (contentEncodingMB.indexOf("gzip") == -1)){
-                    // Check content-type
-                    if (compressionLevel == 1) {
-                        int contentLength = response.getContentLength();
-                        // FIXME: Make the value configurable
-                        if ((contentLength == -1) 
-                            || (contentLength > compressionMinSize)) {
-                            useCompression = 
-                                response.getContentType().startsWith("text/");
-                        }
-                    } else {
-                        useCompression = true;
-                    }
-                }
-                
-                // Change content-length to -1 to force chunking
-                if (useCompression) {
-                    response.setContentLength(-1);
-                }
+            useCompression = isCompressable();
+            
+            // Change content-length to -1 to force chunking
+            if (useCompression) {
+                response.setContentLength(-1);
             }
         }
 
@@ -1054,6 +1177,8 @@ public class Http11Processor implements Processor, ActionHook {
             outputBuffer.addActiveFilter(outputFilters[Constants.GZIP_FILTER]);
             // FIXME: Make content-encoding generation dynamic
             response.setHeader("Content-Encoding", "gzip");
+            // Make Proxies happy via Vary (from mod_deflate)
+            response.setHeader("Vary", "Accept-Encoding");
         }
 
         // Add date header
