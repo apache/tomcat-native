@@ -65,8 +65,28 @@
 #include "jk_workerEnv.h" 
 #include "jk_env.h"
 #include "jk_worker.h"
-#include "jk_util.h"
 
+#define DEFAULT_WORKER              ("ajp13")
+
+int jk_get_worker_list(jk_map_t *m,
+                       char ***list,
+                       unsigned *num_of_wokers)
+{
+    if(m && list && num_of_wokers) {
+        char **ar = map_get_string_list(m, 
+                                        "worker.list", 
+                                        num_of_wokers, 
+                                        DEFAULT_WORKER );
+        if(ar)  {
+            *list = ar;     
+            return JK_TRUE;
+        }
+        *list = NULL;   
+        *num_of_wokers = 0;
+    }
+
+    return JK_FALSE;
+}
 
 /**
  *  Init the workers, prepare the we.
@@ -95,7 +115,6 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
         const char *name=(const char*)worker_list[i];
 
         w=_this->createWorker(_this, name, init_data);
-        w->channel=NULL;
         if( w==NULL ) {
             l->jkLog(_this->l, JK_LOG_ERROR,
                    "init failed to create worker %s\n", 
@@ -103,8 +122,8 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
             /* Ignore it, other workers may be ok.
                return JK_FALSE; */
          } else {
-            map_put(_this->worker_map, worker_list[i], w, (void *)&oldw);
-        
+             map_put(_this->worker_map, worker_list[i], w, (void *)&oldw);
+            
             if(oldw!=NULL) {
                 l->jkLog(_this->l, JK_LOG_DEBUG, 
                        "build_worker_map, removing old %s worker \n",
@@ -186,7 +205,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
         l->jkLog(l, JK_LOG_ERROR,
                "workerEnv.createWorker(): factory can't create worker %s:%s\n",
                type, name); 
-        return JK_FALSE;
+        return NULL;
     }
 
     w->name=(char *)name;
