@@ -62,18 +62,11 @@ import java.io.*;
 import java.net.*;
 import java.security.KeyStore;
 import java.security.SecureRandom;
-import javax.net.ServerSocketFactory;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.HandshakeCompletedListener;
-import javax.net.ssl.HandshakeCompletedEvent;
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 
 /*
   1. Make the JSSE's jars available, either as an installed
