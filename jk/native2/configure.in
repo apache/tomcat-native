@@ -78,6 +78,7 @@ AC_INIT(common/jk_config.c)
 AC_CONFIG_AUX_DIR(scripts/build/unix)
 
 dnl package and version. (synchronization with common/jk_version.h ?)
+AM_INIT_AUTOMAKE(mod_jk2, 2.0.0)
 PACKAGE=mod_jk2
 VERSION=2.0.0
 
@@ -234,4 +235,5 @@ AC_OUTPUT([
 	server/apache2/Makefile
 	server/apache2/Makefile.apxs
 	../build.properties:../build.properties.autoconf
+        scripts/build/unix/dummy
 	])

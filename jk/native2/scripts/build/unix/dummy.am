@@ -1,0 +1,2 @@
+#Dummy file to prevent the error message from automake:
+#"no `Makefile.am' found or specified"
