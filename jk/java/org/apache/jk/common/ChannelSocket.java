@@ -703,7 +703,9 @@ public class ChannelSocket extends JkHandler
                 Request req = (Request)ep.getRequest();
                 if( req != null ) {
                     ObjectName roname = (ObjectName)ep.getNote(JMXRequestNote);
-                    Registry.getRegistry().unregisterComponent(roname);
+                    if( roname != null ) {
+                        Registry.getRegistry().unregisterComponent(roname);
+                    }
                     req.getRequestProcessor().setGlobalProcessor(null);
                 }
             } catch( Exception ee) {
