@@ -1871,11 +1871,7 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
 
         if (conf)
         {
-            /* XXX: This is a pool cleanup issue
-             * the log pool is cleaned before the server pool.
-             */
-            conf->log->logger_private = NULL;
-            wc_close(conf->log);
+            wc_close(main_log);
             if (conf->worker_properties)
                 map_free(&conf->worker_properties);
             if (conf->uri_to_context)
@@ -1883,11 +1879,11 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
             if (conf->automount)
                 map_free(&conf->automount);
             if (conf->uw_map)
-                uri_worker_map_free(&conf->uw_map, conf->log);
+                uri_worker_map_free(&conf->uw_map, main_log);
             /* Since we are now using apache to do logging, this 
              * cleanup will just cause problems so don't do it
              *
-             * jk_close_file_logger(&conf->log);
+             * jk_close_file_logger(main_log);
              */
         }
         s = s->next;
