@@ -287,6 +287,66 @@ Other  important  channels are unix socket and jni</p>
                     </table>
                 </p>
             </subsection>
+            <subsection name="channel.apr">
+                <p>
+    A communication transport to a remote Engine using APR library
+    <b>Magic:</b> The local part of the name will be the Engine name,
+    to use when defining the uri mappings. For example
+    channel.apr.local_9009 will automatically define an engine named
+    local_9009, and if no other setting is set ajp13 will be used for
+    communication.
+    <b>Magic:</b> If no channel is defined in the config, a default channel
+    will be constructed with port=8009, engine=DEFAULT, worker=ajp13 -
+    named 'channel.apr.DEFAULT'
+</p>
+                <p>
+                    <table>
+                        <tr>
+                            <th>Property name</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>port</td>
+                            <td>8009</td>
+                            <td>Port where Tomcat is listening</td>
+                        </tr>
+                        <tr>
+                            <td>host</td>
+                            <td>localhost</td>
+                            <td>Remote host</td>
+                        </tr>
+                        <tr>
+                            <td>keepalive</td>
+                            <td>0 (disabled)</td>
+                            <td>If set to 1 then it enables the use of keep-alive packets on TCP connection </td>
+                        </tr>
+                        <tr>
+                            <td>timeout</td>
+                            <td>0 (infinite)</td>
+                            <td>Socket timeout for sending and receiving</td>
+                        </tr>
+                        <tr>
+                            <td>ndelay</td>
+                            <td>0</td>
+                            <td>If set to 1 Disables the Nagle algorithm for send coalescing</td>
+                        </tr>
+                        <tr>
+                            <td>lbfactor</td>
+                            <td>1</td>
+                            <td>
+    Load balancing factor to use. At this moment, it'll be set on the worker,
+    but in future it should be possible to use lb on a channel level.
+  </td>
+                        </tr>
+                        <tr>
+                            <td>group</td>
+                            <td>lb:0</td>
+                            <td>loadbalanced groups to which this channel and the associated worker will be added, multivalued</td>
+                        </tr>
+                    </table>
+                </p>
+            </subsection>
             <subsection name="channel.jni">
                 <p>The jni channel, used if tomcat is started inprocess</p>
             </subsection>
@@ -296,9 +356,9 @@ Other  important  channels are unix socket and jni</p>
              For the moment 4 worker types are supported: worker.jni,ajp13,status,lb.
             </p>
             <subsection name="worker.jni">
-                <p>worker used in inprocess, holds the details of the Tomcat class to startup, and paramters to pass</p>
+                <p>worker used in inprocess, holds the details of the Tomcat class to startup, and parameters to pass</p>
                 <p>There are two predefined jni workers <b>onStartup</b> and <b>onShutdown</b>. Those two workers are executed
-                during sturtup and shutdown phase of the connector. Both must exsist in the configuration to be able to start
+                during startup and shutdown phase of the connector. Both must exists in the configuration to be able to start
                 and shutdown Tomcat.
                 </p>
                 <p>
@@ -409,6 +469,30 @@ Other  important  channels are unix socket and jni</p>
                             <td/>
                             <td/>
                         </tr>
+                        <tr>
+                            <td>timeout</td>
+                            <td>0 (disabled)</td>
+                            <td>If all the workers are in the error state, probably by Tomcat
+refusing any new connections due to the overload, you can set the timeout forcing lb to wait that some
+worker becomes available, instead of immediately returning error to the client. This is very useful in
+situations with high peek load. The timeout should be set to the maximum application call time, but
+not less then 1 second.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>attempts</td>
+                            <td>3</td>
+                            <td>Number of attempts that lb will try on each worker before
+                            giving up.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>recovery</td>
+                            <td>60 (seconds)</td>
+                            <td>Time to wait before retrying to see if the worker came out
+                            of the error state.
+                            </td>
+                        </tr>                        
                     </table>
                 </p>
             </subsection>
