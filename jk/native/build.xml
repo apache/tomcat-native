@@ -51,6 +51,25 @@
     <available property="HAVE_APR" 
                file="${apr.include}/apr.h" />
     <mkdir dir="${jk.build}/jk" />
+    <condition property="linux">
+       <equals arg1="${os.name}" arg2="Linux"/>
+    </condition>
+    <condition property="solaris">
+       <equals arg1="${os.name}" arg2="SunOS"/>
+    </condition>
+    <condition property="win32">
+      <os family="windows"/>
+    </condition>
+    <condition property="hpux">
+      <equals arg1="${os.name}" arg2="HP-UX"/>
+    </condition>
+    <!-- I believe they are using cross-compilation, so checking the os.name
+         doesn't help. We'll check if the NDK is installed instead -->
+    <condition property="netware">
+      <available file="novellndk.home" />
+    </condition>
+    <echo message="linux=${linux} solaris=${solaris} win32=${win32} hpux=${hpux} netware=${netware}"/>
+
   </target>
 
   <target name="jni" depends="init">
