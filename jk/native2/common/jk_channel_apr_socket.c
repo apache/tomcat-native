@@ -220,50 +220,54 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     apr_status_t ret;
     apr_int32_t timeout = (apr_int32_t)(socketInfo->timeout * APR_USEC_PER_SEC);
     char msg[128];
+    int connected = 0;
 
-    if (apr_socket_create(&sock, remote_sa->family, SOCK_STREAM,
-                          (apr_pool_t *)env->globalPool->_private)
-                         != APR_SUCCESS) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                 "channelApr.open(): can't create socket %d %s\n",
-                 errno, strerror( errno ) );
-        return JK_ERR;
-    } 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelApr.open(): create tcp socket %d\n", sock );
+    while (remote_sa && !connected) {
+        if ((ret = apr_socket_create(&sock, remote_sa->family, SOCK_STREAM,
+                                     (apr_pool_t *)env->globalPool->_private))
+                                    != APR_SUCCESS) {
+            env->l->jkLog(env, env->l, remote_sa->next ? JK_LOG_DEBUG : JK_LOG_ERROR,
+                         "channelApr.open(): error %d creating socket %d %s\n",
+                          ret, socketInfo->host);
+            remote_sa = remote_sa->next;
+            continue;
+        }
 
-    /* the default timeout (0) will set the socket to blocking with
-       infinite timeouts.
-     */
-    if (timeout <= 0)
-        timeout = -1;
-    if (apr_setsocketopt(sock, APR_SO_TIMEOUT, timeout)!= APR_SUCCESS) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                 "channelApr.open(): can't set timeout %d %s\n",
-                 errno, strerror( errno ) );
-        return JK_ERR;
+
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+            "channelApr.open(): create tcp socket %d\n", sock );
+        
+        /* the default timeout (0) will set the socket to blocking with
+           infinite timeouts.
+        */
+        if (timeout <= 0)
+            apr_socket_timeout_set(sock, 0);
+        else
+            apr_socket_timeout_set(sock, timeout);
+
+        /* make the connection out of the socket */
+        do { 
+            ret = apr_connect(sock, remote_sa);
+        } while (APR_STATUS_IS_EINTR(ret));
+        
+        /* if an error occurred, loop round and try again */
+        if (ret != APR_SUCCESS) {
+            apr_socket_close(sock);
+            env->l->jkLog(env, env->l, remote_sa->next ? JK_LOG_DEBUG : JK_LOG_ERROR,
+                         "channelApr.open() attempt to connect to %pI (%s) failed %d\n",
+                         remote_sa,
+                         socketInfo->host,
+                         ret);
+            remote_sa = remote_sa->next;
+            continue;
+        }
+        connected = 1;
     }
 
-    /* Tries to connect to JServ (continues trying while error is EINTR) */
-    do {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channelApr.open() connect on %d\n",sock);
-        ret = apr_connect(sock, remote_sa);
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "jk2_channel_apr_open: %d %s %s\n",ret, strerror( errno ),
-                      socketInfo->host);
-
-    } while (ret == APR_EINTR);
-
-    /* Check if we connected */
-    if(ret != APR_SUCCESS ) {
-        apr_socket_close(sock);
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "channelApr.open() connect failed %d %s\n",
-                      ret, apr_strerror( ret, msg, sizeof(msg) ) );
+    if (!connected) {
+        apr_socket_close(sock);   
         return JK_ERR;
     }
-    
     /* enable the use of keep-alive packets on TCP connection */
     if(keepalive) {
         int set = 1;
