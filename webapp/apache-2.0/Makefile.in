@@ -58,33 +58,32 @@
 # @author  Pier Fumagalli <mailto:pier@betaversion.org>
 # @version $Id$
 
-include @SRCDIR@/Makedefs
+LOCAL_TGT_DIR = @TGT_DIR@/apache-2.0
+LOCAL_SRC_DIR = @SRC_DIR@/apache-2.0
+include @TGT_DIR@/Makedefs
 
-APXS =               @APXS@
+SOURCE = mod_webapp.c
+OBJECT = mod_webapp.lo
+TARGET = libwebapp.la
 
-MODULE = mod_webapp.la
+.PHONY: build clean
 
-all: $(MODULE)
-build: $(MODULE)
-
-mod_webapp.la: mod_webapp.c
-	@$(ECHO) Compiling and Linking Apache 2.0 WebApp Module
-	$(APXS) -I../include -c -L ../lib -lwebapp mod_webapp.c
-
-install: mod_webapp.la
-	$(APXS) -i mod_webapp.la
+build: $(TARGET)
 
 clean:
-	@for ENTRY in *.o *.lo $(MODULE) .libs ; \
-	do \
-		if $(TEST) -f $${ENTRY} ; \
-		then \
-			$(ECHO) Removing file $${ENTRY} ; \
-			$(RM) -f $${ENTRY} ; \
-		fi ; \
-		if $(TEST) -d $${ENTRY} ; \
-		then \
-			$(ECHO) Removing directory $${ENTRY} ; \
-			$(RM) -rf $${ENTRY} ; \
-		fi ; \
-	done
+	rm -f $(TARGET)
+	rm -f $(OBJECT)
+	@if test -h $(SOURCE) ; then \
+	  echo rm -f $(SOURCE) ; \
+	  rm -f $(SOURCE) ; \
+	fi
+	rm -f *.o *.slo
+	rm -rf .libs
+
+$(SOURCE): $(LOCAL_SRC_DIR)/$(SOURCE)
+	ln -s "$<" "$@"
+
+$(TARGET): $(SOURCE)
+	$(APXS) -c -o $@ \
+	  $(INCLUDES) \
+	  $(OBJ_DIR)/*.lo $<
