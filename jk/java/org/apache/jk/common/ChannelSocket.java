@@ -94,7 +94,7 @@ import org.apache.jk.core.*;
  *
  * @author Costin Manolache
  */
-public class ChannelSocket extends Channel {
+public class ChannelSocket extends JkHandler {
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( ChannelSocket.class );
 
@@ -179,6 +179,15 @@ public class ChannelSocket extends Channel {
         sSocket=new ServerSocket( port );
         if( serverTimeout > 0 )
             sSocket.setSoTimeout( serverTimeout );
+
+        if( next==null ) {
+            if( nextName!=null ) 
+                setNext( wEnv.getHandler( nextName ) );
+            if( next==null )
+                next=wEnv.getHandler( "dispatch" );
+            if( next==null )
+                next=wEnv.getHandler( "request" );
+        }
 
         // Run a thread that will accept connections.
         tp.start();
@@ -329,13 +338,6 @@ public class ChannelSocket extends Channel {
         return pos;
     }
     
-    public MsgContext createEndpoint() {
-        MsgContext mc=new MsgContext();
-        mc.setChannel(this);
-        mc.setWorkerEnv( wEnv );
-        return mc;
-    }
-
     boolean running=true;
     
     /** Accept incoming connections, dispatch to the thread pool
@@ -345,7 +347,9 @@ public class ChannelSocket extends Channel {
             log.debug("Accepting ajp connections on " + port);
         while( running ) {
             try {
-                MsgContext ep=this.createEndpoint();
+                MsgContext ep=new MsgContext();
+                ep.setSource(this);
+                ep.setWorkerEnv( wEnv );
                 this.accept(ep);
                 SocketConnection ajpConn=
                     new SocketConnection(this, ep);
@@ -367,7 +371,8 @@ public class ChannelSocket extends Channel {
                     log.warn("Invalid packet, closing connection" );
                     break;
                 }
-                
+
+                ep.setType( 0 );
                 status= this.invoke( recv, ep );
                 if( status!= JkHandler.OK ) {
                     log.warn("processCallbacks status " + status );
@@ -380,6 +385,20 @@ public class ChannelSocket extends Channel {
         }
     }
 
+
+    public int invoke( Msg msg, MsgContext ep ) throws IOException {
+        int type=ep.getType();
+
+        switch( type ) {
+        case JkHandler.HANDLE_RECEIVE_PACKET:
+            return receive( msg, ep );
+        case JkHandler.HANDLE_SEND_PACKET:
+            return send( msg, ep );
+        }
+
+        return next.invoke( msg, ep );
+    }
+    
     public boolean isSameAddress(MsgContext ep) {
         Socket s=(Socket)ep.getNote( socketNote );
         return isSameAddress( s.getLocalAddress(), s.getInetAddress());

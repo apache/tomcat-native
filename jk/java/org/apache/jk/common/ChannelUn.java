@@ -77,10 +77,10 @@ import org.apache.jk.apr.*;
  *
  * @author Costin Manolache
  */
-public class ChannelUn extends Channel {
+public class ChannelUn extends JkHandler {
 
     String file;
-    ThreadPool tp=new ThreadPool();
+    ThreadPool tp;
     String jkHome;
     String aprHome;
 
@@ -126,26 +126,21 @@ public class ChannelUn extends Channel {
     }
 
     public void init() throws IOException {
-        apr=AprImpl.getAprImpl();
-        if( aprHome==null && jkHome != null ) {
-            File f=new File( jkHome );
-            File aprBase=new File( jkHome, "jk2/jni" );
-            if( aprBase.exists() ) {
-                aprHome=aprBase.getAbsolutePath();
-            }
-        }
-        if( aprHome != null ) {
-            apr.setBaseDir( aprHome );
-        }
-        try {
-            apr.loadNative();
-            
-            apr.initialize();
-        } catch( Throwable t ) {
-            log.error("Native code not initialized, disabling UnixSocket and JNI channels: " + t.toString());
+        apr=(AprImpl)wEnv.getHandler("apr");
+        if( apr==null ) {
+            log.error("Apr is not available, disabling unix channel ");
             return;
         }
-        
+        if( next==null ) {
+            if( nextName!=null ) 
+                setNext( wEnv.getHandler( nextName ) );
+            if( next==null )
+                next=wEnv.getHandler( "dispatch" );
+            if( next==null )
+                next=wEnv.getHandler( "request" );
+        }
+
+        tp=new ThreadPool();
         if( log.isDebugEnabled() ) log.debug( "Creating pool " + gPool );
         gPool=apr.poolCreate( 0 );
 
@@ -295,13 +290,12 @@ public class ChannelUn extends Channel {
     }
 
     
-    
-    public MsgContext createEndpoint() {
-        MsgContext mc=new MsgContext();
-        mc.setChannel( this );
-        mc.setWorkerEnv( wEnv );
-        return mc;
-    }
+//     public MsgContext createEndpoint() {
+//         MsgContext mc=new MsgContext();
+//         mc.setChannel( this );
+//         mc.setWorkerEnv( wEnv );
+//         return mc;
+//     }
 
     boolean running=true;
     
@@ -312,7 +306,9 @@ public class ChannelUn extends Channel {
             log.debug("Accepting ajp connections on " + file);
         while( running ) {
             try {
-                MsgContext ep=this.createEndpoint();
+                MsgContext ep=new MsgContext();
+                ep.setSource( this );
+                ep.setWorkerEnv( wEnv );
                 this.accept(ep);
                 AprConnection ajpConn=
                     new AprConnection(this, ep);
@@ -336,6 +332,7 @@ public class ChannelUn extends Channel {
                     // EOS
                     break;
                 }
+                ep.setType(0);
                 int status=this.invoke( recv, ep );
             }
             this.close( ep );
@@ -344,9 +341,21 @@ public class ChannelUn extends Channel {
         }
     }
 
+    public int invoke( Msg msg, MsgContext ep ) throws IOException {
+        int type=ep.getType();
+
+        switch( type ) {
+        case JkHandler.HANDLE_RECEIVE_PACKET:
+            return receive( msg, ep );
+        case JkHandler.HANDLE_SEND_PACKET:
+            return send( msg, ep );
+        }
+
+        return next.invoke( msg, ep );
+    }
+
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( ChannelUn.class );
-
 }
 
 class AprAcceptor implements ThreadPoolRunnable {
