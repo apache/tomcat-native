@@ -64,7 +64,6 @@ import java.util.*;
 
 import org.apache.jk.*;
 
-import org.apache.tomcat.util.net.*;
 import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.log.*;
 import org.apache.tomcat.util.http.*;
