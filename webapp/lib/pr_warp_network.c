@@ -68,7 +68,10 @@ wa_boolean n_recv(apr_socket_t *sock, warp_packet *pack) {
     p_reset(pack);
     len=3;
     while(1) {
-        if (apr_recv(sock,&hdr[ptr],&len)!=APR_SUCCESS) return(wa_false);
+        if (apr_recv(sock,&hdr[ptr],&len)!=APR_SUCCESS) {
+            wa_debug(WA_MARK,"Cannot receive header");
+            return(wa_false);
+        }
         ptr+=len;
         len=3-ptr;
         if (len==0) break;
@@ -77,16 +80,20 @@ wa_boolean n_recv(apr_socket_t *sock, warp_packet *pack) {
     pack->size=(hdr[1]&0x0ff)<<8;
     pack->size=pack->size|(hdr[2]&0x0ff);
 
-    len=pack->size;
-    ptr=0;
-    while(1) {
-        if (apr_recv(sock,&pack->buff[ptr],&len)!=APR_SUCCESS)
-            return(wa_false);
-        ptr+=len;
-        len=pack->size-ptr;
-        if (len==0) break;
+    if (pack->size>0) {
+        len=pack->size;
+        ptr=0;
+        while(1) {
+            if (apr_recv(sock,&pack->buff[ptr],&len)!=APR_SUCCESS) {
+                wa_debug(WA_MARK,"Cannot receive payload");
+                return(wa_false);
+            }
+            ptr+=len;
+            len=pack->size-ptr;
+            if (len==0) break;
+        }
     }
-
+    
     wa_debug(WA_MARK,"WARP <<< TYP=%d LEN=%d",pack->type,pack->size);
 
     return(wa_true);
