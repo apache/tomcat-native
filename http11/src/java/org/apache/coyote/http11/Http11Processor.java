@@ -635,9 +635,16 @@ public class Http11Processor implements Processor, ActionHook {
                     thrA.setCurrentStage(threadPool, "service");
                     rp.setStage(org.apache.coyote.Constants.STAGE_SERVICE);
                     adapter.service(request, response);
-                  /* Mimic httpd (currently disabled)
-                    error = statusDropsConnection(response.getStatus());
-                  */
+                    // Handle when the response was committed before a serious
+                    // error occurred.  Throwing a ServletException should both
+                    // set the status to 500 and set the errorException.
+                    // If we fail here, then the response is likely already 
+                    // committed, so we can't try and set headers.
+                    if(keepAlive && !error) { // Avoid checking twice.
+                        error = response.getErrorException() != null ||
+                                statusDropsConnection(response.getStatus());
+                    }
+
                 } catch (InterruptedIOException e) {
                     error = true;
                 } catch (Throwable t) {
@@ -1260,6 +1267,9 @@ public class Http11Processor implements Processor, ActionHook {
             keepAlive = false;
         }
 
+        // If we know that the request is bad this early, add the
+        // Connection: close header.
+        keepAlive = keepAlive && statusDropsConnection(statusCode);
         if (!keepAlive) {
             response.addHeader("Connection", "close");
         } else if (!http11) {
