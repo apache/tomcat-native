@@ -61,7 +61,7 @@ public class Constants {
     public static final String PACKAGE="org.apache.catalina.connector.warp";
 
     /** Compile-in debug flag. */
-    public static final boolean DEBUG=@DEBUG@;
+    public static final boolean DEBUG=false;
 
     /**
      * The WARP protocol major version.

@@ -95,12 +95,6 @@ lib-build:
 lib-clean:
 	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="lib" MTGT="clean"
 
-java-build:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="java" MTGT="build"
-
-java-clean:
-	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="java" MTGT="clean"
-
 apache-1.3-build:
 	@$(MAKE) template MFLG="$(MAKEFLAGS)" MDIR="apache-1.3" MTGT="build"
 
@@ -118,11 +112,6 @@ apidocs-c-build:
 	support/scandoc.pl -i support/template.pl -p docs/api-c/ */*.h
 apidocs-c-clean:
 	$(RM) -rf docs/api-c
-apidocs-java-build:
-	mkdir docs/api-java
-	javadoc java/*.java -d docs/api-java
-apidocs-java-clean:
-	$(RM) -rf docs/api-java
 
 template:
 	@ { \
