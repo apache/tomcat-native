@@ -34,6 +34,7 @@ static const char *response_trans_headers[] = {
 static const char *long_res_header_for_sc(int sc) 
 {
     const char *rc = NULL;
+    sc = sc & 0X00FF;
     if(sc <= SC_RES_HEADERS_NUM && sc > 0) {
         rc = response_trans_headers[sc - 1];
     }
@@ -503,7 +504,7 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
             ajp_msg_append_string(msg, s->ssl_cert)) {
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                    "Error ajp_marshal_into_msgb - "
-                   "Error appending the SSL certificates\n");
+                   "Error appending the SSL certificates");
             return APR_EGENERAL;
         }
     }
@@ -619,7 +620,7 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
 
     rc = ajp_msg_get_string(msg, &ptr);
     if (rc == APR_SUCCESS) {
-        r->status_line = apr_pstrdup(r->connection->pool, ptr);
+        r->status_line =  apr_psprintf(r->pool, "%d %s", status, ptr);
 #if defined(AS400) || defined(_OSD_POSIX)
         ap_xlate_proto_from_ascii(r->status_line, strlen(r->status_line));
 #endif
@@ -653,17 +654,16 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
                 
         if ((name & 0XFF00) == 0XA000) {
             ajp_msg_peek_uint16(msg, &name);
-            name = name & 0X00FF;
-            if (name <= SC_RES_HEADERS_NUM) {
-                stringname = (char *)long_res_header_for_sc(name);
-            } else {
+            stringname = (char *)long_res_header_for_sc(name);
+            if (stringname == NULL) {
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                        "Error ajp_unmarshal_response - "
-                       "No such sc (%d)",
+                       "No such sc (%08x)",
                        name);
                 return APR_EGENERAL;
             }
         } else {
+            name = 0;
             rc = ajp_msg_get_string(msg, &stringname);
             if (rc != APR_SUCCESS) {
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
@@ -687,10 +687,19 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t   *msg,
 #if defined(AS400) || defined(_OSD_POSIX)
         ap_xlate_proto_from_ascii(value, strlen(value));
 #endif
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-               "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+               "ajp_unmarshal_response: Header[%d] [%s] = [%s]", 
                        i, stringname, value);
         apr_table_add(r->headers_out, stringname, value);
+
+        /* Content-type needs an additional handling */
+        if (memcmp(stringname, "Content-Type",12) == 0) {
+            char *ptr;
+            ptr = apr_pstrdup(r->pool, value);
+            ap_set_content_type(r, ptr); /* add corresponding filter */
+            ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+               "ajp_unmarshal_response: ap_set_content_type done");
+        }
     }
 
     return APR_SUCCESS;
@@ -734,11 +743,13 @@ apr_status_t ajp_send_header(apr_socket_t *sock,
  */
 apr_status_t ajp_read_header(apr_socket_t *sock,
                              request_rec  *r,
-                             ajp_msg_t **msg)
+                             void **data)
 {
     apr_byte_t result;
     apr_status_t rc;
+    ajp_msg_t **msg;
 
+    msg = data;
     rc = ajp_msg_create(r->pool, msg);
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
