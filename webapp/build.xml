@@ -146,7 +146,7 @@
 
 
   <target name="compile"
-   depends="static,javadoc,report"
+   depends="static,report"
    description="Compile Webapp components">
     <javac  srcdir="${source.home}"
            destdir="${build.home}/classes"
