@@ -144,7 +144,7 @@ public class IdentityInputFilter implements InputFilter {
      * Read the content length from the request.
      */
     public void setRequest(Request request) {
-        contentLength = request.getContentLength();
+        contentLength = request.getContentLengthLong();
         remaining = contentLength;
     }
 

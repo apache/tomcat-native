@@ -134,7 +134,7 @@ public final class Request {
     /**
      * HTTP specific fields. (remove them ?)
      */
-    private int contentLength = -1;
+    private long contentLength = -1;
     private MessageBytes contentTypeMB = null;
     private String charEncoding = null;
     private Cookies cookies = new Cookies(headers);
@@ -298,14 +298,22 @@ public final class Request {
 
 
     public int getContentLength() {
+        long length = getContentLengthLong();
+
+        if (length < Integer.MAX_VALUE) {
+            return (int) length;
+        }
+        return -1;
+    }
+
+    public long getContentLengthLong() {
         if( contentLength > -1 ) return contentLength;
 
         MessageBytes clB = headers.getValue("content-length");
-        contentLength = (clB == null || clB.isNull()) ? -1 : clB.getInt();
+        contentLength = (clB == null || clB.isNull()) ? -1 : clB.getLong();
 
         return contentLength;
     }
-
 
     public String getContentType() {
         contentType();

@@ -1196,7 +1196,7 @@ public class Http11Processor implements Processor, ActionHook {
         InputFilter[] inputFilters = inputBuffer.getFilters();
 
         // Parse content-length header
-        int contentLength = request.getContentLength();
+        long contentLength = request.getContentLengthLong();
         if (contentLength >= 0) {
             inputBuffer.addActiveFilter
                 (inputFilters[Constants.IDENTITY_FILTER]);

@@ -477,6 +477,11 @@ public final class ByteChunk implements Cloneable, Serializable {
 	return Ascii.parseInt(buff, start,end-start);
     }
 
+    public long getLong() {
+        return Ascii.parseLong(buff, start,end-start);
+    }
+
+
     // -------------------- equals --------------------
 
     /**
