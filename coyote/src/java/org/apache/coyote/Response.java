@@ -150,6 +150,9 @@ public final class Response {
     protected int contentLength = -1;
     private Locale locale = DEFAULT_LOCALE;
 
+    // General informations
+    private long bytesWritten=0;
+
     /**
      * Holds request error exception.
      */
@@ -520,10 +523,11 @@ public final class Response {
      * Write a chunk of bytes.
      */
     public void doWrite(ByteChunk chunk/*byte buffer[], int pos, int count*/)
-        throws IOException {
+        throws IOException
+    {
         outputBuffer.doWrite(chunk, this);
+        bytesWritten+=chunk.getLength();
     }
-
 
     // --------------------
     
@@ -540,7 +544,16 @@ public final class Response {
         errorException = null;
         errorURI = null;
         headers.clear();
-        
+
+        // update counters
+        bytesWritten=0;
     }
 
+    public long getBytesWritten() {
+        return bytesWritten;
+    }
+
+    public void setBytesWritten(long bytesWritten) {
+        this.bytesWritten = bytesWritten;
+    }
 }

@@ -61,7 +61,6 @@
 package org.apache.coyote;
 
 import java.io.IOException;
-import java.util.Enumeration;
 import java.util.Hashtable;
 
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -172,7 +171,8 @@ public final class Request {
      */
     private int contentLength = -1;
     // how much body we still have to read.
-    private int available = -1; 
+    // Apparently nobody uses this field...
+    private int available = -1;
     private MessageBytes contentTypeMB = null;
     private String charEncoding = null;
     private Cookies cookies = new Cookies(headers);
@@ -184,6 +184,10 @@ public final class Request {
 
     private Response response;
     private ActionHook hook;
+
+    private int bytesRead=0;
+
+    private RequestProcessor reqProcessorMX=new RequestProcessor(this);
     // ------------------------------------------------------------- Properties
 
 
@@ -429,8 +433,10 @@ public final class Request {
     public int doRead(ByteChunk chunk) 
         throws IOException {
         int n = inputBuffer.doRead(chunk, this);
-        if (n > 0)
+        if (n > 0) {
             available -= n;
+            bytesRead+=n;
+        }
         return n;
     }
 
@@ -460,6 +466,9 @@ public final class Request {
 
 
     public void recycle() {
+        // Call RequestProcessorMX
+        reqProcessorMX.updateCounters();
+        bytesRead=0;
 
 	contentLength = -1;
         contentTypeMB = null;
@@ -495,5 +504,16 @@ public final class Request {
         attributes.clear();
     }
 
+    // -------------------- Info  --------------------
+    public RequestProcessor getRequestProcessor() {
+        return reqProcessorMX;
+    }
 
+    public int getBytesRead() {
+        return bytesRead;
+    }
+
+    public void setBytesRead(int bytesRead) {
+        this.bytesRead = bytesRead;
+    }
 }
