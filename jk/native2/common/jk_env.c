@@ -83,8 +83,6 @@ static void * JK_METHOD jk2_env_getAprPool( jk_env_t *env ) {
     if( jkGlobalAprPool==NULL ) {
         int rc;
         
-        /* Make sure apr is initialized */
-        apr_initialize(); 
         rc = apr_pool_create(( apr_pool_t **)&jkGlobalAprPool, NULL);
         if (rc != APR_SUCCESS || jkGlobalAprPool==NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
