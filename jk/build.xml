@@ -358,6 +358,8 @@
     </target>
 
     <target name="clean-native">
+        <ant  dir="native" antfile="build.xml" target="clean"  />
+        <ant  dir="native2" antfile="build.xml" target="clean"  />
     </target>
 
     <!-- Check if we found Xalan in our classpath. We require Xalan because it has
