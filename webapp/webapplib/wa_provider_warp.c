@@ -559,37 +559,16 @@ static void wa_warp_destroy(wa_connection *conn) {
     wa_warp_close(conf,"Normal shutdown");
 }
 
-/**
- * Handle a connection from the web server.
- *
- * @param req The request data.
- * @param cb The web-server callback information.
- */
-void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
-    wa_warp_conn_config *conf=NULL;
-
-    conf=(wa_warp_conn_config *)req->appl->conn->conf;
-    if (conf->sock<0) {
-        wa_callback_setstatus(cb,req,500);
-        wa_callback_settype(cb,req,"text/html");
-        wa_callback_commit(cb,req);
-        wa_callback_printf(cb,req,"<html>\n");
-        wa_callback_printf(cb,req," <head>\n");
-        wa_callback_printf(cb,req,"  <title>mod_webapp(warp) error</title>\n");
-        wa_callback_printf(cb,req," </head>\n");
-        wa_callback_printf(cb,req," <body>\n");
-        wa_callback_printf(cb,req,"  <h2>mod_webapp(warp) error</h2>\n");
-        wa_callback_printf(cb,req,"  Unable to connect (%d) to\n", conf->sock);
-        wa_callback_printf(cb,req,"  Host: %s (%d.%d.%d.%d) Port: %d\n",
-                   conf->name,                   (int)((conf->addr>>0)&0x0ff),
-                   (int)((conf->addr>>8)&0x0ff), (int)((conf->addr>>16)&0x0ff),
-                   (int)((conf->addr>>24)&0x0ff), conf->port);
-        wa_callback_printf(cb,req," </body>\n");
-        wa_callback_printf(cb,req,"</html>\n");
-        wa_callback_flush(cb,req);
-        return;
-    }
-    wa_callback_setstatus(cb,req,200);
+static void wa_warp_handle_error(wa_request *req, wa_callbacks *cb,
+                                 const char *fmt, ...) {
+    char buf[1024];
+    va_list ap;
+    
+    va_start(ap,fmt);
+    vsprintf(buf,fmt,ap);
+    va_end(ap);
+    
+    wa_callback_setstatus(cb,req,500);
     wa_callback_settype(cb,req,"text/html");
     wa_callback_commit(cb,req);
     wa_callback_printf(cb,req,"<html>\n");
@@ -598,11 +577,90 @@ void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
     wa_callback_printf(cb,req," </head>\n");
     wa_callback_printf(cb,req," <body>\n");
     wa_callback_printf(cb,req,"  <h2>mod_webapp(warp) error</h2>\n");
-    wa_callback_printf(cb,req,"  Connected (socket=%d) to\n", conf->sock);
-    wa_callback_printf(cb,req,"  Host: %s (%d.%d.%d.%d) Port: %d\n",
-               conf->name,                   (int)((conf->addr>>0)&0x0ff),
-               (int)((conf->addr>>8)&0x0ff), (int)((conf->addr>>16)&0x0ff),
-               (int)((conf->addr>>24)&0x0ff), conf->port);
+    wa_callback_printf(cb,req,"  %s\n",buf);
+    wa_callback_printf(cb,req," </body>\n");
+    wa_callback_printf(cb,req,"</html>\n");
+    wa_callback_flush(cb,req);
+    return;
+}    
+    
+/**
+ * Handle a connection from the web server.
+ *
+ * @param req The request data.
+ * @param cb The web-server callback information.
+ */
+static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
+    wa_warp_conn_config *cc=NULL;
+    wa_warp_appl_config *ac=NULL;
+    wa_warp_packet *in=NULL;
+    wa_warp_packet *out=NULL;
+    int rid=0;
+
+    cc=(wa_warp_conn_config *)req->appl->conn->conf;
+    ac=(wa_warp_appl_config *)req->appl->conf;
+    // If we're not connected, let's try to connect
+    if (cc->sock<0) wa_warp_init(req->appl->conn);
+    if (cc->sock<0) {
+        wa_warp_handle_error(req,cb,
+                 "Unable to connect (%d) to Host: %s (%d.%d.%d.%d) Port: %d\n",
+                   cc->sock, cc->name,          (int)((cc->addr>>0)&0x0ff),
+                   (int)((cc->addr>>8)&0x0ff),  (int)((cc->addr>>16)&0x0ff),
+                   (int)((cc->addr>>24)&0x0ff), cc->port);
+        return;
+    }
+
+    // We are connected... Let's give it a try.
+    out=wa_warp_packet_create(4096);
+
+    // Let's start requesting the RID for this request.
+    out->typ=TYP_REQUEST;
+    wa_warp_packet_set_short(out,ac->host);
+    wa_warp_packet_set_short(out,ac->appl);
+    if (!wa_warp_send(cc,RID_CONNECTION,out)) {
+        wa_warp_packet_free(out);
+        wa_warp_close(cc, "Cannot send RID request");
+        wa_warp_handle_error(req,cb,"Cannot send RID request");
+        return;
+    }
+    wa_warp_packet_reset(out);
+
+    // Retrieve the packet containing our RID
+    in=wa_warp_recv(cc,RID_CONNECTION);
+    if (in==NULL) {
+        wa_warp_packet_free(out);
+        wa_warp_close(cc, "Cannot retrieve request RID");
+        wa_warp_handle_error(req,cb,"Cannot retrieve request RID");
+        return;
+    }
+    // Check if we got the right packet
+    if (in->typ!=TYP_REQUEST_ID) {
+        wa_warp_packet_free(out);
+        wa_warp_packet_free(in);
+        wa_warp_close(cc, "Cannot retrieve request RID (TYP)");
+        wa_warp_handle_error(req,cb,"Cannot retrieve request RID (TYP)");
+        return;
+    }
+    rid=wa_warp_packet_get_short(in);
+    wa_warp_packet_free(in);
+
+
+
+    wa_callback_setstatus(cb,req,200);
+    wa_callback_settype(cb,req,"text/html");
+    wa_callback_commit(cb,req);
+    wa_callback_printf(cb,req,"<html>\n");
+    wa_callback_printf(cb,req," <head>\n");
+    wa_callback_printf(cb,req,"  <title>mod_webapp(warp) error</title>\n");
+    wa_callback_printf(cb,req," </head>\n");
+    wa_callback_printf(cb,req," <body>\n");
+    wa_callback_printf(cb,req,"  <h2>mod_webapp(warp) request</h2>\n");
+    wa_callback_printf(cb,req,"  Connected (socket=%d) to\n", cc->sock);
+    wa_callback_printf(cb,req,"  Host: %s (%d.%d.%d.%d) Port: %d<br>\n",
+               cc->name,                   (int)((cc->addr>>0)&0x0ff),
+               (int)((cc->addr>>8)&0x0ff), (int)((cc->addr>>16)&0x0ff),
+               (int)((cc->addr>>24)&0x0ff), cc->port);
+    wa_callback_printf(cb,req,"  Received Request ID: %d<br>\n",rid);
     wa_callback_printf(cb,req," </body>\n");
     wa_callback_printf(cb,req,"</html>\n");
     wa_callback_flush(cb,req);
