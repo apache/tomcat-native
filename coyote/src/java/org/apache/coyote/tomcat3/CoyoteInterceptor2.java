@@ -210,14 +210,10 @@ public class CoyoteInterceptor2 extends BaseInterceptor
     */
     public Object getInfo( Context ctx, org.apache.tomcat.core.Request request,
                            int id, String key ) {
-
-        Tomcat3Request httpReq;
-        
-        try {
-            httpReq=(Tomcat3Request)request;
-        } catch (ClassCastException e){
+        if( ! ( request instanceof Tomcat3Request ) )
             return null;
-        }
+
+        Tomcat3Request httpReq=(Tomcat3Request)request;
         
         if(key!=null && httpReq!=null ){
             org.apache.coyote.Request cReq = httpReq.getCoyoteRequest();
@@ -231,8 +227,24 @@ public class CoyoteInterceptor2 extends BaseInterceptor
                             httpReq.getCoyoteRequest() );
                 return cReq.getAttribute(key);
             }
+
+            return cReq.getAttribute( key );
         }
         return super.getInfo(ctx,request,id,key);
+    }
+
+    public void setInfo( Context ctx, org.apache.tomcat.core.Request request,
+                         int id, String key, String object ) {
+        if( ! ( request instanceof Tomcat3Request ) )
+            return;
+        
+        Tomcat3Request httpReq=(Tomcat3Request)request;
+        
+        if(key!=null && httpReq!=null ){
+            org.apache.coyote.Request cReq = httpReq.getCoyoteRequest();
+            cReq.setAttribute(key, object);
+        }
+        super.setInfo(ctx,request,id,key, object);
     }
 
     /**

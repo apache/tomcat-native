@@ -292,17 +292,4 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
     public boolean isSecure() {
 	return "https".equalsIgnoreCase( coyoteRequest.scheme().toString());
     }
-    
-    public void setAttribute(String name, Object value) {
-	coyoteRequest.setAttribute( name, value );
-    }
-
-    public Object getAttribute(String name) {
-        if (name == null) {
-            return null;
-        }
-        return coyoteRequest.getAttribute( name );
-    }
-
-
 }
