@@ -210,7 +210,7 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
 
     public MessageBytes remoteAddr() {
 	if( remoteAddrMB.isNull() ) {
-	    coyoteRequest.action( ActionCode.ACTION_REQ_HOST_ATTRIBUTE, coyoteRequest );
+	    coyoteRequest.action( ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE, coyoteRequest );
 	}
 	return remoteAddrMB;
     }

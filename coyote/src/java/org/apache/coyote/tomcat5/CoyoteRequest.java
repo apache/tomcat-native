@@ -1034,6 +1034,8 @@ public class CoyoteRequest
                 InetAddress inet = socket.getInetAddress();
                 remoteAddr = inet.getHostAddress();
             } else {
+                coyoteRequest.action
+                    (ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE, coyoteRequest);
                 remoteAddr = coyoteRequest.remoteAddr().toString();
             }
         }

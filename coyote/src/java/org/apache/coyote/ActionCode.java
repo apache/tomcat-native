@@ -79,8 +79,9 @@ public final class ActionCode {
     public static final ActionCode ACTION_COMMIT = new ActionCode();
 
 
-    /* A flush() operation originated by the client ( i.e. a flush() on
-       the servlet output stream or writer, called by a servlet ).
+    /**
+     * A flush() operation originated by the client ( i.e. a flush() on
+     * the servlet output stream or writer, called by a servlet ).
      */
     public static final ActionCode ACTION_CLIENT_FLUSH = new ActionCode();
 
@@ -99,16 +100,25 @@ public final class ActionCode {
 
     public static final ActionCode ACTION_WEBAPP = new ActionCode();
 
-    /** Hook called after request, but before recycling. Can be used
-        for logging, to update counters, custom cleanup - the request
-        is still visible
-    */
+
+    /**
+     * Hook called after request, but before recycling. Can be used
+     * for logging, to update counters, custom cleanup - the request
+     * is still visible
+     */
     public static final ActionCode ACTION_POST_REQUEST = new ActionCode();
+
+    /**
+     * Callback for lazy evaluation - extract the remote host name.
+     */
+    public static final ActionCode ACTION_REQ_HOST_ATTRIBUTE = 
+        new ActionCode();
+
 
     /**
      * Callback for lazy evaluation - extract the remote host address.
      */
-    public static final ActionCode ACTION_REQ_HOST_ATTRIBUTE = 
+    public static final ActionCode ACTION_REQ_HOST_ADDR_ATTRIBUTE = 
         new ActionCode();
 
 
@@ -116,6 +126,7 @@ public final class ActionCode {
      * Callback for lazy evaluation - extract the SSL-related attributes.
      */
     public static final ActionCode ACTION_REQ_SSL_ATTRIBUTE = new ActionCode();
+
 
     /**
      * Callback for lazy evaluation - extract the SSL-certificate 
