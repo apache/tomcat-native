@@ -682,8 +682,8 @@ static const char *jk_mount_context(cmd_parms *cmd,
  * JkAutoMount directive handling
  *
  * JkAutoMount worker [virtualhost]
+ * This is an experimental and undocumented extension made in j-t-c/jk.
  */
-
 static const char *jk_automount_context(cmd_parms *cmd,
                                         void *dummy,
                                         const char *worker,
@@ -731,6 +731,7 @@ static const char *jk_set_worker_file(cmd_parms *cmd,
 
 /*
  * JkWorker name value
+ * This is an experimental and undocumented extension made in j-t-c/jk.
  */
 static const char *jk_worker_property(cmd_parms *cmd,
                                       void *dummy,
@@ -1473,7 +1474,7 @@ static void jk_child_init(apr_pool_t *pconf,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    init_jk( pconf, conf, s );
+/*     init_jk( pconf, conf, s ); */
 }
 
 /** Initialize jk, using worker.properties. 
