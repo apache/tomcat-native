@@ -457,7 +457,8 @@ static void jk_to64(char *s, unsigned long v, int n)
     }
 }
 
-char * JK_METHOD jk_md5(const unsigned char *org, const unsigned char *org2, char *dst)
+char * JK_METHOD jk_md5(jk_env_t *env,
+                        const unsigned char *org, const unsigned char *org2, char *dst)
 {
 	JK_MD5_CTX  ctx;
 	char		buf[JK_MD5_DIGESTSIZE + 1];

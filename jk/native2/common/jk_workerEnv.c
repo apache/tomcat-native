@@ -71,28 +71,27 @@
 int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **result,
                                     const char *type, const char *name);
 
-static void jk_workerEnv_close(jk_workerEnv_t *_this);
-static void jk_workerEnv_initHandlers(jk_workerEnv_t *_this);
+static void jk_workerEnv_close(jk_env_t *env, jk_workerEnv_t *_this);
+static void jk_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *_this);
 
 /**
  *  Init the workers, prepare the we.
  * 
  *  Replaces wc_open
  */
-static int jk_workerEnv_init(jk_workerEnv_t *_this)
+static int jk_workerEnv_init(jk_env_t *env, jk_workerEnv_t *_this)
 {
     jk_map_t *init_data=_this->init_data;
     char **worker_list  = NULL;
-    jk_logger_t *l=_this->l;
     int i;
     int err;
     char *tmp;
 
     /*     _this->init_data=init_data; */
 
-    tmp = jk_map_getString(NULL, init_data, "worker.list",
+    tmp = jk_map_getString(env, init_data, "worker.list",
                                    DEFAULT_WORKER );
-    worker_list=jk_map_split( NULL, init_data, init_data->pool,
+    worker_list=jk_map_split( env, init_data, init_data->pool,
                               tmp, &_this->num_of_workers );
 
     if(worker_list==NULL || _this->num_of_workers<= 0 ) {
@@ -105,11 +104,11 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
         jk_worker_t *oldw = NULL;
         const char *name=(const char*)worker_list[i];
 
-        w=_this->createWorker(_this, name, init_data);
+        w=_this->createWorker(env, _this, name, init_data);
         if( w==NULL ) {
-            l->jkLog(_this->l, JK_LOG_ERROR,
-                   "init failed to create worker %s\n", 
-                   worker_list[i]);
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "init failed to create worker %s\n", 
+                          worker_list[i]);
             /* Ignore it, other workers may be ok.
                return JK_FALSE; */
          } else {
@@ -118,49 +117,49 @@ static int jk_workerEnv_init(jk_workerEnv_t *_this)
         }
     }
 
-    jk_workerEnv_initHandlers( _this );
+    jk_workerEnv_initHandlers( env, _this );
     
-    l->jkLog(_this->l, JK_LOG_INFO,
-           "workerEnv.init() %d workers, default %s\n",
-             _this->num_of_workers, worker_list[0]); 
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "workerEnv.init() %d workers, default %s\n",
+                  _this->num_of_workers, worker_list[0]); 
     return JK_TRUE;
 }
 
 
-static void jk_workerEnv_close(jk_workerEnv_t *_this)
+static void jk_workerEnv_close(jk_env_t *env, jk_workerEnv_t *_this)
 {
-    jk_logger_t *l=_this->l;
     int sz;
     int i;
     
-    sz = _this->worker_map->size(NULL, _this->worker_map);
+    sz = _this->worker_map->size(env, _this->worker_map);
 
     for(i = 0 ; i < sz ; i++) {
-        jk_worker_t *w = _this->worker_map->valueAt(NULL, _this->worker_map, i);
+        jk_worker_t *w = _this->worker_map->valueAt(env, _this->worker_map, i);
         if(w) {
-            l->jkLog(l, JK_LOG_DEBUG,
-                   "destroy worker %s\n",
-                   _this->worker_map->nameAt(NULL, _this->worker_map, i));
-            w->destroy(&w, l);
+            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                          "destroy worker %s\n",
+                          _this->worker_map->nameAt(env, _this->worker_map, i));
+            w->destroy(env,w);
         }
     }
-    l->jkLog(_this->l, JK_LOG_DEBUG, "workerEnv.close() done %d\n", sz); 
-    _this->worker_map->clear(NULL, _this->worker_map);
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                  "workerEnv.close() done %d\n", sz); 
+    _this->worker_map->clear(env, _this->worker_map);
 }
 
-static jk_worker_t *jk_workerEnv_getWorkerForName(jk_workerEnv_t *_this,
+static jk_worker_t *jk_workerEnv_getWorkerForName(jk_env_t *env,
+                                                  jk_workerEnv_t *_this,
                                                   const char *name )
 {
     jk_worker_t * rc;
-    jk_logger_t *l=_this->l;
     
     if(!name) {
-        l->jkLog(l, JK_LOG_ERROR,
-                 "workerEnv.getWorkerForName() NullPointerException\n");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "workerEnv.getWorkerForName() NullPointerException\n");
         return NULL;
     }
 
-    rc = _this->worker_map->get(NULL, _this->worker_map, name);
+    rc = _this->worker_map->get(env, _this->worker_map, name);
 
     /*     if( rc==NULL ) { */
     /*         l->jkLog(l, JK_LOG_INFO, */
@@ -170,7 +169,8 @@ static jk_worker_t *jk_workerEnv_getWorkerForName(jk_workerEnv_t *_this,
 }
 
 
-static jk_webapp_t *jk_workerEnv_createWebapp(jk_workerEnv_t *_this,
+static jk_webapp_t *jk_workerEnv_createWebapp(jk_env_t *env,
+                                              jk_workerEnv_t *_this,
                                               const char *vhost,
                                               const char *name, 
                                               jk_map_t *init_data)
@@ -178,16 +178,16 @@ static jk_webapp_t *jk_workerEnv_createWebapp(jk_workerEnv_t *_this,
     jk_pool_t *webappPool;
     jk_webapp_t *webapp;
 
-    webappPool=(jk_pool_t *)_this->pool->create( _this->pool,
+    webappPool=(jk_pool_t *)_this->pool->create( env, _this->pool,
                                                  HUGE_POOL_SIZE);
 
-    webapp=(jk_webapp_t *)webappPool->calloc(webappPool,
+    webapp=(jk_webapp_t *)webappPool->calloc(env, webappPool,
                                              sizeof( jk_webapp_t ));
 
     webapp->pool=webappPool;
 
-    webapp->context=_this->pool->pstrdup( _this->pool, name);
-    webapp->virtual=_this->pool->pstrdup( _this->pool, vhost);
+    webapp->context=_this->pool->pstrdup( env, _this->pool, name);
+    webapp->virtual=_this->pool->pstrdup( env, _this->pool, vhost);
 
     if( name==NULL ) {
         webapp->ctxt_len=0;
@@ -204,7 +204,7 @@ static jk_webapp_t *jk_workerEnv_createWebapp(jk_workerEnv_t *_this,
     
 }
 
-static void jk_workerEnv_checkSpace( jk_pool_t *pool,
+static void jk_workerEnv_checkSpace( jk_env_t *env, jk_pool_t *pool,
                                      void ***tableP, int *sizeP, int id )
 {
     void **newTable;
@@ -213,7 +213,7 @@ static void jk_workerEnv_checkSpace( jk_pool_t *pool,
     
     if( *sizeP > id ) return;
     /* resize the table */
-    newTable=(void **)pool->calloc( pool, newSize * sizeof( void *));
+    newTable=(void **)pool->calloc( env, pool, newSize * sizeof( void *));
     for( i=0; i<*sizeP; i++ ) {
         newTable[i]= (*tableP)[i];
     }
@@ -221,12 +221,12 @@ static void jk_workerEnv_checkSpace( jk_pool_t *pool,
     *sizeP=newSize;
 }
 
-static void jk_workerEnv_initHandlers(jk_workerEnv_t *_this)
+static void jk_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *_this)
 {
     /* Find the max message id */
     /* XXX accessing private data... env most provide some method to get this */
-    jk_map_t *registry=_this->env->_registry;
-    int size=registry->size( NULL, registry );
+    jk_map_t *registry=env->_registry;
+    int size=registry->size( env, registry );
     int i,j;
     
     for( i=0; i<size; i++ ) {
@@ -234,18 +234,16 @@ static void jk_workerEnv_initHandlers(jk_workerEnv_t *_this)
         jk_map_t *localHandlers;
         int rc;
 
-        char *name= registry->nameAt( NULL, registry, i );
+        char *name= registry->nameAt( env, registry, i );
         if( strstr( name, "handler" ) == name ) {
             char *type=name+ strlen( "handler" ) +1;
-            localHandlers=(jk_map_t *)_this->env->getInstance(_this->env,
-                                                              _this->pool,
-                                                              "handler",
-                                                              type );
+            localHandlers=(jk_map_t *)env->getInstance(env, _this->pool,
+                                                       "handler", type );
             if( localHandlers==NULL ) continue;
             
-            for( j=0; j< localHandlers->size( NULL, localHandlers ); j++ ) {
-                handler=(jk_handler_t *)localHandlers->valueAt( NULL, localHandlers, j );
-                jk_workerEnv_checkSpace( _this->pool,
+            for( j=0; j< localHandlers->size( env, localHandlers ); j++ ) {
+                handler=(jk_handler_t *)localHandlers->valueAt( env, localHandlers, j );
+                jk_workerEnv_checkSpace( env, _this->pool,
                                          (void ***)&_this->handlerTable,
                                          &_this->lastMessageId,
                                          handler->messageId );
@@ -272,9 +270,8 @@ static void jk_workerEnv_initHandlers(jk_workerEnv_t *_this)
  * In fact if tomcat link is broken during upload (browser ->apache ->tomcat)
  * we'll loose data and we'll have to abort the whole request.
  */
-static int jk_workerEnv_processCallbacks(jk_workerEnv_t *_this,
-                                         jk_endpoint_t *e,
-                                         jk_ws_service_t *r )
+static int jk_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
+                                         jk_endpoint_t *e, jk_ws_service_t *r )
 {
     int code;
     jk_handler_t *handler;
@@ -288,36 +285,36 @@ static int jk_workerEnv_processCallbacks(jk_workerEnv_t *_this,
         rc=-1;
         handler=NULL;
 
-        _this->l->jkLog(_this->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
                         "ajp14.processCallbacks() Waiting reply\n");
-        e->reply->reset(e->reply);
+        e->reply->reset(env, e->reply);
         
-        rc= e->reply->receive( e->reply, e );
+        rc= e->reply->receive( env, e->reply, e );
         if( rc!=JK_TRUE ) {
-            _this->l->jkLog(_this->l, JK_LOG_ERROR,
-                            "ajp14.service() Error reading reply\n");
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "ajp14.service() Error reading reply\n");
             /* we just can't recover, unset recover flag */
             return JK_FALSE;
         }
         
-        code = (int)e->reply->getByte(e->reply);
+        code = (int)e->reply->getByte(env, e->reply);
         if( code < maxHandler ) {
             handler=handlerTable[ code ];
         }
 
         if( handler==NULL ) {
-            _this->l->jkLog(_this->l, JK_LOG_ERROR,
-                            "ajp14.processCallback() Invalid code: %d\n", code);
-            e->reply->dump(e->reply, _this->l, "Message: ");
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "ajp14.processCallback() Invalid code: %d\n", code);
+            e->reply->dump(env, e->reply, "Message: ");
             return JK_FALSE;
         }
         
-        _this->l->jkLog(_this->l, JK_LOG_DEBUG,
-                        "ajp14.dispath() Calling %d %s\n", handler->messageId,
-                        handler->name);
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                      "ajp14.dispath() Calling %d %s\n", handler->messageId,
+                      handler->name);
         
         /* Call the message handler */
-        rc=handler->callback( e->reply, r, e, _this->l );
+        rc=handler->callback( env, e->reply, r, e );
         
         /* Process the status code returned by handler */
         switch( rc ) {
@@ -338,9 +335,9 @@ static int jk_workerEnv_processCallbacks(jk_workerEnv_t *_this,
              * data to file and replay for it
              */
             e->recoverable = JK_FALSE; 
-            rc = e->post->send(e->post, e );
+            rc = e->post->send(env, e->post, e );
             if (rc < 0) {
-                _this->l->jkLog(_this->l, JK_LOG_ERROR,
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp14.processCallbacks() error sending response data\n");
                 return JK_FALSE;
             }
@@ -372,40 +369,41 @@ static int jk_workerEnv_processCallbacks(jk_workerEnv_t *_this,
 
 
 
-static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
+static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
+                                              jk_workerEnv_t *_this,
                                               const char *name, 
                                               jk_map_t *init_data)
 {
     int err;
     char *type;
     jk_env_objectFactory_t fac;
-    jk_logger_t *l=_this->l;
     jk_worker_t *w = NULL;
     jk_worker_t *oldW = NULL;
     jk_pool_t *workerPool;
 
     /* First find if it already exists */
-    w=_this->getWorkerForName( _this, name );
+    w=_this->getWorkerForName( env, _this, name );
     if( w != NULL ) {
-        l->jkLog(l, JK_LOG_INFO,
-                 "workerEnv.createWorker(): Using existing worker %s\n",name);
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "workerEnv.createWorker(): Using existing worker %s\n",
+                      name);
         return w;
     }
 
-    workerPool=_this->pool->create(_this->pool, HUGE_POOL_SIZE);
+    workerPool=_this->pool->create(env, _this->pool, HUGE_POOL_SIZE);
 
-    type=jk_map_getStrProp( NULL, init_data,"worker",name,"type",NULL );
+    type=jk_map_getStrProp( env, init_data,"worker",name,"type",NULL );
 
     /* Each worker has it's own pool */
     
 
-    w=(jk_worker_t *)_this->env->getInstance(_this->env, workerPool, "worker",
-                                             type );
+    w=(jk_worker_t *)env->getInstance(env, workerPool, "worker",
+                                      type );
     
     if( w == NULL ) {
-        l->jkLog(l, JK_LOG_ERROR,
-               "workerEnv.createWorker(): factory can't create worker %s:%s\n",
-               type, name); 
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                "workerEnv.createWorker(): factory can't create worker %s:%s\n",
+                      type, name); 
         return NULL;
     }
 
@@ -413,34 +411,37 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
     w->pool=workerPool;
     w->workerEnv=_this;
     
-    err=w->validate(w, init_data, _this, l);
+    err=w->validate(env, w, init_data, _this);
     
     if( err!=JK_TRUE ) {
-        l->jkLog(l, JK_LOG_ERROR,
-               "workerEnv.createWorker(): validate failed for %s:%s\n", 
-               type, name); 
-        w->destroy(&w, l);
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "workerEnv.createWorker(): validate failed for %s:%s\n", 
+                      type, name); 
+        w->destroy(env, w);
         return NULL;
     }
     
-    err=w->init(w, init_data, _this, l);
+    err=w->init(env, w, init_data, _this);
     
     if(err!=JK_TRUE) {
-        w->destroy(&w, l);
-        l->jkLog(l, JK_LOG_ERROR, "workerEnv.createWorker() init failed for %s\n", 
-               name); 
+        w->destroy(env, w);
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "workerEnv.createWorker() init failed for %s\n", 
+                      name); 
         return NULL;
     }
     
-    l->jkLog(l, JK_LOG_INFO,
-           "workerEnv.createWorker(): validate and init %s:%s\n", type, name);
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "workerEnv.createWorker(): validate and init %s:%s\n",
+                  type, name);
 
-    _this->worker_map->put(NULL, _this->worker_map, name, w, (void *)&oldW);
+    _this->worker_map->put(env, _this->worker_map, name, w, (void *)&oldW);
             
     if(oldW!=NULL) {
-        l->jkLog(_this->l, JK_LOG_ERROR, "workerEnv.createWorker() duplicated %s worker \n",
-                 name);
-        oldW->destroy(&oldW, _this->l);
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "workerEnv.createWorker() duplicated %s worker \n",
+                      name);
+        oldW->destroy(env, oldW);
     }
     
     return w;
@@ -449,14 +450,13 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
 int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **result,
                                     const char *type, const char *name)
 {
-    jk_logger_t *l=env->logger;
     jk_workerEnv_t *_this;
     int err;
     jk_pool_t *uriMapPool;
 
-    l->jkLog(l, JK_LOG_DEBUG, "Creating workerEnv \n");
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG, "Creating workerEnv \n");
 
-    _this=(jk_workerEnv_t *)pool->calloc( pool, sizeof( jk_workerEnv_t ));
+    _this=(jk_workerEnv_t *)pool->calloc( env, pool, sizeof( jk_workerEnv_t ));
     _this->pool=pool;
     *result=_this;
 
@@ -467,7 +467,6 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **resul
     _this->worker_file     = NULL;
     _this->log_file        = NULL;
     _this->log_level       = -1;
-    _this->l             = NULL;
     _this->mountcopy       = JK_FALSE;
     _this->was_initialized = JK_FALSE;
     _this->options         = JK_OPT_FWDURIDEFAULT;
@@ -509,22 +508,17 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **resul
     _this->secret_key = NULL; 
 
     _this->envvars_in_use = JK_FALSE;
-    jk_map_default_create(NULL, &_this->envvars, pool);
+    jk_map_default_create(env, &_this->envvars, pool);
 
-    _this->l=l;
-    _this->env=env;
-    
-    jk_map_default_create(NULL,&_this->worker_map, _this->pool);
+    jk_map_default_create(env,&_this->worker_map, _this->pool);
 
-    uriMapPool = _this->pool->create(_this->pool, HUGE_POOL_SIZE);
+    uriMapPool = _this->pool->create(env, _this->pool, HUGE_POOL_SIZE);
     
-    _this->uriMap=_this->env->getInstance( _this->env,
-                                           uriMapPool,
-                                           "uriMap",
-                                           "default");
+    _this->uriMap=env->getInstance(env, uriMapPool,"uriMap", "default");
 
     if( _this->uriMap==NULL ) {
-        l->jkLog(l, JK_LOG_ERROR, "Error getting uriMap implementation\n");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "Error getting uriMap implementation\n");
         return JK_FALSE;
     }
 
@@ -539,7 +533,7 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **resul
     _this->createWebapp=&jk_workerEnv_createWebapp;
     _this->processCallbacks=&jk_workerEnv_processCallbacks;
 
-    _this->rootWebapp=_this->createWebapp( _this, NULL, "/", NULL );
+    _this->rootWebapp=_this->createWebapp( env, _this, NULL, "/", NULL );
     
     return JK_TRUE;
 }

@@ -77,7 +77,7 @@ typedef struct jk_map_private {
     int size;
 } jk_map_private_t;
 
-static int jk_map_default_realloc(jk_map_t *m);
+static int jk_map_default_realloc(jk_env_t *env, jk_map_t *m);
 static void trim_prp_comment(char *prp);
 static int trim(char *s);
 
@@ -127,7 +127,7 @@ static int jk_map_default_put(jk_env_t *env, jk_map_t *m,
         return JK_TRUE;
     }
     
-    jk_map_default_realloc(m);
+    jk_map_default_realloc(env, m);
     
     if(mPriv->size < mPriv->capacity) {
         mPriv->values[mPriv->size] = value;
@@ -155,7 +155,7 @@ static int jk_map_default_add(jk_env_t *env, jk_map_t *m,
 
     mPriv=(jk_map_private_t *)m->_private;
     
-    jk_map_default_realloc(m);
+    jk_map_default_realloc(env, m);
     
     if(mPriv->size < mPriv->capacity) {
         mPriv->values[mPriv->size] = value;
@@ -346,7 +346,7 @@ char **jk_map_split(jk_env_t *env, jk_map_t *m,
     if(listStr==NULL)
         return NULL;
 
-    v = pool->pstrdup( pool, listStr);
+    v = pool->pstrdup( env, pool, listStr);
     
     if(v==NULL) {
         return NULL;
@@ -359,7 +359,7 @@ char **jk_map_split(jk_env_t *env, jk_map_t *m,
 
     for(l = strtok(v, " \t,*") ; l ; l = strtok(NULL, " \t,*")) {
         if(idex == capacity) {
-            ar = pool->realloc(pool, 
+            ar = pool->realloc(env, pool, 
                                sizeof(char *) * (capacity + 5),
                                ar,
                                sizeof(char *) * capacity);
@@ -368,7 +368,7 @@ char **jk_map_split(jk_env_t *env, jk_map_t *m,
             }
             capacity += 5;
         }
-        ar[idex] = pool->pstrdup(pool, l);
+        ar[idex] = pool->pstrdup(env, pool, l);
         idex ++;
     }
         
@@ -423,7 +423,7 @@ int jk_map_readFileProperties(jk_env_t *env, jk_map_t *m,
         v = jk_map_replaceProperties(env, m, m->pool, v);
                 
         if(oldv) {
-            char *tmpv = m->pool->alloc(m->pool, 
+            char *tmpv = m->pool->alloc(env, m->pool, 
                                         strlen(v) + strlen(oldv) + 3);
             char sep = '*';
 
@@ -432,16 +432,16 @@ int jk_map_readFileProperties(jk_env_t *env, jk_map_t *m,
                 break;
             }
 
-            if(jk_is_some_property(prp, "path")) {
+            if(jk_is_some_property(env, prp, "path")) {
                 sep = PATH_SEPERATOR;
-            } else if(jk_is_some_property(prp, "cmd_line")) {
+            } else if(jk_is_some_property(env, prp, "cmd_line")) {
                 sep = ' ';
             }
                 
             sprintf(tmpv, "%s%c%s",  oldv, sep, v);
             v = tmpv;
         } else {
-            v = m->pool->pstrdup(m->pool, v);
+            v = m->pool->pstrdup(env, m->pool, v);
         }
         
         if(v==NULL) {
@@ -489,7 +489,7 @@ char *jk_map_replaceProperties(jk_env_t *env, jk_map_t *m,
 
             if(env_value != NULL ) {
                 int offset=0;
-                char *new_value = resultPool->alloc(resultPool, 
+                char *new_value = resultPool->alloc(env, resultPool, 
                                                     (strlen(rc) + strlen(env_value)));
                 if(!new_value) {
                     break;
@@ -526,8 +526,8 @@ int jk_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
     if( m== NULL )
         return JK_FALSE;
     
-    _this=(jk_map_t *)pool->alloc(pool, sizeof(jk_map_t));
-    mPriv=(jk_map_private_t *)pool->alloc(pool, sizeof(jk_map_private_t));
+    _this=(jk_map_t *)pool->alloc(env, pool, sizeof(jk_map_t));
+    mPriv=(jk_map_private_t *)pool->alloc(env, pool, sizeof(jk_map_private_t));
     *m=_this;
 
     if( _this == NULL || mPriv==NULL )
@@ -569,7 +569,7 @@ int jk_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
 
 /* XXX Very strange hack to deal with special properties
  */
-int jk_is_some_property(const char *prp_name, const char *suffix)
+int jk_is_some_property(jk_env_t *env, const char *prp_name, const char *suffix)
 {
     if (prp_name && suffix) {
         size_t prp_name_len = strlen(prp_name);
@@ -614,7 +614,7 @@ static int trim(char *s)
     return strlen(s);
 }
 
-static int jk_map_default_realloc(jk_map_t *m)
+static int jk_map_default_realloc(jk_env_t *env, jk_map_t *m)
 {
     jk_map_private_t *mPriv=m->_private;
     
@@ -623,8 +623,10 @@ static int jk_map_default_realloc(jk_map_t *m)
         void **values;
         int  capacity = mPriv->capacity + CAPACITY_INC_SIZE;
 
-        names = (char **)m->pool->alloc(m->pool, sizeof(char *) * capacity);
-        values = (void **)m->pool->alloc(m->pool, sizeof(void *) * capacity);
+        names = (char **)m->pool->alloc(env, m->pool,
+                                        sizeof(char *) * capacity);
+        values = (void **)m->pool->alloc(env, m->pool,
+                                         sizeof(void *) * capacity);
         
         if(values && names) {
             if (mPriv->capacity && mPriv->names) 

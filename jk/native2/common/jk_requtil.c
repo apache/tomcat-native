@@ -89,7 +89,7 @@ const char *response_trans_headers[] = {
  *
  * long_res_header_for_sc
  */
-const char *jk_requtil_getHeaderById(int sc) 
+const char *jk_requtil_getHeaderById(jk_env_t *env, int sc) 
 {
     const char *rc = NULL;
     if(sc <= SC_RES_HEADERS_NUM && sc > 0) {
@@ -104,7 +104,7 @@ const char *jk_requtil_getHeaderById(int sc)
  *
  * sc_for_req_method
  */
-int jk_requtil_getMethodId(const char    *method,
+int jk_requtil_getMethodId(jk_env_t *env, const char *method,
                            unsigned char *sc) 
 {
     int rc = JK_TRUE;
@@ -162,7 +162,7 @@ int jk_requtil_getMethodId(const char    *method,
  *
  * sc_for_req_header
  */
-int  jk_requtil_getHeaderId(const char *header_name,
+int  jk_requtil_getHeaderId(jk_env_t *env, const char *header_name,
                             unsigned short *sc) 
 {
     switch(header_name[0]) {
@@ -251,7 +251,7 @@ int  jk_requtil_getHeaderId(const char *header_name,
 
 /** Retrieve the cookie with the given name
  */
-char *jk_requtil_getCookieByName(jk_ws_service_t *s,
+char *jk_requtil_getCookieByName(jk_env_t *env, jk_ws_service_t *s,
                                  const char *name)
 {
     int i;
@@ -273,7 +273,7 @@ char *jk_requtil_getCookieByName(jk_ws_service_t *s,
                     id_start += (1 + strlen(name));
                     if(strlen(id_start)) {
                         char *id_end;
-                        id_start = s->pool->pstrdup(s->pool, id_start);
+                        id_start = s->pool->pstrdup(env, s->pool, id_start);
                         if(id_end = strchr(id_start, ';')) {
                             *id_end = '\0';
                         }
@@ -289,7 +289,8 @@ char *jk_requtil_getCookieByName(jk_ws_service_t *s,
 
 /* Retrieve the parameter with the given name
  */
-char *jk_requtil_getPathParam(jk_ws_service_t *s, const char *name)
+char *jk_requtil_getPathParam(jk_env_t *env, jk_ws_service_t *s,
+                              const char *name)
 {
     char *id_start = NULL;
     for(id_start = strstr(s->req_uri, name) ; 
@@ -302,7 +303,7 @@ char *jk_requtil_getPathParam(jk_ws_service_t *s, const char *name)
             id_start += (1 + strlen(name));
             if(strlen(id_start)) {
                 char *id_end;
-                id_start = s->pool->pstrdup(s->pool, id_start);
+                id_start = s->pool->pstrdup(env, s->pool, id_start);
                 /* 
                  * The query string is not part of req_uri, however
                  * to be on the safe side lets remove the trailing query 
@@ -322,12 +323,12 @@ char *jk_requtil_getPathParam(jk_ws_service_t *s, const char *name)
 /** Retrieve session id from the cookie or the parameter                      
  * (parameter first)
  */
-char *jk_requtil_getSessionId(jk_ws_service_t *s)
+char *jk_requtil_getSessionId(jk_env_t *env, jk_ws_service_t *s)
 {
     char *val;
-    val = jk_requtil_getPathParam(s, JK_PATH_SESSION_IDENTIFIER);
+    val = jk_requtil_getPathParam(env, s, JK_PATH_SESSION_IDENTIFIER);
     if(!val) {
-        val = jk_requtil_getCookieByName(s, JK_SESSION_IDENTIFIER);
+        val = jk_requtil_getCookieByName(env, s, JK_SESSION_IDENTIFIER);
     }
     return val;
 }
@@ -336,9 +337,9 @@ char *jk_requtil_getSessionId(jk_ws_service_t *s)
  *  the id of the worker that generated the session and where all
  *  further requests in that session will be sent.
 */
-char *jk_requtil_getSessionRoute(jk_ws_service_t *s)
+char *jk_requtil_getSessionRoute(jk_env_t *env, jk_ws_service_t *s)
 {
-    char *sessionid = jk_requtil_getSessionId(s);
+    char *sessionid = jk_requtil_getSessionId(env, s);
     char *ch;
 
     if(!sessionid) {
@@ -366,9 +367,9 @@ char *jk_requtil_getSessionRoute(jk_ws_service_t *s)
  * Socket API didn't garanty all the data will be kept in a single 
  * read, so we must loop up to all awaited data are received 
  */
-int jk_requtil_readFully(jk_ws_service_t *s,
-                         unsigned char   *buf,
-                         unsigned         len)
+int jk_requtil_readFully(jk_env_t *env, jk_ws_service_t *s,
+                         unsigned char *buf,
+                         unsigned  len)
 {
     unsigned rdlen = 0;
     unsigned padded_len = len;
@@ -388,7 +389,7 @@ int jk_requtil_readFully(jk_ws_service_t *s,
 
     while(rdlen < padded_len) {
         unsigned this_time = 0;
-        if(!s->read(s, buf + rdlen, len - rdlen, &this_time)) {
+        if(!s->read(env, s, buf + rdlen, len - rdlen, &this_time)) {
             return -1;
         }
 
@@ -408,7 +409,7 @@ int jk_requtil_readFully(jk_ws_service_t *s,
  * 
  * jk_init_ws_service
  */ 
-void jk_requtil_initRequest(jk_ws_service_t *s)
+void jk_requtil_initRequest(jk_env_t *env, jk_ws_service_t *s)
 {
     s->ws_private           = NULL;
     s->pool                 = NULL;

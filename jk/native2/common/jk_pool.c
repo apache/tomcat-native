@@ -81,31 +81,35 @@ struct jk_pool_private {
 
 typedef struct jk_pool_private jk_pool_private_t;
 
-int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent, int size );
+int jk_pool_create( jk_env_t *env, jk_pool_t **newPool,
+                    jk_pool_t *parent, int size );
 
 int JK_METHOD jk_pool_factory( jk_env_t *env, void **result,
                                char *type, char *name);
 
-static jk_pool_t *jk_pool_createChild( jk_pool_t *parent, int size );
+static jk_pool_t *jk_pool_createChild( jk_env_t *env,
+                                       jk_pool_t *parent, int size );
 
-static void *jk_pool_dyn_alloc(jk_pool_t *p, 
+static void *jk_pool_dyn_alloc(jk_env_t *env, jk_pool_t *p, 
                                size_t size);
 
-static void jk_pool_reset(jk_pool_t *p);
+static void jk_pool_reset(jk_env_t *env, jk_pool_t *p);
 
-static void jk_pool_close(jk_pool_t *p);
+static void jk_pool_close(jk_env_t *env, jk_pool_t *p);
 
-static void *jk_pool_alloc(jk_pool_t *p, size_t size);
+static void *jk_pool_alloc(jk_env_t *env, jk_pool_t *p, size_t size);
 
-static void *jk_pool_calloc(jk_pool_t *p, size_t size);
+static void *jk_pool_calloc(jk_env_t *env, jk_pool_t *p, size_t size);
 
-static void *jk_pool_strdup(jk_pool_t *p, const char *s);
+static void *jk_pool_strdup(jk_env_t *env, jk_pool_t *p, const char *s);
 
-static void *jk_pool_realloc(jk_pool_t *p, size_t sz,const void *old,
+static void *jk_pool_realloc(jk_env_t *env, jk_pool_t *p, size_t sz,const void *old,
                              size_t old_sz);
 
 
-int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent, int size ) {
+int jk_pool_create( jk_env_t *env, jk_pool_t **newPool,
+                    jk_pool_t *parent, int size )
+{
     jk_pool_private_t *pp;
     
     jk_pool_t *_this=(jk_pool_t *)malloc( sizeof( jk_pool_t ));
@@ -142,14 +146,14 @@ int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent, int size ) {
     return JK_TRUE;
 }
 
-static jk_pool_t *jk_pool_createChild( jk_pool_t *parent, int size ) {
+static jk_pool_t *jk_pool_createChild( jk_env_t *env, jk_pool_t *parent, int size ) {
     jk_pool_t *newPool;
     
-    jk_pool_create( &newPool, parent, size );
+    jk_pool_create( env, &newPool, parent, size );
     return newPool;
 }
 
-static void jk_pool_close(jk_pool_t *p)
+static void jk_pool_close(jk_env_t *env, jk_pool_t *p)
 {
     jk_pool_private_t *pp;
     
@@ -158,7 +162,7 @@ static void jk_pool_close(jk_pool_t *p)
 
     pp=(jk_pool_private_t *)p->_private;
     
-    jk_pool_reset(p);
+    jk_pool_reset(env, p);
     if(pp->dynamic) {
         free(pp->dynamic);
     }
@@ -168,7 +172,7 @@ static void jk_pool_close(jk_pool_t *p)
     free( p );
 }
 
-static void jk_pool_reset(jk_pool_t *p)
+static void jk_pool_reset(jk_env_t *env, jk_pool_t *p)
 {
     jk_pool_private_t *pp;
     
@@ -190,17 +194,17 @@ static void jk_pool_reset(jk_pool_t *p)
     pp->pos      = 0;
 }
 
-static void *jk_pool_calloc(jk_pool_t *p, 
+static void *jk_pool_calloc(jk_env_t *env, jk_pool_t *p, 
                             size_t size)
 {
-    void *rc=jk_pool_alloc( p, size );
+    void *rc=jk_pool_alloc( env, p, size );
     if( rc==NULL )
         return NULL;
     memset( rc, 0, size );
     return rc;
 }
 
-static void *jk_pool_alloc(jk_pool_t *p, 
+static void *jk_pool_alloc(jk_env_t *env, jk_pool_t *p, 
                            size_t size)
 {
     void *rc = NULL;
@@ -224,21 +228,21 @@ static void *jk_pool_alloc(jk_pool_t *p,
 #ifdef JK_DEBUG_POOL
         printf("Dynamic alloc %d\n", pp->size );
 #endif
-        rc = jk_pool_dyn_alloc(p, size);
+        rc = jk_pool_dyn_alloc(env, p, size);
     }
 
     return rc;
 }
 
-static void *jk_pool_realloc(jk_pool_t *p, size_t sz,const void *old,
-                             size_t old_sz)
+static void *jk_pool_realloc(jk_env_t *env, jk_pool_t *p, size_t sz,
+                             const void *old, size_t old_sz)
 {
     void *rc;
 
     if(!p || (!old && old_sz)) {
         return NULL;
     }
-    rc = jk_pool_alloc(p, sz);
+    rc = jk_pool_alloc(env, p, sz);
     if(rc==NULL)
         return NULL;
 
@@ -246,7 +250,7 @@ static void *jk_pool_realloc(jk_pool_t *p, size_t sz,const void *old,
     return rc;
 }
 
-static void *jk_pool_strdup(jk_pool_t *p, const char *s)
+static void *jk_pool_strdup(jk_env_t *env, jk_pool_t *p, const char *s)
 {
     char *rc = NULL;
     if(s && p) {
@@ -256,7 +260,7 @@ static void *jk_pool_strdup(jk_pool_t *p, const char *s)
             return "";
         }
 
-        rc = jk_pool_alloc(p, size+1);
+        rc = jk_pool_alloc(env, p, size+1);
         if(rc) {
             memcpy(rc, s, size);
         }
@@ -281,7 +285,7 @@ static void *jk_pool_strdup(jk_pool_t *p, const char *s)
 }
 */
 
-static void *jk_pool_dyn_alloc(jk_pool_t *p, size_t size)
+static void *jk_pool_dyn_alloc(jk_env_t *env, jk_pool_t *p, size_t size)
 
 {
     void *rc = NULL;

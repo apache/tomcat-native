@@ -65,7 +65,7 @@
 #include "jk_objCache.h"
 
 static int 
-jk_objCache_put(jk_objCache_t *_this, void *obj)
+jk_objCache_put(jk_env_t *env, jk_objCache_t *_this, void *obj)
 {
     int rc;
     
@@ -98,18 +98,20 @@ jk_objCache_put(jk_objCache_t *_this, void *obj)
 }
 
 static int
-jk_objCache_init(jk_objCache_t *_this, int cacheSize ) {
+jk_objCache_init(jk_env_t *env, jk_objCache_t *_this, int cacheSize ) {
     int i;
 
     _this->ep_cache =
-        (void **)_this->pool->calloc(_this->pool, sizeof(void *) * cacheSize);
+        (void **)_this->pool->calloc(env, _this->pool,
+                                     sizeof(void *) * cacheSize);
 
     if( _this->ep_cache==NULL )
         return JK_FALSE;
     
     JK_INIT_CS(&(_this->cs), i);
     if (!i) {
-        _this->l->jkLog(_this->l, JK_LOG_ERROR, "objCache.create(): Can't init CS\n");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "objCache.create(): Can't init CS\n");
         return JK_FALSE;
     }
 
@@ -122,7 +124,7 @@ jk_objCache_init(jk_objCache_t *_this, int cacheSize ) {
 }
 
 static int  
-jk_objCache_destroy(jk_objCache_t *_this ) {
+jk_objCache_destroy(jk_env_t *env, jk_objCache_t *_this ) {
     int i;
 
     JK_DELETE_CS(&(_this->cs), i);
@@ -135,7 +137,7 @@ jk_objCache_destroy(jk_objCache_t *_this ) {
 
 
 static void * 
-jk_objCache_get(jk_objCache_t *_this )
+jk_objCache_get(jk_env_t *env, jk_objCache_t *_this )
 {
     int rc;
     void *ae=NULL;
@@ -162,10 +164,9 @@ jk_objCache_get(jk_objCache_t *_this )
     return NULL;
 }
 
-jk_objCache_t *jk_objCache_create(jk_pool_t *pool, jk_logger_t *l ) {
-    jk_objCache_t *_this=pool->calloc( pool, sizeof( jk_objCache_t ));
+jk_objCache_t *jk_objCache_create(jk_env_t *env, jk_pool_t *pool ) {
+    jk_objCache_t *_this=pool->calloc( env, pool, sizeof( jk_objCache_t ));
 
-    _this->l=l;
     _this->pool=pool;
     
     _this->get=jk_objCache_get;

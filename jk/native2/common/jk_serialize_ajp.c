@@ -100,17 +100,16 @@
  * XXX Add optional Key/Value set .
  *  
  */
-int jk_serialize_ping(jk_msg_t *msg,
-                      jk_endpoint_t  *ae)
+int jk_serialize_ping(jk_env_t *env, jk_msg_t *msg,
+                      jk_endpoint_t *ae)
 {
-    jk_logger_t *l=msg->l;
     int rc;
     
     /* To be on the safe side */
-    msg->reset(msg);
+    msg->reset(env, msg);
 
     /* SHUTDOWN CMD */
-    rc= msg->appendByte( msg, JK_AJP13_PING);
+    rc= msg->appendByte( env, msg, JK_AJP13_PING);
     if (rc!=JK_TRUE )
         return JK_FALSE;
 
@@ -170,123 +169,125 @@ AJPV13_REQUEST/AJPV14_REQUEST=
 
     Was: ajp_marshal_into_msgb
  */
-int jk_serialize_request13(jk_msg_t    *msg,
+int jk_serialize_request13(jk_env_t *env, jk_msg_t *msg,
                            jk_ws_service_t *s )
 {
     unsigned char method;
     int i;
     int headerCount;
-    jk_logger_t *l=msg->l;
 
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp_marshal_into_msgb\n");
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                  "Into ajp_marshal_into_msgb\n");
 
-    if (!jk_requtil_getMethodId(s->method, &method)) { 
-        l->jkLog(l, JK_LOG_ERROR,
-                 "Error ajp_marshal_into_msgb - No such method %s\n", s->method);
+    if (!jk_requtil_getMethodId(env, s->method, &method)) { 
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "Error ajp_marshal_into_msgb - No such method %s\n",
+                      s->method);
         return JK_FALSE;
     }
 
-    headerCount=s->headers_in->size(NULL, s->headers_in);
+    headerCount=s->headers_in->size(env, s->headers_in);
     
-    if (msg->appendByte(msg, JK_AJP13_FORWARD_REQUEST)  ||
-        msg->appendByte(msg, method)               ||
-        msg->appendString(msg, s->protocol)        ||
-        msg->appendString(msg, s->req_uri)         ||
-        msg->appendString(msg, s->remote_addr)     ||
-        msg->appendString(msg, s->remote_host)     ||
-        msg->appendString(msg, s->server_name)     ||
-        msg->appendInt(msg, (unsigned short)s->server_port) ||
-        msg->appendByte(msg, (unsigned char)(s->is_ssl)) ||
-        msg->appendInt(msg, (unsigned short)(headerCount))) {
+    if (msg->appendByte(env, msg, JK_AJP13_FORWARD_REQUEST)  ||
+        msg->appendByte(env, msg, method)               ||
+        msg->appendString(env, msg, s->protocol)        ||
+        msg->appendString(env, msg, s->req_uri)         ||
+        msg->appendString(env, msg, s->remote_addr)     ||
+        msg->appendString(env, msg, s->remote_host)     ||
+        msg->appendString(env, msg, s->server_name)     ||
+        msg->appendInt(env, msg, (unsigned short)s->server_port) ||
+        msg->appendByte(env, msg, (unsigned char)(s->is_ssl)) ||
+        msg->appendInt(env, msg, (unsigned short)(headerCount))) {
 
-        l->jkLog(l, JK_LOG_ERROR,
-                 "handle.request()  Error serializing the message head\n");
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "handle.request()  Error serializing the message head\n");
         return JK_FALSE;
     }
 
     for (i = 0 ; i < headerCount ; i++) {
         unsigned short sc;
 
-        char *name=s->headers_in->nameAt(NULL, s->headers_in, i);
+        char *name=s->headers_in->nameAt(env, s->headers_in, i);
 
-        if (jk_requtil_getHeaderId(name, &sc)) {
-            if (msg->appendInt(msg, sc)) {
-                l->jkLog(l, JK_LOG_ERROR,
-                         "handle.request() Error serializing header id\n");
+        if (jk_requtil_getHeaderId(env, name, &sc)) {
+            if (msg->appendInt(env, msg, sc)) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "handle.request() Error serializing header id\n");
                 return JK_FALSE;
             }
         } else {
-            if (msg->appendString(msg, name)) {
-                l->jkLog(l, JK_LOG_ERROR,
-                         "handle.request() Error serializing header name\n");
+            if (msg->appendString(env, msg, name)) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "handle.request() Error serializing header name\n");
                 return JK_FALSE;
             }
         }
         
-        if (msg->appendString(msg, s->headers_in->valueAt( NULL, s->headers_in, i))) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "handle.request() Error serializing header value\n");
+        if (msg->appendString(env, msg,
+                              s->headers_in->valueAt( env, s->headers_in, i))) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing header value\n");
             return JK_FALSE;
         }
     }
 
     if (s->remote_user) {
-        if (msg->appendByte(msg, SC_A_REMOTE_USER) ||
-            msg->appendString(msg, s->remote_user)) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "handle.request() Error serializing user name\n");
+        if (msg->appendByte(env, msg, SC_A_REMOTE_USER) ||
+            msg->appendString(env, msg, s->remote_user)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing user name\n");
             return JK_FALSE;
         }
     }
     if (s->auth_type) {
-        if (msg->appendByte(msg, SC_A_AUTH_TYPE) ||
-            msg->appendString(msg, s->auth_type)) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "handle.request() Error serializing auth type\n");
+        if (msg->appendByte(env, msg, SC_A_AUTH_TYPE) ||
+            msg->appendString(env, msg, s->auth_type)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing auth type\n");
             return JK_FALSE;
         }
     }
     if (s->query_string) {
-        if (msg->appendByte(msg, SC_A_QUERY_STRING) ||
-            msg->appendString(msg, s->query_string)) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "handle.request() Error serializing query string\n");
+        if (msg->appendByte(env, msg, SC_A_QUERY_STRING) ||
+            msg->appendString(env, msg, s->query_string)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing query string\n");
             return JK_FALSE;
         }
     }
     /* XXX This can be sent only on startup ( ajp14 ) */
      
     if (s->jvm_route) {
-        if (msg->appendByte(msg, SC_A_JVM_ROUTE) ||
-            msg->appendString(msg, s->jvm_route)) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "handle.request() Error serializing worker id\n");
+        if (msg->appendByte(env, msg, SC_A_JVM_ROUTE) ||
+            msg->appendString(env, msg, s->jvm_route)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing worker id\n");
             return JK_FALSE;
         }
     }
     
     if (s->ssl_cert_len) {
-        if (msg->appendByte(msg, SC_A_SSL_CERT) ||
-            msg->appendString(msg, s->ssl_cert)) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "handle.request() Error serializing SSL cert\n");
+        if (msg->appendByte(env, msg, SC_A_SSL_CERT) ||
+            msg->appendString(env, msg, s->ssl_cert)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing SSL cert\n");
             return JK_FALSE;
         }
     }
 
     if (s->ssl_cipher) {
-        if (msg->appendByte(msg, SC_A_SSL_CIPHER) ||
-            msg->appendString(msg, s->ssl_cipher)) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "handle.request() Error serializing SSL cipher\n");
+        if (msg->appendByte(env, msg, SC_A_SSL_CIPHER) ||
+            msg->appendString(env, msg, s->ssl_cipher)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing SSL cipher\n");
             return JK_FALSE;
         }
     }
     if (s->ssl_session) {
-        if (msg->appendByte(msg, SC_A_SSL_SESSION) ||
-            msg->appendString(msg, s->ssl_session)) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "handle.request() Error serializing SSL session\n");
+        if (msg->appendByte(env, msg, SC_A_SSL_SESSION) ||
+            msg->appendString(env, msg, s->ssl_session)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing SSL session\n");
             return JK_FALSE;
         }
     }
@@ -297,23 +298,23 @@ int jk_serialize_request13(jk_msg_t    *msg,
      * JFC removed: ae->proto == AJP14_PROTO
      */
     if (s->ssl_key_size != -1) {
-        if (msg->appendByte(msg, SC_A_SSL_KEY_SIZE) ||
-            msg->appendInt(msg, (unsigned short) s->ssl_key_size)) {
-            l->jkLog(l, JK_LOG_ERROR,
-                     "handle.request() Error serializing SSL key size\n");
+        if (msg->appendByte(env, msg, SC_A_SSL_KEY_SIZE) ||
+            msg->appendInt(env, msg, (unsigned short) s->ssl_key_size)) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "handle.request() Error serializing SSL key size\n");
             return JK_FALSE;
         }
     }
 
 
-    if (s->attributes->size( NULL, s->attributes) > 0) {
-        for (i = 0 ; i < s->attributes->size( NULL, s->attributes) ; i++) {
-            char *name=s->attributes->nameAt( NULL, s->attributes, i);
-            char *val=s->attributes->nameAt( NULL, s->attributes, i);
-            if (msg->appendByte(msg, SC_A_REQ_ATTRIBUTE)       ||
-                msg->appendString(msg, name ) ||
-                msg->appendString(msg, val)) {
-                l->jkLog(l, JK_LOG_ERROR,
+    if (s->attributes->size( env,  s->attributes) > 0) {
+        for (i = 0 ; i < s->attributes->size( env,  s->attributes) ; i++) {
+            char *name=s->attributes->nameAt( env,  s->attributes, i);
+            char *val=s->attributes->nameAt( env, s->attributes, i);
+            if (msg->appendByte(env, msg, SC_A_REQ_ATTRIBUTE) ||
+                msg->appendString(env, msg, name ) ||
+                msg->appendString(env, msg, val)) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
                          "handle.request() Error serializing attribute %s=%s\n",
                          name, val);
                 return JK_FALSE;
@@ -321,24 +322,24 @@ int jk_serialize_request13(jk_msg_t    *msg,
         }
     }
 
-    if (msg->appendByte(msg, SC_A_ARE_DONE)) {
-        l->jkLog(l, JK_LOG_ERROR,
+    if (msg->appendByte(env, msg, SC_A_ARE_DONE)) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                  "handle.request() Error serializing end marker\n");
         return JK_FALSE;
     }
     
-    l->jkLog(l, JK_LOG_INFO, "handle.request() request serialized\n");
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "handle.request() request serialized\n");
     return JK_TRUE;
 }
 
 
 /** The inital BODY chunk 
  */
-int jk_serialize_postHead(jk_msg_t   *msg,
+int jk_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
                           jk_ws_service_t  *r,
                           jk_endpoint_t *e)
 {
-    jk_logger_t *l=msg->l;
     int len = r->left_bytes_to_send;
 
     if(len > AJP13_MAX_SEND_BODY_SZ) {
@@ -349,14 +350,14 @@ int jk_serialize_postHead(jk_msg_t   *msg,
         return JK_TRUE;
     }
 
-    len=msg->appendFromServer( msg, r, e, len );
+    len=msg->appendFromServer( env, msg, r, e, len );
     /* the right place to add file storage for upload */
     if (len >= 0) {
         r->content_read += len;
         return JK_TRUE;
     }                  
             
-    l->jkLog(l, JK_LOG_ERROR,
+    env->l->jkLog(env, env->l, JK_LOG_ERROR,
              "handler.marshapPostHead() - error len=%d\n", len);
     return JK_FALSE;	    
 }
@@ -370,23 +371,23 @@ int jk_serialize_postHead(jk_msg_t   *msg,
  * +-----------------------+
  *
  */
-int jk_serialize_shutdown(jk_msg_t *msg,
+int jk_serialize_shutdown(jk_env_t *env, jk_msg_t *msg,
                           jk_ws_service_t  *r)
 {
-    jk_logger_t *l=msg->l;
     int rc;
     
-    l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_marshal_shutdown_into_msgb\n");
+    env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                  "Into ajp14_marshal_shutdown_into_msgb\n");
 
     /* To be on the safe side */
-    msg->reset(msg);
+    msg->reset(env, msg);
 
     /* SHUTDOWN CMD */
-    rc= msg->appendByte( msg, JK_AJP13_SHUTDOWN);
+    rc= msg->appendByte( env, msg, JK_AJP13_SHUTDOWN);
     if (rc!=JK_TRUE )
         return JK_FALSE;
 
-	return JK_TRUE;
+    return JK_TRUE;
 }
 
 
