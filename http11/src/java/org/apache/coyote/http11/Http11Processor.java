@@ -820,7 +820,7 @@ public class Http11Processor implements Processor, ActionHook {
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE) {
 
-            if (remoteAddr == null) {
+            if ((remoteAddr == null) && (socket != null)) {
                 remoteAddr = socket.getInetAddress().getHostAddress();
                 request.remoteAddr().setString(remoteAddr);
             }
