@@ -114,6 +114,19 @@ SOURCE=..\common\jk_pool.c
 SOURCE=..\common\jk_util.c
 # End Source File
 # End Group
+
+SOURCE=..\common\jk_ajp14.c
+# End Source File
+# End Group
+
+SOURCE=..\common\jk_ajp14_worker.c
+# End Source File
+# End Group
+
+SOURCE=..\common\jk_md5.c
+# End Source File
+# End Group
+
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
@@ -150,6 +163,19 @@ SOURCE=..\common\jk_service.h
 SOURCE=..\common\jk_util.h
 # End Source File
 # End Group
+
+SOURCE=..\common\jk_ajp14.h
+# End Source File
+# End Group
+
+SOURCE=..\common\jk_ajp14_worker.h
+# End Source File
+# End Group
+
+SOURCE=..\common\jk_md5.h
+# End Source File
+# End Group
+
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
