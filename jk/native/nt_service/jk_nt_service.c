@@ -125,7 +125,8 @@ typedef struct jk_tomcat_startup_data jk_tomcat_startup_data_t;
 static void WINAPI service_ctrl(DWORD dwCtrlCode);
 static void WINAPI service_main(DWORD dwArgc, 
                                 char **lpszArgv);
-static void install_service(char *name, 
+static void install_service(char *name,
+                            char *dname,
                             char *user, 
                             char *password, 
                             char *deps, 
@@ -172,6 +173,7 @@ static void usage_message(const char *name)
     printf("%s -i <service name> {optional params} <config properties file>\n", name);
     printf("    Optional parameters\n");
     printf("        -u <user name> - In the form DomainName\\UserName (.\\UserName for local)\n");
+    printf("        -n <service display name> - In quotes if contains non-lphanumeric chars\n");
     printf("        -p <user password>\n");
     printf("        -a - Set startup type to automatic\n");
     printf("        -d <service dependency> - Can be entered multiple times\n\n");
@@ -195,6 +197,7 @@ void main(int argc, char **argv)
     int err;
     int count;
     int iAction = acNoAction;
+    char *pServiceDisplayName = NULL;
     char *pServiceName = NULL;
     char *pUserName = NULL;
     char *pPassword = NULL;
@@ -251,6 +254,8 @@ void main(int argc, char **argv)
                         pMachine = argv[i+1];
                     } else if(0 == stricmp("a", cmd)) {
                         bAutomatic = TRUE;
+                    } else if(0 == stricmp("n", cmd)) {
+                        pServiceDisplayName = argv[i+1];
                     } else if(0 == stricmp("d", cmd)) {
                         memcpy(strDependancy+count, argv[i+1], strlen(argv[i+1]));
                         count+= strlen(argv[i+1])+1;
@@ -259,7 +264,11 @@ void main(int argc, char **argv)
             }
             switch (iAction) {
             case acInstall:
-                install_service(pServiceName, pUserName, pPassword, strDependancy, bAutomatic, argv[i-1]);
+                if (pServiceDisplayName == NULL) {
+                    pServiceDisplayName = pServiceName;
+                }
+                install_service(pServiceName, pServiceDisplayName, pUserName,
+                                pPassword, strDependancy, bAutomatic, argv[i-1]);
                 return;
             case acRemove:
                 remove_service(pServiceName);
@@ -393,6 +402,7 @@ typedef WINADVAPI BOOL (WINAPI * pfnChangeServiceConfig2_t)
 
 
 void install_service(char *name, 
+                     char *dname, 
                      char *user, 
                      char *password, 
                      char *deps, 
@@ -456,7 +466,7 @@ void install_service(char *name,
 
         schService = CreateService(schSCManager, // SCManager database
                                    szTrueName,   // name of service
-                                   name,         // name to display
+                                   dname,         // name to display
                                    SERVICE_ALL_ACCESS, // desired access
                                    SERVICE_WIN32_OWN_PROCESS,  // service type
                                    bAutomatic ? SERVICE_AUTO_START : SERVICE_DEMAND_START,       // start type
