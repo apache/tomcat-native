@@ -57,7 +57,7 @@
 
 /***************************************************************************
  * Description: Context Stuff (Autoconf)                                   *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
+ * Author:      Henri Gomez <hgomez@apache.org>                            *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 #ifndef JK_CONTEXT_H

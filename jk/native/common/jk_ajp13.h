@@ -127,6 +127,18 @@ extern "C" {
 #define JK_AJP13_SHUTDOWN           (unsigned char)7
 
 /*
+ * Check if the container is alive
+ */
+#define AJP13_PING_REQUEST          (unsigned char)8
+
+/*
+ * Reply from the container to alive request
+ */
+#define AJP13_PONG_REPLY            (unsigned char)9
+
+
+
+/*
  * Functions
  */
 

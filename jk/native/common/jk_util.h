@@ -58,8 +58,8 @@
 /***************************************************************************
  * Description: Various utility functions                                  *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
+ * Author:      Henri Gomez <hgomez@apache.org>                            *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 #ifndef _JK_UTIL_H
 #define _JK_UTIL_H
@@ -121,6 +121,18 @@ int jk_get_worker_socket_keepalive(jk_map_t *m,
 int jk_get_worker_cache_timeout(jk_map_t *m,
                              const char *wname,
                              int def);
+
+int jk_get_worker_connect_timeout(jk_map_t *m,
+                                  const char *wname,
+                                  int def);
+
+int jk_get_worker_reply_timeout(jk_map_t *m,
+                                const char *wname,
+                                 int def);
+
+int jk_get_prepost_timeout(jk_map_t *m,
+                           const char *wname,
+                           int def);
 
 char * jk_get_worker_secret_key(jk_map_t *m,
                                 const char *wname);

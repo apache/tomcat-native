@@ -62,8 +62,8 @@
  *              JVM connection point                                       *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  * Author:      Dan Milstein <danmil@shore.net>                            *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
+ * Author:      Henri Gomez <hgomez@apache.org>                            *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 #ifndef JK_SERVICE_H

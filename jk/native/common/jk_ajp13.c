@@ -58,7 +58,7 @@
 /***************************************************************************
  * Description: Experimental bi-directionl protocol handler.               *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
+ * Author:      Henri Gomez <hgomez@apache.org>                            *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 

@@ -60,8 +60,8 @@
  *              See ../common/jk_service.h for general mod_jk info         *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  *              Dan Milstein <danmil@shore.net>                            *
- *              Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
+ *              Henri Gomez <hgomez@apache.org>                            *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 /*

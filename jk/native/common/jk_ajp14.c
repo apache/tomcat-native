@@ -58,8 +58,8 @@
 
 /***************************************************************************
  * Description: Next generation bi-directional protocol handler.           *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
+ * Author:      Henri Gomez <hgomez@apache.org>                            *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 

@@ -58,8 +58,8 @@
 /***************************************************************************
  * Description: common stuff for bi-directional protocols ajp13/ajp14.     *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
+ * Author:      Henri Gomez <hgomez@apache.org>                            *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 
@@ -648,6 +648,82 @@ static void ajp_reuse_connection(ajp_endpoint_t *ae,
     }
 }
 
+/*
+ * Wait input event on ajp_endpoint for timeout ms
+ */
+int ajp_is_input_event(ajp_endpoint_t *ae,
+                       int            timeout,
+                       jk_logger_t   *l)
+{
+	fd_set  rset; 
+	fd_set  eset; 
+	struct  timeval tv;
+	int		rc;
+	
+	FD_ZERO(&rset);
+	FD_SET(ae->sd, &rset);
+	FD_SET(ae->sd, &eset);
+
+	tv.tv_sec  = timeout / 1000;
+	tv.tv_usec = (timeout % 1000) * 1000;
+
+	rc = select(ae->sd + 1, &rset, NULL, &eset, &tv);
+      
+    if ((rc < 1) || (FD_ISSET(ae->sd, &eset)))
+	{
+		jk_log(l, JK_LOG_ERROR, "Error ajp13:is_input_event: error during select [%d]\n", rc);
+		return JK_FALSE;
+	}
+	
+	return ((FD_ISSET(ae->sd, &rset)) ? JK_TRUE : JK_FALSE) ;
+}
+
+                         
+/*
+ * Handle the PING/PONG initial query
+ */
+int ajp_handle_ping_pong(ajp_endpoint_t *ae,
+						 int 			timeout,
+                         jk_logger_t    *l)
+{
+	int	cmd;
+	jk_msg_buf_t * msg;
+
+	msg = jk_b_new(&ae->pool);
+	jk_b_set_buffer_size(msg, 16);	/* 16 is way too large but I'm lazy :-) */
+	jk_b_reset(msg);
+	jk_b_append_byte(msg, AJP13_PING_REQUEST); 
+
+	/* Send Ping query */		
+	if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE)
+	{
+		jk_log(l, JK_LOG_ERROR, "Error ajp13:ping: can't send ping query\n");
+		return JK_FALSE;
+	}
+		
+	/* wait for Pong reply for timeout milliseconds
+	 */
+	if (ajp_is_input_event(ae, timeout, l) == JK_FALSE)
+	{
+		jk_log(l, JK_LOG_ERROR, "Error ajp13:ping: timeout in reply pong\n");
+		return JK_FALSE;
+	}
+		
+	/* Read and check for Pong reply 
+	 */
+	if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE)
+	{
+		jk_log(l, JK_LOG_ERROR, "Error ajp13:ping: awaited reply pong, not received\n");
+		return JK_FALSE;
+	}
+	
+	if ((cmd = jk_b_get_byte(msg)) != AJP13_PONG_REPLY) {
+		jk_log(l, JK_LOG_ERROR, "Error ajp13:ping: awaited reply pong, received %d instead\n", cmd);
+		return JK_FALSE;
+	}
+
+	return JK_TRUE;
+}
 
 int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
                             jk_logger_t    *l)
@@ -669,6 +745,10 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
             if (ae->worker->logon != NULL)
                 return (ae->worker->logon(ae, l));
 
+			/* should we send a PING to validate connection ? */
+			if (ae->worker->connect_timeout != 0)
+				return (ajp_handle_ping_pong(ae, ae->worker->connect_timeout, l));
+				
             return JK_TRUE;
         }
     }
@@ -922,25 +1002,42 @@ static int ajp_send_request(jk_endpoint_t *e,
                             ajp_endpoint_t *ae,
                             ajp_operation_t *op)
 {
+	int err = 0;
+	
     /* Up to now, we can recover */
     op->recoverable = JK_TRUE;
 
     /*
      * First try to reuse open connections...
     */
-    while ((ae->sd > 0) &&
-           !ajp_connection_tcp_send_message(ae, op->request, l)) {
-        jk_log(l, JK_LOG_INFO,
-               "Error sending request try another pooled connection\n");
-        jk_close_socket(ae->sd);
-        ae->sd = -1;
-        ajp_reuse_connection(ae, l);
-    }
+    while ((ae->sd > 0))
+    {
+    	err = 0;
+    	
+    	/* handle ping/pong before request if timeout is set */
+		if (ae->worker->prepost_timeout != 0)
+		{
+			if (ajp_handle_ping_pong(ae, ae->worker->prepost_timeout, l) == JK_FALSE)
+				err++;
+		}	
 
+        if (err || ajp_connection_tcp_send_message(ae, op->request, l) == JK_FALSE) {
+	        jk_log(l, JK_LOG_INFO,
+	               "Error sending request try another pooled connection\n");
+	        jk_close_socket(ae->sd);
+	        ae->sd = -1;
+	        ajp_reuse_connection(ae, l);
+	        break;
+	    }
+	}
+	
     /*
      * If we failed to reuse a connection, try to reconnect.
      */
     if (ae->sd < 0) {
+
+    	/* no need to handle ping/pong here since it should be at connection time */
+
         if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
             /*
              * After we are connected, each error that we are going to
@@ -1133,6 +1230,19 @@ static int ajp_get_reply(jk_endpoint_t *e,
     while(1) {
         int rc = 0;
 
+		/* If we set a reply timeout, check it something is available */
+		if (p->worker->reply_timeout != 0)
+		{
+			if (ajp_is_input_event(p, p->worker->reply_timeout, l) == JK_FALSE)
+			{
+	            jk_log(l, JK_LOG_ERROR,
+	                   "Timeout will waiting reply from tomcat. "
+	                   "Tomcat is down, stopped or network problems.\n");
+
+				return JK_FALSE;
+			}
+		}
+		
         if(!ajp_connection_tcp_get_message(p, op->reply, l)) {
             jk_log(l, JK_LOG_ERROR,
                    "Error reading reply from tomcat. "
@@ -1413,17 +1523,53 @@ int ajp_init(jk_worker_t *pThis,
         int cache_sz = jk_get_worker_cache_size(props, p->name, cache);
         int socket_timeout =
            jk_get_worker_socket_timeout(props, p->name, AJP13_DEF_TIMEOUT);
-        int socket_keepalive =
-            jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
-        int cache_timeout =
-            jk_get_worker_cache_timeout(props, p->name, AJP_DEF_CACHE_TIMEOUT);
 
         jk_log(l, JK_LOG_DEBUG,
                "In jk_worker_t::init, setting socket timeout to %d\n",
                socket_timeout);
+
+        int socket_keepalive =
+            jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
+
+        jk_log(l, JK_LOG_DEBUG,
+               "In jk_worker_t::init, setting socket keepalive to %d\n",
+               socket_keepalive);
+
+        int cache_timeout =
+            jk_get_worker_cache_timeout(props, p->name, AJP_DEF_CACHE_TIMEOUT);
+
+        jk_log(l, JK_LOG_DEBUG,
+               "In jk_worker_t::init, setting cache timeout to %d\n",
+               cache_timeout);
+
+        int connect_timeout =
+            jk_get_worker_connect_timeout(props, p->name, AJP_DEF_CONNECT_TIMEOUT);
+
+    	jk_log(l, JK_LOG_DEBUG,
+        	   "In jk_worker_t::init, setting connect timeout to %d\n",
+           		connect_timeout);
+
+        int reply_timeout =
+            jk_get_worker_reply_timeout(props, p->name, AJP_DEF_REPLY_TIMEOUT);
+
+        jk_log(l, JK_LOG_DEBUG,
+	           "In jk_worker_t::init, setting reply timeout to %d\n",
+    	       reply_timeout);
+
+        int prepost_timeout =
+            jk_get_worker_reply_timeout(props, p->name, AJP_DEF_PREPOST_TIMEOUT);
+
+        jk_log(l, JK_LOG_DEBUG,
+	           "In jk_worker_t::init, setting prepost timeout to %d\n",
+    	       prepost_timeout);
+
         p->socket_timeout = socket_timeout;
         p->keepalive = socket_keepalive;
         p->cache_timeout = cache_timeout;
+        p->connect_timeout = connect_timeout;
+        p->reply_timeout = reply_timeout;
+        p->prepost_timeout = prepost_timeout;
+        
         /* 
          *  Need to initialize secret here since we could return from inside
          *  of the following loop

@@ -102,7 +102,7 @@
 
 /***************************************************************************
  * Description: MD5 encoding wrapper                                       *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
+ * Author:      Henri Gomez <hgomez@apache.org>                            *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 

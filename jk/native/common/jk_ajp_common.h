@@ -58,8 +58,8 @@
 /***************************************************************************
  * Description: common stuff for bi-directional protocol ajp13/ajp14.      *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
- * Version:     $Revision$                                           *
+ * Author:      Henri Gomez <hgomez@apache.org>                            *
+ * Version:     $Revision$                                          *
  ***************************************************************************/
 
 #ifndef JK_AJP_COMMON_H
@@ -229,7 +229,9 @@ extern "C" {
 #define AJP_HEADER_SZ_LEN         (2)
 #define CHUNK_BUFFER_PAD          (12)
 #define AJP_DEF_CACHE_TIMEOUT     (15)
-
+#define AJP_DEF_CONNECT_TIMEOUT   (0)		/* NO CONNECTION TIMEOUT => NO PING/PONG */
+#define AJP_DEF_REPLY_TIMEOUT     (0)		/* NO REPLY TIMEOUT                      */
+#define AJP_DEF_PREPOST_TIMEOUT   (0)		/* NO PREPOST TIMEOUT => NO PING/PONG    */
 
 struct jk_res_data {
     int         status;
@@ -298,6 +300,13 @@ struct ajp_worker {
     * Handle Cache Timeouts
     */
     unsigned cache_timeout;
+
+	/*
+	* Handle Connection/Reply Timeouts
+	*/
+	unsigned connect_timeout;	/* connect ping/pong delay in ms (0 means disabled) 							*/
+	unsigned reply_timeout;	    /* reply timeout delay in ms (0 means disabled)     							*/
+	unsigned prepost_timeout;	/* before sending a request ping/pong timeout delay in ms (0 means disabled)    */
 }; 
  
 
@@ -315,7 +324,7 @@ struct ajp_endpoint {
     int sd;
     int reuse;
     jk_endpoint_t endpoint;
-
+	
     unsigned left_bytes_to_send;
 
     /* time of the last request

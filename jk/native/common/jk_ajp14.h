@@ -57,7 +57,7 @@
 
 /***************************************************************************
  * Description: Next generation bi-directional protocol handler.           *
- * Author:      Henri Gomez <hgomez@slib.fr>                               *
+ * Author:      Henri Gomez <hgomez@apache.org>                            *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 #ifndef JK_AJP14_H
