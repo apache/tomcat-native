@@ -290,7 +290,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         jk_b_reset(s->reco_buf);
         s->reco_status = RECO_INITED;
         jk_log(l, JK_LOG_DEBUG,
-               __FUNCTION__ "::service sticky_session=%d\n",
+               "service sticky_session=%d\n",
                p->worker->sticky_session);
 
         while (1) {
@@ -306,7 +306,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 rc = rec->w->get_endpoint(rec->w, &end, l);
 
                 jk_log(l, JK_LOG_DEBUG,
-                       __FUNCTION__ "::service worker=%s jvm_route=%s rc=%d\n",
+                       "service worker=%s jvm_route=%s rc=%d\n",
                        rec->name, s->jvm_route, rc);
 
                 if (rc && end) {
@@ -345,7 +345,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  * another worker... Lets try to do that.
                  */
                 jk_log(l, JK_LOG_DEBUG,
-                       __FUNCTION__ "::recoverable error... will try to recover on other host\n");
+                       "recoverable error... will try to recover on other host\n");
             }
             else {
                 /* NULL record, no more workers left ... */

@@ -103,34 +103,34 @@ int wc_create_worker(const char *name,
         *rc = NULL;
 
         if (!fac) {
-            jk_log(l, JK_LOG_ERROR, __FUNCTION__ " NULL factory for %s\n",
+            jk_log(l, JK_LOG_ERROR, "NULL factory for %s\n",
                    type);
             return JK_FALSE;
         }
 
         jk_log(l, JK_LOG_DEBUG,
-               __FUNCTION__ " about to create instance %s of %s\n", name,
+               "about to create instance %s of %s\n", name,
                type);
 
         if (!fac(&w, name, l) || !w) {
             jk_log(l, JK_LOG_ERROR,
-                   __FUNCTION__ " factory for %s failed for %s\n", type,
+                   "factory for %s failed for %s\n", type,
                    name);
             return JK_FALSE;
         }
 
         jk_log(l, JK_LOG_DEBUG,
-               __FUNCTION__ " about to validate and init %s\n", name);
+               "about to validate and init %s\n", name);
         if (!w->validate(w, init_data, we, l)) {
             w->destroy(&w, l);
             jk_log(l, JK_LOG_ERROR,
-                   __FUNCTION__ " validate failed for %s\n", name);
+                   "validate failed for %s\n", name);
             return JK_FALSE;
         }
 
         if (!w->init(w, init_data, we, l)) {
             w->destroy(&w, l);
-            jk_log(l, JK_LOG_ERROR, __FUNCTION__ " init failed for %s\n",
+            jk_log(l, JK_LOG_ERROR, "init failed for %s\n",
                    name);
             return JK_FALSE;
         }
@@ -179,7 +179,7 @@ static int build_worker_map(jk_map_t *init_data,
         jk_worker_t *w = NULL;
 
         jk_log(l, JK_LOG_DEBUG,
-               __FUNCTION__ " creating worker %s\n", worker_list[i]);
+               "creating worker %s\n", worker_list[i]);
 
         if (wc_create_worker(worker_list[i], init_data, &w, we, l)) {
             jk_worker_t *oldw = NULL;
@@ -189,7 +189,7 @@ static int build_worker_map(jk_map_t *init_data,
             }
 
             jk_log(l, JK_LOG_DEBUG,
-                   __FUNCTION__ " removing old %s worker \n",
+                   "removing old %s worker \n",
                    worker_list[i]);
             if (oldw) {
                 oldw->destroy(&oldw, l);
@@ -197,7 +197,7 @@ static int build_worker_map(jk_map_t *init_data,
         }
         else {
             jk_log(l, JK_LOG_ERROR,
-                   __FUNCTION__ " failed to create worker%s\n",
+                   "failed to create worker%s\n",
                    worker_list[i]);
             return JK_FALSE;
         }

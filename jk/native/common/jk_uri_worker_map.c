@@ -142,8 +142,7 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
                                    init_data, l);
     }
 
-    jk_log(l, JK_LOG_ERROR,
-           __FUNCTION__ "::uri_worker_map_alloc, NULL parameters\n");
+    JK_LOG_NULL_PARAMS(l);
 
     return JK_FALSE;
 }
@@ -160,8 +159,7 @@ int uri_worker_map_free(jk_uri_worker_map_t **uw_map, jk_logger_t *l)
         return JK_TRUE;
     }
     else
-        jk_log(l, JK_LOG_ERROR,
-               __FUNCTION__ "::uri_worker_map_free, NULL parameters\n");
+        JK_LOG_NULL_PARAMS(l);
 
     return JK_FALSE;
 }
@@ -215,7 +213,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 
     if (!uwr) {
         jk_log(l, JK_LOG_ERROR,
-               "jk_uri_worker_map_t::uri_worker_map_add, can't alloc map entry\n");
+               "can't alloc map entry\n");
         return JK_FALSE;
     }
 
@@ -224,7 +222,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 
     if (!uri || !worker) {
         jk_log(l, JK_LOG_ERROR,
-               "jk_uri_worker_map_t::uri_worker_map_add, can't alloc uri/worker strings\n");
+               "can't alloc uri/worker strings\n");
         return JK_FALSE;
     }
 
@@ -236,7 +234,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 
             if (!uwr->uri) {
                 jk_log(l, JK_LOG_ERROR,
-                       "jk_uri_worker_map_t::uri_worker_map_add, can't alloc uri string\n");
+                       "can't alloc uri string\n");
                 return JK_FALSE;
             }
 
@@ -256,7 +254,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                     uwr->suffix = asterisk + 2;
                     uwr->match_type = MATCH_TYPE_CONTEXT_PATH;
                     jk_log(l, JK_LOG_DEBUG,
-                           "Into jk_uri_worker_map_t::uri_worker_map_open, "
                            "general context path rule %s*%s=%s was added\n",
                            uri, asterisk + 2, worker);
                 }
@@ -268,7 +265,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                     uwr->suffix = asterisk + 3;
                     uwr->match_type = MATCH_TYPE_SUFFIX;
                     jk_log(l, JK_LOG_DEBUG,
-                           "Into jk_uri_worker_map_t::uri_worker_map_open, "
                            "suffix rule %s.%s=%s was added\n",
                            uri, asterisk + 3, worker);
                 }
@@ -280,7 +276,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                     uwr->suffix = asterisk + 2;
                     uwr->match_type = MATCH_TYPE_GENERAL_SUFFIX;
                     jk_log(l, JK_LOG_DEBUG,
-                           "Into jk_uri_worker_map_t::uri_worker_map_open, "
                            "general suffix rule %s*%s=%s was added\n",
                            uri, asterisk + 2, worker);
                 }
@@ -292,7 +287,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                     uwr->suffix = NULL;
                     uwr->match_type = MATCH_TYPE_CONTEXT;
                     jk_log(l, JK_LOG_DEBUG,
-                           "Into jk_uri_worker_map_t::uri_worker_map_open, "
                            "match rule %s=%s was added\n", uri, worker);
                 }
             }
@@ -304,7 +298,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                 uwr->suffix = NULL;
                 uwr->match_type = MATCH_TYPE_EXACT;
                 jk_log(l, JK_LOG_DEBUG,
-                       "Into jk_uri_worker_map_t::uri_worker_map_open, exact rule %s=%s was added\n",
+                       "exact rule %s=%s was added\n",
                        uri, worker);
             }
 
@@ -317,7 +311,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
             uwr->suffix = NULL;
             uwr->match_type = MATCH_TYPE_EXACT;
             jk_log(l, JK_LOG_DEBUG,
-                   "Into jk_uri_worker_map_t::uri_worker_map_open, exact rule %s=%s was added\n",
+                   "exact rule %s=%s was added\n",
                    uri, worker);
         }
         uwr->ctxt_len = strlen(uwr->context);
@@ -330,7 +324,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
          * not arrive here when using Apache.
          */
         jk_log(l, JK_LOG_ERROR,
-               "jk_uri_worker_map_t::uri_worker_map_add, invalid context %s\n",
+               "invalid context %s\n",
                uri);
         return JK_FALSE;
     }
@@ -367,7 +361,7 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
         sz = jk_map_size(init_data);
 
         jk_log(l, JK_LOG_DEBUG,
-               "jk_uri_worker_map_t::uri_worker_map_open, rule map size is %d\n",
+               "rule map size is %d\n",
                sz);
 
         if (sz > 0) {
@@ -383,19 +377,19 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
 
             if (i == sz) {
                 jk_log(l, JK_LOG_DEBUG,
-                       "Into jk_uri_worker_map_t::uri_worker_map_open, there are %d rules\n",
+                       "there are %d rules\n",
                        uw_map->size);
             }
             else {
                 jk_log(l, JK_LOG_ERROR,
-                       "jk_uri_worker_map_t::uri_worker_map_open, There was a parsing error\n");
+                       "Parsing error\n");
                 rc = JK_FALSE;
             }
         }
 
         if (rc == JK_FALSE) {
             jk_log(l, JK_LOG_ERROR,
-                   "jk_uri_worker_map_t::uri_worker_map_open, there was an error, freing buf\n");
+                   "there was an error, freing buf\n");
             jk_close_pool(&uw_map->p);
             jk_close_pool(&uw_map->tp);
         }
@@ -428,9 +422,7 @@ int uri_worker_map_close(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
         return JK_TRUE;
     }
 
-    jk_log(l, JK_LOG_ERROR,
-           "jk_uri_worker_map_t::uri_worker_map_close, NULL parameter\n");
-
+    JK_LOG_NULL_PARAMS(l);
     return JK_FALSE;
 }
 
@@ -487,9 +479,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             if (0 == strncmp(uwr->context, uri, uwr->ctxt_len)) {
                 if (MATCH_TYPE_EXACT == uwr->match_type) {
                     if (strlen(uri) == uwr->ctxt_len) {
-                        jk_log(l,
-                               JK_LOG_DEBUG,
-                               "jk_uri_worker_map_t::map_uri_to_worker, "
+                        jk_log(l, JK_LOG_DEBUG,
                                "Found an exact match %s -> %s\n",
                                uwr->worker_name, uwr->context);
                         return uwr->worker_name;
@@ -497,9 +487,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                 }
                 else if (MATCH_TYPE_CONTEXT == uwr->match_type) {
                     if (uwr->ctxt_len > longest_match) {
-                        jk_log(l,
-                               JK_LOG_DEBUG,
-                               "jk_uri_worker_map_t::map_uri_to_worker, "
+                        jk_log(l, JK_LOG_DEBUG,
                                "Found a context match %s -> %s\n",
                                uwr->worker_name, uwr->context);
                         longest_match = uwr->ctxt_len;
@@ -511,9 +499,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     if (suffix_start >= 0
                         && 0 == strcmp(uri + suffix_start, uwr->suffix)) {
                         if (uwr->ctxt_len >= longest_match) {
-                            jk_log(l,
-                                   JK_LOG_DEBUG,
-                                   "jk_uri_worker_map_t::map_uri_to_worker, "
+                            jk_log(l, JK_LOG_DEBUG,
                                    "Found a general suffix match %s -> *%s\n",
                                    uwr->worker_name, uwr->suffix);
                             longest_match = uwr->ctxt_len;
@@ -529,9 +515,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                             strncmp(suffix_path, uwr->suffix,
                                     strlen(uwr->suffix))) {
                             if (uwr->ctxt_len >= longest_match) {
-                                jk_log(l,
-                                       JK_LOG_DEBUG,
-                                       "jk_uri_worker_map_t::map_uri_to_worker, "
+                                jk_log(l, JK_LOG_DEBUG,
                                        "Found a general context path match %s -> *%s\n",
                                        uwr->worker_name, uwr->suffix);
                                 longest_match = uwr->ctxt_len;
@@ -557,9 +541,8 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                         if (0 == strcmp(suffix, uwr->suffix)) {
 #endif
                             if (uwr->ctxt_len >= longest_match) {
-                                jk_log(l,
-                                       JK_LOG_DEBUG,
-                                       "jk_uri_worker_map_t::map_uri_to_worker, Found a suffix match %s -> *.%s\n",
+                                jk_log(l, JK_LOG_DEBUG,
+                                       "Found a suffix match %s -> *.%s\n",
                                        uwr->worker_name, uwr->suffix);
                                 longest_match = uwr->ctxt_len;
                                 best_match = i;
@@ -586,15 +569,14 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 
             if (fraud >= 0) {
                 jk_log(l, JK_LOG_EMERG,
-                       "In jk_uri_worker_map_t::map_uri_to_worker, found a security fraud in '%s'\n",
+                       "Found a security fraud in '%s'\n",
                        uri);
                 return uw_map->maps[fraud]->worker_name;
             }
         }
     }
     else {
-        jk_log(l, JK_LOG_ERROR,
-               __FUNCTION__ "::map_uri_to_worker, wrong parameters\n");
+        jk_log(l, JK_LOG_ERROR, "wrong parameters\n");
     }
 
     JK_TRACE_EXIT(l);

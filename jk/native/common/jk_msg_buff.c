@@ -385,13 +385,14 @@ int jk_b_get_bytes(jk_msg_buf_t *msg, unsigned char *buf, int len)
  */
 void jk_dump_buff(jk_logger_t *l,
                   const char *file,
-                  int line, int level, char *what, jk_msg_buf_t *msg)
+                  int line, const char *funcname,
+                  int level, char *what, jk_msg_buf_t *msg)
 {
 #ifdef USE_ALSO_BODY
-    jk_log(l, file, line, level, "%s #%d %.*s\n",
+    jk_log(l, file, line, funcname, level, "%s #%d %.*s\n",
            what, jk_b_get_len(msg), jk_b_get_len(msg), jk_b_get_buff(msg));
 #else
-    jk_log(l, file, line, level, "%s #%d\n", what, jk_b_get_len(msg));
+    jk_log(l, file, line, funcname, level, "%s #%d\n", what, jk_b_get_len(msg));
 #endif
 }
 
