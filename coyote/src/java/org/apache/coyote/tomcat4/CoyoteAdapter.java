@@ -277,12 +277,19 @@ final class CoyoteAdapter
             request.setServerName(req.serverName().toString());
         }
 
+        // URI decoding
+        req.decodedURI().duplicate(req.requestURI());
+        req.getURLDecoder().convert(req.decodedURI(), true);
+        req.decodedURI().setEncoding("UTF-8");
+
+        // Normalize decoded URI
         if (!normalize(req.decodedURI())) {
             res.setStatus(400);
             res.setMessage("Invalid URI");
             throw new IOException("Invalid URI");
         }
 
+        // Parse session Id
         parseSessionId(req, request);
 
         // Additional URI normalization and validation is needed for security 
