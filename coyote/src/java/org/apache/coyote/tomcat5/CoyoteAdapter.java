@@ -383,6 +383,11 @@ final class CoyoteAdapter
                     " /Value: " + scookie.getValue(),ex);
             }
         }
+        if( idx < count ) {
+            Cookie [] ncookies = new Cookie[idx];
+            System.arraycopy(cookies, 0, ncookies, 0, idx);
+            cookies = ncookies;
+        }
 
         request.setCookies(cookies);
 
