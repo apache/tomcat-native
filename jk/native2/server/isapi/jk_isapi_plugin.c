@@ -227,10 +227,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 		  )
 		)
 #else
-	if (is_inited &&
-         (((SF_NOTIFY_PREPROC_HEADERS == dwNotificationType) && !iis5) 
-		  )
-		)
+	if (is_inited && (SF_NOTIFY_PREPROC_HEADERS == dwNotificationType))
 #endif
 	{ 
         char uri[INTERNET_MAX_URL_LENGTH]; 
