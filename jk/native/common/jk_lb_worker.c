@@ -410,7 +410,25 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
     int r;
 
     JK_TRACE_ENTER(l);
-    if (p->s->sticky_session) {
+    if (p->num_of_workers == 1) {
+        /* No need to find the best worker
+         * if there is a single one
+         */
+        if (p->lb_workers[0].s->in_error_state &&
+            !p->lb_workers[0].s->is_disabled) {
+            retry_worker(&p->lb_workers[0], p->s->recover_wait_time, l);
+        }
+        if (!p->lb_workers[0].s->in_error_state) {
+            p->lb_workers[0].r = &(p->lb_workers[0].s->name[0]);
+            JK_TRACE_EXIT(l);
+            return &p->lb_workers[0];
+        }
+        else {
+            JK_TRACE_EXIT(l);
+            return NULL;
+        }
+    }
+    else if (p->s->sticky_session) {
         sessionid = get_sessionid(s);
     }
     JK_ENTER_CS(&(p->cs), r);
