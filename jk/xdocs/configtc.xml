@@ -1,0 +1,207 @@
+<?xml version="1.0"?>
+<document>
+  <properties>
+    <title>Configuration in the Tomcat</title>
+    <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
+  </properties>
+
+<section name="Intro">
+<p>
+  This document describes the configuration file used by mod_jk2 on the
+  Tomcat site. Its default name is ${jkHome}/conf/jk2.properties,
+  where ${jkHome} is the well known ${catalina.base} property.
+</p>
+</section>
+
+<section name="Config options">
+<p>
+<table>
+
+  <tr>
+  <th>Property name</th>
+  <th>Default</th>
+  <th>Description</th>
+  </tr>
+
+  <tr>
+  <td>handler.list</td>
+  <td>apr,shm,request,container,channelSocket,channelJni,channelUnix</td>
+  <td>Handlers to load.</td>
+  </tr>
+
+  <tr>
+  <td>class.myhandler</td>
+  <td>No default value</td>
+  <td>Define the class of the handler myhandler.</td>
+  </tr>
+
+  <tr>
+  <th colspan="2">apr</th>
+  <td>APR descriptor</td>
+  </tr>
+
+  <tr>
+  <td>NativeSo</td>
+  <td>jkjni</td>
+  <td>
+    Location of the jkjni dynamic library.
+    It is searched in java.library.path but a absolut path can be specified.
+  </td>
+  </tr>
+
+  <tr>
+  <th colspan="2">channelSocket</th>
+  <td>A communication transport from a remote Web Server.</td>
+  </tr>
+
+  <tr>
+  <td>port</td>
+  <td>8009</td>
+  <td>First port where Tomcat is listening</td>
+  </tr>
+
+  <tr>
+  <td>address</td>
+  <td>127.0.0.1</td>
+  <td>Local address where Tomcat is listening.</td>
+  </tr>
+
+  <tr>
+  <td>maxPort</td>
+  <td>port+10</td>
+  <td>Max port used to listen.</td>
+  </tr>
+
+  <tr>
+  <th colspan="2">channelUnix</th>
+  <td>A AF_UNIX socket communication transport from a local Web Server.</td>
+  </tr>
+
+  <tr>
+  <td>file</td>
+  <td>No default value</td>
+  <td>
+    Name of the "file" associate with the socket.
+    That must be absolut path name.
+  </td>
+  </tr>
+
+  <tr>
+  <th colspan="2">channelJni</th>
+  <td>A in Web Server process communication.</td>
+  </tr>
+
+  <tr>
+  <th colspan="2">mx</th>
+  <td>mx4j adapter.</td>
+  </tr>
+
+  <tr>
+  <td>port</td>
+  <td>-1 (Disabled)</td>
+  <td>Port Number.</td>
+  </tr>
+
+  <tr>
+  <th colspan="2">shm</th>
+  <td>shared memory objects handler.</td>
+  </tr>
+
+  <tr>
+  <td>file</td>
+  <td>/tmp/shm.file</td>
+  <td>Shared memory file.</td>
+  </tr>
+
+  <tr>
+  <td>host</td>
+  <td>localhost</td>
+  <td>Host name.</td>
+  </tr>
+
+  <tr>
+  <td>port</td>
+  <td>8009</td>
+  <td>Port number.</td>
+  </tr>
+
+  <tr>
+  <td>unixSocket</td>
+  <td>No default value</td>
+  <td>Unix socket where tomcat is listening.</td>
+  </tr>
+
+</table>
+</p>
+</section>
+  
+<section name="Examples">
+<p>
+The examples below are working when the Web Server is configured according the 
+examples described in the configweb file.
+</p>
+<subsection name="using normal socket">
+<p>
+There is no need to use the jkjni logic to use normal socket, so that just for
+Fun.
+</p>
+
+<p>
+<source>
+# list of needed handlers.
+handler.list=apr,channelSocket,request
+
+# Override the default port for the channelSocket
+channelSocket.port=8019
+
+# Dynamic library
+apr.NativeSo=/home1/jakarta/jakarta-tomcat-connectors/jk/build/jk2/apache2/jkjni.so
+</source>
+</p>
+</subsection>
+
+<subsection name="using AF_UNIX socket">
+<p>
+Create and listen on a AF_UNIX socket. The location of the socket must be the
+same in the Web Server configuration file.
+</p>
+
+<p>
+<source>
+# list of needed handlers.
+handler.list=apr,channelUnix,request
+
+# Location of the socket.
+channelUnix.file=${jkHome}/work/jk2.socket
+
+# Dynamic library
+jtc=/home1/jakarta/jakarta-tomcat-connectors
+apr.NativeSo=${jtc}/jk/build/jk2/apache2/jkjni.so
+</source>
+</p>
+</subsection>
+
+<subsection name="using user defined class for communication">
+<p>
+It is possible to have a user defined class for the communication.
+Here we have used the ChannelUn as example.
+</p>
+
+<p>
+<source>
+# Define our own handler.
+class.mychannel=org.apache.jk.common.ChannelUn
+# list of needed handlers.
+handler.list=apr,mychannel,request
+
+# Location of the socket.
+channelUnix.file=${jkHome}/work/jk2.socket
+
+# Dynamic library
+jtc=/home1/jakarta/jakarta-tomcat-connectors
+apr.NativeSo=${jtc}/jk/build/jk2/apache2/jkjni.so
+</source>
+</p>
+</subsection>
+</section>
+</document>
