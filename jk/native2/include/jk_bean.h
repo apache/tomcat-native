@@ -122,6 +122,8 @@ struct jk_bean {
      */
     char *type;
 
+    int id;
+    
     /* Full name of the object ( "channel.socket:localhost:8080" ).
      * Used to construct the object.
      */

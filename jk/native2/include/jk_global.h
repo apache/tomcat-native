@@ -238,6 +238,7 @@ typedef  unsigned int    apr_uint32_t;
     #ifndef strncasecmp 
         #define strncasecmp strnicmp
 	#endif
+
 	#ifndef vsnprintf
 		#define vsnprintf _vsnprintf
 	#endif

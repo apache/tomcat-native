@@ -102,8 +102,6 @@ typedef struct jk_channel jk_channel_t;
 struct jk_channel {
     struct jk_bean *mbean;
 
-    int id;
-
     /* JK_TRUE if the channel is 'stream' based, i.e. it works using
        send() followed by blocking reads().
        XXX make it type and define an enum of supported types ?

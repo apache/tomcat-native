@@ -139,7 +139,6 @@ struct jk_worker {
     
     struct jk_workerEnv *workerEnv;
 
-    int id;
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
      * point to data/functions which are specific to a given protocol 

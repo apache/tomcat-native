@@ -94,9 +94,6 @@ struct jk_logger;
  *     On receive - it will be recycled after reset() or equiv.
  *     Same as on the java side.
  *
- * XXX JNI: this was specially designed so it can be used for a JNI
- * channel. It'll collect the params and convert them to java types.
- *
  * @author Costin Manolache
  */
 struct jk_msg {

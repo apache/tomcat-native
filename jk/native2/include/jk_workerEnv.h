@@ -156,6 +156,7 @@ struct jk_workerEnv {
        If -1 - shm is disabled.
     */
     int childId;
+    int childProcessId;
 
     struct jk_env *globalEnv;
 

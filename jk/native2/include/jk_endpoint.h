@@ -123,8 +123,6 @@ typedef struct jk_stat   jk_stat_t;
 struct jk_endpoint {
     struct jk_bean *mbean;
 
-    int id;
-
     /* Parent
      */
     struct jk_worker *worker;
