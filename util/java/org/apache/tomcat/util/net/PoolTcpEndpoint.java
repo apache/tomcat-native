@@ -390,6 +390,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
                 }
             }
 
+            if( ! running ) return null;
             reinitializing = true;
             // Restart endpoint when getting an IOException during accept
             synchronized (threadSync) {

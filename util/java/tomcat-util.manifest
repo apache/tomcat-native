@@ -1,1 +1,7 @@
-Class-Path: commons-logging.jar log4j.jar log4j-core.jar mx4j.jar
+Manifest-version: 1.0
+Extension-Name: org.apache.tomcat.util
+Specification-Vendor: Apache Software Foundation
+Specification-Version: 3.0
+Implementation-Vendor-Id: org.apache
+Implementation-Vendor: Apache Software Foundation
+Implementation-Version: 5.1
