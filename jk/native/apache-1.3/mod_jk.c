@@ -173,7 +173,8 @@ struct apache_private_data {
 };
 typedef struct apache_private_data apache_private_data_t;
 
-static jk_logger_t *main_log = NULL;
+static jk_logger_t 		*main_log = NULL;
+static jk_worker_env_t	 worker_env;
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -1145,7 +1146,9 @@ for (i = 0; i < map_size(conf->automount); i++)
 #endif
             
 			/* we add the URI->WORKER MAP since workers using AJP14 will feed it */
-            if(wc_open(init_map, conf->uw_map, conf->log)) {
+			worker_env.uri_to_worker = conf->uw_map;
+			worker_env.server_name   = (char *)ap_get_server_version();
+            if(wc_open(init_map, &worker_env, conf->log)) {
                 /* we don't need this any more so free it */
                 map_free(&init_map);
                 return;
