@@ -130,7 +130,7 @@ foreach $p (packages()) {
           </tr>
     <<
 
-	# Generate a list of classes included in this package
+    # Generate a list of classes included in this package
     foreach $e ($p->classes()) {
         $_ = $e->url;
         s/\s/_/g;
@@ -147,7 +147,7 @@ foreach $p (packages()) {
         <<
     }
 
-	# Generate a list of all global functions included in this package
+    # Generate a list of all global functions included in this package
     if ($p->globalfuncs()) {
         >>
               <tr>
@@ -185,7 +185,7 @@ foreach $p (packages()) {
         <<
     }
 
-	# Generate a list of all global variables included in this package
+    # Generate a list of all global variables included in this package
     if ($p->globalvars()) {
         >>
               <tr>
@@ -223,7 +223,7 @@ foreach $p (packages()) {
         <<
     }
 
-	# Copyright statement at the bottom
+    # Copyright statement at the bottom
     >>
         </table>
         <hr>
@@ -285,7 +285,7 @@ foreach $p (packages()) {
           </tr>
     <<
 
-	# Generate a TOC of all classes at the top of the page
+    # Generate a TOC of all classes at the top of the page
     foreach $e ($p->classes()) {
         $_ = $e->url;
         s/\s/_/g;
@@ -321,7 +321,7 @@ foreach $p (packages()) {
         <<
     }
 
-	# Continue with the global functions TOC
+    # Continue with the global functions TOC
     if ($p->globalfuncs()) {
         >>
             </table>
@@ -351,7 +351,7 @@ foreach $p (packages()) {
         }
     }
 
-	# And then finish with the global variables TOC
+    # And then finish with the global variables TOC
     if ($p->globalvars()) {
         >>
             </table>
@@ -386,7 +386,7 @@ foreach $p (packages()) {
         <br>
     <<
 
-	# Then generate the detail for each class in this package
+    # Then generate the detail for each class in this package
     foreach $e ($p->classes()) {
         $_ = $e->url;
         s/\s/_/g;
@@ -442,13 +442,13 @@ foreach $p (packages()) {
                 </table>
             <<
             foreach $m ($e->memberfuncs()) {
-	            $_ = join("-",$e->name,$m->name);
-	            s/\s/_/g;
-	            y/[A-Z]/[a-z]/;
-			    >>
-			        <a name="$_">
-			    <<
-            	&function($m);
+                $_ = join("-",$e->name,$m->name);
+                s/\s/_/g;
+                y/[A-Z]/[a-z]/;
+                >>
+                    <a name="$_">
+                <<
+                &function($m);
             }
         }
 
@@ -466,18 +466,18 @@ foreach $p (packages()) {
                 </table>
             <<
             foreach $m ($e->membervars()) {
-	            $_ = join("-",$e->name,$m->name);
-	            s/\s/_/g;
-	            y/[A-Z]/[a-z]/;
-			    >>
-			        <a name="$_">
-			    <<
-	            &variable($m);
+                $_ = join("-",$e->name,$m->name);
+                s/\s/_/g;
+                y/[A-Z]/[a-z]/;
+                >>
+                    <a name="$_">
+                <<
+                &variable($m);
             }
         }
     }
 
-	# Output detailed information for each global function
+    # Output detailed information for each global function
     if ($p->globalfuncs()) {
         >>
             <table width="100%" cellspacing="0" cellpadding="2" border="1">
@@ -494,14 +494,14 @@ foreach $p (packages()) {
             $_ = $e->name;
             s/\s/_/g;
             y/[A-Z]/[a-z]/;
-		    >>
-		        <a name="$_">
-		    <<
-        	&function($e);
+            >>
+                <a name="$_">
+            <<
+            &function($e);
         }
     }
 
-	# Then write detailed information for each global variable
+    # Then write detailed information for each global variable
     if ($p->globalvars()) {
         >>
             <table width="100%" cellspacing="0" cellpadding="2" border="1">
@@ -518,9 +518,9 @@ foreach $p (packages()) {
             $_ = $e->name;
             s/\s/_/g;
             y/[A-Z]/[a-z]/;
-		    >>
-		        <a name="$_">
-		    <<
+            >>
+                <a name="$_">
+            <<
             &variable($e);
         }
     }
@@ -541,9 +541,9 @@ foreach $p (packages()) {
 
 # Write out the detailed description of a function
 sub function {
-	local ($m) = @_;
+    local ($m) = @_;
 
-	# Output the function name and description
+    # Output the function name and description
     >>
         <font size="+1" face="arial,helvetica,sans serif">
           <b>$(m.name)</b>
@@ -558,66 +558,66 @@ sub function {
                 </font>
               </dt>
     <<
-    
+
     # Process all parameters (one by one)
-	if ($m->params()) {
-	    >>
-	              <dt>
-	                <font face="arial,helvetica,sans serif">
-	                  <b>Parameters</b>
-	                </font>
-	              </dt>
-	    <<
-	    foreach $a ($m->params()) {
-		    >>
-		              <dd>
-		                <code>$(a.name)</code> -
-		                <font face="arial,helvetica,sans serif">
-		                  $(a.description)
-		                </font>
-		              </dd>
-		    <<
-	    }
-	}
-	
-	# Check for a return value
-	if ($m->returnValue()) {
-	    >>
-	              <dt>
-	                <font face="arial,helvetica,sans serif">
-	                  <b>Return Value</b>
-	                </font>
-	              </dt>
-	              <dd>
-	                <font face="arial,helvetica,sans serif">
-	                  $(m.returnValue)
-	                </font>
-	              </dd>
-	    <<
-	}
-	
-	# Dig in for exceptions
-	if ($m->exceptions()) {
-	    >>
-	              <dt>
-	                <font face="arial,helvetica,sans serif">
-	                  <b>Exceptions</b>
-	                </font>
-	              </dt>
-	    <<
-	    foreach $a ($m->exceptions()) {
-		    >>
-		              <dd>
-		                <code>$(a.name)</code>
-		                <font face="arial,helvetica,sans serif">
-		                  $(a.description)
-		                </font>
-		              </dd>
-		    <<
-	    }
-	}
-	
-	# Close the list 
+    if ($m->params()) {
+        >>
+                  <dt>
+                    <font face="arial,helvetica,sans serif">
+                      <b>Parameters</b>
+                    </font>
+                  </dt>
+        <<
+        foreach $a ($m->params()) {
+            >>
+                      <dd>
+                        <code>$(a.name)</code> -
+                        <font face="arial,helvetica,sans serif">
+                          $(a.description)
+                        </font>
+                      </dd>
+            <<
+        }
+    }
+
+    # Check for a return value
+    if ($m->returnValue()) {
+        >>
+                  <dt>
+                    <font face="arial,helvetica,sans serif">
+                      <b>Return Value</b>
+                    </font>
+                  </dt>
+                  <dd>
+                    <font face="arial,helvetica,sans serif">
+                      $(m.returnValue)
+                    </font>
+                  </dd>
+        <<
+    }
+
+    # Dig in for exceptions
+    if ($m->exceptions()) {
+        >>
+                  <dt>
+                    <font face="arial,helvetica,sans serif">
+                      <b>Exceptions</b>
+                    </font>
+                  </dt>
+        <<
+        foreach $a ($m->exceptions()) {
+            >>
+                      <dd>
+                        <code>$(a.name)</code>
+                        <font face="arial,helvetica,sans serif">
+                          $(a.description)
+                        </font>
+                      </dd>
+            <<
+        }
+    }
+
+    # Close the list
     >>
             </dl>
           </dd>
@@ -628,9 +628,9 @@ sub function {
 
 # Write out the detailed description of a variable
 sub variable {
-	local ($m) = @_;
+    local ($m) = @_;
 
-	# Output the variable name and description
+    # Output the variable name and description
     >>
         <font size="+1" face="arial,helvetica,sans serif">
           <b>$(m.name)</b>
