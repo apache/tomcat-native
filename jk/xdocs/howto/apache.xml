@@ -838,10 +838,15 @@ Rochester Labs which has provided information and patches
 to adapt mod_jk to OS400.
 </p>
 <p>
-You should have at least Apache 2.0.39, a C Compiler and IFS.
-Apache 2.0.39 is provided with the most recent set of PTFs for the iSeries Apache
+You should have at least Apache 2.0.48 (product 5722DG1), a C Compiler and IFS.
+Apache 2.0.48 is provided with the most recent set of PTFs for the iSeries Apache
 server, which can be found at <a href="http://www.ibm.com/servers/eserver/iseries/software/http/">
 http://www.ibm.com/servers/eserver/iseries/software/http/</a>
+</p>
+<p>
+The all latest Apache 2 for OS400 V5R3 is now 2.0.52 (2005/03/23).
+Be sure to have the latest PTF loaded (SI17402/SI17061) if you want
+to make use of jk 1.2.8 and higher.
 </p>
 
 <p>
