@@ -219,9 +219,9 @@ static void *jk2_create_dir_config(apr_pool_t *p, char *path)
     /* We don't know the vhost yet - so path is not
      * unique. We'll have to generate a unique name
      */
-    jk_uriEnv_t *newUri = workerEnv->globalEnv->createInstance( workerEnv->globalEnv,
-                                                                workerEnv->pool,
-                                                                "uri", path );
+    jk_bean_t *jkb=workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
+                                                      workerEnv->pool, "uri", path );
+    jk_uriEnv_t *newUri = jkb->object;
     newUri->workerEnv=workerEnv;
     newUri->mbean->setAttribute( workerEnv->globalEnv, newUri->mbean, "path", path );
     return newUri;
@@ -252,7 +252,7 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
     jk_env_t *env;
     jk_logger_t *l;
     jk_pool_t *globalPool;
-
+    jk_bean_t *jkb;
     
     /** First create a pool. Compile time option
      */
@@ -272,10 +272,14 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
     
     /* Create the logger */
 #ifdef NO_APACHE_LOGGER
-    l = env->createInstance( env, env->globalPool, "logger.file", "logger");
+    jkb=env->createBean2( env, env->globalPool, "logger.file", "");
+    env->alias( env, "logger.file:", "logger");
+    l = jkb->object;
 #else
     env->registerFactory( env, "logger.apache2",    jk2_logger_apache2_factory );
-    l = env->createInstance( env, env->globalPool, "logger.apache2", "logger");
+    jkb=env->createBean2( env, env->globalPool, "logger.apache2", "");
+    env->alias( env, "logger.apache2:", "logger");
+    l = jkb->object;
     l->logger_private=s;
 #endif
     
@@ -285,7 +289,9 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
        ap_server_root_relative(cmd->pool,opt); */
     
     /* Create the workerEnv */
-    workerEnv= env->createInstance( env, env->globalPool,"workerEnv", "workerEnv");
+    jkb=env->createBean2( env, env->globalPool,"workerEnv", "");
+    workerEnv= jkb->object;
+    env->alias( env, "workerEnv:" , "workerEnv");
 
     if( workerEnv==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating workerEnv\n");
@@ -304,6 +310,7 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
 static void *jk2_create_config(apr_pool_t *p, server_rec *s)
 {
     jk_uriEnv_t *newUri;
+    jk_bean_t *jkb;
 
     if(  workerEnv==NULL ) {
         jk2_create_workerEnv(p, s );
@@ -316,9 +323,11 @@ static void *jk2_create_config(apr_pool_t *p, server_rec *s)
         fprintf( stderr, "Create config for main host\n");        
     }
 
-   newUri = workerEnv->globalEnv->createInstance( workerEnv->globalEnv,
-                                                   workerEnv->pool,
-                                                   "uri", NULL );
+    jkb = workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
+                                             workerEnv->pool,
+                                             "uri", NULL );
+   newUri=jkb->object;
+   
    newUri->workerEnv=workerEnv;
     
    return newUri;
@@ -482,13 +491,14 @@ static int jk2_handler(request_rec *r)
 
     workerEnv = uriEnv->workerEnv;
 
-    /* XXX Get an env instance */
-    env = workerEnv->globalEnv;
+    /* Get an env instance */
+    env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "mod_jk.handler() Can't setup client block %d\n", rc);
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return rc;
     }
 
@@ -505,7 +515,7 @@ static int jk2_handler(request_rec *r)
                       worker, uriEnv->webapp );
         
         if( worker==NULL && uriEnv->workerName != NULL ) {
-            worker=env->getByName( env, uriEnv->workerName);
+             worker=env->getByName( env, uriEnv->workerName);
             env->l->jkLog(env, env->l, JK_LOG_INFO, 
                           "mod_jk.handler() finding worker for %p %p\n",
                           worker, uriEnv );
@@ -516,6 +526,7 @@ static int jk2_handler(request_rec *r)
     if(worker==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "mod_jk.handle() No worker for %s\n", r->uri); 
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return 500;
     }
 
@@ -560,11 +571,13 @@ static int jk2_handler(request_rec *r)
     }
 
     if(rc==JK_TRUE) {
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return OK;    /* NOT r->status, even if it has changed. */
     }
 
     env->l->jkLog(env, env->l, JK_LOG_ERROR,
-             "mod_jk.handler() Error connecting to tomcat %d\n", rc);
+                  "mod_jk.handler() Error connecting to tomcat %d\n", rc);
+    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     return 500;
 }
 
@@ -584,8 +597,8 @@ static int jk2_translate(request_rec *r)
     uriEnv=ap_get_module_config( r->per_dir_config, &jk2_module );
     workerEnv=uriEnv->workerEnv;
     
-    /* XXX get_env() */
-    env=workerEnv->globalEnv;
+    /* get_env() */
+    env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
         
     /* This has been mapped to a location by apache
      * In a previous ( experimental ) version we had a sub-map,
@@ -598,6 +611,7 @@ static int jk2_translate(request_rec *r)
         
         ap_set_module_config( r->request_config, &jk2_module, uriEnv );        
         r->handler=JK_HANDLER;
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return OK;
     }
 
@@ -608,6 +622,7 @@ static int jk2_translate(request_rec *r)
 
     /* Check JkMount directives, if any */
     if( workerEnv->uriMap->size == 0 )
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return DECLINED;
     
     /* XXX TODO: Split mapping, similar with tomcat. First step will
@@ -618,6 +633,7 @@ static int jk2_translate(request_rec *r)
     uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri );
 
     if( uriEnv== NULL || uriEnv->workerName == NULL) {
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return DECLINED;
     }
 
@@ -628,6 +644,7 @@ static int jk2_translate(request_rec *r)
                   "mod_jk.translate(): uriMap %s %s\n",
                   r->uri, uriEnv->workerName);
 
+    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     return OK;
 }
 

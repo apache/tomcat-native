@@ -138,6 +138,7 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
     jk_env_t *env;
     jk_logger_t *l;
     jk_pool_t *globalPool;
+    jk_bean_t *jkb;
     
     /** First create a pool. We use the default ( jk ) pool impl,
      *  other choices are apr or native.
@@ -156,12 +157,16 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
     /* Create the logger . We use the default jk logger, will output
        to a file. Check the logger for default settings.
     */
-    l = env->createInstance( env, env->globalPool, "logger.file", "logger");
+    jkb=env->createBean2( env, env->globalPool, "logger.file", "");
+    l = jkb->object;
     env->l=l;
+    env->alias( env, "logger.file:", "logger");
     
     /* Create the workerEnv
      */
-    workerEnv= env->createInstance( env, env->globalPool,"workerEnv", "workerEnv");
+    jkb=env->createBean2( env, env->globalPool,"workerEnv", "");
+    workerEnv= jkb->object;
+    env->alias( env, "workerEnv:", "workerEnv");
 
     if( workerEnv==NULL || l== NULL  ) {
         fprintf( stderr, "Error initializing jk, NULL objects \n");
@@ -195,6 +200,7 @@ static const command_rec jk2_cmds[] =
 static void *jk2_create_config(ap_pool *p, server_rec *s)
 {
     jk_uriEnv_t *newUri;
+    jk_bean_t *jkb;
 
     if(  workerEnv==NULL ) {
         jk2_create_workerEnv(p, s );
@@ -207,9 +213,10 @@ static void *jk2_create_config(ap_pool *p, server_rec *s)
         fprintf( stderr, "Create config for main host\n");
     }
 
-    newUri = workerEnv->globalEnv->createInstance( workerEnv->globalEnv,
-                                                   workerEnv->pool,
-                                                   "uri", NULL );
+    jkb=workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
+                                           workerEnv->pool,
+                                           "uri", NULL );
+    newUri = jkb->object;
     newUri->workerEnv=workerEnv;
     return newUri;
 }
@@ -257,6 +264,7 @@ static void jk2_init(server_rec *s, ap_pool *pconf)
 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "mod_jk.post_config() init worker env\n");
+
         workerEnv->init(env, workerEnv );
         
         workerEnv->server_name   = (char *)ap_get_server_version();
@@ -292,13 +300,14 @@ static int jk2_handler(request_rec *r)
     if(uriEnv==NULL || strcmp(r->handler,JK_HANDLER)!= 0 )
         return DECLINED;
     
-    /* XXX Get an env instance */
-    env = workerEnv->globalEnv;
+    /* Get an env instance */
+    env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "mod_jk.handler() Can't setup client block %d\n", rc);
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return rc;
     }
 
@@ -326,6 +335,7 @@ static int jk2_handler(request_rec *r)
     if(worker==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                       "mod_jk.handle() No worker for %s\n", r->uri); 
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return 500;
     }
 
@@ -369,11 +379,13 @@ static int jk2_handler(request_rec *r)
     }
 
     if(rc==JK_TRUE) {
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return OK;    /* NOT r->status, even if it has changed. */
     }
 
     env->l->jkLog(env, env->l, JK_LOG_ERROR,
              "mod_jk.handler() Error connecting to tomcat %d\n", rc);
+    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     return 500;
 }
 
@@ -393,12 +405,13 @@ static int jk2_translate(request_rec *r)
     if( workerEnv->uriMap->size == 0 )
         return DECLINED;
     
-    /* XXX get_env() */
-    env=workerEnv->globalEnv;
+    /* get_env() */
+    env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
         
     uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri );
     
     if(uriEnv==NULL || uriEnv->workerName==NULL) {
+        workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return DECLINED;
     }
 
@@ -408,7 +421,8 @@ static int jk2_translate(request_rec *r)
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
                   "mod_jk.translate(): uriMap %s %s\n",
                   r->uri, uriEnv->workerName);
-    
+
+    workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
     return OK;
 }
 

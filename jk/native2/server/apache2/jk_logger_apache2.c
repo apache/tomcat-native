@@ -106,15 +106,15 @@ static int jk2_logger_apache2_close(jk_env_t *env, jk_logger_t *_this)
     return JK_TRUE;
 }
 
-static int jk2_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
-                                   const char *file,
-                                   int line,
-                                   int level,
-                                   const char *fmt, ...)
+static int jk2_logger_apache2_jkVLog(jk_env_t *env, jk_logger_t *l,
+                                     const char *file,
+                                     int line,
+                                     int level,
+                                     char *fmt,
+                                     va_list args)
 {
     /* XXX map jk level to apache level */
     server_rec *s=(server_rec *)l->logger_private;
-    va_list args;
     int rc;
 
     /* XXX XXX Change this to "SMALLSTACK" or something, I don't think it's
@@ -134,7 +134,6 @@ static int jk2_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
         return JK_FALSE;
     }
     
-    va_start(args, fmt);
 #ifdef WIN32
     rc = _vsnprintf(buf, HUGE_BUFFER_SIZE, fmt, args);
 #elif defined(NETWARE) /* until we get a vsnprintf function */
@@ -146,7 +145,6 @@ static int jk2_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
 #else 
     rc = vsnprintf(buf, HUGE_BUFFER_SIZE, fmt, args);
 #endif
-    va_end(args);
     rc=strlen( buf );
     /* Remove trailing \n. XXX need to change the log() to not include \n */
     if( buf[rc-1] == '\n' )
@@ -161,6 +159,23 @@ static int jk2_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
     }
     return rc ;
 }
+
+static int jk2_logger_apache2_jkLog(jk_env_t *env, jk_logger_t *l,
+                                 const char *file,
+                                 int line,
+                                 int level,
+                                 const char *fmt, ...)
+{
+    va_list args;
+    int rc;
+    
+    va_start(args, fmt);
+    rc=jk2_logger_apache2_jkVLog( env, l, file, line, level, fmt, args );
+    va_end(args);
+
+    return rc;
+}
+
 
 static int JK_METHOD
 jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean, 
@@ -194,6 +209,7 @@ int jk2_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result
     l->logger_private = NULL;
     l->init =jk2_logger_apache2_init;
     l->jkLog = jk2_logger_apache2_jkLog;
+    l->jkVLog = jk2_logger_apache2_jkVLog;
 
     l->level=JK_LOG_ERROR_LEVEL;
     
