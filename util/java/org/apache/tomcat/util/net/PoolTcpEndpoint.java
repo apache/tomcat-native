@@ -67,10 +67,12 @@ package org.apache.tomcat.util.net;
 import org.apache.tomcat.util.res.*;
 import org.apache.tomcat.util.collections.SimplePool;
 import org.apache.tomcat.util.threads.*;
-import org.apache.tomcat.util.log.*;
+//import org.apache.tomcat.util.log.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.io.*;
 import java.net.*;
-import java.util.*;
 
 /* Similar with MPM module in Apache2.0. Handles all the details related with
    "tcp server" functionality - thread management, accept policy, etc.
@@ -123,7 +125,10 @@ public class PoolTcpEndpoint { // implements Endpoint {
     static final int debug=0;
 
     ThreadPool tp;
-    protected Log _log=Log.getLog("tc/PoolTcpEndpoint", "PoolTcpEndpoint");
+    // XXX Do we need it for backward compat ?
+    //protected Log _log=Log.getLog("tc/PoolTcpEndpoint", "PoolTcpEndpoint");
+
+    static Log log=LogFactory.getLog(PoolTcpEndpoint.class );
 
     protected boolean tcpNoDelay=false;
     protected int linger=100;
@@ -133,7 +138,11 @@ public class PoolTcpEndpoint { // implements Endpoint {
 	//	super("tc_log");	// initialize default logger
 	tp = new ThreadPool();
     }
-    
+
+    public PoolTcpEndpoint( ThreadPool tp ) {
+        this.tp=tp;
+    }
+
     // -------------------- Configuration --------------------
 
     public void setPoolOn(boolean isPool) {
@@ -294,7 +303,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
     	    listener = new TcpWorkerThread(this);
             tp.runIt(listener);
         } else {
-	    log("XXX Error - need pool !", null, Log.ERROR);
+	    log.error("XXX Error - need pool !");
 	}
     }
 
@@ -315,12 +324,12 @@ public class PoolTcpEndpoint { // implements Endpoint {
 		}
 		s.close();
 	    } catch(Exception e) {
-                log("Caught exception trying to unlock accept.", e);
+                log.error("Caught exception trying to unlock accept.", e);
 	    }
 	    try {
 		serverSocket.close();
 	    } catch(Exception e) {
-                log("Caught exception trying to close socket.", e);
+                log.error("Caught exception trying to close socket.", e);
 	    }
 	    serverSocket = null;
 	}
@@ -362,7 +371,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
 
 		String msg = sm.getString("endpoint.err.nonfatal",
 					  serverSocket, e);
-		log(msg, e, Log.ERROR);
+		log.error(msg, e);
 
                 if (accepted != null) {
                     try {
@@ -371,7 +380,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
                     } catch(Exception ex) {
                         msg = sm.getString("endpoint.err.nonfatal",
                                            accepted, ex);
-                        log(msg, ex, Log.INFORMATION);
+                        log.warn(msg, ex);
                     }
                 }
                 // Restart endpoint when getting an IOException during accept
@@ -381,7 +390,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
                     } catch(Exception ex) {
                         msg = sm.getString("endpoint.err.nonfatal",
                                            serverSocket, ex);
-                        log(msg, ex, Log.INFORMATION);
+                        log.warn(msg, ex);
                     }
                     serverSocket = null;
                     try {
@@ -396,7 +405,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
                     } catch (Throwable t) {
                         msg = sm.getString("endpoint.err.fatal", 
                                            serverSocket, t);
-                        log(msg, t, Log.ERROR);
+                        log.error(msg, t);
                         stopEndpoint();
                     }
                 }
@@ -408,23 +417,31 @@ public class PoolTcpEndpoint { // implements Endpoint {
     	return accepted;
     }
 
-    public void log(String msg) 
+    /** @deprecated
+     */
+    public void log(String msg)
     {
-	_log.log(msg, null, Log.INFORMATION);
-    }
-    
-    public void log(String msg, Throwable t) 
-    {
-	_log.log(msg, t, Log.ERROR);
+	log.info(msg);
     }
 
-    public void log(String msg, int level) 
+    /** @deprecated
+     */
+    public void log(String msg, Throwable t)
     {
-	_log.log(msg, null, level);
+	log.error( msg, t );
     }
 
+    /** @deprecated
+     */
+    public void log(String msg, int level)
+    {
+	log.info( msg );
+    }
+
+    /** @deprecated
+     */
     public void log(String msg, Throwable t, int level) {
-	_log.log( msg, t, level );
+    	log.error( msg, t );
     }
 
     void setSocketOptions(Socket socket)
@@ -496,7 +513,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 	    try {
 		s = endpoint.acceptSocket();
 	    } catch (Throwable t) {
-		endpoint.log("Exception in acceptSocket", t);
+		endpoint.log.error("Exception in acceptSocket", t);
 	    }
 	    if(null != s) {
 		// Continue accepting on another thread...
@@ -507,7 +524,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                         endpoint.getServerSocketFactory().handshake(s);
  		    }
                 } catch (Throwable t) {
-                    endpoint.log("Handshake failed", t, Log.DEBUG);
+                    endpoint.log.info("Handshake failed", t);
                     // Try to close the socket
                     try {
                         s.close();
@@ -533,7 +550,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 		    endpoint.setSocketOptions( s );
 		    endpoint.getConnectionHandler().processConnection(con, perThrData);
                 } catch (Throwable t) {
-                    endpoint.log("Unexpected error", t, Log.ERROR);
+                    endpoint.log.error("Unexpected error", t);
                     // Try to close the socket
                     try {
                         s.close();
