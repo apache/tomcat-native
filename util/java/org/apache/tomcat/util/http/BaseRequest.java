@@ -72,7 +72,8 @@ import java.util.Iterator;
 import org.apache.tomcat.util.buf.MessageBytes;
 
 /**
- *
+ * A general-purpose object for representing an HTTP
+ * request.
  */
 public class BaseRequest {
 
@@ -91,7 +92,6 @@ public class BaseRequest {
     MessageBytes remoteUser = new MessageBytes();
     MessageBytes authType = new MessageBytes();
     MessageBytes queryString = new MessageBytes();
-    MessageBytes jvmRoute = new MessageBytes();
     String scheme = SCHEME_HTTP;
     boolean secure = false;
     int contentLength = 0;
@@ -114,7 +114,6 @@ public class BaseRequest {
         remoteUser.recycle();
         authType.recycle();
         queryString.recycle();
-        jvmRoute.recycle();
         scheme = SCHEME_HTTP;
         secure = false;
         contentLength = 0;
@@ -210,14 +209,6 @@ public class BaseRequest {
      */
     public MessageBytes queryString() {
         return queryString;
-    }
-
-    /**
-     * Get the jvm route
-     * @return the jvm route
-     */
-    public MessageBytes jvmRoute() {
-        return jvmRoute;
     }
 
     /**
@@ -332,7 +323,7 @@ public class BaseRequest {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
 
-        pw.println("=== AjpRequest ===");
+        pw.println("=== BaseRequest ===");
         pw.println("method          = " + method.toString());
         pw.println("protocol        = " + protocol.toString());
         pw.println("requestURI      = " + requestURI.toString());
@@ -343,7 +334,6 @@ public class BaseRequest {
         pw.println("remoteUser      = " + remoteUser.toString());
         pw.println("authType        = " + authType.toString());
         pw.println("queryString     = " + queryString.toString());
-        pw.println("jvmRoute        = " + jvmRoute.toString());
         pw.println("scheme          = " + scheme.toString());
         pw.println("secure          = " + secure);
         pw.println("contentLength   = " + contentLength);
