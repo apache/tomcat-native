@@ -71,6 +71,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.security.AccessControlException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -384,6 +385,15 @@ public class PoolTcpEndpoint { // implements Endpoint {
             // normal part -- should happen regularly so
             // that the endpoint can release if the server
             // is shutdown.
+        }
+        catch (AccessControlException ace) {
+            // When using the Java SecurityManager this exception
+            // can be thrown if you are restricting access to the
+            // socket with SocketPermission's.
+            // Log the unauthorized access and continue
+            String msg = sm.getString("endpoint.warn.security",
+                                      serverSocket,ace);
+            log.warn(msg);
         }
         catch (IOException e) {
 
