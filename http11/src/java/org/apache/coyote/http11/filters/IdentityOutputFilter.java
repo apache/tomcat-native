@@ -102,7 +102,7 @@ public class IdentityOutputFilter implements OutputFilter {
     /**
      * Remaining bytes.
      */
-    protected long remaining = -1;
+    protected long remaining = 0;
 
 
     /**
@@ -141,25 +141,23 @@ public class IdentityOutputFilter implements OutputFilter {
     public int doWrite(ByteChunk chunk)
         throws IOException {
 
-        int result = chunk.getLength();
-
-        if (result <= 0) {
-            return -1;
-        }
+        int result = 0;
 
         if (contentLength > 0) {
             if (remaining > 0) {
-                if (chunk.getLength() > remaining) {
+                result = chunk.getLength();
+                if (result > remaining) {
                     // The chunk is longer than the number of bytes remaining
                     // in the body; changing the chunk length to the number
                     // of bytes remaining
                     chunk.setBytes(chunk.getBytes(), chunk.getStart(), 
                                    (int) remaining);
                     result = (int) remaining;
-                    remaining = -1;
+                    remaining = 0;
                 } else {
                     remaining = remaining - result;
                 }
+                buffer.doWrite(chunk);
             } else {
                 // No more bytes left to be written : return -1 and clear the 
                 // buffer
@@ -167,8 +165,6 @@ public class IdentityOutputFilter implements OutputFilter {
                 result = -1;
             }
         }
-
-        buffer.doWrite(chunk);
 
         return result;
 
@@ -185,6 +181,7 @@ public class IdentityOutputFilter implements OutputFilter {
      */
     public void setResponse(Response response) {
         contentLength = response.getContentLength();
+        remaining = contentLength;
     }
 
 
@@ -215,7 +212,7 @@ public class IdentityOutputFilter implements OutputFilter {
      */
     public void recycle() {
         contentLength = -1;
-        remaining = -1;
+        remaining = 0;
     }
 
 
