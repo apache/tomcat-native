@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib advapi32.lib /nologo /dll /machine:I386
-# ADD LINK32 libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib advapi32.lib wsock32.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /debug /machine:I386 /out:"Release/mod_jk.so" /libpath:"$(APACHE2_HOME)\Release" /libpath:"$(APACHE2_HOME)\srclib\apr\Release" /libpath:"$(APACHE2_HOME)\srclib\apr-util\Release" /libpath:"$(APACHE2_HOME)\lib" /opt:ref
+# ADD LINK32 libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /debug /machine:I386 /out:"Release/mod_jk.so" /libpath:"$(APACHE2_HOME)\Release" /libpath:"$(APACHE2_HOME)\srclib\apr\Release" /libpath:"$(APACHE2_HOME)\srclib\apr-util\Release" /libpath:"$(APACHE2_HOME)\lib" /opt:ref
 
 !ELSEIF  "$(CFG)" == "apache - Win32 Debug"
 
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib advapi32.lib wsock32.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /incremental:no /debug /machine:I386 /out:"Debug/mod_jk.so" /libpath:"$(APACHE2_HOME)/Debug" /libpath:"$(APACHE2_HOME)\srclib\apr\Debug" /libpath:"$(APACHE2_HOME)\srclib\apr-util\Debug" /libpath:"$(APACHE2_HOME)\lib"
+# ADD LINK32 libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /incremental:no /debug /machine:I386 /out:"Debug/mod_jk.so" /libpath:"$(APACHE2_HOME)/Debug" /libpath:"$(APACHE2_HOME)\srclib\apr\Debug" /libpath:"$(APACHE2_HOME)\srclib\apr-util\Debug" /libpath:"$(APACHE2_HOME)\lib"
 
 !ENDIF 
 

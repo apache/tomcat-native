@@ -55,7 +55,9 @@ CLEAN :
 	-@erase "$(INTDIR)\jk_msg_buff.obj"
 	-@erase "$(INTDIR)\jk_nwmain.obj"
 	-@erase "$(INTDIR)\jk_pool.obj"
+	-@erase "$(INTDIR)\jk_shm.obj"
 	-@erase "$(INTDIR)\jk_sockbuf.obj"
+	-@erase "$(INTDIR)\jk_status.obj"
 	-@erase "$(INTDIR)\jk_uri_worker_map.obj"
 	-@erase "$(INTDIR)\jk_util.obj"
 	-@erase "$(INTDIR)\jk_worker.obj"
@@ -72,7 +74,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\isapi.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=wsock32.lib advapi32.lib /nologo /base:"0x6A6B0000" /dll /incremental:no /pdb:"$(OUTDIR)\isapi_redirect.pdb" /debug /machine:I386 /def:".\isapi.def" /out:"$(OUTDIR)\isapi_redirect.dll" /implib:"$(OUTDIR)\isapi_redirect.lib" 
+LINK32_FLAGS=kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib /nologo /base:"0x6A6B0000" /dll /incremental:no /pdb:"$(OUTDIR)\isapi_redirect.pdb" /debug /machine:I386 /def:".\isapi.def" /out:"$(OUTDIR)\isapi_redirect.dll" /implib:"$(OUTDIR)\isapi_redirect.lib" 
 DEF_FILE= \
 	".\isapi.def"
 LINK32_OBJS= \
@@ -92,7 +94,9 @@ LINK32_OBJS= \
 	"$(INTDIR)\jk_msg_buff.obj" \
 	"$(INTDIR)\jk_nwmain.obj" \
 	"$(INTDIR)\jk_pool.obj" \
+	"$(INTDIR)\jk_shm.obj" \
 	"$(INTDIR)\jk_sockbuf.obj" \
+	"$(INTDIR)\jk_status.obj" \
 	"$(INTDIR)\jk_uri_worker_map.obj" \
 	"$(INTDIR)\jk_util.obj" \
 	"$(INTDIR)\jk_worker.obj"
@@ -241,9 +245,21 @@ SOURCE=..\common\jk_pool.c
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
+SOURCE=..\common\jk_shm.c
+
+"$(INTDIR)\jk_shm.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
 SOURCE=..\common\jk_sockbuf.c
 
 "$(INTDIR)\jk_sockbuf.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_status.c
+
+"$(INTDIR)\jk_status.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
