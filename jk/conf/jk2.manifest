@@ -1,2 +1,2 @@
 Main-Class: org.apache.jk.apr.TomcatStarter
-Class-Path: ../lib/tomcat.jar bootstrap.jar 
+Class-Path: ../lib/tomcat.jar bootstrap.jar log4j.jar log4j-core.jar ../lib/common/log4j.jar ../lib/common/log4j-core.jar ../lib/common/classes
