@@ -77,7 +77,7 @@
 
 #define ADDITINAL_WAIT_LOAD (20)
 
-int JK_METHOD jk_worker_lb_factory(jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_worker_lb_factory(jk_env_t *env, jk_pool_t *pool,
                                    void **result,char *type, char *name);
 
 
@@ -86,7 +86,7 @@ int JK_METHOD jk_worker_lb_factory(jk_env_t *env, jk_pool_t *pool,
  * This + ADDITIONAL_WAIT_LOAD will be set on all the workers
  * that recover after an error.
  */
-static double get_max_lb(jk_worker_t *p) 
+static double jk2_get_max_lb(jk_worker_t *p) 
 {
     int i;
     double rc = 0.0;    
@@ -109,13 +109,13 @@ static double get_max_lb(jk_worker_t *p)
 
     It'll also adjust the load balancing factors.
 */
-static jk_worker_t *get_most_suitable_worker(jk_env_t *env, jk_worker_t *p, 
-                                             jk_ws_service_t *s, int attempt)
+static jk_worker_t *jk2_get_most_suitable_worker(jk_env_t *env, jk_worker_t *p, 
+                                                 jk_ws_service_t *s, int attempt)
 {
     jk_worker_t *rc = NULL;
     double lb_min = 0.0;    
     int i;
-    char *session_route = jk_requtil_getSessionRoute(env, s);
+    char *session_route = jk2_requtil_getSessionRoute(env, s);
        
     if(session_route) {
         for(i = 0 ; i < p->num_of_workers ; i++) {
@@ -163,9 +163,9 @@ static jk_worker_t *get_most_suitable_worker(jk_env_t *env, jk_worker_t *p,
     Since we don't directly connect to anything, there's no
     need for an endpoint.
 */
-static int JK_METHOD service(jk_env_t *env,
-                             jk_worker_t *w,
-                             jk_ws_service_t *s)
+static int JK_METHOD jk2_lb_service(jk_env_t *env,
+                                    jk_worker_t *w,
+                                    jk_ws_service_t *s)
 {
     int attempt=0;
 
@@ -179,7 +179,7 @@ static int JK_METHOD service(jk_env_t *env,
     s->realWorker=NULL;
 
     while(1) {
-        jk_worker_t *rec = get_most_suitable_worker(env, w, s, attempt++);
+        jk_worker_t *rec = jk2_get_most_suitable_worker(env, w, s, attempt++);
         int rc;
 
         s->is_recoverable_error = JK_FALSE;
@@ -200,7 +200,7 @@ static int JK_METHOD service(jk_env_t *env,
 
         if(rc==JK_TRUE) {                        
             if(rec->in_recovering) {
-                rec->lb_value = get_max_lb(rec) + ADDITINAL_WAIT_LOAD;
+                rec->lb_value = jk2_get_max_lb(rec) + ADDITINAL_WAIT_LOAD;
             }
             rec->in_error_state = JK_FALSE;
             rec->in_recovering  = JK_FALSE;
@@ -236,8 +236,8 @@ static int JK_METHOD service(jk_env_t *env,
     return JK_FALSE;
 }
 
-static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
-                              jk_map_t *props, jk_workerEnv_t *we)
+static int JK_METHOD jk2_lb_validate(jk_env_t *env, jk_worker_t *_this,
+                                     jk_map_t *props, jk_workerEnv_t *we)
 {
     int err;
     char **worker_names;
@@ -251,7 +251,7 @@ static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
         return JK_FALSE;
     }
 
-    tmp=jk_map_getStrProp( env, props,  "worker", _this->name,
+    tmp=jk2_map_getStrProp( env, props,  "worker", _this->name,
                            "balanced_workers", NULL );
     if( tmp==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -259,7 +259,7 @@ static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
         return JK_FALSE;
     }
 
-    worker_names=jk_map_split( env, props, props->pool,
+    worker_names=jk2_map_split( env, props, props->pool,
                                tmp, NULL, &num_of_workers );
 
     if( worker_names==NULL || num_of_workers==0 ) {
@@ -293,7 +293,7 @@ static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
             continue;
         }
 
-        tmp=jk_map_getStrProp( env, props, "worker", name, "lbfactor", NULL );
+        tmp=jk2_map_getStrProp( env, props, "worker", name, "lbfactor", NULL );
         if( tmp==NULL ) 
             _this->lb_workers[i]->lb_factor = DEFAULT_LB_FACTOR;
         else 
@@ -320,7 +320,7 @@ static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
     return JK_TRUE;
 }
 
-static int JK_METHOD destroy(jk_env_t *env, jk_worker_t *w)
+static int JK_METHOD jk2_lb_destroy(jk_env_t *env, jk_worker_t *w)
 {
     int i = 0;
 
@@ -345,7 +345,7 @@ static int JK_METHOD destroy(jk_env_t *env, jk_worker_t *w)
 }
 
 
-int JK_METHOD jk_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
+int JK_METHOD jk2_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
                                    void **result, char *type, char *name)
 {
     jk_worker_t *_this;
@@ -370,10 +370,10 @@ int JK_METHOD jk_worker_lb_factory(jk_env_t *env,jk_pool_t *pool,
     _this->lb_workers = NULL;
     _this->num_of_workers = 0;
     _this->worker_private = NULL;
-    _this->validate       = validate;
+    _this->validate       = jk2_lb_validate;
     _this->init           = NULL;
-    _this->destroy        = destroy;
-    _this->service = service;
+    _this->destroy        = jk2_lb_destroy;
+    _this->service        = jk2_lb_service;
     
     *result=_this;
 

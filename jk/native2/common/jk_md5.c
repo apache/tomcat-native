@@ -123,7 +123,7 @@
 #include "jk_env.h"
 #include "jk_md5.h"
 
-char * JK_METHOD jk_hextocstr(unsigned char *org, char * dst, int n)
+char * JK_METHOD jk2_hextocstr(unsigned char *org, char * dst, int n)
 {
     char * os = dst;
     unsigned char v;
@@ -141,7 +141,7 @@ char * JK_METHOD jk_hextocstr(unsigned char *org, char * dst, int n)
 
 #ifndef USE_APACHE_MD5 
 
-/* Constants for MD5Transform routine.
+/* Constants for jk2_MD5Transform routine.
  */
 
 #define S11 7
@@ -161,12 +161,12 @@ char * JK_METHOD jk_hextocstr(unsigned char *org, char * dst, int n)
 #define S43 15
 #define S44 21
 
-static void MD5Transform(JK_UINT4 state[4], const unsigned char block[64]);
-static void Encode(unsigned char *output, const JK_UINT4 *input, unsigned int len);
-static void Decode(JK_UINT4 *output, const unsigned char *input, unsigned int len);
-static void jk_MD5Init(JK_MD5_CTX *context);
-static void jk_MD5Update(JK_MD5_CTX *context, const unsigned char *input, unsigned int inputLen);
-/*static void jk_MD5Final(unsigned char digest[JK_MD5_DIGESTSIZE], JK_MD5_CTX *context);*/
+static void jk2_MD5Transform(JK_UINT4 state[4], const unsigned char block[64]);
+static void jk2_Encode(unsigned char *output, const JK_UINT4 *input, unsigned int len);
+static void jk2_Decode(JK_UINT4 *output, const unsigned char *input, unsigned int len);
+static void jk2_MD5Init(JK_MD5_CTX *context);
+static void jk2_MD5Update(JK_MD5_CTX *context, const unsigned char *input, unsigned int inputLen);
+/*static void jk2_MD5Final(unsigned char digest[JK_MD5_DIGESTSIZE], JK_MD5_CTX *context);*/
 
 static unsigned char PADDING[64] =
 {
@@ -212,7 +212,7 @@ static unsigned char PADDING[64] =
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context.
  */
-static void jk_MD5Init(JK_MD5_CTX *context)
+static void jk2_MD5Init(JK_MD5_CTX *context)
 {
     context->count[0] = context->count[1] = 0;
     /* Load magic initialization constants. */
@@ -226,7 +226,7 @@ static void jk_MD5Init(JK_MD5_CTX *context)
    operation, processing another message block, and updating the
    context.
  */
-static void jk_MD5Update(JK_MD5_CTX *context, const unsigned char *input,
+static void jk2_MD5Update(JK_MD5_CTX *context, const unsigned char *input,
 			      unsigned int inputLen)
 {
     unsigned int i, idx, partLen;
@@ -247,10 +247,10 @@ static void jk_MD5Update(JK_MD5_CTX *context, const unsigned char *input,
 #ifndef CHARSET_EBCDIC
     if (inputLen >= partLen) {
 	memcpy(&context->buffer[idx], input, partLen);
-	MD5Transform(context->state, context->buffer);
+	jk2_MD5Transform(context->state, context->buffer);
 
 	for (i = partLen; i + 63 < inputLen; i += 64) {
-	    MD5Transform(context->state, &input[i]);
+	    jk2_MD5Transform(context->state, &input[i]);
 	}
 
 	idx = 0;
@@ -264,12 +264,12 @@ static void jk_MD5Update(JK_MD5_CTX *context, const unsigned char *input,
 #else /*CHARSET_EBCDIC*/
     if (inputLen >= partLen) {
 	ebcdic2ascii(&context->buffer[idx], input, partLen);
-	MD5Transform(context->state, context->buffer);
+	jk2_MD5Transform(context->state, context->buffer);
 
 	for (i = partLen; i + 63 < inputLen; i += 64) {
 	    unsigned char inp_tmp[64];
 	    ebcdic2ascii(inp_tmp, &input[i], 64);
-	    MD5Transform(context->state, inp_tmp);
+	    jk2_MD5Transform(context->state, inp_tmp);
 	}
 
 	idx = 0;
@@ -286,25 +286,25 @@ static void jk_MD5Update(JK_MD5_CTX *context, const unsigned char *input,
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
    the message digest and zeroizing the context.
  */
-void JK_METHOD jk_MD5Final(unsigned char digest[16], JK_MD5_CTX *context)
+void JK_METHOD jk2_MD5Final(unsigned char digest[16], JK_MD5_CTX *context)
 {
     unsigned char bits[8];
     unsigned int idx, padLen;
 
 
     /* Save number of bits */
-    Encode(bits, context->count, 8);
+    jk2_Encode(bits, context->count, 8);
 
 #ifdef CHARSET_EBCDIC
     /* XXX: @@@: In order to make this no more complex than necessary,
      * this kludge converts the bits[] array using the ascii-to-ebcdic
-     * table, because the following jk_MD5Update() re-translates
+     * table, because the following jk2_MD5Update() re-translates
      * its input (ebcdic-to-ascii).
-     * Otherwise, we would have to pass a "conversion" flag to jk_MD5Update()
+     * Otherwise, we would have to pass a "conversion" flag to jk2_MD5Update()
      */
     ascii2ebcdic(bits,bits,8);
 
-    /* Since everything is converted to ascii within jk_MD5Update(), 
+    /* Since everything is converted to ascii within jk2_MD5Update(), 
      * the initial 0x80 (PADDING[0]) must be stored as 0x20 
      */
     ascii2ebcdic(PADDING,PADDING,1);
@@ -313,24 +313,24 @@ void JK_METHOD jk_MD5Final(unsigned char digest[16], JK_MD5_CTX *context)
     /* Pad out to 56 mod 64. */
     idx = (unsigned int) ((context->count[0] >> 3) & 0x3f);
     padLen = (idx < 56) ? (56 - idx) : (120 - idx);
-    jk_MD5Update(context, (const unsigned char *)PADDING, padLen);
+    jk2_MD5Update(context, (const unsigned char *)PADDING, padLen);
 
     /* Append length (before padding) */
-    jk_MD5Update(context, (const unsigned char *)bits, 8);
+    jk2_MD5Update(context, (const unsigned char *)bits, 8);
 
     /* Store state in digest */
-    Encode(digest, context->state, 16);
+    jk2_Encode(digest, context->state, 16);
 
     /* Zeroize sensitive information. */
     memset(context, 0, sizeof(*context));
 }
 
 /* MD5 basic transformation. Transforms state based on block. */
-static void MD5Transform(JK_UINT4 state[4], const unsigned char block[64])
+static void jk2_MD5Transform(JK_UINT4 state[4], const unsigned char block[64])
 {
     JK_UINT4 a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
-    Decode(x, block, 64);
+    jk2_Decode(x, block, 64);
 
     /* Round 1 */
     FF(a, b, c, d, x[0], S11, 0xd76aa478);	/* 1 */
@@ -416,7 +416,7 @@ static void MD5Transform(JK_UINT4 state[4], const unsigned char block[64])
 /* Encodes input (JK_UINT4) into output (unsigned char). Assumes len is
    a multiple of 4.
  */
-static void Encode(unsigned char *output, const JK_UINT4 *input, unsigned int len)
+static void jk2_Encode(unsigned char *output, const JK_UINT4 *input, unsigned int len)
 {
     unsigned int i, j;
     JK_UINT4 k;
@@ -433,7 +433,7 @@ static void Encode(unsigned char *output, const JK_UINT4 *input, unsigned int le
 /* Decodes input (unsigned char) into output (JK_UINT4). Assumes len is
  * a multiple of 4.
  */
-static void Decode(JK_UINT4 *output, const unsigned char *input, unsigned int len)
+static void jk2_Decode(JK_UINT4 *output, const unsigned char *input, unsigned int len)
 {
     unsigned int i, j;
 
@@ -447,7 +447,7 @@ static void Decode(JK_UINT4 *output, const unsigned char *input, unsigned int le
  * the FreeBSD 3.0 /usr/src/lib/libcrypt/crypt.c file, which is
  * licenced as stated at the top of this file.
  */
-static void jk_to64(char *s, unsigned long v, int n)
+static void jk2_to64(char *s, unsigned long v, int n)
 {
     static unsigned char itoa64[] =         /* 0 ... 63 => ASCII - 64 */
 	"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -458,19 +458,19 @@ static void jk_to64(char *s, unsigned long v, int n)
     }
 }
 
-char * JK_METHOD jk_md5(const unsigned char *org, const unsigned char *org2, char *dst)
+char * JK_METHOD jk2_md5(const unsigned char *org, const unsigned char *org2, char *dst)
 {
 	JK_MD5_CTX  ctx;
 	char		buf[JK_MD5_DIGESTSIZE + 1];
 
-    jk_MD5Init(&ctx);
-    jk_MD5Update(&ctx, org, strlen((const char *)org));
+    jk2_MD5Init(&ctx);
+    jk2_MD5Update(&ctx, org, strlen((const char *)org));
 
 	if (org2 != NULL)
-		jk_MD5Update(&ctx, org2, strlen((const char *)org2));
+		jk2_MD5Update(&ctx, org2, strlen((const char *)org2));
 
-    jk_MD5Final((unsigned char *)buf, &ctx);
-	return (jk_hextocstr((unsigned char *)buf, dst, JK_MD5_DIGESTSIZE));
+    jk2_MD5Final((unsigned char *)buf, &ctx);
+	return (jk2_hextocstr((unsigned char *)buf, dst, JK_MD5_DIGESTSIZE));
 }
 
 #else /* USE_APACHE_MD5 */
@@ -492,7 +492,7 @@ char * JK_METHOD jk_md5(const unsigned char *org, const unsigned char *org2, cha
 
 #endif /* STANDARD20_MODULE_STUFF */
 
-char * JK_METHOD jk_md5(const unsigned char *org, const unsigned char *org2, char *dst)
+char * JK_METHOD jk2_md5(const unsigned char *org, const unsigned char *org2, char *dst)
 {
 	AP_MD5_CTX ctx;
 	char	   buf[JK_MD5_DIGESTSIZE + 1];
@@ -504,7 +504,7 @@ char * JK_METHOD jk_md5(const unsigned char *org, const unsigned char *org2, cha
 		ap_MD5Update(&ctx, org2, strlen(org2));
 
     ap_MD5Final(buf, &ctx);
-	return (jk_hextocstr(buf, dst, JK_MD5_DIGESTSIZE));
+	return (jk2_hextocstr(buf, dst, JK_MD5_DIGESTSIZE));
 }
 
 #endif /* USE_APACHE_MD5 */
@@ -524,7 +524,7 @@ main(int argc, char ** argv)
 	char xxx[(2 * JK_MD5_DIGESTSIZE) + 1];
 
 	if (argc > 1)
-		printf("%s => %s\n", argv[1], jk_md5(argv[1], NULL, xxx));
+		printf("%s => %s\n", argv[1], jk2_md5(argv[1], NULL, xxx));
 }
 
 #endif 

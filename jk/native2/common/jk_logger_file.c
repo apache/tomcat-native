@@ -74,7 +74,7 @@
 #define HUGE_BUFFER_SIZE (8*1024)
 #define LOG_LINE_SIZE    (1024)
 
-int JK_METHOD jk_logger_file_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk2_logger_file_factory(jk_env_t *env, jk_pool_t *pool, void **result,
                                      const char *type, const char *name);
 
 
@@ -88,21 +88,21 @@ int JK_METHOD jk_logger_file_factory(jk_env_t *env, jk_pool_t *pool, void **resu
 #define JK_TIME_FORMAT "[%a %b %d %H:%M:%S %Y] "
 #endif
 
-const char * jk_logger_file_logFmt = JK_TIME_FORMAT;
+static const char * jk2_logger_file_logFmt = JK_TIME_FORMAT;
 
-static void jk_logger_file_setTimeStr(jk_env_t *env,char * str, int len)
+static void jk2_logger_file_setTimeStr(jk_env_t *env,char * str, int len)
 {
 	time_t		t = time(NULL);
     	struct tm 	*tms;
 
     	tms = gmtime(&t);
         if( tms==NULL ) return;
-	strftime(str, len, jk_logger_file_logFmt, tms);
+	strftime(str, len, jk2_logger_file_logFmt, tms);
 }
 
-static int jk_logger_file_log(jk_env_t *env,jk_logger_t *l,                                 
-                              int level,
-                              const char *what)
+static int jk2_logger_file_log(jk_env_t *env,jk_logger_t *l,                                 
+                               int level,
+                               const char *what)
 {
     FILE *f = (FILE *)l->logger_private;
 
@@ -126,7 +126,7 @@ static int jk_logger_file_log(jk_env_t *env,jk_logger_t *l,
     return JK_FALSE;
 }
 
-static int jk_logger_file_parseLogLevel(jk_env_t *env, const char *level)
+static int jk2_logger_file_parseLogLevel(jk_env_t *env, const char *level)
 {
     if( level == NULL ) return JK_LOG_ERROR_LEVEL;
     
@@ -145,19 +145,19 @@ static int jk_logger_file_parseLogLevel(jk_env_t *env, const char *level)
     return JK_LOG_DEBUG_LEVEL;
 }
 
-static int jk_logger_file_open(jk_env_t *env,jk_logger_t *_this,
-                               jk_map_t *properties )
+static int jk2_logger_file_open(jk_env_t *env,jk_logger_t *_this,
+                                jk_map_t *properties )
 {
-    char *file=jk_map_getStrProp(NULL, properties,"logger","file",
+    char *file=jk2_map_getStrProp(NULL, properties,"logger","file",
                                  "name","mod_jk.log");
     int level;
-    char *levelS=jk_map_getStrProp(NULL, properties,"logger","file",
+    char *levelS=jk2_map_getStrProp(NULL, properties,"logger","file",
                                    "level", "ERROR");
-    char *logformat=jk_map_getStrProp(NULL, properties,"logger","file",
+    char *logformat=jk2_map_getStrProp(NULL, properties,"logger","file",
                                    "timeFormat", JK_TIME_FORMAT);
     FILE *f;
 
-    _this->level = jk_logger_file_parseLogLevel(env, levelS);
+    _this->level = jk2_logger_file_parseLogLevel(env, levelS);
     if( _this->level == 0 )
         _this->jkLog( env, _this, JK_LOG_ERROR,
                       "Level %s %d \n", levelS, _this->level ); 
@@ -165,7 +165,7 @@ static int jk_logger_file_open(jk_env_t *env,jk_logger_t *_this,
     if( logformat==NULL ) {
         logformat=JK_TIME_FORMAT;
     }
-    jk_logger_file_logFmt = logformat;
+    jk2_logger_file_logFmt = logformat;
 
     f = fopen(file, "a+");
     if(f==NULL) {
@@ -177,7 +177,7 @@ static int jk_logger_file_open(jk_env_t *env,jk_logger_t *_this,
     return JK_TRUE;
 }
 
-static int jk_logger_file_close(jk_env_t *env,jk_logger_t *_this)
+static int jk2_logger_file_close(jk_env_t *env,jk_logger_t *_this)
 {
     FILE *f = _this->logger_private;
     if( f==NULL ) return JK_TRUE;
@@ -190,11 +190,11 @@ static int jk_logger_file_close(jk_env_t *env,jk_logger_t *_this)
     return JK_TRUE;
 }
 
-static int jk_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
-                                const char *file,
-                                int line,
-                                int level,
-                                const char *fmt, ...)
+static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
+                                 const char *file,
+                                 int line,
+                                 int level,
+                                 const char *fmt, ...)
 {
     int rc = 0;
     
@@ -232,12 +232,12 @@ static int jk_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
         if (NULL == buf)
            return -1;
 
-	jk_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
+	jk2_logger_file_setTimeStr(buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
             used += sprintf(&buf[used], " [%s (%d)]: ", f, line);
 #else 
-	jk_logger_file_setTimeStr(env, buf, HUGE_BUFFER_SIZE);
+	jk2_logger_file_setTimeStr(env, buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
             used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
@@ -266,11 +266,11 @@ static int jk_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
 }
 
 
-int jk_logger_file_factory(jk_env_t *env,
-                           jk_pool_t *pool, 
-                           void **result,
-                           const char *type,
-                           const char *name)
+int jk2_logger_file_factory(jk_env_t *env,
+                            jk_pool_t *pool, 
+                            void **result,
+                            const char *type,
+                            const char *name)
 {
     jk_logger_t *l = (jk_logger_t *)pool->alloc(env, pool, sizeof(jk_logger_t));
 
@@ -278,10 +278,10 @@ int jk_logger_file_factory(jk_env_t *env,
         return JK_FALSE;
     }
 
-    l->log = jk_logger_file_log;
+    l->log = jk2_logger_file_log;
     l->logger_private = NULL;
-    l->open =jk_logger_file_open;
-    l->jkLog = jk_logger_file_jkLog;
+    l->open =jk2_logger_file_open;
+    l->jkLog = jk2_logger_file_jkLog;
 
     *result=(void *)l;
     l->level=JK_LOG_ERROR_LEVEL;

@@ -70,15 +70,15 @@
 #include "jk_channel.h"
 #include "jk_requtil.h"
 
-#define AJP13_WS_HEADER				0x1234
+#define AJP13_WS_HEADER           0x1234
 #define AJP_HEADER_LEN            (4)
 #define AJP_HEADER_SZ_LEN         (2)
 
 /*
  * Simple marshaling code.
  */
-static void jk_msg_ajp_dump(jk_env_t *env, struct jk_msg *_this,
-                            char *err)
+static void jk2_msg_ajp_dump(jk_env_t *env, struct jk_msg *_this,
+                             char *err)
 {
     int i=0;
     env->l->jkLog( env, env->l, JK_LOG_INFO,
@@ -114,13 +114,13 @@ static void jk_msg_ajp_dump(jk_env_t *env, struct jk_msg *_this,
 }
 
  
-static void jk_msg_ajp_reset(jk_env_t *env, jk_msg_t *_this) 
+static void jk2_msg_ajp_reset(jk_env_t *env, jk_msg_t *_this) 
 {
     _this->len = 4;
     _this->pos = 4;
 }
 
-static void jk_msg_ajp_end(jk_env_t *env, jk_msg_t *msg) 
+static void jk2_msg_ajp_end(jk_env_t *env, jk_msg_t *msg) 
 {
     unsigned short len=msg->len - 4;
     
@@ -133,8 +133,8 @@ static void jk_msg_ajp_end(jk_env_t *env, jk_msg_t *msg)
 
 
 
-static int jk_msg_ajp_appendLong(jk_env_t *env, jk_msg_t *msg,
-                                 unsigned long val)
+static int jk2_msg_ajp_appendLong(jk_env_t *env, jk_msg_t *msg,
+                                  unsigned long val)
 {
     int len=msg->len;
     
@@ -153,8 +153,8 @@ static int jk_msg_ajp_appendLong(jk_env_t *env, jk_msg_t *msg,
 }
 
 
-static int jk_msg_ajp_appendInt(jk_env_t *env, jk_msg_t *msg, 
-                                unsigned short val) 
+static int jk2_msg_ajp_appendInt(jk_env_t *env, jk_msg_t *msg, 
+                                 unsigned short val) 
 {
     int len=msg->len;
     if(len + 2 > msg->maxlen) {
@@ -169,8 +169,8 @@ static int jk_msg_ajp_appendInt(jk_env_t *env, jk_msg_t *msg,
     return 0;
 }
 
-static int jk_msg_ajp_appendByte(jk_env_t *env, jk_msg_t *msg, 
-                                 unsigned char val)
+static int jk2_msg_ajp_appendByte(jk_env_t *env, jk_msg_t *msg, 
+                                  unsigned char val)
 {
     int len=msg->len;
     if(len + 1 > msg->maxlen) {
@@ -183,8 +183,8 @@ static int jk_msg_ajp_appendByte(jk_env_t *env, jk_msg_t *msg,
     return 0;
 }
 
-static int jk_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg, 
-                                   const char *param) 
+static int jk2_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg, 
+                                    const char *param) 
 {
     int len;
 
@@ -210,9 +210,9 @@ static int jk_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg,
 }
 
 
-static int jk_msg_ajp_appendBytes(jk_env_t *env, jk_msg_t  *msg,
-                                  const unsigned char  *param,
-                                  int len)
+static int jk2_msg_ajp_appendBytes(jk_env_t *env, jk_msg_t  *msg,
+                                   const unsigned char  *param,
+                                   int len)
 {
     if (! len) {
         return 0;
@@ -229,7 +229,7 @@ static int jk_msg_ajp_appendBytes(jk_env_t *env, jk_msg_t  *msg,
     return 0;
 }
 
-static unsigned long jk_msg_ajp_getLong(jk_env_t *env, jk_msg_t *msg)
+static unsigned long jk2_msg_ajp_getLong(jk_env_t *env, jk_msg_t *msg)
 {
     unsigned long i;
     
@@ -246,7 +246,7 @@ static unsigned long jk_msg_ajp_getLong(jk_env_t *env, jk_msg_t *msg)
     return i;
 }
 
-static unsigned short jk_msg_ajp_getInt(jk_env_t *env, jk_msg_t *msg) 
+static unsigned short jk2_msg_ajp_getInt(jk_env_t *env, jk_msg_t *msg) 
 {
     int i;
     if(msg->pos + 1 > msg->len) {
@@ -260,7 +260,7 @@ static unsigned short jk_msg_ajp_getInt(jk_env_t *env, jk_msg_t *msg)
     return i;
 }
 
-static unsigned short jk_msg_ajp_peekInt(jk_env_t *env, jk_msg_t *msg) 
+static unsigned short jk2_msg_ajp_peekInt(jk_env_t *env, jk_msg_t *msg) 
 {
     int i;
     if(msg->pos + 1 > msg->len) {
@@ -274,7 +274,7 @@ static unsigned short jk_msg_ajp_peekInt(jk_env_t *env, jk_msg_t *msg)
     return i;
 }
 
-static unsigned char jk_msg_ajp_getByte(jk_env_t *env, jk_msg_t *msg) 
+static unsigned char jk2_msg_ajp_getByte(jk_env_t *env, jk_msg_t *msg) 
 {
     unsigned char rc;
     if(msg->pos > msg->len) {
@@ -288,9 +288,9 @@ static unsigned char jk_msg_ajp_getByte(jk_env_t *env, jk_msg_t *msg)
     return rc;
 }
 
-static unsigned char *jk_msg_ajp_getString(jk_env_t *env, jk_msg_t *msg) 
+static unsigned char *jk2_msg_ajp_getString(jk_env_t *env, jk_msg_t *msg) 
 {
-    int size = jk_msg_ajp_getInt(env, msg);
+    int size = jk2_msg_ajp_getInt(env, msg);
     int start = msg->pos;
 
     if((size < 0 ) || (size + start > msg->maxlen)) { 
@@ -306,9 +306,9 @@ static unsigned char *jk_msg_ajp_getString(jk_env_t *env, jk_msg_t *msg)
     return (unsigned char *)(msg->buf + start); 
 }
 
-static unsigned char *jk_msg_ajp_getBytes(jk_env_t *env, jk_msg_t *msg, int *lenP) 
+static unsigned char *jk2_msg_ajp_getBytes(jk_env_t *env, jk_msg_t *msg, int *lenP) 
 {
-    int size = jk_msg_ajp_getInt(env, msg);
+    int size = jk2_msg_ajp_getInt(env, msg);
     int start = msg->pos;
 
     *lenP=size;
@@ -330,7 +330,7 @@ static unsigned char *jk_msg_ajp_getBytes(jk_env_t *env, jk_msg_t *msg, int *len
 /** Shame-less copy from somewhere.
     assert (src != dst)
  */
-static void swap_16(unsigned char *src, unsigned char *dst) 
+static void jk2_swap_16(unsigned char *src, unsigned char *dst) 
 {
     *dst++ = *(src + 1 );
     *dst= *src;
@@ -340,8 +340,8 @@ static void swap_16(unsigned char *src, unsigned char *dst)
     available - the channel may get more data it it can, to
     avoid multiple system calls.
 */
-static int jk_msg_ajp_checkHeader(jk_env_t *env, jk_msg_t *msg,
-                                  jk_endpoint_t *ae )
+static int jk2_msg_ajp_checkHeader(jk_env_t *env, jk_msg_t *msg,
+                                   jk_endpoint_t *ae )
 {
     char *head=msg->buf;
     int msglen;
@@ -373,20 +373,20 @@ static int jk_msg_ajp_checkHeader(jk_env_t *env, jk_msg_t *msg,
 
 /** 
  * Special method. Will read data from the server and add them as
- * bytes. It is equivalent with jk_requtil_readFully() in a buffer
+ * bytes. It is equivalent with jk2_requtil_readFully() in a buffer
  * and then jk_msg_appendBytes(), except that we use directly the
  * internal buffer.
  *
  * Returns -1 on error, else number of bytes read
  */
-static int jk_msg_ajp_appendFromServer(jk_env_t *env, jk_msg_t    *msg,
+static int jk2_msg_ajp_appendFromServer(jk_env_t *env, jk_msg_t    *msg,
                                        jk_ws_service_t *r,
                                        jk_endpoint_t  *ae,
                                        int            len )
 {
     unsigned char *read_buf = msg->buf;
 
-    jk_msg_ajp_reset(env, msg);
+    jk2_msg_ajp_reset(env, msg);
 
     read_buf += AJP_HEADER_LEN;    /* leave some space for the buffer headers */
     read_buf += AJP_HEADER_SZ_LEN; /* leave some space for the read length */
@@ -396,7 +396,7 @@ static int jk_msg_ajp_appendFromServer(jk_env_t *env, jk_msg_t    *msg,
 	len = AJP13_MAX_SEND_BODY_SZ;
     }
 
-    if ((len = jk_requtil_readFully(env, r, read_buf, len)) < 0) {
+    if ((len = jk2_requtil_readFully(env, r, read_buf, len)) < 0) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "msgAjp.appendFromServer() error reading from server\n");
         return -1;
@@ -409,7 +409,7 @@ static int jk_msg_ajp_appendFromServer(jk_env_t *env, jk_msg_t    *msg,
     if (len > 0) {
 	/* Recipient recognizes empty packet as end of stream, not
 	   an empty body packet */
-        if(0 != jk_msg_ajp_appendInt(env, msg, (unsigned short)len)) {
+        if(0 != jk2_msg_ajp_appendInt(env, msg, (unsigned short)len)) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                           "msg.appendFromServer(): appendInt failed\n");
             return -1;
@@ -422,7 +422,7 @@ static int jk_msg_ajp_appendFromServer(jk_env_t *env, jk_msg_t    *msg,
 }
 
 
-jk_msg_t *jk_msg_ajp_create(jk_env_t *env, jk_pool_t *pool, int buffSize) 
+jk_msg_t *jk2_msg_ajp_create(jk_env_t *env, jk_pool_t *pool, int buffSize) 
 {
     jk_msg_t *msg = 
         (jk_msg_t *)pool->calloc(env, pool, sizeof(jk_msg_t));
@@ -445,26 +445,26 @@ jk_msg_t *jk_msg_ajp_create(jk_env_t *env, jk_pool_t *pool, int buffSize)
 
     msg->headerLength=4;
 
-    msg->reset=jk_msg_ajp_reset;
-    msg->end=jk_msg_ajp_end;
-    msg->dump=jk_msg_ajp_dump;
+    msg->reset=jk2_msg_ajp_reset;
+    msg->end=jk2_msg_ajp_end;
+    msg->dump=jk2_msg_ajp_dump;
 
-    msg->appendByte=jk_msg_ajp_appendByte;
-    msg->appendBytes=jk_msg_ajp_appendBytes;
-    msg->appendInt=jk_msg_ajp_appendInt;
-    msg->appendLong=jk_msg_ajp_appendLong;
-    msg->appendString=jk_msg_ajp_appendString;
+    msg->appendByte=jk2_msg_ajp_appendByte;
+    msg->appendBytes=jk2_msg_ajp_appendBytes;
+    msg->appendInt=jk2_msg_ajp_appendInt;
+    msg->appendLong=jk2_msg_ajp_appendLong;
+    msg->appendString=jk2_msg_ajp_appendString;
 
-    msg->appendFromServer=jk_msg_ajp_appendFromServer;
+    msg->appendFromServer=jk2_msg_ajp_appendFromServer;
 
-    msg->getByte=jk_msg_ajp_getByte;
-    msg->getInt=jk_msg_ajp_getInt;
-    msg->peekInt=jk_msg_ajp_peekInt;
-    msg->getLong=jk_msg_ajp_getLong;
-    msg->getString=jk_msg_ajp_getString;
-    msg->getBytes=jk_msg_ajp_getBytes;
+    msg->getByte=jk2_msg_ajp_getByte;
+    msg->getInt=jk2_msg_ajp_getInt;
+    msg->peekInt=jk2_msg_ajp_peekInt;
+    msg->getLong=jk2_msg_ajp_getLong;
+    msg->getString=jk2_msg_ajp_getString;
+    msg->getBytes=jk2_msg_ajp_getBytes;
 
-    msg->checkHeader=jk_msg_ajp_checkHeader;
+    msg->checkHeader=jk2_msg_ajp_checkHeader;
                        
     return msg;
 }

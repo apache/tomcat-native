@@ -77,12 +77,12 @@ typedef struct jk_map_private {
     int size;
 } jk_map_private_t;
 
-static int jk_map_default_realloc(jk_env_t *env, jk_map_t *m);
-static void trim_prp_comment(char *prp);
-static int trim(char *s);
+static int  jk2_map_default_realloc(jk_env_t *env, jk_map_t *m);
+static void jk2_trim_prp_comment(char *prp);
+static int  jk2_trim(char *s);
 
-static void *jk_map_default_get(jk_env_t *env, jk_map_t *m,
-                                const char *name)
+static void *jk2_map_default_get(jk_env_t *env, jk_map_t *m,
+                                 const char *name)
 {
     int i;
     jk_map_private_t *mPriv;
@@ -101,9 +101,9 @@ static void *jk_map_default_get(jk_env_t *env, jk_map_t *m,
 }
 
 
-static int jk_map_default_put(jk_env_t *env, jk_map_t *m,
-                              const char *name, void *value,
-                              void **old)
+static int jk2_map_default_put(jk_env_t *env, jk_map_t *m,
+                               const char *name, void *value,
+                               void **old)
 {
     int rc = JK_FALSE;
     int i;
@@ -128,7 +128,7 @@ static int jk_map_default_put(jk_env_t *env, jk_map_t *m,
         return JK_TRUE;
     }
     
-    jk_map_default_realloc(env, m);
+    jk2_map_default_realloc(env, m);
     
     if(mPriv->size < mPriv->capacity) {
         mPriv->values[mPriv->size] = value;
@@ -146,8 +146,8 @@ static int jk_map_default_put(jk_env_t *env, jk_map_t *m,
     return rc;
 }
 
-static int jk_map_default_add(jk_env_t *env, jk_map_t *m,
-                              const char *name, void *value)
+static int jk2_map_default_add(jk_env_t *env, jk_map_t *m,
+                               const char *name, void *value)
 {
     int rc = JK_FALSE;
     int i;
@@ -158,7 +158,7 @@ static int jk_map_default_add(jk_env_t *env, jk_map_t *m,
 
     mPriv=(jk_map_private_t *)m->_private;
     
-    jk_map_default_realloc(env, m);
+    jk2_map_default_realloc(env, m);
     
     if(mPriv->size < mPriv->capacity) {
         mPriv->values[mPriv->size] = value;
@@ -174,7 +174,7 @@ static int jk_map_default_add(jk_env_t *env, jk_map_t *m,
     return rc;
 }
 
-static int jk_map_default_size(jk_env_t *env, jk_map_t *m)
+static int jk2_map_default_size(jk_env_t *env, jk_map_t *m)
 {
     jk_map_private_t *mPriv;
 
@@ -183,8 +183,8 @@ static int jk_map_default_size(jk_env_t *env, jk_map_t *m)
     return mPriv->size;
 }
 
-static char *jk_map_default_nameAt(jk_env_t *env, jk_map_t *m,
-                                   int idex)
+static char *jk2_map_default_nameAt(jk_env_t *env, jk_map_t *m,
+                                    int idex)
 {
     jk_map_private_t *mPriv;
 
@@ -196,8 +196,8 @@ static char *jk_map_default_nameAt(jk_env_t *env, jk_map_t *m,
     return (char *)mPriv->names[idex]; 
 }
 
-static void *jk_map_default_valueAt(jk_env_t *env, jk_map_t *m,
-                                    int idex)
+static void *jk2_map_default_valueAt(jk_env_t *env, jk_map_t *m,
+                                     int idex)
 {
     jk_map_private_t *mPriv;
 
@@ -209,7 +209,7 @@ static void *jk_map_default_valueAt(jk_env_t *env, jk_map_t *m,
     return (void *) mPriv->values[idex]; 
 }
 
-static void jk_map_default_clear(jk_env_t *env, jk_map_t *m )
+static void jk2_map_default_clear(jk_env_t *env, jk_map_t *m )
 {
     jk_map_private_t *mPriv;
 
@@ -219,13 +219,13 @@ static void jk_map_default_clear(jk_env_t *env, jk_map_t *m )
 
 }
 
-static void jk_map_default_init(jk_env_t *env, jk_map_t *m, int initialSize,
-                                void *wrappedObj)
+static void jk2_map_default_init(jk_env_t *env, jk_map_t *m, int initialSize,
+                                 void *wrappedObj)
 {
 
 }
 
-int jk_map_append(jk_env_t *env, jk_map_t * dst, jk_map_t * src )
+int jk2_map_append(jk_env_t *env, jk_map_t * dst, jk_map_t * src )
 {
     /* This was badly broken in the original ! */
     int sz = src->size(env, src);
@@ -248,8 +248,8 @@ int jk_map_append(jk_env_t *env, jk_map_t * dst, jk_map_t * src )
 /* General purpose map utils - independent of the map impl */
 
 
-char *jk_map_getString(jk_env_t *env, jk_map_t *m,
-                       const char *name, char *def)
+char *jk2_map_getString(jk_env_t *env, jk_map_t *m,
+                        const char *name, char *def)
 {
     char *val= m->get( env, m, name );
     if( val==NULL )
@@ -257,21 +257,17 @@ char *jk_map_getString(jk_env_t *env, jk_map_t *m,
     return val;
 }
 
-int jk_map_getBool(jk_env_t *env, jk_map_t *m,
-                   const char *prop, const char *def)
+int jk2_map_getBool(jk_env_t *env, jk_map_t *m,
+                    const char *prop, const char *def)
 {
-    char *val=jk_map_getString( env, m, prop, (char *)def );
+    char *val=jk2_map_getString( env, m, prop, (char *)def );
 
     if( val==NULL )
         return JK_FALSE;
 
     if( strcmp( val, "1" ) == 0 ||
-        strcmp( val, "true" ) == 0 ||
-        strcmp( val, "TRUE" ) == 0 ||
-        strcmp( val, "True" ) == 0 ||
-        strcmp( val, "on" ) == 0 ||
-        strcmp( val, "On" ) == 0 ||
-        strcmp( val, "ON" ) == 0 ) {
+        strcasecmp( val, "TRUE" ) == 0 ||
+        strcasecmp( val, "ON" ) == 0 ) {
         return JK_TRUE;
     }
     return JK_FALSE;
@@ -281,10 +277,10 @@ int jk_map_getBool(jk_env_t *env, jk_map_t *m,
     for properties.
     Example worker.ajp13.host=localhost.
 */
-char *jk_map_getStrProp(jk_env_t *env, jk_map_t *m,
-                        const char *objType, const char *objName,
-                        const char *pname,
-                        char *def)
+char *jk2_map_getStrProp(jk_env_t *env, jk_map_t *m,
+                         const char *objType, const char *objName,
+                         const char *pname,
+                         char *def)
 {
     char buf[1024];
     char *res;
@@ -302,17 +298,17 @@ char *jk_map_getStrProp(jk_env_t *env, jk_map_t *m,
     return res;
 }
 
-int jk_map_getIntProp(jk_env_t *env, jk_map_t *m,
-                      const char *objType, const char *objName,
-                      const char *pname,
-                      int def)
+int jk2_map_getIntProp(jk_env_t *env, jk_map_t *m,
+                       const char *objType, const char *objName,
+                       const char *pname,
+                       int def)
 {
-    char *val=jk_map_getStrProp( env, m, objType, objName, pname, NULL );
+    char *val=jk2_map_getStrProp( env, m, objType, objName, pname, NULL );
 
     if( val==NULL )
         return def;
 
-    return jk_map_str2int( env, val );
+    return jk2_map_str2int( env, val );
 }
 
 /* ==================== */
@@ -320,7 +316,7 @@ int jk_map_getIntProp(jk_env_t *env, jk_map_t *m,
 
 /* Convert a string to int, using 'M', 'K' suffixes
  */
-int jk_map_str2int(jk_env_t *env, char *val )
+int jk2_map_str2int(jk_env_t *env, char *val )
 {   /* map2int:
        char *v=getString();
        return (c==NULL) ? def : str2int( v );
@@ -358,11 +354,11 @@ int jk_map_str2int(jk_env_t *env, char *val )
     return int_res * multit;
 }
 
-char **jk_map_split(jk_env_t *env, jk_map_t *m,
-                    jk_pool_t *pool,
-                    const char *listStr,
-                    const char *sep,
-                    unsigned *list_len )
+char **jk2_map_split(jk_env_t *env, jk_map_t *m,
+                     jk_pool_t *pool,
+                     const char *listStr,
+                     const char *sep,
+                     unsigned *list_len )
 {
     char **ar = NULL;
     unsigned capacity = 0;
@@ -422,8 +418,8 @@ char **jk_map_split(jk_env_t *env, jk_map_t *m,
 /* ==================== */
 /*  Reading / parsing */
 
-int jk_map_readFileProperties(jk_env_t *env, jk_map_t *m,
-                              const char *f)
+int jk2_map_readFileProperties(jk_env_t *env, jk_map_t *m,
+                               const char *f)
 {
     int rc = JK_FALSE;
     FILE *fp;
@@ -444,9 +440,9 @@ int jk_map_readFileProperties(jk_env_t *env, jk_map_t *m,
     while(NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
         char *oldv;
         
-        trim_prp_comment(prp);
+        jk2_trim_prp_comment(prp);
 
-        if( trim(prp)==0 )
+        if( jk2_trim(prp)==0 )
             continue;
 
         v = strchr(prp, '=');
@@ -459,7 +455,7 @@ int jk_map_readFileProperties(jk_env_t *env, jk_map_t *m,
         if(strlen(v)==0 || strlen(prp)==0)
             continue;
 
-        v = jk_map_replaceProperties(env, m, m->pool, v);
+        v = jk2_map_replaceProperties(env, m, m->pool, v);
 
         /* We don't contatenate the values - but use multi-value
            fields. This eliminates the ugly hack where readProperties
@@ -486,10 +482,10 @@ int jk_map_readFileProperties(jk_env_t *env, jk_map_t *m,
  *       values or values separated by one of the sep's chars )
  *    
  */
-char *jk_map_getValuesString(jk_env_t *env, jk_map_t *m,
-                             struct jk_pool *resultPool,
-                             char *name,
-                             char *sep )
+char *jk2_map_getValuesString(jk_env_t *env, jk_map_t *m,
+                              struct jk_pool *resultPool,
+                              char *name,
+                              char *sep )
 {
     char **values;
     int valuesCount;
@@ -501,9 +497,9 @@ char *jk_map_getValuesString(jk_env_t *env, jk_map_t *m,
     char sepStr[2];
     
     if(sep==NULL)
-        values=jk_map_getValues( env, m, resultPool, name," \t,*", &valuesCount );
+        values=jk2_map_getValues( env, m, resultPool, name," \t,*", &valuesCount );
     else
-        values=jk_map_getValues( env, m, resultPool, name, sep, &valuesCount );
+        values=jk2_map_getValues( env, m, resultPool, name, sep, &valuesCount );
 
     if( values==NULL ) return NULL;
     if( valuesCount<=0 ) return NULL;
@@ -539,11 +535,11 @@ char *jk_map_getValuesString(jk_env_t *env, jk_map_t *m,
  * @param sep Optional separator, it'll be used to split existing values.
  *            Curently only single-char separators are supported. 
  */
-char **jk_map_getValues(jk_env_t *env, jk_map_t *m,
-                       struct jk_pool *resultPool,
-                       char *name,
-                       char *sep,
-                       int *countP)
+char **jk2_map_getValues(jk_env_t *env, jk_map_t *m,
+                         struct jk_pool *resultPool,
+                         char *name,
+                         char *sep,
+                         int *countP)
 {
     char **result;
     int count=0;
@@ -586,9 +582,9 @@ char **jk_map_getValues(jk_env_t *env, jk_map_t *m,
  *  Replace $(property) in value.
  * 
  */
-char *jk_map_replaceProperties(jk_env_t *env, jk_map_t *m,
-                               struct jk_pool *resultPool, 
-                               char *value)
+char *jk2_map_replaceProperties(jk_env_t *env, jk_map_t *m,
+                                struct jk_pool *resultPool, 
+                                char *value)
 {
     char *rc = value;
     char *env_start = rc;
@@ -642,7 +638,7 @@ char *jk_map_replaceProperties(jk_env_t *env, jk_map_t *m,
 /* Internal utils */
 
 
-int jk_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
+int jk2_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
 {
     jk_map_t *_this;
     jk_map_private_t *mPriv;
@@ -665,14 +661,14 @@ int jk_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
     mPriv->names    = NULL;
     mPriv->values   = NULL;
 
-    _this->get=jk_map_default_get;
-    _this->put=jk_map_default_put;
-    _this->add=jk_map_default_add;
-    _this->size=jk_map_default_size;
-    _this->nameAt=jk_map_default_nameAt;
-    _this->valueAt=jk_map_default_valueAt;
-    _this->init=jk_map_default_init;
-    _this->clear=jk_map_default_clear;
+    _this->get=jk2_map_default_get;
+    _this->put=jk2_map_default_put;
+    _this->add=jk2_map_default_add;
+    _this->size=jk2_map_default_size;
+    _this->nameAt=jk2_map_default_nameAt;
+    _this->valueAt=jk2_map_default_valueAt;
+    _this->init=jk2_map_default_init;
+    _this->clear=jk2_map_default_clear;
     
 
     return JK_TRUE;
@@ -691,7 +687,7 @@ int jk_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
 /* } */
 
 
-static void trim_prp_comment(char *prp)
+static void jk2_trim_prp_comment(char *prp)
 {
     char *comment = strchr(prp, '#');
     if(comment) {
@@ -699,7 +695,7 @@ static void trim_prp_comment(char *prp)
     }
 }
 
-static int trim(char *s)
+static int jk2_trim(char *s)
 {
     int i;
 
@@ -718,7 +714,7 @@ static int trim(char *s)
     return strlen(s);
 }
 
-static int jk_map_default_realloc(jk_env_t *env, jk_map_t *m)
+static int jk2_map_default_realloc(jk_env_t *env, jk_map_t *m)
 {
     jk_map_private_t *mPriv=m->_private;
     
