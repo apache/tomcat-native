@@ -93,6 +93,7 @@
 	       excludes="**/CVS/**">
 	    <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat4.detect"/>
             <exclude name="org/apache/ajp/tomcat33/**" unless="tomcat33.detect"/>
+            <exclude name="org/apache/ajp/test/**" />
 	    <classpath refid="build-main.classpath"/>
 	</javac>
 
@@ -154,9 +155,12 @@
 	<copy todir="${jkant.build}/classes/META-INF" file="jkant/ant.tasks"/>
 	<jar jarfile="${jkant.build}/jkant.jar"
 	     basedir="${jkant.build}/classes" />
+    </target>
+    
+    <!-- It's better to call it directly with individual tags -->
+    <target name="native" >
 	<ant  dir="native" antfile="build.xml"  />
     </target>
-
 
     <!-- ================ BUILD: Create Jk Javadocs =================== -->
     <target name="javadoc">
@@ -164,7 +168,7 @@
 	<mkdir dir="${jk.build}/javadoc"/>
 	<javadoc packagenames="org.apache.ajp,org.apache.ajp.tomcat4"
                sourcepath="java"
-	       classpath="${tomcat-util.jar}:${catalina.jar}:${servlet.jar}"
+	       classpath="${tomcat-util.jar}:${catalina.home}/server/lib/catalina.jar:${catalina.home}/common/lib/servlet.jar"
                   destdir="${jk.build}/javadoc"
                    author="true"
                   version="true"

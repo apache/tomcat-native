@@ -6,6 +6,7 @@
   
   <property file="${user.home}/.ant.properties" />
   <property file="${user.home}/build.properties" />
+  <property file="../build.properties" />
   <property file="build.properties" />
     
   <!-- Experimental -->
@@ -32,12 +33,13 @@
 
   <!-- ==================== Targets ==================== -->
 
-  <target name="main" depends="init,apache20,apache13,jni">
+  <target name="main" depends="init,apache20,jni">
   </target>
 
   <target name="init" >
     <taskdef resource="META-INF/ant.tasks" 
 	     classpathref="jkant" />
+    <available property="HAVE_APR" file="${apr.include}/apr.h" />
   </target>
 
   <target name="jni" depends="init">
@@ -56,6 +58,7 @@
 	<include name="common/jk_pool.c" />
 	<include name="common/jk_logger.c" />
         <include name="common/jk_nwmain.c" if="netware" />
+        <include name="common/apr/*.c" unless="HAVE_APR" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
@@ -159,6 +162,7 @@
 	<include name="common/*.c" />
         <exclude name="jk_nwmain.c" 
 		 unless="netware" />
+        <include name="common/apr/*.c" unless="HAVE_APR" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
@@ -238,6 +242,7 @@
         <include name="common/*.c" />
         <exclude name="jk_nwmain.c" 
                  unless="netware" />
+        <include name="common/apr/*.c" unless="HAVE_APR" />
       </src>
       <includes>
         <include name="${java.home}/../include" />
@@ -281,6 +286,7 @@
 	<include name="common/*.c" />
         <exclude name="jk_nwmain.c" 
 		 unless="netware" />
+        <include name="common/apr/*.c" unless="HAVE_APR" />
       </src>
       <includes>
 	<include name="${native.dir}/common" />
