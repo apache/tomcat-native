@@ -121,9 +121,30 @@ public class Shm extends JkHandler {
             if( aprShmP== 0 ) {
                 // no shared mem. This is normal result, but create should throw
                 log.info("Can't attach, try to create " + file );
+                aprShmP= apr.shmCreate( aprShmPoolP, 8196, file );
+                
             }
+            if( aprShmP== 0 ) {
+                // no shared mem. This is normal result, but create should throw
+                log.info("Can't create " + file );
+                return;
+            }
+
+            long base=apr.shmBaseaddrGet( aprShmPoolP, aprShmP );
+            long size=apr.shmSizeGet( aprShmPoolP, aprShmP );
+
+            log.info("Got shared memory at " + base + " " + size );
+
+            byte b1[]=new byte[16];
             
-            //XXX not implemented.
+            apr.shmRead( aprShmPoolP, base, b1, 0, b1.length );
+
+            System.out.println("Read: " + new String( b1 ));
+            
+            byte helloW[]="hello World".getBytes();
+
+            apr.shmWrite( aprShmPoolP, base, helloW, 0, helloW.length );
+            
         } catch( Throwable ex ) {
             log.error( "Can't initialize shared memory " + ex.toString() );
             apr=null;
