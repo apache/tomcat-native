@@ -308,20 +308,6 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
  *
  * XXX: How to check the timeouts effectively?
 */ 
-#if 0
-        u_long zero = 0;
-#ifdef WIN32
-        if (ioctlsocket(sock, FIONBIO, &zero) == SOCKET_ERROR) {
-            errno = WSAGetLastError() - WSABASEERR;
-#else
-        if (ioctl(sock, FIONBIO, &zero) != 0) {
-#endif
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "channelSocket.open() ioctlcocket failed %s:%d %d %s \n",
-                           socketInfo->host, socketInfo->port, errno, strerror( errno ) );
-            return JK_ERR;
-        }
-#endif 
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &set, sizeof(set));
         setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *) &set, sizeof(set));
     }
