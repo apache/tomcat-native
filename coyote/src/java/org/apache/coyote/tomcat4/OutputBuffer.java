@@ -189,12 +189,6 @@ public class OutputBuffer extends Writer
     private boolean suspended = false;
 
 
-    /**
-     * True if the total response size can be computed.
-     */
-    private boolean knownResponseSize = false;
-
-
     // ----------------------------------------------------------- Constructors
 
 
@@ -295,8 +289,6 @@ public class OutputBuffer extends Writer
         gotEnc = false;
         enc = null;
 
-        knownResponseSize = false;
-
     }
 
 
@@ -312,8 +304,18 @@ public class OutputBuffer extends Writer
         if (suspended)
             return;
 
-        if (!coyoteResponse.isCommitted()) {
-            knownResponseSize = true;
+        if ((!coyoteResponse.isCommitted()) 
+            && (coyoteResponse.getContentLength() == -1)) {
+            // Flushing the char buffer
+            if (state == CHAR_STATE) {
+                cb.flushBuffer();
+                state = BYTE_STATE;
+            }
+            // If this didn't cause a commit of the response, the final content
+            // length can be calculated
+            if (!coyoteResponse.isCommitted()) {
+                coyoteResponse.setContentLength(bb.getLength());
+            }
         }
 
         flush();
@@ -370,9 +372,6 @@ public class OutputBuffer extends Writer
             return;
         if (coyoteResponse == null)
             return;
-
-        if ((knownResponseSize) && (coyoteResponse.getContentLength() == -1))
-            coyoteResponse.setContentLength(cnt);
 
         // If we really have something to write
         if (cnt > 0) {
