@@ -162,12 +162,20 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
         pVer->dwFilterVersion = http_filter_revision;
     }
 
+#ifdef SF_NOTIFY_AUTH_COMPLETE
+
     pVer->dwFlags = SF_NOTIFY_ORDER_HIGH        | 
                     SF_NOTIFY_SECURE_PORT       | 
                     SF_NOTIFY_NONSECURE_PORT    |
                     SF_NOTIFY_PREPROC_HEADERS   |
                     SF_NOTIFY_AUTH_COMPLETE;
-                    
+#else
+	    pVer->dwFlags = SF_NOTIFY_ORDER_HIGH    | 
+                    SF_NOTIFY_SECURE_PORT       | 
+                    SF_NOTIFY_NONSECURE_PORT    |
+                    SF_NOTIFY_PREPROC_HEADERS;   
+#endif
+
     strcpy(pVer->lpszFilterDesc, VERSION_STRING);
 
     if (!is_inited) {
@@ -212,11 +220,18 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 			}
         }
     }
+#ifdef SF_NOTIFY_AUTH_COMPLETE
     if (is_inited &&
          (((SF_NOTIFY_PREPROC_HEADERS == dwNotificationType) && !iis5) ||
 		  ((SF_NOTIFY_AUTH_COMPLETE   == dwNotificationType) &&  iis5)
 		  )
 		)
+#else
+	if (is_inited &&
+         (((SF_NOTIFY_PREPROC_HEADERS == dwNotificationType) && !iis5) 
+		  )
+		)
+#endif
 	{ 
         char uri[INTERNET_MAX_URL_LENGTH]; 
         char snuri[INTERNET_MAX_URL_LENGTH]="/";
@@ -233,6 +248,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         DWORD szHost = sizeof(Host);
         DWORD szTranslate = sizeof(Translate);
 
+#ifdef SF_NOTIFY_AUTH_COMPLETE
 		if (iis5) {
 			GetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->GetHeader;
 			SetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->SetHeader;
@@ -242,6 +258,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 			SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
 			AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
 		}
+#else
+			GetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->GetHeader;
+			SetHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->SetHeader;
+			AddHeader=((PHTTP_FILTER_PREPROC_HEADERS)pvNotification)->AddHeader;
+#endif
+
 
 
         env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
