@@ -481,6 +481,8 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
             }
         } catch (IOException e) {
             throw new LifecycleException("Error creating server socket",e);
+        } catch (java.security.GeneralSecurityException e) {
+            throw new LifecycleException("Error creating SSL server socket",e);
         }
     }
 
