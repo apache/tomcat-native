@@ -89,9 +89,13 @@
             <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
             <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
             <pathelement 
-                         location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
-            <!-- pathelement 
-                         location="${tomcat33.home}/lib/container/tomcat_util.jar"/ -->
+                 location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
+            <!-- this is needed - otherwise tomcat33 connector will not compile.
+                 Just change tomcat33.home in build.properties to point
+                 to nowhere, and tomcat_util will no longer be visible, nor
+                 3.3 classes. -->
+            <pathelement 
+                 location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
         </path>
 
     </target>
@@ -110,9 +114,12 @@
 	       optimize="${optimize}"
 	       verbose="off" >
 	    <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat40.detect"/>
-            <exclude name="org/apache/ajp/tomcat33/**" unless="tomcat33.detect"/>
-            <exclude name="org/apache/jk/server/tomcat33/**" unless="tomcat33.detect"/>
-            <exclude name="org/apache/jk/server/tomcat40/**" unless="tomcat40.detect"/>
+            <exclude name="org/apache/ajp/tomcat33/**" 
+                     unless="tomcat33.detect"/>
+            <exclude name="org/apache/jk/server/tomcat33/**" 
+                     unless="tomcat33.detect"/>
+            <exclude name="org/apache/jk/server/tomcat40/**" 
+                     unless="tomcat40.detect"/>
 	    <exclude name="org/apache/catalina/**" unless="tomcat40.detect"/>
 	    <classpath refid="build-main.classpath"/>
 	</javac>
