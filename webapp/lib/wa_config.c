@@ -81,10 +81,10 @@ const char *wa_capplication(wa_application **a, const char *n,
     strncpy(buf,p,1024);
     l=strlen(buf)-1;
     if (buf[l]=='/') buf[l]='\0';
-    if (buf[0]=='/') {
-        appl->rpth=apr_pstrcat(wa_pool,buf,"/",NULL);
+    if (buf[0]=='/' || l==0) {
+      appl->rpth=apr_pstrcat(wa_pool,buf,"/",NULL);
     } else {
-        appl->rpth=apr_pstrcat(wa_pool,"/",buf,"/",NULL);
+      appl->rpth=apr_pstrcat(wa_pool,"/",buf,"/",NULL);
     }
 
     /* Zero all other parameters */
