@@ -221,8 +221,8 @@ static int jk2_workerEnv_initChannel(jk_env_t *env,
 
     if( ch->mbean->disabled ) return JK_OK;
     
-    if( ch->init != NULL ) {
-        rc=ch->init(env, ch);
+    if( ch->mbean->init != NULL ) {
+        rc=ch->mbean->init(env, ch->mbean);
         if(rc!=JK_OK) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "workerEnv.initChannel() init failed for %s\n", 

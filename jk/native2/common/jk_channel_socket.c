@@ -140,8 +140,9 @@ static int JK_METHOD jk2_channel_socket_setAttribute(jk_env_t *env,
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
 static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
-                                             jk_channel_t *ch )
+                                             jk_bean_t *chB )
 {
+    jk_channel_t *ch=chB->object;
     jk_channel_socket_private_t *socketInfo=
 	(jk_channel_socket_private_t *)(ch->_privatePtr);
     int rc;
@@ -580,13 +581,13 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
 
     ch->recv= jk2_channel_socket_recv; 
     ch->send= jk2_channel_socket_send; 
-    ch->init= jk2_channel_socket_init; 
     ch->open= jk2_channel_socket_open; 
     ch->close= jk2_channel_socket_close; 
 
     ch->is_stream=JK_TRUE;
 
     result->setAttribute= jk2_channel_socket_setAttribute; 
+    result->init= jk2_channel_socket_init; 
 
     /*result->getAttributeInfo=jk2_channel_socket_getAttributeInfo;*/
     result->multiValueInfo=jk2_channel_socket_multiValueInfo;

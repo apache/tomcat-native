@@ -83,13 +83,18 @@
 
 #ifdef HAVE_UNIXSOCKETS    
 
-
 /** Information specific for the socket channel
  */
 typedef struct jk_channel_un_private {
     int ndelay;
     struct sockaddr_un unix_addr;
     char *file;
+
+    int l_onoff;                /* Nonzero to linger on close.  */
+    int l_linger;               /* Time to linger.  */
+
+    int backlog;
+    int doListen;
 } jk_channel_un_private_t;
 
 static int JK_METHOD jk2_channel_un_close(jk_env_t *env, jk_channel_t *ch,
@@ -110,6 +115,11 @@ static int JK_METHOD jk2_channel_un_setAttribute(jk_env_t *env,
 
     if( strcmp( "file", name ) == 0 ) {
         socketInfo->file=value;
+    } else if( strcmp( "soLinger", name ) == 0 ) {
+        socketInfo->l_linger=atoi( value );
+    } else if( strcmp( "listen", name ) == 0 ) {
+        socketInfo->backlog=atoi( value );
+        socketInfo->doListen=JK_TRUE;
     } else {
 	if( ch->worker!=NULL ) {
             return ch->worker->mbean->setAttribute( env, ch->worker->mbean, name, valueP );
@@ -122,8 +132,9 @@ static int JK_METHOD jk2_channel_un_setAttribute(jk_env_t *env,
 /** resolve the host IP ( jk_resolve ) and initialize the channel.
  */
 static int JK_METHOD jk2_channel_un_init(jk_env_t *env,
-                                         jk_channel_t *ch)
+                                         jk_bean_t *chB)
 {
+    jk_channel_t *ch=chB->object;
     jk_channel_un_private_t *socketInfo=
         (jk_channel_un_private_t *)(ch->_privatePtr);
     int rc=JK_OK;
@@ -356,6 +367,7 @@ static int JK_METHOD jk2_channel_un_recv( jk_env_t *env, jk_channel_t *ch,
 
 }
 
+
 int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
                                      jk_pool_t *pool, 
                                      jk_bean_t *result,
@@ -370,7 +382,6 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
 
     ch->recv= jk2_channel_un_recv; 
     ch->send= jk2_channel_un_send; 
-    ch->init= jk2_channel_un_init; 
     ch->open= jk2_channel_un_open; 
     ch->close= jk2_channel_un_close; 
     ch->is_stream=JK_TRUE;
@@ -380,6 +391,7 @@ int JK_METHOD jk2_channel_un_factory(jk_env_t *env,
     result->setAttributeInfo=jk2_channel_un_setAttributeInfo;
     ch->mbean=result;
     result->object= ch;
+    result->init= jk2_channel_un_init; 
 
     ch->workerEnv=env->getByName( env, "workerEnv" );
     ch->workerEnv->addChannel( env, ch->workerEnv, ch );

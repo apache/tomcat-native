@@ -106,7 +106,7 @@ typedef struct {
 
 
 
-static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
+static int JK_METHOD jk2_channel_jni_setAttribute(jk_env_t *env,
                                                  jk_bean_t *mbean, 
                                                  char *name, void *valueP)
 {
@@ -120,8 +120,9 @@ static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
 }
 
 static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
-                                          jk_channel_t *jniW)
+                                          jk_bean_t *jniWB)
 {
+    jk_channel_t *jniW=jniWB->object;
     jk_workerEnv_t *wEnv=jniW->workerEnv;
 
     if( wEnv->vm == NULL ) {
@@ -156,7 +157,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
         return JK_OK;
     }
     
-    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.init():  \n" );
+    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.open():  \n" );
 
     if( _this->worker != NULL )
         _this->worker->mbean->disabled=JK_TRUE;
@@ -313,10 +314,7 @@ static int JK_METHOD jk2_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
     if( epData->jniJavaContext != NULL){
         (*jniEnv)->DeleteGlobalRef( jniEnv, epData->jniJavaContext );
     }
-    endpoint->mbean->pool->realloc(env,endpoint->mbean->pool,0,
-        epData->carray,epData->arrayLen);
-    endpoint->mbean->pool->realloc(env,endpoint->mbean->pool,0,
-        epData,sizeof( jk_ch_jni_ep_private_t ));
+    
     endpoint->channelData=NULL;
     return JK_OK;
 
@@ -404,7 +402,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     nbuf = (*jniEnv)->GetPrimitiveArrayCritical(jniEnv, jbuf, &iscopy);
 #else
     nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, jbuf, &iscopy);
-#endif
+ #endif
     if( iscopy )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channelJni.send() get java bytes iscopy %d\n", iscopy);
@@ -545,7 +543,6 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
     
     ch->recv= jk2_channel_jni_recv;
     ch->send= jk2_channel_jni_send; 
-    ch->init= jk2_channel_jni_init; 
     ch->open= jk2_channel_jni_open; 
     ch->close= jk2_channel_jni_close; 
 
@@ -556,9 +553,10 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
                     sizeof(jk_channel_jni_private_t));
     ch->is_stream=JK_FALSE;
 
-    result->setAttribute= jk2_channel_jni_setProperty;
+    result->setAttribute= jk2_channel_jni_setAttribute;
     ch->mbean=result;
     result->object= ch;
+    result->init= jk2_channel_jni_init; 
 
     wEnv=env->getByName( env, "workerEnv" );
     ch->workerEnv=wEnv;
