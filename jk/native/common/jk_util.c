@@ -53,6 +53,7 @@
 #define PREPOST_TIMEOUT_OF_WORKER   ("prepost_timeout")
 #define REPLY_TIMEOUT_OF_WORKER     ("reply_timeout")
 #define SOCKET_TIMEOUT_OF_WORKER    ("socket_timeout")
+#define SOCKET_BUFFER_OF_WORKER     ("socket_buffer")
 #define SOCKET_KEEPALIVE_OF_WORKER  ("socket_keepalive")
 #define RECYCLE_TIMEOUT_OF_WORKER   ("recycle_timeout")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
@@ -493,6 +494,23 @@ int jk_get_worker_socket_timeout(jk_map_t *m, const char *wname, int def)
             SOCKET_TIMEOUT_OF_WORKER);
 
     return jk_map_get_int(m, buf, def);
+}
+
+int jk_get_worker_socket_buffer(jk_map_t *m, const char *wname, int def)
+{
+    char buf[1024];
+    int i;
+    if (!m || !wname) {
+        return -1;
+    }
+
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
+            SOCKET_BUFFER_OF_WORKER);
+
+    i = jk_map_get_int(m, buf, 0);
+    if (i > 0 && i < def)
+        i = def;
+    return i;
 }
 
 int jk_get_worker_socket_keepalive(jk_map_t *m, const char *wname, int def)

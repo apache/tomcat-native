@@ -240,9 +240,9 @@ struct ajp_worker
      * 3. An array of "open" endpoints.
      */
     JK_CRIT_SEC cs;
-    unsigned ep_cache_sz;
-    unsigned ep_mincache_sz;
-    unsigned ep_maxcache_sz;
+    unsigned int ep_cache_sz;
+    unsigned int ep_mincache_sz;
+    unsigned int ep_maxcache_sz;
     ajp_endpoint_t **ep_cache;
 
     int proto;              /* PROTOCOL USED AJP13/AJP14 */
@@ -267,6 +267,7 @@ struct ajp_worker
      */
     int socket_timeout;
     int keepalive;
+    int socket_buf;
     /*
      * Handle Cache Timeouts
      */
