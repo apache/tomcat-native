@@ -175,7 +175,7 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
     int needHeader=JK_TRUE;
     
     if( wenv->shm==NULL || wenv->shm->head==NULL) {
-		s->jkprintf(env, s, "<h3>No Scoreboard available</h3>\n"); 
+        s->jkprintf(env, s, "<h3>No Scoreboard available</h3>\n"); 
         return;
     }
 
@@ -952,7 +952,7 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
                         
     s->head(env, s );
 
-	s->jkprintf(env, s, "<style>%s</style>\n", DEFAULT_CSS );
+    s->jkprintf(env, s, "<style>%s</style>\n", DEFAULT_CSS );
 
     /** Process the query string.
      */

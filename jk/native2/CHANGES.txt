@@ -1,4 +1,4 @@
-JAKARTA TOMCAT CONNECTORS 2 (JK2) CHANGELOG:			-*-text-*-
+JAKARTA TOMCAT CONNECTORS 2 (JK2) CHANGELOG:            -*-text-*-
 Last modified at [$Date$]
 
 Changes in JK2 HEAD:
@@ -7,12 +7,12 @@ Changes in JK2 HEAD:
     * Added the load balancer stickySession property. If set to 0
       requests with servlet SESSION ID's can be routed to any Tomcat
       worker. Default is 1, sessions are sticky.
-	* Port from jk of connect_timeout, reply_timeout, prepost_timeout (AJP13 PING/PONG).
-	  You could set connectTimeout, replyTimeout and prepostTimeout for such purpose in ajp properties.
-	  [Henri Gomez]
-	* Add hasinput method for channel, which will check if datas are
-	  available on input channel (TC->WEBSERVER). 
-	  [Henri Gomez]
+    * Port from jk of connect_timeout, reply_timeout, prepost_timeout (AJP13 PING/PONG).
+      You could set connectTimeout, replyTimeout and prepostTimeout for such purpose in ajp properties.
+      [Henri Gomez]
+    * Add hasinput method for channel, which will check if datas are
+      available on input channel (TC->WEBSERVER). 
+      [Henri Gomez]
     * Make use apr_port_t instead of short to fix problem to have port higher than 32K.
     * Make default port configurable (9009 on Netware, 8009 elsewhere)
     * Fix problem when in Load-Balancing and POST 

@@ -416,55 +416,55 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
             /* If we have the service recovery buffer FILLED and we're in first attempt */
             /* recopy the recovery buffer in post instead of reading it from client */
             if ( s->reco_status == RECO_FILLED && (attempt==0) ) {
-		    	/* Get in post buf the previously saved POST */
-		    	
-		    	if (s->reco_buf->copy(env, s->reco_buf, e->post) < 0) {
-		                s->is_recoverable_error = JK_FALSE;
-		                env->l->jkLog(env, env->l, JK_LOG_ERROR,
-		                              "ajp13.service() can't use the LB recovery buffer, aborting\n");
-	                return JK_ERR;
-		    	}		    	
+                /* Get in post buf the previously saved POST */
+                
+                if (s->reco_buf->copy(env, s->reco_buf, e->post) < 0) {
+                        s->is_recoverable_error = JK_FALSE;
+                        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                                      "ajp13.service() can't use the LB recovery buffer, aborting\n");
+                    return JK_ERR;
+                }               
 
                 env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                               "ajp13.service() using the LB recovery buffer\n");
             }
             else
             {
-	            if( attempt==0 )
-	                err=jk2_serialize_postHead( env, e->post, s, e );
-	            else
-	                err=JK_OK; /* We already have the initial body chunk */
-	            
-	            if( e->worker->mbean->debug > 10 )
-	                e->request->dump( env, e->request, "Post head" );
-	            
-	            if (err != JK_OK ) {
-	                /* the browser stop sending data, no need to recover */
-	                /* e->recoverable = JK_FALSE; */
-	                s->is_recoverable_error = JK_FALSE;
-	                env->l->jkLog(env, env->l, JK_LOG_ERROR,
-	                              "ajp13.service() Error receiving initial post %d %d %d\n", err, errno, attempt);
+                if( attempt==0 )
+                    err=jk2_serialize_postHead( env, e->post, s, e );
+                else
+                    err=JK_OK; /* We already have the initial body chunk */
+                
+                if( e->worker->mbean->debug > 10 )
+                    e->request->dump( env, e->request, "Post head" );
+                
+                if (err != JK_OK ) {
+                    /* the browser stop sending data, no need to recover */
+                    /* e->recoverable = JK_FALSE; */
+                    s->is_recoverable_error = JK_FALSE;
+                    env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                                  "ajp13.service() Error receiving initial post %d %d %d\n", err, errno, attempt);
 
                     /* BR #27281 : Should we return HTTP 500 since its the user who stop the sending ? */
                     /* may be not, so return another HTTP code -> use PARTIAL CONTENT, 206 instead */
                     s->status = 206;
-	                return JK_ERR;
-	            }
+                    return JK_ERR;
+                }
 
-				/* If a recovery buffer exist (LB mode), save here the post buf */
-				if (s->reco_status == RECO_INITED) {
-			    	/* Save the post for recovery if needed */
-			    	if (e->post->copy(env, e->post, s->reco_buf) < 0) {
-		                s->is_recoverable_error = JK_FALSE;
-		                env->l->jkLog(env, env->l, JK_LOG_ERROR,
-		                              "ajp13.service() can't save the LB recovery buffer, aborting\n");
-		                return JK_ERR;
-			    	}
-			    	else	
-			    		s->reco_status = RECO_FILLED;
-				}
-			}
-			
+                /* If a recovery buffer exist (LB mode), save here the post buf */
+                if (s->reco_status == RECO_INITED) {
+                    /* Save the post for recovery if needed */
+                    if (e->post->copy(env, e->post, s->reco_buf) < 0) {
+                        s->is_recoverable_error = JK_FALSE;
+                        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                                      "ajp13.service() can't save the LB recovery buffer, aborting\n");
+                        return JK_ERR;
+                    }
+                    else    
+                        s->reco_status = RECO_FILLED;
+                }
+            }
+            
             has_post_body=JK_TRUE;
             err= e->worker->channel->send( env, e->worker->channel, e,
                                            e->post );
