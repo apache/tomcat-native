@@ -157,10 +157,15 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
         strcat( pname, "." );
         strcat( pname, name );
     }
-
+    
     name= cfg->pool->pstrdup( env, cfg->pool, name );
     val= cfg->pool->pstrdup( env, cfg->pool, val );
-    
+
+    if (strlen(name) && *name == '$') {
+        cfg->map->put(env, cfg->map, name + 1, val, NULL);
+        return JK_OK;
+    }
+
     /** Save it on the config. XXX no support for deleting yet */
     /* The _original_ value. Will be saved with $() in it */
     if( mbean->settings == NULL )
