@@ -118,6 +118,7 @@ struct wa_application {
     /** The local expanded application path (if any). */
     char *lpth;
     /** Wether this web-application has been deployed or not. */
+    wa_boolean depl;
 };
 
 /**
