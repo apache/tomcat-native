@@ -69,7 +69,6 @@
 #include <jni.h>
 
 #include "jk_pool.h"
-#include "jk_util.h"
 #include "jk_env.h"
 
 #if defined LINUX && defined APACHE2_SIGHACK
@@ -256,6 +255,84 @@ static void print_signals( sigset_t *sset) {
 }
 #endif
 
+
+char **jk_parse_sysprops(jk_pool_t *p, 
+                         const char *sysprops)
+{
+    char **rc = NULL;
+
+    if(p && sysprops) {
+        char *prps = jk_pool_strdup(p, sysprops);
+        if(prps && strlen(prps)) {
+            unsigned num_of_prps;
+
+            for(num_of_prps = 1; *sysprops ; sysprops++) {
+                if('*' == *sysprops) {
+                    num_of_prps++;
+                }
+            }            
+
+            rc = jk_pool_alloc(p, (num_of_prps + 1) * sizeof(char *));
+            if(rc) {
+                unsigned i = 0;
+                char *tmp = strtok(prps, "*");
+
+                while(tmp && i < num_of_prps) {
+                    rc[i] = tmp;
+                    tmp = strtok(NULL, "*");
+                    i++;
+                }
+                rc[i] = NULL;
+            }
+        }
+    }
+
+    return rc;
+}
+
+
+int jk_file_exists(const char *f)
+{
+    if(f) {
+        struct stat st;
+        if((0 == stat(f, &st)) && (st.st_mode & S_IFREG)) {
+            return JK_TRUE;
+        }
+    }
+    return JK_FALSE;
+}
+
+
+void jk_append_libpath(jk_pool_t *p, 
+                       const char *libpath)
+{
+    char *env = NULL;
+    char *current = getenv(PATH_ENV_VARIABLE);
+
+    if(current) {
+        env = jk_pool_alloc(p, strlen(PATH_ENV_VARIABLE) + 
+                               strlen(current) + 
+                               strlen(libpath) + 5);
+        if(env) {
+            sprintf(env, "%s=%s%c%s", 
+                    PATH_ENV_VARIABLE, 
+                    libpath, 
+                    PATH_SEPERATOR, 
+                    current);
+        }
+    } else {
+        env = jk_pool_alloc(p, strlen(PATH_ENV_VARIABLE) +                               
+                               strlen(libpath) + 5);
+        if(env) {
+            sprintf(env, "%s=%s", PATH_ENV_VARIABLE, libpath);
+        }
+    }
+
+    if(env) {
+        putenv(env);
+    }
+}
+
 static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l,
@@ -366,15 +443,18 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         return JK_TRUE;
     }
 
-    if(jk_get_worker_mx(props, p->name, (unsigned int *)&mem_config)) {
+    mem_config= map_getIntProp( props, "worker", p->name, "mx", -1 );
+    if( mem_config != -1 ) {
         p->tomcat_mx = mem_config;
     }
 
-    if(jk_get_worker_ms(props, p->name, (unsigned int *)&mem_config)) {
+    mem_config= map_getIntProp( props, "worker", p->name, "ms", -1 );
+    if(mem_config != -1 ) {
         p->tomcat_ms = mem_config;
     }
 
-    if(jk_get_worker_classpath(props, p->name, &str_config)) {
+    str_config= map_getStrProp( props, "worker", p->name, "class_path", NULL );
+    if(str_config != NULL ) {
         p->tomcat_classpath = jk_pool_strdup(&p->p, str_config);
     }
 
@@ -383,7 +463,8 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         return JK_FALSE;
     }
 
-    if(jk_get_worker_jvm_path(props, p->name, &str_config)) {
+    str_config= map_getStrProp( props, "worker", p->name, "jvm_lib", NULL );
+    if(str_config != NULL ) {
         p->jvm_dll_path  = jk_pool_strdup(&p->p, str_config);
     }
 
@@ -392,33 +473,40 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         return JK_FALSE;
     }
 
-    if(jk_get_worker_cmd_line(props, p->name, &str_config)) {
+    str_config= map_getStrProp( props, "worker", p->name, "cmd_line", NULL ); 
+    if(str_config != NULL ) {
         p->tomcat_cmd_line  = jk_pool_strdup(&p->p, str_config);
     }
 
-    if(jk_get_worker_stdout(props, p->name, &str_config)) {
+    str_config=  map_getStrProp( props, "worker", p->name, "stdout", NULL ); 
+    if(str_config!= NULL ) {
         p->stdout_name  = jk_pool_strdup(&p->p, str_config);
     }
 
-    if(jk_get_worker_stderr(props, p->name, &str_config)) {
+    str_config=  map_getStrProp( props, "worker", p->name, "stderr", NULL ); 
+    if(str_config!= NULL ) {
         p->stderr_name  = jk_pool_strdup(&p->p, str_config);
     }
 
-    if(jk_get_worker_sysprops(props, p->name, &str_config)) {
+    str_config=  map_getStrProp( props, "worker", p->name, "sysprops", NULL ); 
+    if(str_config!= NULL ) {
         p->sysprops  = jk_parse_sysprops(&p->p, str_config);
     }
 
 #ifdef JNI_VERSION_1_2
-    if(jk_get_worker_str_prop(props, p->name, "java2opts", &str_config)) {
+    str_config= map_getStrProp( props, "worker", p->name, "java2opts", NULL );
+    if( str_config != NULL ) {
     	/* l->jkLog(l, JK_LOG_DEBUG, "Got opts: %s\n", str_config); */
-	    p->java2opts = jk_parse_sysprops(&p->p, str_config);
+        p->java2opts = jk_parse_sysprops(&p->p, str_config);
     }
-    if(jk_get_worker_int_prop(props, p->name, "java2lax", &mem_config)) {
+    mem_config= map_getIntProp( props, "worker", p->name, "java2lax", -1 );
+    if(mem_config != -1 ) {
         p->java2lax = mem_config ? JK_TRUE : JK_FALSE;
     }
 #endif
 
-    if(jk_get_worker_libpath(props, p->name, &str_config)) {
+    str_config=  map_getStrProp( props, "worker", p->name, "ld_path", NULL ); 
+    if(str_config!= NULL ) {
         jk_append_libpath(&p->p, str_config);
     }
 

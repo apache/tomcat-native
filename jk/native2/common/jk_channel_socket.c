@@ -73,7 +73,6 @@
 #include "jk_env.h"
 #include "jk_channel.h"
 #include "jk_global.h"
-#include "jk_util.h"
 
 #include <string.h>
 
@@ -149,8 +148,8 @@ static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this,
     short port=socketInfo->port;
     struct sockaddr_in *rc=&socketInfo->addr;
 
-    port = jk_get_worker_port(props, worker_name, port);
-    host = jk_get_worker_host(props, worker_name, host);
+    port = map_getIntProp( props, "worker", worker_name, "port", port );
+    host = map_getStrProp( props, "worker", worker_name, "host", host);
 
     _this->worker=worker;
     _this->logger=l;

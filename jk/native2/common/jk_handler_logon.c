@@ -62,12 +62,8 @@
  */
 
 #include "jk_global.h"
-#include "jk_context.h"
 #include "jk_pool.h"
-#include "jk_util.h"
 #include "jk_msg_buff.h"
-#include "jk_ajp_common.h"
-#include "jk_ajp14.h" 
 #include "jk_md5.h"
 #include "jk_logger.h"
 #include "jk_service.h"
@@ -130,7 +126,7 @@ static int ajp14_unmarshal_log_nok(jk_msg_buf_t *msg,
  *
  * INIT + REPLY / NEGO + REPLY 
  */
-static int handle_logon(ajp_endpoint_t *ae,
+static int handle_logon(jk_endpoint_t *ae,
                         jk_msg_buf_t	   *msg,
                         jk_logger_t     *l)
 {
@@ -197,7 +193,7 @@ static int handle_logon(ajp_endpoint_t *ae,
     return JK_FALSE;
 }
 
-int logon(ajp_endpoint_t *ae,
+int logon(jk_endpoint_t *ae,
           jk_logger_t    *l)
 {
     jk_pool_t     *p = &ae->pool;
