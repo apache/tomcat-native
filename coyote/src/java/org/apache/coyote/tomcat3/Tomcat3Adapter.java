@@ -107,6 +107,7 @@ public class Tomcat3Adapter implements Adapter {
 
             reqA.setCoyoteRequest(request);
             resA.setCoyoteResponse(response);
+            request.setNote( containerRequestNOTE, reqA );
         } else {
             resA=(Tomcat3Response)reqA.getResponse();
         }
