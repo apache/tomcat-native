@@ -77,6 +77,8 @@
 
 #define JK_CHECK_NULL( str ) ( ((str)==NULL) ? "null" : (str) )
 
+/** Display info for one endpoint
+ */
 static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
                                           jk_stat_t *stat,
                                           int *totalReqP, int *totalErrP,
@@ -127,6 +129,8 @@ static void jk2_worker_status_displayStat(jk_env_t *env, jk_ws_service_t *s,
     *totalErrP=totalErr;
 }
 
+/** Displays the totals
+ */
 static void jk2_worker_status_displayAggregate(jk_env_t *env, jk_ws_service_t *s,
                                                int totalReq, int totalErr,
                                                unsigned long totalTime, unsigned long maxTime )
@@ -150,6 +154,11 @@ static void jk2_worker_status_displayAggregate(jk_env_t *env, jk_ws_service_t *s
     s->jkprintf(env, s, "</tr></table>\n");
 }
 
+/** Information for the internal endpoints ( in this process ).
+    Duplicates info from the scoreboard. This is used for debugging and for
+    cases where scoreboard is not available. No longer included in the
+    normal display to avoid confusion.
+ */
 static void jk2_worker_status_displayEndpointInfo(jk_env_t *env, jk_ws_service_t *s,
                                                   jk_workerEnv_t *wenv)
 {
@@ -193,6 +202,10 @@ static void jk2_worker_status_displayEndpointInfo(jk_env_t *env, jk_ws_service_t
                                         totalReq, totalErr, totalTime, maxTime);
 }
 
+/** Special case for endpoints - the info is stored in a shm segment, to be able
+ *   to access info from all other processes in a multi-process server.
+ *  For single process servers - the scoreboard is just a local char*.
+ */
 static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service_t *s,
                                                     jk_workerEnv_t *wenv)
 {
@@ -416,6 +429,119 @@ static void jk2_worker_status_displayConfigProperties(jk_env_t *env, jk_ws_servi
     s->jkprintf( env,s , "</table>\n" );
 }
 
+/** List metadata for endpoints ( from scoreboard ) using the remote-jmx style
+  */
+static void jk2_worker_status_lstEndpoints(jk_env_t *env, jk_ws_service_t *s,
+                                           jk_workerEnv_t *wenv)
+{
+    jk_map_t *map=wenv->initData;
+    int i;
+    int j;
+    int totalReq=0;
+    int totalErr=0;
+    unsigned long totalTime=0;
+    unsigned long maxTime=0;
+    int needHeader=JK_TRUE;
+    
+    if( wenv->shm==NULL || wenv->shm->head==NULL) {
+        return;
+    }
+
+    for( i=1; i < wenv->shm->head->lastSlot; i++ ) {
+        jk_shm_slot_t *slot= wenv->shm->getSlot( env, wenv->shm, i );
+
+        if( slot==NULL ) continue;
+        
+        if( strncmp( slot->name, "epStat", 6 ) == 0 ) {
+            /* This is an endpoint slot */
+            void *data=slot->data;
+            char *name=JK_CHECK_NULL(slot->name);
+
+            for( j=0; j<slot->structCnt ; j++ ) {
+                jk_stat_t *statArray=(jk_stat_t *)data;
+                jk_stat_t *stat=statArray + j;
+
+                s->jkprintf(env, s, "N|endpoint|endpoint:%s%d\n", name, j );
+
+                s->jkprintf(env, s, "G|endpoint:%s%d|id\n", name, j); 
+                s->jkprintf(env, s, "G|endpoint:%s%d|requests\n", name, j); 
+                s->jkprintf(env, s, "G|endpoint:%s%d|errors\n", name, j); 
+                s->jkprintf(env, s, "G|endpoint:%s%d|lastRequest\n", name, j); 
+                s->jkprintf(env, s, "G|endpoint:%s%d|lastConnectionTime\n", name, j); 
+                s->jkprintf(env, s, "G|endpoint:%s%d|totalTime\n", name, j); 
+                s->jkprintf(env, s, "G|endpoint:%s%d|maxTime\n", name, j); 
+                s->jkprintf(env, s, "G|endpoint:%s%d|requestStart\n", name, j); 
+                s->jkprintf(env, s, "G|endpoint:%s%d|jkTime\n", name, j); 
+                s->jkprintf(env, s, "G|endpoint:%s%d|requestEnd\n", name, j);
+            }
+        }
+    }
+}
+
+
+/** List values for endpoints ( from scoreboard ) using the remote-jmx style
+  */
+static void jk2_worker_status_dmpEndpoints(jk_env_t *env, jk_ws_service_t *s,
+                                           jk_workerEnv_t *wenv)
+{
+    jk_map_t *map=wenv->initData;
+    int i;
+    int j;
+    int totalReq=0;
+    int totalErr=0;
+    unsigned long totalTime=0;
+    unsigned long maxTime=0;
+    int needHeader=JK_TRUE;
+
+    if( wenv->shm==NULL || wenv->shm->head==NULL) {
+        return;
+    }
+
+    for( i=1; i < wenv->shm->head->lastSlot; i++ ) {
+        jk_shm_slot_t *slot= wenv->shm->getSlot( env, wenv->shm, i );
+
+        if( slot==NULL ) continue;
+        
+        if( strncmp( slot->name, "epStat", 6 ) == 0 ) {
+            /* This is an endpoint slot */
+            void *data=slot->data;
+            char *name=JK_CHECK_NULL(slot->name);
+
+            /* XXX Add info about number of slots */
+            for( j=0; j<slot->structCnt ; j++ ) {
+                jk_stat_t *statArray=(jk_stat_t *)data;
+                jk_stat_t *stat=statArray + j;
+				
+                s->jkprintf(env, s, "G|endpoint:%s%d|id|%d\n", name, j,
+                            stat->workerId); 
+                s->jkprintf(env, s, "G|endpoint:%s%d|requests|%d\n", name, j,
+                            stat->reqCnt);
+                s->jkprintf(env, s, "G|endpoint:%s%d|errors|%d\n", name, j,
+                            stat->errCnt);
+                s->jkprintf(env, s, "G|endpoint:%s%d|lastRequest|%s\n", name, j,
+                            JK_CHECK_NULL(stat->active)); 
+#ifdef HAS_APR
+                {
+                    char ctimeBuf[APR_CTIME_LEN];
+                    apr_ctime( ctimeBuf, stat->connectedTime );
+                    s->jkprintf(env, s, "G|endpoint:%s%d|lastConnectionTime|%s\n", name, j, ctimeBuf);
+                    
+                    s->jkprintf(env, s, "G|endpoint:%s%d|totalTime|%ld\n", name, j, (long)stat->totalTime );
+                    s->jkprintf(env, s, "G|endpoint:%s%d|maxTime|%ld\n", name, j, (long)stat->maxTime ); 
+
+                    s->jkprintf(env, s, "G|endpoint:%s%d|requestStart|%lu\n", name, j, (long)stat->startTime); 
+                    s->jkprintf(env, s, "G|endpoint:%s%d|jkTime|%ld\n", name, j,
+                                (long)(stat->jkStartTime - stat->startTime) );
+                    s->jkprintf(env, s, "G|endpoint:%s%d|requestEnd|%ld\n", name, j,
+                                (long)(stat->endTime - stat->startTime) );
+                }
+#endif
+            }
+
+        }
+    }
+}
+
 static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
                                             jk_worker_t *w, 
                                             jk_ws_service_t *s)
@@ -434,7 +560,7 @@ static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
     }
     if( qryLen >0 ) {
         if( cName[strlen(cName)-1] == '*' ) {
-            printf("Exact match off %s\n", cName );
+/*             printf("Exact match off %s\n", cName ); */
             cName[strlen(cName)-1]='\0';
             exact=0;
             qryLen--;
@@ -453,7 +579,15 @@ static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
         /* Prefix */
         if( (! exact)  && qryLen != 0 && strncmp( name, cName, qryLen )!= 0 )
             continue;
-        
+
+        /* Endpoints are treated specially ( scoreboard to get the ep from other
+            processes */
+        if( strncmp( "endpoint", mbean->type, 8 ) == 0 )
+            continue;
+
+        if( strncmp( "threadMutex", mbean->type, 11 ) == 0 )
+            continue;
+
         /* Exact */
         if( exact && qryLen != 0 && strcmp( name, cName )!= 0 )
             continue;
@@ -471,8 +605,9 @@ static int JK_METHOD jk2_worker_status_list(jk_env_t *env,
             s->jkprintf(env, s, "S|%s|%s\n", name, *setAtt);
             setAtt++;
         }
-        
+
     }
+    jk2_worker_status_lstEndpoints( env, s, s->workerEnv);
     return JK_OK;
 }
 
@@ -494,7 +629,7 @@ static int JK_METHOD jk2_worker_status_dmp(jk_env_t *env,
     }
     if( qryLen >0 ) {
         if( cName[strlen(cName)-1] == '*' ) {
-            printf("Exact match off %s\n", cName );
+/*             printf("Exact match off %s\n", cName ); */
             cName[strlen(cName)-1]='\0';
             exact=0;
             qryLen--;
@@ -510,6 +645,14 @@ static int JK_METHOD jk2_worker_status_dmp(jk_env_t *env,
         if( strchr( name, ':' )==NULL )
             continue;
         
+        /* Endpoints are treated specially ( scoreboard to get the ep from other
+            processes */
+        if( strncmp( "endpoint", mbean->type, 8 ) == 0 )
+            continue;
+
+        if( strncmp( "threadMutex", mbean->type, 11 ) == 0 )
+            continue;
+
         /* Prefix */
         if( ! exact  && qryLen != 0 && strncmp( name, cName, qryLen )!= 0 )
             continue;
@@ -529,6 +672,7 @@ static int JK_METHOD jk2_worker_status_dmp(jk_env_t *env,
                 getAtt++;
         }
     }
+    jk2_worker_status_dmpEndpoints( env, s, s->workerEnv);
     return JK_OK;
 }
 
@@ -598,7 +742,12 @@ static int JK_METHOD jk2_worker_status_set(jk_env_t *env,
         
         if( strcmp( name, cName ) == 0 &&
             mbean->setAttribute != NULL ) {
+
+            /* Found the object */
             int res=mbean->setAttribute( env, mbean, attName, attVal );
+            /* Increment the version */
+            mbean->ver++;
+            
             s->jkprintf( env, s, "OK|%s|%s|%d", cName, attName, res );
             return JK_OK;
         }
@@ -706,6 +855,9 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
 
     if( strncmp( s->query_string, "scoreboard=", 11) == 0 ) {
         jk2_worker_status_displayScoreboardInfo(env, s, s->workerEnv );
+        return JK_OK;
+    }
+    if( strncmp( s->query_string, "endpoints=", 11) == 0 ) {
         jk2_worker_status_displayEndpointInfo( env, s, s->workerEnv );
         return JK_OK;
     }
