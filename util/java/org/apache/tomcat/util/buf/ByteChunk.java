@@ -324,6 +324,14 @@ public final class ByteChunk implements Cloneable, Serializable {
 	    return;
 	}
 
+        // Optimize on a common case.
+        // If the buffer is empty and the source is going to fill up all the
+        // space in buffer, may as well write it directly to the output,
+        // and avoid an extra copy
+        if ( len == limit && end == start) {
+            out.realWriteBytes( src, off, len );
+            return;
+        }
 	// if we have limit and we're below
 	if( len <= limit - end ) {
 	    // makeSpace will grow the buffer to the limit,
@@ -452,7 +460,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	
 	// limit < buf.length ( the buffer is already big )
 	// or we already have space XXX
-	if( desiredSize < buff.length ) {
+	if( desiredSize <= buff.length ) {
 	    return;
 	}
 	// grow in larger chunks
