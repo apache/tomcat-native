@@ -26,6 +26,7 @@ sinclude(../support/jk_ws.m4)
 sinclude(../support/jk_exec.m4)
 sinclude(../support/jk_apr.m4)
 sinclude(../support/jk_tchome.m4)
+sinclude(../support/jk_dominohome.m4)
 sinclude(../support/jk_java.m4)
 sinclude(../support/jk_pcre.m4)
 
@@ -126,9 +127,11 @@ AC_SUBST(TOMCAT40_HOME)
 AC_SUBST(TOMCAT41_HOME)
 
 dnl Domino settings
-JK_TCHOME([domino], [DOMINO_HOME], [libnotes.so])
+JK_DOMHOME([domino], [DOMINO_HOME], [libnotes.so])
+JK_DOMHOME([notesapi], [NOTESAPI], [include/global.h])
 
 AC_SUBST(DOMINO_HOME)
+AC_SUBST(NOTESAPI)
 
 dnl APR settings
 
