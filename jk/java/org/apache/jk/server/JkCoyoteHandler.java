@@ -77,7 +77,10 @@ import org.apache.coyote.*;
 /** Plugs Jk2 into Coyote
  */
 public class JkCoyoteHandler extends JkHandler implements
-    ProtocolHandler, ActionHook
+    ProtocolHandler,
+    ActionHook,
+    org.apache.coyote.OutputBuffer,
+    org.apache.coyote.InputBuffer
 {
     protected static org.apache.commons.logging.Log log 
         = org.apache.commons.logging.LogFactory.getLog(JkCoyoteHandler.class);
@@ -144,55 +147,45 @@ public class JkCoyoteHandler extends JkHandler implements
     public void destroy() {
         //  jkMain.stop();
     }
+
     // -------------------- OutputBuffer implementation --------------------
 
-    static class JkCoyoteBuffers implements org.apache.coyote.OutputBuffer,
-        org.apache.coyote.InputBuffer
+        
+    public int doWrite(ByteChunk chunk, Response res) 
+        throws IOException
     {
-        int epNote;
-        int headersMsgNote;
-        int inputStreamNote;
-        org.apache.coyote.Response res;
-        
-        void setResponse( org.apache.coyote.Response res ) {
-            this.res=res;
+        if (!res.isCommitted()) {
+            // Send the connector a request for commit. The connector should
+            // then validate the headers, send them (using sendHeader) and 
+            // set the filters accordingly.
+            res.action(ActionCode.ACTION_COMMIT, null);
         }
+        if( log.isInfoEnabled() )
+            log.info("doWrite " );
+        MsgContext ep=(MsgContext)res.getNote( epNote );
         
-        public int doWrite(ByteChunk chunk) 
-            throws IOException
-        {
-            if (!res.isCommitted()) {
-                // Send the connector a request for commit. The connector should
-                // then validate the headers, send them (using sendHeader) and 
-                // set the filters accordingly.
-                res.action(ActionCode.ACTION_COMMIT, null);
-            }
-            if( log.isInfoEnabled() )
-                log.info("doWrite " );
-            MsgContext ep=(MsgContext)res.getNote( epNote );
-            
-            MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
-            msg.reset();
-            msg.appendByte( HandlerRequest.JK_AJP13_SEND_BODY_CHUNK);
-            msg.appendBytes( chunk.getBytes(), chunk.getOffset(), chunk.getLength() );
-            ep.getChannel().send( msg, ep );
-            
-            return 0;
-        }
+        MsgAjp msg=(MsgAjp)ep.getNote( headersMsgNote );
+        msg.reset();
+        msg.appendByte( HandlerRequest.JK_AJP13_SEND_BODY_CHUNK);
+        msg.appendBytes( chunk.getBytes(), chunk.getOffset(), chunk.getLength() );
+        ep.getChannel().send( msg, ep );
         
-        public int doRead(ByteChunk chunk) 
-            throws IOException
-        {
-            if( log.isInfoEnabled() )
-                log.info("doRead " + chunk.getBytes() + " " +  chunk.getOffset() + " " + chunk.getLength());
-            MsgContext ep=(MsgContext)res.getNote( epNote );
-
-            JkInputStream jkIS=(JkInputStream)ep.getNote( inputStreamNote );
-            // return jkIS.read( chunk.getBytes(), chunk.getOffset(), chunk.getLength());
-            return jkIS.doRead( chunk );
-        }
+        return 0;
     }
-
+    
+    public int doRead(ByteChunk chunk, Request req) 
+        throws IOException
+    {
+        Response res=req.getResponse();
+        if( log.isInfoEnabled() )
+            log.info("doRead " + chunk.getBytes() + " " +  chunk.getOffset() + " " + chunk.getLength());
+        MsgContext ep=(MsgContext)res.getNote( epNote );
+        
+        JkInputStream jkIS=(JkInputStream)ep.getNote( inputStreamNote );
+        // return jkIS.read( chunk.getBytes(), chunk.getOffset(), chunk.getLength());
+        return jkIS.doRead( chunk );
+    }
+    
     // -------------------- Jk handler implementation --------------------
     // Jk Handler mehod
     public int invoke( Msg msg, MsgContext ep ) 
@@ -203,24 +196,15 @@ public class JkCoyoteHandler extends JkHandler implements
         res.setHook( this );
 
         log.info( "Invoke " + req + " " + res + " " + req.requestURI().toString());
-        JkCoyoteBuffers ob=(JkCoyoteBuffers)res.getNote( obNote );
-        if( ob == null ) {
-            // Buffers not initialized yet
-            // Workaround - IB, OB require state.
-            ob=new JkCoyoteBuffers();
-            // Pass the required state.
-            ob.epNote=epNote;
-            ob.headersMsgNote=headersMsgNote;
-            ob.inputStreamNote=inputStreamNote;
-            ob.setResponse(res);
-            res.setOutputBuffer( ob );
-            req.setInputBuffer( ob );
-            
+        
+        res.setOutputBuffer( this );
+        req.setInputBuffer( this );
+        
+        if( ep.getNote( headersMsgNote ) == null ) {
             Msg msg2=new MsgAjp();
             ep.setNote( headersMsgNote, msg );
-
-            res.setNote( obNote, ob );
         }
+        
         res.setNote( epNote, ep );
         
         try {
