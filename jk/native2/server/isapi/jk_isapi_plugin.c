@@ -78,7 +78,7 @@
 #include "jk_env.h"
 #include "jk_service.h"
 #include "jk_worker.h"
-
+#include "apr_general.h"
 #include "jk_iis.h"
 //#include "jk_uri_worker_map.h"
 
@@ -710,7 +710,8 @@ static  jk_env_t*  jk2_create_workerEnv (void) {
     jk_pool_t *globalPool;
     jk_bean_t *jkb;
     jk_env_t *env;
-    
+
+    apr_initialize();
     apr_pool_create( &jk_globalPool, NULL );
 
     jk2_pool_apr_create( NULL, &globalPool, NULL, jk_globalPool );
