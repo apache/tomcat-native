@@ -1040,7 +1040,7 @@
 		<row><td>ISSelfRegisterFiles</td><td>1025</td><td>ISSELFREG.DLL</td><td>ISSelfRegisterFiles</td><td/></row>
 		<row><td>ISSelfRegisterFinalize</td><td>1</td><td>ISSELFREG.DLL</td><td>ISSelfRegisterFinalize</td><td/></row>
 		<row><td>ISUnSelfRegisterFiles</td><td>1025</td><td>ISSELFREG.DLL</td><td>ISUnSelfRegisterFiles</td><td/></row>
-		<row><td>InstallFilter</td><td>326</td><td>NewBinary19</td><td/><td/></row>
+		<row><td>InstallFilter</td><td>70</td><td>NewBinary19</td><td/><td/></row>
 		<row><td>SetARPINSTALLLOCATION</td><td>51</td><td>ARPINSTALLLOCATION</td><td>[INSTALLDIR]</td><td/></row>
 		<row><td>SetAllUsersProfileNT</td><td>51</td><td>ALLUSERSPROFILE</td><td>[%SystemRoot]\Profiles\All Users</td><td/></row>
 		<row><td>caCreateVRoots</td><td>1025</td><td>binIISHelper</td><td>CreateIISVRoots</td><td/></row>

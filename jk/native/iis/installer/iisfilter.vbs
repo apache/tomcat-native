@@ -28,10 +28,10 @@ On Error Resume Next
 filterName = "jakarta"
 filterLib = "bin\isapi_redirect.dll"
   
-Function IISInstallFilter(filterDir)
+Function IISInstallFilter(filterDir, filterObject)
 
     Dim filters
-    Set filters = GetObject("IIS://LocalHost/W3SVC/1/Filters")
+    Set filters = GetObject(filterObject)
     If err Then err.clear
     info "Got Filters " + filters.FilterLoadOrder
     
@@ -42,13 +42,21 @@ Function IISInstallFilter(filterDir)
     info "Creating Filter  - " + filterName
     Dim filter
     Set filter = filters.Create( "IISFilter", filterName )
-    If err then
+    If err Then
     	err.clear
     	info "Filter exists - deleting"
     	filters.delete "IISFilter", filterName
-    	If err Then fail "Error Deleting Filter"
+    	If err Then
+    	    info "Error Deleting Filter"
+    	    IISInstallFilter = 0
+    	    Exit Function
+    	End If
     	Set filter = filters.Create( "IISFilter", filterName )
-    	If Err Then fail "Error Creating Filter"
+    	If Err Then
+    	    info "Error Creating Filter"
+    	    IISInstallFilter = 0
+    	    Exit Function
+    	End If
     End If
     
     '
@@ -77,18 +85,18 @@ Function IISInstallFilter(filterDir)
     	If Len(loadOrders) <> 0  Then loadOrders = loadOrders + ","
     	filters.FilterLoadOrder = loadOrders + filterName
     	filters.SetInfo
-    	info "Filter added." 
+    	info "Added Filter " + filterName 
     Else
     	info "Filter already exists in load order - no update required."
     End If
-    
-End FUnction
+    IISInstallFilter = 1
+End Function
 
 ' 
 ' Helper function for snafus
 '
 Function fail(message)
-'	MsgBox "E: " + message
+'	MsgBox " " + message
 	WScript.Quit(1)
 End function
 
@@ -99,6 +107,13 @@ Function info(message)
 '	MsgBox " " + message
 End Function 
 
-info "Starting..." + Session.Property("INSTALLDIR")
-IISInstallFilter Session.Property("INSTALLDIR")
-info "FInished!"
+info "Installing IIS Filter " + Session.Property("INSTALLDIR")
+Dim rv
+rv = 0
+rv = IISInstallFilter(Session.Property("INSTALLDIR"), "IIS://LocalHost/W3SVC/1/Filters")
+If rv = 0 Then    
+    rv = IISInstallFilter(Session.Property("INSTALLDIR"), "/LM/W3SVC/Filters")
+End If
+If rv = 0 Then
+    rv = IISInstallFilter(Session.Property("INSTALLDIR"), "/LM/W3SVC/1/Filters")
+End If
