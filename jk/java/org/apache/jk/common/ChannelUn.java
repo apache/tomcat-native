@@ -287,6 +287,14 @@ public class ChannelUn extends JniHandler {
             }
             if( log.isDebugEnabled() )
                 log.debug( "Closing un channel");
+            try{
+                MsgAjp endM = new MsgAjp();
+                endM.reset();
+                endM.appendByte((byte)HANDLE_THREAD_END);
+                next.invoke(endM, ep);
+            } catch( Exception ee) {
+                log.error( "Error, releasing connection",ee);
+            }
             this.close( ep );
         } catch( Exception ex ) {
             ex.printStackTrace();
