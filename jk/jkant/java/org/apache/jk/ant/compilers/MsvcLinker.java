@@ -155,7 +155,7 @@ public class MsvcLinker extends LinkerAdapter {
         }
         catch (IOException ioe)
         {
-            System.out.println("Caught IOException");
+            log("Caught IOException");
         }
         finally
         {

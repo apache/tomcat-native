@@ -286,13 +286,15 @@ public class MsgAjp extends Msg {
     }
     
     public void dump(String msg) {
-        log.debug( msg + ": " + buf + " " + pos +"/" + (len + 4));
+        if( log.isDebugEnabled() ) 
+            log.debug( msg + ": " + buf + " " + pos +"/" + (len + 4));
         int max=pos;
         if( len + 4 > pos )
             max=len+4;
         if( max >1000 ) max=1000;
-        for( int j=0; j < max; j+=16 )
-            System.out.println( hexLine( buf, j, len ));
+        if( log.isDebugEnabled() ) 
+            for( int j=0; j < max; j+=16 ) 
+                log.debug( hexLine( buf, j, len ));
 	
     }
 

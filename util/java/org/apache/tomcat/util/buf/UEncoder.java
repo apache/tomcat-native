@@ -33,6 +33,9 @@ import java.util.BitSet;
  */
 public final class UEncoder {
 
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(UEncoder.class );
+    
     // Not static - the set may differ ( it's better than adding
     // an extra check for "/", "+", etc
     private BitSet safeChars=null;
@@ -172,6 +175,7 @@ public final class UEncoder {
     }
 
     private static void log( String s ) {
-	System.out.println("Encoder: " + s );
+        if (log.isDebugEnabled())
+            log.debug("Encoder: " + s );
     }
 }

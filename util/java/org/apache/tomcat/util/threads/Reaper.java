@@ -26,6 +26,11 @@ package org.apache.tomcat.util.threads;
  * @author Costin Manolache
  */
 public class Reaper extends Thread {
+    
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(Reaper.class );
+    
     private boolean daemon = false;
 
     public Reaper() {
@@ -88,7 +93,8 @@ public class Reaper extends Thread {
 
     public synchronized void stopReaper() {
         running = false;
-        System.out.println("Stop reaper ");
+        if (log.isDebugEnabled())
+            log.debug("Stop reaper ");
         this.interrupt(); // notify() doesn't stop sleep
     }
 

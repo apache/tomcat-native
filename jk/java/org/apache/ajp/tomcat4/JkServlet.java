@@ -60,7 +60,7 @@ public class JkServlet
 	super.init();
         if(wrapper == null) {
 	    log("No wrapper available, make sure the app is trusted");
-	    System.out.println("No wrapper available, make sure the app is trusted");
+	    //System.out.println("No wrapper available, make sure the app is trusted");
 	    return;
 	}
 

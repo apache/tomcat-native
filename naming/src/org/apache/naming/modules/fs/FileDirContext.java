@@ -188,7 +188,8 @@ public class FileDirContext extends BaseDirContext {
 
     public void setAttribute( String name, Object v ) {
         new Throwable().printStackTrace();
-        System.out.println(name + " " + v );
+        if (log.isDebugEnabled())
+            log.debug(name + " " + v );
     }
 
     // -------------------- BaseDirContext implementation --------------------
@@ -204,9 +205,10 @@ public class FileDirContext extends BaseDirContext {
     public Object lookup(Name nameObj, boolean resolveLinkx)
         throws NamingException
     {
-        if( log.isDebugEnabled() ) log.debug( "lookup " + nameObj );
-
-        System.out.println("XXX " + nameObj.get(0));
+        if( log.isDebugEnabled() ) {
+            log.debug( "lookup " + nameObj );
+            log.debug( nameObj.get(0));
+        }
         if( "fs:".equals( nameObj.get(0).toString() ))
             nameObj=nameObj.getSuffix(1);
         

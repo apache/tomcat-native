@@ -35,6 +35,10 @@ import org.apache.tomcat.util.http.BaseRequest;
  */
 public class NegociationHandler extends AjpHandler
 {
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(NegociationHandler.class );
+    
     // Initial Login Phase (web server -> servlet engine)
     public static final byte JK_AJP14_LOGINIT_CMD=0x10;
     
@@ -240,7 +244,8 @@ public class NegociationHandler extends AjpHandler
 				 BaseRequest req )
 	throws IOException
     {
-        System.out.println("handleAjpMessage: " + type );
+        if (log.isDebugEnabled())
+            log.debug("handleAjpMessage: " + type );
 	Ajp13Packet outBuf=ch.outBuf;
 	// Valid requests when not logged:
 	switch( type ) {
@@ -522,6 +527,7 @@ public class NegociationHandler extends AjpHandler
     
     private static int debug=10;
     void log(String s) {
-	System.out.println("Ajp14Negotiation: " + s );
+        if (log.isDebugEnabled())
+	    log.ebug("Ajp14Negotiation: " + s );
     }
  }

@@ -31,6 +31,11 @@ import java.io.IOException;
  * @author ( Xml-Xerces )
  */
 public final class UTF8Decoder extends B2CConverter {
+    
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(UTF8Decoder.class );
+    
     // may have state !!
     
     public UTF8Decoder() {
@@ -137,7 +142,8 @@ public final class UTF8Decoder extends B2CConverter {
 
     private static int debug=1;
     void log(String s ) {
-	System.out.println("UTF8Decoder: " + s );
+        if (log.isDebugEnabled())
+            log.debug("UTF8Decoder: " + s );
     }
     
 }

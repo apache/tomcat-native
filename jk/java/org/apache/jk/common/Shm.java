@@ -213,7 +213,8 @@ public class Shm extends JniHandler {
             appendString(msg, instanceId, c2b);
         }
 
-        System.out.println("Register " + instanceId );
+        if (log.isDebugEnabled())
+            log.debug("Register " + instanceId );
         this.invoke( msg, mCtx );
     }
 
@@ -233,7 +234,8 @@ public class Shm extends JniHandler {
         msg.appendInt( 0 );
         msg.appendInt( 0 );
         
-        System.out.println("UnRegister " + slotName );
+        if (log.isDebugEnabled())
+            log.debug("UnRegister " + slotName );
         this.invoke( msg, mCtx );
     }
 
@@ -293,16 +295,18 @@ public class Shm extends JniHandler {
     }
 
     public void setHelp( boolean b ) {
-        System.out.println("Usage: ");
-        System.out.println("  Shm [OPTIONS]");
-        System.out.println();
-        System.out.println("  -file SHM_FILE");
-        System.out.println("  -group GROUP ( can be specified multiple times )");
-        System.out.println("  -host HOST");
-        System.out.println("  -port PORT");
-        System.out.println("  -unixSocket UNIX_FILE");
-        //        System.out.println("  -priority XXX");
-        //        System.out.println("  -lbFactor XXX");
+        if (log.isDebugEnabled()) {
+            log.debug("Usage: ");
+            log.debug("  Shm [OPTIONS]");
+            log.debug("");
+            log.debug("  -file SHM_FILE");
+            log.debug("  -group GROUP ( can be specified multiple times )");
+            log.debug("  -host HOST");
+            log.debug("  -port PORT");
+            log.debug("  -unixSocket UNIX_FILE");
+            //        log.debug("  -priority XXX");
+            //        log.debug("  -lbFactor XXX");
+        }
         help=true;
         return;
     }

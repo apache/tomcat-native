@@ -27,12 +27,16 @@ package org.apache.ajp;
  */
 public class Logger {
     
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(Logger.class );
+    
     /**
      * Log the given message.
      * @param msg The message to log.
      */
     public void log(String msg) {
-        System.out.println("[Ajp13] " + msg);
+        if (log.isDebugEnabled())
+            log.debug("[Ajp13] " + msg);
     }
     
     /**
@@ -41,7 +45,7 @@ public class Logger {
      * @param t The error to log.
      */
     public void log(String msg, Throwable t) {
-        System.out.println("[Ajp13] " + msg);
-        t.printStackTrace(System.out);
+        if (log.isDebugEnabled())
+            log.debug("[Ajp13] " + msg, t);
     }
 }

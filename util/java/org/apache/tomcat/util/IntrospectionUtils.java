@@ -36,6 +36,10 @@ import java.util.Vector;
  */
 public final class IntrospectionUtils {
 
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( IntrospectionUtils.class );
+    
     /**
      * Call execute() - any ant-like task should work
      */
@@ -68,11 +72,13 @@ public final class IntrospectionUtils {
         params[1] = Object.class;
         executeM = findMethod(c, "setAttribute", params);
         if (executeM == null) {
-            System.out.println("No setAttribute in " + proxy.getClass());
+            if (log.isDebugEnabled())
+                log.debug("No setAttribute in " + proxy.getClass());
             return;
         }
         if (false)
-            System.out.println("Setting " + n + "=" + v + "  in " + proxy);
+            if (log.isDebugEnabled())
+                log.debug("Setting " + n + "=" + v + "  in " + proxy);
         executeM.invoke(proxy, new Object[] { n, v });
         return;
     }
@@ -87,7 +93,8 @@ public final class IntrospectionUtils {
         params[0] = String.class;
         executeM = findMethod(c, "getAttribute", params);
         if (executeM == null) {
-            System.out.println("No getAttribute in " + proxy.getClass());
+            if (log.isDebugEnabled())
+                log.debug("No getAttribute in " + proxy.getClass());
             return null;
         }
         return executeM.invoke(proxy, new Object[] { n });
@@ -216,9 +223,11 @@ public final class IntrospectionUtils {
      * Debug method, display the classpath
      */
     public static void displayClassPath(String msg, URL[] cp) {
-        System.out.println(msg);
-        for (int i = 0; i < cp.length; i++) {
-            System.out.println(cp[i].getFile());
+        if (log.isDebugEnabled()) {
+            log.debug(msg);
+            for (int i = 0; i < cp.length; i++) {
+                log.debug(cp[i].getFile());
+            }
         }
     }
 
@@ -557,7 +566,8 @@ public final class IntrospectionUtils {
                 // That's a bug, but we can work around and be nice.
                 f = new File(System.getProperty("java.home") + "/lib/tools.jar");
                 if (f.exists()) {
-                    System.out.println("Detected strange java.home value "
+                    if (log.isDebugEnabled())
+                        log.debug("Detected strange java.home value "
                             + System.getProperty("java.home")
                             + ", it should point to jre");
                 }
@@ -983,6 +993,7 @@ public final class IntrospectionUtils {
     static final int dbg = 0;
 
     static void d(String s) {
-        System.out.println("IntrospectionUtils: " + s);
+        if (log.isDebugEnabled())
+            log.debug("IntrospectionUtils: " + s);
     }
 }

@@ -25,6 +25,11 @@ package org.apache.tomcat.util.collections;
  * @author Costin Manolache
  */
 public final class SimplePool  {
+    
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(SimplePool.class );
+    
     /*
      * Where the threads are held.
      */
@@ -116,6 +121,7 @@ public final class SimplePool  {
     }
     
     private void log( String s ) {
-	System.out.println("SimplePool: " + s );
+        if (log.isDebugEnabled())
+            log.debug("SimplePool: " + s );
     }
 }

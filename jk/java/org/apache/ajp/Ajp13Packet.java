@@ -38,7 +38,10 @@ import org.apache.tomcat.util.http.MimeHeaders;
  * @author Costin Manolache
  */
 public class Ajp13Packet {
-
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( Ajp13Packet.class );
+    
     public static final String DEFAULT_CHAR_ENCODING = "8859_1";
     public static final int    AJP13_WS_HEADER       = 0x1234;
     public static final int    AJP13_SW_HEADER       = 0x4142;  // 'AB'
@@ -149,8 +152,8 @@ public class Ajp13Packet {
         len      = getInt();
 	    
         if( mark != AJP13_WS_HEADER ) {
-            // XXX Logging
-            System.out.println("BAD packet " + mark);
+            if (log.isDebugEnabled())
+                log.debug("BAD packet " + mark);
             dump( "In: " );
             return -1;
         }
@@ -272,8 +275,8 @@ public class Ajp13Packet {
     public void appendBytes( byte b[], int off, int numBytes ) {
         appendInt( numBytes );
         if( pos + numBytes >= buff.length ) {
-            System.out.println("Buffer overflow " + buff.length + " " + pos + " " + numBytes );
-            // XXX Log
+            if (log.isDebugEnabled())
+                log.debug("Buffer overflow " + buff.length + " " + pos + " " + numBytes );
         }
         System.arraycopy( b, off, buff, pos, numBytes);
         buff[pos + numBytes] = 0; // Terminating \0
@@ -311,8 +314,8 @@ public class Ajp13Packet {
      */
     public void appendXBytes(byte[] b, int off, int numBytes) {
         if( pos + numBytes > buff.length ) {
-        System.out.println("appendXBytes - Buffer overflow " + buff.length + " " + pos + " " + numBytes );
-        // XXX Log
+            if (log.isDebugEnabled())
+                log.debug("appendXBytes - Buffer overflow " + buff.length + " " + pos + " " + numBytes );
         }
         System.arraycopy( b, off, buff, pos, numBytes);
         pos += numBytes;
@@ -388,7 +391,8 @@ public class Ajp13Packet {
     public String getString() throws java.io.UnsupportedEncodingException {
         int length = getInt();
         if( (length == 0xFFFF) || (length == -1) ) {
-            //	    System.out.println("null string " + length);
+            if (log.isDebugEnabled())
+                log.debug("null string " + length);
             return null;
         }
         String s = new String(buff, pos, length, encoding);
@@ -409,11 +413,13 @@ public class Ajp13Packet {
         int length = getInt();
         if( length > buff.length ) {
             // XXX Should be if(pos + length > buff.legth)?
-            System.out.println("XXX Assert failed, buff too small ");
+            if (log.isDebugEnabled())
+                log.debug("XXX Assert failed, buff too small ");
         }
 	
         if( (length == 0xFFFF) || (length == -1) ) {
-            System.out.println("null string " + length);
+            if (log.isDebugEnabled())
+                log.debug("null string " + length);
             return 0;
         }
 
@@ -445,7 +451,8 @@ public class Ajp13Packet {
     public int getXBytes(byte[] dest, int length) {
         if( length > buff.length ) {
         // XXX Should be if(pos + length > buff.legth)?
-        System.out.println("XXX Assert failed, buff too small ");
+            if (log.isDebugEnabled())
+                log.debug("XXX Assert failed, buff too small ");
         }
 
         System.arraycopy( buff, pos,  dest, 0, length );
@@ -481,27 +488,33 @@ public class Ajp13Packet {
 	if( pkgEnd > buff.length )
 	    pkgEnd = buff.length;
         for( int i=start; i< start+16 ; i++ ) {
-            if( i < pkgEnd)
-                System.out.print( hex( buff[i] ) + " ");
-            else 
-                System.out.print( "   " );
+            if( i < pkgEnd) {
+                if (log.isDebugEnabled())
+                    log.debug( hex( buff[i] ) + " ");
+            } else {
+                if (log.isDebugEnabled()) 
+                    log.debug( "   " );
+            }
         }
-        System.out.print(" | ");
+        if (log.isDebugEnabled()) 
+            log.debug(" | ");
         for( int i=start; i < start+16 && i < pkgEnd; i++ ) {
-            if( Character.isLetterOrDigit( (char)buff[i] ))
-                System.out.print( new Character((char)buff[i]) );
-            else
-                System.out.print( "." );
+            if( Character.isLetterOrDigit( (char)buff[i] )) {
+                if (log.isDebugEnabled()) 
+                    log.debug( new Character((char)buff[i]) );
+            } else {
+                if (log.isDebugEnabled()) 
+                    log.debug( "." );
+            }
         }
-        System.out.println();
     }
     
     public void dump(String msg) {
-        System.out.println( msg + ": " + buff + " " + pos +"/" + (len + 4));
+        if (log.isDebugEnabled())
+            log.debug( msg + ": " + buff + " " + pos +"/" + (len + 4));
 
         for( int j=0; j < len + 4; j+=16 )
             hexLine( j );
-	
-        System.out.println();
+
     }
 }

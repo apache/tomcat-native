@@ -33,6 +33,9 @@ package org.apache.tomcat.util.buf;
 public final class Base64 {
 
 
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( Base64.class );
+    
     static private final int  BASELENGTH         = 255;
     static private final int  LOOKUPLENGTH       = 63;
     static private final int  TWENTYFOURBITGROUP = 24;
@@ -246,7 +249,8 @@ public final class Base64 {
 	    
 	    if ( v >= 64 ) {
 		if( chars[i] != '=' )
-		    System.out.println("Wrong char in base64: " + chars[i]);
+                    if (log.isDebugEnabled())
+                        log.debug("Wrong char in base64: " + chars[i]);
 	    } else {
 		acc= ( acc << 6 ) | v;
 		shift += 6;

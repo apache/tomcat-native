@@ -34,6 +34,11 @@ import java.io.UnsupportedEncodingException;
  *  be used in a later version or after the remaining optimizations.
  */
 public class B2CConverter {
+    
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( B2CConverter.class );
+    
     private IntermediateInputStream iis;
     private ReadConvertor conv;
     private String encoding;
@@ -109,7 +114,8 @@ public class B2CConverter {
 
     private final int debug=0;
     void log( String s ) {
-	System.out.println("B2CConverter: " + s );
+        if (log.isDebugEnabled())
+            log.debug("B2CConverter: " + s );
     }
 
     // -------------------- Not used - the speed improvemnt is quite small

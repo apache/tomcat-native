@@ -29,6 +29,9 @@ import java.io.IOException;
  */
 public final class UDecoder {
     
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(UDecoder.class );
+    
     public UDecoder() 
     {
     }
@@ -266,7 +269,8 @@ public final class UDecoder {
 
     private final static int debug=0;
     private static void log( String s ) {
-	System.out.println("URLDecoder: " + s );
+        if (log.isDebugEnabled())
+            log.debug("URLDecoder: " + s );
     }
 
 }

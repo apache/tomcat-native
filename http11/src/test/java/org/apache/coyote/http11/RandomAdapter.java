@@ -33,6 +33,8 @@ import org.apache.coyote.Response;
 public class RandomAdapter
     implements Adapter {
 
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( RandomAdapter.class );
 
     public static final String CRLF = "\r\n";
     public static final byte[] b = "0123456789\r\n".getBytes();
@@ -60,13 +62,15 @@ public class RandomAdapter
         case 0:
 
             // 0) Do nothing
-            System.out.println("Response 0");
+            if (log.isDebugEnabled())
+                log.debug("Response 0");
             break;
 
         case 1:
 
             // 1) Set content length, and write the appropriate content
-            System.out.println("Response 1");
+            if (log.isDebugEnabled())
+                log.debug("Response 1");
             res.setContentLength(b.length);
             bc.setBytes(b, 0, b.length);
             res.doWrite(bc);
@@ -76,7 +80,8 @@ public class RandomAdapter
 
             // 2) Read the request data, and print out the number of bytes
             // read
-            System.out.println("Response 2");
+            if (log.isDebugEnabled())
+                log.debug("Response 2");
             while (nRead >= 0) {
                 nRead = req.doRead(bc);
                 buf = ("Read " + nRead + " bytes\r\n").getBytes();
@@ -88,7 +93,8 @@ public class RandomAdapter
         case 3:
 
             // 3) Return 204 (no content), while reading once on input
-            System.out.println("Response 3");
+            if (log.isDebugEnabled())
+                log.debug("Response 3");
             res.setStatus(204);
             nRead = req.doRead(bc);
             res.setHeader("Info", "Read " + nRead + " bytes");
@@ -97,7 +103,8 @@ public class RandomAdapter
         case 4:
 
             // 4) Do a request dump
-            System.out.println("Response 4");
+            if (log.isDebugEnabled())
+                log.debug("Response 4");
             sbuf.append("Request dump:");
             sbuf.append(CRLF);
             sbuf.append(req.method());
@@ -128,7 +135,8 @@ public class RandomAdapter
         default:
 
             // Response not implemented yet
-            System.out.println("Response " + n + " is not implemented yet");
+            if (log.isDebugEnabled())
+                log.debug("Response " + n + " is not implemented yet");
 
         }
 

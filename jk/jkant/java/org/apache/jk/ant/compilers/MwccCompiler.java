@@ -146,7 +146,7 @@ public class MwccCompiler extends CcCompiler {
         }
         catch (IOException ioe)
         {
-            System.out.println("Caught IOException");
+            log("Caught IOException");
         }
         finally
         {

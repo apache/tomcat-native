@@ -24,6 +24,10 @@ import org.apache.tomcat.util.buf.TimeStamp;
  */
 public final class Expirer  implements ThreadPoolRunnable
 {
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(Expirer.class );
+    
     // We can use Event/Listener, but this is probably simpler
     // and more efficient
     public static interface ExpireCallback {
@@ -149,6 +153,7 @@ public final class Expirer  implements ThreadPoolRunnable
 
     private static final int dL=0;
     private void debug( String s ) {
-	System.out.println("Expirer: " + s );
+        if (log.isDebugEnabled())
+            log.debug("Expirer: " + s );
     }
 }

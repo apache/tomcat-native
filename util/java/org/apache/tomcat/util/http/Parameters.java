@@ -32,6 +32,10 @@ import org.apache.tomcat.util.collections.MultiMap;
  */
 public final class Parameters extends MultiMap {
 
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(Parameters.class );
+    
     // Transition: we'll use the same Hashtable( String->String[] )
     // for the beginning. When we are sure all accesses happen through
     // this class - we can switch to MultiMap
@@ -526,7 +530,8 @@ public final class Parameters extends MultiMap {
 
     private static int debug=0;
     private void log(String s ) {
-	System.out.println("Parameters: " + s );
+        if (log.isDebugEnabled())
+            log.debug("Parameters: " + s );
     }
    
     // -------------------- Old code, needs rewrite --------------------

@@ -34,6 +34,11 @@ import org.apache.tomcat.util.buf.MessageBytes;
  *  and the facade will convert it to the external representation.
  */
 public class ServerCookie implements Serializable {
+    
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog(ServerCookie.class );
+    
     private MessageBytes name=MessageBytes.newInstance();
     private MessageBytes value=MessageBytes.newInstance();
 
@@ -286,7 +291,8 @@ public class ServerCookie implements Serializable {
     // log
     static final int dbg=1;
     public static void log(String s ) {
-	System.out.println("ServerCookie: " + s);
+        if (log.isDebugEnabled())
+            log.debug("ServerCookie: " + s);
     }
 
 }

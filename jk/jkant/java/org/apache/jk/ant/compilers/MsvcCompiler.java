@@ -151,7 +151,7 @@ public class MsvcCompiler extends CompilerAdapter {
         }
         catch (IOException ioe)
         {
-            System.out.println("Caught IOException");
+            log("Caught IOException");
         }
         finally
         {

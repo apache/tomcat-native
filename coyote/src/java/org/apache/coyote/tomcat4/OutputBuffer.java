@@ -40,6 +40,9 @@ public class OutputBuffer extends Writer
     implements ByteChunk.ByteOutputChannel, CharChunk.CharOutputChannel {
 
 
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( OutputBuffer.class );
+
     // -------------------------------------------------------------- Constants
 
 
@@ -664,7 +667,8 @@ public class OutputBuffer extends Writer
 
 
     protected void log( String s ) {
-	System.out.println("OutputBuffer: " + s);
+        if (log.isDebugEnabled()) 
+            log.debug("OutputBuffer: " + s);
     }
 
 
