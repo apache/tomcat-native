@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.apache.coyote.ActionCode;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.core.BaseInterceptor;
 
 /** The Request to connect with Coyote.
  *  This class handles the I/O requirements and transferring the request
@@ -32,6 +33,7 @@ import org.apache.tomcat.util.buf.MessageBytes;
 public class Tomcat3Request extends org.apache.tomcat.core.Request {
 
     org.apache.coyote.Request coyoteRequest=null;
+    BaseInterceptor   connector = null;
 
     // For SSL attributes we need to call an ActionHook to get
     // info from the protocol handler.
@@ -90,8 +92,20 @@ public class Tomcat3Request extends org.apache.tomcat.core.Request {
         remoteAddrMB = coyoteRequest.remoteAddr();
 	remoteHostMB = coyoteRequest.remoteHost();
 	serverNameMB = coyoteRequest.serverName();
+    }
 
-        
+    /**
+     * Set the Connector that this request services
+     */
+    void setConnector(BaseInterceptor conn) {
+	connector = conn;
+    }
+
+    /**
+     * Get the Connector that this request services
+     */
+    BaseInterceptor getConnector() {
+	return connector;
     }
     
     /** Read a single character from the request body.

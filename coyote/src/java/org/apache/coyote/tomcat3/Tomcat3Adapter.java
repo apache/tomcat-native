@@ -18,6 +18,7 @@ package org.apache.coyote.tomcat3;
 
 import org.apache.coyote.Adapter;
 import org.apache.tomcat.core.ContextManager;
+import org.apache.tomcat.core.BaseInterceptor;
 
 /** Adapter between Coyote and Tomcat.
  *
@@ -29,9 +30,11 @@ import org.apache.tomcat.core.ContextManager;
  */
 public class Tomcat3Adapter implements Adapter {
     ContextManager cm;
+    BaseInterceptor connector;
     
-    Tomcat3Adapter(ContextManager ctxman) {
+    Tomcat3Adapter(ContextManager ctxman, CoyoteInterceptor2 conn) {
 	cm   = ctxman;
+	connector = conn;
     }
 
     static int containerRequestNOTE=1; // XXX Implement a NoteManager, namespaces.
@@ -53,6 +56,7 @@ public class Tomcat3Adapter implements Adapter {
 
             reqA.setCoyoteRequest(request);
             resA.setCoyoteResponse(response);
+	    reqA.setConnector(connector);
             request.setNote( containerRequestNOTE, reqA );
         } else {
             resA=(Tomcat3Response)reqA.getResponse();

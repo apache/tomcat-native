@@ -77,10 +77,13 @@ import org.apache.tomcat.util.net.SSLSupport;
  */
 public class CoyoteInterceptor2 extends BaseInterceptor
 {
+    public static final String REDIRECT_PORT_ATTR = 
+	"org.apache.tomcat.request.redirectPort";
     private String processorClassName="org.apache.coyote.http11.Http11Protocol";
     Tomcat3Adapter adapter;
     ProtocolHandler proto;
     int protocolNote;
+    int redirectPort = -1;
     
     public CoyoteInterceptor2() {
 	super();
@@ -109,6 +112,21 @@ public class CoyoteInterceptor2 extends BaseInterceptor
         setAttribute( prop, value );
     }
 
+    /**
+     * Set the redirect port.
+     */
+    public void setRedirectPort(int rp) {
+	redirectPort = rp;
+	setAttribute("redirectPort", new Integer(rp));
+    }
+
+    /**
+     * Get the redirect port.
+     */
+    public int getRedirectPort() {
+	return redirectPort;
+    }
+
     /** Called when the ContextManger is started
      */
     public void engineInit(ContextManager cm) throws TomcatException {
@@ -116,7 +134,7 @@ public class CoyoteInterceptor2 extends BaseInterceptor
 
         protocolNote = cm.getNoteId(ContextManager.MODULE_NOTE,
 				    "coyote.protocol");
-        adapter=new Tomcat3Adapter(cm);
+        adapter=new Tomcat3Adapter(cm, this);
         try {
             Class c=Class.forName(processorClassName);
             proto=(ProtocolHandler)c.newInstance();
@@ -204,8 +222,12 @@ public class CoyoteInterceptor2 extends BaseInterceptor
             return null;
 
         Tomcat3Request httpReq=(Tomcat3Request)request;
-        
-        if(key!=null && httpReq!=null ){
+
+        if( httpReq == null || httpReq.getConnector() != this ) {
+	    return null;
+	}
+
+        if(key!=null ){
             org.apache.coyote.Request cReq = httpReq.getCoyoteRequest();
             Object info = cReq.getAttribute(key);
             if( info != null)
@@ -222,7 +244,9 @@ public class CoyoteInterceptor2 extends BaseInterceptor
 		}
 		
                 return cReq.getAttribute(key);
-            }
+            } else if(key.equals(REDIRECT_PORT_ATTR)) {
+		return new Integer(redirectPort);
+	    }
 
             return cReq.getAttribute( key );
         }
