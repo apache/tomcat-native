@@ -362,20 +362,20 @@ static int escape_url(const char *path, char *dest, int destsize)
  */
 static char *stristr(const char *s, const char *find)
 {
-	char c, sc;
-	size_t len;
+    char c, sc;
+    size_t len;
 
-	if ((c = tolower((unsigned char)(*find++))) != 0) {
-		len = strlen(find);
-		do {
-			do {
-				if ((sc = tolower((unsigned char)(*s++))) == 0)
-					return (NULL);
-			} while (sc != c);
-		} while (strnicmp(s, find, len) != 0);
-		s--;
-	}
-	return ((char *)s);
+    if ((c = tolower((unsigned char)(*find++))) != 0) {
+        len = strlen(find);
+        do {
+            do {
+                if ((sc = tolower((unsigned char)(*s++))) == 0)
+                    return (NULL);
+            } while (sc != c);
+        } while (strnicmp(s, find, len) != 0);
+        s--;
+    }
+    return ((char *)s);
 }
 
 static int uri_is_web_inf(const char *uri)
@@ -1037,6 +1037,9 @@ static int init_jk(char *serverName)
       */
      jk_shm_open(NULL, JK_SHM_DEF_SIZE, logger);
 
+     /* 10 is minimum supported on WINXP */
+     jk_set_worker_def_cache_size(10);
+ 
     /* Logging the initialization type: registry or properties file in virtual dir
      */
     if (JK_IS_DEBUG_LEVEL(logger)) {
