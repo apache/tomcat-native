@@ -235,6 +235,14 @@ public class JkCoyoteHandler extends JkHandler implements
         }
     }
 
+    public void pause() throws Exception {
+        // FIXME
+    }
+
+    public void resume() throws Exception {
+        // FIXME
+    }
+
     public void destroy() {
         if( !started ) return;
 
