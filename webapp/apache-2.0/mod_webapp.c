@@ -89,7 +89,7 @@ static server_rec *server=NULL;
 /* ************************************************************************* */
 
 /* Destroy the module and the WebApp Library */
-static apr_status_t wam_shutdown(void *data) {//void *nil) {
+static apr_status_t wam_shutdown(void *data) {/*void *nil) { */
     if (!wam_initialized) return APR_SUCCESS;
     wa_shutdown();
     wam_initialized=wa_false;
