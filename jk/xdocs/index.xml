@@ -145,4 +145,13 @@ which is still only easily available via Apache 2.0 and that it didn't support
 webservers like IIS, NES/iPlanet or Domino.
 </p>
 </section>
+
+<section name="Additional References">
+<p>
+Please note that we maintaing a list of references to external documentation
+on connector usage and configuration in various environments as part of
+the Tomcat wiki <a href="http://wiki.apache.org/jakarta-tomcat/Tomcat_2fLinks">Useful Links</a> page.
+</p>
+</section>
+
 </document>
