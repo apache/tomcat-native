@@ -129,4 +129,4 @@ following URL:
 
 Have fun...
 
-    Pier <pier.fumagalli@sun.com>
+    Pier <pier@betaversion.org>

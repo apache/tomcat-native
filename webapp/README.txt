@@ -105,4 +105,4 @@ mailing list <mailto:tomcat-dev@jakarta.apache.org>
 
 Have fun...
 
-    Pier <pier.fumagalli@sun.com>
+    Pier <pier@betaversion.org>

@@ -57,7 +57,7 @@
 
 /**
  * @package Request Handling
- * @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
+ * @author  Pier Fumagalli <mailto:pier@betaversion.org>
  * @version $Id$
  */
 #ifndef _WA_REQUEST_H_

@@ -56,7 +56,7 @@
  * ========================================================================= */
 
 /**
- * @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
+ * @author  Pier Fumagalli <mailto:pier@betaversion.org>
  * @version $Id$
  */
 
