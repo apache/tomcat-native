@@ -75,23 +75,26 @@
 #include "jk_registry.h"
 #include "jk_endpoint.h"
 
+
 static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service_t *s,
                                                     jk_workerEnv_t *wenv)
 {
     jk_map_t *map=wenv->initData;
     int i;
     int j;
+    int totalReq=0;
+    int totalErr=0;
+    long totalTime=0;
+    long maxTime=0;
     int needHeader=JK_TRUE;
     
     if( wenv->shm==NULL || wenv->shm->head==NULL)
         return;
 
-    s->jkprintf(env, s, "<h2>Scoreboard info</h2>\n");
-
+    s->jkprintf(env, s, "<h2>Scoreboard info (ver=%d slots=%d)</h2>\n", 
+                wenv->shm->head->lbVer, wenv->shm->head->lastSlot );
+                
     s->jkprintf(env, s, "<table border>\n");
-
-    s->jkprintf(env, s, "<tr><td>Version</td><td>%d</td></tr>\n", wenv->shm->head->lbVer );
-    s->jkprintf(env, s, "<tr><td>Slots</td><td>%d</td></tr>\n", wenv->shm->head->lastSlot );
 
     for( i=1; i < wenv->shm->head->lastSlot; i++ ) {
         jk_shm_slot_t *slot= wenv->shm->getSlot( env, wenv->shm, i );
@@ -102,21 +105,77 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
             /* This is an endpoint slot */
             void *data=slot->data;
 
-            s->jkprintf(env, s, "<tr><th colspan='2'>%s</th></tr>\n", slot->name );
-            s->jkprintf(env, s, "<tr><td>StructCnt</td><td>%d</td>\n", slot->structCnt );
-            s->jkprintf(env, s, "<tr><td>StructSize</td><td>%d</td>\n", slot->structSize );
-            s->jkprintf(env, s, "<tr><th>Requests</th><th>Errors</th>\n" );
+            s->jkprintf(env, s, "<tr><th colspan='4'>%s</th>\n", slot->name );
+            s->jkprintf(env, s, "<th>Cnt=%d</th><th>size=%d</th>\n",
+                        slot->structCnt, slot->structSize );
+            
+            s->jkprintf(env, s, "<tr><th>Req</th><th>Err</th>");
+            s->jkprintf(env, s,"<th>LastReq</th>\n" );
+            
+#ifdef HAVE_APR
+            s->jkprintf(env, s, "<th>ConnectionTime</th><th>TotalTime</th><th>MaxTime</th><th>AvgTime</th>" );
+            s->jkprintf(env, s, "<th>ReqStart</th><th>+jk</th><th>+end</th>" );
+#endif
             
             /* XXX Add info about number of slots */
             for( j=0; j<slot->structCnt ; j++ ) {
                 jk_stat_t *stat=(jk_stat_t *) ( data + j * sizeof( jk_stat_t ));
 
-                s->jkprintf(env, s, "<tr><td>%d</td><td>%d</td></tr>\n", stat->reqCnt, stat->errCnt );
+                s->jkprintf(env, s, "<tr><td>%d</td><td>%d</td>\n", stat->reqCnt, stat->errCnt );
+                s->jkprintf(env, s, "<td>%s</td>\n",  stat->active );
+
+                totalReq+=stat->reqCnt;
+                totalErr+=stat->errCnt;
+#ifdef HAVE_APR
+                {
+                    char ctimeBuf[APR_CTIME_LEN];
+                    apr_ctime( ctimeBuf, stat->connectedTime );
+                    s->jkprintf(env, s, "<td>%s</td>\n", ctimeBuf );
+
+                    s->jkprintf(env, s, "<td>%ld</td>\n", stat->totalTime );
+                    s->jkprintf(env, s, "<td>%ld</td>\n", stat->maxTime );
+
+                    if( stat->reqCnt + stat->errCnt > 0 ) 
+                        s->jkprintf(env, s, "<td>%ld</td>\n",
+                                    (stat->totalTime / ( stat->reqCnt + stat->errCnt )) );
+                    else
+                        s->jkprintf(env, s, "<td>-</td>\n");
+
+                    s->jkprintf(env, s, "<td>%ld</td>\n", stat->startTime );
+                    s->jkprintf(env, s, "<td>%ld</td>\n",
+                                stat->jkStartTime - stat->startTime );
+                    s->jkprintf(env, s, "<td>%ld</td>\n",
+                                stat->endTime - stat->startTime );
+
+                    totalTime += stat->totalTime;
+                    if( maxTime < stat->maxTime )
+                        maxTime=stat->maxTime;
+                }
+#endif
+                s->jkprintf(env, s, "</tr>\n");
             }
 
         }
     }
     s->jkprintf(env, s, "</table>\n");
+
+    s->jkprintf(env, s, "Totals:\n");
+
+    s->jkprintf(env, s, "<table border><tr><th>Req</th><th>Err</th><th>Max</th><th>Avg</th></tr>");
+
+    s->jkprintf(env, s, "<tr><td>%d</td>\n", totalReq );
+    s->jkprintf(env, s, "<td>%d</td>\n", totalErr );
+
+    s->jkprintf(env, s, "<td>%ld</td>\n", maxTime );
+
+    if( totalErr + totalReq > 0 ) {
+        long avg=totalTime / ( totalReq + totalErr );
+        s->jkprintf(env, s, "<td>%ld</td>\n", avg );
+    } else {
+        s->jkprintf(env, s, "<td>-</td>\n" );
+    }
+
+    s->jkprintf(env, s, "</tr></table>\n");
 }
 
 /** Use 'introspection' data to find what getters an type support,
@@ -285,9 +344,9 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     
     /* Body */
     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "ajp13" );
-    jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "endpoint" );
-    jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "uri" );
     jk2_worker_status_displayScoreboardInfo(env, s, s->workerEnv );
+/*     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "endpoint" ); */
+    jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "uri" );
     jk2_worker_status_displayConfigProperties(env, s, s->workerEnv );
     jk2_worker_status_displayActiveProperties(env, s, s->workerEnv );
     
