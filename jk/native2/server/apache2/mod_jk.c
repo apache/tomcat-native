@@ -822,7 +822,7 @@ static int jk_translate(request_rec *r)
 
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
                   "mod_jk.translate(): uriMap %s %s\n",
-                  r->uri, uriEnv->webapp->worker->name);
+                  r->uri, uriEnv->webapp->workerName);
 
     return OK;
 }
