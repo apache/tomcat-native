@@ -439,6 +439,21 @@ by putting path delimiter (":"/";") between the entries.
 </screen>
 
 <p>
+<b>bridge</b> indicate the kind of Tomcat you'll use via JNI.
+</p>
+
+<p>
+The bridge property could be for now <b>tomcat32</b> or <b>tomcat33</b>.
+Tomcat 3.2.x is deprecated but still present on some distribution like iSeries. 
+By default the bridge type is set tomcat33.
+</p>
+
+<screen>
+<note>Set bridge type for "wrkjni", we'll use tomcat 3.3</note>
+<read>worker.wrkjni.bridge=tomcat33</read>
+</screen>
+
+<p>
 <b>cmd_line</b> is the command line that is handed over to Tomcats' startup code.
 </p>
 
@@ -490,12 +505,39 @@ The jni worker will use this path to load the JVM dynamically.
 </screen>
 
 <p>
+<b>ms</b> set initial HEAP size for the JVM
+</p>
+
+<screen>
+<note>Told JVM to use 64MB of initial heap size</note>
+<read>worker.wrkjni.mS=64</read>
+</screen>
+
+<p>
+<b>mx</b> set maximal HEAP size for the JVM
+</p>
+
+<screen>
+<note>Told JVM to to not use more than 128MB for heap</note>
+<read>worker.wrkjni.mx=128</read>
+</screen>
+
+<p>
 <b>sysprops</b> set the Java system properties for the JVM
 </p>
 
 <screen>
 <note>Told Java to stay in 64m</note>
 <read>worker.wrkjni.sysprops=-Xmx64</read>
+</screen>
+
+<p>
+<b>sysprops</b> set the Java system properties for the JVM
+</p>
+
+<screen>
+<note>Told JVM to use french language</note>
+<read>worker.wrkjni.sysprops=-Dlang=fr</read>
 </screen>
 
 <p>
@@ -587,6 +629,8 @@ A lb worker that load balance the ajp12 and ajp13 workers
 <read>worker.worker2.socket_timeout=300</read>
 <note># Set properties for worker3 (jni)</note>
 <read>worker.worker3.type=jni</read>
+<note># Set worker3 bridge type, here Tomcat 3.3</note>
+<read>worker.worker3.bridge=tomcat33</read>
 <note># Set worker3 classpath</note>
 <read>worker.worker3.class_path=$(workers.tomcat_home)$(ps)classes</read>
 <read>worker.worker3.class_path=$(workers.tomcat_home)$(ps)lib$(ps)tomcat.jar</read>
