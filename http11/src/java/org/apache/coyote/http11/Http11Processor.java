@@ -366,8 +366,7 @@ public class Http11Processor implements Processor, ActionHook {
         throws IOException {
 
         // Set the remote address
-        remoteAddr = socket.getInetAddress().getHostAddress();
-        request.remoteAddr().setString(remoteAddr);
+        remoteAddr = null;
         remoteHost = null;
 
         // Setting up the I/O
@@ -564,13 +563,27 @@ public class Http11Processor implements Processor, ActionHook {
             } catch (Exception e) {
                 log.warn("Exception getting SSL attributes " ,e);
             }
-        } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
-            request.remoteAddr().setString(remoteAddr);
-            if( remoteHost == null )
-                remoteHost = socket.getInetAddress().getHostName();
-            request.remoteHost().setString(remoteHost);
 
-        } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE ) {
+        } else if (actionCode == ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE) {
+
+            if (remoteAddr == null) {
+                remoteAddr = socket.getInetAddress().getHostAddress();
+                request.remoteAddr().setString(remoteAddr);
+            }
+
+        } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
+
+            if (remoteAddr == null) {
+                remoteAddr = socket.getInetAddress().getHostAddress();
+                request.remoteAddr().setString(remoteAddr);
+            }
+            if (remoteHost == null) {
+                remoteHost = socket.getInetAddress().getHostName();
+                request.remoteHost().setString(remoteHost);
+            }
+
+        } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
+
             try {
                 Object sslO = sslSupport.getPeerCertificateChain(true);
                 if( sslO != null) {
@@ -580,9 +593,10 @@ public class Http11Processor implements Processor, ActionHook {
             } catch (Exception e) {
                 log.warn("Exception getting SSL Cert",e);
             }
+
         }
+
     }
-            
 
 
     // ------------------------------------------------------ Connector Methods
