@@ -121,6 +121,7 @@ struct jk_msg;
 struct jk_ws_service;
 struct jk_endpoint;
 struct jk_logger;
+struct jk_workerEnv;
 struct jk_env;
     
 typedef int (JK_METHOD *jk_handler_callback)(struct jk_env *env,
@@ -136,7 +137,11 @@ struct jk_handler {
 
     char *name;
     int messageId;
+
     jk_handler_callback callback;
+
+    int (*init)( struct jk_env *env, struct jk_handler *handler,
+                 struct jk_workerEnv *workerEnv);
 };
                                         
 #ifdef __cplusplus
