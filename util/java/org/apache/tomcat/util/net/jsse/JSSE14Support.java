@@ -150,6 +150,7 @@ class JSSE14Support extends JSSESupport {
         try {
 	    certs = session.getPeerCertificates();
         } catch( Throwable t ) {
+            logger.debug("Error getting client certs",t);
             return null;
         }
         if( certs==null ) return null;
