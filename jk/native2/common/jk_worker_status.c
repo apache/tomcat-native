@@ -288,6 +288,9 @@ static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t 
         if( strncmp( type, mbean->type, typeLen ) != 0 )
             continue;
 
+        if( mbean->localName == NULL || (strlen(mbean->localName) == 0) )
+            continue;
+
         if( needHeader ) {
             s->jkprintf(env, s, "<H3>%s runtime info</H3>\n", JK_CHECK_NULL(type) );
             s->jkprintf(env, s, "<p>%s information, using getAttribute() </p>\n", JK_CHECK_NULL(type) );
