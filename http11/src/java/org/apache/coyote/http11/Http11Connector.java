@@ -77,6 +77,8 @@ import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.Request;
 import org.apache.coyote.Response;
 
+import org.apache.coyote.http11.filters.ChunkedInputFilter;
+import org.apache.coyote.http11.filters.ChunkedOutputFilter;
 import org.apache.coyote.http11.filters.IdentityInputFilter;
 import org.apache.coyote.http11.filters.IdentityOutputFilter;
 import org.apache.coyote.http11.filters.VoidOutputFilter;
@@ -406,7 +408,8 @@ public class Http11Connector implements Connector, ActionHook {
         } else {
             // Unsupported protocol
             error = true;
-            // FIXME: Find right status code
+            // Send 505; Unsupported HTTP version
+            response.setStatus(505);
         }
 
         // Check connection header
@@ -463,7 +466,8 @@ public class Http11Connector implements Connector, ActionHook {
                 if (!addInputFilter(inputFilters, encodingName)) {
                     // Unsupported transfer encoding
                     error = true;
-                    // FIXME: Find right status code
+                    // Send 501; Unimplemented
+                    response.setStatus(502);
                 }
                 startPos = commaPos + 1;
                 commaPos = transferEncodingValue.indexOf(',', startPos);
@@ -473,7 +477,8 @@ public class Http11Connector implements Connector, ActionHook {
             if (!addInputFilter(inputFilters, encodingName)) {
                 // Unsupported transfer encoding
                 error = true;
-                // FIXME: Find right status code
+                // Send 501; Unimplemented
+                response.setStatus(502);
             }
         }
 
@@ -519,7 +524,8 @@ public class Http11Connector implements Connector, ActionHook {
         outputBuffer.addFilter(new IdentityOutputFilter());
 
         // Create and add the chunked filters.
-        // FIXME
+        inputBuffer.addFilter(new ChunkedInputFilter());
+        outputBuffer.addFilter(new ChunkedOutputFilter());
 
         // Create and add the void filter.
         outputBuffer.addFilter(new VoidOutputFilter());
