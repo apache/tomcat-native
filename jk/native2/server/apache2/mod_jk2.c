@@ -293,7 +293,7 @@ static void jk2_create_workerEnv(apr_pool_t *p, server_rec *s) {
     
     if( env->soName == NULL ){
         env->l->jkLog(env, env->l, JK_LOG_ERROR, "Error creating env->soName\n");
-        return env;
+        return;
     }
     strcpy(env->soName,file_name);
 #else 
@@ -729,7 +729,7 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
                     ULONG ulReason,         // Reason why NT called this DLL
                     LPVOID lpReserved)      // Reserved parameter for future use
 {
-    GetModuleFileName( hInst, file_name, sizeof(file_name)));
+    GetModuleFileName( hInst, file_name, sizeof(file_name));
     return TRUE;
 }
 
