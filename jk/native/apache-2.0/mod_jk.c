@@ -959,7 +959,8 @@ static const char *jk_set_key_size_indicator(cmd_parms *cmd,
  * -ForwardSSLKeySize        => Don't Forward SSL Key Size, will make mod_jk works with all TC release
  *  ForwardURICompat         => Forward URI normally, less spec compliant but mod_rewrite compatible (old TC)
  *  ForwardURICompatUnparsed => Forward URI as unparsed, spec compliant but broke mod_rewrite (old TC)
- *  ForwardURIEscaped       => Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part
+ *  ForwardURIEscaped        => Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part
+ *  ForwardDirectories       => Forward all directory requests with no index files to Tomcat 
  */
 
 const char *jk_set_options(cmd_parms *cmd,
@@ -999,6 +1000,9 @@ const char *jk_set_options(cmd_parms *cmd,
         else if (!strcasecmp(w, "ForwardURIEscaped")) {
             opt = JK_OPT_FWDURIESCAPED;
             mask = JK_OPT_FWDURIMASK;
+        }
+        else if (!strcasecmp(w, "ForwardDirectories")) {
+            opt = JK_OPT_FWDDIRS;
         }
         else
             return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '", w, "'", NULL);
@@ -1183,20 +1187,26 @@ static int jk_handler(request_rec *r)
 
     /* We do DIR_MAGIC_TYPE here to make sure TC gets all requests, even
      * if they are directory requests, in case there are no static files
-     * visible to Apache and/or DirectoryIndex was not used */
+     * visible to Apache and/or DirectoryIndex was not used. This is only
+     * used when JkOptions has ForwardDirectories set. */
 
-    /* not for me, try next handler */
+    /* Not for me, try next handler */
     if(strcmp(r->handler,JK_HANDLER) && strcmp(r->handler,DIR_MAGIC_TYPE))
-      return DECLINED;
+        return DECLINED;
 
     xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
                                                      &jk_module);
+
+    /* Was the option to forward directories to Tomcat set? */
+    if(!strcmp(r->handler,DIR_MAGIC_TYPE) && !(xconf->options & JK_OPT_FWDDIRS))
+        return DECLINED;
+
     worker_name = apr_table_get(r->notes, JK_WORKER_ID);
     xl = xconf->log ? xconf->log : main_log;
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
-    return rc;
+        return rc;
     }
 
     if( worker_name == NULL ) {
@@ -1610,6 +1620,11 @@ static int jk_translate(request_rec *r)
             if(worker) {
                 r->handler=apr_pstrdup(r->pool,JK_HANDLER);
                 apr_table_setn(r->notes, JK_WORKER_ID, worker);
+		
+                /* This could be a sub-request, possibly from mod_dir */
+                if(r->main)
+                    apr_table_setn(r->main->notes, JK_WORKER_ID, worker);
+
                 return OK;
             }
         }
