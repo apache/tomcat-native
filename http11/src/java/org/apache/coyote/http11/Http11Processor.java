@@ -64,12 +64,14 @@ import java.io.InterruptedIOException;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.Socket;
 
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.FastHttpDateFormat;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.buf.HexUtils;
+import org.apache.tomcat.util.net.SSLSupport;
 
 import org.apache.coyote.ActionHook;
 import org.apache.coyote.ActionCode;
@@ -206,6 +208,11 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected int maxKeepAliveRequests=-1;
 
+
+    /** SSL support, socket - this is statefull anyway */
+    protected SSLSupport sslSupport;
+    protected Socket socket;
+    
     // --------------------------------------------------------- Public Methods
 
 
@@ -281,6 +288,16 @@ public class Http11Processor implements Processor, ActionHook {
      */
     public int getMaxKeepAliveRequests() {
         return maxKeepAliveRequests;
+    }
+
+    public void setSSLSupport(  SSLSupport sslSupport ) {
+        this.sslSupport=sslSupport;
+    }
+    
+    public void setSocket( Socket socket )
+        throws IOException
+    {
+        this.socket=socket;
     }
 
     /**
@@ -372,6 +389,8 @@ public class Http11Processor implements Processor, ActionHook {
         inputBuffer.recycle();
         outputBuffer.recycle();
 
+        // Recycle ssl info
+        sslSupport=null;
     }
 
 
@@ -455,19 +474,22 @@ public class Http11Processor implements Processor, ActionHook {
 
             started = false;
 
-        } else if (actionCode == ActionCode.ACTION_REQ_ATTRIBUTE ) {
+        } else if (actionCode == ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
+            Request req=(Request)param;
+            try {
+                if( sslSupport != null ) {
+                    //  if(key.equals("javax.servlet.request.cipher_suite"))
+                    //sslSupport.getCipherSuite();
+                    // if(key.equals("javax.servlet.request.X509Certificate"))
+                    //sslSupport.getPeerCertificateChain();
+                }
+            } catch (Exception e){
+                //log("Exception getting SSL attribute " + key,e,Log.WARNING);
+            }
+        } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
+            Request req=(Request)param;
 
-            // XXX Will be fixed if we replace ActionCode/Action with TcHandler,
-            // the context can be used to pass and return information
-//             try {
-//                 if(key.equals("javax.servlet.request.cipher_suite"))
-//                     return httpReq.sslSupport.getCipherSuite();
-//                 if(key.equals("javax.servlet.request.X509Certificate"))
-//                     return httpReq.sslSupport.getPeerCertificateChain();
-//             } catch (Exception e){
-//                 log.warn("Exception getting SSL attribute " + key,e);
-//                 return null;
-//             }
+            
         }
 
     }
