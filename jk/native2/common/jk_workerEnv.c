@@ -69,7 +69,8 @@
 
 #define DEFAULT_WORKER              ("ajp13")
 
-int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool,
+                                    void **result,
                                     const char *type, const char *name);
 
 static void jk_workerEnv_close(jk_env_t *env, jk_workerEnv_t *_this);
@@ -191,20 +192,21 @@ static int jk_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this)
     int i;
     int err;
     char *tmp;
+    int declared_workers=0;
 
     /*     _this->init_data=init_data; */
 
     tmp = jk_map_getString(env, init_data, "worker.list",
                            DEFAULT_WORKER );
     worker_list=jk_map_split( env, init_data, init_data->pool,
-                              tmp, NULL, &_this->num_of_workers );
+                              tmp, NULL, & declared_workers );
 
-    if(worker_list==NULL || _this->num_of_workers<= 0 ) {
+    if(worker_list==NULL || declared_workers <= 0 ) {
         /* assert() - we pass default worker, we should get something back */
         return JK_FALSE;
     }
 
-    for(i = 0 ; i < _this->num_of_workers ; i++) {
+    for(i = 0 ; i < declared_workers ; i++) {
         jk_worker_t *w = NULL;
         jk_worker_t *oldw = NULL;
         const char *name=(const char*)worker_list[i];
@@ -226,7 +228,7 @@ static int jk_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *_this)
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "workerEnv.init() %d workers, default %s\n",
-                  _this->num_of_workers, worker_list[0]); 
+                  declared_workers, worker_list[0]); 
     return JK_TRUE;
 }
 
@@ -531,7 +533,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
 
     w=(jk_worker_t *)env->getInstance(env, workerPool, "worker",
                                       type );
-    
+
     if( w == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                 "workerEnv.createWorker(): factory can't create worker %s:%s\n",
@@ -539,6 +541,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
         return NULL;
     }
 
+    w->type=type;
     w->name=(char *)name;
     w->pool=workerPool;
     w->workerEnv=_this;
@@ -588,7 +591,8 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
     return w;
 }
 
-int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool,
+                                    void **result,
                                     const char *type, const char *name)
 {
     jk_workerEnv_t *_this;
