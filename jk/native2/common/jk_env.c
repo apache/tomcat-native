@@ -64,10 +64,14 @@ jk_env_t *jk_env_globalEnv;
 */
 static void jk2_env_initEnv( jk_env_t *env, char *id );
 
-/* XXX We should have one env per thread to avoid sync problems. 
-   The env will provide access to pools, etc 
+/* We should have one env per thread to avoid sync problems. 
+   The env provides access to tmp pools, exception 
 */
 
+/* -------------------- Env management -------------------- */
+
+/** Public method, creates/get the global env
+ */
 jk_env_t* JK_METHOD jk2_env_getEnv( char *id, jk_pool_t *pool ) {
   if( jk_env_globalEnv == NULL ) {
       jk_env_globalEnv=(jk_env_t *)pool->calloc( NULL, pool, sizeof( jk_env_t ));
@@ -77,30 +81,53 @@ jk_env_t* JK_METHOD jk2_env_getEnv( char *id, jk_pool_t *pool ) {
   return jk_env_globalEnv;
 }
 
-/* ==================== Implementation ==================== */
 
-static jk_env_t * JK_METHOD jk2_env_get( jk_env_t *env )
+/** Get a local env - either a new one or a recycled one
+ *  XXX Try TLD too 
+ */
+static jk_env_t * JK_METHOD jk2_env_get( jk_env_t *parentEnv )
 {
-    return NULL;
+    jk_env_t *env=(jk_env_t *)parentEnv->envCache->get( parentEnv, parentEnv->envCache);
+    if( env == NULL ) {
+        jk_pool_t *parentPool=parentEnv->globalPool;
+        env=(jk_env_t *)parentPool->calloc( parentEnv, parentPool, sizeof( jk_env_t ));
+        
+        env->tmpPool=parentPool->create(parentEnv, parentPool, HUGE_POOL_SIZE);;
+        
+        env->registerFactory= parentEnv->registerFactory;
+        env->getByName= parentEnv->getByName; 
+        env->getByName2= parentEnv->getByName2; 
+        env->getBean2= parentEnv->getBean2; 
+        env->getBean= parentEnv->getBean; 
+        env->alias= parentEnv->alias; 
+        env->createBean2= parentEnv->createBean2;
+        env->createBean= parentEnv->createBean;
+        env->getEnv= parentEnv->getEnv; 
+        env->releaseEnv= parentEnv->releaseEnv; 
+        env->jkClearException=parentEnv->jkClearException;
+        env->jkException=parentEnv->jkException;
+        
+        env->_registry=parentEnv->_registry;
+        env->_objects=parentEnv->_objects;
+        env->l=parentEnv->l;
+        env->globalPool=parentEnv->globalPool;
+        env->envCache=parentEnv->envCache;
+
+        fprintf( stderr, "Create env %d\n", env->id);
+    }
+    return env;
 }
 
+/** Release the env ( clean and recycle )
+ */
 static int JK_METHOD jk2_env_put( jk_env_t *parent, jk_env_t *chld )
 {
-
-    return JK_TRUE;
+    chld->tmpPool->reset(parent, chld->tmpPool);
+    chld->jkClearException(chld);
+    return parent->envCache->put( parent, parent->envCache, chld);
 }
 
-static jk_env_objectFactory_t JK_METHOD jk2_env_getFactory(jk_env_t *env, 
-                                                           const char *type )
-{
-  if( type==NULL ) {
-      env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "env.getFactory(): NullPointerException\n");
-      return NULL;
-  }
-
-  return (jk_env_objectFactory_t)env->_registry->get( env, env->_registry, type);
-}
+/* -------------------- Object management -------------------- */
 
 /** Create a jk component, using only the name.
  *  Now things are simpler - the 'type' is the prefix, separated by ':' - no
@@ -108,8 +135,6 @@ static jk_env_objectFactory_t JK_METHOD jk2_env_getFactory(jk_env_t *env,
  */
 static jk_bean_t *jk2_env_createBean( jk_env_t *env, jk_pool_t *pool, char *objName )
 {
-    jk_bean_t *w=NULL;
-    int i;
     char *type=NULL;
     void *obj;
     char *localName;
@@ -119,122 +144,141 @@ static jk_bean_t *jk2_env_createBean( jk_env_t *env, jk_pool_t *pool, char *objN
         type=objName;
     } else {
         /* Funny pointer arithmetic. I hope I got it right */
-        type=pool->calloc( env, pool, localName - objName + 2 );
+        type=env->tmpPool->calloc( env, env->tmpPool, localName - objName + 2 );
         strncpy( type, objName, localName - objName );
     }
     
-/*     for( i=0; i< env->_registry->size( env, env->_registry ) ; i++ ) { */
-/*         char *factName=env->_registry->nameAt( env, env->_registry, i ); */
-/*         int len=strlen(factName ); */
-        
-/*         if( (strncmp( objName, factName, len) == 0) && */
-/*             ( (objName[len] == '.') || */
-/*               (objName[len] == ':') || */
-/*               (objName[len] == '_') || */
-/*               (objName[len] == '\0') )  ) { */
-            /* We found the factory. */
-/*             type=factName; */
-            /*             env->l->jkLog(env, env->l, JK_LOG_INFO, */
-            /*                               "Found %s  %s %s %d %d\n", type, objName, */
-            /*                           factName, len, strncmp( objName, factName, len)); */
-/*             break; */
-/*         } */
-/*     } */
-/*     if( type==NULL ) { */
-/*         env->l->jkLog(env, env->l, JK_LOG_ERROR, */
-/*                       "env.createBean(): Can't find type for %s \n", objName); */
-/*         return NULL; */
-/*     }  */
-    
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "env.createBean(): Create [%s] %s\n", type, objName);
-
-    obj=env->createInstance( env, pool, type, objName );
-
-    /* This is a bit twisted, createInstance should be replaced with a method
-       returning jk_bean
-     */
-    w=env->getMBean( env, objName );
-    if( (obj==NULL) || (w==NULL) ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "env.createBean(): Error creating  [%s] %s\n", objName, type);
-        return NULL;
-    }
-    return w;
+    return env->createBean2( env, pool, type, objName );
 }
 
-
-static void *jk2_env_createInstance(jk_env_t *env, jk_pool_t *pool,
-                                    const char *type, const char *name)
+/** Create a component using type and local part ( pre-cooked ).
+ */
+static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
+                                       char *type, char *localName )
 {
     jk_env_objectFactory_t fac;
     jk_bean_t *result;
     jk_pool_t *workerPool;
+    char *name;
 
-    if( type==NULL  ) {
+    if( type==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                        "env.createInstance(): NullPointerException\n");
+                      "env.createBean2(): NullPointerException\n");
         return NULL;
     }
 
-    /** Generate a unique name if none is specified
-     */
-    if( name==NULL ) {
-        name=pool->calloc( env, pool, strlen( type ) + 6 );
-        sprintf( (char *)name, "%s.%d", type, env->id++ );
+    if( localName!=NULL && strncmp( localName, type, strlen( type )) == 0 ) {
+        /* Common error, make it 'localName' */
+        if( strcmp( type, localName ) == 0 ) {
+            localName="";
+        } else {
+            localName= localName + strlen(type) + 1;
+        }
     }
 
-    fac=jk2_env_getFactory( env, type);
+    if( env->l != NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "env.createBean2(): Create [%s] %s\n", type, localName);
+    } else {
+            fprintf(stderr, "env.createBean2(): Create [%s] %s\n", type, localName);
+    }
+    
+    fac=(jk_env_objectFactory_t)env->_registry->get( env, env->_registry, type);
+    
     if( fac==NULL ) {
         if( env->l ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                            "Error getting factory for %s:%s\n", type, name);
+                          "env.createBean2(): Error getting factory for [%s] %s\n", type, localName);
         } else {
             fprintf( stderr, "Error getting factory for %s \n",  type );
         }
         return NULL;
     }
 
-    result=(jk_bean_t *)pool->calloc( NULL, pool, sizeof( jk_bean_t ));
-    result->type=type;
-    result->name=name;
+    workerPool=pool->create(env, pool, HUGE_POOL_SIZE);
+    
+    /** Generate a unique name if none is specified
+     */
+    if( localName==NULL ) {
+        localName=workerPool->calloc( env, workerPool,  10 );
+        sprintf( (char *)localName, "%d", env->id++ );
+    }
+
+    name=workerPool->calloc( env, workerPool,  strlen( type ) + strlen( localName ) + 2 );
+    strcpy( name, type );
+    strcat( name, ":");
+    strcat( name, localName );
+    
+    result=(jk_bean_t *)workerPool->calloc( env, workerPool, sizeof( jk_bean_t ));
+    result->pool=workerPool;
+    result->type= workerPool->pstrdup( env, workerPool, type);
+    result->name= workerPool->pstrdup( env, workerPool, name);
+    result->localName=workerPool->pstrdup( env, workerPool, localName);
     result->settings=NULL;
     result->getAttributeInfo=NULL;
     result->setAttributeInfo=NULL;
     
-    workerPool=pool->create(env, pool, HUGE_POOL_SIZE);
-    
-    fac( env, workerPool, result, type, name );
+    fac( env, workerPool, result, result->type, result->name );
+
     if( result->object==NULL ) {
         if( env->l )
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                                "Error getting instance for %s:%s\n", type, name);
+                          "env.createBean2(): Factory error creating %s ( %s, %s)\n", name,
+                          type, localName);
         return NULL;
     }
 
-    env->_objects->put( env, env->_objects, name, result, NULL );
+    jk_env_globalEnv->_objects->put( env, jk_env_globalEnv->_objects, result->name, result, NULL );
+
+    if( strcmp(localName,"")==0 ) {
+        /* "" for local name is used as 'default'. Allow "type" as an alias for "type:"
+         */
+        jk_env_globalEnv->_objects->put( env, jk_env_globalEnv->_objects, result->type, result, NULL );
+    }
     
-    return result->object;
+    return result;
 }
 
-static void *jk2_env_getByName(jk_env_t *env, const char *name)
+/** Define an alias, for simpler config / less typing
+ */
+static void jk2_env_alias(jk_env_t *env, char *name, char *alias)
 {
-    jk_bean_t *result;
+    jk_bean_t *jkb=env->getBean(env, name);
 
-    if( name==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                        "env.getByName(): NullPointerException\n");
-        return NULL;
+    if( jkb==NULL ) {
+        if( env->l==NULL ) {
+            fprintf(stderr,"env.alias(): Not found %s\n", name);
+        } else {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "env.alias(): Not found %s\n", name);
+        }
+        return ;
     }
-
     
-    result=(jk_bean_t *)env->_objects->get( env, env->_objects, name );
+    jk_env_globalEnv->_objects->put( env, jk_env_globalEnv->_objects, alias, jkb, NULL );
+}
+
+/** Get the object by name. Returns the real object, not the wrapper
+ */
+static void *jk2_env_getByName(jk_env_t *env, char *name)
+{
+    jk_bean_t *result=env->getBean( env, name );
+        
     if( result==NULL ) return NULL;
     
     return result->object;
 }    
 
-static jk_bean_t JK_METHOD *jk2_env_getBean(jk_env_t *env, const char *name)
+static void *jk2_env_getByName2(jk_env_t *env, char *type, char *localName)
+{
+    jk_bean_t *result = env->getBean2( env, type, localName);
+    if( result==NULL ) return NULL;
+    return result->object;
+}    
+
+/** Get the wrapper for the named object
+ */
+static jk_bean_t JK_METHOD *jk2_env_getBean(jk_env_t *env, char *name)
 {
     if( name==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -245,36 +289,110 @@ static jk_bean_t JK_METHOD *jk2_env_getBean(jk_env_t *env, const char *name)
     return (jk_bean_t *)env->_objects->get( env, env->_objects, name );
 }    
 
+static jk_bean_t JK_METHOD *jk2_env_getBean2(jk_env_t *env, char *type, char *localName)
+{
+    char *name;
+    if( type==NULL || localName==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                        "env.getByName(): NullPointerException\n");
+        return NULL;
+    }
+
+    name=env->tmpPool->calloc( env, env->tmpPool, strlen( type ) + strlen( localName ) +2 );
+    strcpy(name, type);
+    strcat( name,":");
+    strcat( name,localName);
+
+    return (jk_bean_t *)env->_objects->get( env, env->_objects, name );
+}    
+
+/** Register the type and the factory
+ */
 static void JK_METHOD jk2_env_registerFactory(jk_env_t *env, 
                                              const char *type,
                                              jk_env_objectFactory_t fact)
 {
     if( type==NULL || fact==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                        "env.registerFactory(): NullPointerException\n");
+                      "env.registerFactory(): NullPointerException\n");
         return;
     }
     env->_registry->put( env, env->_registry, type, fact, NULL );
 }
 
-static void jk2_env_initEnv( jk_env_t *env, char *id ) {
-  /*   env->logger=NULL; */
-  /*   map_alloc( & env->properties ); */
-  env->registerFactory= jk2_env_registerFactory;
-  env->getByName= jk2_env_getByName; 
-  env->getMBean= jk2_env_getBean; 
-  env->createInstance= jk2_env_createInstance;
-  env->createBean= jk2_env_createBean;
-  env->id=0;
-  jk2_map_default_create( env, & env->_registry, env->globalPool );
-  jk2_map_default_create( env, & env->_objects, env->globalPool );
-  jk2_registry_init(env);
+/* -------------------- Exceptions -------------------- */
+
+/* Exceptions.
+ */
+static void JK_METHOD jkThrow( jk_env_t *env,
+                               const char *file, int line,
+                               const char *type,
+                               const char *fmt, ... )
+{
+    va_list args;
+    char *buf;
+
+    va_start(args, fmt);
+    env->l->jkVLog(env, env->l, file, line, JK_LOG_ERROR_LEVEL, fmt, args );
+    va_end(args);
+
+}
+
+/** re-throw the exception and record the current pos.
+ *  in the stack trace
+ *  XXX Not implemented/not used
+ */
+static JK_METHOD void jkReThrow( jk_env_t *env,
+                                 const char *file, int line )
+{
+    /* Nothing yet. It should record the file/line for stack trace */
+}
+
+/* Last exception that occured
+ */
+static JK_METHOD jk_exception_t *jk_env_jkException( jk_env_t *env ) 
+{
+    return env->lastException;
+}
+
+/** Clear the exception state
+ */
+static void JK_METHOD jk_env_jkClearException( jk_env_t *env ) {
+    env->lastException=NULL;
 }
 
 
+/* -------------------- Init method -------------------- */
 
 
+static void jk2_env_initEnv( jk_env_t *env, char *id ) {
 
+    env->registerFactory= jk2_env_registerFactory;
+    env->getByName= jk2_env_getByName; 
+    env->getByName2= jk2_env_getByName2; 
+    env->getBean= jk2_env_getBean; 
+    env->getBean2= jk2_env_getBean2; 
+    env->createBean2= jk2_env_createBean2;
+    env->createBean= jk2_env_createBean;
+    env->alias= jk2_env_alias;
+    env->getEnv= jk2_env_get; 
+    env->releaseEnv= jk2_env_put; 
+
+    env->jkClearException=jk_env_jkClearException;
+    env->jkException=jk_env_jkException;
+
+    env->id=0;
+    
+    jk2_map_default_create( env, & env->_registry, env->globalPool );
+    jk2_map_default_create( env, & env->_objects, env->globalPool );
+    
+    env->envCache= jk2_objCache_create( env, env->globalPool  );
+    env->envCache->init( env, env->envCache, 64 );
+    env->envCache->maxSize=-1;
+    env->tmpPool=env->globalPool->create(env, env->globalPool, HUGE_POOL_SIZE);;
+
+    jk2_registry_init(env);
+}
 
 
 
