@@ -948,7 +948,7 @@ static unsigned int parsedRequest(FilterContext *context, FilterParsedRequest *r
 	
         rc = jk_requtil_unescapeUrl(turi);
 		if (rc < 0) {
-			return rejectWithError(context, "Failed to unescape URI");
+			return rejectBadURI(context);
 		}
 
         jk_requtil_getParents(turi);
