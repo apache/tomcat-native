@@ -56,9 +56,11 @@
   <property name="native.dir" location="${jk.src}/native2" />
 
   <property name="build.dir" location="${jk.build}/jk2" />
+  <property name="cpptask.jar" location="${jk.src}/../lib/cpptasks.jar" />
 
   <path id="jkant" >
     <pathelement location="${jk.build}/lib/jkant.jar"/>
+    <pathelement location="${cpptask.jar}"/>
   </path>
 
   <!-- ==================== Targets ==================== -->
@@ -69,12 +71,14 @@
   <target name="all" depends="jkant,init,apache20,apache13,jni">
   </target>
 
-  <target name="guess.env" >
+  <target name="init.taskdef" >
     <taskdef resource="META-INF/ant.tasks" 
 	     classpathref="jkant" />
 
-    <echo message="build.properties ${os.arch}.${os.name}" />
+  </target>
 
+  <target name="guess.env" >
+    <echo message="build.properties ${os.arch}.${os.name}" />
     <!-- What servers do we have ? -->
     <available property="apache13.detect" 
                file="${apache13.home}/bin/htpasswd" />
@@ -110,6 +114,7 @@
     </condition>
 
     <echo message="Linux:${linux} Win32:${win32} Netware:${netware} Solaris:${solaris} HPUX:${hpux}" />
+
   </target>
 
   <target name="init.win32" if="win32" >
@@ -128,7 +133,7 @@
     <echo message="NDK: ${novellndk.home}" />
   </target>
 
-  <target name="init" depends="guess.env,init.win32,init.netware" >
+  <target name="init" depends="init.taskdef,guess.env,init.win32,init.netware" >
     <mkdir dir="${build.dir}" />
   </target>
 
@@ -136,6 +141,119 @@
     <ant dir="${jk.src}" target="jkant"/>
   </target>
 
+  <target name="apache20-cpptask" depends="init" if="apache2.detect">
+    <property name="ant.reuse.loader"  value="true" />
+
+    <taskdef resource="cpptasks.tasks" classpathref="jkant" />
+    <typedef resource="cpptasks.types" classpathref="jkant" />
+      
+    <property name="apr.include" location="${apache2.home}/include" />
+    <mkdir dir="${build.dir}/apache2" />
+    
+    <defineset id="jk2-defs">
+           <define name="_REENTRANT" />
+           <define name="CHUNK_SIZE" value="4096" />
+           <define name="USE_APACHE_MD5" />
+           <define name="HAS_APR" />
+           <define name="HAVE_JNI" />
+
+           <define name="HPUX11" if="hpux" />
+           <define name="WIN32" if="win32" />
+           <define name="_WINDOWS" if="win32" />
+           <define name="_MBCS" if="win32" />
+           <define name="_USRDLL" if="win32" />
+           <define name="MOD_JK2_EXPORTS" if="win32" />
+    </defineset>
+
+    <cc outtype="shared"
+        subsystem="console"
+        runtime="dynamic"
+        objdir="${build.dir}/apache2" 
+        outfile="${build.dir}/apache2/mod_jk2.so" >
+
+        <compiler name="msvc" if="use.msvc" >
+        </compiler>
+
+        <compiler name="gcc"  
+                  warnings="diagnostic" 
+                  debug="true" />
+        
+        <!-- Do we need this ? 
+        <linker name="gcc"  
+                debug="true">
+        </linker>
+        -->
+        
+        <fileset dir="." >
+          <include name="server/apache2/*.c" />
+	  <include name="common/*.c" />
+	  <include name="jni/*.c" />
+        </fileset>
+        
+        <includepath location="${native.dir}/common" />
+        <includepath location="${native.dir}/include" />
+
+        <sysincludepath location="${apache2.include}" />
+	<sysincludepath location="${apr.include}" />
+	<sysincludepath location="${apr-util.include}" />
+
+	<sysincludepath location="${java.home}/../include" />
+        <sysincludepath location="${java.home}/../include/linux" if="linux" />
+        <sysincludepath location="${java.home}/../include/hp-ux" if="hpux" />        
+        <sysincludepath location="${java.home}/../include/win32" if="win32" />        
+        <sysincludepath location="${java.home}/../include/solaris" if="solaris" />        
+        <sysincludepath location="&quot;${mssdk.home}/include&quot;" if="win32"/>
+        
+        <defineset refid="jk2-defs"/>
+
+        <!--
+        <defineset id="jk2-defs">
+           <define name="_REENTRANT" />
+           <define name="CHUNK_SIZE" value="4096" />
+           <define name="USE_APACHE_MD5" />
+           <define name="HAS_APR" />
+           <define name="HAVE_JNI" />
+
+           <define name="HPUX11" if="hpux" />
+           <define name="WIN32" if="win32" />
+           <define name="_WINDOWS" if="win32" />
+           <define name="_MBCS" if="win32" />
+           <define name="_USRDLL" if="win32" />
+           <define name="MOD_JK2_EXPORTS" if="win32" />
+        </defineset>
+        -->
+
+        <syslibset libs="libhttpd" if="win32" />
+        <syslibset libs="libapr" if="win32" />
+        <syslibset libs="libaprutil" if="win32" />
+        <!--
+        <libset libs="libhttpd.lib" if="win32" />
+        <libset libs="libapr.lib" if="win32" />
+        <libset libs="libaprutil.lib" if="win32" />
+         -->
+        <libset libs="advapi32.lib" if="win32" />
+        <libset libs="wsock32.lib" if="win32" />
+
+        <linkerArg value="/libpath:&quot;${apr.lib}&quot;" if="win32" />
+        <linkerArg value="/libpath:&quot;${apr-util.lib}&quot;" if="win32" />
+        <linkerArg value="/libpath:&quot;${apache2.home}/lib&quot;" if="win32" />
+        <linkerArg value="/libpath:&quot;${mssdk.home}/lib&quot;" if="win32" />
+        <linkerArg value="/libpath:&quot;${mssdk.home}/../Common/MSDev98/bin&quot;" if="win32" />
+    </cc>
+    
+    <!-- Missing in cc:
+          - profile: can be implemented with flags
+          - depends: can be implemented using ant built-ins
+          - Netware/MWCC: probably easy to port.
+         Bugs: 
+          - libtool doesn't seem to work with multiple files ( easy )
+          - can't specify mod_jk.so as name ( will generate libmod_jk.so )
+          - Classpath problems - can't use types if the jar is not in the CP. Workaround with
+            a special <cc-init> task.
+          - 'history.xml' seems to create major problems ( compile-related ? )
+     -->
+  </target>
+  
   <target name="apache20" depends="init" if="apache2.detect">
     <property name="apr.include" location="${apache2.home}/include" />
     <mkdir dir="${build.dir}/apache2" />
