@@ -299,6 +299,10 @@ public class WarpRequestHandler {
         }
         if (name.equalsIgnoreCase("Accept-Language"))
             parseAcceptLanguage(logger,req,value);
+
+        if (name.equalsIgnoreCase("Authorization"))
+            req.setAuthorization(value);
+
         req.addHeader(name,value);
     }
 
