@@ -12,7 +12,7 @@
 It was a completely new Tomcat-Apache plug-in that handles the communication between Tomcat and Apache.
 </p>
 <p>
-The newest <b>jk2</b> is a rewrite of <b>mod_jk</b>.
+The newest <b>jk2</b> is a rewrite of <b>jk</b>.
 The native part has been completly
 restructured and the configuration has been simplified a lot.
 </p>
