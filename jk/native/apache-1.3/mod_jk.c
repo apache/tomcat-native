@@ -123,6 +123,10 @@ typedef struct {
     char *worker_file;
     int  mountcopy;
     jk_map_t *uri_to_context;
+
+	char * secret_key;
+    jk_map_t *automount;
+
     jk_uri_worker_map_t *uw_map;
 
     /*
@@ -557,6 +561,12 @@ static const char *jk_set_mountcopy(cmd_parms *cmd,
     return NULL;
 }
 
+/*
+ * JkMount directive handling 
+ *
+ * JkMount URI(context) worker
+ */
+
 static const char *jk_mount_context(cmd_parms *cmd, 
                                     void *dummy, 
                                     char *context,
@@ -575,6 +585,47 @@ static const char *jk_mount_context(cmd_parms *cmd,
     return NULL;
 }
 
+/*
+ * JkSecretKey directive handling
+ *  
+ * JkSecretKey defaultsecretkey 
+ */ 
+
+static const char *jk_secret_key(cmd_parms *cmd,
+										void *dummy,
+                                        char *secret_key)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf = 
+        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+
+    conf->secret_key = secret_key;
+    return NULL;
+}   
+
+/*
+ * JkAutoMount directive handling 
+ *
+ * JkAutoMount worker secretkey
+ */
+
+static const char *jk_automount_context(cmd_parms *cmd,
+                                        void *dummy,
+										char *worker,
+										char *secret_key)
+{
+	server_rec *s = cmd->server;
+	jk_server_conf_t *conf =
+		(jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+
+	/*
+	 * Add the new automount to the auto map.
+	 */
+	char * old;
+	map_put(conf->automount, worker, secret_key, (void **)&old);
+	return NULL;
+}
+	
 static const char *jk_set_worker_file(cmd_parms *cmd, 
                                       void *dummy, 
                                       char *worker_file)
@@ -723,6 +774,19 @@ static const command_rec jk_cmds[] =
      */
     {"JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF, TAKE1,
      "the name of a worker file for the Jakarta servlet containers"},
+	/*
+	 * JkSecretKey specifies the default (common) secret key to works with
+     * workers in AJP14 protocol
+	 */
+	{"JkSecretKey", jk_secret_key, NULL, RSRC_CONF, TAKE1,
+     "the default secret key to works with workers"},
+    /*
+	/*
+	 * JkAutoMount specifies that the list of handled URLs must be 	
+	 * asked to the servlet engine (autoconf feature)
+	 */
+	{"JkAutoMount", jk_automount_context, NULL, RSRC_CONF, TAKE12,
+     "automatic mount points to a Tomcat worker"},
     /*
      * JkMount mounts a url prefix to a worker (the worker need to be
      * defined in the worker properties file.
@@ -892,6 +956,9 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
     if(!map_alloc(&(c->uri_to_context))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
+    if(!map_alloc(&(c->automount))) {
+        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
+    }
     c->uw_map = NULL;
 
 
@@ -1001,7 +1068,7 @@ static void jk_init(server_rec *s, ap_pool *p)
             
 #if MODULE_MAGIC_NUMBER >= 19980527
             /* Tell apache we're here */
-            ap_add_version_component("mod_jk");
+            ap_add_version_component(JK_EXPOSED_VERSION);
 #endif
             
             if(wc_open(init_map, conf->log)) {
@@ -1053,6 +1120,7 @@ static void exit_handler (server_rec *s, ap_pool *p)
    wc_close(conf->log);
    uri_worker_map_free(&(conf->uw_map), conf->log);
    map_free(&(conf->uri_to_context));
+   map_free(&(conf->automount));
    if (conf->log)
       jk_close_file_logger(&(conf->log));
 }
