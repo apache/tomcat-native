@@ -76,6 +76,7 @@ public class JkData {
     private String value;
     private boolean isfile = false;
     private String ifCond;
+    String unlessCond;
     Project project;
     
     
@@ -108,9 +109,15 @@ public class JkData {
         ifCond = s;
     }
 
+    public void setUnless( String s ) {
+        unlessCond = s;
+    }
+
     public String getValue()
     {
         if( ifCond!=null && project.getProperty(ifCond) == null )
+            return null;
+        if (unlessCond != null && project.getProperty(unlessCond) != null) 
             return null;
         return value;
     }
