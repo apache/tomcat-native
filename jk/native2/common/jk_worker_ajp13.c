@@ -74,7 +74,6 @@
 #include "jk_objCache.h"
 #include "jk_registry.h"
 
-
 #define AJP_DEF_RETRY_ATTEMPTS    (2)
 #define AJP14_PROTO 14
 #define AJP13_PROTO 13
@@ -213,9 +212,12 @@ static void jk2_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
         env->l->jkLog(env, env->l, JK_LOG_INFO, "endpoint.close() %s\n",
                       ae->worker->mbean->name);
 
-    ae->reuse = JK_FALSE;
+    /*     ae->reuse = JK_FALSE; */
     if( ae->worker->channel != NULL )
         ae->worker->channel->close( env, ae->worker->channel, ae );
+    
+    ae->sd=-1;
+    ae->recoverable=JK_TRUE;
     
     ae->cPool->reset( env, ae->cPool );
     /* ae->cPool->close( env, ae->cPool ); */
@@ -254,7 +256,11 @@ static int jk2_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
 
     /* We just reconnected, reset error state
      */
-    ae->worker->in_error_state=0;
+    ae->worker->in_error_state=JK_FALSE;
+
+#ifdef HAS_APR
+    ae->stats->connectedTime=apr_time_now();
+#endif
     
     /** XXX use a 'connected' field */
     if( ae->sd == -1 ) ae->sd=0;
@@ -297,8 +303,8 @@ static int jk2_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
 */
 static int JK_METHOD
 jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
-                              jk_ws_service_t *s,
-                              jk_endpoint_t   *e )
+                                  jk_ws_service_t *s,
+                                  jk_endpoint_t   *e )
 {
     int attempt;
     int err=JK_OK;
@@ -319,10 +325,12 @@ jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "ajp14.service() failed to connect endpoint errno=%d %s\n",
                               errno, strerror( errno ));
+
+                e->worker->in_error_state=JK_TRUE;
                 return err;
             }
         }
-        /* e->request->dump(env, e->request, "Before sending "); */
+
         err=e->worker->channel->send( env, e->worker->channel, e,
                                       e->request );
 
@@ -334,32 +342,12 @@ jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
             break;
         }
 
-        if( e->recoverable != JK_TRUE ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                     "ajp14.service() error sending request %s, giving up\n",
-                     worker->mbean->name);
-            return JK_ERR;
-        }
-        
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp14.service() error sending, reconnect %s %d %d %s\n",
                       e->worker->channelName, err, errno, strerror(errno));
 
         channel->close( env, channel, e );
-        err=jk2_worker_ajp14_connect(env, e); 
-
-        if( err != JK_OK ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                     "ajp14.service() failed to reconnect endpoint errno=%d\n",
-                     errno);
-            return JK_ERR;
-        }
-
-        /*
-         * After we are connected, each error that we are going to
-         * have is probably unrecoverable
-         */
-        e->recoverable = JK_FALSE;
+        e->sd=-1;
     }
     return JK_OK;
 }
@@ -372,13 +360,14 @@ jk2_worker_ajp14_forwardStream(jk_env_t *env, jk_worker_t *worker,
 {
     int err;
 
+    e->recoverable = JK_TRUE;
+    s->is_recoverable_error = JK_TRUE;
+
     err=jk2_worker_ajp14_sendAndReconnect( env, worker, s, e );
     if( err!=JK_OK )
         return err;
     
     /* We should have a channel now, send the post data */
-    s->is_recoverable_error = JK_TRUE;
-    e->recoverable = JK_TRUE;
 
     /* Prepare to send some post data ( ajp13 proto ). We do that after the
      request was sent ( we're receiving data from client, can be slow, no
@@ -405,6 +394,13 @@ jk2_worker_ajp14_forwardStream(jk_env_t *env, jk_worker_t *worker,
         }
         err= e->worker->channel->send( env, e->worker->channel, e,
                                        e->post );
+        if( err != JK_OK ) {
+            e->recoverable = JK_FALSE;
+            s->is_recoverable_error = JK_FALSE;
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "ajp14.service() Error receiving initial post \n");
+            return JK_ERR;
+        }
     }
 
     err = e->worker->workerEnv->processCallbacks(env, e->worker->workerEnv,
@@ -471,13 +467,15 @@ jk2_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
     }
     
     e->currentRequest=s;
+
+    /* XXX configurable ? */
+    strncpy( e->stats->active, s->req_uri, 64);
     
     /* Prepare the messages we'll use.*/ 
     e->request->reset( env, e->request );
     e->reply->reset( env, e->reply );
     e->post->reset( env, e->post );
     
-    e->reuse = JK_FALSE;
     s->is_recoverable_error = JK_TRUE;
     /* Up to now, we can recover */
     e->recoverable = JK_TRUE;
@@ -543,7 +541,7 @@ jk2_worker_ajp14_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
         return JK_ERR;
     }
     
-    if ( w->in_error_state ) {
+    if( ! e->recoverable ||  w->in_error_state ) {
         jk2_close_endpoint(env, e);
         /*     if( w->mbean->debug > 0 )  */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -592,11 +590,7 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
     if( !csOk ) return JK_ERR;
 
     {
-        char *epName=ajp14->mbean->pool->calloc( env, ajp14->mbean->pool, 20);
-
-        sprintf( epName, "%d", ajp14->endpointMap->size( env, ajp14->endpointMap ));
-        
-        jkb=env->createBean2( env, ajp14->mbean->pool,  "endpoint", epName );
+        jkb=env->createBean2( env, ajp14->mbean->pool,  "endpoint", NULL );
         if( jkb==NULL ) {
             JK_LEAVE_CS( &ajp14->cs, csOk );
             return JK_ERR;
@@ -606,9 +600,11 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
         e->worker = ajp14;
         e->sd=-1;
 
-        ajp14->endpointMap->add( env, ajp14->endpointMap, epName, jkb );
+        ajp14->endpointMap->add( env, ajp14->endpointMap, jkb->localName, jkb );
                                  
         *eP = e;
+
+        ajp14->workerEnv->addEndpoint( env, ajp14->workerEnv, e );
     }
     JK_LEAVE_CS( &ajp14->cs, csOk );
         
@@ -633,18 +629,37 @@ jk2_worker_ajp14_service(jk_env_t *env, jk_worker_t *w,
     /* Get endpoint from the pool */
     jk2_worker_ajp14_getEndpoint( env, w, &e );
 
+#ifdef HAS_APR
+    if( s->uriEnv->timing == JK_TRUE ) {
+        e->stats->startTime=s->startTime;
+        e->stats->jkStartTime=e->stats->connectedTime=apr_time_now();
+        if(e->stats->startTime==0)
+            e->stats->startTime=e->stats->jkStartTime;
+    }
+#endif
+    
     err=jk2_worker_ajp14_service1( env, w, s, e );
 
-    if( err!=JK_OK ) {
-        w->in_error_state=JK_TRUE;
-    }
-
+    /* One error doesn't mean the whole worker is in error state.
+     */
     if( err==JK_OK ) {
         e->stats->reqCnt++;
     } else {
         e->stats->errCnt++;
     }
 
+#ifdef HAS_APR
+    if( s->uriEnv->timing == JK_TRUE ) {
+        apr_time_t reqTime;
+
+        e->stats->endTime=apr_time_now();
+        reqTime=e->stats->endTime - e->stats->startTime;
+    
+        e->stats->totalTime += reqTime;
+        if( e->stats->maxTime < reqTime )
+            e->stats->maxTime=reqTime;
+    }
+#endif
     jk2_worker_ajp14_done( env, w, e);
     return err;
 }
