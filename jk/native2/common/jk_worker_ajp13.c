@@ -398,6 +398,8 @@ jk2_worker_ajp13_forwardStream(jk_env_t *env, jk_worker_t *worker,
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "ajp13.service() ajpGetReply unrecoverable error %d\n",
                           err);
+            /* The connection is compromised, need to close it ! */
+            e->worker->in_error_state = 1;
             return JK_ERR;
         }
         
@@ -431,7 +433,8 @@ jk2_worker_ajp13_forwardSingleThread(jk_env_t *env, jk_worker_t *worker,
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                       "ajp13.forwardST() After %d\n",err);
     
-        
+    /* I assume no unrecoverable error can happen here - we're in a single thread,
+       so things are simpler ( at least in this area ) */
     return err;
 }
      
@@ -498,7 +501,8 @@ jk2_worker_ajp13_service1(jk_env_t *env, jk_worker_t *w,
     }
     if (err != JK_OK){
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-              "ajp13.service() Error  forwarding %s\n", e->worker->mbean->name);
+              "ajp13.service() Error  forwarding %s %d %d\n", e->worker->mbean->name,
+                      e->recoverable, e->worker->in_error_state);
     }
 
     if( w->mbean->debug > 0 ) 
@@ -533,7 +537,7 @@ jk2_worker_ajp13_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
         return JK_ERR;
     }
     
-    if( w->in_error_state ) {
+    if(  w->in_error_state ) {
         jk2_close_endpoint(env, e);
         /*     if( w->mbean->debug > 0 )  */
         env->l->jkLog(env, env->l, JK_LOG_INFO,
