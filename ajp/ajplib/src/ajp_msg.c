@@ -420,8 +420,6 @@ apr_status_t ajp_msg_peek_uint16(ajp_msg_t *msg, apr_uint16_t *rvalue)
  */
 apr_status_t ajp_msg_peek_byte(ajp_msg_t *msg, apr_byte_t *rvalue)
 {
-    apr_uint16_t value;
-
     if (msg->pos > msg->len) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_msg_peek_byte(): BufferOverflowException %d %d",
