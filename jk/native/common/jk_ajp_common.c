@@ -1509,6 +1509,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
             return JK_FALSE;
         }
 
+        jk_log(l, JK_LOG_DEBUG, "processing with %d retries\n", s->retries);
         /* 
          * JK_RETRIES could be replaced by the number of workers in
          * a load-balancing configuration 
