@@ -102,10 +102,14 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
     int numheaders;
     request_rec *r;
     jk_map_t *headers;
+    int debug=1;
     
     if(s==NULL ||  s->ws_private==NULL )
         return JK_ERR;
     
+    if( s->uriEnv != NULL )
+        debug=s->uriEnv->debug;
+
     r = (request_rec *)s->ws_private;  
         
     if(s->msg==NULL) {
@@ -140,18 +144,20 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
 #else
     numheaders = headers->size(env, headers);
     /* XXX As soon as we switch to jk_map_apache2, this will not be needed ! */
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "service.head() %d %d\n", s->status,
-                  numheaders);
+    if( debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "service.head() %d %d\n", s->status,
+                      numheaders);
     
     for(h = 0 ; h < numheaders; h++) {
         char *name=headers->nameAt( env, headers, h );
         char *val=headers->valueAt( env, headers, h );
         name=s->pool->pstrdup( env, s->pool, name );
         val=s->pool->pstrdup( env, s->pool, val );
-        
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "service.head() %s: %s %d %d\n", name, val, h, headers->size( env, headers ));
+
+        if( debug > 0 ) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "service.head() %s: %s %d %d\n", name, val, h, headers->size( env, headers ));
 
         /* the cmp can also be avoided in we do this earlier and use
            the header id */
@@ -242,66 +248,76 @@ static int JK_METHOD jk2_service_apache2_read(jk_env_t *env, jk_ws_service_t *s,
 static int JK_METHOD jk2_service_apache2_write(jk_env_t *env, jk_ws_service_t *s,
                                                const void *b, int len)
 {
-    if(s && s->ws_private && b) {
-        if(len) {
-            /* BUFF *bf = p->r->connection->client; */
-            /* size_t w = (size_t)l; */
-            size_t r = 0;
-            long ll=len;
-            char *bb=(char *)b;
-            request_rec *rr=s->ws_private;
-            
-            if(!s->response_started) {
-                env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                              "service.write() default head\n");
-                if(s->head(env, s) != JK_OK) {
-                    return JK_ERR;
-                }
+    size_t r = 0;
+    long ll=len;
+    char *bb=(char *)b;
+    request_rec *rr;
+    int debug=1;
+    
+    if(s==NULL  || s->ws_private == NULL ||  b==NULL) {
+        return JK_ERR;
+    }
+    if( s->uriEnv != NULL )
+        debug=s->uriEnv->debug;
+    
+    if(len==0 ) {
+        return JK_OK;
+    }
 
-                {
-                    const apr_array_header_t *t = apr_table_elts(rr->headers_out);
-                    if(t && t->nelts) {
-                        int i;
-                        
-                        apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
-                        
-                        for(i = 0 ; i < t->nelts ; i++) {
-                            env->l->jkLog(env, env->l, JK_LOG_INFO, "OutHeaders %s: %s\n",
-                                          elts[i].key, elts[i].val);
-                        }
+    /* BUFF *bf = p->r->connection->client; */
+    /* size_t w = (size_t)l; */
+    rr=s->ws_private;
+    
+    if(!s->response_started) {
+        if( debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "service.write() default head\n");
+        if(s->head(env, s) != JK_OK) {
+            return JK_ERR;
+        }
+        
+        {
+            const apr_array_header_t *t = apr_table_elts(rr->headers_out);
+            if(t && t->nelts) {
+                int i;
+                
+                apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
+                
+                if( debug > 0 ) {
+                    for(i = 0 ; i < t->nelts ; i++) {
+                        env->l->jkLog(env, env->l, JK_LOG_INFO, "OutHeaders %s: %s\n",
+                                      elts[i].key, elts[i].val);
                     }
                 }
             }
-            
-            /* Debug - try to get around rwrite */
-            while( ll > 0 ) {
-                unsigned long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
-                r = ap_rwrite((const char *)bb, toSend, s->ws_private );
-                /*  env->l->jkLog(env, env->l, JK_LOG_INFO,  */
-                /*     "service.write()  %ld (%ld) out of %ld \n",toSend, r, ll ); */
-                ll-=CHUNK_SIZE;
-                bb+=CHUNK_SIZE;
-                
-                if(toSend != r) { 
-                    return JK_ERR; 
-                } 
-                
-            }
-
-            /*
-             * To allow server push. After writing full buffers
-             */
-            if(ap_rflush(s->ws_private) != APR_SUCCESS) {
-                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
-                             NULL, "mod_jk: Error flushing \n"  );
-                return JK_ERR;
-            }
-
         }
-        
-        return JK_OK;
     }
-    return JK_ERR;
+    
+    /* Debug - try to get around rwrite */
+    while( ll > 0 ) {
+        unsigned long toSend=(ll>CHUNK_SIZE) ? CHUNK_SIZE : ll;
+        r = ap_rwrite((const char *)bb, toSend, s->ws_private );
+        /*  env->l->jkLog(env, env->l, JK_LOG_INFO,  */
+        /*     "service.write()  %ld (%ld) out of %ld \n",toSend, r, ll ); */
+        ll-=CHUNK_SIZE;
+        bb+=CHUNK_SIZE;
+        
+        if(toSend != r) { 
+            return JK_ERR; 
+                } 
+        
+    }
+    
+    /*
+     * To allow server push. After writing full buffers
+     */
+    if(ap_rflush(s->ws_private) != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
+                     NULL, "mod_jk: Error flushing \n"  );
+        return JK_ERR;
+    }
+    
+    return JK_OK;
 }
 
 /* ========================================================================= */

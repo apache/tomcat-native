@@ -106,6 +106,7 @@ module AP_MODULE_DECLARE_DATA jk2_module;
  */
 static jk_workerEnv_t *workerEnv;
 
+#define NO_APACHE_POOL 1
 
 /* ==================== Options setters ==================== */
 
@@ -555,7 +556,7 @@ static int jk2_handler(request_rec *r)
         if( rPool == NULL ) {
             rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "mod_jk.handler(): new rpool\n");
+                          "mod_jk.handler(): new rpool %p\n", rPool );
         }
 
         /* XXX we should reuse the request itself !!! */
