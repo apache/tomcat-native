@@ -150,7 +150,8 @@ static const char *jk_mount_context(cmd_parms *cmd, void *dummy,
     
     if (context[0]!='/') return "Context must start with /";
 
-    map_put( workerEnv->init_data, context, worker, NULL );
+    workerEnv->init_data->put( NULL, workerEnv->init_data,
+                               context, worker, NULL );
 
     return NULL;
 }
@@ -184,18 +185,20 @@ static const char *jk_set_worker_file(cmd_parms *cmd, void *dummy,
     /** Read worker files
      */
     l->jkLog(l, JK_LOG_DEBUG, "Reading map %s %d\n",
-           workerEnv->worker_file, map_size( workerEnv->init_data ) );
+             workerEnv->worker_file,
+             workerEnv->init_data->size(NULL, workerEnv->init_data) );
     
     if( workerEnv->worker_file != NULL ) {
-        int err=map_read_properties(workerEnv->init_data,
-                                    workerEnv->worker_file);
+        int err=jk_map_readFileProperties(NULL, workerEnv->init_data,
+                                          workerEnv->worker_file);
         if( err==JK_TRUE ) {
             l->jkLog(l, JK_LOG_DEBUG, 
                    "Read map %s %d\n", workerEnv->worker_file,
-                   map_size( workerEnv->init_data ) );
+                     workerEnv->init_data->size( NULL, workerEnv->init_data ) );
         } else {
             l->jkLog(l, JK_LOG_ERROR, "Error reading map %s %d\n",
-                   workerEnv->worker_file, map_size( workerEnv->init_data ) );
+                   workerEnv->worker_file,
+                     workerEnv->init_data->size( NULL, workerEnv->init_data ) );
         }
     }
 
@@ -220,9 +223,9 @@ static const char *jk_worker_property(cmd_parms *cmd,
     
     jk_map_t *m=workerEnv->init_data;
     
-    value = map_replace_properties(value, m );
+    value = jk_map_replaceProperties(NULL, m, m->pool, value);
 
-    oldv = map_get_string(m, name, NULL);
+    oldv = jk_map_getString(NULL, m, name, NULL);
 
     if(oldv) {
         char *tmpv = apr_palloc(cmd->pool,
@@ -245,7 +248,7 @@ static const char *jk_worker_property(cmd_parms *cmd,
     
     if(value) {
         void *old = NULL;
-        map_put(m, name, value, &old);
+        m->put(NULL, m, name, value, &old);
         /*printf("Setting %s %s\n", name, value);*/
     } 
     return NULL;
@@ -272,7 +275,7 @@ static const char *jk_set_log_file(cmd_parms *cmd,
     if (logFileA == NULL)
         return "JkLogFile file_name invalid";
 
-    map_put( workerEnv->init_data, "logger.file.name", logFileA, NULL);
+    workerEnv->init_data->put( NULL, workerEnv->init_data, "logger.file.name", logFileA, NULL);
  
     return NULL;
 }
@@ -291,7 +294,7 @@ static const char *jk_set_log_level(cmd_parms *cmd,
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    map_put( workerEnv->init_data, "logger.file.level", log_level, NULL);
+    workerEnv->init_data->put( NULL, workerEnv->init_data, "logger.file.level", log_level, NULL);
     return NULL;
 }
 
@@ -308,7 +311,7 @@ static const char * jk_set_log_fmt(cmd_parms *cmd,
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    map_put( workerEnv->init_data, "logger.file.timeFormat", log_format, NULL);
+    workerEnv->init_data->put( NULL, workerEnv->init_data, "logger.file.timeFormat", log_format, NULL);
     return NULL;
 }
 
@@ -510,7 +513,7 @@ static const char *jk_add_env_var(cmd_parms *cmd,
 
     workerEnv->envvars_in_use = JK_TRUE;
 
-    map_put(workerEnv->envvars, env_name, default_value, NULL);
+    workerEnv->envvars->put(NULL, workerEnv->envvars, env_name, default_value, NULL);
 
     return NULL;
 }
@@ -679,6 +682,7 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
 
     /** First create a pool
      */
+#define NO_APACHE_POOL
 #ifdef NO_APACHE_POOL
     jk_pool_create( &globalPool, NULL, 2048 );
 #else

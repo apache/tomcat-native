@@ -132,6 +132,8 @@ static int jk_logger_apache2_jkLog(jk_logger_t *l,
     char buf[HUGE_BUFFER_SIZE];
 #endif
 
+    if( level >= l->level )
+        return JK_TRUE;
 
     if( s==NULL ) {
         return JK_FALSE;

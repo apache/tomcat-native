@@ -68,7 +68,11 @@
 
 #include "jk_apache2.h"
 
-int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent, apr_pool_t *aprPool );
+#define POOL_DEBUG
+
+
+int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent,
+                        apr_pool_t *aprPool );
 
 int JK_METHOD jk_pool_apr_factory(jk_env_t *env,
                                   jk_pool_t *pool,
@@ -79,7 +83,9 @@ int JK_METHOD jk_pool_apr_factory(jk_env_t *env,
  */
 static void jk_pool_apr_close(jk_pool_t *p)
 {
-    
+#ifdef POOL_DEBUG
+    fprintf(stderr, "apr_close %p\n", p);
+#endif
 }
 
 /** Nothing - apache will take care.
@@ -88,12 +94,18 @@ static void jk_pool_apr_close(jk_pool_t *p)
 */
 static void jk_pool_apr_reset(jk_pool_t *p)
 {
+#ifdef POOL_DEBUG
+    fprintf(stderr, "apr_reset %p\n", p);
+#endif
     apr_pool_clear(p->_private);
 }
 
 static void *jk_pool_apr_calloc(jk_pool_t *p, 
-                           size_t size)
+                                size_t size)
 {
+#ifdef POOL_DEBUG
+    fprintf(stderr, "apr_calloc %p %d\n", p, size);
+#endif
     /* assert( p->_private != NULL ) */
     return apr_pcalloc( (apr_pool_t *)p->_private, (apr_size_t)size);
 }
@@ -101,16 +113,23 @@ static void *jk_pool_apr_calloc(jk_pool_t *p,
 static void *jk_pool_apr_alloc(jk_pool_t *p, 
                                size_t size)
 {
+#ifdef POOL_DEBUG
+    fprintf(stderr, "apr_alloc %p %d\n", p, size);
+#endif
+
     return apr_palloc( (apr_pool_t *)p->_private, (apr_size_t)size);
 }
 
 static void *jk_pool_apr_realloc(jk_pool_t *p, 
-                             size_t sz,
-                             const void *old,
-                             size_t old_sz)
+                                 size_t sz,
+                                 const void *old,
+                                 size_t old_sz)
 {
     void *rc;
 
+#ifdef POOL_DEBUG
+    fprintf(stderr, "apr_realloc %p %d\n", p, sz);
+#endif
     if(!p || (!old && old_sz)) {
         return NULL;
     }
@@ -126,10 +145,13 @@ static void *jk_pool_apr_realloc(jk_pool_t *p,
 static void *jk_pool_apr_strdup(jk_pool_t *p, 
                                 const char *s)
 {
+#ifdef POOL_DEBUG
+    fprintf(stderr, "apr_strdup %p %d\n", p, ((s==NULL)?-1: (int)strlen(s)));
+#endif
     return apr_pstrdup( (apr_pool_t *)p->_private, s);
 }
 
-
+static void jk_pool_apr_initMethods( jk_pool_t *_this );
 
 static jk_pool_t *jk_pool_apr_createChild( jk_pool_t *_this, int sizeHint ) {
     apr_pool_t *parentAprPool=_this->_private;
@@ -138,20 +160,30 @@ static jk_pool_t *jk_pool_apr_createChild( jk_pool_t *_this, int sizeHint ) {
 
     apr_pool_create( &childAprPool, parentAprPool );
 
-    jk_pool_apr_create( &newPool, _this, childAprPool );
+    newPool=(jk_pool_t *)apr_palloc(parentAprPool, sizeof( jk_pool_t ));
+    
+    jk_pool_apr_initMethods( newPool );
+    newPool->_private=childAprPool;
     
     return newPool;
 }
 
 
-int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent, apr_pool_t *aprPool)
+int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent,
+                        apr_pool_t *aprPool)
 {
-    jk_pool_t *_this=(jk_pool_t *)apr_palloc(aprPool, sizeof( jk_pool_t ));
-    
-    _this->_private=aprPool;
-    
+    jk_pool_t *_this;
+
+    _this=(jk_pool_t *)apr_palloc(aprPool, sizeof( jk_pool_t ));
     *newPool = _this;
 
+    _this->_private=aprPool;
+    jk_pool_apr_initMethods( _this );
+    return JK_TRUE;
+}
+
+static void jk_pool_apr_initMethods( jk_pool_t *_this )
+{
     /* methods */
     _this->create=jk_pool_apr_createChild;
     _this->close=jk_pool_apr_close;
@@ -160,9 +192,8 @@ int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent, apr_pool_t *aprP
     _this->calloc=jk_pool_apr_calloc;
     _this->pstrdup=jk_pool_apr_strdup;
     _this->realloc=jk_pool_apr_realloc;
-    
-    return JK_TRUE;
 }
+
 
 /* Not used yet */
 int  jk_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,

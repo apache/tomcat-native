@@ -82,6 +82,10 @@ int jk_logger_apache2_factory(jk_env_t *env, jk_pool_t *pool,
 int  jk_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,
                          void **result, char *type, char *name);
 
+int  jk_map_aprtable_factory(jk_env_t *env, jk_pool_t *pool,
+                             void **result,
+                             char *type, char *name);
+
 /* Temp. - we should use the factory ( we may need few changes ) */
 int jk_pool_apr_create( jk_pool_t **newPool, jk_pool_t *parent,
                         apr_pool_t *aprPool);
