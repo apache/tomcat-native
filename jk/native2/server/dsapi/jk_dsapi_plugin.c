@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 /* If we're building under Windows get windows.h. This must be included
  * before any APR includes because APR itself does a #include <windows.h>
@@ -108,6 +109,19 @@ typedef struct private_ws {
     unsigned int        reqSize;
 
 } private_ws_t;
+
+#if defined(TESTING)
+static void AddInLogMessageText(char *fmt, unsigned short err, ...) {
+	va_list ap;
+	va_start(ap, err);
+
+	printf("Debug: ");
+	vprintf(fmt, ap);
+	printf("\n");
+
+	va_end(ap);
+}
+#endif
 
 /* Case insentive memcmp() clone
  */
@@ -648,20 +662,19 @@ static unsigned int rejectWithError(FilterContext *context, const char *diagnost
 
 /* Get the info from the lookup buffer
  */
-static int getLookupInfo(FilterContext *context, char *pMatch, int itemNumber, char **pInfo, int *pInfoLen) {
+static int getLookupInfo(FilterContext *context, char *pMatch, WORD itemNumber, char **pInfo) {
     unsigned int reserved = 0;
     unsigned int errID;
     char *pValue = NULL;
     WORD lValue, type;
     STATUS error;
 
-    if (NULL == pMatch || NULL == pInfo || NULL == pInfoLen || (itemNumber < 0)) {
+    if (NULL == pMatch || NULL == pInfo || (itemNumber < 0)) {
         return -1;
     }
 
     /* Initialize output */
     *pInfo = NULL;
-    *pInfoLen = 0;
 
     /* Check the type and length of the info */
     pValue = (char *) NAMELocateItem(pMatch, itemNumber, &type, &lValue);
@@ -671,6 +684,7 @@ static int getLookupInfo(FilterContext *context, char *pMatch, int itemNumber, c
     }
 
     lValue -= sizeof(WORD); /* remove datatype word included in the list length */
+	lValue++; /* Include length of terminator */
 
     /* check the value type */
     if (type != TYPE_TEXT_LIST && type != TYPE_TEXT) {
@@ -678,13 +692,12 @@ static int getLookupInfo(FilterContext *context, char *pMatch, int itemNumber, c
     }
 
     /* Allocate space for the info. This memory will be freed automatically when the thread terminates */
-    if (*pInfo = context->AllocMem(context, lValue+1, reserved, &errID), NULL == *pInfo) {
+    if (*pInfo = context->AllocMem(context, lValue, reserved, &errID), NULL == *pInfo) {
         return -1;
     }
 
     /* Get the info */
-    if (error = NAMEGetTextItem(pMatch, itemNumber, 0, *pInfo, lValue + 1), !error) {
-        *pInfoLen = lValue + 1;
+    if (error = NAMEGetTextItem(pMatch, itemNumber, 0, *pInfo, lValue), !error) {
         return 0;
     }
 
@@ -693,7 +706,7 @@ static int getLookupInfo(FilterContext *context, char *pMatch, int itemNumber, c
 
 /* Lookup the user and return the user's full name
  */
-static int getUserName(FilterContext *context, char *userName, char **pUserName, int *pUserNameLen) {
+static int getUserName(FilterContext *context, char *userName, char **pUserName) {
     STATUS error = NOERROR;
     HANDLE hLookup = NULLHANDLE;
     unsigned short nMatches = 0;
@@ -702,13 +715,12 @@ static int getUserName(FilterContext *context, char *userName, char **pUserName,
     char *pMatch = NULL;
     int rc = -1;
 
-    if (NULL == userName || NULL == pUserName || NULL == pUserNameLen) {
+    if (NULL == userName || NULL == pUserName) {
         return rc;
     }
 
     /* Initializae output */
     *pUserName = NULL;
-    *pUserNameLen = 0;
 
     /* do the name lookup */
     error = NAMELookup(NULL, 0, 1, "$Users", 1, userName, 2, "FullName", &hLookup);
@@ -732,7 +744,7 @@ static int getUserName(FilterContext *context, char *userName, char **pUserName,
     }
 
     /* Get the full name from the info we got back */
-    if (getLookupInfo(context, pMatch, 0, pUserName, pUserNameLen)) {
+    if (getLookupInfo(context, pMatch, 0, pUserName)) {
         goto done;
     }
 
@@ -850,8 +862,7 @@ static int processRequest(struct jk_env *env, jk_ws_service_t *s,
 
     /* If the REMOTE_USER CGI variable doesn't work try asking Domino */
     if (s->remote_user[0] == '\0' && fr->userName[0] != '\0') {
-        int len;
-        getUserName(ws->context, fr->userName, &s->remote_user, &len);
+        getUserName(ws->context, fr->userName, &s->remote_user);
     }
 
     GETVARIABLE("SERVER_PROTOCOL", &s->protocol, "");
