@@ -59,7 +59,7 @@
     <echo message="build.properties.${os.arch}.${os.name}" />
     <taskdef resource="META-INF/ant.tasks" 
 	     classpathref="jkant" />
-    <available property="HAVE_APR" file="${apr.include}/apr.h" />
+    <available property="HAS_APR" file="${apr.include}/apr.h" />
     <available property="apache13.detect" 
                file="${apache13.home}/bin/htpasswd" />
     <available property="apache2.detect" 
@@ -314,6 +314,7 @@
       <def name="USE_SPRINTF" if="netware"
 	   info="Use the sprintf function to build strings" />
            
+      <def name="HAVE_MMAP" unless="win32" />
       <def name="WIN32" if="win32" />
       <def name="_WINDOWS" if="win32" />
       <def name="_MBCS" if="win32" />
@@ -366,7 +367,6 @@
 	<include name="jni/*.c" />
         <exclude name="jk_apr.c" 
                  unless="netware" />
-        <include name="common/apr/*.c" unless="HAVE_APR"  />
       </src>
       <includes>
         <include name="${java.home}/../include" />
