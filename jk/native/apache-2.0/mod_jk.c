@@ -95,6 +95,7 @@
 #include "jk_uri_worker_map.h"
 #include "jk_util.h"
 #include "jk_worker.h"
+#include "jk_shm.h"
 
 #define JK_WORKER_ID        ("jakarta.worker")
 #define JK_HANDLER          ("jakarta-servlet")
@@ -188,6 +189,8 @@ typedef struct apache_private_data apache_private_data_t;
 static jk_logger_t *main_log = NULL;
 static jk_worker_env_t worker_env;
 static apr_global_mutex_t *jk_log_lock = NULL;
+static char *jk_shm_file = NULL;
+static jk_shm_t jk_shmem = { 0, NULL, -1, NULL, 0};
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -862,6 +865,23 @@ static const char *jk_set_log_file(cmd_parms * cmd,
 
     if (conf->log_file == NULL)
         return "JkLogFile file_name invalid";
+
+    return NULL;
+}
+
+/*
+ * JkShmFile Directive Handling
+ *
+ * JkShmFile file
+ */
+
+static const char *jk_set_shm_file(cmd_parms * cmd,
+                                   void *dummy, const char *shm_file)
+{
+    /* we need an absolute path */
+    jk_shm_file = ap_server_root_relative(cmd->pool, shm_file);
+    if (jk_shm_file == NULL)
+        return "JkShmFile file name invalid";
 
     return NULL;
 }
@@ -1557,6 +1577,10 @@ static const command_rec jk_cmds[] = {
      */
     AP_INIT_TAKE1("JkLogFile", jk_set_log_file, NULL, RSRC_CONF,
                   "Full path to the Jakarta Tomcat module log file"),
+
+    AP_INIT_TAKE1("JkShmFile", jk_set_shm_file, NULL, RSRC_CONF,
+                  "Full path to the Jakarta Tomcat module shared memory file"),
+
     AP_INIT_TAKE1("JkLogLevel", jk_set_log_level, NULL, RSRC_CONF,
                   "The Jakarta Tomcat module log level, can be debug, "
                   "info, error or emerg"),
@@ -1639,6 +1663,17 @@ apr_status_t jk_cleanup_endpoint(void *data)
     jk_endpoint_t *end = (jk_endpoint_t *)data;
     /*     printf("XXX jk_cleanup1 %ld\n", data); */
     end->done(&end, NULL);
+    return 0;
+}
+
+/** Util - cleanup shmem.
+ */
+apr_status_t jk_cleanup_shmem(void *data)
+{
+    if (jk_shmem.base) {
+    jk_shm_close(&jk_shmem);
+    jk_shmem.base = NULL;
+    }
     return 0;
 }
 
@@ -2192,6 +2227,7 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
     jk_server_conf_t *conf;
     int mpm_threads = 1;
     apr_status_t rv;
+    int rc;
 
     conf = ap_get_module_config(s->module_config, &jk_module);
 
@@ -2211,6 +2247,16 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 #endif
     if (mpm_threads > 0)
         jk_set_worker_def_cache_size(mpm_threads);
+
+    rc = jk_shm_attach(jk_shm_file, 0, 0, &jk_shmem);
+    if (JK_IS_DEBUG_LEVEL(conf->log))
+        jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s with status %d",
+               jk_shm_file ? jk_shm_file : "memory", rc);
+    if (!rc) {
+            apr_pool_cleanup_register(pconf, s, jk_cleanup_shmem,
+                                     jk_cleanup_shmem);
+    }
+
     if (JK_IS_DEBUG_LEVEL(conf->log))
         jk_log(conf->log, JK_LOG_DEBUG, "Initialized %s", JK_EXPOSED_VERSION);
     JK_TRACE_EXIT(conf->log);
@@ -2228,8 +2274,18 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                     server_rec * s)
 {
+    int rc;
     /*     jk_map_t *init_map = NULL; */
     jk_map_t *init_map = conf->worker_properties;
+
+    rc = jk_shm_open(jk_shm_file, 0, 0, &jk_shmem);
+    if (JK_IS_DEBUG_LEVEL(conf->log))
+        jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s with status %d",
+               jk_shm_file ? jk_shm_file : "memory", rc);
+    if (!rc) {
+            apr_pool_cleanup_register(pconf, s, jk_cleanup_shmem,
+                                      jk_cleanup_shmem);
+    }
 
     if (!uri_worker_map_alloc(&(conf->uw_map),
                               conf->uri_to_context,
