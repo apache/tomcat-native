@@ -759,13 +759,14 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 jk_log(logger, JK_LOG_DEBUG, 
                        "In HttpFilterProc Virtual Host redirection of %s\n", 
                        snuri);
-                worker = map_uri_to_worker(uw_map, snuri, logger);                
-            }
+            } else {
+	      strncpy(snuri, uri, sizeof(snuri));
+	    }
             if (!worker) {
                 jk_log(logger, JK_LOG_DEBUG, 
                        "In HttpFilterProc test Default redirection of %s\n", 
                        uri);
-                worker = map_uri_to_worker(uw_map, uri, logger);
+                worker = map_uri_to_worker(uw_map, snuri, logger);
             }
 
             if (worker) {
