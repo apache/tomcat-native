@@ -526,7 +526,7 @@ int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def)
 int jk_get_worker_retries(jk_map_t *m, const char *wname, int def)
 {
     char buf[1024];
-
+    int rv;
     if (!m || !wname) {
         return -1;
     }
@@ -534,7 +534,11 @@ int jk_get_worker_retries(jk_map_t *m, const char *wname, int def)
     sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
             RETRIES_OF_WORKER);
 
-    return jk_map_get_int(m, buf, def);
+    rv = jk_map_get_int(m, buf, def);
+    if (rv < 1)
+        rv = 1;
+
+    return rv;        
 }
 
 int jk_get_worker_recovery_opts(jk_map_t *m, const char *wname, int def)
