@@ -1701,8 +1701,7 @@ static int jk_handler(request_rec * r)
                        worker_env.num_of_workers);
         }
         else {
-            char *uri = apr_pstrdup(r->pool, r->uri);
-            worker_name = map_uri_to_worker(xconf->uw_map, uri, xconf->log);
+            worker_name = map_uri_to_worker(xconf->uw_map, r->uri, xconf->log);
             if (worker_name == NULL)
                 worker_name = worker_env.first_worker;
             if (JK_IS_DEBUG_LEVEL(xconf->log))
