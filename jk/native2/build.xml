@@ -73,7 +73,7 @@
   <target name="main" depends="init,apache20,apache13,jni,iis">
   </target>
 
-  <target name="all" depends="jkant,init,apache20,apache13,jni">
+  <target name="all" depends="jkant,main">
   </target>
 
   <target name="init.taskdef" >
@@ -85,10 +85,14 @@
   <target name="guess.env" >
     <echo message="build.properties ${os.arch}.${os.name}" />
     <!-- What servers do we have ? -->
-    <available property="apache13.detect" 
-	    file="${apache13.home}/bin" />
     <available property="apache2.detect" 
                file="${apache2.home}" />
+    <condition property="apache13.detect" >
+       <or>
+        <available file="${apache13.home}/bin/htpasswd" />
+        <available file="${apache13.home}/bin/htpasswd.exe" />
+       </or>
+    </condition>
     <available property="iis.detect" 
                file="${mssdk.home}" />
     <available property="iplanet.detect" 
@@ -127,6 +131,9 @@
     <property name="build.compiler.cc" location="${mssdk.home}/bin/cl" />
     <property name="build.compiler.ld" location="${mssdk.home}/bin/link" />
     <echo message="MSDEV compiler: ${mssdk.home}" />
+    <exec executable="${mssdk.home}/bin/mc" dir="common" >
+      <arg value="jk_logger_win32_message.mc" />
+    </exec>
   </target>
 
   <target name="init.netware" if="netware" >
