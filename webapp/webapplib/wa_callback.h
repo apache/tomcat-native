@@ -58,42 +58,116 @@
 // CVS $Id$
 // Author: Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 
-#ifndef _WA_H_
-#define _WA_H_
+#ifndef _WA_CALLBACK_H_
+#define _WA_CALLBACK_H_
 
-/* Generic includes */
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
+/**
+ * The wa_callbacks structure contains function pointers for callbacks to the
+ * web server.
+ */
+struct wa_callbacks {
+    /**
+     * Log data on the web server log file.
+     *
+     * @param file The source file of this log entry.
+     * @param line The line number within the source file of this log entry.
+     * @param data The web-server specific data (wa_request->data).
+     * @param fmt The format string (printf style).
+     * @param ... All other parameters (if any) depending on the format.
+     */
+    void (*log)(void *data, const char *file, int line, const char *fmt, ...);
 
-/* Define TRUE and FALSE */
-#ifndef TRUE
-#define TRUE 1
-#endif
+    /**
+     * Allocate memory while processing a request.
+     *
+     * @param data The web-server specific data (wa_request->data).
+     * @param size The size in bytes of the memory to allocate.
+     * @return A pointer to the allocated memory or NULL.
+     */
+    void *(*alloc)(void *data, int size);
 
-#ifndef FALSE
-#define FALSE 0
-#endif
+    /**
+     * Read part of the request content.
+     *
+     * @param data The web-server specific data (wa_request->data).
+     * @param buf The buffer that will hold the data.
+     * @param len The buffer length.
+     * @return The number of bytes read, 0 on end of file or -1 on error.
+     */
+    int (*read)(void *data, char *buf, int len);
 
-/* Define the log mark */
-#define WA_LOG __FILE__,__LINE__
+    /**
+     * Set the HTTP response status code.
+     *
+     * @param data The web-server specific data (wa_request->data).
+     * @param status The HTTP status code for the response.
+     * @return TRUE on success, FALSE otherwise
+     */
+    boolean (*setstatus)(void *data, int status);
 
-/* Types definitions */
-typedef int boolean;
-typedef struct wa_connection wa_connection;
-typedef struct wa_application wa_application;
-typedef struct wa_host wa_host;
-typedef struct wa_provider wa_provider;
-typedef struct wa_header wa_header;
-typedef struct wa_request wa_request;
-typedef struct wa_callbacks wa_callbacks;
+    /**
+     * Set the HTTP response mime content type.
+     *
+     * @param data The web-server specific data (wa_request->data).
+     * @param type The mime content type of the HTTP response.
+     * @return TRUE on success, FALSE otherwise
+     */
+    boolean (*settype)(void *data, char *type);
 
-/* Other includes from the webapp lib */
-#include <wa_host.h>
-#include <wa_connection.h>
-#include <wa_provider.h>
-#include <wa_request.h>
-#include <wa_callback.h>
+    /**
+     * Set an HTTP mime header.
+     *
+     * @param data The web-server specific data (wa_request->data).
+     * @param name The mime header name.
+     * @param value The mime header value.
+     * @return TRUE on success, FALSE otherwise
+     */
+    boolean (*setheader)(void *data, char *name, char *value);
 
-#endif // ifdef _WA_H_
+    /**
+     * Commit the first part of the response (status and headers).
+     *
+     * @param data The web-server specific data (wa_request->data).
+     * @return TRUE on success, FALSE otherwise
+     */
+    boolean (*commit)(void *data);
+
+    /**
+     * Write part of the response data back to the client.
+     *
+     * @param buf The buffer holding the data to be written.
+     * @param len The number of characters to be written.
+     * @return The number of characters written to the client or -1 on error.
+     */
+    int (*write)(void *data, char *buf, int len);
+
+    /**
+     * Flush any unwritten response data to the client.
+     *
+     * @param data The web-server specific data (wa_request->data).
+     * @return TRUE on success, FALSE otherwise
+     */
+    boolean (*flush)(void *);
+};
+
+/* Function prototype declaration */
+// Allocate memory while processing a request.
+void *wa_callback_alloc(wa_callbacks *, wa_request *, int);
+// Read part of the request content.
+int wa_callback_read(wa_callbacks *, wa_request *, char *, int);
+// Set the HTTP response status code.
+boolean wa_callback_setstatus(wa_callbacks *, wa_request *, int);
+// Set the HTTP response mime content type.
+boolean wa_callback_settype(wa_callbacks *, wa_request *, char *);
+// Set an HTTP mime header.
+boolean wa_callback_setheader(wa_callbacks *, wa_request *, char *, char *);
+// Commit the first part of the response (status and headers).
+boolean wa_callback_commit(wa_callbacks *, wa_request *);
+// Write part of the response data back to the client.
+int wa_callback_write(wa_callbacks *, wa_request *, char *, int);
+// Write part of the response data back to the client.
+int wa_callback_printf(wa_callbacks *, wa_request *, const char *, ...);
+// Flush any unwritten response data to the client.
+boolean wa_callback_flush(wa_callbacks *, wa_request *);
+
+#endif // ifdef _WA_CALLBACK_H_

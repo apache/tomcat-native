@@ -61,7 +61,7 @@
 #include <wa.h>
 
 /* The list of configured hosts */
-static wa_host *wa_hosts=NULL;
+wa_host *wa_hosts=NULL;
 
 /**
  * Create configuration for a new host.

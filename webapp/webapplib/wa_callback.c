@@ -58,42 +58,61 @@
 // CVS $Id$
 // Author: Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 
-#ifndef _WA_H_
-#define _WA_H_
+#include <wa.h>
 
-/* Generic includes */
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
+// Allocate memory while processing a request.
+void *wa_callback_alloc(wa_callbacks *c, wa_request *r, int size) {
+    return((*c->alloc)(r->data, size));
+}
 
-/* Define TRUE and FALSE */
-#ifndef TRUE
-#define TRUE 1
-#endif
+// Read part of the request content.
+int wa_callback_read(wa_callbacks *c, wa_request *r, char *buf, int size) {
+    return((*c->read)(r->data,buf,size));
+}
 
-#ifndef FALSE
-#define FALSE 0
-#endif
+// Set the HTTP response status code.
+boolean wa_callback_setstatus(wa_callbacks *c, wa_request *r, int status) {
+    return((*c->setstatus)(r->data,status));
+}
 
-/* Define the log mark */
-#define WA_LOG __FILE__,__LINE__
+// Set the HTTP response mime content type.
+boolean wa_callback_settype(wa_callbacks *c, wa_request *r, char *type) {
+    return((*c->settype)(r->data,type));
+}
 
-/* Types definitions */
-typedef int boolean;
-typedef struct wa_connection wa_connection;
-typedef struct wa_application wa_application;
-typedef struct wa_host wa_host;
-typedef struct wa_provider wa_provider;
-typedef struct wa_header wa_header;
-typedef struct wa_request wa_request;
-typedef struct wa_callbacks wa_callbacks;
+// Set an HTTP mime header.
+boolean wa_callback_setheader(wa_callbacks *c,wa_request *r,char *n,char *v) {
+    return((*c->setheader)(r->data,n,v));
+}
 
-/* Other includes from the webapp lib */
-#include <wa_host.h>
-#include <wa_connection.h>
-#include <wa_provider.h>
-#include <wa_request.h>
-#include <wa_callback.h>
 
-#endif // ifdef _WA_H_
+// Commit the first part of the response (status and headers).
+boolean wa_callback_commit(wa_callbacks *c, wa_request *r) {
+    return((*c->commit)(r->data));
+}
+
+// Write part of the response data back to the client.
+int wa_callback_write(wa_callbacks *c, wa_request *r, char *buf, int size) {
+    return((*c->write)(r->data,buf,size));
+}
+
+// Write part of the response data back to the client.
+int wa_callback_printf(wa_callbacks *c, wa_request *r, const char *fmt, ...) {
+    va_list ap;
+    char buf[1024];
+    int ret;
+    
+    va_start(ap,fmt);
+    ret=vsnprintf(buf,1024,fmt,ap);
+    va_end(ap);
+
+    if (ret<0) return(-1);
+    
+    return(wa_callback_write(c,r,buf,ret));
+}
+
+// Flush any unwritten response data to the client.
+boolean wa_callback_flush(wa_callbacks *c, wa_request *r) {
+    return((*c->flush)(r->data));
+}
+
