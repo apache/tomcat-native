@@ -92,6 +92,7 @@ const char *wa_capplication(wa_application **a, const char *n,
     appl->conn=NULL;
     appl->conf=NULL;
     appl->lpth=NULL;
+    appl->depl=wa_false;
 
     /* Done */
     wa_debug(WA_MARK,"Created application \"%s\" in path \"%s\"",

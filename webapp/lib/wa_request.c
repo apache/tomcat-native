@@ -190,8 +190,9 @@ int wa_rerror(const char *file, const int line, wa_request *r, int s,
 
 /* Invoke a request in a web application. */
 int wa_rinvoke(wa_request *r, wa_application *a) {
+    if (a->depl!=wa_true)
+        return(wa_rerror(WA_MARK,r,404,"Web-application not yet deployed"));
     return(a->conn->prov->handle(r,a));
-    /*return(wa_rerror(r,500,"This is being fixed"));*/
 }
 
 void wa_rlog(wa_request *r, const char *f, const int l, const char *fmt, ...) {
