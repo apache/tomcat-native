@@ -63,7 +63,6 @@
 #include "jk_logger.h"
 #include "jk_pool.h"
 #include "jk_msg.h"
-#include "jk_mt.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -118,7 +117,7 @@ struct jk_objCache {
 
     /* Sync.
      */
-    JK_CRIT_SEC cs;
+    struct jk_mutex *cs;
 
     /** Objects in the cache */
     void **data;

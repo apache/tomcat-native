@@ -68,6 +68,7 @@ extern "C" {
 #include "jk_map.h"
 #include "jk_worker.h"
 #include "jk_bean.h"
+#include "jk_mutex.h"
 
 #define JK_LINE __FILE__,__LINE__
 

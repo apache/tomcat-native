@@ -70,7 +70,6 @@
 #include "jk_service.h"
 #include "jk_endpoint.h"
 #include "jk_map.h"
-#include "jk_mt.h"
 #include "jk_uriMap.h"
 #include "jk_objCache.h"
 #include "jk_msg.h"
@@ -170,7 +169,7 @@ struct jk_worker {
     /* Private key used to connect to the remote side2.*/
     char * secret;
 
-    JK_CRIT_SEC cs;
+    struct jk_mutex *cs;
     /* -------------------- Information used for load balancing ajp workers -------------------- */
 
     /** The id of the tomcat instance we connect to. We may have multiple

@@ -63,7 +63,6 @@
 #define JK_CONFIG_H
 
 #include "jk_global.h"
-#include "jk_mt.h"
 #include "jk_pool.h"
 #include "jk_env.h"
 #include "jk_logger.h"
@@ -126,14 +125,26 @@ struct jk_config {
     struct jk_map *cfgData;
     /* Only one thread can update the config
      */
-    JK_CRIT_SEC cs;
+    struct jk_mutex *cs;
     time_t mtime;
 };
+
+int jk2_config_setProperty(struct jk_env  *env, struct jk_config *cfg,
+                           struct jk_bean *mbean, char *name, char *val);
+
+int jk2_config_setPropertyString(struct jk_env *env, struct jk_config *cfg,
+                                 char *name, char *value);
+
+int jk2_config_processConfigData(struct jk_env *env, struct jk_config *cfg,
+                                 int firstTime );
+
 
 char *jk2_config_replaceProperties(struct jk_env *env, struct jk_map *m,
                                    struct jk_pool *resultPool, 
                                    char *value);
 
+int jk2_config_processNode(struct jk_env *env, struct jk_config *cfg,
+                           char *name, int firstTime );
 
 #ifdef __cplusplus
 }

@@ -71,9 +71,21 @@ extern "C" {
 
 struct jk_env;
 struct jk_mutex;
+
+#ifdef HAS_APR
+#include "apr_thread_mutex.h"
+#elif defined( WIN32 )
+#include <windows.h>
+#elif defined( _REENTRANT )
+#include <pthread.h>
+#endif
+
     
 typedef struct jk_mutex jk_mutex_t;
 
+#define MUTEX_LOCK 4
+#define MUTEX_TRYLOCK 5
+#define MUTEX_UNLOCK 6
 
 /**
  *  Interprocess mutex support. This is a wrapper to APR.
@@ -105,7 +117,21 @@ struct jk_mutex {
 
     /* Private data */
     void *privateData;
+
+#ifdef HAS_APR
+    apr_thread_mutex_t *threadMutex;
+#elif defined( WIN32 )
+    CRITICAL_SECTION threadMutex;
+#elif defined( _REENTRANT )
+    pthread_mutex_t threadMutex;
+#else
+    void *threadMutex;
+#endif
 };
+
+int JK_METHOD jk2_mutex_invoke(struct jk_env *env, struct jk_bean *bean, struct jk_endpoint *ep, int code,
+                               struct jk_msg *msg, int raw);
+
     
 #ifdef __cplusplus
 }

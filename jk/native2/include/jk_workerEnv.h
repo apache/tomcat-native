@@ -246,7 +246,7 @@ struct jk_workerEnv {
      */
     void *_private;
 
-    JK_CRIT_SEC cs;
+    struct jk_mutex *cs;
 
     /* Global setting to enable counters on all requests.
      *  That adds about 2-3 ms per request ( at least on linux ),
