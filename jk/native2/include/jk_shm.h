@@ -73,26 +73,56 @@ struct jk_env;
 struct jk_shm;
     
 typedef struct jk_shm jk_shm_t;
+typedef struct jk_shm_slot jk_shm_slot_t;
+typedef struct jk_shm_head jk_shm_head_t;
 
+
+/* That's the default - should be enough for most cases.
+   8k is what we use as the default packet size in ajp13, and 256
+   slots should be enough for now ( == 256 workers )
+   XXX implement the setters to override this
+*/
+#define DEFAULT_SLOT_SIZE 1024 * 8
+#define DEFAULT_SLOT_COUNT 256
+
+
+    
 /** Each shared memory slot has at least the following components.
  */
 struct jk_shm_slot {
-    /** Size of the segment */
-    int size;
-    
     /** Version of the segment. Whoever writes it must change the
         version after writing. Various components will check the version
         and refresh if needed
     */
     int ver;
 
-    /** Name of the segment. 
+    /** Size of the segment */
+    int size;
+
+    /** Full name of the segment. type:localName convention.
      */
-    char type[64];
+    char name[64];
 
     char data[1];
 };
+
     
+struct jk_shm_head {
+    struct jk_shm_slot slot;
+    
+    int slotSize;
+    
+    int slotMaxCount;
+    
+    /* Last used position. Increase ( at least atomically, eventually with mutexes )
+       each time a slot is created */
+    int lastSlot;
+
+    /* XXX Need a more generic mechanism */
+    int lbVer;
+};
+
+
 /**
  *  Shared memory support. This is similar with the scoreboard or jserv's worker shm, but
  *  organized a bit more generic to support use of shm as a channel and to support config
@@ -121,9 +151,14 @@ struct jk_shm {
      */
     int (*destroy)(struct jk_env *env, struct jk_shm *shm);
 
+    /** 
+     */
+    int (*setWorkerEnv)( struct jk_env *env, struct jk_shm *shm,
+                         struct jk_workerEnv *wEnv );
+
     /** Get a shm slot. Each slot has different rules for synchronization, based on type. 
      */
-    struct jk_shm_slot *(*getSlot)(struct jk_env *env, struct jk_shm *shm, char *name, int size);
+    struct jk_shm_slot *(*getSlot)(struct jk_env *env, struct jk_shm *shm, int pos);
 
     /** Create a slot. This typically involves inter-process synchronization.
      */
@@ -132,7 +167,17 @@ struct jk_shm {
     /** Get an ID that is unique across processes.
      */
     int (*getId)(struct jk_env *env, struct jk_shm *shm);
+
+    int size;
+
+    int slotSize;
     
+    int slotMaxCount;
+    
+    void *image;
+
+    struct jk_shm_head *head;
+
     /* Private data */
     void *privateData;
 };
