@@ -56,8 +56,10 @@ AC_CHECK_FUNC(vsnprintf, AC_DEFINE(HAVE_VSNPRINTF,1,[Have vsnprintf()]))
 dnl check for flock function.
 AC_CHECK_FUNC(flock, AC_DEFINE(HAVE_FLOCK,1,[Have flock()]))
 
-AC_DEFUN(JK_CHECK_SETSOCKOPT, [
+AC_DEFUN([JK_CHECK_SETSOCKOPT], [
 AC_MSG_CHECKING(whether to use $1 with setsockopt())
+saved_LIBS="$LIBS"
+LIBS="$saved_LIBS -lsocket"
 AC_TRY_RUN([
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -88,6 +90,7 @@ int main(void)
 , [ AC_MSG_RESULT([yes]) AC_DEFINE(USE_$1, 1, [Define to use $1 with setsockopt()]) ]
 , [ AC_MSG_RESULT([no]) ]
 )
+LIBS="$saved_LIBS"
 ])dnl
 
 dnl check for SO_RCVTIMEO and SO_SNDTIMEO
@@ -141,7 +144,7 @@ AC_ARG_WITH(apxs,
             APA=`${GREP} STANDARD20 ${APXS}`
             if ${TEST} -z "$APA" ; then
                 WEBSERVER="apache-1.3"
-		APXSCFLAGS=`$APXS -q CFLAGS`
+		APXSCFLAGS="`$APXS -q CFLAGS` -DJK_PREFORK"
 		APXS_CPPFLAGS=""
             else
                 WEBSERVER="apache-2.0"
@@ -211,6 +214,7 @@ AC_ARG_WITH(apache,
                    -I${withval}/src/${osdir}"
                WEBSERVER="apache-1.3"
                LIB_JK_TYPE=mod_jk.a
+               CFLAGS="${CFLAGS} -DJK_PREFORK"
                AC_MSG_RESULT([${apache_include}, version 1.3])
            else
                AC_MSG_ERROR([Sorry Apache 1.2.x is no longer supported.])
