@@ -96,7 +96,7 @@ public final class Response {
    /**
      * Default locale as mandated by the spec.
      */
-    private static Locale DEFAULT_LOCALE = new Locale("en", "US");
+    private static Locale DEFAULT_LOCALE = Locale.getDefault();
     
        
     /**
