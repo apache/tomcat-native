@@ -871,7 +871,7 @@ static void stop_tomcat(char *name,
     } 
     
     if(jk_resolve("localhost", port, &in)) {
-        int sd = jk_open_socket(&in, JK_TRUE, 0, NULL);
+        int sd = jk_open_socket(&in, JK_TRUE, 0, -1, NULL);
         if(sd >0) {
             int rc = JK_FALSE;
 
@@ -954,8 +954,8 @@ static int exec_cmd(const char *name, HANDLE *hTomcat, char *cmdLine)
                                          sizeof(prp_file))) {
             jk_map_t *init_map;
             
-            if(map_alloc(&init_map)) {
-                if(map_read_properties(init_map, prp_file)) {
+            if(jk_map_alloc(&init_map)) {
+                if(jk_map_read_properties(init_map, prp_file)) {
                     jk_tomcat_startup_data_t data;
                     jk_pool_t p;
                     jk_pool_atom_t buf[HUGE_POOL_SIZE];
@@ -1127,29 +1127,29 @@ static int read_startup_data(jk_map_t *init_map,
 
     /* All this is wrong - you just need to configure cmd_line */
     /* Optional - you may have cmd_line defined */
-    data->server_file = map_get_string(init_map, 
-                                       "wrapper.server_xml", 
+    data->server_file = jk_map_get_string(init_map, 
+                                          "wrapper.server_xml", 
+                                          NULL);
+    data->classpath = jk_map_get_string(init_map, 
+                                        "wrapper.class_path", 
+                                        NULL);
+    data->tomcat_home = jk_map_get_string(init_map, 
+                                          "wrapper.tomcat_home", 
+                                          NULL);
+    data->java_bin = jk_map_get_string(init_map, 
+                                       "wrapper.javabin", 
                                        NULL);
-    data->classpath = map_get_string(init_map, 
-                                     "wrapper.class_path", 
-                                       NULL);
-    data->tomcat_home = map_get_string(init_map, 
-                                       "wrapper.tomcat_home", 
-                                       NULL);
-    data->java_bin = map_get_string(init_map, 
-                                    "wrapper.javabin", 
-                                    NULL);
-    data->tomcat_class = map_get_string(init_map,
-                                        "wrapper.startup_class",
-                                        "org.apache.tomcat.startup.Tomcat");
+    data->tomcat_class = jk_map_get_string(init_map,
+                                           "wrapper.startup_class",
+                                           "org.apache.tomcat.startup.Tomcat");
 
-    data->cmd_line = map_get_string(init_map,
-                                    "wrapper.cmd_line",
-                                    NULL);
+    data->cmd_line = jk_map_get_string(init_map,
+                                       "wrapper.cmd_line",
+                                       NULL);
 
-    data->stop_cmd = map_get_string(init_map,
-                                    "wrapper.stop_cmd",
-                                    NULL);
+    data->stop_cmd = jk_map_get_string(init_map,
+                                       "wrapper.stop_cmd",
+                                       NULL);
 
     if(NULL == data->cmd_line &&
        ( (NULL == data->tomcat_class) ||
@@ -1185,24 +1185,25 @@ static int read_startup_data(jk_map_t *init_map,
         strcat(data->cmd_line, data->server_file);
     }
 
-    data->shutdown_port = map_get_int(init_map,
-                                      "wrapper.shutdown_port",
-                                      8007);
+    data->shutdown_port = jk_map_get_int(init_map,
+                                         "wrapper.shutdown_port",
+                                         8007);
 
-    data->shutdown_secret = map_get_string(init_map,
-                                           "wrapper.shutdown_secret", NULL );
+    data->shutdown_secret = jk_map_get_string(init_map,
+                                              "wrapper.shutdown_secret", 
+                                              NULL);
     
-    data->shutdown_protocol = map_get_string(init_map,
-                                             "wrapper.shutdown_protocol",
-                                             AJP12_TAG);
+    data->shutdown_protocol = jk_map_get_string(init_map,
+                                                "wrapper.shutdown_protocol",
+                                                AJP12_TAG);
 
-    data->extra_path = map_get_string(init_map,
-                                      "wrapper.ld_path",
-                                      NULL);
+    data->extra_path = jk_map_get_string(init_map,
+                                         "wrapper.ld_path",
+                                         NULL);
 
-    data->stdout_file = map_get_string(init_map,
-                                       "wrapper.stdout",
-                                       NULL);
+    data->stdout_file = jk_map_get_string(init_map,
+                                          "wrapper.stdout",
+                                          NULL);
 
     if(NULL == data->stdout_file && NULL == data->tomcat_home ) {
         return JK_FALSE;
@@ -1214,9 +1215,9 @@ static int read_startup_data(jk_map_t *init_map,
         strcat(data->stdout_file, "\\stdout.log");        
     }
 
-    data->stderr_file = map_get_string(init_map,
-                                       "wrapper.stderr",
-                                       NULL);
+    data->stderr_file = jk_map_get_string(init_map,
+                                          "wrapper.stderr",
+                                          NULL);
 
     if(NULL == data->stderr_file) {
         data->stderr_file = jk_pool_alloc(p, strlen(data->tomcat_home) + 2 + strlen("\\stderr.log"));
