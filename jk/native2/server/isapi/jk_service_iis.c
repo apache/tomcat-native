@@ -82,7 +82,7 @@
 
 static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
     static char crlf[3] = { (char)13, (char)10, '\0' };
-    char *reason;
+    const char *reason;
     LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
     DWORD len_of_status;
     char *status_str;
@@ -519,8 +519,8 @@ static void JK_METHOD jk2_service_iis_afterRequest(jk_env_t *env, jk_ws_service_
 
         char *buff = s->pool->calloc(env,s->pool, 2048);
         if (buff != NULL) {
-            int rd;
-            /* Is there a IIS equivalent ? */
+            /* int rd; */
+            /* FIXME Is there a IIS equivalent ? */
             /*             while ((rd = ap_get_client_block(r, buff, 2048)) > 0) { */
             /*                 s->content_read += rd; */
             /*             } */
