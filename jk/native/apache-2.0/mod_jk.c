@@ -139,7 +139,9 @@ struct apache_private_data {
 };
 typedef struct apache_private_data apache_private_data_t;
 
-static jk_logger_t *main_log = NULL;
+static jk_logger_t *	 main_log = NULL;
+static jk_worker_env_t   worker_env;
+
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -526,7 +528,7 @@ static int init_ws_service(apache_private_data_t *private_data,
 /*
  * JkMountCopy directive handling
  *
- * JkMountCopy Yes/No
+ * JkMountCopy On/Off
  */
 
 static const char *jk_set_mountcopy(cmd_parms *cmd, 
@@ -568,33 +570,15 @@ static const char *jk_mount_context(cmd_parms *cmd,
 }
 
 /*
- * JkSecretKey directive handling
- * 
- * JkSecretKey defaultsecretkey
- */
-
-static const char *jk_secret_key(cmd_parms *cmd,
-                                        void *dummy,
-                                        char *secret_key)
-{
-    server_rec *s = cmd->server;
-    jk_server_conf_t *conf =
-        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
-
-    conf->secret_key = secret_key;
-    return NULL;
-}  
-
-/*
  * JkAutoMount directive handling
  *
- * JkAutoMount worker secretkey
+ * JkAutoMount worker [virtualhost]
  */
 
 static const char *jk_automount_context(cmd_parms *cmd,
                                         void *dummy,
                                         char *worker,
-                                        char *secret_key)
+                                        char *virtualhost)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
@@ -604,9 +588,15 @@ static const char *jk_automount_context(cmd_parms *cmd,
      * Add the new automount to the auto map.
      */
     char * old;
-    map_put(conf->automount, worker, secret_key, (void **)&old);
+	map_put(conf->automount, worker, virtualhost, (void **)&old);
     return NULL;
 }
+
+/*
+ * JkWorkersFile Directive Handling
+ *
+ * JkWorkersFile file
+ */
 
 static const char *jk_set_worker_file(cmd_parms *cmd, 
                                       void *dummy, 
@@ -626,6 +616,12 @@ static const char *jk_set_worker_file(cmd_parms *cmd,
     return NULL;
 }
 
+/*
+ * JkLogFile Directive Handling
+ *
+ * JkLogFile file
+ */
+
 static const char *jk_set_log_file(cmd_parms *cmd, 
                                    void *dummy, 
                                    char *log_file)
@@ -638,6 +634,12 @@ static const char *jk_set_log_file(cmd_parms *cmd,
 
     return NULL;
 }
+
+/*
+ * JkLogLevel Directive Handling
+ *
+ * JkLogLevel debug/info/error/emerg
+ */
 
 static const char *jk_set_log_level(cmd_parms *cmd, 
                                     void *dummy, 
@@ -652,6 +654,12 @@ static const char *jk_set_log_level(cmd_parms *cmd,
     return NULL;
 }
 
+/*
+ * JkLogStampFormat Directive Handling
+ *
+ * JkLogStampFormat "[%a %b %d %H:%M:%S %Y] "
+ */
+
 static const char * jk_set_log_fmt(cmd_parms *cmd,
                       void *dummy,
                       char * log_format)
@@ -659,6 +667,12 @@ static const char * jk_set_log_fmt(cmd_parms *cmd,
     jk_set_log_format(log_format);
     return NULL;
 }
+
+/*
+ * JkExtractSSL Directive Handling
+ *
+ * JkExtractSSL On/Off
+ */
 
 static const char *jk_set_enable_ssl(cmd_parms *cmd,
                                      void *dummy,
@@ -769,6 +783,12 @@ static const char *jk_set_key_size_indicator(cmd_parms *cmd,
     return NULL;
 }
 
+/*
+ * JkEnvVar Directive Handling
+ *
+ * JkEnvVar MYOWNDIR
+ */
+
 static const char *jk_add_env_var(cmd_parms *cmd,
                                   void *dummy,
                                   char *env_name,
@@ -796,13 +816,6 @@ static const command_rec jk_cmds[] =
      */
     {"JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF, TAKE1,
      "the name of a worker file for the Jakarta servlet containers"},
-
-    /*
-     * JkSecretKey specifies the default (common) secret key to works with
-     * workers in AJP14 protocol
-     */
-    {"JkSecretKey", jk_secret_key, NULL, RSRC_CONF, TAKE1,
-     "the default secret key to works with workers"},
 
     /*
      * JkAutoMount specifies that the list of handled URLs must be
@@ -890,15 +903,14 @@ static int jk_handler(request_rec *r)
     if(strcmp(r->handler,JK_HANDLER))	/* not for me, try next handler */
     return DECLINED;
 
+	worker_name = apr_table_get(r->notes, JK_WORKER_ID);
+
 	if (1)
 	{
-	jk_server_conf_t *xconf =
-			(jk_server_conf_t *)ap_get_module_config(r->server->module_config, &jk_module);
+	jk_server_conf_t *xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, &jk_module);
 	jk_logger_t *xl = xconf->log ? xconf->log : main_log;
-	jk_log(xl, JK_LOG_DEBUG, "Into handler r->proxyreq=%d r->handler=%s r->notes=%d\n", r->proxyreq, r->handler, r->notes); 
+	jk_log(xl, JK_LOG_DEBUG, "Into handler r->proxyreq=%d r->handler=%s r->notes=%d worker=%s\n", r->proxyreq, r->handler, r->notes, worker_name); 
 	}
-
-	worker_name = apr_table_get(r->notes, JK_WORKER_ID);
 
     /* If this is a proxy request, we'll notify an error */
     if(r->proxyreq) {
@@ -1020,6 +1032,7 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
      */
     c->cipher_indicator = "SSL_CIPHER";
     c->session_indicator = "SSL_SESSION_ID";
+    c->key_size_indicator = "SSL_CIPHER_USEKEYSIZE";
 
     if(!map_alloc(&(c->uri_to_context))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
@@ -1119,7 +1132,10 @@ static void jk_child_init(apr_pool_t *pconf,
 
     if(map_alloc(&init_map)) {
         if(map_read_properties(init_map, conf->worker_file)) {
-	    if(wc_open(init_map, conf->uw_map, conf->log)) {
+        /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
+        /* worker_env.uri_to_worker = conf->uw_map;
+        worker_env.server_name   = (char *)ap_get_server_version(); */
+	    if(wc_open(init_map, &worker_env, conf->log)) {
 		return;
         }            
         }
@@ -1154,7 +1170,10 @@ static void jk_post_config(apr_pool_t *pconf,
             if(map_alloc(&init_map)) {
                 if(map_read_properties(init_map, conf->worker_file)) {
 					ap_add_version_component(pconf, JK_EXPOSED_VERSION);
-                        if(wc_open(init_map, conf->uw_map, conf->log)) {
+						/* May be allready done in init ??? */
+        				/* worker_env.uri_to_worker = conf->uw_map;
+        				worker_env.server_name   = (char *)ap_get_server_version(); */
+                        if(wc_open(init_map, &worker_env, conf->log)) {
                             return;
                         }            
                 }
