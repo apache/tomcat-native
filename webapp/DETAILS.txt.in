@@ -1,0 +1,6 @@
+Coonfiguration details:
+
+module version:  @WEBAPP_VERSION@
+httpd version:   @APACHE_VERSION@
+host machine/os: @HOST@
+cration date:    @DATE@

@@ -74,6 +74,9 @@ dnl Initialize GNU Autoconf (note, this requires autoconf vers. >= 2.52)
 dnl --------------------------------------------------------------------------
 AC_INIT([WebApp Module],[""],[http://nagoya.apache.org/bugzilla])
 AC_CONFIG_SRCDIR([configure.in])
+AC_CONFIG_AUX_DIR([support])
+AC_CANONICAL_HOST()
+
 
 dnl --------------------------------------------------------------------------
 dnl Get rid of all that "--prefix" ... "--xxxdir" in the help message
@@ -112,6 +115,13 @@ WA_VARIABLE([EXTRA_BUILD])
 WA_VARIABLE([EXTRA_CLEAN])
 
 WA_VARIABLE([MODULE])
+
+WA_VARIABLE([APACHE_VERSION])
+WA_VARIABLE([WEBAPP_VERSION])
+WA_VARIABLE([HOST])
+WA_VARIABLE([DATE])
+HOST="${host}"
+DATE="`date`"
 
 dnl --------------------------------------------------------------------------
 dnl Figure out if we have APXS, where it's located, and what version it is
@@ -238,10 +248,13 @@ else
     MODULE="apache-2.0"
 fi
 
+dnl --------------------------------------------------------------------------
+dnl Retrieve Apache and WebApp version
+dnl --------------------------------------------------------------------------
 WA_APXS_SERVER([APACHE_VERSION],[${APXS}])
 WA_VERSION([WEBAPP_VERSION],[${CC}])
 
 dnl --------------------------------------------------------------------------
 dnl All done
 dnl --------------------------------------------------------------------------
-AC_OUTPUT([Makedefs Makefile lib/Makefile ${MODULE}/Makefile])
+AC_OUTPUT([Makedefs Makefile lib/Makefile ${MODULE}/Makefile DETAILS.txt])
