@@ -70,17 +70,19 @@ import java.util.*;
  * @author Costin Manolache
  */
 public class CcCompiler extends CompilerAdapter {
-    
+    GlobPatternMapper co_mapper=new GlobPatternMapper();
+
     public CcCompiler() {
 	super();
-    };
-
-    public GlobPatternMapper getOMapper() {
-	GlobPatternMapper co_mapper=new GlobPatternMapper();
 	co_mapper.setFrom("*.c");
 	co_mapper.setTo("*.o");
+    }
 
-	return co_mapper;
+    public String[] getTargetFiles( Source src ) {
+        File srcFile = src.getFile();
+        String name=srcFile.getName();
+        
+        return co_mapper.mapFileName( name );
     }
 
     /** Compile  using 'standard' gcc flags. This assume a 'current' gcc on

@@ -69,12 +69,14 @@ import java.util.*;
  * 
  * @author Costin Manolache
  */
-public class MwldLinker extends SoTask implements LinkerAdapter {
-    SoTask so;
+public class MwldLinker extends LinkerAdapter {
+    GlobPatternMapper lo_mapper=new GlobPatternMapper();
     
     public MwldLinker() {
-        so=this;
-    };
+        super();
+        lo_mapper.setFrom("*.c");
+	lo_mapper.setTo("*.o");
+    }
 
     public void setSoTask(SoTask so ) {
         this.so=so;
@@ -161,7 +163,7 @@ public class MwldLinker extends SoTask implements LinkerAdapter {
                 Source source=(Source)srcList.elementAt(i);
                 File srcF = source.getFile();
                 String name=srcF.getName();
-                String targetNA[]=co_mapper.mapFileName( name );
+                String targetNA[]=lo_mapper.mapFileName( name );
                 if( targetNA!=null )
                     linkOptPw.println( targetNA[0] );
             }

@@ -69,12 +69,15 @@ import java.util.*;
  *
  * @author Ignacio J. Ortega
  */
-public class MsvcLinker extends SoTask implements LinkerAdapter {
+public class MsvcLinker extends LinkerAdapter {
     SoTask so;
-
+    GlobPatternMapper co_mapper=new GlobPatternMapper();
+    
     public MsvcLinker() {
         so=this;
-    };
+	co_mapper.setFrom("*.c");
+	co_mapper.setTo("*.obj");
+    }
 
     public void setSoTask(SoTask so ) {
         this.so=so;

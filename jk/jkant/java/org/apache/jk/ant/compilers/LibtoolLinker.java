@@ -69,24 +69,13 @@ import java.util.*;
  * 
  * @author Costin Manolache
  */
-public class LibtoolLinker extends SoTask implements LinkerAdapter {
+public class LibtoolLinker extends LinkerAdapter {
     SoTask so;
-    protected static GlobPatternMapper lo_mapper=new GlobPatternMapper();
-    static {
-	lo_mapper.setFrom("*.c");
-	lo_mapper.setTo("*.lo");
-    }
+    GlobPatternMapper lo_mapper=new GlobPatternMapper();
     public LibtoolLinker() {
 	so=this;
-    };
-
-    public void setSoTask(SoTask so ) {
-	this.so=so;
-    }
-
-    public void execute() throws BuildException {
-	findSourceFiles();
-	link(this.srcList);
+	lo_mapper.setFrom("*.c");
+	lo_mapper.setTo("*.lo");
     }
 
     /** Link using libtool.

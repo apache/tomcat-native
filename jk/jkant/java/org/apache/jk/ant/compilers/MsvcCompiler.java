@@ -69,21 +69,20 @@ import java.util.*;
  * @author Ignacio J. Ortega
  */
 public class MsvcCompiler extends CompilerAdapter {
-
-    static GlobPatternMapper co_mapperS=new GlobPatternMapper();
-    static {
-	co_mapperS.setFrom("*.c");
-	co_mapperS.setTo("*.obj");
-    }
+    GlobPatternMapper co_mapperS=new GlobPatternMapper();
     
     public MsvcCompiler() {
         super();
-    };
-
-    public GlobPatternMapper getOMapper() {
-	return co_mapperS;
+	co_mapperS.setFrom("*.c");
+	co_mapperS.setTo("*.obj");
     }
 
+    public String[] getTargetFiles( Source src ) {
+        File srcFile = src.getFile();
+        String name=srcFile.getName();
+        
+        return co_mapperS.mapFileName( name );
+    }
 
     public void setSoTask(SoTask so ) {
         this.so=so;
