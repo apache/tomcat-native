@@ -62,6 +62,7 @@
 #define LOCAL_WORKER_ONLY_FLAG      ("local_worker_only")
 #define LOCAL_WORKER_FLAG           ("local_worker")
 #define DOMAIN_OF_WORKER            ("domain")
+#define MOUNT_OF_WORKER             ("mount")
 
 #define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
@@ -690,7 +691,7 @@ int jk_get_local_worker_only_flag(jk_map_t *m, const char *lb_wname)
 
 int jk_get_lb_worker_list(jk_map_t *m,
                           const char *lb_wname,
-                          char ***list, unsigned *num_of_wokers)
+                          char ***list, unsigned int *num_of_wokers)
 {
     char buf[1024];
 
@@ -714,6 +715,29 @@ int jk_get_lb_worker_list(jk_map_t *m,
         }
         *list = NULL;
         *num_of_wokers = 0;
+    }
+
+    return JK_FALSE;
+}
+
+int jk_get_worker_mount_list(jk_map_t *m,
+                             const char *wname,
+                             char ***list, unsigned int *num_of_maps)
+{
+    char buf[1024];
+
+    if (m && list && num_of_maps && wname) {
+        char **ar = NULL;
+
+        sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname,
+                MOUNT_OF_WORKER);
+        ar = jk_map_get_string_list(m, buf, num_of_maps, NULL);
+        if (ar) {
+            *list = ar;
+            return JK_TRUE;
+        }
+        *list = NULL;
+        *num_of_maps = 0;
     }
 
     return JK_FALSE;

@@ -90,8 +90,10 @@ int jk_get_local_worker_only_flag(jk_map_t *m, const char *lb_wname);
 
 int jk_get_lb_worker_list(jk_map_t *m,
                           const char *lb_wname,
-                          char ***list, unsigned *num_of_wokers);
-
+                          char ***list, unsigned int *num_of_wokers);
+int jk_get_worker_mount_list(jk_map_t *m,
+                             const char *wname,
+                             char ***list, unsigned int *num_of_maps);
 const char *jk_get_worker_secret(jk_map_t *m, const char *wname);
 
 int jk_get_worker_mx(jk_map_t *m, const char *wname, unsigned *mx);
