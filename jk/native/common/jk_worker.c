@@ -191,7 +191,7 @@ int wc_create_worker(const char *name,
         }
 
         *rc = w;
-        jk_log(l, JK_LOG_DEBUG, "wc_create_worker, done\n"); 
+           jk_log(l, JK_LOG_DEBUG, "wc_create_worker, done\n"); 
         return JK_TRUE;
     }
 
@@ -257,17 +257,3 @@ static int build_worker_map(jk_map_t *init_data,
     jk_log(l, JK_LOG_DEBUG, "build_worker_map, done\n"); 
     return JK_TRUE;
 }
-
-/* static worker_factory get_factory_for(char *type) */
-/* { */
-/*     worker_factory_record_t *factory = &worker_factories[0]; */
-/*     while(factory->name) { */
-/*         if(0 == strcmp(factory->name, type)) { */
-/*             return factory->fac; */
-/*         } */
-
-/*         factory ++; */
-/*     } */
-
-/*     return NULL; */
-/* } */
