@@ -199,6 +199,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     case 'c':
+    case 'C':
         if(!strcasecmp(header_name, "cookie")) {
             *sc = SC_COOKIE;
         } else if(!strcasecmp(header_name, "connection")) {
@@ -215,6 +216,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     case 'h':
+    case 'H':
         if(!strcasecmp(header_name, "host")) {
             *sc = SC_HOST;
         } else {
@@ -223,6 +225,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     case 'p':
+    case 'P':
         if(!strcasecmp(header_name, "pragma")) {
             *sc = SC_PRAGMA;
         } else {
@@ -231,6 +234,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     case 'r':
+    case 'R':
         if(!strcasecmp(header_name, "referer")) {
             *sc = SC_REFERER;
         } else {
@@ -239,6 +243,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     case 'u':
+    case 'U':
         if(!strcasecmp(header_name, "user-agent")) {
             *sc = SC_USER_AGENT;
         } else {
@@ -247,7 +252,7 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
         break;
         
     default:
-        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
                       "requtil.getHeaderId() long header %s\n", header_name);
 
         return JK_FALSE;
