@@ -137,13 +137,13 @@ static void jk2_msg_ajp_dump(jk_env_t *env, struct jk_msg *_this,
  
 static void jk2_msg_ajp_reset(jk_env_t *env, jk_msg_t *_this) 
 {
-    _this->len = 4;
-    _this->pos = 4;
+    _this->len = AJP_HEADER_LEN;
+    _this->pos = AJP_HEADER_LEN;
 }
 
 static void jk2_msg_ajp_end(jk_env_t *env, jk_msg_t *msg) 
 {
-    unsigned short len=msg->len - 4;
+    unsigned short len=msg->len - AJP_HEADER_LEN;
     
 
     if(msg->serverSide ) {
@@ -165,7 +165,7 @@ static int jk2_msg_ajp_appendLong(jk_env_t *env, jk_msg_t *msg,
 {
     int len=msg->len;
     
-    if(len + 4 > msg->maxlen) {
+    if(len + AJP_HEADER_LEN > msg->maxlen) {
         return JK_ERR;
     }
     
@@ -442,8 +442,8 @@ static int jk2_msg_ajp_checkHeader(jk_env_t *env, jk_msg_t *msg,
         return -2;
     }
 
-    msg->len=msglen+4;
-    msg->pos=4;
+    msg->len=msglen+AJP_HEADER_LEN;
+    msg->pos=AJP_HEADER_LEN;
 
     return msglen;
 }
@@ -505,7 +505,7 @@ static void jk2_msg_ajp_init(jk_env_t *env, jk_msg_t *msg, int buffSize)
     msg->maxlen=buffSize;
     msg->len=0;
 
-    msg->headerLength=4;
+    msg->headerLength=AJP_HEADER_LEN;
 
     msg->reset=jk2_msg_ajp_reset;
     msg->end=jk2_msg_ajp_end;
