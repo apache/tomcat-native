@@ -68,6 +68,7 @@ sinclude(./support/wa_exec.m4)
 sinclude(./support/wa_version.m4)
 sinclude(./support/wa_apr.m4)
 sinclude(./support/wa_apxs.m4)
+sinclude(./support/wa_ant.m4)
 
 dnl --------------------------------------------------------------------------
 dnl Initialize GNU Autoconf (note, this requires autoconf vers. >= 2.52)
@@ -76,7 +77,6 @@ AC_INIT([WebApp Module],[""],[http://nagoya.apache.org/bugzilla])
 AC_CONFIG_SRCDIR([configure.in])
 AC_CONFIG_AUX_DIR([support])
 AC_CANONICAL_HOST()
-
 
 dnl --------------------------------------------------------------------------
 dnl Get rid of all that "--prefix" ... "--xxxdir" in the help message
@@ -89,6 +89,7 @@ dnl --------------------------------------------------------------------------
 WA_VARIABLE([APR_DIR])
 WA_VARIABLE([SRC_DIR])
 WA_VARIABLE([TGT_DIR])
+WA_VARIABLE([TC4_DIR])
 WA_PATH_DIR([SRC_DIR],[${srcdir}],[sources])
 WA_PATH_DIR([TGT_DIR],[.],[build])
 
@@ -100,6 +101,7 @@ WA_VARIABLE([CPP])
 WA_VARIABLE([SHELL])
 WA_VARIABLE([LIBTOOL])
 WA_VARIABLE([APXS])
+WA_VARIABLE([ANT])
 
 WA_VARIABLE([CPPFLAGS])
 WA_VARIABLE([CFLAGS])
@@ -122,6 +124,10 @@ WA_VARIABLE([HOST])
 WA_VARIABLE([DATE])
 HOST="${host}"
 DATE="`date`"
+
+WA_VARIABLE([ENABLE_JAVA])
+WA_VARIABLE([ENABLE_DOCS])
+WA_VARIABLE([ENABLE_APIJ])
 
 dnl --------------------------------------------------------------------------
 dnl Figure out if we have APXS, where it's located, and what version it is
@@ -255,6 +261,51 @@ WA_APXS_SERVER([APACHE_VERSION],[${APXS}])
 WA_VERSION([WEBAPP_VERSION],[${CC}])
 
 dnl --------------------------------------------------------------------------
+dnl Java Tips and Tricks
+dnl --------------------------------------------------------------------------
+WA_ANT([ANT])
+
+AC_MSG_CHECKING([for java compilation])
+AC_ARG_ENABLE(
+    [java],
+    [  --enable-java[[=tc4dir]]  compile java code (tc4dir must be specifed)],
+    [
+        case "${enableval}" in
+        ""|"yes"|"YES"|"true"|"TRUE")
+            WA_ERROR([Path of Tomcat 4.0 binary distribution unspecified])
+            ;;
+        "no"|"NO"|"false"|"FALSE")
+            AC_MSG_RESULT([no])
+            ENABLE_JAVA=""
+            ;;
+        *)
+            AC_MSG_RESULT([yes])
+            ENABLE_JAVA="compile"
+            WA_PATH_DIR([TC4_DIR],[${enableval}],[tomcat 4.0 distribution])
+            AC_MSG_CHECKING([for proper tomcat layout])
+            if test ! -f "${TC4_DIR}/server/lib/catalina.jar" ; then
+              WA_ERROR([cannot find "${TC4_DIR}/server/lib/catalina.jar"])
+            fi
+            if test ! -f "${TC4_DIR}/common/lib/servlet.jar" ; then
+              WA_ERROR([cannot find "${TC4_DIR}/common/lib/servlet.jar"])
+            fi
+            AC_MSG_RESULT([ok])
+            ;;
+        esac
+    ],[
+        AC_MSG_RESULT([no])
+        ENABLE_JAVA=""
+    ])
+
+dnl --------------------------------------------------------------------------
 dnl All done
 dnl --------------------------------------------------------------------------
-AC_OUTPUT([Makedefs Makefile lib/Makefile ${MODULE}/Makefile DETAILS.txt])
+AC_OUTPUT(
+  [
+    Makedefs
+    Makefile
+    lib/Makefile
+    ${MODULE}/Makefile
+    DETAILS.txt
+    build.properties
+  ])
