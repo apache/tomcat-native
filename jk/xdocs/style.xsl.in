@@ -50,7 +50,7 @@
         <title>
           <xsl:value-of select="properties/title"/>
         </title>
-        <meta name="copyright" content="1999-2002 The Apache Software Foundation"/>
+        <meta name="copyright" content="1999-2003 The Apache Software Foundation"/>
         <xsl:for-each select="properties/date">
           <xsl:variable name="date">
             <xsl:value-of select="."/>

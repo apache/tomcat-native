@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+<properties>
+<title>Tools</title>
+<author>Glenn Nielsen</author>
+<date>$Date$</date>
+</properties>
+<section name="Introduction">
+<p>Documentation for additional mod_jk related tools.</p>
+</section>
+
+<section name="Reports">
+<p>
+The mod_jk source distribution contains two perl scripts in the
+jk/tools/reports directory which can be used to analyze the mod_jk
+logs, save statistical data, and generate report graphs.
+</p>
+
+<p><code>tomcat_trend.pl log_dir archive_dir</code></p>
+<p>
+Script for analyzing mod_jk.log data when logging tomcat request data using
+the <code>JkRequestLogFormat</code> Apache mod_jk configuration.
+Generates statistics for request latency and errors.  Archives the generated
+data to files for later use in long term trend graphs and reports.
+</p>
+
+<p><code>tomcat_reports.pl archive_dir reports_dir</code></p>
+<p>
+Script for generating reports and graphs using statistical data generated
+by the <code>tomcat_trend.pl</code> script.
+
+The following graphs are created:
+<ul>
+  <li>tomcat_request.png - Long term trend graph of total number of tomcat
+    requests handled.</li>
+  <li>tomcat_median.png - Long term overall trend graph of tomcat request
+    latency median.</li>
+  <li>tomcat_deviation.png - Long term overall trend graph of tomcat request
+    mean and standard deviation.</li>
+  <li>tomcat_error.png - Long term trend graph of requests rejected by tomcat.
+    Shows requests rejected when tomcat has no request processors available.
+    Can be an indicator that tomcat is overloaded or having other scaling
+    problems.</li>
+  <li>tomcat_client.png - Long term trend graph of requests forward to tomcat
+    which were aborted by the remote client (browser).  You will normally see
+    some aborted requests.  High numbers of these can be an indicator that
+    tomcat is overloaded or there are requests which have very high latency.</li>
+</ul>
+</p>
+
+<p>
+A great deal of statistical data is generated but at this time
+only long term trend graphs are being created and no reports.
+This is only a start.  Many more graphs and reports could be
+generated from the data. Please consider contributing back any
+new reports or graphs you create.  Thanks.
+</p>
+
+<p>
+These perl scripts depend upon the following perl modules and libraries:
+<ul>
+  <li>GD 1.8.x graphics library <a href="http://www.boutell.com/gd/">
+    http://www.boutell.com/gd/</a></li>
+  <li>GD 1.4.x perl module</li>
+  <li>GD Graph perl module</li>
+  <li>GD TextUtil perl module</li>
+  <li>StatisticsDescriptive perl module</li>
+</ul>
+</p>
+</section>
+</document>
