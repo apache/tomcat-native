@@ -47,7 +47,7 @@ int jk_resolve(char *host,
 {
     int x;
 
-    memset(rc, 0, sizeof(sockaddr_in));
+    memset(rc, 0, sizeof(struct sockaddr_in));
 
     /* TODO: Should be updated for IPV6 support. */
     /* for now use the correct type, in_addr_t */    
