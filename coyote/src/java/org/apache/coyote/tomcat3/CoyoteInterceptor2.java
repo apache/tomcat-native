@@ -164,6 +164,7 @@ public class CoyoteInterceptor2 extends BaseInterceptor
                 else
                     IntrospectionUtils.setAttribute( proto, k, o );
             }
+	    proto.init();
         } catch( Exception ex ) {
             throw new TomcatException( "Error setting protocol properties ", ex );
         }
@@ -173,7 +174,7 @@ public class CoyoteInterceptor2 extends BaseInterceptor
      */
     public void engineStart(ContextManager cm) throws TomcatException {
 	try {
-            proto.init();
+            proto.start();
 	} catch( Exception ex ) {
             ex.printStackTrace();
 	    throw new TomcatException( ex );
