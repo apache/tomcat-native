@@ -306,12 +306,6 @@ public final class CoyoteConnector
 
 
     /**
-     * Use URI validation for Tomcat 5.0.x.
-     */
-    private boolean useURIValidationHack = true;
-
-
-    /**
      * Coyote protocol handler.
      */
     private ProtocolHandler protocolHandler = null;
@@ -785,28 +779,6 @@ public final class CoyoteConnector
     public void setTcpNoDelay(boolean tcpNoDelay) {
 
         this.tcpNoDelay = tcpNoDelay;
-
-    }
-
-
-    /**
-     * Return the value of the Uri validation flag.
-     */
-    public boolean getUseURIValidationHack() {
-
-        return (this.useURIValidationHack);
-
-    }
-
-
-    /**
-     * Set the value of the Uri validation flag.
-     * 
-     * @param useURIValidationHack The new flag value
-     */
-    public void setUseURIValidationHack(boolean useURIValidationHack) {
-
-        this.useURIValidationHack = useURIValidationHack;
 
     }
 
