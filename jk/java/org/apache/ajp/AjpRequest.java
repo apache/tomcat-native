@@ -185,6 +185,10 @@ public class AjpRequest {
         return serverPort;
     }
 
+    public void setServerPort( int s ) {
+	serverPort=s;
+    }
+    
     /**
      * Get the remote user
      * @return the remote user

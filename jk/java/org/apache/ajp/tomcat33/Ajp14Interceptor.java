@@ -1,8 +1,4 @@
 /*
- * $Header$
- * $Revision$
- * $Date$
- *
  * ====================================================================
  *
  * The Apache Software License, Version 1.1
@@ -73,8 +69,9 @@ import org.apache.tomcat.modules.server.*;
 import org.apache.tomcat.core.*;
 
 import org.apache.tomcat.util.net.*;
-import org.apache.tomcat.util.*;
+import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.log.*;
+import org.apache.tomcat.util.http.*;
 
 /** Note. PoolTcpConnector is a convenience base class used for
     TCP-based connectors in tomcat33. It allows all those modules
@@ -286,10 +283,120 @@ class Ajp14Request extends Request
     
     public Ajp14Request(Ajp14 ajp14, AjpRequest ajpReq) 
     {
+	headers = ajpReq.getHeaders();
+	methodMB=ajpReq.getMethod();
+	protoMB=ajpReq.getProtocol();
+	uriMB = ajpReq.getRequestURI();
+	queryMB = ajpReq.getQueryString();
+	remoteAddrMB = ajpReq.getRemoteAddr();
+	remoteHostMB = ajpReq.getRemoteHost();
+	serverNameMB = ajpReq.getServerName();
+
+	// XXX sync cookies 
+	scookies = new Cookies( headers );
+	urlDecoder=new UDecoder();
+
+	// XXX sync headers
+	
+	params.setQuery( queryMB );
+	params.setURLDecoder( urlDecoder );
+	params.setHeaders( headers );
+	initRequest(); 	
+
         this.ajp14=ajp14;
 	this.ajpReq=ajpReq;
     }
 
+    // -------------------- Wrappers for changed method names, and to use the buffers
+    // XXX Move AjpRequest into util !!! ( it's just a stuct with some MessageBytes )
+
+    public int getServerPort() {
+        return ajpReq.getServerPort();
+    }
+
+    public void setServerPort(int i ) {
+	ajpReq.setServerPort( i );
+    }
+
+    public  void setRemoteUser( String s ) {
+	super.setRemoteUser(s);
+	ajpReq.getRemoteUser().setString(s);
+    }
+
+    public String getRemoteUser() {
+	String s=ajpReq.getRemoteUser().toString();
+	if( s == null )
+	    s=super.getRemoteUser();
+	return s;
+    }
+
+    public String getAuthType() {
+	return ajpReq.getAuthType().toString();
+    }
+    
+    public void setAuthType(String s ) {
+	ajpReq.getAuthType().setString(s);
+    }
+
+    public String getJvmRoute() {
+	return ajpReq.getJvmRoute().toString();
+    }
+    
+    public void setJvmRoute(String s ) {
+	ajpReq.getJvmRoute().setString(s);
+    }
+
+    // XXX scheme
+    
+    public boolean isSecure() {
+	return ajpReq.getSecure();
+    }
+    
+    public int getContentLength() {
+        int i=ajpReq.getContentLength();
+	if( i >= 0 ) return i;
+	i= super.getContentLength();
+	return i;
+    }
+
+    public void setContentLength( int i ) {
+	super.setContentLength(i); // XXX sync
+    }
+
+    // -------------------- Attributes --------------------
+    
+    public void setAttribute(String name, Object value) {
+	ajpReq.setAttribute( name, value );
+    }
+
+    public Object getAttribute(String name) {
+        if (name == null) {
+            return null;
+        }
+
+        return ajpReq.getAttribute( name );
+    }
+
+    // XXX broken
+//     public Iterator getAttributeNames() {
+//         return attributes.keySet().iterator();
+//     }
+
+
+    // --------------------
+
+    public void recycle() {
+	super.recycle();
+	ajpReq.recycle();
+	if( ajp14!=null) ajp14.recycle();
+    }
+
+    public String dumpRequest() {
+	return ajpReq.toString();
+    }
+    
+    // -------------------- 
+    
     // XXX This should go away if we introduce an InputBuffer.
     // We almost have it as result of encoding fixes, but for now
     // just keep this here, doesn't hurt too much.
@@ -310,11 +417,6 @@ class Ajp14Request extends Request
 	return rd;
     }
     
-    public void recycle() 
-    {
-        super.recycle();
-	if( ajp14!=null) ajp14.recycle();
-    }
 }
 
 class Ajp14Response extends Response 
