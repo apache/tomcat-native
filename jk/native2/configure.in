@@ -78,6 +78,7 @@ AC_REVISION($Id$)dnl
 AC_PREREQ(2.13)
 AC_INIT(common/jk_config.c)
 AC_CONFIG_AUX_DIR(scripts/build/unix)
+AC_CANONICAL_SYSTEM
 
 dnl package and version. (synchronization with common/jk_version.h ?)
 PACKAGE=mod_jk2
