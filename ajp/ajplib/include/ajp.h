@@ -261,7 +261,7 @@ apr_status_t ajp_msg_get_string(ajp_msg_t *msg, char **rvalue);
  * @return          APR_SUCCESS or error
  */
 apr_status_t ajp_msg_get_bytes(ajp_msg_t *msg, apr_byte_t **rvalue,
-                               apr_size_t *rvalueLen);
+                               apr_size_t *rvalue_len);
 
 /**
  * Create an AJP Message from pool

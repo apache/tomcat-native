@@ -262,7 +262,7 @@ apr_status_t ajp_msg_append_cvt_string(ajp_msg_t *msg, const char *value,
     ajp_msg_append_uint16(msg, (apr_uint16_t)len);
 
     /* We checked for space !!  */
-    strncpy((char *)msg->buf + msg->len, value, len + 1); /* including \0 */
+    memcpy(msg->buf + msg->len, value, len + 1); /* including \0 */
 
     if (convert)   /* convert from EBCDIC if needed */
         ajp_xlate_to_ascii((char *)msg->buf + msg->len, len + 1);
@@ -322,7 +322,7 @@ apr_status_t ajp_msg_append_bytes(ajp_msg_t *msg, const apr_byte_t *value,
     }
 
     /* We checked for space !!  */
-    memcpy((char *)msg->buf + msg->len, value, valuelen);
+    memcpy(msg->buf + msg->len, value, valuelen);
     msg->len += valuelen;
 
     return APR_SUCCESS;
@@ -474,13 +474,14 @@ apr_status_t ajp_msg_get_string(ajp_msg_t *msg, char **rvalue)
  * @return          APR_SUCCESS or error
  */
 apr_status_t ajp_msg_get_bytes(ajp_msg_t *msg, apr_byte_t **rvalue,
-                               apr_size_t *rvalueLen)
+                               apr_size_t *rvalue_len)
 {
     apr_uint16_t size;
     apr_size_t   start;
     apr_status_t status;
 
     status = ajp_msg_get_uint16(msg, &size);
+    /* save the current position */
     start = msg->pos;
 
     if ((status != APR_SUCCESS) || (size + start > AJP_MSG_BUFFER_SZ)) {
@@ -489,11 +490,10 @@ apr_status_t ajp_msg_get_bytes(ajp_msg_t *msg, apr_byte_t **rvalue,
                       msg->pos, msg->len);
         return AJP_EOVERFLOW;
     }
-
     msg->pos += (apr_size_t)size;   /* only bytes, no trailer */
 
-    *rvalue    = (apr_byte_t *)(msg->buf + start);
-    *rvalueLen = size;
+    *rvalue     = msg->buf + start;
+    *rvalue_len = size;
 
     return APR_SUCCESS;
 }
@@ -510,7 +510,7 @@ apr_status_t ajp_msg_create(apr_pool_t *pool, ajp_msg_t **rmsg)
 {
     ajp_msg_t *msg = (ajp_msg_t *)apr_pcalloc(pool, sizeof(ajp_msg_t));
 
-    if (! msg) {
+    if (!msg) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_msg_create(): can't allocate AJP message memory");
         return APR_ENOPOOL;
@@ -519,7 +519,13 @@ apr_status_t ajp_msg_create(apr_pool_t *pool, ajp_msg_t **rmsg)
     msg->server_side = 0;
 
     msg->buf = (apr_byte_t *)apr_palloc(pool, AJP_MSG_BUFFER_SZ);
-
+    
+    /* XXX: This should never happen
+     * In case if the OS cannont allocate 8K of data
+     * we are in serious trouble
+     * No need to check the alloc return value, cause the
+     * core dump is probably the best solution anyhow.
+     */
     if (msg->buf == NULL) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, NULL,
                       "ajp_msg_create(): can't allocate AJP message memory");
