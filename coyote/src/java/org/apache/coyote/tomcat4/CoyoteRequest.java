@@ -1262,7 +1262,7 @@ public class CoyoteRequest
      * @param values Corresponding values for this request parameter
      */
     public void addParameter(String name, String values[]) {
-        // Not used
+        coyoteRequest.getParameters().addParameterValues(name, values);
     }
 
 

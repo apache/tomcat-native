@@ -538,7 +538,9 @@ public class CoyoteRequest
      * Return the Host within which this Request is being processed.
      */
     public Host getHost() {
-        return (Host)getContext().getParent();
+        if (getContext() == null)
+            return null;
+        return (Host) getContext().getParent();
         //return ((Host) mappingData.host);
     }
 
@@ -1521,7 +1523,7 @@ public class CoyoteRequest
      * @param values Corresponding values for this request parameter
      */
     public void addParameter(String name, String values[]) {
-        // Not used
+        coyoteRequest.getParameters().addParameterValues(name, values);
     }
 
 
