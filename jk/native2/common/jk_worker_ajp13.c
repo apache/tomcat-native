@@ -160,6 +160,8 @@ jk2_worker_ajp13_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         ajp13->level=atoi( value );
     } else if( strcmp( name, "channel" )==0 ) {
         ajp13->channelName=value;
+    } else if( strcmp( name, "max_connections" )==0 ) {
+        ajp13->maxEndpoints=atoi(value);
     } else {
         return JK_ERR;
     }
@@ -585,6 +587,21 @@ jk2_worker_ajp13_getEndpoint(jk_env_t *env,
         ajp13->cs->lock( env, ajp13->cs );
 
     {
+        if (ajp13->maxEndpoints && 
+            ajp13->maxEndpoints <= ajp13->endpointMap->size(env, ajp13->endpointMap)) {
+            /* The maximum number of connections is reached */
+            ajp13->in_max_epcount = JK_TRUE;
+            if( ajp13->cs != NULL ) 
+                ajp13->cs->unLock( env, ajp13->cs );
+            if( ajp13->mbean->debug > 0 )
+                env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+                              "ajp13.getEndpoint(): maximum %d endpoints for %s reached\n",
+                              ajp13->maxEndpoints, 
+                              ajp13->mbean->name);
+            return JK_ERR;
+        }
+        ajp13->in_max_epcount = JK_FALSE;
+
         jkb=env->createBean2( env, ajp13->mbean->pool,  "endpoint", NULL );
         if( jkb==NULL ) {
             if( ajp13->cs != NULL ) 
