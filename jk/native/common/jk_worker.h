@@ -65,12 +65,14 @@
 #include "jk_logger.h"
 #include "jk_service.h"
 #include "jk_map.h"
+#include "jk_uri_worker_map.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 int wc_open(jk_map_t *init_data,
+			jk_uri_worker_map_t *uw,
             jk_logger_t *l);
 
 void wc_close(jk_logger_t *l);
