@@ -101,35 +101,18 @@ jk_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
     jk_worker_t *p = _this;
     jk_worker_t *aw;
     char * secret_key;
-    int proto=AJP14_PROTO;
     char *channelType;
     
     aw = _this;
-    secret_key = jk_map_getStrProp( env, props,
-                                    "worker", aw->name, "secretkey", NULL );
-
+    _this->secret = jk_map_getStrProp( env, props,
+                                       "worker", aw->name, "secretkey", NULL );
+    _this->secret= _this->pool->pstrdup(env, _this->pool, _this->secret);
+    
     channelType = jk_map_getStrProp( env, props,
                                      "worker", aw->name, "channel", "socket" );
 
-    if ((!secret_key) || (!strlen(secret_key))) {
-        proto=AJP13_PROTO;
-        aw->proto= AJP13_PROTO;
-    }
-    
-    if (proto == AJP13_PROTO) {
-	port = AJP13_DEF_PORT;
-	host = AJP13_DEF_HOST;
-    } else if (proto == AJP14_PROTO) {
-	port = AJP14_DEF_PORT;
-	host = AJP14_DEF_HOST;
-    } else {
-	env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                 "ajp14.validate() unknown protocol %d\n",proto);
-	return JK_FALSE;
-    } 
     if( _this->channel == NULL ) {
 	/* Create a default channel */
-
 	_this->channel=env->getInstance(env, _this->pool,"channel",
                                         channelType );
 
@@ -141,7 +124,6 @@ jk_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
     }
     
     err=_this->channel->init( env, _this->channel, props, p->name, _this);
-
     if( err != JK_TRUE ) {
 	env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp14.validate(): channel init failed\n");
@@ -149,8 +131,8 @@ jk_worker_ajp14_validate(jk_env_t *env, jk_worker_t *_this,
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "ajp14.validate() %s protocol=%s\n", _this->name,
-                  ((_this->secret==NULL) ? "ajp13" : "ajp14"));
+                  "ajp14.validate() %s %s\n", _this->name,
+                  _this->channel->name);
     
     return JK_TRUE;
 }
@@ -213,6 +195,11 @@ static int jk_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
     return err;
 }
 
+/** There is no point of trying multiple times - each channel may
+    have built-in recovery mechanisms
+*/
+#define JK_RETRIES 2
+
 /** First message in a stream-based connection. If the first send
     fails, try to reconnect.
 */
@@ -231,7 +218,7 @@ jk_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
      * XXX JK_RETRIES could be replaced by the number of workers in
      * a load-balancing configuration 
      */
-    for(attempt = 0 ; attempt < worker->connect_retry_attempts ;attempt++) {
+    for(attempt = 0 ; attempt < JK_RETRIES ;attempt++) {
         jk_channel_t *channel= worker->channel;
 
         /* e->request->dump(env, e->request, "Before sending "); */
@@ -387,7 +374,7 @@ jk_worker_ajp14_service1(jk_env_t *env, jk_worker_t *w,
     /* 
      * We get here initial request (in reqmsg)
      */
-    err=jk_serialize_request13(env, e->request, s);
+    err=jk_serialize_request13(env, e->request, s, e);
     if (err!=JK_TRUE) {
 	s->is_recoverable_error = JK_FALSE;                
 	env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -497,7 +484,6 @@ jk_worker_ajp14_getEndpoint(jk_env_t *env,
     e->cPool=endpointPool->create(env, endpointPool, HUGE_POOL_SIZE );
 
     e->worker = _this;
-    e->proto = _this->proto;
     e->channelData = NULL;
     
     *eP = e;
@@ -531,22 +517,7 @@ jk_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
 {
     jk_endpoint_t *e;
     int  rc;
-    char *secret_key;
-    int proto=AJP14_PROTO;
     int cache_sz;
-
-    secret_key = jk_map_getStrProp( env, props,
-                                    "worker", _this->name, "secretkey", NULL );
-    
-    if( secret_key==NULL ) {
-        proto=AJP13_PROTO;
-        _this->proto= AJP13_PROTO;
-        _this->secret=NULL;
-    } else {
-        /* Set Secret Key (used at logon time) */	
-        _this->secret = _this->pool->pstrdup(env, _this->pool, secret_key);
-    }
-
 
     /* start the connection cache */
     cache_sz=jk_map_getIntProp(env, props,
@@ -566,10 +537,6 @@ jk_worker_ajp14_init(jk_env_t *env, jk_worker_t *_this,
     } else {
         _this->endpointCache=NULL;
     }
-
-    /* Set WebServerName (used at logon time) */
-    if( we->server_name == NULL )
-        we->server_name = _this->pool->pstrdup(env, we->pool,we->server_name);
 
     if (_this->secret == NULL) {
         /* No extra initialization for AJP13 */
@@ -617,9 +584,9 @@ jk_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *_this)
                   "ajp14.destroy()\n");
 
     if( _this->endpointCache != NULL ) {
-        
-        for( i=0; i< _this->endpointCache->ep_cache_sz; i++ ) {
-            jk_endpoint_t *e;
+        jk_endpoint_t *e;
+
+        while( _this->endpointCache->count > 0 ) {
             
             e= _this->endpointCache->get( env, _this->endpointCache );
             
@@ -656,10 +623,7 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     w->pool = pool;
     w->name = NULL;
     
-    w->proto= AJP14_PROTO;
-
     w->endpointCache= NULL;
-    w->connect_retry_attempts= AJP_DEF_RETRY_ATTEMPTS;
 
     w->channel= NULL;
     w->secret= NULL;
