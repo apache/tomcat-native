@@ -250,8 +250,8 @@ static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
         
         /* XXX or apr_ctime ? */
         apr_rfc822_date( rfctime, time );
-        fmt1=apr_psprintf( aprPool, "[%s] [%s:%d] %s", rfctime, file, line, fmt );
-        buf=apr_pvsprintf( aprPool, fmt, args );
+        fmt1=apr_psprintf( aprPool, "[%s] [%s:%d] %s", rfctime, f, line, fmt );
+        buf=apr_pvsprintf( aprPool, fmt1, args );
 
         l->log(env, l, level, buf);
         
