@@ -56,7 +56,8 @@
  * ========================================================================= */
 
 /**
- * Channel using 'plain' TCP sockets. Based on jk_sockbuf.
+ * Channel using 'plain' TCP sockets. Based on jk_sockbuf. Will be replaced by
+ * an APR-based mechanism.
  * 
  * Properties:
  *  - host
@@ -73,6 +74,28 @@
 #include "jk_channel.h"
 #include "jk_global.h"
 
+#include <string.h>
+
+#ifndef WIN32
+	#define closesocket			close
+#endif
+
+/** Information specific for the socket channel
+ */
+struct jk_channel_socket_private {
+    int ndelay;
+    struct sockaddr_in addr;    
+    char *host;
+    short port;
+};
+
+/** Informations for each connection
+ */
+typedef struct jk_channel_socket_data {
+    int sock;
+} jk_channel_socket_data_t;
+
+typedef struct jk_channel_socket_private jk_channel_socket_private_t;
 
 /*
   We use the _privateInt field directly. Long term we can define our own
@@ -84,6 +107,230 @@
 
 int JK_METHOD jk_channel_socket_factory(jk_env_t *env, void **result,
 					char *type, char *name);
+static int jk_channel_socket_resolve(char *host, short port,
+				     struct sockaddr_in *rc);
+
+static int jk_channel_socket_getProperty(jk_channel_t *_this, 
+					 char *name, char **value)
+{
+    return JK_FALSE;
+}
+
+static int jk_channel_socket_setProperty(jk_channel_t *_this, 
+					 char *name, char *value)
+{
+    jk_channel_socket_private_t *socketInfo=
+	(jk_channel_socket_private_t *)(_this->_privatePtr);
+
+    if( strcmp( "host", name ) != 0 ) {
+	socketInfo->host=value;
+    } else if( strcmp( "defaultPort", name ) != 0 ) {
+    } else if( strcmp( "port", name ) != 0 ) {
+    } else {
+	return JK_FALSE;
+    }
+    return JK_TRUE;
+}
+
+/** resolve the host IP ( jk_resolve ) and initialize the channel.
+ */
+static int jk_channel_socket_init(jk_channel_t *_this, 
+				  jk_map_t *props,
+				  char *worker_name, 
+				  jk_worker_t *worker, 
+				  jk_logger_t *l )
+{
+    int err=jk_log(l, JK_LOG_DEBUG, "Into jk_channel_socket_init\n");
+    jk_channel_socket_private_t *socketInfo=
+	(jk_channel_socket_private_t *)(_this->_privatePtr);
+
+    char *host=socketInfo->host;
+    short port=socketInfo->port;
+    struct sockaddr_in *rc=&socketInfo->addr;
+
+    port = jk_get_worker_port(props, worker_name, port);
+    host = jk_get_worker_host(props, worker_name, host);
+
+    _this->worker=worker;
+    _this->logger=l;
+    _this->properties=props;
+    
+    err=jk_channel_socket_resolve( host, port, rc );
+    if( err!= JK_TRUE ) {
+	jk_log(l, JK_LOG_ERROR, "jk_channel_socket_init: "
+	       "can't resolve %s:%d errno=%d\n", host, port, errno );
+    }
+    jk_log(l, JK_LOG_DEBUG, "jk_channel_socket_init: ok "
+	   " %s:%d\n", host, port );
+
+    return err;
+}
+
+/** private: resolve the address on init
+ */
+static int jk_channel_socket_resolve(char *host, short port,
+				     struct sockaddr_in *rc)
+{
+    int x;
+    u_long laddr;
+    
+    rc->sin_port   = htons((short)port);
+    rc->sin_family = AF_INET;
+
+    /* Check if we only have digits in the string */
+    for(x = 0 ; '\0' != host[x] ; x++) {
+        if(!isdigit(host[x]) && host[x] != '.') {
+            break;
+        }
+    }
+
+    if(host[x] != '\0') {
+        /* If we found also characters we use gethostbyname()*/
+        struct hostent *hoste = gethostbyname(host);
+        if(!hoste) {
+            return JK_FALSE;
+        }
+
+        laddr = ((struct in_addr *)hoste->h_addr_list[0])->s_addr;
+    } else {
+        /* If we found only digits we use inet_addr() */
+        laddr = inet_addr(host);        
+    }
+    memcpy(&(rc->sin_addr), &laddr , sizeof(laddr));
+
+    return JK_TRUE;
+}
+
+/** connect to Tomcat (jk_open_socket)
+ */
+static int jk_channel_socket_open(jk_channel_t *_this, jk_endpoint_t *endpoint)
+{
+    jk_logger_t *l=_this->logger;
+    int err=jk_log(l, JK_LOG_DEBUG, "Into jk_channel_socket_open\n");
+    jk_channel_socket_private_t *socketInfo=
+	(jk_channel_socket_private_t *)(_this->_privatePtr);
+
+    struct sockaddr_in *addr=&socketInfo->addr;
+    int ndelay=socketInfo->ndelay;
+
+    int sock;
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if(sock > -1) {
+        int ret;
+        /* Tries to connect to JServ (continues trying while error is EINTR) */
+        do {
+            jk_log(l, JK_LOG_DEBUG, "jk_open_socket, try to connect socket = %d\n", sock);
+            ret = connect(sock,
+                          (struct sockaddr *)addr,
+                          sizeof(struct sockaddr_in));
+#ifdef WIN32
+            if(SOCKET_ERROR == ret) { 
+                errno = WSAGetLastError() - WSABASEERR;
+            }
+#endif /* WIN32 */
+            jk_log(l, JK_LOG_DEBUG, "jk_open_socket, after connect ret = %d\n", ret);
+        } while (-1 == ret && EINTR == errno);
+
+        /* Check if we connected */
+        if(0 == ret) {
+            if(ndelay) {
+                int set = 1;
+
+                jk_log(l, JK_LOG_DEBUG, "jk_open_socket, set TCP_NODELAY to on\n");
+                setsockopt(sock, 
+                           IPPROTO_TCP, 
+                           TCP_NODELAY, 
+                           (char *)&set, 
+                           sizeof(set));
+            }   
+
+            jk_log(l, JK_LOG_DEBUG, "jk_open_socket, return, sd = %d\n", sock);
+	    {
+		jk_channel_socket_data_t *sd=endpoint->channelData;
+		if( sd==NULL ) {
+		    sd=(jk_channel_socket_data_t *)
+			malloc( sizeof( jk_channel_socket_data_t ));
+		    endpoint->channelData=sd;
+		}
+		sd->sock=sock;
+	    }
+            return JK_TRUE;
+        }   
+        jk_close_socket(sock);
+    } else {
+#ifdef WIN32
+        errno = WSAGetLastError() - WSABASEERR;
+#endif /* WIN32 */
+    }    
+
+    jk_log(l, JK_LOG_ERROR, "jk_open_socket, connect() failed errno = %d %s\n",
+	   errno, strerror( errno ) ); 
+
+    return -1;
+}
+
+
+/** close the socket  ( was: jk_close_socket )
+*/
+int jk_channel_socket_close(jk_channel_t *_this, jk_endpoint_t *endpoint)
+{
+    int sd;
+    jk_channel_socket_data_t *chD=endpoint->channelData;
+    if( chD==NULL ) 
+	return JK_FALSE;
+    sd=chD->sock;
+
+#ifdef WIN32
+    if(INVALID_SOCKET  != sd) {
+        return closesocket(sd) ? JK_FALSE : JK_TRUE;; 
+    }
+#else 
+    if(-1 != sd) {
+        return close(sd);
+    }
+#endif
+    return JK_FALSE;
+}
+
+/** send a long message
+ * @param sd  opened socket.
+ * @param b   buffer containing the data.
+ * @param len length to send.
+ * @return    -2: send returned 0 ? what this that ?
+ *            -3: send failed.
+ *            >0: total size send.
+ * @bug       this fails on Unixes if len is too big for the underlying
+ *             protocol.
+ * @was: jk_tcp_socket_sendfull
+ */
+static int jk_channel_socket_send(jk_channel_t *_this,
+				  jk_endpoint_t *endpoint,
+				  char *b, int len) 
+{
+    int sd;
+    int  sent=0;
+
+    jk_channel_socket_data_t *chD=endpoint->channelData;
+    if( chD==NULL ) 
+	return JK_FALSE;
+    sd=chD->sock;
+
+    while(sent < len) {
+        int this_time = send(sd, (char *)b + sent , len - sent,  0);
+	    
+	if(0 == this_time) {
+	    return -2;
+	}
+	if(this_time < 0) {
+	    return -3;
+	}
+	sent += this_time;
+    }
+    /*     return sent; */
+    return JK_TRUE;
+}
+
 
 /** receive len bytes.
  * @param sd  opened socket.
@@ -94,49 +341,76 @@ int JK_METHOD jk_channel_socket_factory(jk_env_t *env, void **result,
  * Was: tcp_socket_recvfull
  */
 static int jk_channel_socket_recv( jk_channel_t *_this,
-				   jk_msg_buf_t *mb ) 
+				   jk_endpoint_t *endpoint,
+				   char *b, int len ) 
 {
-  int sd=_this->_privateInt;
-  unsigned char *b=jk_b_get_buff( mb );
-  int len=jk_b_get_len( mb );
+    jk_channel_socket_data_t *chD=endpoint->channelData;
+    int sd;
+    int rdlen;
 
-  int rdlen = 0;
-
-  while(rdlen < len) {
-    int this_time = recv(sd, 
-			 (char *)b + rdlen, 
-			 len - rdlen, 
-			 0);	
-    if(-1 == this_time) {
+    if( chD==NULL ) 
+	return JK_FALSE;
+    sd=chD->sock;
+    rdlen = 0;
+    
+    while(rdlen < len) {
+	int this_time = recv(sd, 
+			     (char *)b + rdlen, 
+			     len - rdlen, 
+			     0);	
+	if(-1 == this_time) {
 #ifdef WIN32
-      if(SOCKET_ERROR == this_time) { 
-	errno = WSAGetLastError() - WSABASEERR;
-      }
+	    if(SOCKET_ERROR == this_time) { 
+		errno = WSAGetLastError() - WSABASEERR;
+	    }
 #endif /* WIN32 */
-      
-      if(EAGAIN == errno) {
-	continue;
-      } 
-      return -1;
+	    
+	    if(EAGAIN == errno) {
+		continue;
+	    } 
+	    return -1;
+	}
+	if(0 == this_time) {
+	    return -1; 
+	}
+	rdlen += this_time;
     }
-    if(0 == this_time) {
-      return -1; 
-    }
-    rdlen += this_time;
-  }
-  return rdlen;
+    return rdlen; 
 }
+
+
 
 int JK_METHOD jk_channel_socket_factory(jk_env_t *env, void **result,
 					char *type, char *name)
 {
-  jk_channel_t *channel;
+    jk_channel_t *channel;
+    
+    if( strcmp( "channel", type ) != 0 ) {
+	/* Wrong type  XXX throw */
+	*result=NULL;
+	return JK_FALSE;
+    }
+    channel=(jk_channel_t *)malloc( sizeof( jk_channel_t));
+    channel->_privatePtr= (jk_channel_socket_private_t *)
+	malloc( sizeof( jk_channel_socket_private_t));
 
-  channel=(jk_channel_t *)malloc( sizeof( jk_channel_t));
-  /* channel->send= &jk_channel_socket_send; */
+    channel->recv= &jk_channel_socket_recv; 
+    channel->send= &jk_channel_socket_send; 
+    channel->init= &jk_channel_socket_init; 
+    channel->open= &jk_channel_socket_open; 
+    channel->close= &jk_channel_socket_close; 
+    channel->getProperty= &jk_channel_socket_getProperty; 
+    channel->setProperty= &jk_channel_socket_setProperty; 
 
+    channel->supportedProperties=( char ** )malloc( 4 * sizeof( char * ));
+    channel->supportedProperties[0]="host";
+    channel->supportedProperties[1]="port";
+    channel->supportedProperties[2]="defaultPort";
+    channel->supportedProperties[3]="\0";
 
-  *result= & channel;
-  
-  return JK_TRUE;
+    channel->name="file";
+    
+    *result= channel;
+    
+    return JK_TRUE;
 }
