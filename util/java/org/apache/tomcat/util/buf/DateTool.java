@@ -141,8 +141,12 @@ public class DateTool {
     // Called from MessageBytes.setTime
     /** 
      */
-    public static synchronized String format1123( Date d ) {
-	return format1123(d, rfc1123Format);
+    public static String format1123( Date d ) {
+	String dstr=null;
+	synchronized(rfc1123Format) {
+	    dstr = format1123(d, rfc1123Format);
+	}
+	return dstr;
     } 
 
     public static String format1123( Date d,DateFormat df ) {
