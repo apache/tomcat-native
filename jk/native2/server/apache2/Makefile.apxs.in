@@ -1,4 +1,6 @@
 ## configure should make the Makefile out of this file.
+prefix=@prefix@
+exec_prefix=@prefix@
 
 APXS=@APXS2@
 OS=@OS@
@@ -6,30 +8,33 @@ JAVA_HOME=@JAVA_HOME@
 JK_DIR := ../..
 APXS_LDFLAGS=@APXS2_LDFLAGS@
 APXS_CFLAGS=@APXS2_CFLAGS@
-COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
-
-
-JK=${JK_DIR}/common/
-JKINC=${JK_DIR}/include/
-JK_INCL=-DUSE_APACHE_MD5 -I ${JK} -I ${JKINC} -DHAS_APR @HAVE_JNI@ @HAS_PCRE@
 
 ifneq ($(strip $(JAVA_HOME)),)
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 endif
 
-APACHE2_OBJECTS=jk_logger_apache2.c jk_map_aprtable.c jk_service_apache2.c
+INCLUDES= -I${JK_DIR}/include \
+          ${JAVA_INCL}
 
-## Must include the jni stuff 
+JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 @HAVE_JNI@ @HAS_PCRE@
+
+COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
+JNI_C_FILES := $(wildcard ${JK_DIR}/jni/*.c )
+A2_C_FILES := $(wildcard *.c )
 
 all: mod_jk2.la
 
 mod_jk2.la: 
-	$(APXS) -c -o $@ -Wc,"${JK_INCL}" "${JAVA_INCL}" mod_jk2.c ${APACHE2_OBJECTS} ${COMMON_C_FILES}
+	$(APXS) -c -o $@ -Wc,"${INCLUDES} ${JK_CFLAGS}" ${JAVA_LIB} @PCRE_LIBS@ \
+		${A2_C_FILES} ${COMMON_C_FILES} ${JNI_C_FILES}
 
 install: mod_jk2.la
 	$(APXS) -i mod_jk2.la
  
 clean:
-	rm -f *.o *.so *.lo *.la *.slo
-	rm -rf .libs
+	rm -f *.o *.so *.lo *.la *.slo ${JK_DIR}/common/*.o ${JK_DIR}/common/*.so \
+		${JK_DIR}/common/*.lo ${JK_DIR}/common/*.la ${JK_DIR}/common/*.slo \
+		${JK_DIR}/jni/*.o ${JK_DIR}/jni/*.so ${JK_DIR}/jni/*.lo \
+		${JK_DIR}/jni/*.la ${JK_DIR}/jni/*.slo
+	rm -rf .libs ${JK_DIR}/common/.libs ${JK_DIR}/jni/.libs
