@@ -574,7 +574,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	// Look for first char 
 	int srcEnd = srcOff + srcLen;
         
-	for( int i=myOff+start; i< end - srcLen ; i++ ) {
+	for( int i=myOff+start; i <= (end - srcLen); i++ ) {
 	    if( buff[i] != first ) continue;
 	    // found first char, now look for a match
             int myPos=i+1;
