@@ -15,11 +15,14 @@ JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_thre
 OEXT=.c
 include ../common/list.mk
 
-all: mod_jk.so
+all: mod_jk.la
 
-mod_jk.so: 
+mod_jk.la: 
 	$(APXS)  -c -o $@ -Wc,"${APXSCFLAGS} ${JK_INCL}" "${JAVA_INCL}" "${APXSLDFLAGS}" mod_jk.c ${APACHE_OBJECTS} 
 
+install: mod_jk.la
+	$(APXS) -i mod_jk.la
+ 
 clean:
 	rm -f *.o *.so *.lo *.la *.slo
 	rm -rf .libs
