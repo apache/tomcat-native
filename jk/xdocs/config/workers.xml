@@ -46,8 +46,6 @@ There are probably more reasons for having multiple workers but I guess that thi
 Tomcat workers are defined in a properties file dubbed <b>workers.properties</b> and this tutorial 
 explains how to work with it.
 </p>
-<p>The generic workers.properties directive is in the form:</p>
-<p><strong>worker.&lt;worker name&gt;.&lt;directive&gt;=&lt;value&gt;</strong></p>
 </section>
  
 <section name="Directives">
@@ -62,11 +60,13 @@ The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z
 </p>
 
 <subsection name="Defining workers">
+<p>The generic workers.properties directive is in the form:</p>
+<p><strong>worker.&lt;worker name&gt;.&lt;directive&gt;=&lt;value&gt;</strong></p>
 <p>Defining workers to the Tomcat web server plugin can be done using a properties file
 (a sample file named workers.properties is available in the conf/ directory).
 </p>
 <directives>
-<directive name="worker.list" required="true">
+<directive name="worker.list" default="ajp13" required="true">
 A comma separated list of workers names that the JK will use. When starting up,
 the web server plugin will instantiate the workers whose name appears in the
 worker.list property, these are also the workers to whom you can map requests. 
@@ -93,18 +93,20 @@ channel. For detailed description of the AJP13 protocol stack browse to
 
 <subsection name="Connection directives">
 <p>Connection directives defines the parameters needed to connect and maintain
-the connections pool of persisten connections between JK and remote Tomcat.
+the connections pool of persistent connections between JK and remote Tomcat.
 </p>
 <directives>
 
-<directive name="host" default="localhost" required="true">
+<directive name="host" default="localhost" required="false">
 Host name or IP address of the backend Tomcat instance. The remote Tomcat must
 support the ajp13 protocol stack. The host name can have a <b>port</b> number
-embedded separated by the colon (':') character. 
+embedded separated by the colon (':') character.
 </directive>
 
 <directive name="port" default="8009" required="false">
 Port number of the remote Tomcat instance listening for defined protocol requests.
+The default value depends on the worker type. For AJP13 workers the default port is
+<b>8009</b>, while for AJP14 type of worker that value is <b>8011</b>.
 </directive>
 
 <directive name="socket_timeout" default="0" required="false">
@@ -122,7 +124,7 @@ generally 120ms), and thus prevent the firewall to cut the connection.
 To enable keepalive set this property value to the number greater then <b>0</b>.
 <p>
 The problem with Firewall cutting inactive connections is that sometimes, neither webserver or tomcat
-have informations about the cut and couldn't handle it.
+have information about the cut and couldn't handle it.
 </p>
 </directive>
 
@@ -143,12 +145,17 @@ each retry after default an extra wait of 100ms will be inserted.
 </directive>
 
 <directive name="cachesize" default="1" required="false">
-Cachesize property is usefull when you're using JK in multithreaded 
-web servers such as Apache 2.0 (worker), IIS and Netscape. They will benefit the most by 
-setting this value to a higher level (such as the estimated average concurrent users for Tomcat).
-If cachesize is not set, the connection cache support is disabled.
-Cachesize determines the minimum number of open connections to backend Tomcat.
-<warn>Do not use cachesize with values higer then 1 on <b>prefork mpm</b> or <b>apache 1.3.x</b>!</warn>
+Cachesize defines the number of connections made to the AJP backend that
+are maintained as a connection pool.
+It does not limit the number of those connection. 
+<p>
+Cachesize property is useful when you're using JK in multi threaded 
+web servers such as Apache 2.0 (worker), IIS and Netscape. The cachesize property
+should reflect the number of threads per child process. The JK 1.2.8 will discover
+the number of threads per child process on Apache 2 web server with worker-mpm.
+For other web servers to will have to set that value manually.
+</p>
+<warn>Do not use cachesize with values higher then 1 on <b>prefork mpm</b> or <b>apache 1.3.x</b>!</warn>
 </directive>
 
 <directive name="cache_timeout" default="0" required="false">
@@ -187,7 +194,7 @@ See worker's <b>type</b> directive. The workers that
 are member of load balancer must not appear in the <b>worker.list</b> directive.
 </p>
 <p>Loadbalancer directives defines the parameters needed to create a workers that are
-connectiong to a remote cluster of backend Tomcat servers. Each cluster node has to
+connecting to a remote cluster of backend Tomcat servers. Each cluster node has to
 have a worker defined.
 </p>
 <p>
@@ -241,7 +248,7 @@ instances of Tomcat. By default sticky_session is set to True.
 </subsection>
 
 <subsection name="Advanced worker directives">
-
+<br />
 <directives>
 <directive name="connect_timeout" default="0" required="false">
 Connect timeout property told webserver to send a PING request on ajp13 connection after 
@@ -267,7 +274,7 @@ Disabled by default.
 Reply_timeout property told webserver to wait some time for reply to a forwarded request
 before considering the remote tomcat is dead and eventually switch to another tomcat in a cluster
 group. By default webserver will wait forever which could be an issue for you.
-The parameter is the number of milliseconds to wait for reply, so adjust it carrefully if you 
+The parameter is the number of milliseconds to wait for reply, so adjust it carefully if you 
 have long running servlets.
 <p>
 This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and works on all
@@ -336,7 +343,7 @@ The local worker will be check for requests without a session id (and with a ses
 the other worker will only be checked if a request with a session id of this worker comes in.
 </p>
 <p>
-Why do we need souch a complex behavior ?
+Why do we need such a complex behavior ?
 </p>
 <p>
 We need a graceful shut down of a node for maintenance. The balancer in front asks a special port on each 

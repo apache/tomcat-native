@@ -46,10 +46,10 @@ The Jakarta Tomcat module log level, can be debug, info, warn
 error or trace
 </p></attribute>
 <attribute name="JkLogStampFormat" required="false"><p>
-The Jakarta Tomcat Connector module <b>date</b> log format, follow strftime synthax
+The Jakarta Tomcat Connector module <b>date</b> log format, follow strftime syntax
 </p></attribute>
 <attribute name="JkRequestLogFormat" required="false"><p>
-Request log format string. See datailed description below.
+Request log format string. See detailed description below.
 </p></attribute>
 <attribute name="JkAutoAlias" required="false"><p>
 Automatically Alias webapp context directories into the Apache
@@ -75,7 +75,7 @@ Turns on SSL processing and information gathering by mod_jk
 </p></attribute>
 <attribute name="JkOptions" required="false"><p>
 Set one of more options to configure the mod_jk module. See below for
-deatails about this directive
+details about this directive
 </p></attribute>
 <attribute name="JkEnvVar" required="false"><p>
 Adds a name of environment variable that should be sent to servlet-engine
@@ -151,7 +151,7 @@ set the log level between :
 </p>
 
 <p>
-<b>JkLogStampFormat</b> will configure the date/time format found on mod_jk logfile. 
+<b>JkLogStampFormat</b> will configure the date/time format found on mod_jk log file. 
 Using the strftime() format string it's set by<br />
 default to <b>"[%a %b %d %H:%M:%S %Y]"</b>
 </p>
@@ -169,7 +169,7 @@ default to <b>"[%a %b %d %H:%M:%S %Y]"</b>
 <b>JkRequestLogFormat</b> will configure the format of mod_jk individual request logging. 
 Request logging is configured and enabled on a per virtual host basis. 
 To enable request logging for a virtual host just add a JkRequestLogFormat config. 
-The syntax of the format string is similiar to the Apache LogFormat command, 
+The syntax of the format string is similar to the Apache LogFormat command, 
 here is a list of the available request log format options:
 </p>
                        
@@ -357,8 +357,8 @@ example will block all .gif files.
 <source>
   # do not send requests ending with .gif to worker1
   JkUnMount /*.gif worker1
-  # The .gif files will not be mouted cause JkUnMount takes
-  # precedance over JkMount directive
+  # The .gif files will not be mounted cause JkUnMount takes
+  # precedence over JkMount directive
   JkMount /servlet/*.gif worker1
 </source>
 
@@ -397,12 +397,12 @@ host inside your httpd.conf
 </p>
 <p>
 <b>JkWorkerProperty</b> is a new directive available from JK 1.2.7
-version. It is a convinient method for seting directives that are
-usualy set insice <b>workers.propeties</b>file. The parameter for
+version. It is a convenient method for setting directives that are
+usually set inside <b>workers.propeties</b>file. The parameter for
 that directive is raw line from workers.properties file.
 </p>
 <source>
-  # Just like workers.properties but exach line is prefixed
+  # Just like workers.properties but exact line is prefixed
   # with JkWorkerProperty
 
   # Minimal jk configuration
