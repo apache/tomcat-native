@@ -608,7 +608,7 @@ public class Http11Processor implements Processor, ActionHook {
                 error = true;
                 break;
             } catch (Exception e) {
-                log.warn("Error parsing HTTP request", e);
+                log.debug("Error parsing HTTP request", e);
                 // 500 - Bad Request
                 response.setStatus(400);
                 error = true;
@@ -617,7 +617,14 @@ public class Http11Processor implements Processor, ActionHook {
             // Setting up filters, and parse some request headers
             thrA.setCurrentStage(threadPool, "prepareRequest");
             rp.setStage(org.apache.coyote.Constants.STAGE_PREPARE);
-            prepareRequest();
+            try {
+                prepareRequest();
+            } catch (Throwable t) {
+                log.debug("Error preparing request", t);
+                // 500 - Internal Server Error
+                response.setStatus(400);
+                error = true;
+            }
 
             if (maxKeepAliveRequests > 0 && --keepAliveLeft == 0)
                 keepAlive = false;
