@@ -361,7 +361,10 @@ final class CoyoteAdapter
                                        scookie.getValue().toString());
             cookie.setPath(scookie.getPath().toString());
             cookie.setVersion(scookie.getVersion());
-            cookie.setDomain(scookie.getDomain().toString());
+            String domain = scookie.getDomain().toString();
+            if (domain != null) {
+                cookie.setDomain(scookie.getDomain().toString());
+            }
             cookies[i] = cookie;
         }
 
