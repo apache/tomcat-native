@@ -260,9 +260,17 @@ public class HandlerRequest extends JkHandler
         int portInt=8009; // tcpCon.getPort();
         InetAddress address=null; // tcpCon.getAddress();
 
-        File f1=new File( wEnv.getJkHome() );
+        if( requiredSecret == null )
+            return;
         
-        File sf=new File( f1, "conf/ajp13.id");
+        File f1=new File( wEnv.getJkHome() );
+        File f2=new File( f1, "conf" );
+        if( ! f2.exists() ) {
+            log( "No conf dir for ajp13.id " + f2 );
+            return;
+        }
+        
+        File sf=new File( f2, "ajp13.id");
         
         if( dL > 0) d( "Using stop file: "+sf);
 
