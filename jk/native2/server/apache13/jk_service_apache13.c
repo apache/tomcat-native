@@ -483,17 +483,8 @@ static void jk2_service_apache13_afterRequest(jk_env_t *env, jk_ws_service_t *s 
     }
 }
 
-int jk2_service_apache13_factory(jk_env_t *env,
-                                 jk_pool_t *pool,
-                                 void **result,
-                                 char *type,
-                                 char *name)
+int jk2_service_apache13_init(jk_env_t *env, jk_ws_service_t *s)
 {
-    jk_ws_service_t *s = *result;
-    if( s==NULL ) {
-        s=(jk_ws_service_t *)pool->calloc(env, pool, sizeof(jk_ws_service_t));
-    }
-
     if(s==NULL ) {
         return JK_FALSE;
     }
@@ -504,7 +495,5 @@ int jk2_service_apache13_factory(jk_env_t *env,
     s->init   = jk2_init_ws_service;
     s->afterRequest     = jk2_service_apache13_afterRequest;
     
-    *result=(void *)s;
-
     return JK_TRUE;
 }

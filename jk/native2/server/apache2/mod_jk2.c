@@ -80,6 +80,7 @@
 #include "http_log.h"
 
 #include "util_script.h"
+
 /*
  * Jakarta (jk_) include files
  */
@@ -100,6 +101,9 @@
 
 module AP_MODULE_DECLARE_DATA jk2_module;
 
+/* In apache1.3 this is reset when the module is reloaded ( after
+ * config. No good way to discover if it's the first time or not.
+ */
 static jk_workerEnv_t *workerEnv;
 
 
@@ -144,26 +148,12 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
     server_rec *s = cmd->server;
     jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
         ap_get_module_config(s->module_config, &jk2_module);
-    
-    jk_workerEnv_t *workerEnv = serverEnv->workerEnv;
-    char *type=(char *)cmd->info;
     jk_env_t *env=workerEnv->globalEnv;
     int rc;
     
-    if( type==NULL || type[0]=='\0') {
-        /* Generic Jk2Set foo bar */
-        workerEnv->config->setPropertyString( env, workerEnv->config, name, value );
-    } else if( strcmp(type, "env")==0) {
-        workerEnv->envvars_in_use = JK_TRUE;
-        workerEnv->envvars->put(env, workerEnv->envvars,
-                                ap_pstrdup(cmd->pool,name),
-                                ap_pstrdup(cmd->pool,value),
-                                NULL);
-    } else if( strcmp(type, "mount")==0) {
-        if (name[0] !='/') return "Context must start with /";
-        workerEnv->mbean->setAttribute( env, workerEnv->mbean, name, value );
-    } else {
-        fprintf( stderr, "set2 error %s %s %s ", type, name, value );
+    rc=workerEnv->config->setPropertyString( env, workerEnv->config, name, value );
+    if( rc!=JK_TRUE ) {
+        fprintf( stderr, "mod_jk2: Unrecognized option %s %s\n", name, value);
     }
 
     return NULL;
@@ -208,38 +198,6 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
     return NULL;
 }
 
-/* XXX Move to docs.
-   Equivalence table:
-
-   JkWorkersFile == workerFile ( XXX make it a multi-value, add dir, reload )
-                               ( XXX Should it be 'jkPropertiesFile' - for additional props.)
-   
-   JkWorker == JkSet
-
-   JkAutoMount - was not implemented in 1.2, will be added in 2.1 in a better form
-
-   JkMount ==  ( the property name is the /uri, the value is the worker )
- 
-   JkMountCopy == root_apps_are_global ( XXX looking for a better name, mountCopy is very confusing )
-
-   JkLogFile == logFile
-
-   JkLogLevel == logLevel
-
-   JkLogStampFormat == logStampFormat
-
-   JkXXXIndicator == XxxIndicator
-
-   JkExtractSSL == extractSSL
-
-   JkOptions == Individual properties:
-                  forwardSslKeySize
-                  forwardUriCompat
-                  forwardUriCompatUnparsed
-                  forwardUriEscaped
-
-   JkEnvVar == env.NAME=DEFAULT_VALUE
-*/
 /* Command table.
  */
 static const command_rec jk2_cmds[] =
@@ -264,6 +222,7 @@ static void *jk2_create_dir_config(apr_pool_t *p, char *path)
     jk_uriEnv_t *newUri = workerEnv->globalEnv->createInstance( workerEnv->globalEnv,
                                                                 workerEnv->pool,
                                                                 "uri", path );
+    newUri->workerEnv=workerEnv;
     newUri->mbean->setAttribute( workerEnv->globalEnv, newUri->mbean, "path", path );
     return newUri;
 }
@@ -348,18 +307,18 @@ static void *jk2_create_config(apr_pool_t *p, server_rec *s)
     }
     if( s->is_virtual == 1 ) {
         /* Virtual host */
-        
-        
+        fprintf( stderr, "Create config for virtual host\n");
     } else {
         /* Default host */
-        
+        fprintf( stderr, "Create config for main host\n");        
     }
 
-    newUri=(jk_uriEnv_t *)apr_pcalloc(p, sizeof(jk_uriEnv_t));
-
-    newUri->workerEnv=workerEnv;
+   newUri = workerEnv->globalEnv->createInstance( workerEnv->globalEnv,
+                                                   workerEnv->pool,
+                                                   "uri", NULL );
+   newUri->workerEnv=workerEnv;
     
-    return newUri;
+   return newUri;
 }
 
 
@@ -389,9 +348,12 @@ static void jk2_child_init(apr_pool_t *pconf,
 {
     jk_uriEnv_t *serverEnv=(jk_uriEnv_t *)
         ap_get_module_config(s->module_config, &jk2_module);
-    jk_workerEnv_t *workerEnv = serverEnv->workerEnv;
+    jk_env_t *env;
+        
+    if( workerEnv==NULL )
+        workerEnv = serverEnv->workerEnv;
 
-    jk_env_t *env=workerEnv->globalEnv;
+    env=workerEnv->globalEnv;
 
     env->l->jkLog(env, env->l, JK_LOG_INFO, "mod_jk child init\n" );
     
