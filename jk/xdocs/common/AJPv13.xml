@@ -255,7 +255,12 @@ The web server can send the following messages to the servlet container:
   <tr>
     <td>8</td>
     <td>Ping</td>
-    <td>The web server asks the container to respond quickly with a Pong.</td>
+    <td>The web server asks the container to take control (secure login phase).</td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td>CPing</td>
+    <td>The web server asks the container to respond quickly with a CPong.</td>
   </tr>
 </table>
 
@@ -293,8 +298,8 @@ server:
   </tr>
   <tr>
     <td>9</td>
-    <td>Pong Reply</td>
-    <td>The reply to a PING request</td>
+    <td>CPong Reply</td>
+    <td>The reply to a CPing request</td>
   </tr>
 </table>
 </p>
