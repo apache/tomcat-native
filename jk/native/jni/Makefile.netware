@@ -4,14 +4,17 @@
 #
 
 # Edit the path below to point to the base of your Netscape includes.
+ifndef NS_HOME
 NS_HOME	= c:/projects/sdks/netscape
-
+endif
 # Edit the path below to point to the base of your NetWare Java SDK.
-JDK	= c:/projects/sdks/java-nw
-
+ifndef NW_JDK
+NW_JDK	= c:/projects/sdks/java-nw
+endif
 # Edit the path below to point to the base of your Novell NDK.
-# BASE	= /usr/prg/nlm
-BASE	= c:/novell
+ifndef NDKBASE
+NDKBASE	= c:/novell
+endif
 INSTDIR = /mnt/sys/novonyx/modules
 
 # Edit the vars below to change NLM target settings.
@@ -64,7 +67,7 @@ endif
 # CP	= cp -fv
 # if you want to mark the target as MTSAFE you will need a tool for
 # generating the xdc data for the linker; here's a minimal tool:
-# http://www.gknw.de/development/prgtools/mkxdc.zip
+# http://www.gknw.com/development/prgtools/mkxdc.zip
 MPKXDC	= mkxdc
 
 # Global flags for all compilers
@@ -94,19 +97,19 @@ ifeq ($(LIBARCH),LIBC)
 #	CFLAGS += -D__ANSIC__
 else
 	PRELUDE = $(SDK_CLIB)/imports/clibpre.gcc.o
-	CFLAGS += -include $(BASE)/nlmconv/genlm.h
+	CFLAGS += -include $(NDKBASE)/nlmconv/genlm.h
 endif
 endif
 
 LDLIBS	=
 
-NDK_ROOT = $(BASE)/ndk
+NDK_ROOT = $(NDKBASE)/ndk
 SDK_CLIB = $(NDK_ROOT)/nwsdk
 SDK_LIBC = $(NDK_ROOT)/libc
 JKCOMMON = ../common
 
 INCLUDES = -I$(NS_HOME)/include -I$(NS_HOME)/include/base
-INCLUDES += -I$(JKCOMMON) -I$(JDK)/include -I$(JDK)/include/netware 
+INCLUDES += -I$(JKCOMMON) -I$(NW_JDK)/include -I$(NW_JDK)/include/netware 
 
 ifeq ($(LIBARCH),LIBC)
 	INCLUDES += -I$(SDK_LIBC)/include -I$(SDK_LIBC)/include/nks
@@ -122,9 +125,9 @@ ifeq ($(MTSAFE),YES)
 	XDCDATA = $(OBJDIR)/$(TARGET).xdc
 endif
 
-ifeq ($(OSTYPE),linux)
+ifeq ($(findstring linux,$(OSTYPE)),linux)
 DL	= '
--include $(BASE)/nlmconv/ncpfs.inc
+#-include $(NDKBASE)/nlmconv/ncpfs.inc
 endif
 
 OBJS	= \
