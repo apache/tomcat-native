@@ -58,6 +58,7 @@
  */ 
 package org.apache.tomcat.util.net.jsse;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -309,7 +310,13 @@ public abstract class JSSESocketFactory
         InputStream istream = null;
         try {
             ks = KeyStore.getInstance(type);
-            istream = new FileInputStream(path);
+            File keyStoreFile = new File(path);
+            if (!keyStoreFile.isAbsolute()) {
+                keyStoreFile = new File(System.getProperty("catalina.base"),
+                                        path);
+            }
+            istream = new FileInputStream(keyStoreFile);
+
             ks.load(istream, pass.toCharArray());
             istream.close();
             istream = null;
