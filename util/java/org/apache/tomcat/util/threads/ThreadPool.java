@@ -1,7 +1,4 @@
 /*
- * $Header$
- * $Revision$
- * $Date$
  *
  * ====================================================================
  *
@@ -63,11 +60,9 @@
 
 package org.apache.tomcat.util.threads;
 
-import java.util.zip.*;
-import java.net.*;
 import java.util.*;
-import java.io.*;
-import org.apache.tomcat.util.log.*; 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * A thread pool that is trying to copy the apache process management.
@@ -75,6 +70,7 @@ import org.apache.tomcat.util.log.*;
  * @author Gal Shachor
  */
 public class ThreadPool  {
+    static Log log = LogFactory.getLog(ThreadPool.class);
 
     /*
      * Default values ...
@@ -130,10 +126,17 @@ public class ThreadPool  {
     
     static int debug=0;
 
+    /** The threads that are part of the pool.
+     * Key is Thread, value is the ControlRunnable
+     */
+    protected Hashtable threads=new Hashtable();
+
+    protected Vector listeners=new Vector();
+
     /**
      * Helper object for logging
      **/
-    Log loghelper = Log.getLog("tc/ThreadPool", "ThreadPool");
+    //Log loghelper = Log.getLog("tc/ThreadPool", "ThreadPool");
     
     public ThreadPool() {
         maxThreads      = MAX_THREADS;
@@ -155,6 +158,10 @@ public class ThreadPool  {
 
         openThreads(minSpareThreads);
         monitor = new MonitorRunnable(this);
+    }
+
+    public MonitorRunnable getMonitor() {
+        return monitor;
     }
 
     public void setMaxThreads(int maxThreads) {
@@ -181,6 +188,22 @@ public class ThreadPool  {
         return maxSpareThreads;
     }
 
+    public int getCurrentThreadCount() {
+        return currentThreadCount;
+    }
+
+    public int getCurrentThreadsBusy() {
+        return currentThreadsBusy;
+    }
+
+    public boolean isDaemon() {
+        return isDaemon;
+    }
+
+    public static int getDebug() {
+        return debug;
+    }
+
     /** The default is true - the created threads will be
      *  in daemon mode. If set to false, the control thread
      *  will not be daemon - and will keep the process alive.
@@ -192,7 +215,31 @@ public class ThreadPool  {
     public boolean getDaemon() {
         return isDaemon;
     }
-    
+
+    public void addThread( Thread t, ControlRunnable cr ) {
+        threads.put( t, cr );
+        for( int i=0; i<listeners.size(); i++ ) {
+            ThreadPoolListener tpl=(ThreadPoolListener)listeners.elementAt(i);
+            tpl.threadStart(this, t);
+        }
+    }
+
+    public void removeThread( Thread t ) {
+        threads.remove(t);
+        for( int i=0; i<listeners.size(); i++ ) {
+            ThreadPoolListener tpl=(ThreadPoolListener)listeners.elementAt(i);
+            tpl.threadEnd(this, t);
+        }
+    }
+
+    public void addThreadPoolListener( ThreadPoolListener tpl ) {
+        listeners.addElement( tpl );
+    }
+
+    public Enumeration getThreads(){
+        return threads.keys();
+    }
+
     //
     // You may wonder what you see here ... basically I am trying
     // to maintain a stack of threads. This way locality in time
@@ -225,7 +272,7 @@ public class ThreadPool  {
                     int toOpen = currentThreadCount + minSpareThreads;
                     openThreads(toOpen);
                 } else {
-		    logFull(loghelper, currentThreadCount, maxThreads);
+		    logFull(log, currentThreadCount, maxThreads);
                     // Wait for a thread to become idel.
                     while(currentThreadsBusy == currentThreadCount) {
                         try {
@@ -237,7 +284,7 @@ public class ThreadPool  {
 			// it'll never actually happen, since nowhere
 			// do we say pool.interrupt().
 			catch(InterruptedException e) {
-			    loghelper.log("Unexpected exception", e);
+			    log.error("Unexpected exception", e);
                         }
 
                         // Pool was stopped. Get away of the pool.
@@ -258,10 +305,10 @@ public class ThreadPool  {
     static boolean logfull=true;
     public static void logFull(Log loghelper, int currentThreadCount, int maxThreads) {
 	if( logfull ) {
-	    loghelper.log("All threads are busy, waiting. Please " +
-			  "increase maxThreads or check the servlet" +
-			  " status" + currentThreadCount + " " +
-			  maxThreads  );
+            log.error("All threads are busy, waiting. Please " +
+                    "increase maxThreads or check the servlet" +
+                    " status" + currentThreadCount + " " +
+                    maxThreads  );
 	    logfull=false;
 	} 
     }
@@ -282,7 +329,7 @@ public class ThreadPool  {
 		     * Do nothing... The show must go on, we are shutting
 		     * down the pool and nothing should stop that.
 		     */
-		    loghelper.log("Ignored exception while shutting down thread pool", t, Log.ERROR);
+		    log.error("Ignored exception while shutting down thread pool", t);
                 }
             }
             currentThreadsBusy = currentThreadCount = 0;
@@ -390,26 +437,36 @@ public class ThreadPool  {
         currentThreadCount = toOpen;
     }
 
+    /** @deprecated */
     void log( String s ) {
-	loghelper.log(s);
-	loghelper.flush();
+	log.info(s);
+	//loghelper.flush();
     }
     
     /** 
      * Periodically execute an action - cleanup in this case
      */
-    class MonitorRunnable implements Runnable {
+    public static class MonitorRunnable implements Runnable {
         ThreadPool p;
         Thread     t;
+        int interval=WORK_WAIT_TIMEOUT;
         boolean    shouldTerminate;
 
         MonitorRunnable(ThreadPool p) {
+            this.p=p;
+            this.start();
+        }
+
+        public void start() {
             shouldTerminate = false;
-            this.p = p;
             t = new Thread(this);
             t.setDaemon(p.getDaemon() );
 	    t.setName( "MonitorRunnable" );
             t.start();
+        }
+
+        public void setInterval(int i ) {
+            this.interval=i;
         }
 
         public void run() {
@@ -430,10 +487,13 @@ public class ThreadPool  {
                     p.checkSpareControllers();
 
                 } catch(Throwable t) {
-		    loghelper.log("Unexpected exception", t);
-		    loghelper.flush();
+		    ThreadPool.log.error("Unexpected exception", t);
                 }
             }
+        }
+
+        public void stop() {
+            this.terminate();
         }
 
 	/** Stop the monitor
@@ -448,9 +508,8 @@ public class ThreadPool  {
      * A Thread object that executes various actions ( ThreadPoolRunnable )
      *  under control of ThreadPool
      */
-    class ControlRunnable implements Runnable {
-
-	/**
+    public static class ControlRunnable implements Runnable {
+        /**
 	 * ThreadPool where this thread will be returned
 	 */
         ThreadPool p;
@@ -492,9 +551,10 @@ public class ThreadPool  {
             shouldTerminate = false;
             shouldRun = false;
             this.p = p;
-            t = new Thread(this);
+            t = new ThreadWithAttributes(p, this);
             t.setDaemon(true);
             t.start();
+            p.addThread( t, this );
 	    noThData=true;
 	    thData=null;
         }
@@ -510,18 +570,21 @@ public class ThreadPool  {
                         }
                     }
                     if(toRun == null ) {
-                            if( p.debug>0) p.log( "No toRun ???");
+                            if( p.log.isDebugEnabled())
+                                p.log.debug( "No toRun ???");
                     }
 
                     if( shouldTerminate ) {
-                            if( p.debug>0) p.log( "Terminate");
+                            if( p.log.isDebugEnabled())
+                                p.log.debug( "Terminate");
                             break;
                     }
 
                     /* Check if should execute a runnable.  */
                     try {
                         if(noThData) {
-                            if(p.debug>0) p.log( "Getting new thread data");
+                            if(p.log.isDebugEnabled())
+                                p.log.debug( "Getting new thread data");
                             thData=toRun.getInitData();
                             noThData = false;
                         }
@@ -530,8 +593,7 @@ public class ThreadPool  {
 			    toRun.runIt(thData);
                         }
                     } catch(Throwable t) {
-			loghelper.log("Caught exception executing " + toRun.toString() + ", terminating thread", t);
-			loghelper.flush();
+			p.log.error("Caught exception executing " + toRun.toString() + ", terminating thread", t);
                         /*
                         * The runnable throw an exception (can be even a ThreadDeath),
                         * signalling that the thread die.
@@ -561,12 +623,15 @@ public class ThreadPool  {
                     }
                 } catch(InterruptedException ie) { /* for the wait operation */
 		    // can never happen, since we don't call interrupt
-		    loghelper.log("Unexpected exception", ie);
-		    loghelper.flush();
+    		    p.log.error("Unexpected exception", ie);
                 }
             }
         }
 
+        /** Run a task
+         *
+         * @param toRun
+         */
         public synchronized void runIt(ThreadPoolRunnable toRun) {
 	    if( toRun == null ) {
 		throw new NullPointerException("No Runnable");
@@ -580,9 +645,72 @@ public class ThreadPool  {
             this.notify();
         }
 
+        public void stop() {
+            this.terminate();
+        }
+
+        public void kill() {
+            t.stop();
+        }
+
         public synchronized void terminate() {
             shouldTerminate = true;
             this.notify();
         }
+    }
+
+    /** Special thread that allows storing of attributes and notes.
+     *  A guard is used to prevent untrusted code from accessing the
+     *  attributes.
+     *
+     *  This avoids hash lookups and provide something very similar
+     * with ThreadLocal ( but compatible with JDK1.1 and faster on
+     * JDK < 1.4 ).
+     *
+     * The main use is to store 'state' for monitoring ( like "processing
+     * request 'GET /' ").
+     */
+    public static class ThreadWithAttributes extends Thread {
+        private Object control;
+        public static int MAX_NOTES=16;
+        private Object notes[]=new Object[MAX_NOTES];
+        private Hashtable attributes=new Hashtable();
+        private String currentStage;
+
+        public ThreadWithAttributes(Object control, Runnable r) {
+            super(r);
+            this.control=control;
+        }
+
+        public void setNote( Object control, int id, Object value ) {
+            if( this.control != control ) return;
+            notes[id]=value;
+        }
+
+        public String getCurrentStage() {
+            return currentStage;
+        }
+
+        public void setCurrentStage(String currentStage) {
+            this.currentStage = currentStage;
+        }
+
+        public Object getNote(Object control, int id ) {
+            if( this.control != control ) return null;
+            return notes[id];
+        }
+
+        public Hashtable getAttributes(Object control) {
+            return attributes;
+        }
+    }
+
+    /** Interface to allow applications to be notified when
+     * a threads are created and stopped.
+     */
+    public static interface ThreadPoolListener {
+        public void threadStart( ThreadPool tp, Thread t);
+
+        public void threadEnd( ThreadPool tp, Thread t);
     }
 }
