@@ -307,7 +307,8 @@ final class CoyoteAdapter
 
         // Set the SSL properties
 	if( request.isSecure() ) {
-	    res.action(ActionCode.ACTION_REQ_SSL_ATTRIBUTE,request.getRequest());
+	    res.action(ActionCode.ACTION_REQ_SSL_ATTRIBUTE,
+                       request.getCoyoteRequest());
 	    //Set up for getAttributeNames
 	    request.getAttribute(Globals.CERTIFICATES_ATTR);
 	    request.getAttribute(Globals.CIPHER_SUITE_ATTR);
