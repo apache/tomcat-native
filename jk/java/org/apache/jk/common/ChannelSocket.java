@@ -434,7 +434,11 @@ public class ChannelSocket extends JkHandler {
             }
             this.close( ep );
         } catch( Exception ex ) {
-            ex.printStackTrace();
+            if( ex.getMessage().indexOf( "Connection reset" ) >=0 ) {
+                log.warn( "Server has closed connection");
+            } else {
+                log.error( "Error, closing connection", ex);
+            }
         }
     }
 
