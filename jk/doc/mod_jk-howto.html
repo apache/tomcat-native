@@ -643,14 +643,13 @@ the syntax:
 <h3><a name="s82">(Optional) Configuring Tomcat to use the Ajpv13 protocol</a></h3>
 <div class=subsection>
 mod_jk can use either the original Ajpv12 protocol or the newer Ajpv13 protocol.
-If you choose the latter, you need to activate the &quot;Ajp13&quot; Connection Handler in Tomcat. This
-will give you the benefit of a faster protocol and the ability to identify requests made via HTTPS.<BR><BR>
-Add the following block to your <tt>TOMCAT_HOME/conf/server.xml</tt> file.
+Both protocols are enabled by default. The &quot;Ajp13&quot; Connection Handler in Tomcat will
+give you the benefit of a faster protocol and the ability to identify requests made via HTTPS.<BR><BR>
+The following block enables Ajpv13 in your <tt>TOMCAT_HOME/conf/server.xml</tt> file.
 <blockquote><pre>
-&lt;Connector className=&quot;org.apache.tomcat.service.PoolTcpConnector&quot;&gt;
-  &lt;Parameter name=&quot;handler&quot; value=&quot;org.apache.tomcat.service.connector.Ajp13ConnectionHandler&quot;/&gt;
-  &lt;Parameter name=&quot;port&quot; value=&quot;8009&quot;/&gt;
-&lt;/Connector&gt;
+&lt;RequestInterceptor
+  className=&quot;org.apache.tomcat.modules.server.Ajp13Interceptor&quot;
+  port=&quot;8009&quot;/&gt;
 </pre></blockquote>
 
 <p>The <tt>server.xml</tt> file already has a block similar to this for
