@@ -1,39 +1,214 @@
-<project name="Jtc" default="coyote" basedir=".">
+<project name="Jtc" default="dist" basedir=".">
 
 <!-- ========== Initialize Properties ===================================== -->
 
 
-  <property file="build.properties"/>                <!-- Component local   -->
   <property file="${user.home}/build.properties"/>   <!-- User local        -->
+  <property file="build.properties"/>                <!-- Component local   -->
+  <property file="build.properties.default"/>
+
+
+  <target name="dist" 
+          description="Compile jtc">
+    <property name="lib.dir" location="dist/lib" />
+    <property name="build.dir" location="build" />
+
+    <mkdir dir="${build.dir}/classes" />
+    <mkdir dir="${lib.dir}" />
+    
+    <ant dir="util">
+      <property name="puretls.jar" value="${puretls.jar}" />
+      <property name="jsse.lib" value="${jsse.lib}" />
+      <property name="tomcat-util.build" value="${build.dir}" />
+      <property name="tomcat-util.lib" value="${lib.dir}" />
+    </ant>
+
+    <ant dir="coyote" target="compile">
+      <property name="catalina.home" value="${tomcat41.home}"/>
+      <property name="tomcat33.home" value="${tomcat33.home}"/>
+      <property name="build.home" value="${build.dir}"/>
+      <property name="tomcat5.detect" value="true"/> <!-- This is a hack to disable ajp -->
+      <property name="servlet.jar" value="${tomcat41.home}/common/lib/servlet.jar" />
+
+      <property name="tomcat-coyote.jar" value="${lib.dir}/tomcat-coyote.jar" />
+      <property name="tomcat33-coyote.jar" value="${lib.dir}/tomcat33-coyote.jar" />
+      <property name="tomcat4-coyote.jar" value="${lib.dir}/tomcat4-coyote.jar" />
+      <property name="tomcat-util.jar"
+                value="${lib.dir}/tomcat-util.jar"/>
+      <property name="servlet.jar"   value="${servlet-api.jar}"/>
+    </ant>
+
+    <ant dir="http11">
+      <property name="build.home" value="${build.dir}"/>
+      <property name="tomcat-http11.jar" value="${lib.dir}/tomcat-http11.jar"/>
+      <property name="tomcat-coyote.jar" value="${lib.dir}/tomcat-coyote.jar" />
+      <property name="commons-logging.jar" value="${commons-logging.jar}"/>
+    </ant>
+
+    <ant dir="jk" target="build-jk">
+      <property name="commons-logging.jar" value="${commons-logging.jar}"/>
+      <property name="jmx.jar" value="${jmx.jar}"/>
+      <property name="jmx.detect" value="true"/>
+      <property name="tomcat-coyote.jar" value="${lib.dir}/tomcat-coyote.jar" />
+      <property name="jk.build" value="${build.dir}"/>
+      <!-- exclude ajp -->
+      <property name="tomcat5.detect" value="true"/>
+      <property name="tomcat-jk.jar" value="${lib.dir}/tomcat-jk.jar" />
+      <property name="tomcat-jkconfig.jar" value="${lib.dir}/jkconfig.jar" />
+      <property name="tomcat-jkshm.jar" value="${lib.dir}/jkshm.jar" />
+      <property name="tomcat-jk2.jar" value="${lib.dir}/tomcat-jk2.jar" />
+      <property name="tomcat-jni.jar" value="${lib.dir}/tomcat-jni.jar" />
+    </ant>
+
+    <mkdir dir="${dist.dir}/javadoc"/>
+    <path id="compile.classpath">
+        <pathelement location="${build.dir}/classes" />
+        <pathelement location="${jmx.jar}" />
+        <pathelement location="${jsse.jar}" />
+        <pathelement location="${java.home}/lib/jsse.jar" />
+        <pathelement location="${jnet.jar}" />
+        <pathelement location="${jcert.jar}" />
+        <pathelement location="${puretls.jar}" />
+        <pathelement location="${commons-logging.jar}" />
+        <pathelement location="${commons-modeler.jar}" />
+    </path>
+  </target>
+
+  <target name="javadoc" 
+          description="javadocs">
+    <javadoc 
+      destdir="${dist.dir}/javadoc"
+      author="true"
+      version="true"
+      windowtitle="Tomcat Connector Documentation"
+      doctitle="Tomcat Connector"
+      bottom="Copyright &#169; 2003 Apache Software Foundation.  All Rights Reserved.">
+      <packageset>
+        <include name="org.apache.tomcat.util"/>
+        <include name="org.apache.tomcat.jk"/>
+        <include name="org.apache.tomcat.coyote"/>
+        <include name="org.apache.tomcat.coyote.http11"/>
+      </packageset>
+      <sourcepath>
+        <path location="util/java"/>
+        <path location="coyote/java"/>
+        <path location="jk/java"/>
+        <path location="http11/java"/>
+      </sourcepath>
+      <classpath refid="compile.classpath"/>
+    </javadoc>
+
+
+  </target>
 
   <target name="coyote" 
           description="Compile Coyote and all related protocols">
-        <ant dir="util" />
-        <ant dir="coyote" target="compile" />
-        <ant dir="http11" />
-        <ant dir="jk" target="build-jk"/>
+    <ant dir="util" />
+    <ant dir="coyote" target="compile" />
+    <ant dir="http11" />
+    <ant dir="jk" target="build-jk"/>
+    
+    <jar jarfile="jtc.jar" 
+      manifest="coyote/src/conf/MANIFEST.MF" >
+      <fileset dir="util/build/classes" includes="org/apache/**" />
+      <fileset dir="coyote/build/classes" includes="org/apache/coyote/**" />
+      <fileset dir="http11/build/classes" includes="org/apache/coyote/**" />
+      <fileset dir="jk/build/classes" >
+        <include name="org/apache/**" />
+        <exclude name="org/apache/jk/ant/**" />
+      </fileset>
+    </jar>
+  </target>
+  
 
-        <jar jarfile="jtc.jar" 
-             manifest="coyote/src/conf/MANIFEST.MF" >
-            <fileset dir="util/build/classes" includes="org/apache/**" />
-            <fileset dir="coyote/build/classes" includes="org/apache/coyote/**" />
-            <fileset dir="http11/build/classes" includes="org/apache/coyote/**" />
-            <fileset dir="jk/build/classes" >
-                <include name="org/apache/**" />
-                <exclude name="org/apache/jk/ant/**" />
-            </fileset>
-        </jar>
+  <target name="clean" description="Delete build and dist trees">
+    <delete dir="dist" />
+    <delete dir="build" />
   </target>
 
 
-  <target name="clean" 
-          description="Compile Coyote and all related protocols">
-        <ant dir="util" target="clean" />
-        <ant dir="coyote" target="clean" />
-        <ant dir="http11" target="clean"/>
-        <ant dir="jk" target="clean" />
+  <target name="download" depends="proxyflags" 
+    description="Download binary packages" >
+    
+    <mkdir dir="${base.path}" />
+    
+    <antcall target="downloadgz">
+      <param name="sourcefile" value="${commons-logging.loc}"/>
+      <param name="destfile" value="${commons-logging.jar}"/>
+    </antcall>
 
-        <delete file="jtc.jar" />
+    <antcall target="downloadgz">
+      <param name="sourcefile" value="${jmx.loc}"/>
+      <param name="destfile" value="${jmx.jar}"/>
+    </antcall>
+
+    <antcall target="downloadgz">
+      <param name="sourcefile" value="${tomcat41.loc}"/>
+      <param name="destfile" value="${tomcat41.jar}"/>
+    </antcall>
+
+    <antcall target="downloadgz">
+      <param name="sourcefile" value="${tomcat33.loc}"/>
+      <param name="destfile" value="${tomcat33.jar}"/>
+    </antcall>
+
+
   </target>
 
+
+
+  <!-- Common download targets - we should use an import with ant1.6. This is cut&paste from tocmat5 -->
+  
+  <target name="proxyflags">
+    <!-- check proxy parameters. -->
+    <condition property="useproxy">
+      <equals arg1="${proxy.use}" arg2="on" />
+    </condition>
+  </target>
+
+  <target name="setproxy"  if="useproxy">
+    <taskdef name="setproxy"
+      classname="org.apache.tools.ant.taskdefs.optional.net.SetProxy" />
+    <setproxy proxyhost="${proxy.host}" proxyport="${proxy.port}"/> 
+    <echo message="Using ${proxy.host}:${proxy.port} to download ${sourcefile}"/>
+  </target>
+
+  <target name="testexist">
+    <echo message="Testing  for ${destfile}"/>
+    <available file="${destfile}" property="exist"/>
+  </target>
+
+  <target name="testsrc">
+    <echo message="Testing  for ${destfile} versus ${cvs.base}/${location}/src"/>
+    <uptodate property="exist"
+              targetfile="${destfile}">
+      <srcfiles dir="${cvs.base}/${location}/src" includes="**" />
+    </uptodate>
+  </target>
+
+  <target name="downloadgz" unless="exist" depends="setproxy,testexist">
+    <!-- Download and extract the package -->
+    <get src="${sourcefile}" dest="${base.path}/file.tar.gz" />
+    <gunzip src="${base.path}/file.tar.gz" dest="${base.path}/file.tar"/>
+    <untar src="${base.path}/file.tar" dest="${base.path}"/>
+    <delete file="${base.path}/file.tar"/>
+    <delete file="${base.path}/file.tar.gz"/>
+  </target>
+
+  <target name="downloadzip" unless="exist" depends="setproxy,testexist">
+    <!-- Download and extract the package -->
+    <get src="${sourcefile}" dest="${base.path}/file.zip" />
+    <mkdir dir="${destdir}" />
+    <unzip src="${base.path}/file.zip" dest="${destdir}"/>
+    <delete file="${base.path}/file.zip"/>
+  </target>
+
+  <target name="downloadfile" unless="exist" depends="setproxy,testexist">
+    <!-- Download extract the file -->
+    <mkdir dir="${destdir}" />
+    <get src="${sourcefile}" dest="${destfile}" />
+  </target>
+
+
+  
 </project>
