@@ -58,28 +58,48 @@
 # @author  Pier Fumagalli <mailto:pier@betaversion.org>
 # @version $Id$
 
-LOCAL_INCLUDES = -I$(SRC_DIR)/include
-LOCAL_TGT_DIR = $(TGT_DIR)/apache-1.3
-LOCAL_SRC_DIR = $(SRC_DIR)/apache-1.3
+LOCAL_TGT_DIR = @TGT_DIR@/apache-1.3
+LOCAL_SRC_DIR = @SRC_DIR@/apache-1.3
 include @TGT_DIR@/Makedefs
 
-OBJ =	mod_webapp.o
-LIB =	mod_webapp.so
+SOURCE = mod_webapp.c
+OBJECT = mod_webapp.o
+TARGET = libwebapp.so
 
 .PHONY: build clean
 
-build: $(LIB)
+build: $(TARGET)
 
 clean:
-	rm -f $(OBJ)
-	rm -f $(LIB)
+	rm -f $(TARGET)
+	rm -f $(OBJECT)
+	@if test -h $(SOURCE) ; then \
+	  echo rm -f $(SOURCE) ; \
+	  rm -f $(SOURCE) ; \
+	fi
 
-$(LIB): $(LOCAL_SRC_DIR)/mod_webapp.c
+$(SOURCE): $(LOCAL_SRC_DIR)/$(SOURCE)
+	ln -s $< $@
+	  
+$(TARGET): $(SOURCE)
 	$(APXS) -c -o $@ \
 	  $(INCLUDES) $(LOCAL_INCLUDES) \
 	  -Wc,"$(CPPFLAGS) $(CFLAGS)" \
 	  -Wl,"$(LDFLAGS) $(LIBS)" \
-	  $(TGT_DIR)/libwebapp.a \
-	  $(TGT_DIR)/libapr.a \
-	  $<
+	  -L$(OBJ_DIR) -lapr \
+	  $(OBJ_DIR)/*.o $<
 
+# +++ EXPERIMENTAL +++ LIBTOOL COMPILE, APXS LINK +++
+# SOURCE = mod_webapp.c
+# OBJECT = mod_webapp.lo
+# TARGET = libwebapp.so
+# 
+# $(OBJECT): $(LOCAL_SRC_DIR)/$(SOURCE)
+# 	$(LIBTOOL) --mode=compile \
+# 	  $(CC) -c $< -o $@ \
+# 	    $(INCLUDES) $(EXTRA_INCLUDES) \
+# 	    $(CPPFLAGS) $(EXTRA_CPPFLAGS) \
+# 	    $(CFLAGS) $(EXTRA_CFLAGS)
+# 
+# $(TARGET): $(OBJECT)
+# 	$(APXS) -c -o $@ -L$(OBJ_DIR) -lapr $< $(OBJ_DIR)/*.o
