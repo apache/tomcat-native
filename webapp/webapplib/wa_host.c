@@ -159,6 +159,7 @@ const char *wa_host_setapp(wa_host *host, char *name, char *path,
     appl=(wa_application *)malloc(sizeof(wa_application));
     appl->name=strdup(name);
     appl->conn=conn;
+    appl->conf=NULL;
 
     // Check for leading/trailing slashes. Set slashes to 1 if the leading
     // slash is missing, to 2 if the trailing one is missing or to 3 in case

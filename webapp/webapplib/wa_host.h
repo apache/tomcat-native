@@ -68,6 +68,7 @@
 struct wa_application {
     char *name;             // The name of this web application
     char *path;             // The web application root URI path
+    void *conf;             // Provider specific configurations
     wa_connection *conn;    // Pointer to the appropriate connection
     wa_application *next;   // Pointer to the next web application
 };

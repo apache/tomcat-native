@@ -83,7 +83,7 @@ static const char *wa_info_configure(wa_connection *conn, char *param) {
  * @param len The buffer length.
  * @return The number of bytes written to the buffer.
  */
-static int wa_info_describe(wa_connection *conn, char *buf, int len) {
+static int wa_info_conninfo(wa_connection *conn, char *buf, int len) {
     if ((buf==NULL)||(len==0)) return(0);
 
     if(conn==NULL) return(strlcpy(buf,"Null connection specified",len));
@@ -91,11 +91,24 @@ static int wa_info_describe(wa_connection *conn, char *buf, int len) {
 }
 
 /**
+ * Describe the configuration member found in a web application.
+ *
+ * @param appl The application for wich a description must be produced.
+ * @param buf The buffer where the description must be stored.
+ * @param len The buffer length.
+ * @return The number of bytes written to the buffer.
+ */
+static int wa_info_applinfo(wa_application *conn, char *buf, int len) {
+    return(0);
+}
+
+/**
  * Initialize a connection.
  *
  * @param conn The connection to initialize.
  */
-void wa_info_init(wa_connection *conn) {
+static void wa_info_init(wa_connection *conn) {
+    return;
 }
 
 /**
@@ -103,7 +116,8 @@ void wa_info_init(wa_connection *conn) {
  *
  * @param conn The connection to destroy.
  */
-void wa_info_destroy(wa_connection *conn) {
+static void wa_info_destroy(wa_connection *conn) {
+    return;
 }
 
 /**
@@ -126,7 +140,7 @@ void wa_info_handle(wa_request *req, wa_callbacks *cb) {
     wa_callback_printf(cb,req," </head>\n");
     wa_callback_printf(cb,req," <body>\n");
     
-    // Dump configured hosts and applications
+    // Dump configured connections
     while (conn!=NULL) {
         char desc[1024];
 
@@ -136,7 +150,7 @@ void wa_info_handle(wa_request *req, wa_callbacks *cb) {
         wa_callback_printf(cb,req,"   <dd>\n");
         wa_callback_printf(cb,req,"    Provider &quot;%s&quot;\n",
                            conn->prov->name);
-        if ((*conn->prov->describe)(conn,desc,1024)>0)
+        if ((*conn->prov->conninfo)(conn,desc,1024)>0)
             wa_callback_printf(cb,req,"    (Descr.: &quot;%s&quot;)\n",desc);
         else
             wa_callback_printf(cb,req,"    (No description available)\n");
@@ -154,6 +168,8 @@ void wa_info_handle(wa_request *req, wa_callbacks *cb) {
         wa_callback_printf(cb,req,"   <dt><b>Host: %s:%d</b></dt>\n",
                            host->name,host->port);
         while (appl!=NULL) {
+            char d[1024];
+
             wa_callback_printf(cb,req,"   <dd>\n");
             wa_callback_printf(cb,req,"    Application &quot;%s&quot;\n",
                                appl->name);
@@ -161,6 +177,13 @@ void wa_info_handle(wa_request *req, wa_callbacks *cb) {
                                appl->path);
             wa_callback_printf(cb,req,"    using connection &quot;%s&quot;\n",
                                appl->conn->name);
+
+            // Get provider specific description of the application
+            if ((*appl->conn->prov->applinfo)(appl,d,1024)>0)
+                wa_callback_printf(cb,req,"    (Descr.: &quot;%s&quot;)\n",d);
+            else
+                wa_callback_printf(cb,req,"    (No description available)\n");
+
             wa_callback_printf(cb,req,"   </dd>\n");
             appl=appl->next;
         }
@@ -201,5 +224,6 @@ wa_provider wa_provider_info = {
     wa_info_init,
     wa_info_destroy,
     wa_info_handle,
-    wa_info_describe,
+    wa_info_conninfo,
+    wa_info_applinfo,
 };

@@ -58,38 +58,38 @@
 // CVS $Id$
 // Author: Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
 
-#ifndef _WA_PROVIDER_H_
-#define _WA_PROVIDER_H_
+/* The warp packet structure */
+typedef struct wa_warp_packet {
+    int typ;    // The packet type signature
+    int len;    // The payload buffer length (or position for wa_warp_packet_*)
+    int siz;    // The size of the buffer
+    char *buf;  // The payload buffer
+} wa_warp_packet;
 
-/**
- * The wa_provider structure describes a connection provider.
- */
-struct wa_provider {
-    // The name of the current provider
-    const char *name;
-    // Configure a connection
-    const char *(*configure) (wa_connection *, char *);
-    // Initialize a connection
-    void (*init) (wa_connection *);
-    // Clean up a connection
-    void (*destroy) (wa_connection *);
-    // Handle an HTTP request
-    void (*handle) (wa_request *, wa_callbacks *);
-    // Get a descriptive string on a connection (based on wa_connection->conf)
-    int (*conninfo) (wa_connection *, char *, int);
-    // Get a descriptive string on a connection (based on wa_application->conf)
-    int (*applinfo) (wa_application *, char *, int);
-};
+/* The structure holding warp configuration data in wa_application */
+typedef struct wa_warp_appl_config {
+    int host;   // The warp virtual host ID
+    int appl;   // The warp web application ID
+} wa_warp_appl_config;
 
-/* The list of all compiled in providers */
-extern wa_provider *wa_providers[];
+/* The structure holding warp configuration data in wa_connection */
+typedef struct wa_warp_conn_config {
+    char *name;             // The warp server name
+    unsigned short port;    // The warp server port
+    long addr;              // The warp server address
+    int sock;               // The connected socket
+} wa_warp_conn_config;
 
-/* Pointers to the different providers */
-extern wa_provider wa_provider_info;
-extern wa_provider wa_provider_warp;
+#define SOCKET_NOT_INITIALIZED  -3
+#define SOCKET_NOT_CONNECTED    -2
+#define SOCKET_NOT_CREATED      -1
 
-/* Function prototype declaration */
-// Retrieve a provider.
-wa_provider *wa_provider_get(char *);
-
-#endif // ifndef _WA_PROVIDER_H_
+/* Look in WarpConstants.java for a description of these definitions. */
+#define RID_CONNECTION     0x00000
+#define RID_DISCONNECT     0x0ffff
+#define TYP_HOST           0x00000
+#define TYP_HOST_ID        0x00001 
+#define TYP_APPLICATION    0x00002 
+#define TYP_APPLICATION_ID 0x00003 
+#define TYP_REQUEST        0x00004 
+#define TYP_REQUEST_ID     0x00005 
