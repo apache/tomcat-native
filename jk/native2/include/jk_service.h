@@ -126,6 +126,20 @@ typedef struct jk_ws_service jk_ws_service_t;
 #define SC_M_MKACTIVITY         (unsigned char)27
 
 
+/*
+ * RECOVERY STATUS
+ *
+ * The recovery buffer status is RECO_NONE unless we're using a LB service.
+ * In such case, the status is RECO_INITED. 
+ * The first real worker will detect this special status and will fill the 
+ * recovery buffer with initial POST data. In case of failure, the next worker
+ * will use this recovery buffer to feed tomcat with the saved initial POST data.
+ */
+
+#define RECO_NONE	0x00
+#define RECO_INITED	0x01
+#define RECO_FILLED	0x02
+
     
 /*
  * The web server service 'class'.  An instance of this class is created
@@ -276,6 +290,12 @@ struct jk_ws_service {
     int outSize;
     char *outBuf;
     apr_time_t startTime;
+
+    /*
+     * Area to get POST data for fail-over recovery in POST (used in LB mode)
+     */
+    struct jk_msg *reco_buf; 
+    int		       reco_status;
     
     /** printf style output. Formats in the tmp buf, then calls write
      */

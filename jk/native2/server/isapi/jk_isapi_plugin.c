@@ -503,6 +503,10 @@ DWORD WINAPI HttpExtensionProcWorker(LPEXTENSION_CONTROL_BLOCK  lpEcb,
 
     jk2_service_iis_init( env, s );
     s->pool = rPool;
+
+    /* reset the reco_status, will be set to INITED in LB mode */
+    s->reco_status = RECO_NONE;
+    
     s->is_recoverable_error = JK_FALSE;
     s->response_started = JK_FALSE;
     s->content_read = 0;

@@ -468,6 +468,29 @@ static int jk2_msg_ajp_checkHeader(jk_env_t *env, jk_msg_t *msg,
 }
 
 
+/** 
+ * Copy the msg buf into another one, sort of clone.
+ *
+ * Returns -1 on error, else number of bytes copied
+ */
+static int jk2_msg_ajp_copy(jk_env_t *env, jk_msg_t  *msg, jk_msg_t *dmsg)
+{
+	if (dmsg == NULL)
+		return -1;
+		
+    if(msg->len > dmsg->maxlen ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "msgAjp.copy(): destination buffer too small %d/%d\n",
+                      msg->len, dmsg->maxlen);
+        return -2;
+    }
+
+	memcpy(dmsg->buf, msg->buf, msg->len);
+	dmsg->len = msg->len;
+	dmsg->pos = msg->pos;
+	
+	return dmsg->len;
+}
 
 /** 
  * Special method. Will read data from the server and add them as
@@ -539,6 +562,7 @@ static void jk2_msg_ajp_init(jk_env_t *env, jk_msg_t *msg, int buffSize)
     msg->appendMap=jk2_msg_ajp_appendMap;
 
     msg->appendFromServer=jk2_msg_ajp_appendFromServer;
+    msg->copy=jk2_msg_ajp_copy;
 
     msg->getByte=jk2_msg_ajp_getByte;
     msg->getInt=jk2_msg_ajp_getInt;

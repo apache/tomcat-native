@@ -569,6 +569,9 @@ static int jk2_handler(request_rec *r)
         s->pool = rPool;
         s->init( env, s, worker, r );
         
+	    /* reset the reco_status, will be set to INITED in LB mode */
+	    s->reco_status = RECO_NONE;
+	    
         s->is_recoverable_error = JK_FALSE;
         s->uriEnv = uriEnv;
 

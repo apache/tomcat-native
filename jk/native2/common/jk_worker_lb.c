@@ -365,6 +365,10 @@ static int JK_METHOD jk2_lb_service(jk_env_t *env,
             wEnv->config->ver = wEnv->shm->head->lbVer;
         }
     }
+
+    /* Initialize here the recovery POST buffer */
+	s->reco_buf = jk2_msg_ajp_create( env, s->pool, 0);
+    s->reco_status = RECO_INITED;
     
     while(1) {
         int rc;

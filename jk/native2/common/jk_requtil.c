@@ -752,7 +752,7 @@ int jk2_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
     }                  
             
     env->l->jkLog(env, env->l, JK_LOG_ERROR,
-             "handler.marshapPostHead() - error len=%d\n", len);
+             "handler.marshalPostHead() - error len=%d\n", len);
     return JK_ERR;	    
 }
 /* -------------------- Query decoding -------------------- */

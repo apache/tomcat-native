@@ -196,6 +196,15 @@ struct jk_msg {
                             struct jk_endpoint  *ae,
                             int            len );
 
+    /** 
+     * Clone the msg buf into another one, sort of clone.
+     *
+     * Returns -1 on error, else number of bytes copied
+     */
+    int (*copy)(struct jk_env *env,
+                 struct jk_msg *_this,
+                 struct jk_msg *dst);
+
     void *_privatePtr;
     
     /* Temporary, don't use */

@@ -974,6 +974,9 @@ static unsigned int parsedRequest(FilterContext *context, FilterParsedRequest *r
 
 			jk2_requtil_initRequest(env, &s);
 
+		    /* reset the reco_status, will be set to INITED in LB mode */
+    		s.reco_status 			= RECO_NONE;
+    
 			s.pool					= rPool;
 			s.is_recoverable_error	= JK_FALSE;
 			s.response_started		= JK_FALSE;

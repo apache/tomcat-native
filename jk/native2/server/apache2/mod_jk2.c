@@ -760,9 +760,12 @@ static int jk2_handler(request_rec *r)
     
     /* XXX we should reuse the request itself !!! */
     jk2_service_apache2_init( env, s );
-    
+
     s->pool = rPool;
     s->init( env, s, worker, r );
+    
+    /* reset the reco_status, will be set to INITED in LB mode */
+    s->reco_status = RECO_NONE;
     
     s->is_recoverable_error = JK_FALSE;
     s->uriEnv = uriEnv; 

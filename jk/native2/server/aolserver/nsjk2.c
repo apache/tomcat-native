@@ -286,6 +286,10 @@ static int jk2_handler(void* context, Ns_Conn *conn)
     
     s->pool = rPool;
     s->init( env, s, worker, conn );
+
+    /* reset the reco_status, will be set to INITED in LB mode */
+    s->reco_status = RECO_NONE;
+    
     s->is_recoverable_error = JK_FALSE;
     s->uriEnv = uriEnv; 
     rc = worker->service(env, worker, s);    
