@@ -86,7 +86,7 @@ AC_DEFUN(
         esac
       ])
     AC_MSG_RESULT([${wa_apxs_tempval}])
-    WA_PATH_PROG([$1],[${wa_apxs_tempval}],[apxs])
+    WA_PATH_PROG_FAIL([$1],[${wa_apxs_tempval}],[apxs])
     unset wa_apxs_tempval
   ])
 
@@ -155,7 +155,7 @@ AC_DEFUN(
     WA_APXS_GET([wa_apxs_server_sbindir],[$2],[SBINDIR])
     WA_APXS_GET([wa_apxs_server_target],[$2],[TARGET])
     wa_apxs_server_daemon="${wa_apxs_server_sbindir}/${wa_apxs_server_target}"
-    WA_PATH_PROG([wa_apxs_server_daemon],[${wa_apxs_server_daemon}],[httpd])
+    WA_PATH_PROG_FAIL([wa_apxs_server_daemon],[${wa_apxs_server_daemon}],[httpd])
     AC_MSG_CHECKING([httpd version])
     wa_apxs_server_info="`${wa_apxs_server_daemon} -v | head -1`"
     wa_apxs_server_info="`echo ${wa_apxs_server_info} | cut -d: -f2`"
