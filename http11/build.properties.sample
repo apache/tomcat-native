@@ -30,3 +30,5 @@ coyote.jar=../coyote/dist/coyote.jar
 # junit.jar -- JUnit classes (http://junit.org)
 junit.jar=/java/junit/junit.jar
 
+# commons-logging.jar -- Commons Logging 1.0 package
+commons-logging.jar=../lib/commons-logging.jar

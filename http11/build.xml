@@ -74,6 +74,7 @@
     <pathelement location="${build.home}/classes"/>
     <pathelement location="${tomcat-util.jar}"/>
     <pathelement location="${tomcat-coyote.jar}"/>
+    <pathelement location="${commons-logging.jar}"/>
   </path>
 
 
@@ -86,6 +87,7 @@
     <pathelement location="${build.home}/tests"/>
     <pathelement location="${tomcat-util.jar}"/>
     <pathelement location="${tomcat-coyote.jar}"/>
+    <pathelement location="${commons-logging.jar}"/>
     <pathelement location="${junit.jar}"/>
   </path>
 
