@@ -466,3 +466,4 @@ static char *update_env_variables(char *value, jk_map_t *m)
 
     return rc;
 }
+

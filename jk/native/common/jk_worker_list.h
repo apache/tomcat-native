@@ -79,7 +79,7 @@
 
         #include "jk_ajp12_worker.h"
         #include "jk_ajp13_worker.h"
-        /* #include "jk_ajp23_worker.h" */
+        #include "jk_ajp14_worker.h"
         #ifndef HPUX11GCC
             #include "jk_jni_worker.h"
         #endif
@@ -102,12 +102,10 @@
              * AJPv13 worker, fast bi-directional worker.
              */
             { JK_AJP13_WORKER_NAME, ajp13_worker_factory},
-
             /*
-             * Sample commented out (and deprecated) factory.
+             * AJPv14 worker, next generation fast bi-directional worker.
              */
-            /*{ JK_AJP23_WORKER_NAME, ajp23_worker_factory},*/
-
+            { JK_AJP14_WORKER_NAME, ajp14_worker_factory},
             /*
              * In process JNI based worker. Requires the server to be 
              * multithreaded and to use native threads.
@@ -128,3 +126,4 @@
     };
     #endif /* _JK_WORKER_LIST_H */
 #endif /* _PLACE_WORKER_LIST_HERE */
+

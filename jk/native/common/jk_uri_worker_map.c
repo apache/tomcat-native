@@ -111,7 +111,8 @@ struct jk_uri_worker_map {
  * fumble and return the jsp content. 
  *
  * To solve that we will check for path info following the suffix, we 
- * will also check that the end of the uri is not .suffix.
+ * will also check that the end of the uri is not ".suffix.",
+ * ".suffix/", or ".suffix ".
  */
 static int check_security_fraud(jk_uri_worker_map_t *uw_map, 
                                 const char *uri, 
@@ -129,9 +130,9 @@ static int check_security_fraud(jk_uri_worker_map_t *uw_map,
                 if('.' != *(suffix_start - 1)) {
                     continue;
                 } else {
-                    char *after_suffix = suffix_start + strlen(uw_map->maps[i].suffix) + 1;
+                    char *after_suffix = suffix_start + strlen(uw_map->maps[i].suffix);
                 
-                    if((('.' == *after_suffix) || ('/' == *after_suffix)) && 
+                    if((('.' == *after_suffix) || ('/' == *after_suffix) || (' ' == *after_suffix)) &&
                        (0 == strncmp(uw_map->maps[i].context, uri, uw_map->maps[i].ctxt_len))) {
                         /* 
                          * Security violation !!!
@@ -356,7 +357,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             uri = clean_uri;
         }
 
-		jk_log(l, JK_LOG_DEBUG, "Attempting to map URI %s\n", uri);
+		jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s'\n", uri);
         for(i = 0 ; i < uw_map->size ; i++) {
 
             if(uw_map->maps[i].ctxt_len < longest_match) {
@@ -370,7 +371,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     if(strlen(uri) == uw_map->maps[i].ctxt_len) {
 			jk_log(l,
 			       JK_LOG_DEBUG,
-			       "jk_uri_worker_map_t::map_uri_to_worker, Found an exact match %s ->%s\n",
+			       "jk_uri_worker_map_t::map_uri_to_worker, Found an exact match %s -> %s\n",
 			       uw_map->maps[i].worker_name,
 			       uw_map->maps[i].context );
                         return uw_map->maps[i].worker_name;
@@ -431,7 +432,7 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 
             if(fraud >= 0) {
                 jk_log(l, JK_LOG_EMERG, 
-                       "In jk_uri_worker_map_t::map_uri_to_worker, found a security fraud in [%s]\n",
+                       "In jk_uri_worker_map_t::map_uri_to_worker, found a security fraud in '%s'\n",
                        uri);    
                 return uw_map->maps[fraud].worker_name;
             }

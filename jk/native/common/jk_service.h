@@ -92,7 +92,7 @@ typedef struct jk_worker     jk_worker_t;
  * As with all the core jk classes, this is essentially an abstract base
  * class which is implemented/extended by classes which are specific to a
  * particular web server.  By using an abstract base class in this manner,
- * workers can be written for different protocols (e.g. ajp12, ajp13)
+ * workers can be written for different protocols (e.g. ajp12, ajp13, ajp14)
  * without the workers having to worry about which web server they are
  * talking to.
  *
@@ -231,7 +231,7 @@ struct jk_ws_service {
  * The endpoint 'class', which represents one end of a connection to the
  * servlet engine.  Basically, supports nothing other than forwarding the
  * request to the servlet engine.  Endpoints can be persistent (as with
- * ajp13, where a single connection is reused many times), or can last for a
+ * ajp13/ajp14, where a single connection is reused many times), or can last for a
  * single request (as with ajp12, where a new connection is created for
  * every request).
  *
@@ -255,14 +255,14 @@ struct jk_ws_service {
  * imagine that you are seeing the internal vtables of your favorite OO
  * language.  Whatever works for you.
  *
- * See jk_ajp13_worker.c and jk_ajp12_worker.c for examples.  
+ * See jk_ajp13_worker.c/jk_ajp14_worker.c and jk_ajp12_worker.c for examples.  
  */
 struct jk_endpoint {
   
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
      * point to data/functions which are specific to a given protocol 
-     * (e.g. ajp12 or ajp13).  
+     * (e.g. ajp12 or ajp13 or ajp14).  
      */
     void *endpoint_private;
 
@@ -279,7 +279,7 @@ struct jk_endpoint {
     /*
      * Called when this particular endpoint has finished processing a
      * request.  For some protocols (e.g. ajp12), this frees the memory
-     * associated with the endpoint.  For others (e.g. ajp13), this can
+     * associated with the endpoint.  For others (e.g. ajp13/ajp14), this can
      * return the endpoint to a cache of already opened endpoints.  
      *
      * Note that the first argument is *not* a 'this' pointer, but is
@@ -297,10 +297,10 @@ struct jk_endpoint {
  * This can mean communicating with a particular servlet engine instance,
  * using a particular protocol.  A single web server instance may have
  * multiple workers communicating with a single servlet engine (it could be
- * using ajp12 for some requests and ajp13 for others).  Or, a single web
+ * using ajp12 for some requests and ajp13/ajp14 for others).  Or, a single web
  * server instance could have multiple workers communicating with different
  * servlet engines using the same protocol (it could be load balancing
- * among many engines, using ajp13 for all communication).
+ * among many engines, using ajp13/ajp14 for all communication).
  *
  * There is also a load balancing worker (jk_lb_worker.c), which itself
  * manages a group of workers.
@@ -327,14 +327,14 @@ struct jk_endpoint {
  * imagine that you are seeing the internal vtables of your favorite OO
  * language.  Whatever works for you.
  *
- * See jk_ajp13_worker.c and jk_ajp12_worker.c for examples.  
+ * See jk_ajp14_worker.c, jk_ajp13_worker.c and jk_ajp12_worker.c for examples.  
  */
 struct jk_worker {
 
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
      * point to data/functions which are specific to a given protocol 
-     * (e.g. ajp12 or ajp13).  
+     * (e.g. ajp12 or ajp13 or ajp14).  
      */
     void *worker_private;
 
@@ -348,7 +348,7 @@ struct jk_worker {
      * of configuration options (or 'properties'), check to see if it the
      * options are.  This will always be called before the init() method.
      * The init/validate distinction is a bit hazy to me.
-     * See jk_ajp13_worker.c and jk_worker.c->wc_create_worker() 
+     * See jk_ajp13_worker.c/jk_ajp14_worker.c and jk_worker.c->wc_create_worker() 
      */
     int (JK_METHOD *validate)(jk_worker_t *w,
                               jk_map_t *props, 
@@ -387,7 +387,7 @@ struct jk_worker {
  * different types of workers.  The set of all these functions is created
  * at startup from the list in jk_worker_list.h, and then the correct one
  * is chosen in jk_worker.c->wc_create_worker().  See jk_worker.c and
- * jk_ajp13_worker.c for examples.
+ * jk_ajp13_worker.c/jk_ajp14_worker.c for examples.
  *
  * This allows new workers to be written without modifing the plugin code
  * for the various web servers (since the only link is through
