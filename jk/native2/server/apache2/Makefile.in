@@ -5,7 +5,8 @@ APACHE2_HOME=@APACHE2_HOME@
 OS=@OS@
 JAVA_HOME=@JAVA_HOME@
 APACHE2_INCL=@APACHE2_INCL@
-APACHE2_LIBDIR=@APACHE2_LIBDIR@
+APACHE2_LIBEXEC=@APACHE2_LIBEXEC@
+APACHE2_LIBDIR=@JAVA_HOME@/lib
 APR_INCL=@APR_CFLAGS@ 
 EXTRA_CFLAGS=@APXS2_CFLAGS@
 EXTRA_CPPFLAGS=@APXS2_CPPFLAGS@
@@ -33,7 +34,7 @@ INCLUDES= -I${JK_DIR}/include \
           ${JAVA_INCL}
 
 JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 -DHAS_APR @HAVE_JNI@
-JK_LDFLAGS=-L${APACHE2_LIBDIR} -lcrypt
+JK_LDFLAGS=-L${APACHE2_LIBDIR} -lcrypt -lapr
 
 ###### Based on rules.mk ##########################################
 ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(CFLAGS)
@@ -46,7 +47,7 @@ ALL_INCLUDES = $(INCLUDES) $(EXTRA_INCLUDES)
 COMPILE      = $(CC)  $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(ALL_INCLUDES)
 
 SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
-MOD_LINK = $(LIBTOOL) --mode=link $(CC) -avoid-version -module -rpath ${APACHE2_HOME}/modules $(LT_LDFLAGS) $(ALL_LDFLAGS) $(JK_LDFLAGS)
+MOD_LINK = $(LIBTOOL) --mode=link $(CC) -avoid-version -module -rpath ${APACHE2_LIBEXEC} $(LT_LDFLAGS) $(ALL_LDFLAGS)
 MOD_INSTALL = $(LIBTOOL) --mode=install $(CP)
 
 #############################################################################
@@ -98,7 +99,7 @@ ${BUILD_DIR}/jkjni.so: ${BUILD_DIR}/jkjni.la
 	$(MOD_INSTALL) cp $^ `pwd`/${BUILD_DIR}
 
 ${BUILD_DIR}/jkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES}
-	$(MOD_LINK) -o $@ $^
+	$(MOD_LINK) -o $@ $(JK_LDFLAGS) $^
 
 ${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${JNI_LO_FILES} ${A2_LO_FILES}
 	${MOD_LINK} -o $@ $^ 
