@@ -53,7 +53,7 @@ struct jk_worker_env
     /* The URI to WORKER map, will be feeded by AJP14 autoconf feature */
     jk_uri_worker_map_t *uri_to_worker;
 
-    int num_of_workers;
+    unsigned int num_of_workers;
     char **worker_list;
 
     /* Web-Server we're running on (Apache/IIS/NES) */
