@@ -103,10 +103,17 @@ all: prepare ${BUILD_DIR}/mod_jk2.so @JNI_BUILD@
 
 jni-build: ${BUILD_DIR}/libjkjni.so
 
-${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
-	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}
-${BUILD_DIR}/libjkjni.so: ${BUILD_DIR}/libjkjni.la
-	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}
+${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/${APACHE2_LIBEXEC}/mod_jk2.so
+	$(CP) $^ $@
+${BUILD_DIR}/${APACHE2_LIBEXEC}/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
+	mkdir -p ${BUILD_DIR}/${APACHE2_LIBEXEC}
+	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}/${APACHE2_LIBEXEC}
+
+${BUILD_DIR}/libjkjni.so: ${BUILD_DIR}/${APACHE2_LIBEXEC}/libjkjni.so
+	$(CP) $^ $@
+${BUILD_DIR}/${APACHE2_LIBEXEC}/libjkjni.so: ${BUILD_DIR}/libjkjni.la
+	mkdir -p ${BUILD_DIR}/${APACHE2_LIBEXEC}
+	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}/${APACHE2_LIBEXEC}
 
 ${BUILD_DIR}/libjkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES}
 	$(MOD_LINK) -o $@ $(JK_LDFLAGS) $^
