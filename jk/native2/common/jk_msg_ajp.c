@@ -172,14 +172,36 @@ static int jk2_msg_ajp_appendByte(jk_env_t *env, jk_msg_t *msg,
 static int jk2_msg_ajp_appendMap(jk_env_t *env, jk_msg_t *msg, 
                                  jk_map_t *map) 
 {
+    int rc;
+    int i;
+    int size=map->size(env, map);
 
-    return JK_OK;
+    rc=msg->appendInt( env, msg, size );
+    
+    for( i=0; i< size; i++ ) {
+        char *name=map->nameAt( env, map, i );
+        char *val=map->valueAt( env, map, i );
+        if( rc== JK_OK ) 
+            rc=msg->appendString( env, msg, name );
+        if( rc== JK_OK ) 
+            msg->appendString( env, msg, val );
+    }
+    
+    return rc;
 }
 
 static int jk2_msg_ajp_getMap(jk_env_t *env, jk_msg_t *msg, 
                               jk_map_t *map) 
 {
+    int size=msg->getInt( env, msg );
+    int i;
+    
+    for( i=0; i<size; i++ ) {
+        char *name= msg->getString( env, msg );
+        char *val=msg->getString( env, msg );
 
+        map->add( env, map, name, val );
+    }
     return JK_OK;
 }
 
@@ -189,8 +211,8 @@ static int jk2_msg_ajp_appendString(jk_env_t *env, jk_msg_t *msg,
 {
     int len;
 
-    if(!param) {
-         msg->appendInt( env, msg, 0xFFFF );
+    if(param==NULL) {
+        msg->appendInt( env, msg, 0xFFFF );
         return JK_OK; 
     }
 
