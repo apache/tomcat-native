@@ -102,6 +102,8 @@ public abstract class JSSESocketFactory
     private static final String defaultKeystoreFile
         = System.getProperty("user.home") + "/.keystore";
     private static final String defaultKeyPass = "changeit";
+    static org.apache.commons.logging.Log log =
+        org.apache.commons.logging.LogFactory.getLog(JSSESocketFactory.class);
 
     protected boolean initialized;
     protected boolean clientAuth = false;
@@ -269,12 +271,28 @@ public abstract class JSSESocketFactory
         if(trustStoreFile == null) {
             trustStoreFile = System.getProperty("javax.net.ssl.trustStore");
         }
+        if(log.isDebugEnabled()) {
+            log.debug("Truststore = " + trustStoreFile);
+        }
         String trustStorePassword = (String)attributes.get("truststorePass");
         if( trustStorePassword == null) {
             trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
         }
+        if( trustStorePassword == null ) {
+            trustStorePassword = getKeystorePassword();
+        }
+        if(log.isDebugEnabled()) {
+            log.debug("TrustPass = " + trustStorePassword);
+        }
+        String truststoreType = (String)attributes.get("truststoreType");
+        if(truststoreType == null) {
+            truststoreType = keystoreType;
+        }
+        if(log.isDebugEnabled()) {
+            log.debug("trustType = " + truststoreType);
+        }
         if (trustStoreFile != null && trustStorePassword != null){
-            trustStore = getStore(keystoreType, trustStoreFile,
+            trustStore = getStore(truststoreType, trustStoreFile,
                                   trustStorePassword);
         }
 
