@@ -21,6 +21,12 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     // Handlers for native callbacks
     Hashtable jkHandlers=new Hashtable();
 
+    // Name of the so used in inprocess mode 
+    String jniModeSo;
+    // name of the so used by java. If not set we'll loadLibrary("jkjni" ),
+    // if set we load( nativeSo )
+    String nativeSo;
+    
     public AprImpl() {
         aprSingleton=this;
     }
@@ -49,6 +55,19 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
         jkHandlers.put( type, cb );
     }
     
+    /** Name of the so used in inprocess mode
+     */
+    public void setJniModeSo(String jniModeSo ) {
+        this.jniModeSo=jniModeSo;
+    }
+
+    /** name of the so used by java. If not set we'll loadLibrary("jkjni" ),
+        if set we load( nativeSo )
+    */
+    public void setNativeSo( String nativeSo ) {
+        this.nativeSo=nativeSo;
+    }
+
     // -------------------- Apr generic utils --------------------
     /** Initialize APR
      */
@@ -190,10 +209,12 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     }
 
     static boolean jniMode=false;
+
     
     public static void jniMode() {
         jniMode=true;
     }
+
     
     /** This method of loading the libs doesn't require setting
      *   LD_LIBRARY_PATH. Assuming a 'right' binary distribution,
@@ -217,8 +238,8 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
                VMs.
             */
             try {
-                System.out.println("Loading mod_jk.so");
-                System.load( "/opt/apache2/modules/mod_jk2.so" );
+                System.out.println("Loading " + jniModeSo);
+                System.load( jniModeSo );
             } catch( Throwable ex ) {
                 // ignore
                 ex.printStackTrace();
@@ -246,7 +267,12 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
               }
             */
         try {
-            System.loadLibrary( "jkjni" );
+            if( nativeSo == null ) {
+                // This will load libjkjni.so or jkjni.dll in LD_LIBRARY_PATH
+                System.loadLibrary( "jkjni" );
+            } else {
+                System.load( nativeSo );
+            }
         } catch( Throwable ex ) {
             ok=false;
             throw ex;
