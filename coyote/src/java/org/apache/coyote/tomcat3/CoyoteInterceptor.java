@@ -66,6 +66,7 @@ import java.util.*;
 import java.text.*;
 import org.apache.tomcat.core.*;
 import org.apache.tomcat.util.res.StringManager;
+import org.apache.tomcat.util.IntrospectionUtils;
 import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.http.*;
 import org.apache.tomcat.util.net.*;
@@ -117,6 +118,7 @@ public class CoyoteInterceptor extends PoolTcpConnector
     private String reportedname;
     private int socketCloseDelay=-1;
     private String processorClassName="org.apache.coyote.http11.Http11Processor";
+    private int maxKeepAliveRequests=100; // as in Apache HTTPD server
 
     public CoyoteInterceptor() {
 	super();
@@ -137,6 +139,12 @@ public class CoyoteInterceptor extends PoolTcpConnector
     }
     public void setReportedname( String reportedName) {
 	reportedname = reportedName;
+    }
+
+    /** Set the maximum number of Keep-Alive requests that we will honor.
+     */
+    public void setMaxKeepAliveRequests(int mkar) {
+	maxKeepAliveRequests = mkar;
     }
 
     public void setSocketCloseDelay( int d ) {
@@ -163,6 +171,8 @@ public class CoyoteInterceptor extends PoolTcpConnector
 		getClass().getClassLoader().loadClass(processorClassName);
 	    processor = (Processor)processorClass.newInstance();
 	    processor.setAdapter(adaptor);
+	    IntrospectionUtils.setProperty(processor,"maxKeepAliveRequests", 
+					    String.valueOf(maxKeepAliveRequests));
 	} catch(Exception ex) {
 	    log("Can't load Processor", ex);
 	}
