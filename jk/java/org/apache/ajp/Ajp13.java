@@ -63,9 +63,12 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.ByteArrayInputStream;
+
 import java.net.Socket;
 import java.util.Enumeration;
-import javax.security.cert.X509Certificate;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateFactory;
 
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -406,15 +409,18 @@ public class Ajp13 {
                 // Transform the string into certificate.
                 String certString = msg.getString();
                 byte[] certData = certString.getBytes();
+                ByteArrayInputStream bais = new ByteArrayInputStream(certData);
  
                 // Fill the first element.
                 X509Certificate jsseCerts[] = null;
                 try {
-                    X509Certificate cert =
-                        X509Certificate.getInstance(certData);
+                    CertificateFactory cf =
+                        CertificateFactory.getInstance("X.509");
+                    X509Certificate cert = (X509Certificate)
+                        cf.generateCertificate(bais);
                     jsseCerts =  new X509Certificate[1];
                     jsseCerts[0] = cert;
-                } catch(javax.security.cert.CertificateException e) {
+                } catch(java.security.cert.CertificateException e) {
                     logger.log("Certificate convertion failed" + e );
                 }
  
