@@ -155,6 +155,11 @@ struct jk_bean {
      */
     int disabled;
 
+    /* Initialize. Will be set to 0 after first service 
+     * call to the worker.
+     */
+    int initialize;
+
     /** Object 'version'. Used to detect changes in config.
      *  XXX will be set to the timestamp of the last config modification.
      */
