@@ -99,8 +99,6 @@
 	<mkdir dir="${jk.build}/classes"/>
         <mkdir dir="${jk.build}/classes/META-INF" />
 	<mkdir dir="${jk.build}/lib"/>
-        <copy file="${commons-logging.jar}" 
-              todir="${jk.build}/lib" />
 	<copy todir="${jk.build}/conf" >
 	    <fileset dir="conf" includes="*" />
 	</copy>
@@ -190,6 +188,7 @@
         </jar>
 	
 	<jar jarfile="${jk.build}/lib/tomcat-jk2.jar"
+             manifest="conf/tomcat-jk2.manifest"
 	     basedir="${jk.build}/classes" >
             <include name="org/apache/jk/**" />
             <exclude name="org/apache/jk/ant/**" />
