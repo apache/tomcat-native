@@ -59,21 +59,30 @@
 
 package org.apache.jk.common;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 
-import org.apache.tomcat.util.threads.*;
-
-import org.apache.jk.core.*;
-import org.apache.commons.modeler.Registry;
-import javax.management.NotificationBroadcaster;
-import javax.management.NotificationBroadcasterSupport;
-import javax.management.NotificationListener;
-import javax.management.NotificationFilter;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
+import javax.management.NotificationBroadcaster;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationFilter;
+import javax.management.NotificationListener;
 import javax.management.ObjectName;
+
+import org.apache.commons.modeler.Registry;
+import org.apache.jk.core.JkHandler;
+import org.apache.jk.core.Msg;
+import org.apache.jk.core.MsgContext;
+import org.apache.tomcat.util.threads.ThreadPool;
+import org.apache.tomcat.util.threads.ThreadPoolRunnable;
 
 
 /* XXX Make the 'message type' pluggable

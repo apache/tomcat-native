@@ -59,7 +59,7 @@
 
 package org.apache.ajp.tomcat4;
 
-import java.io.*;
+import java.io.IOException;
 
 import javax.servlet.ServletInputStream;
 

@@ -59,8 +59,11 @@
 
 package org.apache.jk.common;
 
-import java.io.*;
-import org.apache.jk.core.*;
+import java.io.IOException;
+
+import org.apache.jk.core.JkHandler;
+import org.apache.jk.core.Msg;
+import org.apache.jk.core.MsgContext;
 
 
 

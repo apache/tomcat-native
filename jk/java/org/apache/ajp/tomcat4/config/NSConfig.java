@@ -58,9 +58,13 @@
  */
 package org.apache.ajp.tomcat4.config;
 
-import org.apache.catalina.*;
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Date;
+
+import org.apache.catalina.Context;
 
 
 /**

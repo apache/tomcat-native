@@ -58,14 +58,15 @@
  */
 package org.apache.jk.core;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.Properties;
 
-import javax.management.Notification;
 import javax.management.MBeanRegistration;
-import javax.management.ObjectName;
 import javax.management.MBeanServer;
+import javax.management.Notification;
 import javax.management.NotificationListener;
+import javax.management.ObjectName;
+
 import org.apache.commons.modeler.Registry;
 
 /**
