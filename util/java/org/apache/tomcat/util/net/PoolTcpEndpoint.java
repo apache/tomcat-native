@@ -96,7 +96,8 @@ import java.util.*;
  */
 public class PoolTcpEndpoint { // implements Endpoint {
 
-    private StringManager sm = StringManager.getManager("org.apache.tomcat.resources");
+    private StringManager sm = 
+        StringManager.getManager("org.apache.tomcat.util.net.res");
 
     private static final int BACKLOG = 100;
     private static final int TIMEOUT = 1000;
