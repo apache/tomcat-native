@@ -71,12 +71,6 @@
 
 static void jk2_trim_prp_comment(char *prp);
 static int  jk2_trim(char *s);
-static char **jk2_config_getValues(jk_env_t *env, jk_config_t *m,
-                                   struct jk_pool *resultPool,
-                                   char *name,
-                                   char *sep,
-                                   int *countP);
-
 
 /* ==================== ==================== */
 
@@ -203,8 +197,6 @@ static int jk2_config_saveConfig( jk_env_t *env,
     No replacement or saving is done on the val - this is
     a private method
 */
-
-
 static int jk2_config_processBeanPropertyString( jk_env_t *env,
                                                  jk_config_t *cfg,
                                                  char *propertyString,
@@ -289,11 +281,21 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     if( strcmp( name, "name" ) == 0 ) {
         return JK_OK;
     }
+    if( strcmp( name, "ver " ) == 0 ) {
+        mbean->ver=atol(val);
+        return JK_OK;
+    }
     if( strcmp( name, "debug" ) == 0 ) {
         mbean->debug=atoi( val );
+        return JK_OK;
     }
     if( strcmp( name, "disabled" ) == 0 ) {
         mbean->disabled=atoi( val );
+        return JK_OK;
+    }
+    if( strcmp( name, "info" ) == 0 ) {
+        /* do nothing, this is a comment */
+        return JK_OK;
     }
 
     if( (mbean == cfg->mbean) &&
@@ -301,8 +303,9 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
         cfg->file != NULL ) {
         /* 'file' property on ourself, avoid rec.
          */
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "config.setAttribute() ignore %s %s %s\n", mbean->name, name, val );
+        if( cfg->mbean->debug > 0 )
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "config.setAttribute() ignore %s %s %s\n", mbean->name, name, val );
         
         return JK_OK;
     }
@@ -313,9 +316,10 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "config.setAttribute() Error setting %s %s %s\n", mbean->name, name, val );
         }
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "config.setAttribute() %d setting %s %s %s\n",
-                      cfg->mbean->debug, mbean->name, name, val );
+        if( cfg->mbean->debug > 0 ) 
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "config.setAttribute() %d setting %s %s %s\n",
+                          cfg->mbean->debug, mbean->name, name, val );
         return rc;
     }
     return JK_ERR;
@@ -366,166 +370,6 @@ int jk2_config_setPropertyString(jk_env_t *env, jk_config_t *cfg,
 }
 
 
-char *jk2_config_getString(jk_env_t *env, jk_config_t *conf,
-                                  const char *name, char *def)
-{
-    char *val= conf->map->get( env, conf->map, name );
-    if( val==NULL )
-        return def;
-    return val;
-}
-
-int jk2_config_getBool(jk_env_t *env, jk_config_t *conf,
-                              const char *prop, const char *def)
-{
-    char *val=jk2_config_getString( env, conf, prop, (char *)def );
-
-    if( val==NULL )
-        return JK_ERR;
-
-    if( strcmp( val, "1" ) == 0 ||
-        strcasecmp( val, "TRUE" ) == 0 ||
-        strcasecmp( val, "ON" ) == 0 ) {
-        return JK_OK;
-    }
-    return JK_ERR;
-}
-
-/** Get a string property, using the worker's style
-    for properties.
-    Example worker.ajp13.host=localhost.
-*/
-static char *jk2_config_getStrProp(jk_env_t *env, jk_config_t *conf,
-                                   const char *objType, const char *objName,
-                                   const char *pname, char *def)
-{
-    char buf[1024];
-    char *res;
-
-    if(  objName==NULL || pname==NULL ) {
-        return def;
-    }
-    if( objType==NULL ) 
-        sprintf(buf, "%s.%s", objName, pname);
-    else
-        sprintf(buf, "%s.%s.%s", objType, objName, pname);
-    res = jk2_config_getString(env, conf, buf, def );
-    return res;
-}
-
-
-static int jk2_config_getIntProp(jk_env_t *env, jk_config_t *conf,
-                       const char *objType, const char *objName,
-                       const char *pname, int def)
-{
-    char *val=jk2_config_getStrProp( env, conf, objType, objName, pname, NULL );
-
-    if( val==NULL )
-        return def;
-
-    return jk2_config_str2int( env, val );
-}
-
-/* ==================== */
-/* Conversions */
-
-/* Convert a string to int, using 'M', 'K' suffixes
- */
-int jk2_config_str2int(jk_env_t *env, char *val )
-{   /* map2int:
-       char *v=getString();
-       return (c==NULL) ? def : str2int( v );
-    */ 
-    int  len;
-    int  int_res;
-    char org='\0';
-    int  multit = 1;
-    char *lastchar;
-
-    if( val==NULL ) return 0;
-    
-    /* sprintf(buf, "%d", def); */
-    /* rc = map_get_string(m, name, buf); */
-
-    len = strlen(val);
-    if(len==0)
-        return 0;
-    
-    lastchar = val + len - 1;
-    if('m' == *lastchar || 'M' == *lastchar) {
-        org=*lastchar;
-        *lastchar = '\0';
-        multit = 1024 * 1024;
-    } else if('k' == *lastchar || 'K' == *lastchar) {
-        org=*lastchar;
-        *lastchar = '\0';
-        multit = 1024;
-    }
-
-    int_res = atoi(val);
-    if( org!='\0' )
-        *lastchar=org;
-
-    return int_res * multit;
-}
-
-
-char **jk2_config_split(jk_env_t *env, jk_pool_t *pool,
-                        const char *listStr, const char *sep,
-                        unsigned *list_len )
-{
-    char **ar = NULL;
-    unsigned capacity = 0;
-    unsigned idex = 0;    
-    char *v;
-    char *l;
-
-    if( sep==NULL )
-        sep=" \t,*";
-    
-    if( list_len != NULL )
-        *list_len = 0;
-
-    if(listStr==NULL)
-        return NULL;
-
-    v = pool->pstrdup( env, pool, listStr);
-    
-    if(v==NULL) {
-        return NULL;
-    }
-
-    /*
-     * GS, in addition to VG's patch, we now need to 
-     * strtok also by a "*"
-     */
-
-    /* Not thread safe */
-    for(l = strtok(v, sep) ; l ; l = strtok(NULL, sep)) {
-        /* We want at least one space after idex for the null*/
-        if(idex+1 >= capacity) {
-            ar = pool->realloc(env, pool, 
-                               sizeof(char *) * (capacity + 5),
-                               ar,
-                               sizeof(char *) * capacity);
-            if(!ar) {
-                return NULL;
-            }
-            capacity += 5;
-        }
-        ar[idex] = pool->pstrdup(env, pool, l);
-        idex ++;
-    }
-
-    /* Append a NULL, we have space */
-    ar[idex]=NULL;
-
-    if( list_len != NULL )
-        *list_len = idex;
-
-    return ar;
-}
-
 
 /* ==================== */
 /*  Reading / parsing */
@@ -533,7 +377,7 @@ int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char 
 {
     int rc = JK_ERR;
     char *v;
-        
+
     jk2_trim_prp_comment(prp);
     
     if( jk2_trim(prp)==0 )
@@ -576,6 +420,7 @@ int jk2_config_parseProperty(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, char 
         prp=newN;
     }
 
+    
     /* Don't replace now - the caller may want to
        save the file, and it'll replace them anyway for runtime changes
        v = jk2_config_replaceProperties(env, cfg->map, cfg->pool, v); */
@@ -646,111 +491,7 @@ int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *f)
     return JK_OK;
 }
 
-/** For multi-value properties, return the concatenation
- *  of all values.
- *
- * @param sep Separators used to separate multi-values and
- *       when concatenating the values, NULL for none. The first
- *       char will be used on the result, the other will be
- *       used to split. ( i.e. the map may either have multiple
- *       values or values separated by one of the sep's chars )
- *    
- */
-static char *jk2_config_getValuesString(jk_env_t *env, jk_config_t *m,
-                                     struct jk_pool *resultPool,
-                                     char *name,
-                                     char *sep )
-{
-    char **values;
-    int valuesCount;
-    int i;
-    int len=0;
-    int pos=0;
-    int sepLen=0;
-    char *result;
-    char sepStr[2];
-    
-    if(sep==NULL)
-        values=jk2_config_getValues( env, m, resultPool, name," \t,*", &valuesCount );
-    else
-        values=jk2_config_getValues( env, m, resultPool, name, sep, &valuesCount );
 
-    if( values==NULL ) return NULL;
-    if( valuesCount<=0 ) return NULL;
-
-    if( sep!= NULL )
-        sepLen=strlen( sep );
-
-    for( i=0; i< valuesCount; i++ ) {
-        len+=strlen( values[i] );
-        if( sep!= NULL )
-            len+=1; /* Separator */
-    }
-
-    result=(char *)resultPool->alloc( env, resultPool, len + 1 );
-
-    result[0]='\0';
-    if( sep!=NULL ) {
-        sepStr[0]=sep[0];
-        sepStr[1]='\0';
-    }
-    
-    for( i=0; i< valuesCount; i++ ) {
-        strcat( values[i], result );
-        if( sep!=NULL )
-            strcat( sepStr, result );
-    }
-    return result;
-}
-
-/** For multi-value properties, return the array containing
- * all values.
- *
- * @param sep Optional separator, it'll be used to split existing values.
- *            Curently only single-char separators are supported. 
- */
-static char **jk2_config_getValues(jk_env_t *env, jk_config_t *m,
-                                struct jk_pool *resultPool,
-                                char *name,
-                                char *sep,
-                                int *countP)
-{
-    char **result;
-    int count=0;
-    int capacity=8;
-    int mapSz= m->map->size(env, m->map );
-    int i;
-    char *l;
-
-    *countP=0;
-    result=(char **)resultPool->alloc( env, resultPool,
-                                       capacity * sizeof( char *));
-    for(i=0; i<mapSz; i++ ) {
-        char *cName= m->map->nameAt( env, m->map, i );
-        char *cVal= m->map->valueAt( env, m->map, i );
-
-        if(0 == strcmp(cName, name)) {
-            /* Split the value by sep, and add it to the result list
-             */
-            for(l = strtok(cVal, sep) ; l ; l = strtok(NULL, sep)) {
-                if(count == capacity) {
-                    result = resultPool->realloc(env, resultPool, 
-                                                 sizeof(char *) * (capacity + 5),
-                                                 result,
-                                                 sizeof(char *) * capacity);
-                    if(result==NULL) 
-                        return NULL;
-                    capacity += 5;
-                }
-                result[count] = resultPool->pstrdup(env, resultPool, l);
-                count++;
-            }
-        }
-    }
-    *countP=count;
-    return result;
-}
-                               
 
 /**
  *  Replace $(property) in value.
