@@ -387,6 +387,26 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                 return(status);
                 break;
             }
+            case TYPE_CBK_READ: {
+                int size=-1;
+                p_read_ushort(pack,&size);
+                p_reset(pack);
+                size=wa_rread(r,pack->buff,size);
+                if (size==0) {
+                    pack->type=TYPE_CBK_DONE;
+                } else if (size>0) {
+                    pack->type=TYPE_CBK_DATA;
+                    pack->size=size;
+                } else {
+                    pack->type=TYPE_ERROR;
+                    p_write_string(pack,"Transfer interrupted");
+                }
+                if (n_send(conf->sock,pack)!=wa_true) {
+                    n_disconnect(conn);
+                    return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+                }
+                break;
+            }
             case TYPE_ERROR: {
                 char *mesg=NULL;
                 p_read_string(pack,&mesg);

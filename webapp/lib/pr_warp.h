@@ -131,6 +131,10 @@ typedef struct warp_header {
 #define TYPE_RES_BODY     0x30
 #define TYPE_RES_DONE     0x3f
 
+#define TYPE_CBK_READ     0x40
+#define TYPE_CBK_DATA     0x41
+#define TYPE_CBK_DONE     0x42
+
 
 /* ************************************************************************* */
 /* PACKET FUNCTIONS FROM PR_WARP_PACKET.C                                    */

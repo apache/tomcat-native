@@ -66,7 +66,7 @@ public class WarpPacket {
     protected int size=0;
 
     /* Pointer to the last byte read in the buffer */
-    private int pointer=0;
+    protected int pointer=0;
     /* Type of this packet */
     private int type=-1;
     /* Maximum value for a 16 bit unsigned value (0x0ffff +1) */

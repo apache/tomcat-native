@@ -94,7 +94,7 @@ wa_boolean n_recv(apr_socket_t *sock, warp_packet *pack) {
         }
     }
     
-    wa_debug(WA_MARK,"WARP <<< TYP=%d LEN=%d",pack->type,pack->size);
+    wa_debug(WA_MARK,"WARP <<< TYP=%02X LEN=%d",pack->type,pack->size);
 
     return(wa_true);
 }

@@ -56,15 +56,25 @@
  * ========================================================================= */
 package org.apache.catalina.connector.warp;
 
+import java.io.*;
+
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.HttpRequestBase;
 
 public class WarpRequest extends HttpRequestBase {
+    /** The local stream */
+    private Stream localstream;
+
+    /** The connection to which we are associated */
+    private WarpConnection connection;
+
     private Host host=null;
 
     public WarpRequest() {
         super();
+        this.localstream=new Stream(this);
+        this.setStream(this.localstream);
     }
 
     public void setHost(Host host) {
@@ -73,5 +83,87 @@ public class WarpRequest extends HttpRequestBase {
 
     public Host getHost() {
         return(this.host);
+    }
+
+    /**
+     * Recycle this <code>WarpResponse</code> instance.
+     */
+    public void recycle() {
+        // Recycle our parent
+        super.recycle();
+        // Recycle the stream
+        this.localstream.recycle();
+        // Tell the parent that a stream is already in use.
+        this.setStream(localstream);
+    }
+
+    /**
+     * Associate this <code>WarpResponse</code> instance with a specific
+     * <code>WarpConnection</code> instance.
+     */
+    public void setConnection(WarpConnection connection) {
+        this.connection=connection;
+    }
+
+    /**
+     * Return the <code>WarpConnection</code> associated this instance of
+     * <code>WarpResponse</code>.
+     */
+    public WarpConnection getConnection() {
+        return(this.connection);
+    }
+
+    protected class Stream extends InputStream {
+
+        /** The response associated with this stream instance. */
+        private WarpRequest request=null;
+        /** The packet used by this stream instance. */
+        private WarpPacket packet=null;
+        /** Wether <code>close()</code> was called or not. */
+        private boolean closed=false;
+
+        protected Stream(WarpRequest request) {
+            super();
+            this.request=request;
+            this.packet=new WarpPacket();
+            this.packet.setType(Constants.TYPE_CBK_DATA);
+        }
+        
+        public int read()
+        throws IOException {
+            if (closed) throw new IOException("Stream closed");
+
+            if (packet.getType()==Constants.TYPE_CBK_DONE) return(-1);
+
+            if (packet.getType()!=Constants.TYPE_CBK_DATA)
+                throw new IOException("Invalid WARP packet type for body");
+
+            if (this.packet.pointer<this.packet.size)
+                return((int)this.packet.buffer[this.packet.pointer++]);
+
+            this.packet.reset();
+            this.packet.setType(Constants.TYPE_CBK_READ);
+            this.packet.writeUnsignedShort(65535);
+            this.request.getConnection().send(packet);
+            packet.reset();
+
+            this.request.getConnection().recv(packet);
+            return(this.read());
+        }
+        
+        public void close()
+        throws IOException {
+            if (closed) throw new IOException("Stream closed");
+            this.packet.reset();
+            this.packet.setType(Constants.TYPE_CBK_DONE);
+            this.closed=true;
+        }
+
+        public void recycle() {
+            this.packet.reset();
+            this.packet.setType(Constants.TYPE_CBK_DATA);
+            this.closed=false;
+        }
+
     }
 }

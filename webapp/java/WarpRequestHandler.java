@@ -89,6 +89,7 @@ public class WarpRequestHandler {
         response.setRequest(request);
         response.setConnection(connection);
         response.setPacket(packet);
+        request.setConnection(connection);
 
         // Prepare the Proceed packet
         packet.reset();
@@ -120,6 +121,7 @@ public class WarpRequestHandler {
                     request.setRequestURI(ruri);
                     request.setQueryString(args);
                     request.setProtocol(prot);
+                    request.setConnection(connection);
                     Context ctx=connector.applicationContext(id);
                     if (ctx!=null) {
                         request.setContext(ctx);

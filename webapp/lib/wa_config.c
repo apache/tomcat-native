@@ -118,6 +118,7 @@ const char *wa_cvirtualhost(wa_virtualhost **h, const char *n, int p) {
     /* Set up parameters */
     host->name=apr_pstrdup(wa_pool,n);
     host->port=p;
+    host->apps=NULL;
 
     /* Done! :) */
     wa_debug(WA_MARK,"Created virtual host \"%s:%d\"",host->name,host->port);
