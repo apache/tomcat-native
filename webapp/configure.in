@@ -118,11 +118,12 @@ AC_MSG_RESULT([setting target directories to \"$TGTDIRS\"])
 AC_SUBST(TGTDIRS)
 
 dnl -----------------------------------------------------------------------------
-dnl Process the --with-apxs=FILE... command line argument
+dnl Process the --with-apxs[=FILE]... command line argument
 dnl -----------------------------------------------------------------------------
 AC_ARG_WITH(apxs,
-[  --with-apxs[=FILE]        Build shared Apache module. FILE is the optional      
-                          pathname to the Apache apxs tool; defaults to apxs.],
+[  --with-apxs[=FILE]      Build shared Apache module. FILE is the optional 
+                          pathname to the apxs tool; defaults to finding 
+                          apxs in your PATH.],
 [
     case "${withval}" in 
         y | yes | true) find_apxs=true ;;
@@ -135,18 +136,18 @@ AC_ARG_WITH(apxs,
         AC_PATH_PROG(PERL,perl,$PATH)dnl
     
         if ${TEST} ${find_apxs} ; then
-            AC_PATH_PROG(APXS_CMD,apxs,$PATH)dnl
+            AC_PATH_PROG(APXS,apxs,$PATH)dnl
         else
-            APXS_CMD=${withval}
+            APXS=${withval}
         fi
     
-        if ${TEST} -n "${APXS_CMD}" ; then
+        if ${TEST} -n "${APXS}" ; then
             dnl Seems that we have it, but have to check if it is OK first        
-            if ${TEST} ! -x "${APXS_CMD}" ; then
-                AC_MSG_ERROR(Invalid location for apxs: '${APXS_CMD}')
+            if ${TEST} ! -x "${APXS}" ; then
+                AC_MSG_ERROR(Invalid location for apxs: '${APXS}')
             fi
             
-            $APXS_CMD -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
+            $APXS -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
     
             if ${TEST} "${apxs_support}" = "false" ; then
                 AC_MSG_RESULT(could not find apxs)
@@ -157,7 +158,7 @@ AC_ARG_WITH(apxs,
             AC_MSG_RESULT([adding apache-1.3 to target directories: \"$TGTDIRS\"])
     
             AC_SUBST(TGTDIRS)
-            AC_SUBST(APXS_CMD)
+            AC_SUBST(APXS)
         fi
     fi
 ],
