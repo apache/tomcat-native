@@ -134,8 +134,9 @@ AC_ARG_WITH(apxs,
     if ${TEST} ${find_apxs} ; then    
         AC_MSG_RESULT([need to check for Perl first, apxs depends on it...])
         AC_PATH_PROG(PERL,perl,$PATH)dnl
-    
-        if ${TEST} ${find_apxs} ; then
+   
+        dnl if the value is an excutable otherwise try the PATH.
+        if ${TEST} ! -x ${withval} ; then
             AC_PATH_PROG(APXS,apxs,$PATH)dnl
         else
             APXS=${withval}
