@@ -174,6 +174,8 @@ public class GeneratorApache2 implements WebXml2Jk.MappingGenerator {
         out.println( "  SetHandler jakarta-servlet2" );
         out.println( "  JkUriSet group " + worker );
         out.println( "  JkUriSet servlet " +  servlet);
+        out.println( "  JkUriSet host " +  vhost );
+        out.println( "  JkUriSet context " +  cpath );
         out.println( "</Location>");
         out.println();
     }
@@ -183,6 +185,8 @@ public class GeneratorApache2 implements WebXml2Jk.MappingGenerator {
         out.println( "  SetHandler jakarta-servlet2" );
         out.println( "  JkUriSet group " + worker );
         out.println( "  JkUriSet servlet " +  servlet);
+        out.println( "  JkUriSet host " +  vhost );
+        out.println( "  JkUriSet context " +  cpath );
         out.println( "</Location>");
         out.println();
     }
@@ -192,6 +196,8 @@ public class GeneratorApache2 implements WebXml2Jk.MappingGenerator {
         out.println( "<Location \"" + cpath + loginPage + "\" >");
         out.println( "  SetHandler jakarta-servlet2" );
         out.println( "  JkUriSet group " + worker );
+        out.println( "  JkUriSet host " +  vhost );
+        out.println( "  JkUriSet context " +  cpath );
         out.println( "</Location>");
         out.println();
     }
@@ -208,7 +214,7 @@ public class GeneratorApache2 implements WebXml2Jk.MappingGenerator {
             out.println( "<Location \"" + cpath + url + "\" >");
 
             if( methods.size() > 0 ) {
-                out.print("<Limit ");
+                out.print("  <Limit ");
                 for( int j=0; j<methods.size(); j++ ) {
                     String m=(String)methods.elementAt(j);
                     out.print( " " +  m);
@@ -216,8 +222,8 @@ public class GeneratorApache2 implements WebXml2Jk.MappingGenerator {
                 out.println(  " >" );
             }
 
-            out.println( "AuthType basic" );
-            out.print( "Require group " );
+            out.println( "    AuthType basic" );
+            out.print( "    Require group " );
             for( int j=0; j<roles.size(); j++ ) {
                 String role=(String)roles.elementAt(j);
                 out.print( " " +  role);
@@ -225,7 +231,7 @@ public class GeneratorApache2 implements WebXml2Jk.MappingGenerator {
             out.println();
 
             if( methods.size() > 0 ) {
-                out.println("</Limit>");
+                out.println("  </Limit>");
             }
             
             out.println( "</Location>");

@@ -125,9 +125,11 @@ public class GeneratorJk2 implements WebXml2Jk.MappingGenerator {
     }
     
     public void generateServletMapping( String servlet, String url ) {
-        out.println( "[url:" + vhost + cpath + url + "]");
+        out.println( "[uri:" + vhost + cpath + url + "]");
         out.println( "group=" + worker );
         out.println( "servlet=" +  servlet);
+        out.println( "host=" +  vhost); 
+        out.println( "context=" +  cpath);
         out.println();
     }
 
@@ -135,6 +137,8 @@ public class GeneratorJk2 implements WebXml2Jk.MappingGenerator {
         out.println( "[url:" + vhost + cpath + url + "]");
         out.println( "group=" + worker );
         out.println( "filter=" +  servlet);
+        out.println( "host=" +  vhost); 
+        out.println( "context=" +  cpath);
         out.println();
     }
 
@@ -142,9 +146,13 @@ public class GeneratorJk2 implements WebXml2Jk.MappingGenerator {
                                         String errPage, String authM ) {
         out.println("[url:" + vhost + cpath + loginPage  + "]" );
         out.println( "group=" + worker );
+        out.println( "host=" +  vhost); 
+        out.println( "context=" +  cpath);
         out.println();
         out.println("[url:" + vhost + cpath + errPage  + "]" );
         out.println( "group=" + worker );
+        out.println( "host=" +  vhost); 
+        out.println( "context=" +  cpath);
         out.println();
     }
 
@@ -167,6 +175,8 @@ public class GeneratorJk2 implements WebXml2Jk.MappingGenerator {
 
             out.println("[url:" + vhost + cpath + url + "]");
             out.println( "group=" + worker );
+            out.println( "host=" +  vhost); 
+            out.println( "context=" +  cpath);
             for( int j=0; j<roles.size(); j++ ) {
                 String role=(String)roles.elementAt(j);
                 out.println( "role=" +  role);
