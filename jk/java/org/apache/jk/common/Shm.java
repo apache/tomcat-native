@@ -85,7 +85,7 @@ public class Shm extends JniHandler {
 
     // Will be dynamic ( getMethodId() ) after things are stable 
     static final int SHM_SET_ATTRIBUTE=0;
-    static final int SHM_REGISTER_TOMCAT=2;
+    static final int SHM_WRITE_SLOT=2;
     static final int SHM_ATTACH=3;
     static final int SHM_DETACH=4;
     
@@ -142,8 +142,13 @@ public class Shm extends JniHandler {
         
         this.invoke( msg, mCtx );
     }
+
+    public void registerTomcat(String host, int port) throws IOException {
+        String slotName="TOMCAT:" + host + ":" + port;
+        writeSlot( slotName );
+    }
     
-    public void registerTomcat(String host, int port)
+    public void writeSlot(String slotName)
         throws IOException
     {
         if( apr==null ) return;
@@ -151,10 +156,8 @@ public class Shm extends JniHandler {
         Msg msg=(Msg)mCtx.getMsg(0);
         msg.reset();
         C2BConverter c2b=(C2BConverter)mCtx.getNote(C2B_NOTE);
-
-        String slotName="TOMCAT:" + host + ":" + port;
         
-        msg.appendByte( SHM_REGISTER_TOMCAT );
+        msg.appendByte( SHM_WRITE_SLOT );
         appendString( msg, slotName, c2b );
 
         this.invoke( msg, mCtx );
