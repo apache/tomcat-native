@@ -1,4 +1,14 @@
 #### XXXX DO we need this Makefile ????
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+top_builddir = ..
+
+LIBTOOL = @LIBTOOL@
+
 OEXT=.lo
 include list.mk
 
