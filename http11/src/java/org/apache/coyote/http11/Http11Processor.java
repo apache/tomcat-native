@@ -81,6 +81,7 @@ import org.apache.coyote.http11.filters.IdentityInputFilter;
 import org.apache.coyote.http11.filters.IdentityOutputFilter;
 import org.apache.coyote.http11.filters.VoidInputFilter;
 import org.apache.coyote.http11.filters.VoidOutputFilter;
+import org.apache.coyote.http11.filters.BufferedInputFilter;
 import org.apache.regexp.RE;
 import org.apache.regexp.RESyntaxException;
 import org.apache.tomcat.util.buf.Ascii;
@@ -997,7 +998,14 @@ public class Http11Processor implements Processor, ActionHook {
             request.localAddr().setString(localAddr);
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
-            if( sslSupport != null) { 
+            if( sslSupport != null) {
+                /*
+                 * Consume and buffer the request body, so that it does not
+                 * interfere with the client's handshake messages
+                 */
+                InputFilter[] inputFilters = inputBuffer.getFilters();
+                inputBuffer.addActiveFilter
+                    (inputFilters[Constants.BUFFERED_FILTER]);
                 try {
                     Object sslO = sslSupport.getPeerCertificateChain(true);
                     if( sslO != null) {
@@ -1478,6 +1486,9 @@ public class Http11Processor implements Processor, ActionHook {
         // Create and add the void filters.
         inputBuffer.addFilter(new VoidInputFilter());
         outputBuffer.addFilter(new VoidOutputFilter());
+
+        // Create and add buffered input filter
+        inputBuffer.addFilter(new BufferedInputFilter());
 
         // Create and add the chunked filters.
         //inputBuffer.addFilter(new GzipInputFilter());

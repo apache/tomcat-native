@@ -201,7 +201,7 @@ public final class Constants {
 
 
     /**
-     * Indetity filters (input and output).
+     * Identity filters (input and output).
      */
     public static final int IDENTITY_FILTER = 0;
 
@@ -219,9 +219,15 @@ public final class Constants {
 
 
     /**
-     * GZIP filters (input and output).
+     * GZIP filter (output).
      */
     public static final int GZIP_FILTER = 3;
+
+
+    /**
+     * Buffered filter (input)
+     */
+    public static final int BUFFERED_FILTER = 3;
 
 
     /**
