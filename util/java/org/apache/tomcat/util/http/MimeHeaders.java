@@ -281,19 +281,19 @@ public class MimeHeaders {
 	The conversion to chars can be delayed until
 	encoding is known.
      */
-    public MessageBytes addValue(byte b[], int startN, int endN)
+    public MessageBytes addValue(byte b[], int startN, int len)
     {
 	MimeHeaderField mhf=createHeader();
-	mhf.getName().setBytes(b, startN, endN);
+	mhf.getName().setBytes(b, startN, len);
 	return mhf.getValue();
     }
 
     /** Create a new named header using translated char[].
      */
-    public MessageBytes addValue(char c[], int startN, int endN)
+    public MessageBytes addValue(char c[], int startN, int len)
     {
 	MimeHeaderField mhf=createHeader();
-	mhf.getName().setChars(c, startN, endN);
+	mhf.getName().setChars(c, startN, len);
 	return mhf.getValue();
     }
 
