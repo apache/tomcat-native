@@ -524,7 +524,6 @@ static int jk2_handler(request_rec *r)
     jk_endpoint_t *end = NULL;
     jk_uriEnv_t *uriEnv;
     jk_env_t *env;
-    jk_workerEnv_t *workerEnv;
 
     jk_ws_service_t *s=NULL;
     jk_pool_t *rPool=NULL;
@@ -541,8 +540,6 @@ static int jk2_handler(request_rec *r)
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    workerEnv = uriEnv->workerEnv;
-
     /* Get an env instance */
     env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
 
@@ -554,22 +551,14 @@ static int jk2_handler(request_rec *r)
         return rc;
     }
 
-    if( uriEnv == NULL ) {
-        /* SetHandler case - per_dir config should have the worker*/
-        worker =  workerEnv->defaultWorker;
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "mod_jk.handler() Default worker for %s %s\n",
-                      r->uri, worker->mbean->name); 
-    } else {
-        worker=uriEnv->worker;
+    worker=uriEnv->worker;
         
-        if( worker==NULL && uriEnv->workerName != NULL ) {
-            worker=env->getByName( env, uriEnv->workerName);
-            env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                          "mod_jk.handler() finding worker for %#lx %#lx %s\n",
-                          worker, uriEnv, uriEnv->workerName);
-            uriEnv->worker=worker;
-        }
+    if( worker==NULL && uriEnv->workerName != NULL ) {
+        worker=env->getByName( env, uriEnv->workerName);
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "mod_jk.handler() finding worker for %#lx %#lx %s\n",
+                      worker, uriEnv, uriEnv->workerName);
+        uriEnv->worker=worker;
     }
 
     if(worker==NULL || worker->mbean == NULL || worker->mbean->localName==NULL ) {
