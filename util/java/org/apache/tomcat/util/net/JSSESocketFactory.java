@@ -161,7 +161,18 @@ public class JSSESocketFactory
 
 	    //determine whether we want client authentication
 	    // the presence of the attribute enables client auth
-	    clientAuth = null != (String)attributes.get("clientauth");
+	    String clientAuthStr=(String)attributes.get("clientauth");
+	    if(clientAuthStr != null){
+		if(clientAuthStr.equals("true")){
+		    clientAuth=true;
+		} else if(clientAuthStr.equals("false")) {
+		    clientAuth=false;
+		} else {
+		    throw new IOException("Invalid value '" +
+					  clientAuthStr + 
+					  "' for 'clientauth' parameter:");
+		}
+	    }
 
 	    String keyPass=(String)attributes.get("keypass");
 	    if( keyPass==null) keyPass=defaultKeyPass;
@@ -224,11 +235,14 @@ public class JSSESocketFactory
     public Socket acceptSocket(ServerSocket socket)
 	throws IOException
     {
+	SSLSocket asock = null;
 	try {
-	    return socket.accept();
+	     asock = (SSLSocket)socket.accept();
+	     asock.setNeedClientAuth(clientAuth);
 	} catch (SSLException e){
 	  throw new SocketException("SSL handshake error" + e.toString());
 	}
+	return asock;
     }
      
     /** Set server socket properties ( accepted cipher suites, etc)
