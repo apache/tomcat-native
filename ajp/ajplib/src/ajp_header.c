@@ -447,6 +447,9 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
                    "Error appending the header value");
             return APR_EGENERAL;
         }
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+                   "ajp_marshal_into_msgb: Header[%d] [%s] = [%s]",
+                   i, elts[i].key, elts[i].val);
     }
 
 /* XXXX need to figure out how to do this
