@@ -944,6 +944,12 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
         s->headers_out->put(env, s->headers_out,
                             "Content-Type", "text/html", NULL);
     }
+
+    s->headers_out->put(env, s->headers_out,
+                        "Pragma", "no-cache", NULL);
+    s->headers_out->put(env, s->headers_out,
+                        "Cache-Control", "no-cache", NULL);
+                        
     s->head(env, s );
 
 	s->jkprintf(env, s, "<style>%s</style>\n", DEFAULT_CSS );
