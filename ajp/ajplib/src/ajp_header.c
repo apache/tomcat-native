@@ -210,91 +210,91 @@ static int sc_for_req_method(const char *method)
 } 
 
 
-static apr_status_t sc_for_req_header(const char *header_name,
-                                      apr_uint16_t *sc) 
+static apr_status_t sc_for_req_header(const char *header_name)
 {
-    switch((tolower(header_name[0]))) {
-        case 'a':
-            if('c' ==tolower(header_name[1]) &&
-               'c' ==tolower(header_name[2]) &&
-               'e' ==tolower(header_name[3]) &&
-               'p' ==tolower(header_name[4]) &&
-               't' ==tolower(header_name[5])) {
-                if ('-' == header_name[6]) {
-                    if(!strcasecmp(header_name + 7, "charset")) {
-                        *sc = SC_ACCEPT_CHARSET;
-                    } else if(!strcasecmp(header_name + 7, "encoding")) {
-                        *sc = SC_ACCEPT_ENCODING;
-                    } else if(!strcasecmp(header_name + 7, "language")) {
-                        *sc = SC_ACCEPT_LANGUAGE;
-                    } else {
-                        return APR_EGENERAL;
-                    }
-                } else if ('\0' == header_name[6]) {
-                    *sc = SC_ACCEPT;
-                } else {
-                    return APR_EGENERAL;
+    char header[24];
+    apr_size_t len = strlen(header_name);
+    const char *p = header_name;
+    int i = 0;
+
+    /* ACCEPT-CONTENT_LENGTH is the longest headeer
+     * that is of interest.
+     */
+    if (len < 4 || len > 21)
+        return UNKNOWN_METHOD;
+    
+    while (*p)
+        header[i++] = apr_toupper(*p++);
+    header[i] = '\0';
+    p = &header[1];
+
+    switch (header[0]) {
+        case 'A':
+            if (memcmp(p, "CCEPT", 5) == 0) {
+                if (!header[6])
+                    return SC_ACCEPT;
+                else if (header[6] == '-') {
+                    p += 6;
+                    if (memcmp(p, "CHARSET", 7) == 0)
+                        return SC_ACCEPT_CHARSET;
+                    else if (memcmp(p,  "ENCODING", 8))
+                        return SC_ACCEPT_ENCODING;
+                    else if (memcmp(p, "LANGUAGE", 8))
+                        return SC_ACCEPT_LANGUAGE;
+                    else
+                        return UNKNOWN_METHOD;
                 }
-            } else if (!strcasecmp(header_name, "authorization")) {
-                *sc = SC_AUTHORIZATION;
-            } else {
-                return APR_EGENERAL;
+                else
+                    return UNKNOWN_METHOD;
             }
+            else if (memcmp(p, "UTHORIZATION", 12) == 0)
+                return SC_AUTHORIZATION;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-        case 'c':
-            if(!strcasecmp(header_name, "cookie")) {
-                *sc = SC_COOKIE;
-            } else if(!strcasecmp(header_name, "connection")) {
-                *sc = SC_CONNECTION;
-            } else if(!strcasecmp(header_name, "content-type")) {
-                *sc = SC_CONTENT_TYPE;
-            } else if(!strcasecmp(header_name, "content-length")) {
-                *sc = SC_CONTENT_LENGTH;
-            } else if(!strcasecmp(header_name, "cookie2")) {
-                *sc = SC_COOKIE2;
-            } else {
-                return APR_EGENERAL;
-            }
+        case 'C':
+            if (memcmp(p, "OOKIE", 5) == 0)
+                return SC_COOKIE;
+            else if(memcmp(p, "ONNECTION", 9) == 0)
+                return SC_CONNECTION;
+            else if(memcmp(p, "ONTENT_TYPE", 11) == 0)
+                return SC_CONTENT_TYPE;
+            else if(memcmp(p, "ONTENT_LENGTH", 13) == 0)
+                return SC_CONTENT_LENGTH;
+            else if(memcmp(p, "OOKIE2", 6) == 0)
+                return SC_COOKIE2;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-        case 'h':
-            if(!strcasecmp(header_name, "host")) {
-                *sc = SC_HOST;
-            } else {
-                return APR_EGENERAL;
-            }
+        case 'H':
+            if(memcmp(p, "OST", 3) == 0)
+                return SC_HOST;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-        case 'p':
-            if(!strcasecmp(header_name, "pragma")) {
-                *sc = SC_PRAGMA;
-            } else {
-                return APR_EGENERAL;
-            }
+        case 'P':
+            if(memcmp(p, "RAGMA", 5) == 0)
+                return SC_PRAGMA;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-        case 'r':
-            if(!strcasecmp(header_name, "referer")) {
-                *sc = SC_REFERER;
-            } else {
-                return APR_EGENERAL;
-            }
+        case 'R':
+            if(memcmp(p, "EFERER", 6) == 0)
+                return SC_REFERER;
+            else
+                return UNKNOWN_METHOD;
         break;
-
-        case 'u':
-            if(!strcasecmp(header_name, "user-agent")) {
-                *sc = SC_USER_AGENT;
-            } else {
-                return APR_EGENERAL;
-            }
+        case 'U':
+            if(memcmp(p, "SER_AGENT", 9) == 0)
+                return SC_USER_AGENT;
+            else
+                return UNKNOWN_METHOD;
         break;
-
         default:
-            return APR_EGENERAL;
+            return UNKNOWN_METHOD;
     }
 
-    return APR_SUCCESS;
+    /* NOTREACHED */
 }
 
 
@@ -376,18 +376,19 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t    *msg,
     }
 
     for (i = 0 ; i < num_headers ; i++) {
-        apr_uint16_t sc;
+        int sc;
         const apr_array_header_t *t = apr_table_elts(r->headers_in);
         const apr_table_entry_t *elts = (apr_table_entry_t *)t->elts;
 
-        if (sc_for_req_header(elts[i].key, &sc)) {
-            if (ajp_msg_append_uint16(msg, sc)) {
+        if ((sc = sc_for_req_header(elts[i].key)) != UNKNOWN_METHOD) {
+            if (ajp_msg_append_uint16(msg, (apr_uint16_t)sc)) {
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                        "Error ajp_marshal_into_msgb - "
                        "Error appending the header name");
                 return APR_EGENERAL;
             }
-        } else {
+        }
+        else {
             if (ajp_msg_append_string(msg, elts[i].key)) {
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                        "Error ajp_marshal_into_msgb - "
