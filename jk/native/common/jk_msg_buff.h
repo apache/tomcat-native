@@ -46,8 +46,7 @@ RPC details:
 
  */
 
-struct jk_msg_buf;
-typedef struct jk_msg_buf jk_msg_buf_t;
+typedef struct jk_msg_buf_t jk_msg_buf_t;
 
 /* -------------------- Setup routines -------------------- */
 
@@ -58,7 +57,7 @@ jk_msg_buf_t *jk_b_new(jk_pool_t *p);
 /** Set up a buffer with an existing buffer
  */
 int jk_b_set_buffer(jk_msg_buf_t *msg, 
-                    char *data, 
+                    unsigned char *data, 
                     int buffSize );
 
 /*
@@ -71,7 +70,7 @@ int jk_b_set_buffer_size(jk_msg_buf_t *msg,
  * Finalize the buffer before sending - set length fields, etc
  */
 void jk_b_end(jk_msg_buf_t *msg,
-			  int protoh);
+              int protoh);
 
 /*
  * Recycle the buffer - z for a new invocation 
@@ -105,12 +104,6 @@ void jk_b_set_pos(jk_msg_buf_t *msg,
  */
 unsigned int jk_b_get_len(jk_msg_buf_t *msg);
 
-/*
- * Dump the buffer header
- *   @param err Message text
- */
-void jk_b_dump(jk_msg_buf_t *msg, 
-               char *err); 
 
 /* -------------------- Real encoding -------------------- */
 
@@ -119,7 +112,7 @@ int jk_b_append_byte(jk_msg_buf_t *msg,
 
 int jk_b_append_bytes(jk_msg_buf_t *        msg, 
                       const unsigned char * param,
-					  int                   len);
+                      int                   len);
 
 int jk_b_append_int(jk_msg_buf_t *msg, 
                     unsigned short val);
@@ -160,8 +153,8 @@ unsigned char *jk_b_get_string(jk_msg_buf_t *msg);
 /** Get Bytes from the current position
  */
 int jk_b_get_bytes(jk_msg_buf_t *msg, 
-				   unsigned char * buf, 
-				   int len);
+                   unsigned char * buf, 
+                   int len);
 
 /** Get a byte from an arbitrary position
  */
