@@ -120,7 +120,9 @@ static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
 
     if( wEnv->vm == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "channel_jni.init() no VM found\n" ); 
+                      "channel_jni.init() no VM found\n" );
+        if( jniW->worker != NULL )
+            jniW->worker->mbean->disabled=JK_TRUE;
         return JK_ERR;
     }
     return JK_OK;
@@ -150,6 +152,9 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.init():  \n" );
 
+    if( _this->worker != NULL )
+        _this->worker->mbean->disabled=JK_TRUE;
+    
     jniCh->vm=(jk_vm_t *)we->vm;
     if( jniCh->vm == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -262,6 +267,9 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "channel_jni.open() found write method, open ok\n" ); 
 
+    
+    if( _this->worker != NULL )
+        _this->worker->mbean->disabled=JK_FALSE;
     
     /* Don't detach ( XXX Need to find out when the thread is
      *  closing in order for this to work )
