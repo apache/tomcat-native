@@ -18,11 +18,7 @@ package org.apache.jk.core;
 
 import java.io.IOException;
 
-import javax.management.ObjectName;
-
-import org.apache.commons.modeler.Registry;
 import org.apache.coyote.Request;
-import org.apache.tomcat.util.threads.ThreadPool;
 
 /**
  * A Channel represents a connection point to the outside world.

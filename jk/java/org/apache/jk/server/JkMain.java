@@ -68,7 +68,6 @@ import org.apache.tomcat.util.IntrospectionUtils;
  *  to see configs based on registry, LDAP, db, etc. ( XML is not necesarily better )
  * 
  * @author Costin Manolache
- * @deprecated Will be replaced with JMX operations
  */
 public class JkMain implements MBeanRegistration
 {
@@ -362,7 +361,7 @@ public class JkMain implements MBeanRegistration
     */
     public void setBeanProperty( Object target, String name, String val ) {
         if( val!=null )
-            val=IntrospectionUtils.replaceProperties( val, props );
+            val=IntrospectionUtils.replaceProperties( val, props, null );
         if( log.isDebugEnabled())
             log.debug( "setProperty " + target + " " + name + "=" + val );
         
@@ -468,7 +467,7 @@ public class JkMain implements MBeanRegistration
         File outFile= new File(propsF.getParentFile(), propsF.getName()+".save");
         log.debug("Saving properties " + outFile );
         try {
-            props.save( new FileOutputStream(outFile), "AUTOMATICALLY GENERATED" );
+            props.store( new FileOutputStream(outFile), "AUTOMATICALLY GENERATED" );
         } catch(IOException ex ){
             log.warn("Unable to save to "+outFile,ex);
         }
@@ -583,8 +582,9 @@ public class JkMain implements MBeanRegistration
         }
         if( this.domain != null ) {
             try {
-                Registry.getRegistry().registerComponent(handler, this.domain, classN,
-                        "type=JkHandler,name=" + fullName);
+                ObjectName handlerOname = new ObjectName
+                    (this.domain + ":" + "type=JkHandler,name=" + fullName);
+                Registry.getRegistry(null, null).registerComponent(handler, handlerOname, classN);
             } catch (Exception e) {
                 log.error( "Error registering " + fullName, e );
             }

@@ -96,7 +96,7 @@ public class JniHandler extends JkHandler {
                 if( oname != null ) {
                     ObjectName aprname=new ObjectName(oname.getDomain() +
                             ":type=JkHandler, name=apr");
-                    Registry.getRegistry().registerComponent(apr, aprname, null);
+                    Registry.getRegistry(null, null).registerComponent(apr, aprname, null);
                 }
             } catch( Throwable t ) {
                 log.debug("Can't load apr", t);
@@ -180,7 +180,7 @@ public class JniHandler extends JkHandler {
             C2BConverter c2b=new C2BConverter(  "iso-8859-1" );
             msgCtx.setNote( C2B_NOTE, c2b );
 
-            MessageBytes tmpMB=new MessageBytes();
+            MessageBytes tmpMB= MessageBytes.newInstance();
             msgCtx.setNote( MB_NOTE, tmpMB );
             return msgCtx;
         } catch( Exception ex ) {
@@ -284,7 +284,7 @@ public class JniHandler extends JkHandler {
 
         // Will process the message in the current thread.
         // No wait needed to receive the response, if any
-        int status=apr.jkInvoke( xEnv,
+        int status=AprImpl.jkInvoke( xEnv,
                                  nativeJkHandlerP,
                                  nativeContext,
                                  code, msg.getBuffer(), 0, msg.getLen(), raw );

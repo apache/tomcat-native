@@ -46,7 +46,6 @@ import org.apache.jk.core.JkHandler;
 import org.apache.jk.core.Msg;
 import org.apache.jk.core.MsgContext;
 import org.apache.jk.core.WorkerEnv;
-import org.apache.jk.core.JkChannel;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.C2BConverter;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -189,8 +188,10 @@ public class JkCoyoteHandler extends JkHandler implements
         try {
             if( oname != null && getJkMain().getDomain() == null) {
                 try {
-                    Registry.getRegistry().registerComponent(getJkMain(), oname.getDomain(),
-                            "JkMain", "type=JkMain");
+                    ObjectName jkmainOname = 
+                        new ObjectName(oname.getDomain() + ":type=JkMain");
+                    Registry.getRegistry(null, null)
+                        .registerComponent(getJkMain(), jkmainOname, "JkMain");
                 } catch (Exception e) {
                     log.error( "Error registering jkmain " + e );
                 }
@@ -356,7 +357,7 @@ public class JkCoyoteHandler extends JkHandler implements
         
         MessageBytes mb=(MessageBytes)ep.getNote( tmpMessageBytesNote );
         if( mb==null ) {
-            mb=new MessageBytes();
+            mb=MessageBytes.newInstance();
             ep.setNote( tmpMessageBytesNote, mb );
         }
         String message=res.getMessage();

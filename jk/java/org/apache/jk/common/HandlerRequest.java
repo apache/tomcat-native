@@ -22,11 +22,8 @@ import java.io.IOException;
 import java.io.CharConversionException;
 import java.net.InetAddress;
 import java.util.Properties;
-import javax.management.ObjectName;
 
-import org.apache.commons.modeler.Registry;
 import org.apache.coyote.Request;
-import org.apache.coyote.RequestGroupInfo;
 import org.apache.coyote.RequestInfo;
 import org.apache.coyote.Response;
 import org.apache.coyote.Constants;
@@ -321,7 +318,7 @@ public class HandlerRequest extends JkHandler
             }
 
             FileOutputStream stopF=new FileOutputStream( sf );
-            props.save( stopF, "Automatically generated, don't edit" );
+            props.store( stopF, "Automatically generated, don't edit" );
         } catch( IOException ex ) {
             log.debug( "Can't create stop file: "+sf );
             ex.printStackTrace();
@@ -351,7 +348,7 @@ public class HandlerRequest extends JkHandler
 
         MessageBytes tmpMB=(MessageBytes)ep.getNote( tmpBufNote );
         if( tmpMB==null ) {
-            tmpMB=new MessageBytes();
+            tmpMB= MessageBytes.newInstance();
             ep.setNote( tmpBufNote, tmpMB);
         }
         if( log.isDebugEnabled() )
@@ -604,7 +601,7 @@ public class HandlerRequest extends JkHandler
                 // Transform the string into certificate.
                 MessageBytes tmpMB2 = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
                 if(tmpMB2 == null) {
-                    tmpMB2 = new MessageBytes();
+                    tmpMB2 = MessageBytes.newInstance();
                     req.setNote(WorkerEnv.SSL_CERT_NOTE, tmpMB2);
                 }
                 // SSL certificate extraction is costy, moved to JkCoyoteHandler

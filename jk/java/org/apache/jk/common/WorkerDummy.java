@@ -46,7 +46,7 @@ public class WorkerDummy extends JkHandler
         headersMsgNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "headerMsg" );
     }
  
-    MessageBytes body=new MessageBytes();
+    MessageBytes body=MessageBytes.newInstance();
     private int headersMsgNote;
     
     public int invoke( Msg in, MsgContext ep ) 

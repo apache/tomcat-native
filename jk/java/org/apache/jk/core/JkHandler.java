@@ -169,7 +169,7 @@ public class JkHandler implements MBeanRegistration, NotificationListener {
             wEnv=new WorkerEnv();
         }
         if( ! mserver.isRegistered(wEnvName )) {
-            Registry.getRegistry().registerComponent(wEnv, wEnvName, null);
+            Registry.getRegistry(null, null).registerComponent(wEnv, wEnvName, null);
         }
         mserver.invoke( wEnvName, "addHandler", 
                 new Object[] {name, this}, 

@@ -433,7 +433,7 @@ public class ChannelSocket extends JkHandler
                      getChannelName()+",name=JkRequest" +count);
                 ep.setNote(JMXRequestNote, roname);
                         
-                Registry.getRegistry().registerComponent( rp, roname, null);
+                Registry.getRegistry(null, null).registerComponent( rp, roname, null);
             } catch( Exception ex ) {
                 log.warn("Error registering request");
             }
@@ -480,10 +480,10 @@ public class ChannelSocket extends JkHandler
             sSocket.close(); // XXX?
             
             if( tpOName != null )  {
-                Registry.getRegistry().unregisterComponent(tpOName);
+                Registry.getRegistry(null, null).unregisterComponent(tpOName);
             }
             if( rgOName != null ) {
-                Registry.getRegistry().unregisterComponent(rgOName);
+                Registry.getRegistry(null, null).unregisterComponent(rgOName);
             }
         } catch(Exception e) {
             log.info("Error shutting down the channel " + port + " " +
@@ -704,7 +704,7 @@ public class ChannelSocket extends JkHandler
                 if( req != null ) {
                     ObjectName roname = (ObjectName)ep.getNote(JMXRequestNote);
                     if( roname != null ) {
-                        Registry.getRegistry().unregisterComponent(roname);
+                        Registry.getRegistry(null, null).unregisterComponent(roname);
                     }
                     req.getRequestProcessor().setGlobalProcessor(null);
                 }

@@ -182,10 +182,10 @@ public class ChannelUn extends JniHandler implements JkChannel {
             super.destroyJkComponent();
 
             if(tpOName != null) {
-		Registry.getRegistry().unregisterComponent(tpOName);
+		Registry.getRegistry(null, null).unregisterComponent(tpOName);
 	    }
 	    if(rgOName != null) {
-		Registry.getRegistry().unregisterComponent(rgOName);
+		Registry.getRegistry(null, null).unregisterComponent(rgOName);
 	    }
         } catch(Exception e) {
             log.error("Error in destroy",e);
@@ -203,7 +203,7 @@ public class ChannelUn extends JniHandler implements JkChannel {
 		     getChannelName()+",name=JkRequest" +count);
 		ep.setNote(JMXRequestNote, roname);
                         
-		Registry.getRegistry().registerComponent( rp, roname, null);
+		Registry.getRegistry(null, null).registerComponent( rp, roname, null);
 	    } catch( Exception ex ) {
 		log.warn("Error registering request");
 	    }
@@ -313,7 +313,7 @@ public class ChannelUn extends JniHandler implements JkChannel {
                 if( req != null ) {
                     ObjectName roname = (ObjectName)ep.getNote(JMXRequestNote);
                     if( roname != null ) {
-                        Registry.getRegistry().unregisterComponent(roname);
+                        Registry.getRegistry(null, null).unregisterComponent(roname);
                     }
                     req.getRequestProcessor().setGlobalProcessor(null);
                 }
