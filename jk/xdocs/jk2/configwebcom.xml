@@ -78,7 +78,7 @@ and  provides access to all other objects</p>
                     <tr>
                         <td>forwardURICompat</td>
                         <td>set</td>
-                        <td>Past the URI untouched.</td>
+                        <td>Pass the URI untouched.</td>
                     </tr>
                     <tr>
                         <td>forwardURICompatUnparsed</td>
@@ -88,7 +88,7 @@ and  provides access to all other objects</p>
                     <tr>
                         <td>forwardURIEscaped</td>
                         <td>not set</td>
-                        <td>Past the URI escaped.</td>
+                        <td>Pass the URI escaped.</td>
                     </tr>
                 </table>
             </p>
