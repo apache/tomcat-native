@@ -250,6 +250,20 @@ extern "C" {
 /** Minor part of HTTP protocol */
 #define HTTP_VERSION_MINOR(number) ((number)%1000)
 
+/**
+ * @defgroup values_request_rec_body Possible values for request_rec.read_body 
+ * @{
+ * Possible values for request_rec.read_body (set by handling module):
+ */
+
+/** Send 413 error if message has any body */
+#define REQUEST_NO_BODY          0
+/** Send 411 error if body without Content-Length */
+#define REQUEST_CHUNKED_ERROR    1
+/** If chunked, remove the chunks for me. */
+#define REQUEST_CHUNKED_DECHUNK  2
+/** @} */
+ 
 
 /* fake structure declarations */
 typedef struct process_rec  process_rec;
@@ -679,6 +693,16 @@ AP_DECLARE(long) ap_get_client_block(request_rec *r, char *buffer, apr_size_t bu
  * @deffunc int ap_discard_request_body(request_rec *r)
  */
 AP_DECLARE(int) ap_discard_request_body(request_rec *r);
+
+/**
+ * Set the content type for this request (r->content_type). 
+ * @param r The current request
+ * @param ct The new content type
+ * @deffunc void ap_set_content_type(request_rec *r, const char* ct)
+ * @warning This function must be called to set r->content_type in order 
+ * for the AddOutputFilterByType directive to work correctly.
+ */
+AP_DECLARE(void) ap_set_content_type(request_rec *r, const char *ct);
 
 /**
  * create the request_rec structure from fake client connection 

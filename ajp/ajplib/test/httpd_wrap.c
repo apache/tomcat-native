@@ -318,6 +318,12 @@ AP_DECLARE(const char *) ap_get_server_name(request_rec *r)
     return r->server->server_hostname;
 } 
 
+AP_DECLARE(void) ap_set_content_type(request_rec *r, const char *ct)
+{
+    r->content_type = ct;
+}
+
+
 #define UNKNOWN_METHOD (-1)
 
 static int lookup_builtin_method(const char *method, apr_size_t len)
