@@ -166,24 +166,29 @@ public class Http11Protocol implements ProtocolHandler
 
     public void setPools( boolean t ) {
 	ep.setPoolOn(t);
+        setAttribute("pools", "" + t);
     }
 
     public void setMaxThreads( int maxThreads ) {
 	ep.setMaxThreads(maxThreads);
+        setAttribute("maxThreads", "" + maxThreads);
     }
 
     public void setMaxSpareThreads( int maxThreads ) {
 	ep.setMaxSpareThreads(maxThreads);
+        setAttribute("maxSpareThreads", "" + maxThreads);
     }
 
     public void setMinSpareThreads( int minSpareThreads ) {
 	ep.setMinSpareThreads(minSpareThreads);
+        setAttribute("minSpareThreads", "" + minSpareThreads);
     }
 
     // -------------------- Tcp setup --------------------
 
     public void setBacklog( int i ) {
 	ep.setBacklog(i);
+        setAttribute("backlog", "" + i);
     }
     
     public void setPort( int port ) {
