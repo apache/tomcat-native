@@ -758,23 +758,17 @@ static int status_cmd_type(const char *req)
 
 static int status_mime_type(const char *req)
 {
-    if (!req)
-        return 0;
-    else {
-        char buf[32];
-        char *mimetype = NULL;
-        int ret = 0 ;
-        if(status_cmd("mime", req, buf, sizeof(buf)) != NULL) {
-            mimetype = strdup(buf) ;
-		    if (!strncmp(mimetype, "xml", 3))
-		        ret = 1;
-		    else if (!strncmp(mimetype, "txt", 3))
-		        ret = 2;
+    int ret = 0 ;
+    if (req) {
+        char mimetype[32];
+        if (status_cmd("mime", req, mimetype, sizeof(mimetype)) != NULL) {
+            if (!strcmp(mimetype, "xml"))
+                ret = 1;
+            else if (!strcmp(mimetype, "txt"))
+                ret = 2;
         }
-        if (mimetype)
-            free(mimetype);
-        return ret ;
     }
+    return ret ;
 }
 
 static int JK_METHOD service(jk_endpoint_t *e,
