@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "libtoolize --force --automake"
+echo "libtoolize --force --automake --copy"
 libtoolize --force --automake --copy
 echo "automake -a --foreign -i"
 automake -a --foreign -i
