@@ -33,8 +33,8 @@ INCLUDES= -I${JK_DIR}/include \
           ${APR_INCL} \
           ${JAVA_INCL}
 
-JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 -DHAS_APR @HAVE_JNI@
-JK_LDFLAGS=-L${APACHE2_LIBDIR} -lcrypt -lapr
+JK_CFLAGS=-DCHUNK_SIZE=4096 -DUSE_APACHE_MD5 -DHAS_APR @HAVE_JNI@ @HAS_PCRE@
+JK_LDFLAGS=-L${APACHE2_LIBDIR} -lcrypt -lapr-0 @PCRE_LIBS@
 
 ###### Based on rules.mk ##########################################
 ALL_CFLAGS   = $(EXTRA_CFLAGS) $(NOTEST_CFLAGS) $(CFLAGS)

@@ -67,6 +67,7 @@ sinclude(../support/jk_ws.m4)
 sinclude(../support/jk_apr.m4)
 sinclude(../support/jk_tchome.m4)
 sinclude(../support/jk_java.m4)
+sinclude(../support/jk_pcre.m4)
 
 dnl
 dnl Process this file with autoconf to produce a configure script
@@ -79,7 +80,7 @@ AC_CONFIG_AUX_DIR(scripts/build/unix)
 
 dnl package and version. (synchronization with common/jk_version.h ?)
 PACKAGE=mod_jk2
-VERSION=2.0.0
+VERSION=2.0.2
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})
 
@@ -186,12 +187,14 @@ dnl Java settings
 JK_JDK()
 JK_JDK_OS()
 JK_JNI()
+JK_PCRE()
 
 AC_SUBST(JAVA_HOME)
 AC_SUBST(JAVA_PLATFORM)
 AC_SUBST(OS)
 AC_SUBST(HAVE_JNI)
-
+AC_SUBST(HAS_PCRE)
+AC_SUBST(PCRE_LIBS)
 
 dnl Check that at least one WEBSERVER has been given
 if ${TEST} -z "$WEBSERVERS" ; then
