@@ -41,26 +41,26 @@ public class BaseRequest {
     public static final String SCHEME_HTTPS = "https";
 
     // request attributes
-    MessageBytes method = new MessageBytes();
-    MessageBytes protocol = new MessageBytes();
-    MessageBytes requestURI = new MessageBytes();
-    MessageBytes remoteAddr = new MessageBytes();
-    MessageBytes remoteHost = new MessageBytes();
-    MessageBytes serverName = new MessageBytes();
+    MessageBytes method = MessageBytes.newInstance();
+    MessageBytes protocol = MessageBytes.newInstance();
+    MessageBytes requestURI = MessageBytes.newInstance();
+    MessageBytes remoteAddr = MessageBytes.newInstance();
+    MessageBytes remoteHost = MessageBytes.newInstance();
+    MessageBytes serverName = MessageBytes.newInstance();
     int serverPort = 80;
-    MessageBytes remoteUser = new MessageBytes();
-    MessageBytes authType = new MessageBytes();
-    MessageBytes queryString = new MessageBytes();
-    MessageBytes authorization = new MessageBytes();
+    MessageBytes remoteUser = MessageBytes.newInstance();
+    MessageBytes authType = MessageBytes.newInstance();
+    MessageBytes queryString = MessageBytes.newInstance();
+    MessageBytes authorization = MessageBytes.newInstance();
     String scheme = SCHEME_HTTP;
     boolean secure = false;
     int contentLength = 0;
-    MessageBytes contentType = new MessageBytes();
+    MessageBytes contentType = MessageBytes.newInstance();
     MimeHeaders headers = new MimeHeaders();
     Cookies cookies = new Cookies();
     HashMap attributes = new HashMap();
 
-    MessageBytes tomcatInstanceId = new MessageBytes();
+    MessageBytes tomcatInstanceId = MessageBytes.newInstance();
     
     /**
      * Recycles this object and readies it further use.

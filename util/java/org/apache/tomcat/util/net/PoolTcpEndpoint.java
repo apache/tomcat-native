@@ -444,10 +444,9 @@ public class PoolTcpEndpoint { // implements Endpoint {
                             msg = sm.getString("endpoint.err.fatal",
                                                serverSocket, t);
                             log.error(msg, t);
-                        } finally {
-                            // Current thread is now invalid: kill it
-                            throw new ThreadDeath();
                         }
+                        // Current thread is now invalid: kill it
+                        throw new ThreadDeath();
                     }
                 }
             }
