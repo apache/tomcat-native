@@ -1,6 +1,10 @@
 JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
+Changes with JK 1.2.3:
+    * Add JkAutoAlias to Apache 2.0
+      [glenn]
+
 Changes with JK 1.2.2:
     * tomcat_trend.pl updated script to support changed logging of 
       aborted requests
