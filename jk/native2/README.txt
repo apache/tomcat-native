@@ -1,14 +1,22 @@
 README for JK2
 --------------
 
-The  newest  JK2  is  a  rewrite of  JK.  The  native  part  has been  completly
-restructured and the configuration has been  simplified a lot. Even if it  works
-with Apache 1.3,  JK2 has been  developed with Apache  2.0 in mind,  and thus is
-better suited for multi-threaded servers like IIS, NES/iPlanet.
+JK2 is a refactoring of  JK and is much more  powerfull.  Even if it works  with
+Apache 1.3, JK2 has been developed with Apache 2.0 in mind, and is better suited
+for multi-threaded  servers like  IIS, NES/iPlanet.  It can  also be  embeded in
+other applications and used from java.
 
-JK2 has a  better separation between  protocol and physical  layer. As such  JK2
-support fast unix-socket, and could be extended to support others communications
-channels. Better it's suited for JNI and JDK 1.4 fast IO APIs.
+JK2 improves  the modularity  and has  a better  separation between protocol and
+physical layer. As such JK2 support  fast unix-socket, and could be extended  to
+support others communications channels. It is better suited for JNI and may  use
+(in a future version) JDK 1.4  NIO. There is additional support for  monitoring,
+similar with  JMX in  java. A  module similar  with mod_status  is provided, and
+additional adapters  can be  used to  interface and  provide status  and runtime
+configuration.  The  configuration  has been  changed  to  follow the  component
+models. Multiple configuration sources can be  supported ( in additon to file  )
+providing better  integration with  the embeding  application. The  config layer
+uses the management layer APIs and  it can support persistence for changes  done
+via runtime configuration. 
 
 
 How to obtain the JK2 and Apache Portable Runtime sources:
