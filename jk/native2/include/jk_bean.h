@@ -55,127 +55,150 @@
  *                                                                           *
  * ========================================================================= */
 
-/** Config object. It's more-or-less independent of the config source
-    or representation. 
- */
+#ifndef JK_BEAN_H
+#define JK_BEAN_H
 
-#ifndef JK_CONFIG_H
-#define JK_CONFIG_H
-
-#include "jk_pool.h"
-#include "jk_env.h"
-#include "jk_logger.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
+#include "jk_global.h"
+#include "jk_env.h"
+#include "jk_logger.h"
+#include "jk_pool.h"
+#include "jk_map.h"
+#include "jk_worker.h"
+
 struct jk_pool;
-struct jk_map;
 struct jk_env;
-struct jk_config;
-typedef struct jk_config jk_config_t;
+struct jk_logger;
+struct jk_map;
+struct jk_bean;
+typedef struct jk_bean jk_bean_t;
 
 /**
+ * Factory used to create all jk objects. Factories are registered with 
+ * jk2_env_registerFactory. The 'core' components are registered in
+ * jk_registry.c
  *
+ * Each jk component must be configurable using the setAttribute methods
+ * in jk_bean. The factory is responsible to set up the config methods.
+ *
+ * The mechanism provide modularity and manageability to jk.
  */
-struct jk_config {
-    struct jk_bean *mbean;
-    
-    /* Parse and process a property. It'll locate the object and call the
-     * setAttribute on it.
-     */
-    int (*setPropertyString)(struct jk_env *env, struct jk_config *cfg,
-                             char *name, char *value); 
+typedef int (JK_METHOD *jk_env_objectFactory_t)(struct jk_env *env,
+                                                struct jk_pool *pool,
+                                                struct jk_bean *mbean, 
+                                                const char *type,
+                                                const char *name);
 
-    /* Set an attribute for a jk object. This should be the
-     * only method called to configure objects. The implementation
-     * should update the underlying repository in addition to setting
-     * the runtime value. Calling setAttribute on the object directly
-     * will only set the runtime value.
+/** Each jk object will use this mechanism for configuration
+ *
+ *  Lifecycle:
+ *  - object is created using env->createBean() or by jk_config ( if you want
+ *    the object config to be saved )
+ *
+ *  - the name is parsed and the 'type' and 'localName' extracted.
+ * 
+ *  - 'type' will be looked up in registry, to find jk_env_objectFactory_t
+ *
+ *  - the factory method is called. It will create the object ( and eventually look
+ *    up other objects )
+ *
+ *  - setAttribute() is called for each configured property.
+ *
+ *  - init() is called, after this the component is operational.
+ *
+ *  - destroy() should clean up any resources ( the pool and all objects allocated
+ *    in the pool can be cleaned up automatically )
+ */
+struct jk_bean {
+    /* Type of this object ( "channel.socket", "workerEnv", etc )
      */
-    int (*setProperty)(struct jk_env *env, struct jk_config *cfg,
-                       struct jk_bean *target, char *name, char *value); 
+    char *type;
 
-    /** Write the config file. If targetFile is NULL, it'll override the
-     *  file that was used for reading
+    /* Full name of the object ( "channel.socket:localhost:8080" ).
+     * Used to construct the object.
+     */
+    char *name;
+
+    /* Local part of the name ( localhost:8080 )
+     */
+    char *localName;
+
+    /* The wrapped object ( points to the real struct: jk_worker_t *, jk_channel_t *, etc )
+     */
+    void *object;
+
+    /** Common information - if not 0 the component should print
+     *  verbose information about its operation
     */
-    int (*save)( struct jk_env *env, struct jk_config *cfg,
-                 char *targetFile);
+    int debug;
     
-
-    /** Read the properties from the file, doing $(prop) substitution
-     *  The source can be a file ( or uri ).
+    /* Common information - if set the component will not be
+     * initialized or used
      */
-    /*     int (*read)(struct jk_env *env, jk_config_t *m, const char *source); */
-
-    /** Write the properties, preserving the original format. Is it possible ?
-     */
-    /* int (*write)(struct jk_env *env, jk_config_t *m, const char *dest); */
-
+    int disabled;
     
-    /* ========== Utilities and 'pull' access   ========== */
-    
-    /** For multi-value properties, return the concatenation
-     *  of all values.
+    /** Unprocessed settings that are set on this bean by the config
+        apis ( i.e. with $() in it ).
+
+        It'll be != NULL for each component that was created or set using
+        jk_config.
+
+        This is what jk_config will save.
+    */
+    struct jk_map *settings;
+
+    /* Object pool. The jk_bean and the object itself are created in this
+     * pool. If this pool is destroyed or recycled, the object and all its
+     * data are destroyed as well ( assuming the pool corectly cleans child pools
+     * and object data are not created explicitely in a different pool ).
      *
-     * @param sep Separators used to separate multi-values and
-     *       when concatenating the values, NULL for none. The first
-     *       char will be used on the result, the other will be
-     *       used to split. ( i.e. the map may either have multiple
-     *       values or values separated by one of the sep's chars )
-     *    
+     * Object should create sub-pools if they want to create/destroy long-lived
+     * data, and env->tmpPool for data that is valid during the transaction.
      */
-    /*     char *(*getValuesString)(struct jk_env *env, struct jk_map *m, */
-    /*                              struct jk_pool *resultPool, */
-    /*                              char *name, char *sep ); */
-    
-    
-    /** For multi-value properties, return the array containing
-     * all values.
-     *
-     * @param sep Optional separator, it'll be used to split existing values.
-     *            Curently only single-char separators are supported. 
-     */
-    /*     char **(*getValues)(struct jk_env *env, struct jk_map *m, */
-    /*                         struct jk_pool *resultPool, */
-    /*                         char *name, char *sep, int *count); */
-    
-    /**
-     *  Replace $(property) and ${property} in value.
-     */
-    /*     char *(*replaceProperties)(struct jk_env *env, jk_config_t *m, */
-    /*                                char *value, struct jk_pool *resultPool ); */
-    
-    
-    
-    /* Private data */
     struct jk_pool *pool;
-    void *_private;
-    struct jk_workerEnv *workerEnv;
-    struct jk_map *map;
-
-    char *file;
     
-    char *section;
+    /* Temp - will change !*/
+    /* Attributes supported by getAttribute method */
+    char **getAttributeInfo;
+    
+    /* Attributes supported by setAttribute method */
+    char **setAttributeInfo;
+    
+    /** Set a jk property. This is similar with the mechanism
+     *  used by java side ( with individual setters for
+     *  various properties ), except we use a single method
+     *  and a big switch
+     *
+     *  As in java beans, setting a property may have side effects
+     *  like changing the log level or reading a secondary
+     *  properties file.
+     *
+     *  Changing a property at runtime will also be supported for
+     *  some properties.
+     *  XXX Document supported properties as part of
+     *  workers.properties doc.
+     *  XXX Implement run-time change in the status/ctl workers.
+     */
+    int  ( JK_METHOD *setAttribute)(struct jk_env *env, struct jk_bean *bean,
+                                    char *name, void *value );
+
+    void *( JK_METHOD *getAttribute)(struct jk_env *env, struct jk_bean *bean, char *name );
+
+    /* Init the component
+     */
+    int (JK_METHOD *init)(struct jk_env *env, struct jk_bean *bean);
+
+    int (JK_METHOD *destroy)(struct jk_env *env, struct jk_bean *bean );
+
 };
-
-/** Util: Split a string in components. */
-char **jk2_config_split(struct jk_env *env, struct jk_pool *pool,
-                        const char *listStr, const char *sep,
-                        unsigned *list_len );
-
-int jk2_config_str2int(struct jk_env *env, char *val );
-
-char *jk2_config_replaceProperties(struct jk_env *env, struct jk_map *m,
-                                   struct jk_pool *resultPool, 
-                                   char *value);
-
-int jk2_config_read(struct jk_env *env, struct jk_config *cfg,
-                    struct jk_map *map, const char *f);
+    
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* JK_CONFIG_H */
+#endif 

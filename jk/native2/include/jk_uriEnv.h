@@ -184,6 +184,16 @@ struct jk_uriEnv {
     struct jk_map *prefixMatch;
     struct jk_map *suffixMatch;
 
+    /** For MATCH_TYPE_CONTEXT, the config used to read properties
+        for that context.
+        For MATCH_TYPE_HOST, the config used to read contexts 
+        For MATCH_TYPE_HOST/default it also contains all vhosts
+
+        If NULL - no config was attached.
+        ( this will be used in future for run-time deployment )
+     */
+    struct jk_config *config;
+
     /* -------------------- Other properties -------------------- */
 
 

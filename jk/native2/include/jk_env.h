@@ -67,6 +67,7 @@ extern "C" {
 #include "jk_pool.h"
 #include "jk_map.h"
 #include "jk_worker.h"
+#include "jk_bean.h"
 
 #define JK_LINE __FILE__,__LINE__
 
@@ -88,27 +89,10 @@ struct jk_env;
 struct jk_logger;
 struct jk_map;
 struct jk_bean;
-typedef struct jk_bean jk_bean_t;
 typedef struct jk_env jk_env_t;
 
 extern struct jk_env *jk_env_globalEnv;
     
-/**
- * Factory used to create all jk objects. Factories are registered with 
- * jk2_env_registerFactory. The 'core' components are registered in
- * jk_registry.c
- *
- * Each jk component must be configurable using the setAttribute methods
- * in jk_bean. The factory is responsible to set up the config methods.
- *
- * The mechanism provide modularity and manageability to jk.
- */
-typedef int (JK_METHOD *jk_env_objectFactory_t)(jk_env_t *env,
-                                                struct jk_pool *pool,
-                                                struct jk_bean *mbean, 
-                                                const char *type,
-                                                const char *name);
-
 /** Get a pointer to the jk_env. We could support multiple 
  *  env 'instances' in future - for now it's a singleton.
  */
@@ -125,70 +109,6 @@ struct jk_exception {
 };
 
 typedef struct jk_exception jk_exception_t;
-
-
-/** Each jk object will use this mechanism for configuration
- *  XXX Should it be named mbean ?
- */
-struct jk_bean {
-    /* Type of this object
-     */
-    char *type;
-
-    /* Name of the object
-     */
-    char *name;
-
-    /* Local part of the name
-     */
-    char *localName;
-
-    /* The wrapped object
-     */
-    void *object;
-
-    /** Unprocessed settings that are set on this bean by the config
-        apis ( i.e. with $() in it ).
-
-        It'll be != NULL for each component that was created or set using
-        jk_config.
-    */
-    struct jk_map *settings;
-
-    /* Object pool. The jk_bean and the object itself are created in this
-     * pool. If this pool is destroyed or recycled, the object and all its
-     * data are destroyed as well ( assuming the pool corectly cleans child pools
-     * and object data are not created explicitely in a different pool ).
-     */
-    struct jk_pool *pool;
-    
-    /* Temp - will change !*/
-    /* Attributes supported by getAttribute method */
-    char **getAttributeInfo;
-    
-    /* Attributes supported by setAttribute method */
-    char **setAttributeInfo;
-    
-    /** Set a jk property. This is similar with the mechanism
-     *  used by java side ( with individual setters for
-     *  various properties ), except we use a single method
-     *  and a big switch
-     *
-     *  As in java beans, setting a property may have side effects
-     *  like changing the log level or reading a secondary
-     *  properties file.
-     *
-     *  Changing a property at runtime will also be supported for
-     *  some properties.
-     *  XXX Document supported properties as part of
-     *  workers.properties doc.
-     *  XXX Implement run-time change in the status/ctl workers.
-     */
-    int  ( JK_METHOD *setAttribute)(struct jk_env *env, struct jk_bean *bean,
-                                    char *name, void *value );
-
-    void *  ( JK_METHOD *getAttribute)(struct jk_env *env, struct jk_bean *bean, char *name );
-};
     
 /**
  *  The env will be used in a similar way with the JniEnv, to provide 

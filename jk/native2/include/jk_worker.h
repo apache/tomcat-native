@@ -158,10 +158,6 @@ struct jk_worker {
 
     /* -------------------- Information used for load balancing ajp workers -------------------- */
 
-    /* Worker is in gracefull shutdown
-     */
-    int  disabled;
-    
     /** The id of the tomcat instance we connect to. We may have multiple
         workers connecting to a single tomcat. If no route is defined,
         the worker name will be the route name. The route can be the
@@ -169,8 +165,14 @@ struct jk_worker {
      */
     char *route;
 
+    /* Number of requests served by this worker and the number of errors */
     int reqCnt;
     int errCnt;
+
+    /* Total time ( for average - divide by reqCnt ) and maxTime */
+    /* XXX Not used curently. XXX Mutex for mt access  */
+    long time;
+    long maxTime;
     
     /** lb groups in which this worker belongs */
     struct jk_map *groups;
@@ -181,12 +183,27 @@ struct jk_worker {
      */
     double  lb_factor;
     double  lb_value;
-    int     in_error_state;
-    int     in_recovering;
-    int     retry_count;
+
+    /* Time when the last error occured on this worker */
     time_t  error_time;
 
+    /* In error state. Will return to normal state after a timeout
+     *  ( number of requests or time ), if no other worker is active
+     *  or when the configuration changes.
+     */
+    int     in_error_state;
     
+    /* Worker priority.
+     * Workers with lower priority are allways preffered - regardless of lb_value
+     * This is user to represent 'local' workers ( we can call it 'proximity' or 'distance' )
+     */
+    int priority;
+    
+    /* I have no idea what it means... */
+    int     in_recovering;
+    /* I have no idea why we need this */
+    int     retry_count;
+
     /* -------------------- Information for reconfiguration -------------------- */
     
     /* Only one thread can update the config

@@ -121,8 +121,8 @@ struct jk_ws_service;
 /* Dispatcher for shm ( JNI -> web server ) */
 #define JK_HANDLE_SHM_DISPATCH 0x16
 
-/* Dispatcher for apr channel ( JNI -> web server ) */
-#define JK_HANDLE_CHANNELAPR_DISPATCH 0x17
+/* Dispatcher for unix socket channel ( JNI -> web server ) */
+#define JK_HANDLE_UN_DISPATCH 0x17
 
     
 /*
