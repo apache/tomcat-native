@@ -1222,14 +1222,6 @@ public class Http11Processor implements Processor, ActionHook {
         // Input filter setup
         InputFilter[] inputFilters = inputBuffer.getFilters();
 
-        // Parse content-length header
-        long contentLength = request.getContentLengthLong();
-        if (contentLength >= 0) {
-            inputBuffer.addActiveFilter
-                (inputFilters[Constants.IDENTITY_FILTER]);
-            contentDelimitation = true;
-        }
-
         // Parse transfer-encoding header
         MessageBytes transferEncodingValueMB = null;
         if (http11)
@@ -1260,6 +1252,14 @@ public class Http11Processor implements Processor, ActionHook {
                 // 501 - Unimplemented
                 response.setStatus(501);
             }
+        }
+
+        // Parse content-length header
+        long contentLength = request.getContentLengthLong();
+        if (contentLength >= 0 && !contentDelimitation) {
+            inputBuffer.addActiveFilter
+                (inputFilters[Constants.IDENTITY_FILTER]);
+            contentDelimitation = true;
         }
 
         MessageBytes valueMB = headers.getValue("host");
