@@ -59,18 +59,17 @@
 package org.apache.ajp.tomcat4;
 
 
-import java.io.*;
-import java.net.*;
-import javax.servlet.*;
-import javax.servlet.http.*;
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.catalina.Container;
 import org.apache.catalina.ContainerServlet;
 import org.apache.catalina.Context;
-import org.apache.catalina.Deployer;
-import org.apache.catalina.Globals;
-import org.apache.catalina.Session;
 import org.apache.catalina.Wrapper;
-import org.apache.catalina.util.StringManager;
 
 
 /**

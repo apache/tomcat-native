@@ -65,39 +65,18 @@
 package org.apache.ajp.tomcat4;
 
 
-import java.io.BufferedInputStream;
-import java.io.EOFException;
-import java.io.InterruptedIOException;
-import java.io.InputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.StringTokenizer;
-import java.util.TreeMap;
+
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.catalina.Connector;
-import org.apache.catalina.Container;
-import org.apache.catalina.Globals;
-import org.apache.catalina.HttpRequest;
-import org.apache.catalina.HttpResponse;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Logger;
-import org.apache.catalina.util.RequestUtil;
-import org.apache.catalina.util.LifecycleSupport;
-import org.apache.catalina.util.StringManager;
-import org.apache.catalina.util.StringParser;
 
 import org.apache.ajp.Ajp13;
+import org.apache.catalina.Lifecycle;
+import org.apache.catalina.LifecycleException;
+import org.apache.catalina.LifecycleListener;
+import org.apache.catalina.util.LifecycleSupport;
+import org.apache.catalina.util.StringManager;
 import org.apache.tomcat.util.http.BaseRequest;
 
 /**

@@ -58,18 +58,13 @@
  */
 package org.apache.jk.config;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.security.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Vector;
 
-import org.apache.tomcat.util.IntrospectionUtils;
-
-import javax.xml.parsers.*;
-
-/* Yes, it's using DOM */
-import org.w3c.dom.*;
-import org.xml.sax.*;
+import org.w3c.dom.Node;
 
 
 /* Naming conventions:

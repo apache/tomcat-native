@@ -59,14 +59,16 @@
 
 package org.apache.ajp;
 
-import java.io.*;
-import java.net.Socket;
-import java.util.Enumeration;
-import java.security.*;
-import java.security.cert.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
-import org.apache.tomcat.util.http.*;
-import org.apache.tomcat.util.buf.*;
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.BaseRequest;
+import org.apache.tomcat.util.http.HttpMessages;
+import org.apache.tomcat.util.http.MimeHeaders;
 
 
 /**

@@ -59,20 +59,15 @@
 
 package org.apache.jk.common;
 
-import java.io.*;
+import java.io.IOException;
+import java.util.Vector;
 
-import java.net.*;
-import java.util.*;
-
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
-
-import org.apache.tomcat.util.threads.*;
-
-import org.apache.jk.core.*;
-import org.apache.jk.apr.*;
-
+import org.apache.jk.apr.AprImpl;
+import org.apache.jk.core.Msg;
+import org.apache.jk.core.MsgContext;
+import org.apache.jk.core.WorkerEnv;
 import org.apache.tomcat.util.IntrospectionUtils;
+import org.apache.tomcat.util.buf.C2BConverter;
 
 /* The code is a bit confusing at this moment - the class is used as
    a Bean, or ant Task, or CLI - i.e. you set properties and call execute.

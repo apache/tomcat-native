@@ -60,21 +60,13 @@
 package org.apache.ajp;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.ByteArrayInputStream;
-
 import java.net.Socket;
-import java.util.Enumeration;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateFactory;
 
-import org.apache.tomcat.util.buf.MessageBytes;
-import org.apache.tomcat.util.buf.ByteChunk;
-import org.apache.tomcat.util.http.MimeHeaders;
-import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.http.BaseRequest;
+import org.apache.tomcat.util.http.HttpMessages;
+import org.apache.tomcat.util.http.MimeHeaders;
 
 /**
  * Represents a single, persistent connection between the web server and

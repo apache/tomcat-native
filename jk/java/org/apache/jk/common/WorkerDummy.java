@@ -58,16 +58,13 @@
  */
 package org.apache.jk.common;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
 
-import org.apache.jk.core.*;
-
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.log.*;
-import org.apache.tomcat.util.http.*;
-import org.apache.tomcat.util.threads.*;
+import org.apache.jk.core.JkHandler;
+import org.apache.jk.core.Msg;
+import org.apache.jk.core.MsgContext;
+import org.apache.jk.core.WorkerEnv;
+import org.apache.tomcat.util.buf.MessageBytes;
 
 
 /** A dummy worker, will just send back a dummy response.

@@ -59,19 +59,25 @@
 
 package org.apache.ajp.tomcat33;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
 
-import org.apache.ajp.*;
+import org.apache.ajp.Ajp13;
+import org.apache.ajp.NegociationHandler;
+import org.apache.ajp.RequestHandler;
+import org.apache.tomcat.core.Context;
+import org.apache.tomcat.core.ContextManager;
+import org.apache.tomcat.core.Request;
+import org.apache.tomcat.core.Response;
+import org.apache.tomcat.core.TomcatException;
 import org.apache.tomcat.modules.server.PoolTcpConnector;
-
-import org.apache.tomcat.core.*;
-
-import org.apache.tomcat.util.net.*;
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.log.*;
-import org.apache.tomcat.util.http.*;
+import org.apache.tomcat.util.buf.UDecoder;
+import org.apache.tomcat.util.http.BaseRequest;
+import org.apache.tomcat.util.http.Cookies;
+import org.apache.tomcat.util.http.HttpMessages;
+import org.apache.tomcat.util.net.TcpConnection;
+import org.apache.tomcat.util.net.TcpConnectionHandler;
 
 /** Note. PoolTcpConnector is a convenience base class used for
     TCP-based connectors in tomcat33. It allows all those modules

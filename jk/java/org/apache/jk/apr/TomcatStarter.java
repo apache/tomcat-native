@@ -59,10 +59,7 @@
  
  package org.apache.jk.apr;
 
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
-import org.apache.jk.core.*;
+import java.lang.reflect.Method;
 
 // Hack for Catalina 4.1 who hungs the calling thread.
 // Also avoids delays in apache initialization ( tomcat can take a while )

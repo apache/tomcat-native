@@ -58,18 +58,10 @@
  */
 package org.apache.ajp;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.util.Enumeration;
-import java.security.*;
 
-import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.buf.MessageBytes;
-import org.apache.tomcat.util.http.HttpMessages;
-import org.apache.tomcat.util.buf.HexUtils;
+import org.apache.tomcat.util.http.MimeHeaders;
 
 
 /**

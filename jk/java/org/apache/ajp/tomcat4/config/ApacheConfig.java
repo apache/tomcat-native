@@ -58,10 +58,16 @@
  */
 package org.apache.ajp.tomcat4.config;
 
-import org.apache.catalina.*;
-import java.io.*;
-import java.util.*;
-import javax.servlet.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Date;
+import java.util.Hashtable;
+
+import org.apache.catalina.Context;
+import org.apache.catalina.Host;
+
 /* The idea is to keep all configuration in server.xml and
    the normal apache config files. We don't want people to
    touch apache ( or IIS, NES ) config files unless they

@@ -60,28 +60,23 @@ package org.apache.ajp.tomcat4;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TreeMap;
 
 import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 
-import org.apache.catalina.connector.HttpRequestBase;
 import org.apache.catalina.Globals;
-import org.apache.catalina.util.RequestUtil;
+import org.apache.catalina.connector.HttpRequestBase;
 import org.apache.catalina.util.StringParser;
-
 import org.apache.tomcat.util.buf.MessageBytes;
-import org.apache.tomcat.util.http.Cookies;
-import org.apache.tomcat.util.http.ServerCookie;
 import org.apache.tomcat.util.http.BaseRequest;
+import org.apache.tomcat.util.http.Cookies;
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.http.ServerCookie;
 
 public class Ajp13Request extends HttpRequestBase {
 

@@ -59,17 +59,25 @@
 
 package org.apache.jk.server;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
-import org.apache.jk.core.*;
-
-import org.apache.tomcat.util.IntrospectionUtils;
-import org.apache.commons.modeler.Registry;
-import javax.management.ObjectName;
-import javax.management.MBeanServer;
 import javax.management.MBeanRegistration;
-import javax.management.MalformedObjectNameException;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+
+import org.apache.commons.modeler.Registry;
+import org.apache.jk.core.JkHandler;
+import org.apache.jk.core.WorkerEnv;
+import org.apache.tomcat.util.IntrospectionUtils;
 
 /** Main class used to startup and configure jk. It manages the conf/jk2.properties file
  *  and is the target of JMX proxy.

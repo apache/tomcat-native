@@ -60,15 +60,8 @@
 package org.apache.ajp;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.util.Enumeration;
-import java.security.*;
 
-import org.apache.tomcat.util.http.*;
-import org.apache.tomcat.util.buf.*;
+import org.apache.tomcat.util.http.BaseRequest;
 
 /**
  * Base class for handlers of Ajp messages. Jk provide a simple bidirectional 

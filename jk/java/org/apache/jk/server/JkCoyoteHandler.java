@@ -59,24 +59,35 @@
 
 package org.apache.jk.server;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.security.*;
-import java.security.cert.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
-import org.apache.jk.core.*;
-import org.apache.jk.common.*;
-
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.log.*;
-import org.apache.tomcat.util.http.*;
-import org.apache.tomcat.util.net.SSLSupport;
-
-import org.apache.coyote.*;
-import org.apache.commons.modeler.Registry;
-import javax.management.ObjectName;
 import javax.management.MBeanServer;
+import javax.management.ObjectName;
+
+import org.apache.commons.modeler.Registry;
+import org.apache.coyote.ActionCode;
+import org.apache.coyote.ActionHook;
+import org.apache.coyote.Adapter;
+import org.apache.coyote.ProtocolHandler;
+import org.apache.coyote.Request;
+import org.apache.coyote.Response;
+import org.apache.jk.common.HandlerRequest;
+import org.apache.jk.common.JkInputStream;
+import org.apache.jk.common.MsgAjp;
+import org.apache.jk.core.JkHandler;
+import org.apache.jk.core.Msg;
+import org.apache.jk.core.MsgContext;
+import org.apache.jk.core.WorkerEnv;
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.C2BConverter;
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.http.HttpMessages;
+import org.apache.tomcat.util.http.MimeHeaders;
+import org.apache.tomcat.util.net.SSLSupport;
 
 /** Plugs Jk2 into Coyote. Must be named "type=JkHandler,name=container"
  *

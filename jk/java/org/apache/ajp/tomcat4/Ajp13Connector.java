@@ -71,16 +71,12 @@ import java.net.Socket;
 import java.security.AccessControlException;
 import java.util.Stack;
 import java.util.Vector;
-import java.util.Enumeration;
+
 import org.apache.catalina.Connector;
 import org.apache.catalina.Container;
-import org.apache.catalina.HttpRequest;
-import org.apache.catalina.HttpResponse;
 import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Logger;
 import org.apache.catalina.Request;
 import org.apache.catalina.Response;
 import org.apache.catalina.Service;

@@ -59,18 +59,11 @@
 
 package org.apache.jk.common;
 
-import java.io.*;
+import java.io.IOException;
 
-import java.net.*;
-import java.util.*;
-
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
-
-import org.apache.tomcat.util.threads.*;
-
-import org.apache.jk.core.*;
-import org.apache.jk.apr.*;
+import org.apache.jk.core.JkHandler;
+import org.apache.jk.core.Msg;
+import org.apache.jk.core.MsgContext;
 
 
 /** Pass messages using jni 

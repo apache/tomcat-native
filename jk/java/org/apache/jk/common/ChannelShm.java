@@ -59,20 +59,7 @@
 
 package org.apache.jk.common;
 
-import java.io.*;
-
-import java.net.*;
-import java.util.*;
-
-import org.apache.tomcat.util.buf.*;
-import org.apache.tomcat.util.http.*;
-
-import org.apache.tomcat.util.threads.*;
-
-import org.apache.jk.core.*;
-import org.apache.jk.apr.*;
-
-import org.apache.tomcat.util.IntrospectionUtils;
+import org.apache.jk.core.JkHandler;
 
 
 
