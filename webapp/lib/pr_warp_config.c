@@ -57,7 +57,7 @@
 /* @version $Id$ */
 #include "pr_warp.h"
 
-wa_boolean n_check(wa_connection *conn, warp_packet *pack) {
+wa_boolean c_check(wa_connection *conn, warp_packet *pack) {
     warp_config *conf=(warp_config *)conn->conf;
     int maj=-1;
     int min=-1;
@@ -99,7 +99,7 @@ wa_boolean n_check(wa_connection *conn, warp_packet *pack) {
     return(wa_true);
 }
 
-wa_boolean n_configure(wa_connection *conn) {
+wa_boolean c_configure(wa_connection *conn) {
     warp_config *conf=(warp_config *)conn->conf;
     wa_chain *elem=warp_applications;
     apr_pool_t *pool=NULL;
@@ -115,11 +115,12 @@ wa_boolean n_configure(wa_connection *conn) {
 
     if ((pack=p_create(wa_pool))==NULL) {
         wa_log(WA_MARK,"Cannot create WARP configuration packet");
+        n_disconnect(conn);
         apr_pool_destroy(pool);
         return(wa_false);
     }
 
-    if ((ret=n_check(conn,pack))==wa_false) n_disconnect(conn);
+    if ((ret=c_check(conn,pack))==wa_false) n_disconnect(conn);
 
     while (elem!=NULL) {
         wa_application *appl=(wa_application *)elem->curr;
@@ -136,6 +137,7 @@ wa_boolean n_configure(wa_connection *conn) {
 
         if (n_recv(conf->sock,pack)!=wa_true) {
             wa_log(WA_MARK,"Cannot read packet (%s:%d)",WA_MARK);
+            n_disconnect(conn);
             return(wa_false);
         }
         if (pack->type==TYPE_ERROR) {
@@ -148,10 +150,10 @@ wa_boolean n_configure(wa_connection *conn) {
             pack->type=TYPE_FATAL;
             p_write_string(pack,"Invalid packet received");
             n_send(conf->sock,pack);
+            n_disconnect(conn);
         }
         p_read_int(pack,(int *)&appl->conf);
         p_read_string(pack,&temp);
-        wa_debug(WA_MARK,"TEMP=\"%s\"",temp);
         appl->lpth=apr_pstrdup(wa_pool,temp);
         appl->depl=wa_true;
         wa_debug(WA_MARK,"Application \"%s\" deployed with root=%s id=%d",
@@ -166,10 +168,16 @@ wa_boolean n_configure(wa_connection *conn) {
 
     if (n_recv(conf->sock,pack)!=wa_true) {
         wa_log(WA_MARK,"Cannot read packet (%s:%d)",WA_MARK);
+        n_disconnect(conn);
         return(wa_false);
     }
     if (pack->type!=TYPE_CONF_PROCEED) {
         wa_log(WA_MARK,"Cannot proceed on this connection");
+        p_reset(pack);
+        pack->type=TYPE_FATAL;
+        p_write_string(pack,"Expected PROCEED packet not received");
+        n_send(conf->sock,pack);
+        n_disconnect(conn);
         return(wa_false);
     }
 
