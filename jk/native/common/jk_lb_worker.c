@@ -42,6 +42,9 @@
 #define WAIT_BEFORE_RECOVER (60*1)
 #define WORKER_RECOVER_TIME ("recover_time")
 
+#define JK_WORKER_IN_ERROR(w) ((w)->in_error_state && !(w)->is_disabled && !(w)->is_busy)
+#define JK_WORKER_USABLE(w)   (!(w)->in_error_state && !(w)->is_disabled && !(w)->is_busy)
+
 struct lb_endpoint
 {
     jk_endpoint_t *e;
@@ -183,6 +186,7 @@ static void retry_worker(worker_record_t *w,
                     w->s->name);
         w->s->in_recovering  = JK_TRUE;
         w->s->in_error_state = JK_FALSE;
+        w->s->is_busy = JK_FALSE;
     }
 
     JK_TRACE_EXIT(l);
@@ -225,8 +229,7 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
         /* Take into calculation only the workers that are
          * not in error state or not disabled.
          */
-        if (!p->lb_workers[i].s->in_error_state &&
-            !p->lb_workers[i].s->is_disabled) {
+        if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
             if (p->lbmethod == JK_LB_BYREQUESTS) {
                 p->lb_workers[i].s->lb_value += p->lb_workers[i].s->lb_factor;
                 total_factor += p->lb_workers[i].s->lb_factor;
@@ -269,15 +272,13 @@ static worker_record_t *find_best_byrequests(lb_worker_t *p,
          * The worker might still be unusable, but we try
          * anyway.
          */
-        if (p->lb_workers[i].s->in_error_state &&
-            !p->lb_workers[i].s->is_disabled) {
+        if (JK_WORKER_IN_ERROR(p->lb_workers[i].s)) {
             retry_worker(&p->lb_workers[i], p->s->recover_wait_time, l);
         }
         /* Take into calculation only the workers that are
          * not in error state or not disabled.
          */
-        if (!p->lb_workers[i].s->in_error_state &&
-            !p->lb_workers[i].s->is_disabled) {
+        if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
             p->lb_workers[i].s->lb_value += p->lb_workers[i].s->lb_factor;
             total_factor += p->lb_workers[i].s->lb_factor;
             if (!candidate || p->lb_workers[i].s->lb_value > candidate->s->lb_value)
@@ -309,15 +310,13 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
          * The worker might still be unusable, but we try
          * anyway.
          */
-        if (p->lb_workers[i].s->in_error_state &&
-            !p->lb_workers[i].s->is_disabled) {
+        if (JK_WORKER_IN_ERROR(p->lb_workers[i].s)) {
             retry_worker(&p->lb_workers[i], p->s->recover_wait_time, l);
         }
         /* Take into calculation only the workers that are
          * not in error state or not disabled.
          */
-        if (!p->lb_workers[i].s->in_error_state &&
-            !p->lb_workers[i].s->is_disabled) {
+        if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
             mytraffic = (p->lb_workers[i].s->transferred/p->lb_workers[i].s->lb_factor) +
                         (p->lb_workers[i].s->readed/p->lb_workers[i].s->lb_factor);
             if (!candidate || mytraffic < curmin) {
@@ -346,9 +345,9 @@ static worker_record_t *find_best_worker(lb_worker_t * p,
     return rc;
 }
 
-static worker_record_t *find_session_route(lb_worker_t *p, 
-                                           const char *name,
-                                           jk_logger_t *l)
+static worker_record_t *find_bysession_route(lb_worker_t *p, 
+                                             const char *name,
+                                             jk_logger_t *l)
 {
     unsigned int i;
     int total_factor = 0;
@@ -361,13 +360,12 @@ static worker_record_t *find_session_route(lb_worker_t *p,
         candidate = find_best_bydomain(p, name, l);
     }
     if (candidate) {
-        if (candidate->s->in_error_state && !candidate->s->is_disabled) {
+        if (JK_WORKER_IN_ERROR(candidate->s)) {
             retry_worker(candidate, p->s->recover_wait_time, l);
         }
         if (candidate->s->in_error_state) {
-            /* We have a worker that is unusable.
-             * It can be in error or disabled, but in case
-             * it has a redirection set use that redirection worker.
+            /* We have a worker that is error state.
+             * If it has a redirection set use that redirection worker.
              * This enables to safely remove the member from the
              * balancer. Of course you will need a some kind of
              * session replication between those two remote.
@@ -384,8 +382,7 @@ static worker_record_t *find_session_route(lb_worker_t *p,
     }
     if (candidate && !uses_domain) {
         for (i = 0; i < p->num_of_workers; i++) {
-            if (!p->lb_workers[i].s->in_error_state &&
-                !p->lb_workers[i].s->is_disabled) {
+            if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
                 /* Skip all workers that are not member of candidate domain */
                 if (*candidate->s->domain &&
                     strcmp(p->lb_workers[i].s->domain, candidate->s->domain))
@@ -413,10 +410,10 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
         /* No need to find the best worker
          * if there is a single one
          */
-        if (p->lb_workers[0].s->in_error_state &&
-            !p->lb_workers[0].s->is_disabled) {
+        if (JK_WORKER_IN_ERROR(p->lb_workers[0].s)) {
             retry_worker(&p->lb_workers[0], p->s->recover_wait_time, l);
         }
+        /* Check if worker is marked for retry */
         if (!p->lb_workers[0].s->in_error_state) {
             p->lb_workers[0].r = &(p->lb_workers[0].s->name[0]);
             JK_TRACE_EXIT(l);
@@ -428,6 +425,9 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
         }
     }
     else if (p->s->sticky_session) {
+        /* Use sessionid only if sticky_session is
+         * defined for this load balancer
+         */
         sessionid = get_sessionid(s);
     }
     JK_ENTER_CS(&(p->cs), r);
@@ -464,17 +464,18 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                             session_route);
 
                 /* We have a session route. Whow! */
-                rc = find_session_route(p, session_route, l);
+                rc = find_bysession_route(p, session_route, l);
                 if (rc) {
                     JK_LEAVE_CS(&(p->cs), r);
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
-                               "found worker %s for partial sessionid %s",
-                               rc->s->name, sessionid);
+                               "found worker %s for route %s and partial sessionid %s",
+                               rc->s->name, session_route, sessionid);
                         JK_TRACE_EXIT(l);
                     return rc;
                 }
             }
+            /* Try next partial sessionid if present */
             sessionid = next;
         }
         if (!rc && p->s->sticky_session_force) {
@@ -556,6 +557,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rec->s->readed += end->rd;
                     rec->s->transferred += end->wr;
                     end->done(&end, l);
+                    /* When returning the endpoint mark the worker as not busy.
+                     * We have at least one endpoint free
+                     */
+                    rec->s->is_busy = JK_FALSE;
                     /* Decrement the busy worker count */
                     rec->s->busy--;
                     p->worker->s->busy--;
@@ -566,6 +571,19 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         JK_TRACE_EXIT(l);
                         return JK_TRUE;
                     }
+                }
+                else {
+                    /* If we can not get the endpoint
+                     * mark the worker as busy rather then
+                     * as in error
+                     */
+                    rec->s->is_busy = JK_TRUE;
+                    jk_log(l, JK_LOG_INFO,
+                           "could not get free endpoint for worker %s",
+                           rec->s->name);
+                    /* Decrement the worker count and try another worker */
+                    --num_of_workers;
+                    continue;
                 }
                 if (!service_ok) {
                     /*
@@ -712,6 +730,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 p->lb_workers[i].s->lb_value = p->lb_workers[i].s->lb_factor;
                 p->lb_workers[i].s->in_error_state = JK_FALSE;
                 p->lb_workers[i].s->in_recovering = JK_FALSE;
+                p->lb_workers[i].s->is_busy = JK_FALSE;
                 p->lb_workers[i].s->error_time = 0;
                 /* Worker can be initaly disabled as hot standby */
                 p->lb_workers[i].s->is_disabled = jk_get_is_worker_disabled(props, worker_names[i]);

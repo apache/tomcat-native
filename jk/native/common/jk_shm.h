@@ -56,10 +56,6 @@ struct jk_shm_worker
     int     id;
     /* Number of currently busy channels */
     int     busy;
-    /* Number of currently idle channels */
-    int     idle;
-    /* Maximum number of channels */
-    int     max_conn;
     /* worker name */
     char    name[JK_SHM_STR_SIZ+1];
     /* worker domain */
@@ -68,6 +64,7 @@ struct jk_shm_worker
     char    redirect[JK_SHM_STR_SIZ+1];
     /* current status of the worker */
     int     is_disabled;
+    int     is_busy;
     /* Current lb factor */
     int     lb_factor;
     /* Current lb value  */

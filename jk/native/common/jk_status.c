@@ -199,7 +199,7 @@ static const char *status_val_bool(int v)
         return "True";
 }
 
-static const char *status_val_status(int d, int e, int r)
+static const char *status_val_status(int d, int e, int r, int b)
 {
     if (d)
         return "Disabled";
@@ -207,6 +207,8 @@ static const char *status_val_status(int d, int e, int r)
         return "Recovering";
     else if (e)
         return "Error";
+    else if (b)
+        return "Busy";
     else
         return "OK";
 }
@@ -374,7 +376,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_putv(s, "<td>",
                         status_val_status(wr->s->is_disabled,
                                           wr->s->in_error_state,
-                                          wr->s->in_recovering),
+                                          wr->s->in_recovering,
+                                          wr->s->is_busy),
                         "</td>", NULL);
                 jk_printf(s, "<td>%d</td>", wr->s->lb_factor);
                 jk_printf(s, "<td>%d</td>", wr->s->lb_value);
