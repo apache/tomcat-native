@@ -175,8 +175,33 @@ if test "${APXS_VERSION}" = "1.3" ; then
 
 else
 
+    dnl ----------------------------------------------------------------------
+    dnl APXS version 2.0, meaning Apache 2.0. We use APR from there
+    dnl ----------------------------------------------------------------------
     AC_MSG_RESULT([apache 2 distribution])
-    AC_MSG_ERROR([using Apache 2.0 apxs will be supported shortly])
+
+    WA_APXS_GET([CC],[${APXS}],[CC])
+    WA_APXS_GET([CPP],[${APXS}],[CPP])
+    WA_APXS_GET([SHELL],[${APXS}],[SHELL])
+    WA_APXS_GET([LIBTOOL],[${APXS}],[LIBTOOL])
+
+    WA_APXS_GET([CPPFLAGS],[${APXS}],[CPPFLAGS])
+    WA_APXS_GET([CPPFLAGS],[${APXS}],[NOTEST_CPPFLAGS])
+    WA_APXS_GET([CPPFLAGS],[${APXS}],[EXTRA_CPPFLAGS])
+
+    WA_APXS_GET([LDFLAGS],[${APXS}],[LDFLAGS])
+    WA_APXS_GET([LDFLAGS],[${APXS}],[NOTEST_LDFLAGS])
+    WA_APXS_GET([LDFLAGS],[${APXS}],[EXTRA_LDFLAGS])
+
+    WA_APXS_GET([CFLAGS],[${APXS}],[CFLAGS])
+    WA_APXS_GET([CFLAGS],[${APXS}],[NOTEST_CFLAGS])
+    WA_APXS_GET([CFLAGS],[${APXS}],[EXTRA_CFLAGS])
+
+    WA_APXS_GET([INCLUDES],[${APXS}],[INCLUDEDIR])
+    WA_PATH_DIR([INCLUDES],[${INCLUDES}],[apache 2.0 headers])
+    INCLUDES="-I${INCLUDES}"
+    AC_SUBST([INCLUDES])
+
     MODULE="apache-2.0"
 fi
 
