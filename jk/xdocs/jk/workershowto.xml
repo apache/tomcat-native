@@ -287,6 +287,21 @@ servlet engines supporting ajp13.
 Disabled by default.
 </p>
 
+<p>
+<b>recovery_options</b> property told webserver how to handle recovery when
+it detect that tomcat failed.
+By default, webserver will forward the request to another tomcat in LB mode
+(or to another ajp thread in ajp13 mode).
+values are : 0 (full recovery), 1 (don't recover if tomcat failed after getting the request),
+2 (don't recover if tomcat failed after sending the headers to client), 3 (don't recover if tomcat failed 
+getting the request or after sending the headers to client).
+</p>
+<p>
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and works on all
+servlet engines supporting ajp13.
+Full recovery by default.
+</p>
+
 <screen>
 <note>worker "worker2" will talk to Tomcat listening on machine www2.x.com at port 8009 using 3.5 lb factor</note>
 <read>worker.worker2.host=www2.x.com</read>
