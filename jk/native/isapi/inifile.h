@@ -26,8 +26,8 @@
 #include "jk_pool.h"
 
 #define ERRTYPE const char *
-#define ERRFMT  "%s"			/* natural printf format for errors */
-#define ERRTXT(e) (e)			/* macro to return text for an error */
+#define ERRFMT  "%s"            /* natural printf format for errors */
+#define ERRTXT(e) (e)           /* macro to return text for an error */
 #define ERRNONE NULL
 extern ERRTYPE inifile_outofmemory;
 extern ERRTYPE inifile_filenotfound;
