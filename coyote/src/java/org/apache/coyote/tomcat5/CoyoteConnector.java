@@ -202,6 +202,13 @@ public final class CoyoteConnector
 
 
     /**
+     * Linger value on the incoming connection.
+     * Note : a value inferior to 0 means no linger.
+     */
+    private int connectionLinger = Constants.DEFAULT_CONNECTION_LINGER;
+
+
+    /**
      * Timeout value on the incoming connection.
      * Note : a value of 0 means no timeout.
      */
@@ -385,6 +392,28 @@ public final class CoyoteConnector
     public void setCompression(String compression) {
 
         this.compression = compression;
+
+    }
+
+
+    /**
+     * Return the connection linger for this Connector.
+     */
+    public int getConnectionLinger() {
+
+        return (connectionLinger);
+
+    }
+
+
+    /**
+     * Set the connection linger for this Connector.
+     *
+     * @param count The new connection linge
+     */
+    public void setConnectionLinger(int connectionLinger) {
+
+        this.connectionLinger = connectionLinger;
 
     }
 
@@ -1053,6 +1082,8 @@ public final class CoyoteConnector
                                        "" + acceptCount);
         IntrospectionUtils.setProperty(protocolHandler, "tcpNoDelay",
                                        "" + tcpNoDelay);
+        IntrospectionUtils.setProperty(protocolHandler, "soLinger",
+                                       "" + connectionLinger);
         IntrospectionUtils.setProperty(protocolHandler, "soTimeout",
                                        "" + connectionTimeout);
         IntrospectionUtils.setProperty(protocolHandler, "timeout",
