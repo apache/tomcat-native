@@ -188,6 +188,7 @@ class Tomcat3Response extends  Response {
         coyoteResponse.setContentType(contentType);
         this.contentType = coyoteResponse.getContentType();
         this.characterEncoding = coyoteResponse.getCharacterEncoding();
+        this.haveCharacterEncoding = true;
         // maintain Tomcat 3.3 behavior by setting the header too
         headers.setValue("Content-Type").setString(contentType);
     }
