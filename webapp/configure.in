@@ -446,6 +446,22 @@ AC_ARG_WITH(apxs,
       APR_VARFIL=""
       APR_LIBDIR=""
       APR_INCDIR=""
+
+      dnl -----------------------------------------------------
+      dnl check for broken APXS (Apachetoolbox brokes it)
+      dnl -----------------------------------------------------
+      local_ldflags_shlib="`${APXS} -q LDFLAGS_SHLIB 2>&1 | grep Error`"
+      if  ${TEST} -n "${local_ldflags_shlib}"
+      then
+        AC_MSG_ERROR([${APXS} is broken (LDFLAGS_SHLIB not found)])
+      fi
+
+      local_cflags="`${APXS} -q CFLAGS 2>&1 | grep Error`"
+      if  ${TEST} -n "${local_cflags}"
+      then
+        AC_MSG_ERROR([${APXS} is broken (CFLAGS not found)])
+      fi
+
     fi
     unset local_apache
   ],[
