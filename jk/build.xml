@@ -38,6 +38,7 @@
     </target>
 
     <target name="detect" >
+        <echo message="-------- jakarta-tomcat-connectors --------" /> 
         <available property="tomcat33.detect" 
                    file="${tomcat33.home}/lib/common/tomcat_core.jar" />
         <available property="tomcat40.detect" 
@@ -212,6 +213,7 @@
               file="${jk.build}/WEB-INF/lib/tomcat-jk.jar"/>
         <copy todir="${tomcat40.home}/server/lib" 
               file="${jk.build}/WEB-INF/lib/tomcat-jk2.jar"/>
+        <mkdir dir="${tomcat40.home}/webapps/jk/WEB-INF/conf"/>
     </target>
 
     <target name="install-t41" if="tomcat41.detect" > 
@@ -222,6 +224,7 @@
               file="${jk.build}/WEB-INF/lib/tomcat-jk.jar"/>
         <copy todir="${tomcat41.home}/server/lib" 
               file="${jk.build}/WEB-INF/lib/tomcat-jk2.jar"/>
+        <mkdir dir="${tomcat41.home}/webapps/jk/WEB-INF/conf"/>
         <echo message="Don't forget to add the connector to ${tomcat41.home}/conf/server.xml" />
 
         <!-- 3.3 style -->
