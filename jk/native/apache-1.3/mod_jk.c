@@ -463,8 +463,41 @@ static int init_ws_service(apache_private_data_t *private_data,
      * HttpServletRequest.getRequestURI() should remain encoded.
      * [http://java.sun.com/products/servlet/errata_042700.html]
      *
+     * We use JkOptions to determine which method to be used 
+     * 
+     * ap_escape_uri is the latest recommanded but require 
+     *               some java decoding (in TC 3.3 rc2)
+     *
+     * unparsed_uri is used for strict compliance with spec and
+     *              old Tomcat (3.2.3 for example)
+     *
+     * uri is use for compatibilty with mod_rewrite with old Tomcats
      */
-    s->req_uri      = ap_escape_uri(r->pool, r->uri);
+
+    switch (conf->options & JK_OPT_FWDURIMASK) {
+   
+        case JK_OPT_FWDURICOMPATUNPARSED :
+            s->req_uri      = r->unparsed_uri;
+            if (s->req_uri != NULL) {
+                char *query_str = strchr(s->req_uri, '?');
+                if (query_str != NULL) {
+                    *query_str = 0;
+                }
+            }
+
+        break;
+
+        case JK_OPT_FWDURICOMPAT :
+            s->req_uri = r->uri;
+        break;
+
+        case JK_OPT_FWDURIESCAPED :
+            s->req_uri      = ap_escape_uri(r->pool, r->uri);
+        break;
+
+        default :
+            return JK_FALSE;
+    }
 
     s->is_ssl       = JK_FALSE;
     s->ssl_cert     = NULL;
@@ -852,8 +885,11 @@ static const char *jk_set_key_size_indicator(cmd_parms *cmd,
  * JkOptions Directive Handling
  *
  *
- * +ForwardSSLKeySize => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
- * -ForwardSSLKeySize => Don't Forward SSL Key Size, will make mod_jk works with all TC release
+ * +ForwardSSLKeySize        => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
+ * -ForwardSSLKeySize        => Don't Forward SSL Key Size, will make mod_jk works with all TC release
+ *  ForwardURICompat         => Forward URI normally, less spec compliant but mod_rewrite compatible (old TC)
+ *  ForwardURICompatUnparsed => Forward URI as unparsed, spec compliant but broke mod_rewrite (old TC)
+ *  ForwardURIEscaped        => Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part
  */
 
 const char *jk_set_options(cmd_parms *cmd,
@@ -861,6 +897,7 @@ const char *jk_set_options(cmd_parms *cmd,
                            const char *line)
 {
     int  opt = 0; 
+    int  mask = 0;
     char action;
     char *w;
 
@@ -876,10 +913,27 @@ const char *jk_set_options(cmd_parms *cmd,
             action = *(w++);
         }
 
-        if (!strcasecmp(w, "ForwardKeySize"))
+        mask = 0;
+
+        if (!strcasecmp(w, "ForwardKeySize")) {
             opt = JK_OPT_FWDKEYSIZE;
+        }
+        else if (!strcasecmp(w, "ForwardURICompat")) {
+            opt = JK_OPT_FWDURICOMPAT;
+            mask = JK_OPT_FWDURIMASK;
+        }
+        else if (!strcasecmp(w, "ForwardURICompatUnparsed")) {
+            opt = JK_OPT_FWDURICOMPATUNPARSED;
+            mask = JK_OPT_FWDURIMASK;
+        }
+        else if (!strcasecmp(w, "ForwardURIEscaped")) {
+            opt = JK_OPT_FWDURIESCAPED;
+            mask = JK_OPT_FWDURIMASK;
+        }
         else
             return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '", w, "'", NULL);
+
+        conf->options &= ~mask;
 
         if (action == '-') {
             conf->options &= ~opt;
@@ -989,8 +1043,11 @@ static const command_rec jk_cmds[] =
     /*
      * Options to tune mod_jk configuration
      * for now we understand :
-     * +ForwardSSLKeySize => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
-     * -ForwardSSLKeySize => Don't Forward SSL Key Size, will make mod_jk works with all TC release
+     * +ForwardSSLKeySize        => Forward SSL Key Size, to follow 2.3 specs but may broke old TC 3.2
+     * -ForwardSSLKeySize        => Don't Forward SSL Key Size, will make mod_jk works with all TC release
+     *  ForwardURICompat         => Forward URI normally, less spec compliant but mod_rewrite compatible (old TC)
+     *  ForwardURICompatUnparsed => Forward URI as unparsed, spec compliant but broke mod_rewrite (old TC)
+     *  ForwardURIEscaped        => Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part
      */
     {"JkOptions", jk_set_options, NULL, RSRC_CONF, RAW_ARGS,
      "Set one of more options to configure the mod_jk module"},
@@ -1098,7 +1155,7 @@ static void *create_jk_config(ap_pool *p, server_rec *s)
     c->log_level   = -1;
     c->log         = NULL;
     c->mountcopy   = JK_FALSE;
-    c->options     = 0;
+    c->options     = JK_OPT_FWDURIDEFAULT;
 
     /*
      * By default we will try to gather SSL info. 
