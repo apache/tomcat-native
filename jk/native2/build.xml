@@ -372,14 +372,16 @@
       </depends>
       <resource fileName="../jk_logger_win32_message.res" if="win32"/>
 
-      <!-- Platform-specific tags -->
+      <!-- Platform-specific tags. We should have a "readhat" test too -->
       <linkOpt value="-lcrypt" if="linux" />
       <linkOpt value="-L${apr.lib}" if="linux" />
-      <linkOpt value="-lapr" if="linux" />
+      <linkOpt value="-lapr-0" if="linux" />
+
       <linkOpt value="-L${apr.lib}" if="solaris" />
-      <linkOpt value="-lapr" if="solaris" />
+      <linkOpt value="-lapr-0" if="solaris" />
+
       <linkOpt value="-L${apr.lib}" if="hpux" />
-      <linkOpt value="-lapr" if="hpux" />
+      <linkOpt value="-lapr-0" if="hpux" />
 
       <altSoFile value="jni_conn" if="netware" />
       
