@@ -176,6 +176,11 @@ static int jk2_create_workerEnv(ap_pool *p, const server_rec *s)
     /* Local initialization.
      */
     workerEnv->_private = s;
+
+    /* serverRoot via ap_server_root_relative()
+     */
+    workerEnv->initData->add( env, workerEnv->initData, "serverRoot",
+                              ap_server_root_relative(p,""));
     return JK_TRUE;
 }
 

@@ -238,7 +238,7 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     if(  configFile == NULL ) {
         wEnv->config->setPropertyString( env, wEnv->config,
                                          "config.file",
-                                         "conf/jk2.properties" );
+                                         "$(serverRoot)/conf/jk2.properties" );
     }
     
     jk2_workerEnv_initWorkers( env, wEnv );

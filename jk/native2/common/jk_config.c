@@ -713,9 +713,12 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
                                    struct jk_pool *resultPool, 
                                    char *value)
 {
-    char *rc = value;
-    char *env_start = rc;
+    char *rc;
+    char *env_start;
     int rec = 0;
+
+    rc = value;
+    env_start = value;
 
     while(env_start = strstr(env_start, "$(")) {
         char *env_end = strstr(env_start, ")");
@@ -724,9 +727,7 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
             char env_name[LENGTH_OF_LINE + 1] = ""; 
             char *env_value;
 
-            *env_end = '\0';
-            strcpy(env_name, env_start + 2);
-            *env_end = ')';
+            strncpy(env_name, env_start + 2, (env_end-env_start)-2);
 
             env_value = m->get(env, m, env_name);
 	    if(env_value == NULL ) {
@@ -741,8 +742,7 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
                 if(!new_value) {
                     break;
                 }
-                *env_start = '\0';
-                strcpy(new_value, rc);
+                strncpy(new_value, rc, env_start-rc);
                 strcat(new_value, env_value);
                 strcat(new_value, env_end + 1);
 		offset= env_start - rc + strlen( env_value );
