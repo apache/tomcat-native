@@ -303,7 +303,7 @@
           </td>
      	  <xsl:choose>
             <xsl:when test="@default != ''">
-               <td align="left" valign="center">          
+               <td align="center" valign="center">          
                <code><xsl:value-of select="@default"/></code>
               </td>
             </xsl:when>
