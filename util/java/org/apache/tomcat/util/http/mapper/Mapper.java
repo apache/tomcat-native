@@ -1279,6 +1279,8 @@ public final class Mapper {
 
     // -------------------------------------------------------- Testing Methods
 
+    // FIXME: Externalize this
+    /*
     public static void main(String args[]) {
 
         try {
@@ -1383,6 +1385,7 @@ public final class Mapper {
         }
 
     }
+    */
 
 
 }
