@@ -80,6 +80,9 @@ Not needed when --with-apxs has been used.</p>
   <attribute name="--enable-maitainer-mode" required="false">
   <p>Build mod_jk enabling maintainer or DEBUG mode.</p>
   </attribute>
+  <attribute name="--enable-prefork" required="false">
+  <p>Build mod_jk without all the pthread code, better support apache prefork mode.</p>
+  </attribute>
 </attributes>
 
 <p>JNI related parameters :</p>
