@@ -68,6 +68,7 @@
 #include <http_protocol.h>
 #include <util_script.h>
 #include <wa.h>
+#include <wa_version.h>
 
 /* ************************************************************************* */
 /* GENERIC DECLARATIONS                                                      */
@@ -81,6 +82,11 @@ static wa_boolean wam_initialized=wa_false;
 static wa_chain *wam_connections=NULL;
 /* The main server using for logging error not related to requests */
 static server_rec *server=NULL;
+
+static void wam_init_handler(server_rec *s, ap_pool *p)
+{
+    ap_add_version_component(WA_EXPOSED_VERSION);
+}
 
 /* ************************************************************************* */
 /* MODULE AND LIBRARY INITIALIZATION AND DESTRUCTION                         */
@@ -532,7 +538,7 @@ static const handler_rec wam_handlers[] = {
 /* Apache module declaration */
 module MODULE_VAR_EXPORT webapp_module = {
     STANDARD_MODULE_STUFF,
-    NULL,                               /* module initializer */
+    wam_init_handler,                   /* module initializer */
     NULL,                               /* per-directory config creator */
     NULL,                               /* dir config merger */
     NULL,                               /* server config creator */

@@ -69,6 +69,7 @@
 #include <http_protocol.h>
 #include <util_script.h>
 #include <wa.h>
+#include <wa_version.h>
 #include <apr_tables.h>
 
 /* ************************************************************************* */
@@ -87,6 +88,13 @@ static server_rec *server=NULL;
 /* ************************************************************************* */
 /* MODULE AND LIBRARY INITIALIZATION AND DESTRUCTION                         */
 /* ************************************************************************* */
+
+static int wam_init_handler(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp,
+                             server_rec *s)
+{
+    ap_add_version_component(p, WA_EXPOSED_VERSION);
+    return OK;
+}
 
 /* Destroy the module and the WebApp Library */
 static apr_status_t wam_shutdown(void *data) {/*void *nil) { */
@@ -526,6 +534,7 @@ static void register_hooks(apr_pool_t *p)
     ap_hook_translate_name(wam_match, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_child_init(wam_startup, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_map_to_storage(wam_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_post_config(wam_init_handler, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
 /* Apache module declaration */
