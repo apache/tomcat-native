@@ -67,7 +67,6 @@ import org.apache.catalina.Connector;
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Lifecycle;
-import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Logger;
@@ -252,7 +251,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
 
     /**
      * Return the scheme that will be assigned to requests received
-     * through this connector.  Default value is "http".
+     * through this connector.  Default value is "warp".
      */
     public String getScheme() {
         return(this.scheme);
@@ -362,7 +361,9 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     }
 
     /**
-     * Return the port to which this <code>Connector</code> will bind to.
+     * Set the port to which this <code>Connector</code> will bind to.
+     * 
+     * @param port The bind port
      */
     public void setPort(int port) {
         this.port=port;
@@ -374,8 +375,8 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      * @param address The bind IP address
      */
     public void setAddress(int port) {
-        if ((redirectPort<1) || (redirectPort>65535))
-            throw new IllegalArgumentException("Invalid port "+redirectPort);
+        if ((port<1) || (port>65535))
+            throw new IllegalArgumentException("Invalid port "+port);
         this.port=port;
 
         if (Constants.DEBUG) logger.debug("Setting port to "+port);
