@@ -81,6 +81,7 @@ public class JSSEImplementation extends SSLImplementation
         "org.apache.tomcat.util.net.jsse.JSSE14SocketFactory";
     static final String JSSE14Support = 
         "org.apache.tomcat.util.net.jsse.JSSE14Support";
+    static final String SSLSocketClass = "javax.net.ssl.SSLSocket";
 
     static org.apache.commons.logging.Log logger = 
         org.apache.commons.logging.LogFactory.getLog(JSSEImplementation.class);
@@ -120,7 +121,7 @@ public class JSSEImplementation extends SSLImplementation
             try {
                 Class sslsCl = Class.forName(JSSE14Support);
                 Class [] cparams = new Class[1];
-                cparams[0] = SSLSocket.class;
+                cparams[0] = Class.forName(SSLSocketClass);
                 Constructor sslc = sslsCl.getConstructor(cparams);
                 Object [] params = new Object[1];
                 params[0] = s;
