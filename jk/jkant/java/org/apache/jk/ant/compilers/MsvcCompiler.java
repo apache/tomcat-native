@@ -133,7 +133,7 @@ public class MsvcCompiler extends CompilerAdapter {
         String localCflags=cflags;
         File ccOpt = new File(buildDir, "cc.opt");
         if( localCflags==null ) {
-            localCflags=new String("-nologo -MT -W3 -GX -O2");
+            localCflags=new String("-nologo -MT -W3 -GX -O2 -c");
             if( extra_cflags!=null ) {
                 localCflags+=" " + extra_cflags;
             }
