@@ -62,6 +62,9 @@ import java.io.*;
 import java.util.*;
 import java.security.*;
 
+// XXX This should be called MsgListener or MsgDecoder - 'handler' is too
+// overloaded. 
+
 /**
  *
  * @author Costin Manolache
@@ -70,12 +73,27 @@ public class Handler {
     public static final int OK=0;
     public static final int LAST=1;
     public static final int ERROR=2;
+
+    protected WorkerEnv we;
+    protected Worker worker;
     
-    
-    public void init( WorkerEnv we ) {
+    public void setWorkerEnv( WorkerEnv we ) {
+        this.we=we;
     }
 
-    public int callback(int type, Channel ch, Endpoint ep, Msg in) throws IOException { 
+    public void setWorker( Worker worker ) {
+        this.worker=worker;
+    }
+    
+    /** Should register the request types it can handle,
+     *   same style as apache2.
+     */
+    public void init() {
+    }
+
+    public int callback(int type, Channel ch, Endpoint ep, Msg in)
+        throws IOException
+    {
         return OK;
     }
     

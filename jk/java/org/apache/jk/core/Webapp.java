@@ -99,6 +99,9 @@ public class Webapp {
 
     int logLevel;
 
+    // 
+    String welcomeFiles[];
+
     /* Server env variables we want to receive
      */
     String envvars[];

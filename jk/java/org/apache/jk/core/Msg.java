@@ -154,16 +154,13 @@ public abstract class Msg {
      */
     public abstract int getLongInt();
 
-    /**
-     * Send a packet to the web server.  Works for any type of message.
-     *
-     * @param msg A packet with accumulated data to send to the server --
-     * this method will write out the length in the header.  
-     */
-    public abstract void send(Channel ch, Endpoint ep) throws IOException;
+    public abstract int getHeaderLength();
 
-    public abstract int receive(Channel ch, Endpoint ep) throws IOException;
+    public abstract int processHeader();
 
+    public abstract byte[] getBuffer();
+
+    public abstract int getLen();
     
     public abstract void dump(String msg);
     

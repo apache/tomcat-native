@@ -96,8 +96,8 @@ public class WorkerEnv {
     String handlerNames[]=new String[MAX_HANDLERS];
     int currentId=RESERVED;
 
-    Vector workers=new Vector();
-    Vector channels=new Vector();
+    Hashtable workers=new Hashtable();
+    Hashtable channels=new Hashtable();
 
     public WorkerEnv() {
         for( int i=0; i<noteId.length; i++ ) {
@@ -125,7 +125,8 @@ public class WorkerEnv {
     }
 
     public void addHandler( Handler h ) {
-        h.init( this );
+        h.setWorkerEnv( this );
+        h.init();
     }
 
     public int getNoteId( int type, String name ) {
@@ -171,25 +172,32 @@ public class WorkerEnv {
         return handler.callback( type, ch, ep, hBuf );
     }
 
-    public void addWorker( Worker w ) {
+    public void addWorker( String name, Worker w ) {
         w.setWorkerEnv( this );
-        workers.addElement( w );
+        workers.put( name, w );
     }
 
-    public void addChannel( Channel c ) {
+    public Worker getWorker( String name ) {
+        return (Worker)workers.get(name);
+    }
+
+    public void addChannel( String name, Channel c ) {
         c.setWorkerEnv( this );
-        channels.addElement( c );
+        channels.put( name, c );
     }
 
     public void start() throws IOException {
-
-        for( int i=0; i< workers.size(); i++ ) {
-            Worker w=(Worker)workers.elementAt(i);
-            w.init(this);
+        Enumeration en=workers.keys();
+        while( en.hasMoreElements() ) {
+            String n=(String)en.nextElement();
+            Worker w=(Worker)workers.get(n);
+            w.init();
         }
 
-        for( int i=0; i< channels.size(); i++ ) {
-            Channel ch=(Channel)channels.elementAt(i);
+        en=channels.keys();
+        while( en.hasMoreElements() ) {
+            String n=(String)en.nextElement();
+            Channel ch=(Channel)channels.get(n);
             ch.init();
         }
     }

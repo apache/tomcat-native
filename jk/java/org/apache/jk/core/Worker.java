@@ -84,25 +84,12 @@ public class Worker
         this.we=we;
     }
 
-    public WorkerEnv getWorkerEnv() {
-        return we;
-    }
-    
     /* ==================== Start/stop ==================== */
 
-    /** Configuration. We'll extract and check the settings.
-     *  XXX We should be able to get info from the same
-     *  properties file as the C side, so port, etc could be
-     *  configured in only one place
-     */
-    public void validate(  Properties p ) 
-    {
-    }
-    
     /** Initialize the worker. After this call the worker will be
      *  ready to accept new requests.
      */
-    public void init(WorkerEnv we) throws IOException {
+    public void init() throws IOException {
         // Run a thread that will accept connections.
         
         
