@@ -254,8 +254,7 @@ fi
 LOCAL_HEADER([Configuring APR])
 LOCAL_FILTEREXEC(
   [./configure --enable-static --disable-shared --disable-threads],
-  [APR configure]
-)
+  ["APR configure"])
 if ${TEST} "${ret}" -ne "0"
 then
   AC_MSG_ERROR([APR configure script terminated with error code ${ret}])

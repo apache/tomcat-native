@@ -90,7 +90,7 @@ mod_webapp.so: mod_webapp.lo @SRCDIR@/lib/libwebapp.la @APRDIR@/libapr.la
 	@$(SHELL) $(LIBTOOL) $(LTFLAGS) --mode=link \
 		$(APXS_LD_SHLIB) $(APXS_LDFLAGS_SHLIB) \
 		mod_webapp.lo @SRCDIR@/lib/libwebapp.la \
-		$(LIBTOOL_LIBS) $(EXTRA_LIBS) \
+		$(LIBTOOL_LIBS) $(EXTRA_LIBS) @APRDIR@/libapr.la \
 		-o mod_webapp.so
 
 clean:
