@@ -305,6 +305,25 @@ apr_status_t ajp_msg_serialize_ping(ajp_msg_t *msg);
  */
 apr_status_t ajp_msg_serialize_cping(ajp_msg_t *msg);
 
+/** 
+ * Send an AJP message to backend
+ *
+ * @param soct      backend socket
+ * @param smsg      AJP message to put serialized message
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_ilink_send(apr_socket_t *sock, ajp_msg_t *msg);
+
+/** 
+ * Receive an AJP message from backend
+ *
+ * @param soct      backend socket
+ * @param smsg      AJP message to put serialized message
+ * @return          APR_SUCCESS or error
+ */
+apr_status_t ajp_ilink_receive(apr_socket_t *sock, ajp_msg_t *msg);
+
+
 
 #endif /* AJP_H */
 
