@@ -69,6 +69,8 @@
 #include "ap_config.h"
 #include "apr_lib.h"
 #include "apr_date.h"
+#include "apr_strings.h"
+
 #include "httpd.h"
 #include "http_config.h"
 #include "http_request.h"
@@ -76,14 +78,8 @@
 #include "http_protocol.h"
 #include "http_main.h"
 #include "http_log.h"
+
 #include "util_script.h"
-
-/* moved to apr since http-2.0.19-dev */
-#if (MODULE_MAGIC_NUMBER_MAJOR < 20010523)
-#include "util_date.h"
-#endif
-
-#include "apr_strings.h"
 /*
  * Jakarta (jk_) include files
  */
@@ -97,9 +93,9 @@
 #include "jk_uriMap.h"
 #include "jk_requtil.h"
 
-#define JK_WORKER_ID        ("jakarta.worker")
 #define JK_HANDLER          ("jakarta-servlet")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet")
+
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x) 
 
 module AP_MODULE_DECLARE_DATA jk_module;
@@ -332,21 +328,9 @@ static int init_ws_service(jk_ws_service_t *s,
     s->remote_host  = NULL_FOR_EMPTY(s->remote_host);
     s->remote_addr  = NULL_FOR_EMPTY(r->connection->remote_ip);
 
-    if( l->level <= JK_LOG_DEBUG_LEVEL ) {
-        l->jkLog(l, JK_LOG_DEBUG, 
-               "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d \n",
-               ap_get_server_port( r ),
-               ap_get_server_name( r ),
-               r->hostname,
-               r->server->server_hostname,
-               r->connection->base_server->port,
-               r->server->port);
-    }
-    
     /* get server name */
     s->server_name= (char *)(r->hostname ? r->hostname :
                  r->server->server_hostname);
-
 
     /* get the real port (otherwise redirect failed) */
     apr_sockaddr_port_get(&port,r->connection->local_addr);
@@ -561,8 +545,7 @@ static const char *jk_set_mountcopy(cmd_parms *cmd,
  *
  * JkMount URI(context) worker
  */
-static const char *jk_mount_context(cmd_parms *cmd, 
-                                    void *dummy, 
+static const char *jk_mount_context(cmd_parms *cmd, void *dummy, 
                                     const char *context,
                                     const char *worker,
                                     const char *maybe_cookie)
@@ -570,21 +553,11 @@ static const char *jk_mount_context(cmd_parms *cmd,
     server_rec *s = cmd->server;
     jk_workerEnv_t *workerEnv =
         (jk_workerEnv_t *)ap_get_module_config(s->module_config, &jk_module);
-    char *old;
-    jk_uriMap_t *uriMap=workerEnv->uriMap;
-    jk_uriEnv_t *uriEnv;
     
-    if (context[0]!='/')
-        return "Context should start with /";
+    if (context[0]!='/') return "Context must start with /";
 
-    /*
-     * Add the new worker to the alias map. XXX host ?
-     */
-    uriEnv=uriMap->addMapping( uriMap, NULL, context, worker );
-    if( uriEnv==NULL ) {
-        ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0, 
-                     NULL, "mod_jk: Error mounting %s %s \n", context, worker  );
-    }
+    map_put( workerEnv->init_data, context, worker, NULL );
+
     return NULL;
 }
 
@@ -594,8 +567,7 @@ static const char *jk_mount_context(cmd_parms *cmd,
  *
  * JkWorkersFile file
  */
-static const char *jk_set_worker_file(cmd_parms *cmd, 
-                                      void *dummy, 
+static const char *jk_set_worker_file(cmd_parms *cmd, void *dummy, 
                                       const char *worker_file)
 {
     server_rec *s = cmd->server;
@@ -1286,9 +1258,8 @@ static int jk_post_config(apr_pool_t *pconf,
     for( i=0; i<10; i++ ) {
         tmpPool=apr_pool_get_parent( gPool );
         if( tmpPool == NULL ) {
-            workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO,
-                                "mod_jk.post_config() found global at %d\n",i);
-            printf("XXX found global at %d\n", i );
+            /*             workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO, */
+            /*               "mod_jk.post_config() found global at %d\n",i); */
             break;
         }
         gPool=tmpPool;
@@ -1299,14 +1270,14 @@ static int jk_post_config(apr_pool_t *pconf,
         apr_pool_userdata_get( &data, "mod_jk_init", gPool );
         if( data==NULL ) {
             workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO,
-                                "mod_jk.post_config() validation, no key %d\n",i);
-            printf("XXX No key\n");
+                                "mod_jk.post_config() first invocation\n",i);
             apr_pool_userdata_set( "INITOK", "mod_jk_init", NULL, gPool );
             return OK;
         }
     }
         
-    workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO, "mod_jk.post_config()\n" ); 
+    workerEnv->l->jkLog(workerEnv->l, JK_LOG_INFO,
+                        "mod_jk.post_config() second invocation\n" ); 
     if(!workerEnv->was_initialized) {
         workerEnv->was_initialized = JK_TRUE;        
         init_jk( pconf, workerEnv, s );
@@ -1342,9 +1313,10 @@ static int jk_handler(request_rec *r)
     uriEnv=ap_get_module_config( r->request_config, &jk_module );
 
     /* not for me, try next handler */
-    if(uriEnv==NULL && strcmp(r->handler,JK_HANDLER))
+    if(uriEnv==NULL ||
+       strcmp(r->handler,JK_HANDLER)!= 0 )
       return DECLINED;
-
+    
     /* If this is a proxy request, we'll notify an error */
     if(r->proxyreq) {
         return HTTP_INTERNAL_SERVER_ERROR;
@@ -1356,6 +1328,8 @@ static int jk_handler(request_rec *r)
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if(rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) {
+        l->jkLog(l, JK_LOG_INFO,
+                 "mod_jk.handler() Can't setup client block %d\n", rc);
         return rc;
     }
 
@@ -1389,7 +1363,7 @@ static int jk_handler(request_rec *r)
         s->response_started = JK_FALSE;
         s->read_body_started = JK_FALSE;
         s->ws_private = r;
-        s->pool=end->pool;
+        s->pool=end->cPool;
         
         rc=init_ws_service(s, workerEnv);
         
@@ -1402,6 +1376,11 @@ static int jk_handler(request_rec *r)
              * If the servlet engine didn't consume all of the
              * request data, consume and discard all further
              * characters left to read from client
+             *
+             *  XXX Is it the right thing to do ????? Why spend the
+             *  bandwith, the servlet decided not to read the POST then
+             *  jk shouldn't do it instead, and the user should get the
+             *  error message !
              */
             char *buff = apr_palloc(r->pool, 2048);
             if (buff != NULL) {
@@ -1415,7 +1394,7 @@ static int jk_handler(request_rec *r)
 
     end->done(&end, l); 
 
-    if(rc) {
+    if(rc==JK_TRUE) {
         return OK;    /* NOT r->status, even if it has changed. */
     }
 
@@ -1475,14 +1454,14 @@ static int jk_translate(request_rec *r)
     ap_set_module_config( r->request_config, &jk_module, uriEnv );
     
     l->jkLog(l, JK_LOG_INFO, 
-             "mod_jk.translate(): map %s %s\n", r->uri, uriEnv->webapp->worker->name);
+             "mod_jk.translate(): map %s %s\n",
+             r->uri, uriEnv->webapp->worker->name);
 
     return OK;
 }
 
 /* XXX Can we use type checker step to set our stuff ? */
 
-#if (MODULE_MAGIC_NUMBER_MAJOR > 20010808)
 /* bypass the directory_walk and file_walk for non-file requests */
 static int jk_map_to_storage(request_rec *r)
 {
@@ -1490,13 +1469,13 @@ static int jk_map_to_storage(request_rec *r)
 
     if( env != NULL ) {
         r->filename = (char *)apr_filename_of_pathname(r->uri);
-        printf( "XXX (httpd -X): map to storage %s %s \n",
-                r->handler, r->filename);
+        env->workerEnv->l->jkLog(env->workerEnv->l, JK_LOG_INFO, 
+                                 "mod_jk.map_to_storage(): map %s %s\n",
+                                 r->uri, r->filename);
         return OK;
     }
     return DECLINED;
 }
-#endif
 
 static void jk_register_hooks(apr_pool_t *p)
 {
@@ -1504,9 +1483,7 @@ static void jk_register_hooks(apr_pool_t *p)
     ap_hook_post_config(jk_post_config,NULL,NULL,APR_HOOK_MIDDLE);
     ap_hook_child_init(jk_child_init,NULL,NULL,APR_HOOK_MIDDLE);
     ap_hook_translate_name(jk_translate,NULL,NULL,APR_HOOK_FIRST);
-#if (MODULE_MAGIC_NUMBER_MAJOR > 20010808)
     ap_hook_map_to_storage(jk_map_to_storage, NULL, NULL, APR_HOOK_MIDDLE);
-#endif
 }
 
 module AP_MODULE_DECLARE_DATA jk_module =
