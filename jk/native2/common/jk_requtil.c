@@ -412,7 +412,6 @@ int jk_requtil_readFully(jk_env_t *env, jk_ws_service_t *s,
 void jk_requtil_initRequest(jk_env_t *env, jk_ws_service_t *s)
 {
     s->ws_private           = NULL;
-    s->pool                 = NULL;
     s->method               = NULL;
     s->protocol             = NULL;
     s->req_uri              = NULL;

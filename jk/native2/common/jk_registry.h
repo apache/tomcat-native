@@ -121,11 +121,15 @@ int JK_METHOD jk_worker_ajp12_factory(jk_env_t *env, jk_pool_t *pool,
 int JK_METHOD jk_channel_apr_socket_factory(jk_env_t *env, jk_pool_t *pool,
                                         void **result,
 					const char *type, const char *name);
-#else
+#endif
+
+int JK_METHOD jk_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
+                                    void **result,
+                                    const char *type, const char *name);
+
 int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool,
                                         void **result,
 					const char *type, const char *name);
-#endif
 
 int JK_METHOD jk_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                    void **result,
