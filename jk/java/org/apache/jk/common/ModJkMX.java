@@ -175,8 +175,12 @@ public class ModJkMX extends JkHandler
             Iterator mbeansIt=mbeans.values().iterator();
             while( mbeansIt.hasNext()) {
                 MBeanProxy proxy=(MBeanProxy)mbeansIt.next();
-                ObjectName oname=proxy.getObjectName();
-                Registry.getRegistry().getMBeanServer().unregisterMBean(oname);
+                Object ooname = proxy.getObjectName();
+                if( ooname != null ) {
+                    String soname = ooname.toString();
+                    ObjectName oname = new ObjectName(soname);
+                    Registry.getRegistry().getMBeanServer().unregisterMBean(oname);
+                }
             }
         } catch( Throwable t ) {
             log.error( "Destroy error", t );
