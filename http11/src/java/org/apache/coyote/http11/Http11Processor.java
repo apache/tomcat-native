@@ -888,7 +888,7 @@ public class Http11Processor implements Processor, ActionHook {
             // Send a 100 status back if it makes sense (response not committed
             // yet, and client specified an expectation for 100-continue)
 
-            if (response.isCommitted())
+            if ((response.isCommitted()) || (!http11))
                 return;
 
             MessageBytes expectMB = 
