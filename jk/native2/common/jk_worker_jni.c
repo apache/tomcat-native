@@ -216,8 +216,8 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
     jstring stderr_name = NULL;
     jint rc = 0;
     char *str_config = NULL;
-    jk_map_t *props=_this->workerEnv->initData;
-    jk_vm_t *vm=_this->workerEnv->vm;
+    jk_map_t *props;
+    jk_vm_t *vm;
     jclass jstringClass;
     jarray jargs;
     int i=0;
@@ -227,12 +227,25 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_bean_t *bean)
         return JK_ERR;
     }
 
+    vm = _this->workerEnv->vm;
     if( vm == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerJni.init() No VM found\n");
         return JK_ERR;
     }
+    /* XXX Allow only the first child to execute the worker 
+     * The WM will be shared between processes.
+    */
+    if (_this->workerEnv->childId != 0) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "workerJni.init() Skipping initialization for process %d %d\n",
+                      _this->workerEnv->childId, _this->workerEnv->childProcessId);
+		      
+	    _this->lb_disabled = JK_TRUE;        
+        return JK_OK;
+    }
     
+    props=_this->workerEnv->initData;
     jniWorker = _this->worker_private;
     
     if( jniWorker->className==NULL )
@@ -379,7 +392,7 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
 {
     jk_worker_t *_this=bean->object;
     jni_worker_data_t *jniWorker;
-    jk_vm_t *vm=_this->workerEnv->vm;
+    jk_vm_t *vm;
     JNIEnv *jniEnv;
     jstring cmd_line = NULL;
     jstring stdout_name = NULL;
@@ -392,6 +405,24 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "In destroy, assert failed - invalid parameters\n");
         return JK_ERR;
+    }
+    vm = _this->workerEnv->vm;
+    
+    if( vm == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "jni.destroy() No VM found\n");
+        return JK_ERR;
+    }
+    
+    /* XXX Allow only the first child to execute the worker 
+     * The WM will be shared between processes.
+    */
+    if (_this->workerEnv->childId != 0) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "workerJni.init() Skipping destroying for process %d %d\n",
+                      _this->workerEnv->childId, _this->workerEnv->childProcessId);
+		      
+        return JK_OK;
     }
 
     jniWorker = _this->worker_private;

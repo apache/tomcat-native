@@ -655,6 +655,12 @@ int JK_METHOD jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
     jk_vm_t *jkvm;
     jk_workerEnv_t *workerEnv;
     
+    workerEnv=env->getByName( env, "workerEnv" );
+    
+    if (workerEnv->childGeneration > 0) {
+        result->disabled = 1;
+        return JK_OK;
+    }
     jkvm = (jk_vm_t *)pool->calloc(env, pool, sizeof(jk_vm_t ));
 
     jkvm->pool=pool;
@@ -671,7 +677,6 @@ int JK_METHOD jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
     result->setAttribute=jk2_jk_vm_setProperty;
     jkvm->mbean=result;
 
-    workerEnv=env->getByName( env, "workerEnv" );
     jkvm->properties=workerEnv->initData;
 
     workerEnv->vm=jkvm;
