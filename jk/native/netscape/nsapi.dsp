@@ -160,6 +160,10 @@ SOURCE=..\common\jk_md5.c
 # End Source File
 # End Group
 
+SOURCE=..\common\jk_context.c
+# End Source File
+# End Group
+
 SOURCE=..\common\jk_ajp_common.c
 # End Source File
 # End Group
@@ -250,6 +254,10 @@ SOURCE=..\common\jk_worker_ajp14.h
 # End Group
 
 SOURCE=..\common\jk_md5.h
+# End Source File
+# End Group
+
+SOURCE=..\common\jk_context.h
 # End Source File
 # End Group
 

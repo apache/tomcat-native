@@ -38,6 +38,7 @@ JK_OBJS=\
 	jk_ajp14.obj \
 	jk_ajp_common.obj \
 	jk_md5.obj \
+	jk_context.obj \
 	jk_connect.obj \
 	jk_jni_worker.obj \
 	jk_lb_worker.obj \
