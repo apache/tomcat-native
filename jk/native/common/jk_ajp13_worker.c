@@ -73,6 +73,8 @@ static void reset_endpoint(ajp13_endpoint_t *ep)
 static void close_endpoint(ajp13_endpoint_t *ep)
 {
     reset_endpoint(ep);
+	jk_close_pool(&(ep->pool));
+
     if(ep->sd > 0) {
         jk_close_socket(ep->sd);
     } 
@@ -111,20 +113,14 @@ static void connect_to_tomcat(ajp13_endpoint_t *ep,
     unsigned attempt;
 
     for(attempt = 0 ; attempt < ep->worker->connect_retry_attempts ; attempt++) {
-        ep->sd = jk_open_socket(&ep->worker->worker_inet_addr, 
-                               JK_TRUE, 
-                               l);
+        ep->sd = jk_open_socket(&ep->worker->worker_inet_addr, JK_TRUE, l);
         if(ep->sd >= 0) {
-            jk_log(l, 
-                   JK_LOG_DEBUG, 
-                   "In jk_endpoint_t::connect_to_tomcat, connected sd = %d\n", ep->sd);
+            jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::connect_to_tomcat, connected sd = %d\n", ep->sd);
             return;
         }
     }    
 
-    jk_log(l, 
-           JK_LOG_ERROR, 
-           "In jk_endpoint_t::connect_to_tomcat, failed errno = %d\n", errno);
+    jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::connect_to_tomcat, failed errno = %d\n", errno);
 }
 
 static int connection_tcp_send_message(ajp13_endpoint_t *ep, 
@@ -135,9 +131,7 @@ static int connection_tcp_send_message(ajp13_endpoint_t *ep,
     
     jk_dump_buff(l, JK_LOG_DEBUG, "sending to ajp13", msg);
 
-    if(0 > jk_tcp_socket_sendfull(ep->sd, 
-                                  jk_b_get_buff(msg),
-                                  jk_b_get_len(msg))) {
+    if(0 > jk_tcp_socket_sendfull(ep->sd, jk_b_get_buff(msg), jk_b_get_len(msg))) {
         return JK_FALSE;
     }
 
@@ -155,14 +149,12 @@ static int connection_tcp_get_message(ajp13_endpoint_t *ep,
     rc = jk_tcp_socket_recvfull(ep->sd, head, AJP13_HEADER_LEN);
 
     if(rc < 0) {
-        jk_log(l, JK_LOG_ERROR, 
-               "connection_tcp_get_message: Error - jk_tcp_socket_recvfull failed\n");
+        jk_log(l, JK_LOG_ERROR, "connection_tcp_get_message: Error - jk_tcp_socket_recvfull failed\n");
         return JK_FALSE;
     }
     
     if((head[0] != 'A') || (head[1] != 'B' )) {
-        jk_log(l, JK_LOG_ERROR, 
-               "connection_tcp_get_message: Error - Wrong message format\n");
+        jk_log(l, JK_LOG_ERROR, "connection_tcp_get_message: Error - Wrong message format\n");
 	    return JK_FALSE;
     }
 
@@ -170,8 +162,7 @@ static int connection_tcp_get_message(ajp13_endpoint_t *ep,
     msglen += (head[3] & 0xFF);
 
     if(msglen > jk_b_get_size(msg)) {
-        jk_log(l, JK_LOG_ERROR, 
-               "connection_tcp_get_message: Error - Wrong message size\n");
+        jk_log(l, JK_LOG_ERROR, "connection_tcp_get_message: Error - Wrong message size\n");
 	    return JK_FALSE;
     }
     
@@ -180,8 +171,7 @@ static int connection_tcp_get_message(ajp13_endpoint_t *ep,
 
     rc = jk_tcp_socket_recvfull(ep->sd, jk_b_get_buff(msg), msglen);
     if(rc < 0) {
-        jk_log(l, JK_LOG_ERROR, 
-               "connection_tcp_get_message: Error - jk_tcp_socket_recvfull failed\n");
+        jk_log(l, JK_LOG_ERROR, "connection_tcp_get_message: Error - jk_tcp_socket_recvfull failed\n");
         return JK_FALSE;
     }
         
@@ -224,16 +214,14 @@ static int read_into_msg_buff(ajp13_endpoint_t *ep,
     read_buf += AJP13_HEADER_SZ_LEN; /* leave some space for the read length */
 
     if(read_fully_from_server(r, read_buf, len) < 0) {
-        jk_log(l, JK_LOG_ERROR, 
-               "read_into_msg_buff: Error - read_fully_from_server failed\n");
+        jk_log(l, JK_LOG_ERROR, "read_into_msg_buff: Error - read_fully_from_server failed\n");
         return JK_FALSE;                        
     } 
     
     ep->left_bytes_to_send -= len;
 
     if(0 != jk_b_append_int(msg, (unsigned short)len)) {
-        jk_log(l, JK_LOG_ERROR, 
-               "read_into_msg_buff: Error - jk_b_append_int failed\n");
+        jk_log(l, JK_LOG_ERROR, "read_into_msg_buff: Error - jk_b_append_int failed\n");
         return JK_FALSE;
     }
 
@@ -253,12 +241,8 @@ static int ajp13_process_callback(jk_msg_buf_t *msg,
         case JK_AJP13_SEND_HEADERS:
             {
                 jk_res_data_t res;
-                if(!ajp13_unmarshal_response(msg,
-                                             &res,
-                                             &ep->pool,
-                                             l)) {
-                    jk_log(l, JK_LOG_ERROR, 
-                           "Error ajp13_process_callback - ajp13_unmarshal_response failed\n");
+                if(!ajp13_unmarshal_response(msg, &res, &ep->pool, l)) {
+                    jk_log(l, JK_LOG_ERROR, "Error ajp13_process_callback - ajp13_unmarshal_response failed\n");
                     return JK_AJP13_ERROR;
                 }
                 if(!r->start_response(r, 
@@ -267,8 +251,7 @@ static int ajp13_process_callback(jk_msg_buf_t *msg,
                                       (const char * const *)res.header_names,
                                       (const char * const *)res.header_values,
                                       res.num_headers)) {
-                    jk_log(l, JK_LOG_ERROR, 
-                           "Error ajp13_process_callback - start_response failed\n");
+                    jk_log(l, JK_LOG_ERROR, "Error ajp13_process_callback - start_response failed\n");
                     return JK_INTERNAL_ERROR;
                 }
             }
@@ -278,8 +261,7 @@ static int ajp13_process_callback(jk_msg_buf_t *msg,
             {
 	            unsigned len = (unsigned)jk_b_get_int(msg);
                 if(!r->write(r, jk_b_get_buff(msg) + jk_b_get_pos(msg), len)) {
-                    jk_log(l, JK_LOG_ERROR, 
-                           "Error ajp13_process_callback - write failed\n");
+                    jk_log(l, JK_LOG_ERROR, "Error ajp13_process_callback - write failed\n");
                     return JK_INTERNAL_ERROR;
                 }
             }
@@ -305,8 +287,7 @@ static int ajp13_process_callback(jk_msg_buf_t *msg,
 		    return JK_AJP13_HAS_RESPONSE;
 		}                  
 
-		jk_log(l, JK_LOG_ERROR, 
-		       "Error ajp13_process_callback - read_into_msg_buff failed\n");
+		jk_log(l, JK_LOG_ERROR, "Error ajp13_process_callback - read_into_msg_buff failed\n");
 		return JK_INTERNAL_ERROR;	    
             }
 	    break;
@@ -326,9 +307,7 @@ static int ajp13_process_callback(jk_msg_buf_t *msg,
 	    break;
 
         default:
-	        jk_log(l, 
-                   JK_LOG_ERROR,
-		           "Error ajp13_process_callback - Invalid code: %d\n", code);
+	        jk_log(l, JK_LOG_ERROR, "Error ajp13_process_callback - Invalid code: %d\n", code);
 	        return JK_AJP13_ERROR;
     }
     
@@ -344,18 +323,10 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
     if(pThis && pThis->worker_private) {        
         ajp13_worker_t *p = pThis->worker_private;
-        int port = jk_get_worker_port(props, 
-                                      p->name,
-                                      AJP13_DEF_PORT);
+        int port = jk_get_worker_port(props, p->name, AJP13_DEF_PORT);
+        char *host = jk_get_worker_host(props, p->name, AJP13_DEF_HOST);
 
-        char *host = jk_get_worker_host(props, 
-                                        p->name,
-                                        AJP13_DEF_HOST);
-
-        jk_log(l, 
-               JK_LOG_DEBUG, 
-               "In jk_worker_t::validate for worker %s contact is %s:%d\n", 
-               p->name, host, port);
+        jk_log(l, JK_LOG_DEBUG, "In jk_worker_t::validate for worker %s contact is %s:%d\n", p->name, host, port);
 	
         if(port > 1024 && host) {
             if(jk_resolve(host, (short)port, &p->worker_inet_addr)) {
@@ -383,13 +354,9 @@ static int JK_METHOD init(jk_worker_t *pThis,
 
     if(pThis && pThis->worker_private) {        
         ajp13_worker_t *p = pThis->worker_private;
-        int cache_sz = jk_get_worker_cache_size(props, 
-                                                p->name,
-                                                AJP13_DEF_CACHE_SZ);
-
-        if(cache_sz > 0) {
-            p->ep_cache = 
-                (ajp13_endpoint_t **)malloc(sizeof(ajp13_endpoint_t *) * cache_sz);
+        int cache_sz = jk_get_worker_cache_size(props, p->name, AJP13_DEF_CACHE_SZ);
+        if (cache_sz > 0) {
+            p->ep_cache = (ajp13_endpoint_t **)malloc(sizeof(ajp13_endpoint_t *) * cache_sz);
             if(p->ep_cache) {
                 int i;
                 p->ep_cache_sz = cache_sz;
@@ -397,15 +364,13 @@ static int JK_METHOD init(jk_worker_t *pThis,
                     p->ep_cache[i] = NULL;
                 }
                 JK_INIT_CS(&(p->cs), i);
-                if(i) {
+                if (i) {
                     return JK_TRUE;
                 }
             }
         }        
     } else {
-        jk_log(l, 
-               JK_LOG_ERROR, 
-               "In jk_worker_t::init, NULL parameters\n");
+        jk_log(l, JK_LOG_ERROR, "In jk_worker_t::init, NULL parameters\n");
     }
     
     return JK_FALSE;
@@ -416,6 +381,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
                              jk_logger_t *l)
 {
     jk_log(l, JK_LOG_DEBUG, "Into jk_worker_t::destroy\n");
+
     if(pThis && *pThis && (*pThis)->worker_private) {
         ajp13_worker_t *private_data = (*pThis)->worker_private;
         
@@ -447,6 +413,7 @@ static int JK_METHOD done(jk_endpoint_t **e,
                           jk_logger_t *l)
 {
     jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done\n");
+
     if(e && *e && (*e)->endpoint_private) {
         ajp13_endpoint_t *p = (*e)->endpoint_private;
         int reuse_ep = p->reuse;
@@ -481,9 +448,7 @@ static int JK_METHOD done(jk_endpoint_t **e,
         return JK_TRUE;
     }
 
-    jk_log(l, 
-           JK_LOG_ERROR, 
-           "In jk_endpoint_t::done, NULL parameters\n");
+    jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::done, NULL parameters\n");
     return JK_FALSE;
 }
 
@@ -795,8 +760,7 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
                                    const char *name,
                                    jk_logger_t *l)
 {
-    ajp13_worker_t *private_data = 
-            (ajp13_worker_t *)malloc(sizeof(ajp13_worker_t));
+    ajp13_worker_t *private_data = (ajp13_worker_t *)malloc(sizeof(ajp13_worker_t));
     
     jk_log(l, JK_LOG_DEBUG, "Into ajp13_worker_factory\n");
 
