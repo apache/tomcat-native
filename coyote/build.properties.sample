@@ -21,6 +21,9 @@
 # EXTERNAL DEPENDENCIES 
 # -------------------------------------------------------------------
 
+# tomcat33.home -- Tomcat 3.3 distribution directory
+tomcat33.home=../../jakarta-tomcat/build/tomcat
+
 # catalina.home -- Tomcat 4.x distribution directory
 catalina.home=../../jakarta-tomcat-4.0/build
 
