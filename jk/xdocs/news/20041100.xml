@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="20041100.html">
+ 
+  &project;
+ 
+  <properties>
+    <author email="general.AT.jakarta.DOT.apache.DOT.org">Apache Jakarta Project</author>
+    <title>News and Status</title>
+  </properties>
+
+<body>
+
+<section name="News &amp; Status">
+<!--
+<a name="2004****.1">
+<h3></h3>
+</a>
+<hr size="1" noshade="noshade" />
+-->
+<a name="20041115.1"> 
+<h3>15 November - JK2 is officially unsupported</h3>
+<p>JK2 has been put in maintainer mode and no further development will take place.
+The reason for shutting down JK2 development was the lack of developers interest.
+Other reason was lack of users interest in adopting JK2, caused by configuration
+complexity when compared to JK.
+</p>
+<p>The latest official JK2 release is 2.0.4.
+</p>
+<p>JK2 will have it's successor within core Apache2.1/2.2 distribution.
+We have developed new <b>proxy_ajp</b> that is an addition to
+the mod_proxy and uses Tomcat's AJP protocol stack. It is developped in httpd-2.1
+and integrated in it. We have also developed a new <b>proxy_balancer</b> module
+for load balancing http and ajp protocol stacks.
+</p>
+<p>JK will be fully supported for all other web servers. The next JK release is
+planned for the end of November. Lots of code from JK2 has been ported to JK
+</p>
+</a> 
+<hr size="1" noshade="noshade" />
+</section>
+</body>
+</document>  
