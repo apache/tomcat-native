@@ -105,11 +105,16 @@ public class SoTask extends Task {
     String soFile;
     String cflags;
     File buildDir;
-        
+    int debug;
+    
     public SoTask() {};
 
     public void setSoFile(String s ) {
 	soFile=s;
+    }
+
+    public void setDebug(int i) {
+	debug=i;
     }
     
     public void setTarget(String s ) {
@@ -132,6 +137,15 @@ public class SoTask extends Task {
     public void setSoDir( String s ) {
 	
     }
+
+    public void addJniConfig( JniConfig jniCfg ) {
+
+    }
+
+    public void addApacheConfig( ApacheConfig apacheCfg ) {
+
+    }
+    
     
     /**
      * Source files ( .c )
@@ -259,20 +273,29 @@ public class SoTask extends Task {
 
 	cmd.createArgument().setValue( source );
 
-	execute( cmd );
+	int result=execute( cmd );
+	if( result!=0 ) {
+	    log("Compile failed " + result + " " +  source );
+	    log("Output:" );
+	    if( outputstream!=null ) 
+		log( outputstream.toString());
+	    log("StdErr:" );
+	    if( errorstream!=null ) 
+		log( errorstream.toString());
+	    
+	    throw new BuildException("Compile failed " + source);
+	}
+	closeStreamHandler();
     }
 
     
     // ==================== Execution utils ==================== 
 
-    
-    String output;
-    String error;
     ExecuteStreamHandler streamhandler = null;
-    OutputStream outputstream = null;
-    OutputStream errorstream = null;
+    ByteArrayOutputStream outputstream = null;
+    ByteArrayOutputStream errorstream = null;
 
-    public void execute( Commandline cmd ) throws BuildException
+    public int execute( Commandline cmd ) throws BuildException
     {
 	createStreamHandler();
         Execute exe = new Execute(streamhandler, null);
@@ -283,57 +306,37 @@ public class SoTask extends Task {
         exe.setWorkingDirectory(buildDir);
 
         exe.setCommandline(cmd.getCommandline());
-        try {
-            exe.execute();
+	int result=0;
+	try {
+            result=exe.execute();
         } catch (IOException e) {
             throw new BuildException(e, location);
-        } finally {
-	    closeStreamHandler();
-        }
+        } 
+	return result;
     }
 
-    public void createStreamHandler()  {
-            if (error == null && output == null) {
-            streamhandler = new LogStreamHandler(this, Project.MSG_INFO,
-                                                 Project.MSG_WARN);
-        } else {
-            if (output != null) {
-                try {
-                    outputstream =
-			new PrintStream(new BufferedOutputStream(new FileOutputStream(output)));
-                } catch (IOException e) {
-                    throw new BuildException(e,location);
-                }
-            }
-            else {
-                outputstream = new LogOutputStream(this,Project.MSG_INFO);
-            }
-            if (error != null) {
-                try {
-                    errorstream =
-			new PrintStream(new BufferedOutputStream(new FileOutputStream(error)));
-                }  catch (IOException e) {
-                    throw new BuildException(e,location);
-                }
-            }
-            else {
-                errorstream = new LogOutputStream(this, Project.MSG_WARN);
-            }
-            streamhandler = new PumpStreamHandler(outputstream, errorstream);
-        }
+    public void createStreamHandler()  throws BuildException {
+	//	try {
+	outputstream= new ByteArrayOutputStream();
+	errorstream = new ByteArrayOutputStream();
+	
+	streamhandler =
+	    new PumpStreamHandler(new PrintStream(outputstream),
+				  new PrintStream(errorstream));
+	//	}  catch (IOException e) {
+	//	    throw new BuildException(e,location);
+	//	}
     }
 
     public void closeStreamHandler() {
-	if (output != null) {
-	    try {
+	try {
+	    if (outputstream != null) 
 		outputstream.close();
-	    } catch (IOException e) {}
-	}
-	if (error != null) {
-	    try {
+	    if (errorstream != null) 
 		errorstream.close();
-	    } catch (IOException e) {}
-	}
+	    outputstream=null;
+	    errorstream=null;
+	} catch (IOException e) {}
     }
 }
 

@@ -6,37 +6,63 @@
     <pathelement location="../jkant/build/classes"/>
     <pathelement location="../jkant/build/jkant.jar"/>
   </path>
-  
-  <taskdef resource="META-INF/ant.tasks" 
-	   classpathref="jkant" />
 
+  <property name="native.dir" location="." />
   <property name="apxs13" value="/usr/sbin/apxs" />
   <property name="apxs20" value="/opt/apache2/bin/apxs" />
 
   <target name="main" >
-    <!-- Guess/extract configuration informations
-    -->
-    <configJni id="jni" />
-    <configApache13 id="apache13" />
-    <configApache2 id="apache2" />
-    <!-- configIIS id="iis" />
-    <!-- configNES id="nes" />
-
-    <so sofile="jni_connect" >
-      <src dir=".">
+    <taskdef resource="META-INF/ant.tasks" 
+	     classpathref="jkant" />
+    <so sofile="jni_connect" buildDir="jni" >
+      <jniConfig />
+      <src dir="${native.dir}">
 	<include name="jni/jk_jnicb.c" />
 	<include name="common/jk_map.c" />
 	<include name="common/jk_util.c" />
 	<include name="common/jk_pool.c" />
       </src>
       <includes>
-	<pathelement path="${java.home}/include" />
-	<pathelement path="${java.home}/include/${os.name}" />
+	<pathelement location="${native.dir}/common" />
+	<pathelement location="${java.home}/../include" />
+      </includes>
+    </so>
+
+    <so sofile="mod_jk" buildDir="apache-2.0">
+      <apacheConfig apxs="${apxs20}" />
+      <jniConfig />
+      <src dir=".">
+	<include name="apache-2.0/mod_jk.c" />
+	<include name="common/*.c" />
+      </src>
+      <includes>
 	<pathelement location="../common" />
       </includes>
-      <cfg refid="jni" />
     </so>
     
+    <so sofile="mod_jk" buildDir="apache-1.3">
+      <apacheConfig apxs="${apxs13}" />
+      <src dir=".">
+	<include name="apache-1.3/mod_jk.c" />
+	<include name="common/*.c" />
+        <exclude name="common/jk_jni_worker.c" />
+      </src>
+      <includes>
+	<pathelement location="../common" />
+      </includes>
+    </so>
+  </target>
+
+  <target name="clean" >
+    <delete >
+      <fileset dir=".">
+	<include name="**/*.o"/>
+	<include name="**/*.so"/>
+	<include name="**/*.lo"/>
+	<include name="**/*.la"/>
+	<include name="**/.libs"/>
+      </fileset>
+    </delete>
   </target>
 
 </project>

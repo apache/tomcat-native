@@ -154,7 +154,7 @@
 	<copy todir="${jkant.build}/classes/META-INF" file="jkant/ant.tasks"/>
 	<jar jarfile="${jkant.build}/jkant.jar"
 	     basedir="${jkant.build}/classes" />
-	<ant  antfile="build.xml" dir="native"  />
+	<ant  dir="native" antfile="build.xml"  />
     </target>
 
 
