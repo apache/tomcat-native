@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="iis.html">
+
+    &project; 
+
+    <properties>
+        <author email="mturk@apache.org">Mladen Turk</author>
+        <title>Configuring IIS</title>
+    </properties>
+
+<body>
+
+<section name="Requirements">
+<p>
+The Tomcat redirector requires three entities:
+
+<ul>
+<li>
+<b>isapi_redirect.dll</b> - The IIS server plugin, either obtain a pre-built DLL or build it yourself (see the build section).
+</li>
+<li>
+<b>workers.properties</b> - A file that describes the host(s) and port(s) used by the workers (Tomcat processes). 
+A sample workers.properties can be found under the conf directory.
+</li>
+<li>
+<b>uriworkermap.properties</b> - A file that maps URL-Path patterns to workers. 
+A sample uriworkermap.properties can be found under the conf directory as well.
+</li>
+</ul>
+</p>
+
+<p>
+The installation includes the following parts:
+
+<ul>
+<li>
+Configuring the ISAPI redirector with a default /examples context and checking that you can serve servlets with IIS.
+</li>
+<li>
+Adding more contexts to the configuration.
+</li>
+</ul>
+</p>
+</section>
+<section name="Registry settings">
+<p>
+ISAPI redirector reads configuration from the registry, create a new registry key named :
+</p>
+<p>
+<b>"HKEY_LOCAL_MACHINE\SOFTWARE\Apache Software Foundation\Jakarta Isapi Redirector\1.0"</b>
+</p>
+<attributes name="Key Name">
+<attribute name="extension_uri" required="true"><p>
+A string value pointing to the ISAPI extension <b>/jakarta/isapi_redirect.dll</b>
+</p></attribute>
+<attribute name="log_file" required="false"><p>
+A value pointing to location where log file will be created.
+(for example <b>c:\jakarta-tomcat\logs\isapi.log</b>)
+</p></attribute>
+<attribute name="log_level" required="false"><p>
+A string value for log level 
+(can be debug, info, warn, error or trace).
+</p></attribute>
+<attribute name="worker_file" required="true"><p>
+A string value with the full path to workers.properties file
+(for example <b>c:\jakarta-tomcat\conf\workers.properties</b>)
+</p></attribute>
+<attribute name="worker_mount_file" required="true"><p>
+A string value with is the full path to uriworkermap.properties file
+(for example <b>c:\jakarta-tomcat\conf\uriworkermap.properties</b>)
+</p></attribute>
+
+</attributes>
+</section> 
+ 
+</body>
+</document>

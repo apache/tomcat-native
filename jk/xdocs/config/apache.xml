@@ -1,0 +1,353 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="apache.html">
+
+    &project; 
+
+    <properties>
+        <author email="mturk@apache.org">Mladen Turk</author>
+        <title>Configuring Apache</title>
+    </properties>
+
+<body>
+
+<section name="Configuration Directives">
+<p>
+Here are the all directives supported by Apache:
+</p>
+<attributes name="Directive">
+<attribute name="JkWorkersFile" required="false"><p>
+The name of a worker file for the Jakarta servlet containers
+</p></attribute>
+<attribute name="JkWorkerProperty" required="false"><p>
+Enables setting workers.properties inside Apache configuration file.
+This directive is available in jk1.2.7 version and later.
+</p></attribute>
+<attribute name="JkLogFile" required="false"><p>
+Full or server relative path to the Jakarta Tomcat Connector module log file
+</p></attribute>
+<attribute name="JkAutoMount" required="false"><p>
+Automatic mount points to a Tomcat worker
+</p></attribute>
+<attribute name="JkMount" required="false"><p>
+A mount point from a context to a Tomcat worker
+</p></attribute>
+<attribute name="JkMountCopy" required="false"><p>
+Should the base server mounts be copied to the virtual server.
+</p></attribute>
+<attribute name="JkLogFile" required="false"><p>
+Full or server relative path to the Jakarta Tomcat module log file
+</p></attribute>
+<attribute name="JkLogLevel" required="false"><p>
+The Jakarta Tomcat module log level, can be debug, info, warn
+error or trace
+</p></attribute>
+<attribute name="JkLogStampFormat" required="false"><p>
+The Jakarta Tomcat Connector module <b>date</b> log format, follow strftime synthax
+</p></attribute>
+<attribute name="JkRequestLogFormat" required="false"><p>
+Request log format string. See datailed description below.
+</p></attribute>
+<attribute name="JkAutoAlias" required="false"><p>
+Automatically Alias webapp context directories into the Apache
+document space. 
+</p></attribute>
+<attribute name="JkHTTPSIndicator" required="false"><p>
+Name of the Apache environment that contains SSL indication
+</p></attribute>
+<attribute name="JkCERTSIndicator" required="false"><p>
+Name of the Apache environment that contains SSL client certificates
+</p></attribute>
+<attribute name="JkCIPHERIndicator" required="false"><p>
+Name of the Apache environment that contains SSL client cipher
+</p></attribute>
+<attribute name="JkSESSIONIndicator" required="false"><p>
+Name of the Apache environment that contains SSL session
+</p></attribute>
+<attribute name="JkKEYSIZEIndicator" required="false"><p>
+Name of the Apache environment that contains SSL key size in use
+</p></attribute>
+<attribute name="JkExtractSSL" required="false"><p>
+Turns on SSL processing and information gathering by mod_jk
+</p></attribute>
+<attribute name="JkOptions" required="false"><p>
+Set one of more options to configure the mod_jk module. See below for
+deatails about this directive
+</p></attribute>
+<attribute name="JkEnvVar" required="false"><p>
+Adds a name of environment variable that should be sent to servlet-engine
+</p></attribute>
+
+</attributes>
+</section>
+
+<section name="Configuration Directives Types">
+<p>
+We'll discuss here the mod_jk directive types.
+</p>
+
+<subsection name="Define workers">
+<p>
+<b>JkWorkersFile</b> specify the location where mod_jk will find the workers definitions.
+Take a look at <a href="workers.html">Workers documentation</a> for detailed description.
+
+<source>
+  
+  JkWorkersFile     /etc/httpd/conf/workers.properties
+</source>
+
+<br/>
+<br/>
+</p>
+</subsection>
+
+<subsection name="Logging">
+<p>
+<b>JkLogFile</b> specify the location where mod_jk is going to place its log file.
+
+<source>
+  
+  JkLogFile     /var/log/httpd/mod_jk.log
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+<b>JkLogLevel</b>
+set the log level between :
+</p>
+
+<ul>
+<li>
+<b>info</b> log will contains standard mod_jk activity (default).
+</li>
+<li>
+<li>
+<b>warn</b> log will contains non fatal error reports.
+</li>
+<b>error</b> log will contains also error reports.
+</li>
+<li>
+<b>debug</b> log will contains all informations on mod_jk activity
+</li>
+<li>
+<b>trace</b> log will contains all tracing informations on mod_jk activity
+</li>
+</ul>
+
+<source>
+  
+  JkLogLevel    info
+</source>
+
+<p>
+<code>info</code> should be your default selection for normal operations.
+<br/>
+<br/>
+</p>
+
+<p>
+<b>JkLogStampFormat</b> will configure the date/time format found on mod_jk logfile. 
+Using the strftime() format string it's set by<br />
+default to <b>"[%a %b %d %H:%M:%S %Y]"</b>
+</p>
+
+<source>
+  
+  JkLogStampFormat "[%a %b %d %H:%M:%S %Y] "
+</source>
+
+<p>
+<br/>
+<br/>
+</p>
+
+<p>
+<b>JkRequestLogFormat</b> will configure the format of mod_jk individual request logging. 
+Request logging is configured and enabled on a per virtual host basis. 
+To enable request logging for a virtual host just add a JkRequestLogFormat config. 
+The syntax of the format string is similiar to the Apache LogFormat command, 
+here is a list of the available request log format options:
+</p>
+                       
+<p>
+<attributes name="Options">
+  <attribute name="%b" required="false">Bytes sent, excluding HTTP headers (CLF format)</attribute>
+  <attribute name="%B" required="false">Bytes sent, excluding HTTP headers</attribute>
+  <attribute name="%H" required="false">The request protocol</attribute>
+  <attribute name="%m" required="false">The request method</attribute>
+  <attribute name="%p" required="false">The canonical Port of the server serving the request</attribute>
+  <attribute name="%q" required="false">The query string (prepended with a ? if a query string exists, otherwise an empty string)</attribute>
+  <attribute name="%r" required="false">First line of request</attribute>
+  <attribute name="%s" required="false">Request HTTP status code</attribute>
+  <attribute name="%T" required="false">Request duration, elapsed time to handle request in seconds '.' micro seconds</attribute>
+  <attribute name="%U" required="false">The URL path requested, not including any query string.</attribute>
+  <attribute name="%v" required="false">The canonical ServerName of the server serving the request</attribute>
+  <attribute name="%V" required="false">The server name according to the UseCanonicalName setting</attribute>
+  <attribute name="%w" required="false">Tomcat worker name</attribute>
+</attributes>
+
+<source>
+
+  JkRequestLogFormat     "%w %V %T"
+</source>
+
+<br/>
+<br/>
+</p>
+
+</subsection>
+
+<subsection name="Forwarding">
+<p>
+The directive JkOptions allow you to set many forwarding options which will enable (+)
+or disable (-) following option.
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>ForwardKeySize</b>,  you ask mod_jk, when using ajp13, to forward also the SSL Key Size  as 
+required by Servlet API 2.3.
+This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
+
+<source>
+  
+  JkOptions     +ForwardKeySize
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>ForwardURICompat</b>, you told mod_jk to send the URI to Tomcat normally, 
+which is less spec compliant but mod_rewrite compatible, 
+use it for compatibility with Tomcat 3.2.x engines (on by default).
+
+<source>
+  
+  JkOptions     +ForwardURICompat
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>ForwardURICompatUnparsed</b>, the forwarded URI 
+is unparsed, it's spec compliant but broke mod_rewrite.
+
+<source>
+  
+  JkOptions     +ForwardURICompatUnparsed
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>ForwardURIEscaped</b>, the forwarded URI is escaped and 
+Tomcat (since 3.3 rc2) will do the decoding part.
+
+<source>
+  
+  JkOptions     +ForwardURIEscaped
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>ForwardDirectories</b> is used in conjunction with <b>DirectoryIndex</b> 
+directive of Apache web server. As such mod_dir should be available to Apache,
+statically or dynamically (DSO)
+<br/>
+<br/>
+</p>
+
+<p>
+When DirectoryIndex is configured, Apache will create sub-requests for
+each of the local-url's specified in the directive, to determine if there is a
+local file that matches (this is done by stat-ing the file).
+</p>
+
+<p>
+If ForwardDirectories is set to false (default) and Apache doesn't find any
+files that match, Apache will serve the content of the directory (if directive
+Options specifies Indexes for that directory) or a <code>403 Forbidden</code> response (if
+directive Options doesn't specify Indexes for that directory).
+</p>
+
+<p>
+If ForwarDirectories is set to true and Apache doesn't find any files that
+match, the request will be forwarded to Tomcat for resolution. This is used in
+cases when Apache cannot see the index files on the file system for various
+reasons: Tomcat is running on a different machine, the JSP file has been
+precompiled etc. 
+</p>
+
+<p>Note that locally visible files will take precedence over the
+ones visible only to Tomcat (i.e. if Apache can see the file, that's the one
+that's going to get served). This is important if there is more then one type of
+file that Tomcat normally serves - for instance Velocity pages and JSP pages.
+
+<source>
+  
+  JkOptions     +ForwardDirectories
+</source>
+<br/>
+<br/>
+</p>
+
+<p>
+The directive <b>JkEnvVar</b> allow you to forward an environment vars from Apache server to Tomcat engine.
+
+<source>
+  
+  JkEnvVar     SSL_CLIENT_V_START
+</source>
+<br/>
+<br/>
+</p>
+
+</subsection>
+
+<subsection name="Assigning URLs to Tomcat">
+<p>
+If you have created a custom or local version of mod_jk.conf-local as noted above, 
+you can change settings such as the workers or URL prefix.
+</p>
+
+<p>
+<b>JkMount</b> directive assign specific URLs to Tomcat. 
+In general the structure of a JkMount directive is:
+</p>
+
+<source>
+  
+  JkMount [URL prefix] [Worker name]
+</source>
+
+<source>
+  # send all requests ending in .jsp to worker1
+  JkMount /*.jsp worker1
+  # send all requests ending /servlet to worker1
+  JkMount /*/servlet/ worker1
+  # send all requests jsp requests to files located in /otherworker will go worker2
+  JkMount /otherworker/*.jsp worker2
+</source>
+
+<p>
+You can use the JkMount directive at the top level or inside &lt;VirtualHost&gt; sections of your httpd.conf file.
+</p>
+</subsection>
+ </section>
+</body>
+</document>

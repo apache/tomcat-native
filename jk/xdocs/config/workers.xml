@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="workers.html">
+
+    &project; 
+
+    <properties>
+        <author email="mturk@apache.org">Mladen Turk</author>
+        <title>workers.properties configuration</title>
+    </properties>
+
+<body>
+
+<section name="Work in progress">
+To be finished!
+
+</section> 
+ 
+</body>
+</document>
