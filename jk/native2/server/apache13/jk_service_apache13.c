@@ -207,7 +207,7 @@ static int JK_METHOD jk2_service_apache13_read(jk_env_t *env, jk_ws_service_t *s
 #endif
 
 static int JK_METHOD jk2_service_apache13_write(jk_env_t *env, jk_ws_service_t *s,
-                                                const void *b, int len)
+                                                const void *b, unsigned int len)
 {
     int rc;
     
