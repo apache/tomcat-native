@@ -122,15 +122,23 @@ static char *get_cookie(jk_ws_service_t *s,
             for(id_start = strstr(s->headers_values[i], name) ; 
                 id_start ; 
                 id_start = strstr(id_start + 1, name)) {
-                if('=' == id_start[strlen(name)]) {
-                    /*
-                     * Session cookie was found, get it's value
-                     */
-                    id_start += (1 + strlen(name));
-                    if(strlen(id_start)) {
+                if(id_start == s->headers_values[i] ||
+                   id_start[-1] == ';' ||
+                   id_start[-1] == ',' ||
+                   isspace(is_start[-1]) ) {
+                    id_start += strlen(name);
+                    while(*id_start && !isspace(*id_start))
+                        ++id_start;
+                    if(*id_start == '=' && id_start[1]) {
+                        /*
+                         * Session cookie was found, get it's value
+                         */
                         char *id_end;
                         id_start = jk_pool_strdup(s->pool, id_start);
-                        if(id_end = strchr(id_start, ';')) {
+                        if((id_end = strchr(id_start, ';')) != NULL) {
+                            *id_end = '\0';
+                        }
+                        if((id_start = strchr(id_start, ',')) != NULL) {
                             *id_end = '\0';
                         }
                         return id_start;
