@@ -204,18 +204,41 @@ class CoyoteRequest extends Request {
 	MessageBytes hH=getMimeHeaders().getValue("host");
         serverPort = socket.getLocalPort();
 	if (hH != null) {
-	    // XXX use MessageBytes
-	    String hostHeader = hH.toString();
-	    int i = hostHeader.indexOf(':');
-	    if (i > -1) {
-		serverNameMB.setString( hostHeader.substring(0,i));
-                hostHeader = hostHeader.substring(i+1);
-                try{
-                    serverPort=Integer.parseInt(hostHeader);
+	    ByteChunk valueBC = hH.getByteChunk();
+	    byte [] valueB = valueBC.getBytes();
+	    int valueL = valueBC.getLength();
+	    int valueS = valueBC.getStart();
+	    int colonPos = -1;
+	    for( int i = 0; i < valueL; i++) {
+		byte b = valueB[i+valueS];
+		if(b == ':') {
+		    colonPos = i;
+		    break;
+		}
+	    }
+	    if (colonPos > -1) {
+		serverNameMB.setBytes( valueB, valueS, colonPos);
+		int port = 0;
+		int mult = 1;
+		try {
+		    for(int i = colonPos+1; i < valueL; i++) {
+			int charValue = HexUtils.DEC[(int)valueB[i+valueS]];
+			if(charValue == -1) {
+			    throw new NumberFormatException(
+					      "Invalid port number: " + 
+					      valueB[i+valueS]);
+			}
+			port *= 10;
+			port += charValue;
+		    }
+		    serverPort = port;
                 }catch(NumberFormatException  nfe){
+		    contextM.log("Port Parsing error", nfe);
                 }
-	    }else serverNameMB.setString( hostHeader);
-        return;
+	    }else {
+		serverNameMB.setBytes(valueB, valueS, valueL);
+	    }
+	    return;
 	}
 	if( localHost != null ) {
 	    serverNameMB.setString( localHost );
