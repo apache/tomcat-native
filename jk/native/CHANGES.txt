@@ -1,6 +1,14 @@
 JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
+Changes with JK 1.2.5
+    * Fix Apache 2 connector so that DirectoryIndex works for an
+      index.jsp page if JkOptions ForwardDirectories was configured.
+      [hgomez]
+    * Fix exposure of JSP source if a //path/to.jsp URL was requested
+      in Apache 1.3 and Apache 2.0 connector.
+      [billbarker]
+
 Changes with JK 1.2.4
     * Fix use of libtool for Apache mod_jk builds with more recent
       versions of Apache 2.
