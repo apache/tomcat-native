@@ -109,7 +109,6 @@ struct jk_uriMap {
      * level.
      */
     struct jk_map *vhosts;
-    struct jk_uriEnv *defaultVhost;
     
     /* ---------- Methods ---------- */
 
@@ -142,6 +141,7 @@ struct jk_uriMap {
 
     struct jk_uriEnv *(*mapUri)(struct jk_env *env, jk_uriMap_t *_this,
                                 const char *vhost,
+                                int port,
                                 const char *uri);
     
     /* -------------------- @deprecated -------------------- */
