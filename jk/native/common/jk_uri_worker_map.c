@@ -332,8 +332,8 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                 return JK_FALSE;
             }
             /*
-             * Now, lets check that the pattern is /context/*.suffix
-             * or /context/*
+             * Now, lets check that the pattern is /context/asterisk.suffix
+             * or /context/asterisk
              * we need to have a '/' then a '*' and the a '.' or a
              * '/' then a '*'
              */
