@@ -307,6 +307,7 @@
 
   <target name="javadoc"
    description="Create component Javadoc documentation">
+    <mkdir dir="${build.home}/docs/api"/>
     <javadoc sourcepath="${source.home}"
                 destdir="${build.home}/docs/api"
            packagenames="org.apache.coyote"
