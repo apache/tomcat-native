@@ -1840,15 +1840,17 @@ static int jk_translate(request_rec *r)
                 r->handler = ap_pstrdup(r->pool, JK_HANDLER);
                 ap_table_setn(r->notes, JK_WORKER_ID, worker);
             } else if(conf->alias_dir != NULL) {
+                char *clean_uri = ap_pstrdup(r->pool, r->uri);
+                ap_no2slash(clean_uri);
                 /* Automatically map uri to a context static file */
                 jk_log(l, JK_LOG_DEBUG,
                     "mod_jk::jk_translate, check alias_dir: %s\n",conf->alias_dir);
-                if (strlen(r->uri) > 1) {
+                if (strlen(clean_uri) > 1) {
                     /* Get the context directory name */
                     char *context_dir = NULL;
                     char *context_path = NULL;
                     char *child_dir = NULL;
-                    char *index = r->uri;
+                    char *index = clean_uri;
                     char *suffix = strchr(index+1,'/');
                     if( suffix != NULL ) {
                         int size = suffix - index;
@@ -1885,7 +1887,7 @@ static int jk_translate(request_rec *r)
                     if( context_path != NULL ) {
                         DIR *dir = ap_popendir(r->pool,context_path);
                         if( dir != NULL ) {
-                            char *escurl = ap_os_escape_path(r->pool, r->uri, 1);
+                            char *escurl = ap_os_escape_path(r->pool, clean_uri, 1);
                             char *ret = ap_pstrcat(r->pool,conf->alias_dir,escurl,NULL);
                             ap_pclosedir(r->pool,dir);
                             /* Add code to verify real path ap_os_canonical_name */
