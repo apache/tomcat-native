@@ -64,6 +64,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Vector;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import org.apache.tomcat.util.buf.HexUtils;
 
 import COM.claymoresystems.sslg.*;
@@ -83,6 +84,9 @@ import COM.claymoresystems.cert.*;
 */
 
 class PureTLSSupport implements SSLSupport {
+    static org.apache.commons.logging.Log logger =
+	org.apache.commons.logging.LogFactory.getLog(PureTLSSupport.class);
+
     private COM.claymoresystems.ptls.SSLSocket ssl;
 
     PureTLSSupport(SSLSocket sock){
@@ -130,12 +134,16 @@ class PureTLSSupport implements SSLSupport {
               CertificateFactory.getInstance("X.509");
             ByteArrayInputStream stream =
               new ByteArrayInputStream(buffer);
-            
-            chain[i]=(java.security.cert.X509Certificate)
-              cf.generateCertificate(stream);
+
+            X509Certificate xCert = (X509Certificate)cf.generateCertificate(stream);
+            chain[i-1]= xCert;
+            if(logger.isTraceEnabled()) {
+		logger.trace("Cert # " + i + " = " + xCert);
+	    }
           }
         } catch (java.security.cert.CertificateException e) {
-            throw new IOException("JDK's broken cert handling can't parse this certificate (which PureTLS likes");
+	    logger.info("JDK's broken cert handling can't parse this certificate (which PureTLS likes)",e);
+            throw new IOException("JDK's broken cert handling can't parse this certificate (which PureTLS likes)");
         }
         return chain;
     }
@@ -168,6 +176,10 @@ class PureTLSSupport implements SSLSupport {
     }
 
 }
+
+
+
+
 
 
 

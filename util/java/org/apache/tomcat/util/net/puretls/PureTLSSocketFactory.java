@@ -160,11 +160,15 @@ public class PureTLSSocketFactory
 		}
 	    }
 
-	    SSLContext tmpContext=new SSLContext();
-	    if(clientAuth){
-		tmpContext.loadRootCertificates(rootFile);
-	    }
-	    tmpContext.loadEAYKeyFile(keyStoreFile,keyPass);
+            SSLContext tmpContext=new SSLContext();
+            try {
+                tmpContext.loadRootCertificates(rootFile);
+            } catch(IOException iex) {
+                if(logger.isDebugEnabled())
+                    logger.debug("Error loading Client Root Store: " + 
+                                 rootFile,iex);
+            }
+            tmpContext.loadEAYKeyFile(keyStoreFile,keyPass);
 	    tmpContext.useRandomnessFile(randomFile,keyPass);
 	    
 	    SSLPolicyInt policy=new SSLPolicyInt();
