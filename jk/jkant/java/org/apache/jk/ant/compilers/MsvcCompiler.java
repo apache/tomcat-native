@@ -156,7 +156,14 @@ public class MsvcCompiler extends CompilerAdapter {
             ccpw.println(localCflags);
             for( int i=0; i<includeList.length; i++ ) {
                 ccpw.print("-I");
-                ccpw.println(includeList[i] );
+                if (!includeList[i].startsWith("\"")) {
+                    ccpw.print("\"");
+                }
+                ccpw.print(includeList[i] );
+                if (!includeList[i].endsWith("\"")) {
+                    ccpw.print("\"");
+                }
+                ccpw.println();
             }
 
             if( defines.size() > 0 ) {
