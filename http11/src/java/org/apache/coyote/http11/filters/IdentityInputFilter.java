@@ -162,18 +162,14 @@ public class IdentityInputFilter implements InputBuffer {
                     chunk.setBytes(chunk.getBytes(), chunk.getStart(), 
                                    (int) remaining);
                     result = (int) remaining;
-                    remaining = -1;
-                } else {
-                    remaining = remaining - result;
                 }
+                remaining = remaining - result;
             } else {
                 // No more bytes left to be read : return -1 and clear the 
                 // buffer
                 chunk.recycle();
                 result = -1;
             }
-        } else {
-            result = -1;
         }
 
         return result;
