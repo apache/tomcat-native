@@ -116,9 +116,9 @@ static int uri_select_option = URI_SELECT_OPT_PARSED;
 
 static int init_jk(char *serverName);
 
-static int initialize_extension();
+static int initialize_extension(void);
 
-static int read_registry_init_data();
+static int read_registry_init_data(void);
 
 static int get_registry_config_parameter(HKEY hkey,
                                          const char *tag, 
@@ -564,7 +564,7 @@ static int init_jk(char *serverName)
     return rc;
 }
 
-static int initialize_extension()
+static int initialize_extension(void)
 {
     if (read_registry_init_data()) {
         is_inited = JK_TRUE;
@@ -589,7 +589,7 @@ int parse_uri_select(const char *uri_select)
     return -1;
 }
 
-static int read_registry_init_data()
+static int read_registry_init_data(void)
 {
     char tmpbuf[INTERNET_MAX_URL_LENGTH];
     HKEY hkey;
@@ -649,7 +649,7 @@ static int read_registry_init_data()
             return JK_FALSE;
         } 
 
-        if(rc=get_registry_config_parameter(hkey,
+        if(get_registry_config_parameter(hkey,
                                          EXTENSION_URI_TAG,
                                          tmpbuf,
                                          sizeof(extension_uri))) {
@@ -658,7 +658,7 @@ static int read_registry_init_data()
             ok = JK_FALSE;
         }
 
-        if(rc=get_registry_config_parameter(hkey,
+        if(get_registry_config_parameter(hkey,
                                          SERVER_ROOT_TAG,
                                          tmpbuf,
                                          sizeof(server_root))) {
@@ -666,7 +666,7 @@ static int read_registry_init_data()
         } else {
             ok = JK_FALSE;
         }
-        if(rc=get_registry_config_parameter(hkey,
+        if(get_registry_config_parameter(hkey,
                                          JK_WORKER_FILE_TAG,
                                          tmpbuf,
                                          sizeof(worker_file))) {
@@ -675,7 +675,7 @@ static int read_registry_init_data()
             ok = JK_FALSE;
         }
 
-        if(rc=get_registry_config_parameter(hkey,
+        if(get_registry_config_parameter(hkey,
                                          URI_SELECT_TAG, 
                                          tmpbuf,
                                          sizeof(tmpbuf))) {
@@ -776,7 +776,7 @@ static jk_env_t * jk2_create_config()
     jk_uriEnv_t *newUri;
     jk_bean_t *jkb;
     jk_env_t *env;
-   if(  workerEnv==NULL ) {
+    if(  workerEnv==NULL ) {
         env=jk2_create_workerEnv();
     }
 
