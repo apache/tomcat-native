@@ -69,6 +69,7 @@ sinclude(./support/wa_version.m4)
 sinclude(./support/wa_apr.m4)
 sinclude(./support/wa_apxs.m4)
 sinclude(./support/wa_ant.m4)
+sinclude(./support/wa_perl.m4)
 
 dnl --------------------------------------------------------------------------
 dnl Initialize GNU Autoconf (note, this requires autoconf vers. >= 2.52)
@@ -76,12 +77,17 @@ dnl --------------------------------------------------------------------------
 AC_INIT([WebApp Module],[""],[http://nagoya.apache.org/bugzilla])
 AC_CONFIG_SRCDIR([configure.in])
 AC_CONFIG_AUX_DIR([support])
-AC_CANONICAL_HOST()
 
 dnl --------------------------------------------------------------------------
 dnl Get rid of all that "--prefix" ... "--xxxdir" in the help message
 dnl --------------------------------------------------------------------------
+WA_HEADER([Configuring AC_PACKAGE_STRING])
 WA_HELP()
+
+dnl --------------------------------------------------------------------------
+dnl What are we compiling for
+dnl --------------------------------------------------------------------------
+AC_CANONICAL_HOST()
 
 dnl --------------------------------------------------------------------------
 dnl Directories locations are defined here
@@ -102,6 +108,7 @@ WA_VARIABLE([SHELL])
 WA_VARIABLE([LIBTOOL])
 WA_VARIABLE([APXS])
 WA_VARIABLE([ANT])
+WA_VARIABLE([PERL])
 
 WA_VARIABLE([CPPFLAGS])
 WA_VARIABLE([CFLAGS])
@@ -125,26 +132,24 @@ WA_VARIABLE([DATE])
 HOST="${host}"
 DATE="`date`"
 
-WA_VARIABLE([ENABLE_JAVA])
-WA_VARIABLE([ENABLE_DOCS])
-WA_VARIABLE([ENABLE_APIJ])
+WA_VARIABLE([ANT_TARGETS])
 
 dnl --------------------------------------------------------------------------
 dnl Figure out if we have APXS, where it's located, and what version it is
 dnl --------------------------------------------------------------------------
+WA_HEADER([Checking Apache APXS])
 WA_APXS([APXS])
 WA_APXS_CHECK([APXS_VERSION],[${APXS}])
 
 dnl --------------------------------------------------------------------------
 dnl Decide based on what version of APXS we found
 dnl --------------------------------------------------------------------------
-AC_MSG_CHECKING([for apr location])
 if test "${APXS_VERSION}" = "1.3" ; then
 
     dnl ----------------------------------------------------------------------
     dnl APXS version 1.3, meaning Apache 1.3. We _require_ APR sources
     dnl ----------------------------------------------------------------------
-    AC_MSG_RESULT([local sources])
+    WA_HEADER([Apache 1.3 module compilation (APR checks)])
 
     dnl ----------------------------------------------------------------------
     dnl Check where the APR sources are and issue "configure"
@@ -190,6 +195,11 @@ if test "${APXS_VERSION}" = "1.3" ; then
     AC_MSG_RESULT([${LIBTOOL}])
 
     dnl ----------------------------------------------------------------------
+    dnl Done with APR, let's see what APXS says
+    dnl ----------------------------------------------------------------------
+    WA_HEADER([Apache 1.3 module compilation (APXS checks)])
+
+    dnl ----------------------------------------------------------------------
     dnl Do a check on the C compiler to see if apxs reports the same one
     dnl ----------------------------------------------------------------------
     WA_APXS_GET([tempval],[${APXS}],[CC])
@@ -226,7 +236,7 @@ else
     dnl ----------------------------------------------------------------------
     dnl APXS version 2.0, meaning Apache 2.0. We use APR from there
     dnl ----------------------------------------------------------------------
-    AC_MSG_RESULT([apache 2 distribution])
+    WA_HEADER([Apache 2.0 module])
 
     WA_APXS_GET([CC],[${APXS}],[CC])
     WA_APXS_GET([CPP],[${APXS}],[CPP])
@@ -257,18 +267,25 @@ fi
 dnl --------------------------------------------------------------------------
 dnl Retrieve Apache and WebApp version
 dnl --------------------------------------------------------------------------
+WA_HEADER([Checking component versions])
 WA_APXS_SERVER([APACHE_VERSION],[${APXS}])
 WA_VERSION([WEBAPP_VERSION],[${CC}])
 
 dnl --------------------------------------------------------------------------
-dnl Java Tips and Tricks
+dnl Detect another couple of binaries we _might_ require for compilation
 dnl --------------------------------------------------------------------------
+WA_HEADER([Checking optional binaries])
+WA_PERL([PERL])
 WA_ANT([ANT])
-if test -n "${ANT}" ; then
-    WA_APPEND([EXTRA_BUILD],[ant-build])
-dnl    WA_APPEND([EXTRA_CLEAN],[ant-clean])
-fi
 
+dnl --------------------------------------------------------------------------
+dnl Optional targets
+dnl --------------------------------------------------------------------------
+WA_HEADER([Optional targets])
+
+dnl --------------------------------------------------------------------------
+dnl Do we want to build also tomcat-webapp.jar or not?
+dnl --------------------------------------------------------------------------
 AC_MSG_CHECKING([for java compilation])
 AC_ARG_ENABLE(
     [java],
@@ -276,18 +293,21 @@ AC_ARG_ENABLE(
     [
         case "${enableval}" in
         ""|"yes"|"YES"|"true"|"TRUE")
-            WA_ERROR([Path of Tomcat 4.0 binary distribution unspecified])
+            WA_ERROR([path of Tomcat 4.0 binary distribution unspecified])
             ;;
         "no"|"NO"|"false"|"FALSE")
             AC_MSG_RESULT([no])
-            ENABLE_JAVA=""
             ;;
         *)
+            dnl --------------------------------------------------------------
+            dnl We were given something as a parameter, we need to make sure
+            dnl that what we were given is the path to the Tomcat 4.0 distrib.
+            dnl --------------------------------------------------------------
             if test -z "${ANT}" ; then
                 WA_ERROR([java compilation desired but ANT not found])
             fi
             AC_MSG_RESULT([yes])
-            ENABLE_JAVA="compile"
+
             WA_PATH_DIR([TC4_DIR],[${enableval}],[tomcat 4.0 distribution])
             AC_MSG_CHECKING([for proper tomcat layout])
             if test ! -f "${TC4_DIR}/server/lib/catalina.jar" ; then
@@ -296,14 +316,24 @@ AC_ARG_ENABLE(
             if test ! -f "${TC4_DIR}/common/lib/servlet.jar" ; then
               WA_ERROR([cannot find "${TC4_DIR}/common/lib/servlet.jar"])
             fi
+
+            dnl --------------------------------------------------------------
+            dnl We found what we were looking for, make sure ANT gets called
+            dnl with the "compile" target
+            dnl --------------------------------------------------------------
+            WA_APPEND([ANT_TARGETS],[compile])
+            WA_APPEND([EXTRA_BUILD],[ant-build])
+            WA_APPEND([EXTRA_CLEAN],[ant-clean])
             AC_MSG_RESULT([ok])
             ;;
         esac
     ],[
         AC_MSG_RESULT([no])
-        ENABLE_JAVA=""
     ])
 
+dnl --------------------------------------------------------------------------
+dnl Do we want to build also the documentation from XML?
+dnl --------------------------------------------------------------------------
 AC_MSG_CHECKING([for documentation generation])
 AC_ARG_ENABLE(
     [docs],
@@ -315,25 +345,40 @@ AC_ARG_ENABLE(
                 WA_ERROR([docs generation desired but ANT not found])
             fi
             AC_MSG_RESULT([yes])
-            ENABLE_DOCS="docs"
+
+            dnl --------------------------------------------------------------
+            dnl We were specifically requested to compile docs, and we found
+            dnl ANT, we need to call it with the "docs" target
+            dnl --------------------------------------------------------------
+            WA_APPEND([ANT_TARGETS],[docs])
+            WA_APPEND([EXTRA_BUILD],[ant-build])
+            WA_APPEND([EXTRA_CLEAN],[ant-clean])
             ;;
         "no"|"NO"|"false"|"FALSE")
             AC_MSG_RESULT([no])
-            ENABLE_DOCS=""
             ;;
         *)
             WA_ERROR([invalid parameter --enable-docs="${enableval}"])
             ;;
         esac
     ],[
+        dnl ------------------------------------------------------------------
+        dnl We are going to call ANT only if we found it, but making sure
+        dnl that we specify the "docs" target
+        dnl ------------------------------------------------------------------
         if test -z "${ANT}" ; then
             AC_MSG_RESULT([no (ant required)])
         else
             AC_MSG_RESULT([yes (ant detected)])
-            ENABLE_DOCS="docs"
+            WA_APPEND([ANT_TARGETS],[docs])
+            WA_APPEND([EXTRA_BUILD],[ant-build])
+            WA_APPEND([EXTRA_CLEAN],[ant-clean])
         fi
     ])
 
+dnl --------------------------------------------------------------------------
+dnl Do we want to build also the Java API documentation?
+dnl --------------------------------------------------------------------------
 AC_MSG_CHECKING([for Java API docs generation])
 AC_ARG_ENABLE(
     [apidoc-java],
@@ -345,28 +390,84 @@ AC_ARG_ENABLE(
                 WA_ERROR([docs generation desired but ANT not found])
             fi
             AC_MSG_RESULT([yes])
-            ENABLE_APIJ="javadoc"
+
+            dnl --------------------------------------------------------------
+            dnl We were specifically requested to create javadocs, and we
+            dnl found ANT, we need to call it with the "javadoc" target
+            dnl --------------------------------------------------------------
+            WA_APPEND([ANT_TARGETS],[javadoc])
+            WA_APPEND([EXTRA_BUILD],[ant-build])
+            WA_APPEND([EXTRA_CLEAN],[ant-clean])
             ;;
         "no"|"NO"|"false"|"FALSE")
             AC_MSG_RESULT([no])
-            ENABLE_APIJ=""
             ;;
         *)
             WA_ERROR([invalid parameter --enable-apidoc-java="${enableval}"])
             ;;
         esac
     ],[
+        dnl ------------------------------------------------------------------
+        dnl We are going to call ANT only if we found it, but making sure
+        dnl that we specify the "javadoc" target
+        dnl ------------------------------------------------------------------
         if test -z "${ANT}" ; then
             AC_MSG_RESULT([no (ant required)])
         else
             AC_MSG_RESULT([yes (ant detected)])
-            ENABLE_APIJ="javadoc"
+            WA_APPEND([ANT_TARGETS],[javadoc])
+            WA_APPEND([EXTRA_BUILD],[ant-build])
+            WA_APPEND([EXTRA_CLEAN],[ant-clean])
+        fi
+    ])
+
+dnl --------------------------------------------------------------------------
+dnl Do we want to build also the C API documentation?
+dnl --------------------------------------------------------------------------
+AC_MSG_CHECKING([for C API docs generation])
+AC_ARG_ENABLE(
+    [apidoc-c],
+    [  --enable-apidoc-c       generate C API docs (requires PERL)],
+    [
+        case "${enableval}" in
+        ""|"yes"|"YES"|"true"|"TRUE")
+            if test -z "${PERL}" ; then
+                WA_ERROR([docs generation desired but PERL not found])
+            fi
+            AC_MSG_RESULT([yes])
+
+            dnl --------------------------------------------------------------
+            dnl We were specifically requested to create c api docs, and we
+            dnl found PERL, we need to define a couple of new targets
+            dnl --------------------------------------------------------------
+            WA_APPEND([EXTRA_BUILD],[capi-build])
+            WA_APPEND([EXTRA_CLEAN],[capi-clean])
+            ;;
+        "no"|"NO"|"false"|"FALSE")
+            AC_MSG_RESULT([no])
+            ;;
+        *)
+            WA_ERROR([invalid parameter --enable-apidoc-c="${enableval}"])
+            ;;
+        esac
+    ],[
+        dnl ------------------------------------------------------------------
+        dnl We are going to call the C Api generation/cleanup targets only if
+        dnl we found PERL
+        dnl ------------------------------------------------------------------
+        if test -z "${PERL}" ; then
+            AC_MSG_RESULT([no (perl required)])
+        else
+            AC_MSG_RESULT([yes (perl detected)])
+            WA_APPEND([EXTRA_BUILD],[capi-build])
+            WA_APPEND([EXTRA_CLEAN],[capi-clean])
         fi
     ])
 
 dnl --------------------------------------------------------------------------
 dnl All done
 dnl --------------------------------------------------------------------------
+WA_HEADER([All done])
 AC_OUTPUT(
   [
     Makedefs
