@@ -166,9 +166,9 @@ static int jk2_workerEnv_initWorkers(jk_env_t *env,
                                      jk_workerEnv_t *wEnv)
 {
     int i;
-    char **wlist=wEnv->worker_list;
 
     for( i=0; i< wEnv->worker_map->size( env, wEnv->worker_map ); i++ ) {
+
         char *name= wEnv->worker_map->nameAt( env, wEnv->worker_map, i );
         jk_worker_t *w= wEnv->worker_map->valueAt( env, wEnv->worker_map, i );
         int err;
@@ -184,6 +184,59 @@ static int jk2_workerEnv_initWorkers(jk_env_t *env,
                               name); 
             }
         }
+    }
+    return JK_TRUE;
+}
+
+static int jk2_workerEnv_initChannel(jk_env_t *env,
+                                     jk_workerEnv_t *wEnv, jk_channel_t *ch)
+{
+    int rc=JK_TRUE;
+    
+    ch->workerEnv=wEnv;
+    
+    if( ch->init != NULL ) {
+        rc=ch->init(env, ch);
+        
+        if(rc!=JK_TRUE) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                          "workerEnv.initChannel() init failed for %s\n", 
+                          ch->mbean->name); 
+        }
+    }
+    
+    if( ch->workerName != NULL ) {
+        jk_worker_t *w=wEnv->worker_map->get( env, wEnv->worker_map, ch->workerName );
+        ch->worker=w;
+    }
+
+    /* If a worker is not defined ( yet ) for the channel, define a default one ( ajp13 )*/
+    if( ch->worker == NULL ) {
+        jk_bean_t *jkb;
+        
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "workerEnv.initChannel(): default worker ajp13:%s\n", ch->mbean->localName );
+        
+        jkb=env->createBean2(env, ch->mbean->pool, "worker.ajp13", ch->mbean->localName );
+        ch->worker=jkb->object;
+        ch->worker->channelName=ch->mbean->name;
+        ch->worker->channel=ch;
+            
+        /* XXX Set additional parameters - use defaults otherwise */
+    }
+    return rc;
+}
+
+static int jk2_workerEnv_initChannels(jk_env_t *env,
+                                      jk_workerEnv_t *wEnv)
+{
+    int i;
+
+    for( i=0; i< wEnv->channel_map->size( env, wEnv->channel_map ); i++ ) {
+
+        char *name= wEnv->channel_map->nameAt( env, wEnv->channel_map, i );
+        jk_channel_t *ch= wEnv->channel_map->valueAt( env, wEnv->channel_map, i );
+        jk2_workerEnv_initChannel( env, wEnv, ch );
     }
     return JK_TRUE;
 }
@@ -212,7 +265,6 @@ static void jk2_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *wEnv)
     }
 }
 
-
 static void jk2_workerEnv_registerHandler(jk_env_t *env, jk_workerEnv_t *wEnv,
                                           jk_handler_t *handler)
 {
@@ -239,9 +291,10 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     if(  configFile == NULL ) {
         wEnv->config->setPropertyString( env, wEnv->config,
                                          "config.file",
-                                         "$(serverRoot)/conf/jk2.properties" );
+                                         "${serverRoot}/conf/workers2.properties" );
     }
     
+    jk2_workerEnv_initChannels( env, wEnv );
     jk2_workerEnv_initWorkers( env, wEnv );
     jk2_workerEnv_initHandlers( env, wEnv );
 
@@ -390,6 +443,16 @@ static jk_worker_t *jk2_workerEnv_releasePool(jk_env_t *env,
                                               jk_map_t *initData)
 {
     
+}
+
+static int jk2_workerEnv_addChannel(jk_env_t *env, jk_workerEnv_t *wEnv,
+                                    jk_channel_t *w) 
+{
+    int err=JK_TRUE;
+
+    wEnv->channel_map->put(env, wEnv->channel_map, w->mbean->name, w, NULL);
+            
+    return JK_TRUE;
 }
 
 
@@ -543,6 +606,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     jk2_map_default_create(env, &wEnv->envvars, pool);
 
     jk2_map_default_create(env,&wEnv->worker_map, wEnv->pool);
+    jk2_map_default_create(env,&wEnv->channel_map, wEnv->pool);
 
     jkb=env->createBean2(env, wEnv->pool,"uriMap", "");
 
@@ -575,6 +639,8 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
     wEnv->init=&jk2_workerEnv_init;
     wEnv->close=&jk2_workerEnv_close;
     wEnv->addWorker=&jk2_workerEnv_addWorker;
+    wEnv->addChannel=&jk2_workerEnv_addChannel;
+    wEnv->initChannel=&jk2_workerEnv_initChannel;
     wEnv->registerHandler=&jk2_workerEnv_registerHandler;
     wEnv->processCallbacks=&jk2_workerEnv_processCallbacks;
     wEnv->dispatch=&jk2_workerEnv_dispatch;
