@@ -295,8 +295,17 @@ public class Http11Processor implements Processor, ActionHook {
             this.compressionLevel = 1;
         } else if (compression.equals("force")) {
             this.compressionLevel = 2;
-        } else {
+        } else if (compression.equals("off")) {
             this.compressionLevel = 0;
+        } else {
+            try {
+                // Try to parse compression as an int, which would give the
+                // minimum compression size
+                compressionMinSize = Integer.parseInt(compression);
+                this.compressionLevel = 1;
+            } catch (Exception e) {
+                this.compressionLevel = 0;
+            }
         }
     }
 
