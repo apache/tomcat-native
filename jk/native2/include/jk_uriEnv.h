@@ -118,50 +118,74 @@ struct jk_uriEnv {
     
     struct jk_workerEnv *workerEnv;
 
-    struct jk_webapp *webapp;
-    
+    struct jk_uriMap *uriMap;
+
     /* Generic name/value properties. Some workers may use it.
      */
     struct jk_map *properties;
 
-    /* Original uri ( unparsed )
+    /* -------------------- Properties extracted from the URI name ---------- */
+    /** Full name */
+    char *name;
+    
+    /* Virtual server handled - NULL means 'global' ( visible in all
+     * virtual servers ). Part of the uri name.
+     */
+    char *virtual;
+
+    /* Original uri ( unparsed ). Part of the uri name.
      */
     char *uri;
 
-    /** XXX todo.
+    /* -------------------- Properties set using setAttribute ---------- */
+    /** ContextPath. Set with 'context' attribute.
      */
-    int status;
+    char *contextPath;
+    int ctxt_len;
     
-    /** Servlet. No need to compute it again in tomcat
+    /** ServletName. Set with 'servlet' attribute.
      */
     char *servlet;
     int servletId;
 
+    /** Group, set with 'group' attribute. Defaults to 'lb'.
+     */
+    char *workerName; 
+    struct jk_worker *worker;
+
+    /** Debug for that location. Set with 'debug'
+     */
+    int debug;
+
+    /** For MATCH_TYPE_HOST, the list of aliases for the virtual host.
+     *  Set using (multi-value ) 'alias' attribute on vhost uris.
+    */
+    struct jk_map *aliases;
+
+    /* -------------------- Properties extracted from the uri, at init() -------------------- */
     /* Extracted suffix, for extension-based mathces */
     char *suffix;
-    char *prefix;
-    
-    int prefix_len;
     int suffix_len;
+
+    /* Prefix based mapping. Same a contextPath for MATCH_TYPE_CONTEXT
+     */
+    char *prefix;
+    int prefix_len;
 
     int match_type;
 
-    int debug;
-
-    /** Worker associated with this uri
-        Inherited by virtual host. Defaults to the first declared worker.
-        ( if null == use default worker ).
-    */
-    struct jk_worker *worker;
-    
-    /** worker name - allow this to be set before the worker is defined.
-     *  worker will be set on init.
+    /** For MATCH_TYPE_HOST, the list of webapps in that host
      */
-    char *workerName; 
+    struct jk_map *webapps;
 
-    /** You can fine-tune the logging level per location
+    /** For MATCH_TYPE_CONTEXT, the list of local mappings
      */
-    int logLevel;
+    struct jk_map *exactMatch;
+    struct jk_map *prefixMatch;
+    struct jk_map *suffixMatch;
+
+    /* -------------------- Other properties -------------------- */
+
 
     /** Different apps can have different loggers.
      */
@@ -172,19 +196,10 @@ struct jk_uriEnv {
     int envvars_in_use;
     struct jk_map *envvars;
 
-    /* Virtual server handled - NULL means 'global' ( visible in all
-     * virtual servers ). This is the canonical name.
+    /** XXX .
      */
-    char *virtual;
-    int virtualPort;
-
-    /** Uri we're monted on
-     *  The 'id' is the index in the context table ( todo ), it
-     *  reduce the ammount of trafic ( and string creation on java )
-     */
-    char *context;
-    int ctxt_len;
-    int contextId;
+/*     int status; */
+/*     int virtualPort; */
 
     /* -------------------- Methods -------------------- */
 
