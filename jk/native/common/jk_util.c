@@ -64,7 +64,6 @@
 
 
 #include "jk_util.h"
-#include "jk_ajp12_worker.h"
 
 #define SYSPROPS_OF_WORKER          ("sysprops")
 #define STDERR_OF_WORKER            ("stderr")
@@ -84,10 +83,10 @@
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
 #define BALANCED_WORKERS            ("balanced_workers")
 #define WORKER_AJP12                ("ajp12")
-#define DEFAULT_WORKER_TYPE         JK_AJP12_WORKER_NAME
+#define DEFAULT_WORKER_TYPE         ("ajp13")
 #define SECRET_KEY_OF_WORKER        ("secretkey")
 
-#define DEFAULT_WORKER              JK_AJP12_WORKER_NAME
+#define DEFAULT_WORKER              ("ajp13")
 #define WORKER_LIST_PROPERTY_NAME   ("worker.list")
 #define DEFAULT_LB_FACTOR           (1.0)
 #define LOG_FORMAT		    ("log_format")

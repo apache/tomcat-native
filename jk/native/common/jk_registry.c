@@ -84,10 +84,6 @@
  *  
  */
 
-int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
-                                   const char *name,
-                                   jk_logger_t *l);
-
 int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
                                    const char *name,
                                    jk_logger_t *l);
@@ -120,7 +116,6 @@ int JK_METHOD jk_registry_init(jk_env_t *env) {
     printf("jk_registry_init: Assertion failed, env==NULL\n" );
     return;
   }
-  env->registerFactory( env, "worker", "ajp12", &ajp12_worker_factory );
   env->registerFactory( env, "worker", "ajp13", &ajp13_worker_factory );
   env->registerFactory( env, "worker", "ajp14", &ajp14_worker_factory );
   env->registerFactory( env, "worker", "lb",    &lb_worker_factory );
