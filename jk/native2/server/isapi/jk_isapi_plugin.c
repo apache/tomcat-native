@@ -313,7 +313,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 /* This is a servlet, should redirect ... */
                 env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                        "HttpFilterProc [%s] is a servlet url - should redirect to %s\n", 
-                       uri, worker);
+                       uri, uriEnv->workerName);
                 
                 /* get URI we should forward */
                 if (uri_select_option == URI_SELECT_OPT_UNPARSED) {
@@ -378,7 +378,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
              * We reject such postings !
              */
             env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                   "HttpFilterProc check if [%s] is points to the web-inf directory\n", 
+                   "HttpFilterProc check if [%s] is pointing to the web-inf directory\n", 
                    uri);
 
             if(jk_requtil_uriIsWebInf(uri)) {
@@ -447,14 +447,25 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         int rc1;
 
         GET_SERVER_VARIABLE_VALUE(workerEnv->pool,HTTP_WORKER_HEADER_NAME, ( worker_name ));
-        worker=workerEnv->worker_map->get(env,workerEnv->worker_map,worker_name);
+        worker=env->getByName( env, worker_name);
+
+        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+               "HttpExtensionProc %s a worker for name %s\n", 
+               worker ? "got" : "could not get",
+               worker_name);
+        
+        if( worker==NULL ){
+            env->l->jkLog(env, env->l,  JK_LOG_INFO, 
+                   "HttpExtensionProc worker is NULL\n");
+            return rc;            
+        }
         /* Get a pool for the request XXX move it in workerEnv to
            be shared with other server adapters */
         rPool= worker->rPoolCache->get( env, worker->rPoolCache );
         if( rPool == NULL ) {
             rPool=worker->pool->create( env, worker->pool, HUGE_POOL_SIZE );
             env->l->jkLog(env, env->l, JK_LOG_INFO,
-                          "mod_jk.handler(): new rpool\n");
+                          "HttpExtensionProc: new rpool\n");
         }
 
         jk2_service_iis_init( env, s );
@@ -467,11 +478,6 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         /* Initialize the ws_service structure */
         s->init( env, s, worker, lpEcb );
         
-        /* env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-               "HttpExtensionProc %s a worker for name %s\n", 
-               worker ? "got" : "could not get",
-               worker_name);
-        */
         rc = worker->service(env, worker, s);
         
         s->afterRequest(env, s);
@@ -546,7 +552,7 @@ static int init_jk(char *serverName)
        
     jk_env_t *env=jk2_create_config();   
 
-    rc=workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file );
+    rc=(JK_OK == workerEnv->config->setPropertyString( env, workerEnv->config, "config.file", worker_file ));
 
     /* Logging the initialization type: registry or properties file in virtual dir
     */

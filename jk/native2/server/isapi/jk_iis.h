@@ -109,8 +109,7 @@ extern "C" {
 #define GET_SERVER_VARIABLE_VALUE(pool, name, place) {    \
     (place) = NULL;                                 \
     huge_buf_sz = sizeof(huge_buf);                 \
-    if (get_server_value(env,                       \
-                        lpEcb,                      \
+    if (get_server_value(lpEcb,                      \
                         (name),                     \
                         huge_buf,                   \
                         huge_buf_sz,                \
@@ -121,8 +120,7 @@ extern "C" {
 
 #define GET_SERVER_VARIABLE_VALUE_INT(name, place, def) {   \
     huge_buf_sz = sizeof(huge_buf);                 \
-    if (get_server_value(env,                       \
-                         lpEcb,                     \
+    if (get_server_value(lpEcb,                     \
                         (name),                     \
                         huge_buf,                   \
                         huge_buf_sz,                \
@@ -152,7 +150,7 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
 
 int jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s);
 
-int get_server_value(struct jk_env *env, LPEXTENSION_CONTROL_BLOCK lpEcb,
+int get_server_value( LPEXTENSION_CONTROL_BLOCK lpEcb,
                             char *name,
                             char  *buf,
                             DWORD bufsz,

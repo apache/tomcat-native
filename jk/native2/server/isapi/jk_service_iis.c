@@ -256,7 +256,7 @@ static int JK_METHOD jk2_service_iis_write(jk_env_t *env, jk_ws_service_t *s,
     return JK_ERR;
 }
 
-int get_server_value(struct jk_env *env, LPEXTENSION_CONTROL_BLOCK lpEcb,
+int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
                             char *name,
                             char  *buf,
                             DWORD bufsz,
@@ -267,16 +267,14 @@ int get_server_value(struct jk_env *env, LPEXTENSION_CONTROL_BLOCK lpEcb,
                                  buf,
                                  (LPDWORD)&bufsz)) {
         strcpy(buf, def_val);
-        return JK_ERR;
+        return JK_FALSE;
     }
 
     if (bufsz > 0) {
         buf[bufsz - 1] = '\0';
     }
-    env->l->jkLog(env,env->l, JK_LOG_ERROR, 
-           "jk_ws_service_t::write, NULL parameters\n");
 
-    return JK_OK;
+    return JK_TRUE;
 }
 
 
@@ -400,8 +398,7 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
 
     
     huge_buf_sz = sizeof(huge_buf);         
-    if (get_server_value(env,
-                                                lpEcb,
+    if (get_server_value(lpEcb,
                          "ALL_HTTP",             
                          huge_buf,           
                          huge_buf_sz,        
