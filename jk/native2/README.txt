@@ -1,6 +1,15 @@
 README for JK2
 --------------
 
+AS OF NOVEMBER 15, 2004, JK2 IS NO LONGER SUPPORTED. ALL BUGS RELATED TO JK2 
+WILL BE MARKED AS WONTFIX. IN ITS PLACE, SOME OF ITS FEATURES HAVE BEEN 
+BACKPORTED TO JK1. MOST OF THOSE FEATURES WILL BE SEEN IN 1.2.7 AND LATER
+VERSIONS.
+
+ANOTHER ALTERNATIVE IS THE AJP ADDITION TO MOD_PROXY WHICH WILL BE PART OF 
+APACHE 2.1.
+
+
 JK2 is a refactoring of  JK and is much more  powerfull.  Even if it works  with
 Apache 1.3, JK2 has been developed with Apache 2.0 in mind, and is better suited
 for multi-threaded  servers like  IIS, NES/iPlanet.  It can  also be  embeded in
