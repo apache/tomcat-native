@@ -84,7 +84,9 @@
     Clean up all we generated using ANT (and nothing more)
   -->
   <target
-      name="clean"/>
+      name="clean"
+      description="Clean up what we built"
+      depends="compile.clean,docs.clean,javadoc.clean"/>
 
 
 <!-- === COMPILATION TASKS =============================================== -->
@@ -102,6 +104,17 @@
     <!-- Just jump out -->
     <fail message="Cannot find Tomcat 4.0 classes"/>
   </target>
+
+  <!--
+    Delete the generated classes and JAR file.
+  -->
+  <target
+      name="compile.clean"
+      description="Clean up the JAR file and all classes">
+    <delete file="${build.jar}"/>
+    <delete dir="${build.classes}"/>
+  </target>
+
 
   <!--
     Create the directory where classes will be compiled into, then compile
@@ -156,6 +169,18 @@
     <fail message="Cannot find the Apache Xalan XSLT processor"/>
   </target>
 
+  <!--
+    Delete the generated documentation
+  -->
+  <target
+      name="docs.clean"
+      description="Clean up the generated docs directory">
+    <delete dir="${build.docs}"/>
+  </target>
+
+  <!--
+    Generate documentation from the XML sources.
+  -->
   <target
       name="docs"
       depends="docs.check"
@@ -198,6 +223,15 @@
     
     <!-- Just output a simple warning message -->
     <echo message="Cannot find Tomcat 4.0. Warnings in JavaDOC are ok"/>
+  </target>
+
+  <!--
+    Delete the generated JavaDOC output
+  -->
+  <target
+      name="javadoc.clean"
+      description="Clean up the generated javadoc directory">
+    <delete dir="${build.javadoc}"/>
   </target>
 
   <!--
