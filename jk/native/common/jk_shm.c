@@ -144,9 +144,9 @@ static jk_shm_t *do_shm_open(const char *fname, int workers, int dynamic,
 
     /* Clear shared memory */
     if (!attached) {
-        jk_shm_h_rec *hdr;
+        jk_shm_h_rec_t *hdr;
 
-        memset(shm->base, 0, size);
+        memset(shm->base, 0, shm->size);
         hdr = (jk_shm_h_rec_t *)shm->base;
 
         memcpy(hdr->magic, shm_signature, 8);
@@ -173,7 +173,7 @@ jk_shm_t *jk_shm_attach(const char *fname, int workers, int dynamic, jk_pool_t *
 void jk_shm_close(jk_shm_t *shm)
 {
     if (shm) {
-        if (shm->base)
+        if (shm->base) {
             munmap(shm->base, shm->size);
             close(shm->fd);
         }
