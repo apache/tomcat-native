@@ -1,0 +1,75 @@
+$Id$
+
+Prerequisites
+-------------
+
+You need to be able to build the jk2 code which requires both APR and
+PCRE. You can get a suitable Win32 build of APR from here:
+
+  http://apr.apache.org/
+  
+and a Win32 version of PCRE can be found here:
+
+  http://gnuwin32.sourceforge.net/packages/pcre.htm
+  
+To avoid messing around with the paths in the MSVC project place the APR
+and PCRE directories in the same parent directory as jakarta-tomcat-
+connectors. Here's what I have
+
+tomcat\
+    apr\
+    apr-iconv\
+    apr-util\
+    jakarta-tomcat-connectors\
+    pcre\
+
+The project also depends on the Lotus Notes C API which can be downloaded
+here:
+
+  http://www-10.lotus.com/ldd/toolkits
+  
+Set the environment variable NOTESAPI to the directory where you've
+installed it so the MSVC project can find it.
+
+You'll also need to have a suitable (for jk2) JVM installed and
+JAVA_HOME properly set.
+
+Once you've done all that you should be able to fire up MSVC, open the
+dsapi.dsw and build it. You'll most likely want to build the
+configuration 'Release Static' which will build a standalone
+dsapi_redirector2.dll.
+
+Having built the redirector refer to INSTALL-WIN32.txt for installation
+instructions.
+
+Mailing Lists
+-------------
+
+There are two mailing lists dedicated to the Domino Tomcat redirector:
+
+domino-tomcat-l:
+ http://nomen.tagish.co.uk/mailman/listinfo/domino-tomcat-l
+
+domino-tomcat-l is a general discussion list for issues with the
+redirector and also wider Tomcat/Domino integration issues such as
+calling the Domino Java API from a Tomcat servlet. I expect it to be
+fairly low volume so please subscribe if you're actively using the
+redirector. If you have an issue with the redirector please post it to
+the list where it will be seen not only by me but by other users who may
+be able to help with any problems.
+
+domino-tomcat-announce-l:
+ http://nomen.tagish.co.uk/mailman/listinfo/domino-tomcat-announce-l:
+
+domino-tomcat-announce-l is for announcements about the Domino Tomcat
+redirector. Mainly this list will be used for new releases but serious
+bugs will also be posted to it. This list will be very low volume; only
+I can post to it. I wouldn't expect more than a few posts per month. For
+this reason if you'd like to keep track of new redirector versions
+please subscribe to this list. From now on this list will be the main
+place to find out about new versions.
+<
+Please let me know if you have any problems.
+
+Andy Armstrong, <andy@tagish.com>
+

@@ -1,0 +1,73 @@
+$Id$
+
+Prerequisites
+-------------
+
+The common jk2 code requires APR and
+PCRE. Download a suitable version of APR from here:
+
+  http://apr.apache.org/
+  
+PCRE can be found here:
+
+  http://www.pcre.org/
+  
+Now you should be able to configure and build the redirector. cd to
+jakarta-tomcat-connectors/jk/native2 and
+
+$ autoconf
+
+to generate the configure script. Now  issue a ./configure command
+similar to this:
+
+$ ./configure \
+        --with-domino=/opt/lotus/notes/50120/linux \
+        --with-dsapi=/opt/tomcat/jakarta-tomcat-connectors/jk/native2 \
+        --with-apr=/opt/tomcat/apr/apr-0.9.4 \
+        --with-apr-util=/opt/tomcat/apr/apr-util-0.9.4
+
+Adjust the paths in the above to suit your setup. Assuming configure
+reports no problems do
+
+$ make
+
+to build redirector. Again note and fix any problems that are reported.
+
+If make is successful the redirector will be in
+
+../build/jk2/dsapi/libtomcat2.so
+
+Having built the redirector refer to INSTALL-LINUX.txt for installation
+instructions.
+
+Mailing Lists
+-------------
+
+There are two mailing lists dedicated to the Domino Tomcat redirector:
+
+domino-tomcat-l:
+ http://nomen.tagish.co.uk/mailman/listinfo/domino-tomcat-l
+
+domino-tomcat-l is a general discussion list for issues with the
+redirector and also wider Tomcat/Domino integration issues such as
+calling the Domino Java API from a Tomcat servlet. I expect it to be
+fairly low volume so please subscribe if you're actively using the
+redirector. If you have an issue with the redirector please post it to
+the list where it will be seen not only by me but by other users who may
+be able to help with any problems.
+
+domino-tomcat-announce-l:
+ http://nomen.tagish.co.uk/mailman/listinfo/domino-tomcat-announce-l:
+
+domino-tomcat-announce-l is for announcements about the Domino Tomcat
+redirector. Mainly this list will be used for new releases but serious
+bugs will also be posted to it. This list will be very low volume; only
+I can post to it. I wouldn't expect more than a few posts per month. For
+this reason if you'd like to keep track of new redirector versions
+please subscribe to this list. From now on this list will be the main
+place to find out about new versions.
+<
+Please let me know if you have any problems.
+
+Andy Armstrong, <andy@tagish.com>
+
