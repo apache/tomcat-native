@@ -66,7 +66,7 @@ struct file_logger_t
 #define JK_LOG_ERROR_VERB   "error"
 #define JK_LOG_EMERG_VERB   "emerg"
 
-#if defined(__GNUC__) || defined(_MSC_VER)
+#if defined(__GNUC__) || (defined(_MSC_VER) && (_MSC_VER > 1200))
 #define JK_LOG_TRACE   __FILE__,__LINE__,__FUNCTION__,JK_LOG_TRACE_LEVEL
 #define JK_LOG_DEBUG   __FILE__,__LINE__,__FUNCTION__,JK_LOG_DEBUG_LEVEL
 #define JK_LOG_ERROR   __FILE__,__LINE__,__FUNCTION__,JK_LOG_ERROR_LEVEL
