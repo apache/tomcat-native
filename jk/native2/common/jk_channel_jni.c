@@ -329,6 +329,10 @@ static int JK_METHOD jk2_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
         (*jniEnv)->DeleteGlobalRef( jniEnv, epData->jniJavaContext );
     }
     
+    jniCh->vm->detach( env, jniCh->vm );
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "channel_jni.close() ok\n" ); 
+
     endpoint->channelData=NULL;
     return JK_OK;
 
@@ -522,7 +526,7 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
     if( we==NULL || we->vm==NULL ) {
         return JK_OK;
     }
-    /* we->vm->detach( env, we->vm );  */
+    we->vm->detach( env, we->vm );
     
     if( worker->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_INFO, 
