@@ -112,10 +112,10 @@ wa_boolean p_read_string(warp_packet *pack, char **x) {
         return(wa_false);
     }
 
-    *x=(char *)apr_palloc(pack->pool,(len+1)*sizeof(char));
+    *x=(char *)apr_palloc(pack->pool,(len+2)*sizeof(char));
     if (*x==NULL) return(wa_false);
 
-    apr_cpystrn(*x,&pack->buff[pack->curr],len);
+    apr_cpystrn(*x,&pack->buff[pack->curr],len+1);
     pack->curr+=len;
     return(wa_true);
 }
