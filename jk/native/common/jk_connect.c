@@ -71,7 +71,7 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
 #ifdef HAVE_APR
         apr_sockaddr_t *remote_sa, *temp_sa;
         char *remote_ipaddr;
-        
+
         if (!jk_apr_pool) {
             if (apr_pool_create(&jk_apr_pool, NULL) != APR_SUCCESS)
                 return JK_FALSE;
@@ -197,9 +197,9 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
 #ifdef WIN32
     if (timeout > 0) {
         timeout = timeout * 1000;
-        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, 
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
                    (char *) &timeout, sizeof(int));
-        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, 
+        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
                    (char *) &timeout, sizeof(int));
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
@@ -214,13 +214,13 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                    "trying to connect socket %d to %s", sock,
                    jk_dump_hinfo(addr, buf));
 
-/* Need more infos for BSD 4.4 and Unix 98 defines, for now only 
+/* Need more infos for BSD 4.4 and Unix 98 defines, for now only
 iSeries when Unix98 is required at compil time */
 #if (_XOPEN_SOURCE >= 520) && defined(AS400)
         ((struct sockaddr *)addr)->sa_len = sizeof(struct sockaddr_in);
 #endif
         ret = connect(sock, (struct sockaddr *)addr,
-                      sizeof(struct sockaddr_in));            
+                      sizeof(struct sockaddr_in));
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
         if (ret == SOCKET_ERROR) {
             errno = WSAGetLastError() - WSABASEERR;
@@ -318,10 +318,10 @@ int jk_tcp_socket_recvfull(int sd, unsigned char *b, int len)
             if (rd == SOCKET_ERROR)
                 errno = WSAGetLastError() - WSABASEERR;
 #else
-            rd = read(sd, (char *)b + rdlen, len - rdlen); 
+            rd = read(sd, (char *)b + rdlen, len - rdlen);
 #endif
         } while (rd == -1 && errno == EINTR);
-        
+
         if (rd == -1)
             return (errno > 0) ? -errno : errno;
         else if (rd == 0)
@@ -403,7 +403,7 @@ static int sononblock(int sd)
     }
 #endif /* WIN32 */
     return 0;
-} 
+}
 
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 #define EWOULDBLOCK (WSAEWOULDBLOCK - WSABASEERR)
@@ -411,8 +411,8 @@ static int sononblock(int sd)
 
 int jk_is_socket_connected(int sd, int timeout)
 {
-    unsigned char test_buffer[1]; 
-    int  rc;    
+    unsigned char test_buffer[1];
+    int  rc;
     /* Set socket to nonblocking */
     if ((rc = sononblock(sd)) != 0)
         return (errno > 0) ? -errno : errno;
@@ -423,11 +423,11 @@ int jk_is_socket_connected(int sd, int timeout)
     /* Reset socket timeouts if the new timeout differs from the old timeout */
     if (timeout > 0) {
         /* Timeouts are in msec, represented as int */
-        setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, 
+        setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,
                     (char *) &timeout, sizeof(int));
-        setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, 
+        setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO,
                     (char *) &timeout, sizeof(int));
-    } 
+    }
 #endif
     if (rc == EWOULDBLOCK || rc == -1)
         return 1;
