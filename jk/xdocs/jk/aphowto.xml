@@ -9,12 +9,12 @@
 <section name="Introduction">
 <p>
 This document explains how to connect Tomcat to the popular open source web server, Apache. 
-There is actually to version of Apache, 1.3 and 2.0 and both could used mod_jk, the Tomcat redirector
+There is actually two version of Apache, 1.3 and 2.0 and both can be used with mod_jk, the Tomcat redirector
 module.
 </p>
 
 <p>
-We recommand you to read also the <a href="jk/workershowto.html">Workers HowTo</a> document
+It is recommanded that you also read the <a href="jk/workershowto.html">Workers HowTo</a> document
 to learn how to setup the working entities between your WebServer and Tomcat Engines.
 </p>
 
@@ -161,7 +161,7 @@ For others, the binary distribution of mod_jk offers simpler installation.
 </p>
 
 <p>
-For example JK 1.2.0 could be find <a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.0/bin/">
+For example JK 1.2.0 can be found <a href="http://jakarta.apache.org/builds/jakarta-tomcat-connectors/jk/release/v1.2.0/bin/">
 here</a> and contains the following:
 </p>
 
@@ -287,7 +287,7 @@ Here is a simple configuration:
 <note># JkRequestLogFormat set the request format </note>
 <read>JkRequestLogFormat     "%w %V %T"</read>
 <note># Send servlet for context /examples to worker named worker1</note>
-<read>JkMout  /examples/servlet/* worker1</read>
+<read>JkMount  /examples/servlet/* worker1</read>
 <note># Send JSPs  for context /examples to worker named worker1</note>
 <read>JkMount  /examples/*.jsp worker1</read>
 </screen>
@@ -297,7 +297,7 @@ Here is a simple configuration:
 
 <section name="mod_jk Directives">
 <p>
-We'll discuss here about mod_jk directives and details them
+We'll discuss here the mod_jk directives and details behind them
 </p>
 
 <subsection name="Define workers">
@@ -371,9 +371,9 @@ Using the strftime() format string it's set by default to <b>"[%a %b %d %H:%M:%S
 Request logging is configured and enabled on a per virtual host basis. 
 To enable request logging for a virtual host just add a JkRequestLogFormat config. 
 The syntax of the format string is similiar to the Apache LogFormat command, 
-here is a list of the avaialbe request log format options:
+here is a list of the available request log format options:
 </p>
-
+                       
 <p>
 <table>
   <tr><th>Options</th><th>Description</th></tr>
@@ -618,7 +618,7 @@ To create the configure script just type :
 </subsection>
 
 <subsection name="Using configure to build mod_jk">
-<p>Here's how to use configure to prepare mod_jk building, just type: 
+<p>Here's how to use configure to prepare mod_jk for building, just type: 
 <source>
 ./configure [autoconf arguments] [jakarta-tomcat-connectors arguments]
 </source>
@@ -793,14 +793,21 @@ An alternative will be to open mod_jk.dsp in msdev and build it using the build 
 
 <section name="Building mod_jk for Apache on iSeries/OS400">
 <p>
-Since OS400 V4R5, iSeries (AS/400) use Apache 2.0 as their primary web server, replacing the old IBM webserver.
-It's now possible to build mod_jk on iSeries thanks to the help of IBM Rochester Labs who provided informations and patches
-to adapt mod_jk to their Operating System.
+Since OS400 V4R5, iSeries (AS/400) has used Apache 2.0 as their primary web server, 
+replacing the old IBM webserver.
+It's now possible to build mod_jk on iSeries thanks to the help of the IBM 
+Rochester Labs which has provided information and patches
+to adapt mod_jk to OS400.
 </p>
 <p>
-You should have at least Apache 2.0.39 which is provided in recent PTFs, a C Compiler and IFS.
-Since there's still no configure stuff on iSeries, you'll have to use the good command line or use a CL with is present 
-in mod_jk source.
+You should have at least Apache 2.0.39, a C Compiler and IFS.
+Apache 2.0.39 is provided with the most recent set of PTFs for the iSeries Apache
+server, which can be found at <a href="http://www.ibm.com/servers/eserver/iseries/software/http/">
+http://www.ibm.com/servers/eserver/iseries/software/http/</a>
+</p>
+
+<p>
+To configure mod_jk on iSeries use the CL source provided with the mod_jk source.
 </p>
 <ul>
 <li>
@@ -813,7 +820,7 @@ Create a directory in IFS, ie /home/apache
 Send the whole jk source directory to iSeries directory via FTP.
 </li>
 <li>
-Then go to iSeries command line :
+Then go to the iSeries command line :
 </li>
 </ul>
 <screen5250>
@@ -901,9 +908,9 @@ are located. </note>
 <type>make install</type><br/>
 <note> Configure in the Apache sources: </note>
 <type>cd /home/apache/apache_1.3.26</type>
-<type>configure ... --enable-module=dir --disable-shared=dir \ </type>
-<type>              --activate-module=src/modules/jk/libjk.a \  </type>
-<type>              --disable-shared=jk</type>
+<type>configure ... --enable-module=dir --disable-shared=dir \</type>
+<typenext>              --activate-module=src/modules/jk/libjk.a \</typenext>
+<typenext>              --disable-shared=jk</typenext>
 <type>make</type>
 <type>make install</type><br/>
 </screen>
@@ -912,9 +919,9 @@ The --enable-shared=jk is also working and builds a dso file.
 </p>
 <screen>
 <note> Just change the configure in the Apache sources: </note>
-<type>configure ... --enable-module=dir --enable-shared=dir \ </type>
-<type>              --activate-module=src/modules/jk/libjk.a \  </type>
-<type>              --enable-shared=jk</type>
+<type>configure ... --enable-module=dir --enable-shared=dir \</type>
+<typenext>              --activate-module=src/modules/jk/libjk.a \</typenext>
+<typenext>              --enable-shared=jk</typenext>
 </screen>
 </subsection>
 
