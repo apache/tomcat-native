@@ -10,9 +10,10 @@
 <!-- ========== Initialize Properties ===================================== -->
 
 
+  <property file="${user.home}/build.properties"/>   <!-- User local        -->
   <property file="build.properties"/>                <!-- Component local   -->
   <property file="../build.properties"/>             <!-- Commons local     -->
-  <property file="${user.home}/build.properties"/>   <!-- User local        -->
+  <property file="../build.properties.default"/>             <!-- Commons local     -->
 
 
 <!-- ========== External Dependencies ===================================== -->
@@ -74,9 +75,9 @@
 
     <!-- default locations -->
     <property name="tomcat33.home" 
-	      location="../../jakarta-tomcat/build/tomcat" />
+	      location="${base.path}/jakarta-tomcat-3.3" />
     <property name="catalina.home" 
-	      location="../../jakarta-tomcat-4.0/build" />
+	      location="${base.path}/jakarta-tomcat-4.1.24" />
 
     <property name="servlet.jar"
               value="${catalina.home}/common/lib/servlet.jar" />
@@ -271,7 +272,7 @@
   </target>
 
   <target name="compile" 
-   depends="static,report,compile.shared,compile.tomcat5,compile.tomcat4,compile.tomcat33"
+   depends="static,report,compile.shared,compile.tomcat4,compile.tomcat33"
    description="Compile Coyote and its Adapters">
     <jar    jarfile="${build.home}/lib/tomcat-${component.name}.jar"
             index="true"
