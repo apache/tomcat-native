@@ -18,7 +18,7 @@ package org.apache.tomcat.util.log;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Hashtable;
+import java.util.EmptyStackException;
 import java.util.Stack;
 
 /**
@@ -58,7 +58,7 @@ public class SystemLogHandler extends PrintStream {
     /**
      * Thread <-> CaptureLog associations.
      */
-    protected static Hashtable logs = new Hashtable();
+    protected static ThreadLocal logs = new ThreadLocal();
 
 
     /**
@@ -75,19 +75,20 @@ public class SystemLogHandler extends PrintStream {
      */
     public static void startCapture() {
         CaptureLog log = null;
-
-        // Synchronized for Bugzilla 31018
-        synchronized(reuse) {
-            log = reuse.isEmpty() ? new CaptureLog() : (CaptureLog)reuse.pop();
+        if (!reuse.isEmpty()) {
+            try {
+                log = (CaptureLog)reuse.pop();
+            } catch (EmptyStackException e) {
+                log = new CaptureLog();
+            }
+        } else {
+            log = new CaptureLog();
         }
-
-        Thread thread = Thread.currentThread();
-        Stack stack = (Stack)logs.get(thread);
+        Stack stack = (Stack)logs.get();
         if (stack == null) {
             stack = new Stack();
-            logs.put(thread, stack);
+            logs.set(stack);
         }
-
         stack.push(log);
     }
 
@@ -96,7 +97,7 @@ public class SystemLogHandler extends PrintStream {
      * Stop capturing thread's output and return captured data as a String.
      */
     public static String stopCapture() {
-        Stack stack = (Stack)logs.get(Thread.currentThread());
+        Stack stack = (Stack)logs.get();
         if (stack == null || stack.isEmpty()) {
             return null;
         }
@@ -118,7 +119,7 @@ public class SystemLogHandler extends PrintStream {
      * Find PrintStream to which the output must be written to.
      */
     protected PrintStream findStream() {
-        Stack stack = (Stack)logs.get(Thread.currentThread());
+        Stack stack = (Stack)logs.get();
         if (stack != null && !stack.isEmpty()) {
             CaptureLog log = (CaptureLog)stack.peek();
             if (log != null) {
