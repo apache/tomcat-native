@@ -740,22 +740,80 @@ apr_status_t ajp_read_header(apr_socket_t *sock,
     ajp_msg_t *msg;
     apr_status_t rc;
 
-    ajp_msg_reset(msg);
     rc = ajp_msg_create(r->pool, &msg);
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_read_header: ajp_msg_create failed");
         return rc;
     }
+    ajp_msg_reset(msg);
     rc = ajp_ilink_receive(sock, msg);
     if (rc != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
                "ajp_read_header: ajp_ilink_receive failed");
         return rc;
     }
-    rc = ajp_msg_peek_byte(msg,&result);
+    rc = ajp_msg_peek_byte(msg, &result);
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
                "ajp_read_header: ajp_ilink_received %02x", result);
     *data = msg;
+    return APR_SUCCESS;
+}
+/* parse the msg to read the type */
+int ajp_parse_type(request_rec  *r, void *data)
+{
+    apr_byte_t result;
+    ajp_msg_t *msg;
+    msg = (ajp_msg_t *)data;
+    ajp_msg_peek_byte(msg, &result);
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+               "ajp_parse_type: got %02x", result);
+    return (int) result;
+}
+/* parse the headers */
+apr_status_t ajp_parse_headers(request_rec  *r, void *data)
+{
+    ajp_msg_t *msg;
+    apr_byte_t result;
+    apr_status_t rc;
+
+    msg = (ajp_msg_t *)data;
+    rc = ajp_msg_get_byte(msg, &result);
+    if (rc != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+               "ajp_parse_headers: ajp_msg_get_byte failed");
+        return rc;
+    }
+    if (result != 4) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+               "ajp_parse_headers: wrong type %02x", result);
+        return APR_EGENERAL;
+    }
+    return ajp_unmarshal_response(msg, r);
+}
+/* parse the header and return data address and length */
+apr_status_t  ajp_parse_data(request_rec  *r, void *data, apr_uint16_t *len, char **ptr)
+{
+    ajp_msg_t *msg;
+    apr_byte_t result;
+    apr_status_t rc;
+
+    msg = (ajp_msg_t *)data;
+    rc = ajp_msg_get_byte(msg, &result);
+    if (rc != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+               "ajp_parse_data: ajp_msg_get_byte failed");
+        return rc;
+    }
+    if (result != 3) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+               "ajp_parse_data: wrong type %02x", result);
+        return APR_EGENERAL;
+    }
+    rc = ajp_msg_get_uint16(msg, len);
+    if (rc != APR_SUCCESS) {
+        return APR_EGENERAL;
+    }
+    *ptr = msg->buf[msg->pos];
     return APR_SUCCESS;
 }
