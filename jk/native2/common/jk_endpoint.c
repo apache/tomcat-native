@@ -43,7 +43,7 @@ static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean)
     if (wEnv->epStat == NULL) {
         if (wEnv->shm != NULL && wEnv->childId >= 0) {
             char shmName[128];
-            snprintf(shmName, 128, "epStat.%d", wEnv->childId);
+            apr_snprintf(shmName, 128, "epStat.%d", wEnv->childId);
 
             wEnv->epStat =
                 wEnv->shm->createSlot(env, wEnv->shm, shmName, 8096);

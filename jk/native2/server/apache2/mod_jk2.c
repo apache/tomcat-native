@@ -638,7 +638,7 @@ static void jk2_child_init(apr_pool_t * pconf, server_rec * s)
                  env->l->jkLog(env, env->l, JK_LOG_INFO,
                      "jk2_child_init() child %d not in scoreboard yet, spin %d\n", 
                      proc.pid, counter);
-                 usleep(10);
+                 apr_sleep((apr_interval_time_t)10);
                  workerEnv->childId = find_child_by_pid(&proc);
              }
              if (workerEnv->childId == -1) {

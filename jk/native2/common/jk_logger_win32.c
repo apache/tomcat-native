@@ -128,7 +128,7 @@ static int JK_METHOD jk2_logger_win32_jkVLog(jk_env_t *env, jk_logger_t *l,
         }
 
 
-        rc = _vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
+        rc = apr_vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
 
         l->log(env, l, level, buf);
     }

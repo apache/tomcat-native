@@ -494,7 +494,7 @@ static void jk2_requtil_printf(jk_env_t *env, jk_ws_service_t *s, char *fmt,
     va_start(vargs, fmt);
     s->outPos = 0;              /* Temp - we don't buffer */
     ret =
-        vsnprintf(s->outBuf + s->outPos, s->outSize - s->outPos, fmt, vargs);
+        apr_vsnprintf(s->outBuf + s->outPos, s->outSize - s->outPos, fmt, vargs);
     va_end(vargs);
 
     s->write(env, s, s->outBuf, strlen(s->outBuf));
