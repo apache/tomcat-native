@@ -73,6 +73,7 @@ import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Logger;
 import org.apache.catalina.Request;
 import org.apache.catalina.Response;
+import org.apache.catalina.Service;
 import org.apache.catalina.net.DefaultServerSocketFactory;
 import org.apache.catalina.net.ServerSocketFactory;
 import org.apache.catalina.util.LifecycleSupport;
@@ -112,6 +113,8 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
     private String scheme="warp";
     /** The secure flag of this <code>Connector</code>. */
     private boolean secure=false;
+    /** The <code>Service</code> we are associated with (if any). */
+    private Service service=null;
     /** Descriptive information of this <code>Connector</code>. */
     private String info=null;
     /** The address we need to bind to. */
@@ -287,6 +290,28 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
 
         if (Constants.DEBUG) logger.debug("Setting secure to "+secure);
     }
+
+    /**
+     * Return the <code>Service</code> with which we are associated (if any).
+     */
+    public Service getService() {
+
+        return (this.service);
+
+    }
+
+
+    /**
+     * Set the <code>Service</code> with which we are associated (if any).
+     *
+     * @param service The service that owns this Engine
+     */
+    public void setService(Service service) {
+
+        this.service = service;
+
+    }
+
 
     /**
      * Return descriptive information about this <code>Connector</code>.
