@@ -45,9 +45,15 @@ so.optimize=false
 so.profile=false
 
 # tools for other directories
-# Metrowerks and novel ndk
+# Metrowerks and Novell ndk
 #mw.home=d:/tools/mw/6.0
 #novellndk.home=d:/tools/novell/ndk/nwsdk
+#novelllibc.home=d:/tools/novell/ndk/libc
+#build.compiler.base=${mw.home}
+#build.compiler.cc=${mw.home}/bin/mwccnlm
+#build.compiler.ld=${mw.home}/bin/mwldnlm
+#netscape.home=${iplanet.home}
+#option_no_reuse_worker=true
 
 # MSVC
 #mssdk.home=c:/Program Files/Microsoft Visual Studio/VC98
