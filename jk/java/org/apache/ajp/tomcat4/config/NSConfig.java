@@ -318,7 +318,15 @@ public class NSConfig  extends BaseJkConfig {
 	// but it's implemented using a special module.
 	
 	// XXX we need to better collect all mappings
-
+	if(context.getLoginConfig() != null) {
+	    String loginPage = context.getLoginConfig().getLoginPage();
+	    if(loginPage != null) {
+		int lpos = loginPage.lastIndexOf("/");
+		String jscurl = loginPage.substring(0,lpos+1) + "j_security_check";
+		addMapping( ctxPath, jscurl, objfile);
+	    }
+	}
+	
 	String [] servletMaps=context.findServletMappings();
 	for(int ii=0; ii < servletMaps.length; ii++) {
 	    addMapping( ctxPath , servletMaps[ii] , objfile );

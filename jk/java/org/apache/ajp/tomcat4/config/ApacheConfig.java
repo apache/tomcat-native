@@ -446,6 +446,14 @@ public class ApacheConfig  extends BaseJkConfig {
 	
 	// XXX we need to better collect all mappings
 
+	if(context.getLoginConfig() != null) {
+	    String loginPage = context.getLoginConfig().getLoginPage();
+	    if(loginPage != null) {
+		int lpos = loginPage.lastIndexOf("/");
+		String jscurl = loginPage.substring(0,lpos+1) + "j_security_check";
+		addMapping( ctxPath, jscurl, mod_jk);
+	    }
+	}
 	String [] servletMaps = context.findServletMappings();
 	for(int ii=0; ii < servletMaps.length; ii++) {
 	      addMapping( ctxPath, servletMaps[ii] , mod_jk );
