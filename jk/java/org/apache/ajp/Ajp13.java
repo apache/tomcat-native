@@ -476,8 +476,10 @@ public class Ajp13 {
  	int total_read = 0;
         
         total_read = readN(in, b, H_SIZE, len);
-        
-        if (total_read <= 0) {
+
+        // it's ok to have read 0 bytes when len=0 -- this means
+        // the end of the stream has been reached.
+        if (total_read < 0) {
             logger.log("can't read body, waited #" + len);
             return JK_AJP13_BAD_BODY;
         }
