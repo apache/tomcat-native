@@ -956,8 +956,30 @@ public final class CoyoteConnector2
         IntrospectionUtils.setProperty(protocolHandler, "soTimeout", 
                                        "" + connectionTimeout);
 
-        // Configure socket factory
-        // TODO
+        IntrospectionUtils.setProperty(protocolHandler, "secure", 
+                                       "" + secure);
+
+        // Configure secure socket factory
+        if (factory instanceof CoyoteServerSocketFactory) {
+            CoyoteServerSocketFactory ssf = (CoyoteServerSocketFactory) factory;
+            IntrospectionUtils.setProperty(protocolHandler, "algorithm", 
+                                           ssf.getAlgorithm());
+            IntrospectionUtils.setProperty(protocolHandler, "clientauth", 
+                                           "" + ssf.getClientAuth());
+            IntrospectionUtils.setProperty(protocolHandler, "keystore", 
+                                           ssf.getKeystoreFile());
+            IntrospectionUtils.setProperty(protocolHandler, "keypass", 
+                                           ssf.getKeystorePass());
+            IntrospectionUtils.setProperty(protocolHandler, "keytype", 
+                                           ssf.getKeystoreType());
+            IntrospectionUtils.setProperty(protocolHandler, "protocol", 
+                                           ssf.getProtocol());
+            IntrospectionUtils.setProperty(protocolHandler, 
+                                           "sSLImplementation", 
+                                           ssf.getSSLImplementation());
+            IntrospectionUtils.setProperty(protocolHandler, "socketFactory", 
+                                           ssf.getSocketFactoryName());
+        }
 
         try {
             protocolHandler.init();
