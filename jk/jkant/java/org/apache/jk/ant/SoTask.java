@@ -117,10 +117,11 @@ public class SoTask extends Task {
     protected boolean optG=true;
     protected boolean optimize=false;
     protected boolean profile=false;
-    protected Vector defines = new Vector();
-    protected Vector imports = new Vector();    // used by the NetWare linker
-    protected Vector exports = new Vector();    // used by the NetWare linker
-    protected Vector modules = new Vector();    // used by the NetWare linker
+    protected Vector defines    = new Vector();
+    protected Vector imports    = new Vector();     // used by the NetWare, win32 linkers
+    protected Vector exports    = new Vector();     // used by the NetWare, win32 linkers
+    protected Vector modules    = new Vector();     // used by the NetWare linker
+    protected Vector linkOpts   = new Vector();     // used by the NetWare, win32 linkers
 
     // Computed fields 
     protected Vector compileList; // [Source]
@@ -158,6 +159,7 @@ public class SoTask extends Task {
 	so.imports=imports;
 	so.exports=exports;
 	so.modules=modules;
+	so.linkOpts=linkOpts;
 	so.srcList=srcList;
 	so.compileList=compileList;
 	so.compiler=compiler;
@@ -203,7 +205,7 @@ public class SoTask extends Task {
     }
 
     /**
-     * Add an import file/symbol for NetWare platform
+     * Add an import file/symbol for NetWare or win32 platform
      *
      * 
      */
@@ -213,13 +215,23 @@ public class SoTask extends Task {
     }
 
     /**
-     * Add an export file/symbol for NetWare platform
+     * Add an export file/symbol for NetWare or win32 platform
      *
      * 
      */
     public void addExport(JkData exp) {
 	exp.setProject( project );
         exports.add(exp);
+    }
+
+    /**
+     * Add a link option for NetWare or win32 platform
+     *
+     * 
+     */
+    public void addLinkOpt(JkData option) {
+	option.setProject( project );
+        linkOpts.add(option);
     }
 
     /**
