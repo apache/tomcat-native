@@ -39,11 +39,11 @@
       Change the xml status format to xml attribute syntax (pero)
       </update>
       <fix>
-      <bug>33248</bug>Fix builds where apxs defines multiple
+      <bug>33248</bug>: Fix builds where apxs defines multiple
       directories for APR includes. (mturk)
       </fix>
       <fix>
-      <bug>32696</bug>Return 404 instead 403 when WEB-INF is requested
+      <bug>32696</bug>: Return 404 instead 403 when WEB-INF is requested
       to comply with Servlet spec. (mturk)
       </fix>
       <update>Added ANT task for managing jkstatus. (pero)    
