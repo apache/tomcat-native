@@ -244,7 +244,7 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
 static int JK_METHOD jk2_channel_socket_hasinput(jk_env_t *env,
                                                  jk_channel_t *ch,
                                                  jk_endpoint_t *endpoint,
-											     int timeout)
+                                                 int timeout)
 {
 	fd_set  rset; 
 	fd_set  eset; 
@@ -259,7 +259,7 @@ static int JK_METHOD jk2_channel_socket_hasinput(jk_env_t *env,
 	tv.tv_sec  = timeout / 1000;
 	tv.tv_usec = (timeout % 1000) * 1000;
 
-	rc = select(ae->sd + 1, &rset, NULL, &eset, &tv);
+	rc = select(endpoint->sd + 1, &rset, NULL, &eset, &tv);
       
     if ((rc < 1) || (FD_ISSET(endpoint->sd, &eset)))
 	{

@@ -124,7 +124,7 @@ static void * JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env, jk_bean_t *
     } else if (strcmp( name, "graceful" )==0 ) {
         return jk2_env_itoa( env, worker->graceful );
     } else if (strcmp( name, "connectTimeout" )==0 ) {
-        return jk2_env_itoa( env, worket->connect_timeout);
+        return jk2_env_itoa( env, worker->connect_timeout);
     } else if (strcmp( name, "replyTimeout" )==0 ) {
         return jk2_env_itoa( env, worker->reply_timeout);
     } else if (strcmp( name, "prepostTimeout" )==0 ) {
@@ -277,9 +277,9 @@ static void jk2_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
  */
 static int jk2_check_alive(jk_env_t *env, jk_endpoint_t *ae, int timeout) {
 
+    int err;
     jk_channel_t *channel=ae->worker->channel;
     jk_msg_t * msg=ae->reply;
-;
 
 	jk2_serialize_cping( env, msg, ae );
 	err = ae->worker->channel->send( env, ae->worker->channel, ae, msg );
@@ -311,7 +311,6 @@ static int jk2_check_alive(jk_env_t *env, jk_endpoint_t *ae, int timeout) {
 
 		return JK_ERR;
 	}
-	
 	
 	return JK_OK;
 }
@@ -353,7 +352,7 @@ static int jk2_worker_ajp13_connect(jk_env_t *env, jk_endpoint_t *ae) {
     /** XXX use a 'connected' field */
     if( ae->sd == -1 ) ae->sd=0;
     
-	if (ae->worker->connect_timeout != 0 )
+	if (ae->worker->connect_timeout != 0 ) {
 		if (jk2_check_alive(env, ae, ae->worker->connect_timeout) != JK_OK)
     		return JK_ERR;
 	}
@@ -582,7 +581,7 @@ jk2_worker_ajp13_service1(jk_env_t *env, jk_worker_t *w,
     s->content_read=0;
 
 	if (w->prepost_timeout != 0) {
-		if (jk2_check_alive(env, ae, ae->worker->prepost_timeout) != JK_OK)
+		if (jk2_check_alive(env, e, e->worker->prepost_timeout) != JK_OK)
     		return JK_ERR;
 	}
 	

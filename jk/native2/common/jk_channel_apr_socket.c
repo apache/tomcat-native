@@ -91,7 +91,6 @@ struct jk_channel_apr_private {
     short port;
     int keepalive;
     int timeout;
-    int 
 };
 
 typedef struct jk_channel_apr_private jk_channel_apr_private_t;
@@ -146,8 +145,8 @@ static void * JK_METHOD jk2_channel_apr_socket_getAttribute(jk_env_t *env, jk_be
                                                             char *name )
 {
     jk_channel_t *ch=(jk_channel_t *)bean->object;
-    jk_channel_socket_private_t *socketInfo=
-        (jk_channel_socket_private_t *)(ch->_privatePtr);
+    jk_channel_apr_private_t *socketInfo=
+        (jk_channel_apr_private_t *)(ch->_privatePtr);
     
     if( strcmp( name, "name" )==0 ) {
         return  bean->name;
