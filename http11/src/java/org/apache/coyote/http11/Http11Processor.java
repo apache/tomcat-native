@@ -396,10 +396,9 @@ public class Http11Processor implements Processor, ActionHook {
 
         int keepAliveLeft = maxKeepAliveRequests;
         int soTimeout = socket.getSoTimeout();
+
         boolean keptAlive = false;
-        if( !disableUploadTimeout ) {
-            socket.setSoTimeout(timeout);
-        }
+
         while (started && !error && keepAlive) {
             try {
                 if( !disableUploadTimeout && keptAlive && soTimeout > 0 ) {
@@ -407,7 +406,9 @@ public class Http11Processor implements Processor, ActionHook {
                 }
                 inputBuffer.parseRequestLine();
                 keptAlive = true;
-                socket.setSoTimeout(timeout);
+                if (!disableUploadTimeout) {
+                    socket.setSoTimeout(timeout);
+                }
                 inputBuffer.parseHeaders();
             } catch (IOException e) {
                 error = true;
