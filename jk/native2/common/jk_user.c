@@ -145,6 +145,7 @@ int JK_METHOD jk2_user_factory( jk_env_t *env ,jk_pool_t *pool,
                                   const char *type, const char *name)
 {
     result->disabled=JK_TRUE;
+    return JK_FALSE;
 }
 
 #endif
