@@ -68,19 +68,26 @@ sinclude(./support/aplocal.m4)
 sinclude(./support/apjava.m4)
 AC_INIT(Makefile.in)
 LOCAL_INIT()
+LOCAL_HELP([External libraries and compilation flags])
 
 dnl --------------------------------------------------------------------------
 dnl Setup initial variable value
+dnl
+dnl New vars: MODULE TARGET_BUILD TARGET_CLEAN 
+dnl           APR_SRCDIR APR_LIBDIR APR_INCDIR APR_VARFIL
+dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
-SRCDIR=""
 MODULE=""
-AC_SUBST(SRCDIR)
-AC_SUBST(MODULE)
-
+TARGET_BUILD="lib-build"
+TARGET_CLEAN="lib-clean"
 APR_SRCDIR=""
 APR_LIBDIR=""
 APR_INCDIR=""
 APR_VARFIL=""
+
+AC_SUBST(MODULE)
+AC_SUBST(TARGET_BUILD)
+AC_SUBST(TARGET_CLEAN)
 AC_SUBST(APR_SRCDIR)
 AC_SUBST(APR_LIBDIR)
 AC_SUBST(APR_INCDIR)
@@ -88,8 +95,12 @@ AC_SUBST(APR_VARFIL)
 
 dnl --------------------------------------------------------------------------
 dnl Check where sources are
+dnl
+dnl New vars: SRCDIR
+dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 LOCAL_RESOLVEDIR(SRCDIR,[${srcdir}],[sources directory])
+AC_SUBST(SRCDIR)
 
 dnl -------------------------------------------------------------------------
 dnl Check C environment
@@ -97,15 +108,88 @@ dnl
 dnl   We need to check local compilation in case the user got an APR
 dnl   distribution from a binary tarball (such as in Apache 2.0) and the
 dnl   compiler is not available.
+dnl
+dnl New vars: AR RANLIB CC CFLAGS CPP
+dnl Upd vars: N/A
 dnl -------------------------------------------------------------------------
 LOCAL_HEADER([C-Language compilation tools])
 LOCAL_CHECK_PROG(AR,ar)
 LOCAL_CHECK_PROG(RANLIB,ranlib)
+AC_SUBST(AR)
+AC_SUBST(RANLIB)
 AC_PROG_CC()
 AC_PROG_CC_C_O()
 AC_PROG_CPP()
-AC_SUBST(AR)
-AC_SUBST(RANLIB)
+
+dnl -------------------------------------------------------------------------
+dnl Check JAVA environment
+dnl
+dnl New vars: JAVA_HOME JAVAC JAR JAVADOC
+dnl Upd vars: N/A
+dnl -------------------------------------------------------------------------
+LOCAL_HEADER([JAVA-Language compilation tools])
+JAVA_INIT()
+JAVA_JAVAC()
+JAVA_JAR()
+JAVA_JAVADOC()
+
+dnl --------------------------------------------------------------------------
+dnl Process the --with-tomcat=... command line argument
+dnl
+dnl   This is always processed, and sets the CLASSPATH variable.
+dnl
+dnl New vars: TOMCAT_DIR
+dnl Upd vars: N/A
+dnl -------------------------------------------------------------------------
+AC_ARG_WITH(tomcat,
+  [  --with-tomcat[=DIR]     path of a Tomcat 4.0 distribution. (DIR defaults
+                          to \"/usr/local/tomcat\"). Not required and ignored
+                          when the --enable-java option is not specified.],
+  [
+    case "${withval}" in
+    yes|YES|true|TRUE)
+      TOMCAT_DIR="/usr/local/tomcat"
+      ;;
+    *)
+      TOMCAT_DIR="${withval}"
+      ;;
+    esac
+  ],[
+    TOMCAT_DIR="/usr/local/tomcat"
+  ]
+)
+
+dnl --------------------------------------------------------------------------
+dnl Check that we can build all classes depending on Tomcat if Java is enabled
+dnl
+dnl New vars: CLASSPATH
+dnl Upd vars: TOMCAT_DIR TARGET_BUILD TARGET_CLEAN
+dnl --------------------------------------------------------------------------
+if ${TEST} "$JAVA_ENABLE" = "TRUE"
+then
+  LOCAL_RESOLVEDIR(TOMCAT_DIR,"${TOMCAT_DIR}",[tomcat distribution directory])
+  
+  if ${TEST} ! -f "${TOMCAT_DIR}/common/lib/servlet.jar"
+  then
+    AC_MSG_ERROR([Cannot find Servlet 2.3 jar in \"${TOMCAT_DIR}\"])
+  fi
+
+  if ${TEST} ! -f "${TOMCAT_DIR}/server/lib/catalina.jar"
+  then
+    AC_MSG_ERROR([Cannot find Catalina jar in \"${TOMCAT_DIR}\"])
+  fi
+
+  if ${TEST} -z "${CLASSPATH}"
+  then
+    CLASSPATH="${TOMCAT_DIR}/common/lib/servlet.jar"
+  else
+    CLASSPATH="${CLASSPATH}:${TOMCAT_DIR}/common/lib/servlet.jar"
+  fi
+  CLASSPATH="${CLASSPATH}:${TOMCAT_DIR}/server/lib/catalina.jar"
+
+  TARGET_BUILD="${TARGET_BUILD} java-build"
+  TARGET_CLEAN="${TARGET_CLEAN} java-clean"
+fi
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-apr=... command line argument
@@ -114,26 +198,43 @@ dnl   This is always processed, and sets the APR_SRCDIR variable. After this
 dnl   is executed, for each module the APR_SRCDIR variable should be over
 dnl   written if the web server already knows the location of APR's include
 dnl   header and library directories. (As in Apache 2.0)
+dnl
+dnl New vars: N/A
+dnl Upd vars: APR_SRCDIR
 dnl --------------------------------------------------------------------------
 AC_ARG_WITH(apr,
   [  --with-apr[=DIR]        path of an APR (Apache Portable Runtime) source
                           distribution or CVS snapshot. (DIR defaults to
                           \"./apr\"). Not required and ignored when the
                           --with-apxs2 option is specified.],
-  APR_SRCDIR="${withval}",
-  APR_SRCDIR="${SRCDIR}/apr"
+  [
+    case "${withval}" in
+    yes|YES|true|TRUE)
+      APR_SRCDIR="${SRCDIR}/apr"
+      ;;
+    *)
+      APR_SRCDIR="${withval}"
+      ;;
+    esac
+  ],[
+    APR_SRCDIR="${SRCDIR}/apr"
+  ]
 )
 
 dnl --------------------------------------------------------------------------
 dnl Target module to build
 dnl --------------------------------------------------------------------------
-LOCAL_HEADER([APR location and target module])
+LOCAL_HEADER([Target web-server])
+LOCAL_HELP([Available Web-Server modules])
 
 dnl --------------------------------------------------------------------------
 dnl Process the --with-apxs[=FILE] command line argument
 dnl
 dnl   Use Apache's APXS utility to compile the Apache module (1.3/2.0 is
 dnl   detected and APR variables are set accordingly).
+dnl
+dnl New vars: APXS
+dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 AC_ARG_WITH(apxs,
   [  --with-apxs[=FILE]      build a shared Apache module. If FILE was not
@@ -146,40 +247,61 @@ AC_ARG_WITH(apxs,
       AC_MSG_ERROR([target module already defined as ${MODULE}])
     fi
 
-    APXS="${withval}"
+    case "${withval}" in
+    yes|YES|true|TRUE)
+      LOCAL_CHECK_PROG(APXS,apxs)
+      ;;
+    *)
+      APXS="${withval}"
+      ;;
+    esac
+
+    if ${TEST} ! -f ${APXS}
+    then
+      APXS=""
+    fi
 
     if ${TEST} -z "${APXS}"
     then
-      APXS="yes"
+      AC_MSG_ERROR([cannot find apxs])
     fi
 
-    if ${TEST} "${APXS}" = "yes"
+    dnl ----------------------------------------------------------------------
+    dnl Detect APXS 1.3/2.0
+    dnl ----------------------------------------------------------------------
+    local_apache=`${GREP} STANDARD20 ${APXS}`
+    if  ${TEST} -n "${local_apache}"
     then
-      AC_PATH_PROG(APXS,apxs,${PATH})
-    fi
 
-    apache=`${GREP} STANDARD20 ${APXS}`
-    if  ${TEST} -n "${apache}"
-    then
+      dnl -----------------------------------------------
+      dnl APXS 2.0
+      dnl   Note: APXS for 2.0 is broken, so we need to
+      dnl   "discover" some of the values manually hoping
+      dnl   to get the right layout.
+      dnl
+      dnl New vars: N/A
+      dnl Upd vars: APR_VARFIL APR_LIBDIR APR_INCDIR
+      dnl -----------------------------------------------
       MODULE="apache-2.0"
-dnl ### FIXME ###
-dnl ### APXS For Apache 2.0 doesn't report the right values, we have to ###
-dnl ### guess from the prefix and hope everything goes all right ###
-      apache_prefix="`apxs -q PREFIX`"
-      APR_VARFIL="${apache_prefix}/lib/APRVARS"
-      APR_LIBDIR="${apache_prefix}/lib"
-      APR_INCDIR="${apache_prefix}/include"
-      APR_SRCDIR=""
+      local_prefix="`apxs -q PREFIX`"
+      APR_VARFIL="${local_prefix}/lib/APRVARS"
+      APR_LIBDIR="${local_prefix}/lib"
+      APR_INCDIR="${local_prefix}/include"
+      unset local_prefix
     else
+
+      dnl ------------------------------------------
+      dnl APXS 1.3
+      dnl
+      dnl New vars: N/A
+      dnl Upd vars: APR_VARFIL APR_LIBDIR APR_INCDIR
+      dnl ------------------------------------------
       MODULE="apache-1.3"
       APR_VARFIL=""
       APR_LIBDIR=""
       APR_INCDIR=""
-      if ${TEST} -z "${APR_SRCDIR}"
-      then
-        AC_MSG_ERROR([You must specify --with-apr\[=DIR\] with this module])
-      fi
     fi
+    unset local_apache
   ]
 )
 
@@ -198,62 +320,59 @@ AC_MSG_RESULT([${MODULE}])
 dnl --------------------------------------------------------------------------
 dnl Configure the APR source distribution
 dnl 
-dnl   This step gets executed ONLY if APR_SRCDIR's length is nonzero. In
-dnl   case of Apache 2.0 and other APR based servers APR_SRCDIR must be set
-dnl   to the empty string "", and APR_INCDIR, APR_LIBDIR and APR_VARFIL must
-dnl   be defined with the appropriate values on where respectively apr.h,
-dnl   libapr.so/.a and APRVARS reside.
+dnl   This step gets executed ONLY if APR_VARFIL's length zero. Basically, if
+dnl   the module doesn't provide us with a name for the APRVARS file.
+dnl
+dnl New vars: N/A
+dnl Upd vars: APR_VARFIL APR_LIBDIR APR_INCDIR
 dnl --------------------------------------------------------------------------
-if ${TEST} -n "${APR_SRCDIR}"
+if ${TEST} -z "${APR_VARFIL}"
 then
 
   dnl -----------------------------------------------
   dnl Check if we were supplied a valid APR directory
   dnl -----------------------------------------------
-
-  if ${TEST} ! -d "${APR_SRCDIR}" ; then
-    AC_MSG_ERROR([Cannot find APR sources directory \"${APR_SRCDIR}\"])
+  if ${TEST} ! -d "${APR_SRCDIR}"
+  then
+    AC_MSG_ERROR([APR sources not found. Use --with-apr\[=DIR\]...])
   fi
-  
-  if ${TEST} ! -x "${APR_SRCDIR}/buildconf" ; then
-    AC_MSG_ERROR([Cannot find APR buildconf program in \"${APR_SRCDIR}\"])
-  fi
-  
   LOCAL_RESOLVEDIR(APR_SRCDIR,[${APR_SRCDIR}],[full APR directory path])
   
-  dnl ---------------------------------------------
-  dnl Build the configure script for APR and run it
-  dnl ---------------------------------------------
-  
-  curdir=`pwd`
-  cd ${APR_SRCDIR}
-  
+  dnl ------------------------------
+  dnl Build the APR configure script
+  dnl ------------------------------
   LOCAL_HEADER([Building APR configure script])
-  LOCAL_FILTEREXEC(ret,
+  LOCAL_FILTEREXEC(local_return,
     [./buildconf],
-    [APR buildconf])
-  if ${TEST} "${ret}" -ne "0"
+    [APR buildconf],
+    [${APR_SRCDIR}])
+
+  if ${TEST} "${local_return}" -ne "0"
   then
-    AC_MSG_ERROR([APR buildconf terminated with error code ${ret}])
+    AC_MSG_ERROR([APR buildconf terminated with error code ${local_return}])
   fi
   
+  dnl ----------------------------
+  dnl Run the APR configure script
+  dnl ----------------------------
   LOCAL_HEADER([Configuring APR])
-  LOCAL_FILTEREXEC(ret,
+  LOCAL_FILTEREXEC(local_return,
     [./configure --enable-static --disable-shared --disable-threads],
-    ["APR configure"])
-  if ${TEST} "${ret}" -ne "0"
+    ["APR configure"],
+    [${APR_SRCDIR}])
+
+  if ${TEST} "${local_return}" -ne "0"
   then
-    AC_MSG_ERROR([APR configure script terminated with error code ${ret}])
+    AC_MSG_ERROR([APR configure script terminated with error code ${local_return}])
   fi
-  cd ${curdir}
 
   APR_INCDIR="${APR_SRCDIR}/include"
   APR_LIBDIR="${APR_SRCDIR}/lib"
   APR_VARFIL="${APR_SRCDIR}/APRVARS"
 fi
 
-
-
-
-AC_OUTPUT(Makefile)
+dnl --------------------------------------------------------------------------
+dnl Finish up
+dnl --------------------------------------------------------------------------
+AC_OUTPUT(Makefile Makedefs)
 LOCAL_HEADER([All done. Now you can issue \"make\". Good luck.])
