@@ -48,6 +48,9 @@ typedef struct nsapi_private_data nsapi_private_data_t;
 static int init_on_other_thread_is_done = JK_FALSE;
 static int init_on_other_thread_is_ok = JK_FALSE;
 
+static const char ssl_cert_start[] = "-----BEGIN CERTIFICATE-----\r\n";
+static const char ssl_cert_end[] = "\r\n-----END CERTIFICATE-----\r\n";
+
 static jk_logger_t *logger = NULL;
 static jk_worker_env_t worker_env;
 
@@ -400,8 +403,14 @@ static int init_ws_service(nsapi_private_data_t * private_data,
 
     s->ssl_key_size = -1;       /* required by Servlet 2.3 Api, added in jtc */
     if (s->is_ssl) {
-        s->ssl_cert = pblock_findval("auth-cert", private_data->rq->vars);
-        if (s->ssl_cert) {
+        char *ssl_cert = pblock_findval("auth-cert", private_data->rq->vars);
+        if (ssl_cert != NULL) {
+            s->ssl_cert = jk_pool_alloc(s->pool, sizeof(ssl_cert_start)+
+                                                 strlen(ssl_cert)+
+                                                 sizeof(ssl_cert_end));
+            strcpy(s->ssl_cert, ssl_cert_start);
+            strcat(s->ssl_cert, ssl_cert);
+            strcat(s->ssl_cert, ssl_cert_end);
             s->ssl_cert_len = strlen(s->ssl_cert);
         }
         s->ssl_cipher = pblock_findval("cipher", private_data->sn->client);
