@@ -443,7 +443,7 @@ Make the source with MSDEV
 </ul>
 <screen>
 <note>Change directory to the isapi plugins source directory</note>
-<typedos>cd c:\home\apache\jk\isapi</typedos>
+<typedos>cd c:\home\apache\jk\iis</typedos>
 <note>Build the sources using MSDEV</note>
 <typedos>MSDEV isapi.dsp /MAKE ALL</typedos>
 </screen>
