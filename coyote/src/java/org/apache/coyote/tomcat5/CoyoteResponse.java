@@ -1033,10 +1033,16 @@ public class CoyoteResponse
      * @param url URL to be encoded
      */
     public String encodeURL(String url) {
-
-        if (isEncodeable(toAbsolute(url))) {
+        
+        String absolute = toAbsolute(url);
+        if (isEncodeable(absolute)) {
             HttpServletRequest hreq =
                 (HttpServletRequest) request.getRequest();
+            
+            // W3c spec clearly said 
+            if (url.equalsIgnoreCase("")){
+                url = absolute;
+            }
             return (toEncoded(url, hreq.getSession().getId()));
         } else {
             return (url);
