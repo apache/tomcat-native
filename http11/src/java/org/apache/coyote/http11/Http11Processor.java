@@ -455,6 +455,19 @@ public class Http11Processor implements Processor, ActionHook {
 
             started = false;
 
+        } else if (actionCode == ActionCode.ACTION_REQ_ATTRIBUTE ) {
+
+            // XXX Will be fixed if we replace ActionCode/Action with TcHandler,
+            // the context can be used to pass and return information
+//             try {
+//                 if(key.equals("javax.servlet.request.cipher_suite"))
+//                     return httpReq.sslSupport.getCipherSuite();
+//                 if(key.equals("javax.servlet.request.X509Certificate"))
+//                     return httpReq.sslSupport.getPeerCertificateChain();
+//             } catch (Exception e){
+//                 log.warn("Exception getting SSL attribute " + key,e);
+//                 return null;
+//             }
         }
 
     }
