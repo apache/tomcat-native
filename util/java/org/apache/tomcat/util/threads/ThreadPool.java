@@ -125,6 +125,9 @@ public class ThreadPool  {
      */
     protected boolean stopThePool;
 
+    /* Flag to control if the main thread is 'daemon' */
+    protected boolean isDaemon=true;
+    
     static int debug=0;
 
     /**
@@ -176,6 +179,18 @@ public class ThreadPool  {
         return maxSpareThreads;
     }
 
+    /** The default is true - the created threads will be
+     *  in daemon mode. If set to false, the control thread
+     *  will not be daemon - and will keep the process alive.
+     */
+    public void setDaemon( boolean b ) {
+        isDaemon=b;
+    }
+    
+    public boolean getDaemon() {
+        return isDaemon;
+    }
+    
     //
     // You may wonder what you see here ... basically I am trying
     // to maintain a stack of threads. This way locality in time
@@ -395,7 +410,7 @@ public class ThreadPool  {
             shouldTerminate = false;
             this.p = p;
             t = new Thread(this);
-            t.setDaemon(true);
+            t.setDaemon(p.getDaemon() );
 	    t.setName( "MonitorRunnable" );
             t.start();
         }
