@@ -111,6 +111,9 @@
 <!-- ========== Detection and Reports ===================================== -->
 
 
+    <target name="report-tc5" if="tomcat5.detect" >
+	<echo message="Tomcat5 detected "  />
+    </target>
     <target name="report-tc4" if="tomcat4.detect" >
 	<echo message="Tomcat4 detected "  />
     </target>
@@ -118,7 +121,7 @@
 	<echo message="Tomcat3.3 detected "  />
     </target>
 
-    <target name="report" depends="report-tc4, report-tc33" />
+    <target name="report" depends="report-tc5, report-tc4, report-tc33" />
 
 
 <!-- ========== Executable Targets ======================================== -->
@@ -141,7 +144,26 @@
     <mkdir dir="${build.home}/docs/api"/>
     <mkdir dir="${build.home}/lib"/>
     <mkdir dir="${build.home}/tests"/>
-    <available property="tomcat4.detect" file="${catalina.home}/server/lib/catalina.jar" />
+    <condition property="tomcat5.detect">
+      <and>
+        <available file="${catalina.home}/server/lib/catalina.jar" />
+        <available
+          classname="javax.servlet.ServletRequestEvent"
+          classpath="${catalina.home}/common/lib/servlet.jar"
+        />
+      </and>
+    </condition>
+    <condition property="tomcat4.detect">
+      <and>
+        <available file="${catalina.home}/server/lib/catalina.jar" />
+        <not>
+          <available
+            classname="javax.servlet.ServletRequestEvent"
+            classpath="${catalina.home}/common/lib/servlet.jar"
+          />
+        </not>
+      </and>
+    </condition>
     <available property="tomcat33.detect" file="${tomcat33.home}/lib/common/tomcat_core.jar" />
   </target>
 
@@ -171,6 +193,21 @@
     </copy>
   </target>
 
+
+  <target name="compile.tomcat5" if="tomcat5.detect"
+   description="Compile Tomcat 5.x Adapter">
+    <javac  srcdir="${source.home}"
+           destdir="${build.home}/classes"
+             debug="${compile.debug}"
+       deprecation="${compile.deprecation}"
+          optimize="${compile.optimize}">
+      <classpath refid="compile.classpath"/>
+      <include name="org/apache/coyote/tomcat5/**" />
+    </javac>
+    <copy    todir="${build.home}/classes" filtering="on">
+      <fileset dir="${source.home}" excludes="**/*.java"/>
+    </copy>
+  </target>
 
   <target name="compile.tomcat4" if="tomcat4.detect"
    description="Compile Tomcat 4.x Adapter">

@@ -62,7 +62,7 @@
  */
 
 
-package org.apache.coyote.tomcat4;
+package org.apache.coyote.tomcat5;
 
 
 import java.io.IOException;
@@ -147,7 +147,7 @@ public class CoyoteResponse
      * Descriptive information about this Response implementation.
      */
     protected static final String info =
-        "org.apache.coyote.tomcat4.CoyoteResponse/1.0";
+        "org.apache.coyote.tomcat5.CoyoteResponse/1.0";
 
 
     /**
@@ -716,6 +716,24 @@ public class CoyoteResponse
 
     }
 
+
+    /*
+     * Overrides the name of the character encoding used in the body
+     * of the request. This method must be called prior to reading
+     * request parameters or reading input using getReader().
+     *
+     * @param charset String containing the name of the chararacter encoding.
+     */
+    public void setCharacterEncoding(String charset) {
+
+        if (isCommitted())
+            return;
+
+        if (included)
+            return;     // Ignore any call from an included servlet
+
+	coyoteResponse.setCharacterEncoding(charset);
+    }
 
     /**
      * Set the Locale that is appropriate for this response, including
