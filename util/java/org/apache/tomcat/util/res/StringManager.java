@@ -194,6 +194,7 @@ public class StringManager {
                     nonNullArgs[i] = "null";
                 }
             }
+            if( value==null ) value=key;
             iString = MessageFormat.format(value, nonNullArgs);
         } catch (IllegalArgumentException iae) {
             StringBuffer buf = new StringBuffer();
