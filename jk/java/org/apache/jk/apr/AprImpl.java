@@ -244,6 +244,7 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
 
             initialize();
             jkSetAttribute(0, 0, "channel:jni", "starting");
+            log.info("JK2: Initialized apr" );
         } catch( Throwable t ) {
             throw new IOException( t.getMessage() );
         }
@@ -336,4 +337,6 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
             ex.printStackTrace();
         }
     }
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( AprImpl.class );
 }
