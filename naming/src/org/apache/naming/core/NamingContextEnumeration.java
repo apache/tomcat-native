@@ -75,7 +75,8 @@ import javax.naming.NameClassPair;
  */
 
 public class NamingContextEnumeration 
-    implements NamingEnumeration {
+    implements NamingEnumeration
+{
 
 
     // ----------------------------------------------------------- Constructors
@@ -138,7 +139,5 @@ public class NamingContextEnumeration
         NamingEntry entry = (NamingEntry) enum.nextElement();
         return new NameClassPair(entry.name, entry.value.getClass().getName());
     }
-
-
 }
 

@@ -1,6 +1,6 @@
 /*
  * ====================================================================
- *
+ * 
  * The Apache Software License, Version 1.1
  *
  * Copyright (c) 1999 The Apache Software Foundation.  All rights 
@@ -53,72 +53,115 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * [Additional notices, if required by prior licensing conditions]
- *
  */ 
 
-
-package org.apache.naming.core;
-
-import java.util.Hashtable;
-import java.util.HashMap;
-import javax.naming.Context;
-import javax.naming.Name;
-import javax.naming.NameParser;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.CompositeName;
-import javax.naming.NameParser;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.ModificationItem;
-import javax.naming.directory.SearchControls;
-import org.apache.tomcat.util.res.StringManager;
+package org.apache.naming.ant;
 
 import java.io.*;
+import java.util.*;
+
+import org.apache.tools.ant.*;
+
+import javax.naming.*;
 
 /**
- * Utility class providing additional operations on DirContexts.
- * Instead of extending DirContext we use a helper who will work
- * on any context, including 'foreign' ones ( like JNDI, etc ).
- *
- * Typical methods - conversions ( int, boolean), etc.
- *
- * This code should check if the context extend our BaseDirContext
- * and use specific features ( like notes - to cache the conversion
- * results for example ), but fallback for external contexts.
- *
- * @author Costin Manolache
+ *  Task to set up JNDI properties ( the hashtable that is passed to InitialContext )
+ *  It has explicit attributes for common properties, and supports generic name/value
+ *  elements.
+ * 
+ * @author  Costin Manolache
  */
-public class DirContextHelper  {
-    static DirContextHelper instance=new DirContextHelper();
+public class JndiEnv extends Task  {
+ 
+    Hashtable env = new Hashtable();
+    String url;
+    boolean topLevel=true;
     
-    public static DirContextHelper getInstance() {
-        return instance;
+    public JndiEnv() {
     }
     
+    public JndiEnv(boolean child) {
+        topLevel=false;
+    }
     
-    /** Debugging string - the context, imediate childs and attributes
-     */
-    public String toString(DirContext ctx) {
-        return "";
+    public String getProviderUrl() {
+        return (String) env.get(Context.PROVIDER_URL);
+    }
+    
+    public void setProviderUrl(String providerUrl) {
+        env.put(Context.PROVIDER_URL, providerUrl);
     }
 
-    public int getIntAttribute( DirContext ctx, String name ) {
-        return 0;
+    public String getUrl() {
+        return url;
     }
 
-    public long getLongAttribute( DirContext ctx, String name ) {
-        return 0;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
-    public String getStringAttribute( DirContext ctx, String name ) {
-        return null;
+    public String getInitialFactory() {
+        return (String) env.get(Context.INITIAL_CONTEXT_FACTORY);
     }
 
-    public boolean getBooleanAttribute( DirContext ctx, String name ) {
-        return false;
+    public void setInitialFactory(String initialFactory) {
+        env.put(Context.INITIAL_CONTEXT_FACTORY, initialFactory);
+    }
+
+    public String getAuthoritative() {
+        return (String) env.get(Context.AUTHORITATIVE);
+    }
+
+    public void setAuthoritative(String authoritative) {
+        env.put(Context.AUTHORITATIVE, authoritative);
+    }
+
+    public String getObjectFactories() {
+        return (String) env.get(Context.OBJECT_FACTORIES);
+    }
+
+    public void setObjectFactories(String objectFactories) {
+        env.put(Context.OBJECT_FACTORIES, objectFactories);
+    }
+
+    public String getUrlPkgPrefixes() {
+        return (String) env.get(Context.URL_PKG_PREFIXES);
+    }
+
+    public void setUrlPkgPrefixes(String urlPkgPrefixes) {
+        env.put(Context.URL_PKG_PREFIXES, urlPkgPrefixes);
+    }
+
+    public void execute() {
+        if( nvEntries!=null ) {
+            for( int i=0; i<nvEntries.size(); i++ ) {
+                NameValue nv=(NameValue)nvEntries.elementAt(i);
+                env.put( nv.name, nv.value);
+            }
+        }
+        // If this is a standalone task - add a ref in the project.
+        if(topLevel)
+            project.addReference( "globalJndiEnv", this );
+    }
+
+    Vector nvEntries;
+    
+    public NameValue addEnv() {
+        if( nvEntries==null ) nvEntries=new Vector();
+        NameValue nv=new NameValue();
+        nvEntries.addElement( nv );
+        return nv;
+    }
+    
+    public static class NameValue {
+        String name;
+        String value;
+        
+        public void setName(String name) {
+            this.name=name;
+        }
+        public void setValue(String value) {
+            this.value=value;
+        }
     }
 }
-

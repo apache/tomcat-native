@@ -107,21 +107,20 @@ public class BaseDirContext implements DirContext {
      * Builds a base directory context.
      */
     public BaseDirContext() {
-        this( new Hashtable() );
+        this.env=new Hashtable();
     }
 
     /**
      * Builds a base directory context using the given environment.
      */
     public BaseDirContext(Hashtable env) {
+        this.env=new Hashtable();
         if (env != null ) {
             Enumeration envEntries = env.keys();
             while (envEntries.hasMoreElements()) {
                 String entryName = (String) envEntries.nextElement();
                 this.env.put(entryName, env.get(entryName));
             }
-        } else {
-            this.env=new Hashtable();
         }
     }
 
@@ -233,16 +232,16 @@ public class BaseDirContext implements DirContext {
     
     /** The lookup method to implement
      */
-    protected Object lookup(Name name, boolean resolveLinks, Object o)
+    public Object lookup(Name name, boolean resolveLinks, Object o)
         throws NamingException
     {
-        throws OperationNotSupportedException();
+        throw new OperationNotSupportedException();
     }
 
     public void bind(Name name, Object obj, Attributes attrs, boolean rebind )
         throws NamingException
     {
-        throws OperationNotSupportedException();
+        throw new OperationNotSupportedException();
     }
     
     public void unbind(Name name, boolean isContext)

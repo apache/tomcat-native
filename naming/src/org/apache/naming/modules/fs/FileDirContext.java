@@ -257,11 +257,16 @@ public class FileDirContext extends BaseDirContext {
      * @return the object bound to name
      * @exception NamingException if a naming exception is encountered
      */
-    public Object lookup(Name nameO, boolean resolveLinkx, Object o)
+    public Object lookup(Name nameObj, boolean resolveLinkx, Object o)
         throws NamingException
     {
-        if( log.isDebugEnabled() ) log.debug( "lookup " + nameO );
-        String name=nameO.toString(); // we need to convert anyway, for File constructor
+        if( log.isDebugEnabled() ) log.debug( "lookup " + nameObj );
+
+        System.out.println("XXX " + nameObj.get(0));
+        if( "fs:".equals( nameObj.get(0).toString() ))
+            nameObj=nameObj.getSuffix(1);
+        
+        String name=nameObj.toString(); // we need to convert anyway, for File constructor
         
         Object result = null;
         File file = file(name);
@@ -302,6 +307,8 @@ public class FileDirContext extends BaseDirContext {
     public void unbind(Name nameObj)
         throws NamingException
     {
+        if( "fs:".equals( nameObj.get(0).toString() ))
+            nameObj=nameObj.getSuffix(1);
         String name=nameObj.toString();
         if( log.isDebugEnabled() ) log.debug( "unbind " + name );
         File file = file(name);
@@ -775,7 +782,7 @@ public class FileDirContext extends BaseDirContext {
                 //object = new FileResource(currentFile);
                 object = currentFile;
             }
-            entry = new NamingEntry(names[i], object, NamingEntry.ENTRY);
+            entry = new NamingEntry(names[i], object, null, NamingEntry.ENTRY);
             entries.addElement(entry);
 
         }

@@ -273,13 +273,9 @@ public class MemoryNamingContext extends BaseDirContext {
     }
 
     // XXX Make it iterative, less objects
-    private NamingEntry findNamingEntry(Name name, boolean resolveLinks)
+    private NamingEntry findNamingEntry(Name name, boolean resolveLinks, Object o)
         throws NamingException
     {
-        // Removing empty parts
-        while ((!name.isEmpty()) && (name.get(0).length() == 0))
-            name = name.getSuffix(1);
-        
          if (name.isEmpty()) {
 //             // If name is empty, a newly allocated naming context is returned
 //             MemoryNamingContext mmc= new MemoryNamingContext(env);
@@ -302,18 +298,25 @@ public class MemoryNamingContext extends BaseDirContext {
                 throw new NamingException
                     (sm.getString("namingContext.contextExpected"));
             }
-            //            return ((Context) entry.value).lookup(name.getSuffix(1));
-            return ((MemoryNamingContext) entry.value).findNamingEntry(name.getSuffix(1), resolveLinks);
+            return entry;
         } else {
             return entry;
         }
     }
 
-    protected Object lookup(Name name, boolean resolveLinks, Object o)
+    public Object lookup(Name name, boolean resolveLinks, Object o)
         throws NamingException
     {
-        NamingEntry entry=findNamingEntry( name, resolveLinks );
+        // Removing empty parts
+        while ((!name.isEmpty()) && (name.get(0).length() == 0))
+            name = name.getSuffix(1);
+        
+        NamingEntry entry=findNamingEntry( name, resolveLinks, o );
 
+        if( entry.type == NamingEntry.CONTEXT ) {
+            return ((BaseDirContext) entry.value).lookup(name.getSuffix(1), resolveLinks, o);
+        }
+        
         if ((resolveLinks) && (entry.type == NamingEntry.LINK_REF)) {
             String link = ((LinkRef) entry.value).getLinkName();
             if (link.startsWith(".")) {

@@ -165,7 +165,5 @@ public class ContextAccessController {
     public static boolean isWritable(Object name) {
         return !(readOnlyContexts.containsKey(name));
     }
-
-
 }
 

@@ -68,7 +68,7 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 
 import org.apache.tomcat.util.res.StringManager;
-import org.apache.naming.memory.*;
+import org.apache.naming.modules.memory.*;
 
 /* This delegates to another context, removing a prefix.
    XXX make it generic, move to core. The context thread can be
@@ -674,7 +674,9 @@ public class SelectorContext implements Context {
             if (initialContext == null) {
                 // Allocating a new context and binding it to the appropriate 
                 // name
-                initialContext = new MemoryNamingContext(env, ICName);
+                // XXX Should return null, let the caller create something
+                // Or use a different constructor.
+                initialContext = new MemoryNamingContext(env);
                 ContextBindings.bindContext(ICName, initialContext);
             }
             return initialContext;

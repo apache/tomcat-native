@@ -33,12 +33,6 @@
         <pathelement location="${jndi.home}/lib/jndibrowser.jar"/>
     </path>
 
-    <systemPath pathRef="build-main.classpath" />
-    <taskdef name="jndiSet" classname="org.apache.naming.ant.JndiSet"/>
-    <taskdef name="jndiProperties" classname="org.apache.naming.ant.JndiProperties"/>
-    <taskdef name="jndiFileCtx" classname="org.apache.naming.file.FileDirContext"/>
-
-    <jndiProperties/>
  
     <target name="main"  >
         <mkdir dir="${naming.build.dir}/classes"/>
@@ -57,6 +51,12 @@
     </target>
 
   <target name="test"  >
+    <systemPath pathRef="build-main.classpath" />
+    <taskdef name="jndiSet" classname="org.apache.naming.ant.JndiSet"/>
+    <taskdef name="jndiProperties" classname="org.apache.naming.ant.JndiProperties"/>
+    <taskdef name="jndiFileCtx" classname="org.apache.naming.modules.fs.FileDirContext"/>
+
+    <jndiProperties/>
     <jndiSet context="/foo" value="bar" />
 
     <jndiFileCtx docBase="/tmp" id="docBaseId" />

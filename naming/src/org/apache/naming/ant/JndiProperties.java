@@ -87,7 +87,11 @@ public class JndiProperties extends Task implements PropertyInterceptor {
 //         System.setProperty( "java.naming.factory.initial", "org.apache.naming.memory.MemoryInitialContextFactory" );
     }
     
-    public Object getProperty( Project p, String ns, String name ) {
+    public boolean setProperty( Object p, String ns, String name, Object value ) {
+        return false;
+    }
+
+    public Object getProperty( Object p, String ns, String name ) {
         if( ! name.startsWith( PREFIX ) )
             return null;
         

@@ -57,78 +57,114 @@
  *
  */ 
 
-package org.apache.naming.modules.fs;
 
-import java.util.Hashtable;
-import javax.naming.Name;
-import javax.naming.Context;
-import javax.naming.NamingException;
-import javax.naming.spi.ObjectFactory;
-import javax.naming.spi.InitialContextFactory;
-import org.apache.naming.modules.memory.MemoryNamingContext;
-//import org.apache.naming.ContextBindings;
+package org.apache.naming.core;
+
+import java.util.*;
+import javax.naming.*;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.ModificationItem;
+import javax.naming.directory.SearchControls;
+import org.apache.tomcat.util.res.StringManager;
 
 /**
- * Context factory for the "file:" namespace.
- * <p>
- * <b>Important note</b> : This factory MUST be associated with the "java" URL
- * prefix, which can be done by either :
- * <ul>
- * <li>Adding a 
- * java.naming.factory.url.pkgs=org.apache.naming property to the JNDI properties file</li>
- * <li>Setting an environment variable named Context.URL_PKG_PREFIXES with 
- * its value including the org.apache.naming package name. 
- * More detail about this can be found in the JNDI documentation : 
- * {@link javax.naming.spi.NamingManager#getURLContext(java.lang.String, java.util.Hashtable)}.</li>
- * </ul>
- * 
+ * Base Directory Context implementation. All j-t-c/naming contexts should
+ * extend it. 
+ *
+ *
  * @author Remy Maucherat
+ * @author Costin Manolache
  */
-
-public class fsURLContextFactory implements ObjectFactory,InitialContextFactory
-{
-    private static org.apache.commons.logging.Log log=
-        org.apache.commons.logging.LogFactory.getLog( fsURLContextFactory.class );
-    /**
-     * Initial context.
-     */
-    protected static Context initialContext = null;
-
-
-    // --------------------------------------------------------- Public Methods
+public class BaseNamingImpl {
 
     /**
-     * Crete a new Context's instance.
+     * Builds a base directory context.
      */
-    public Object getObjectInstance(Object obj, Name name, Context nameCtx,
-                                    Hashtable environment)
-        throws NamingException {
-        // Called with null/null/null if fs:/tmp/test
-        if( log.isDebugEnabled() ) log.debug( "getObjectInstance " + obj + " " + name + " " + nameCtx + " " + environment);
-
-        FileDirContext fc= new FileDirContext(environment);
-        fc.setDocBase( "/" );
-        fc.setURLPrefix("fs:");
-        return fc;
+    public BaseNamingImpl() {
     }
 
 
-    /**
-     * Get a new (writable) initial context.
+    /** Configuration - called for all entries in the 'env'.
+     *  The base implementation will call IntrospectionUtil and
+     *  call explicit setter methods.
      */
-    public Context getInitialContext(Hashtable environment)
+    public void setEnv(String name, Object value ) {
+
+    }
+
+    /** The context facade that calls us.
+     */
+    public void setContext( Context ctx ) {
+
+    }
+    
+    /**
+     * 
+     */
+    public void recycle() {
+    }
+
+    // -------------------- Abstract methods -------------------- 
+    // This is what a subclass should override
+    
+    /** The lookup method.
+     */
+    public Object lookup(Name name, boolean resolveLinks, Object o)
         throws NamingException
     {
-        // If the thread is not bound, return a shared writable context
-        if (initialContext == null) {
-            FileDirContext fc= new FileDirContext(environment);
-            fc.setDocBase( "/" );
-            fc.setURLPrefix("fs:");
-            initialContext=fc;
-            if( log.isDebugEnabled() )
-                log.debug("Create initial fs context "+ environment);
-        }
-        return initialContext;
+        throw new OperationNotSupportedException();
     }
+
+    public void bind(Name name, Object obj, Attributes attrs, boolean rebind )
+        throws NamingException
+    {
+        throw new OperationNotSupportedException();
+    }
+    
+    public void unbind(Name name, boolean isContext)
+        throws NamingException
+    {
+        throw new OperationNotSupportedException();
+    }
+
+    public void size() throws NamingException
+    {
+        throw new OperationNotSupportedException("size");
+    }
+
+    public Name childNameAt( int i ) throws NamingException
+    {
+        return null;
+    }
+
+    public Object childAt( int i ) throws NamingException
+    {
+        return null;
+    }
+    
+    public DirContext createSubcontext(Name name, Attributes attrs)
+        throws NamingException
+    {
+        // XXX We can implement a decent default using bind and the current class.
+        throw new OperationNotSupportedException();
+    }
+
+    public void rename(Name oldName, Name newName)
+        throws NamingException
+    {
+        // Override if needed
+        Object value = lookup(oldName, false, null);
+        // XXX Copy attributes
+        bind(newName, value, null, true);
+        unbind(oldName, false);
+    }
+
+    public Attributes getAttributes(Name name, String[] attrIds)
+        throws NamingException
+    {
+        throw new OperationNotSupportedException();
+    }    
 }
 

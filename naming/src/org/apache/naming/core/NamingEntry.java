@@ -58,17 +58,17 @@
  */ 
 
 
-package org.apache.naming.modules.memory;
+package org.apache.naming.core;
 
 import javax.naming.directory.*;
 
 /**
- * Represents a binding in a NamingContext.
+ * Represents a binding in a NamingContext. All jtc contexts should
+ * use this class to represent entries.
  *
  * @author Remy Maucherat
- * @version $Revision$ $Date$
+ * @author Costin Manolache
  */
-
 public class NamingEntry {
 
 
@@ -106,8 +106,19 @@ public class NamingEntry {
 
     public Attributes attributes;
 
+    // cached values
+    private boolean hasIntValue=false;
+    private boolean hasBoolValue=false;
+    private boolean hasLongValue=false;
+    
+    private int intValue;
+    private boolean boolValue;
+    private long longValue;
+
     // --------------------------------------------------------- Object Methods
 
+    public void recycle() {
+    }
 
     public boolean equals(Object obj) {
         if ((obj != null) && (obj instanceof NamingEntry)) {
@@ -117,10 +128,8 @@ public class NamingEntry {
         }
     }
 
-
     public int hashCode() {
         return name.hashCode();
     }
-
 
 }

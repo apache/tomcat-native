@@ -66,7 +66,7 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.spi.ObjectFactory;
 import javax.naming.spi.InitialContextFactory;
-import org.apache.naming.memory.MemoryNamingContext;
+import org.apache.naming.modules.memory.MemoryNamingContext;
 //import org.apache.naming.ContextBindings;
 
 import org.apache.tomcat.util.res.StringManager;
@@ -143,7 +143,7 @@ public class javaURLContextFactory implements ObjectFactory, InitialContextFacto
         } else {
             // If the thread is not bound, return a shared writable context
             if (initialContext == null)
-                initialContext = new MemoryNamingContext(environment, MAIN);
+                initialContext = new MemoryNamingContext(environment);
             return initialContext;
         }
     }
