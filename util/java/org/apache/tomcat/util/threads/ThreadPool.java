@@ -133,7 +133,12 @@ public class ThreadPool  {
 
     /** Name of the threadpool
      */
-    protected String name=null;
+    protected String name = "TP";
+
+    /**
+     * Sequence.
+     */
+    protected int sequence = 1;
 
     /**
      * Helper object for logging
@@ -238,6 +243,18 @@ public class ThreadPool  {
     
     public boolean getDaemon() {
         return isDaemon;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getSequence() {
+        return sequence++;
     }
 
     public void addThread( Thread t, ControlRunnable cr ) {
@@ -499,7 +516,7 @@ public class ThreadPool  {
             shouldTerminate = false;
             t = new Thread(this);
             t.setDaemon(p.getDaemon() );
-	    t.setName( "MonitorRunnable" );
+	    t.setName(p.getName() + "-Monitor");
             t.start();
         }
 
@@ -592,6 +609,7 @@ public class ThreadPool  {
             this.p = p;
             t = new ThreadWithAttributes(p, this);
             t.setDaemon(true);
+            t.setName(p.getName() + "-Processor" + p.getSequence());
             t.start();
             p.addThread( t, this );
 	    noThData=true;
