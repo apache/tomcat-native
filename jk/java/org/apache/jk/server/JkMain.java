@@ -81,14 +81,15 @@ public class JkMain
     String propFile;
     Properties props=new Properties();
 
-    Worker defaultWorker;
-    String jkHome;
-
     public JkMain()
     {
     }
-
-    public void setPropFile( String p  ) {
+    // -------------------- Setting --------------------
+    
+    /** Load a .properties file into and set the values
+     *  into jk2 configuration.
+     */
+    public void setPropertiesFile( String p  ) {
         propFile=p;
         try {
             props.load( new FileInputStream(propFile) );
@@ -97,91 +98,106 @@ public class JkMain
         }
     }
 
+    /** Set a name/value as a jk2 property
+     */
     public void setProperty( String n, String v ) {
         props.put( n, v );
     }
-    
+
     /**
      * Set the <code>channelClassName</code> that will used to connect to
      * httpd.
      */
     public void setChannelClassName(String name) {
-        props.put( "channel.default.className",name);
+        props.put( "handler.channel.className",name);
     }
 
     /**
-     * Set the <code>channelClassName</code> that will used to connect to
-     * httpd.
+     * Set the <code>workerClassName</code> that will handle the request.
+     * ( sort of 'pivot' in axis :-)
      */
     public void setWorkerClassName(String name) {
-        props.put( "worker.default.className",name);
+        props.put( "handler.container.className",name);
     }
 
-    public void setDefaultWorker( Worker w ) {
-        defaultWorker=w;
-    }
-
+    /** Set the base dir of jk2. ( including WEB-INF if in a webapp ).
+     *  We'll try to guess it from classpath if none is set ( for
+     *  example on command line ), but if in a servlet environment
+     *  you need to use Context.getRealPath or a system property or
+     *  set it expliciltey.
+     */
     public void setJkHome( String s ) {
-        jkHome=s;
+        wEnv.setJkHome(s);
     }
 
-    private Object newInstance( String type, String name, String def )
-        throws IOException
+    
+    // -------------------- Initialization --------------------
+    
+    public void init() throws IOException
     {
-        try {
-            String classN=props.getProperty( type + "." + name + ".className",
-                                             def );
-            Class channelclass = Class.forName(classN);
-            return channelclass.newInstance();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new IOException("Cannot create channel class");
+        String home=wEnv.getJkHome();
+        if( home==null ) {
+            // XXX use IntrospectionUtil to find myself
+        }
+        if( home != null ) {
+            File hF=new File(home);
+            File conf=new File( home, "conf" );
+            File propsF=new File( conf, "jk2.properties" );
+            
+            if( propsF.exists() ) {
+                setPropertiesFile( propsF.getAbsolutePath());
+            } else {
+                if( dL > 0 ) d( "No properties file found " + propsF );
+            }
         }
     }
     
+    
     public void start() throws IOException
     {
-        String workers=props.getProperty( "worker.list", "default" );
+        if( props.get( "handler.request.className" )==null )
+            props.put( "handler.request.className",
+                       "org.apache.jk.common.HandlerRequest" );
+        
+        if( props.get( "handler.channel.className" )==null )
+            props.put( "handler.channel.className",
+                       "org.apache.jk.common.ChannelSocket" );
+
+        // We must have at least 3 handlers:
+        // channel is the 'transport'
+        // request is the request processor or 'global' chain
+        // container is the 'provider'
+        // Additional handlers may exist and be used internally
+        // or be chained to create one of the standard handlers 
+        
+        String workers=props.getProperty( "handler.list",
+                                          "channel,request,container" );
         Vector workerNamesV= split( workers, ",");
 
         for( int i=0; i<workerNamesV.size(); i++ ) {
             String name= (String)workerNamesV.elementAt( i );
-            Worker w=(Worker)newInstance( "worker", name,
-                                          "org.apache.jk.common.WorkerDummy");
+            JkHandler w=wEnv.getHandler( name );
+            if( w==null )
+                w=(JkHandler)newInstance( "handler", name, null );
+            if( w==null ) {
+                d("Can't create handler for name " + name );
+                continue;
+            }
+
+            wEnv.addHandler( name, w );
             
-            processProperties( w, "worker."+ name + "." );
-
-            wEnv.addWorker( name, w );
+            processProperties( w, "handler."+ name + "." );
         }
-        
-        defaultWorker = wEnv.getWorker( "default" );
-
-        // XXX alternatives, setters, etc
-        String channels=props.getProperty( "channel.list", "default" );
-        Vector channelNamesV= split( channels, ",");
-
-        for( int i=0; i<channelNamesV.size(); i++ ) {
-            String name= (String)channelNamesV.elementAt( i );
-            Channel ch=(Channel)newInstance( "channel", name, 
-                                      "org.apache.jk.common.ChannelSocket");
-            processProperties( ch, "channel."+ name + "." );
-
-            if( jkHome != null )
-                this.setProperty( ch, "jkHome", jkHome );
-            
-            wEnv.addChannel( name, ch );
-            ch.setWorker( defaultWorker );
-        }
-
-        // channel and handler should _pull_ the worker from we
-
-        HandlerRequest hReq=new HandlerRequest();
-        hReq.setWorker( defaultWorker );
-        wEnv.addHandler( hReq );
         
         wEnv.start();
     }
 
+    // -------------------- Usefull methods --------------------
+    
+    public WorkerEnv getWorkerEnv() {
+        return wEnv;
+    }
+    
     /* A bit of magic to support workers.properties without giving
        up the clean get/set
     */
@@ -192,6 +208,46 @@ public class JkMain
         IntrospectionUtils.setProperty( target, name, val );
     }
 
+    /* 
+     * Set a handler property
+     */
+    public void setProperty( String handlerN, String name, String val ) {
+        d( "setProperty " + handlerN + " " + name + "=" + val );
+        Object target=wEnv.getHandler( handlerN );
+        IntrospectionUtils.setProperty( target, name, val );
+    }
+
+    // -------------------- Main --------------------
+    
+    public static void main(String args[]) {
+        try {
+            if( args.length == 1 &&
+                ( "-?".equals(args[0]) || "-h".equals( args[0])) ) {
+                System.out.println("Usage: ");
+                System.out.println("  JkMain [workers.properties]");
+                System.out.println();
+                System.out.println("  System properties:");
+                System.out.println("    jk2.home    Base dir of jk2");
+                return;
+            }
+
+            JkMain jkMain=new JkMain();
+
+            jkMain.guessHome();
+            
+            if( args.length > 0  ) 
+                jkMain.setPropertiesFile(args[0]);
+            
+            jkMain.init();
+            jkMain.start();
+        } catch( Exception ex ) {
+            ex.printStackTrace();
+        }
+    }
+
+    // -------------------- Private methods --------------------
+
+    
     private void processProperties(Object o, String prefix) {
         Enumeration keys=props.keys();
         int plen=prefix.length();
@@ -209,6 +265,21 @@ public class JkMain
         }
     }
 
+    private Object newInstance( String type, String name, String def )
+        throws IOException
+    {
+        try {
+            String classN=props.getProperty( type + "." + name + ".className",
+                                             def );
+            if( classN== null ) return null;
+            Class channelclass = Class.forName(classN);
+            return channelclass.newInstance();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new IOException("Cannot create channel class");
+        }
+    }
+
     private Vector split(String s, String delim ) {
          Vector v=new Vector();
         StringTokenizer st=new StringTokenizer(s, delim );
@@ -218,24 +289,21 @@ public class JkMain
         return v;
     }
 
-    public static void main(String args[]) {
-        try {
-            if( args.length == 0 ) {
-                System.out.println("Usage: ");
-                System.out.println("  JkMain workers.properties workerId");
-                return;
-            }
-            
-            String propFile=args[0];
-            
-            JkMain jkMain=new JkMain();
-            jkMain.setPropFile(propFile);
-            jkMain.start();
-        } catch( Exception ex ) {
-            ex.printStackTrace();
+    // guessing home
+    private static String CNAME="org/apache/jk/server/JkMain.class";
+
+    private void guessHome() {
+        String home= wEnv.getJkHome();
+        if( home != null )
+            return;
+        home=IntrospectionUtils.guessInstall( "jk2.home","jk2.home",
+                                              "tomcat-jk2.jar", CNAME );
+        if( home != null ) {
+            if( dL > -1 ) d("Guessed home " + home );
+            wEnv.setJkHome( home );
         }
     }
-
+    
     private static final int dL=0;
     private static void d(String s ) {
         System.err.println( "JkMain: " + s );
