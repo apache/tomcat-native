@@ -155,9 +155,17 @@ public final class Response {
      */
     protected String errorURI = null;
 
+    protected Request req;
 
     // ------------------------------------------------------------- Properties
 
+    public Request getRequest() {
+        return req;
+    }
+
+    public void setRequest( Request req ) {
+        this.req=req;
+    }
 
     public OutputBuffer getOutputBuffer() {
 	return outputBuffer;
@@ -202,7 +210,10 @@ public final class Response {
 
     public void action(ActionCode actionCode, Object param) {
         if (hook != null) {
-            hook.action(actionCode, param);
+            if( param==null ) 
+                hook.action(actionCode, this);
+            else
+                hook.action(actionCode, param);
         }
     }
 
@@ -317,17 +328,17 @@ public final class Response {
 	    throw new IllegalStateException();
 	}
         
-        action(ActionCode.ACTION_RESET, null);
+        action(ActionCode.ACTION_RESET, this);
     }
 
 
     public void finish() throws IOException {
-        action(ActionCode.ACTION_CLOSE, null);
+        action(ActionCode.ACTION_CLOSE, this);
     }
 
 
     public void acknowledge() throws IOException {
-        action(ActionCode.ACTION_ACK, null);
+        action(ActionCode.ACTION_ACK, this);
     }
 
 
@@ -392,6 +403,7 @@ public final class Response {
      *  interceptors to fix headers.
      */
     public void sendHeaders() throws IOException {
+        // XXX This code doesn't send any notification :-)
 	commited = true;
     }
 

@@ -183,6 +183,7 @@ public final class Request {
     private Hashtable attributes=new Hashtable();
 
     private Response response;
+    private ActionHook hook;
     // ------------------------------------------------------------- Properties
 
 
@@ -354,8 +355,21 @@ public final class Request {
 
     public void setResponse( Response response ) {
         this.response=response;
+        response.setRequest( this );
     }
     
+    public void action(ActionCode actionCode, Object param) {
+        if( hook==null && response!=null )
+            hook=response.getHook();
+        
+        if (hook != null) {
+            if( param==null ) 
+                hook.action(actionCode, this);
+            else
+                hook.action(actionCode, param);
+        }
+    }
+
 
     // -------------------- Cookies --------------------
 
