@@ -8,6 +8,7 @@ APXS_CFLAGS=@APXS_CFLAGS@
 COMMON_C_FILES := $(wildcard ${JK_DIR}/common/*.c )
 APR_CFLAGS=@APR_CFLAGS@
 APR_LDFLAGS=@APR_LDFLAGS@
+C_FILES=jk_service_apache13_c mod_jk2_c
 
 JK=../../common/
 JKINC=../../include/
@@ -18,7 +19,7 @@ JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_thre
 all: mod_jk2.so
 
 mod_jk2.so: 
-	$(APXS) -c -o $@ -Wc,"${JK_INCL} ${APR_CFLAGS} ${APR_LDFLAGS}" "${JAVA_INCL}" mod_jk2.c ${COMMON_C_FILES} 
+	$(APXS) -c -o $@ -Wc,"${JK_INCL} ${APR_CFLAGS} ${APR_LDFLAGS}" "${JAVA_INCL}" ${C_FILES} ${COMMON_C_FILES} 
 
 clean:
 	rm -f *.o *.so
