@@ -857,7 +857,7 @@ static const char *process_item(request_rec *r,
     return cp ? cp : "-";
 }
 
-static int request_log_transaction(request_rec *r,
+static void request_log_transaction(request_rec *r,
                                   jk_server_conf_t *conf)
 {
     request_log_format_item *items;
