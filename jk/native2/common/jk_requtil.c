@@ -730,6 +730,262 @@ int jk2_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
     return JK_FALSE;	    
 }
 
+/* -------------------- Request encoding -------------------- */
+/* Moved from IIS adapter */
+
+#define T_OS_ESCAPE_PATH	(4)
+
+static const unsigned char test_char_table[256] = {
+    0,14,14,14,14,14,14,14,14,14,15,14,14,14,14,14,14,14,14,14,
+    14,14,14,14,14,14,14,14,14,14,14,14,14,0,7,6,1,6,1,1,
+    9,9,1,0,8,0,0,10,0,0,0,0,0,0,0,0,0,0,8,15,
+    15,8,15,15,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,15,15,15,7,0,7,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,15,7,15,1,14,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6 
+};
+
+#define TEST_CHAR(c, f)	(test_char_table[(unsigned)(c)] & (f))
+
+static const char c2x_table[] = "0123456789abcdef";
+
+static unsigned char *c2x(unsigned what, unsigned char *where)
+{
+    *where++ = '%';
+    *where++ = c2x_table[what >> 4];
+    *where++ = c2x_table[what & 0xf];
+    return where;
+}
+
+int jk_requtil_escapeUrl(const char *path, char *dest, int destsize)
+{
+    const unsigned char *s = (const unsigned char *)path;
+    unsigned char *d = (unsigned char *)dest;
+    unsigned char *e = dest + destsize - 1;
+    unsigned char *ee = dest + destsize - 3;
+    unsigned c;
+
+    while ((c = *s)) {
+	if (TEST_CHAR(c, T_OS_ESCAPE_PATH)) {
+            if (d >= ee )
+                return JK_FALSE;
+	    d = c2x(c, d);
+	}
+	else {
+            if (d >= e )
+                return JK_FALSE;
+	    *d++ = c;
+	}
+	++s;
+    }
+    *d = '\0';
+    return JK_TRUE;
+}
+
+/* XXX Make it a default checking in uri worker map
+ */
+int jk_requtil_uriIsWebInf(char *uri)
+{
+    char *c = uri;
+    while(*c) {
+        *c = tolower(*c);
+        c++;
+    }                    
+    if(strstr(uri, "web-inf")) {
+        return JK_TRUE;
+    }
+    if(strstr(uri, "meta-inf")) {
+        return JK_TRUE;
+    }
+
+    return JK_FALSE;
+}
+
+static char x2c(const char *what)
+{
+    register char digit;
+
+    digit = ((what[0] >= 'A') ? ((what[0] & 0xdf) - 'A') + 10 : (what[0] - '0'));
+    digit *= 16;
+    digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
+    return (digit);
+}
+
+int jk_requtil_unescapeUrl(char *url)
+{
+    register int x, y, badesc, badpath;
+
+    badesc = 0;
+    badpath = 0;
+    for (x = 0, y = 0; url[y]; ++x, ++y) {
+        if (url[y] != '%')
+            url[x] = url[y];
+        else {
+            if (!isxdigit(url[y + 1]) || !isxdigit(url[y + 2])) {
+                badesc = 1;
+                url[x] = '%';
+            }
+            else {
+                url[x] = x2c(&url[y + 1]);
+                y += 2;
+                if (url[x] == '/' || url[x] == '\0')
+                    badpath = 1;
+            }
+        }
+    }
+    url[x] = '\0';
+    if (badesc)
+        return -1;
+    else if (badpath)
+        return -2;
+    else
+        return 0;
+}
+
+void jk_requtil_getParents(char *name)
+{
+    int l, w;
+
+    /* Four paseses, as per RFC 1808 */
+    /* a) remove ./ path segments */
+
+    for (l = 0, w = 0; name[l] != '\0';) {
+        if (name[l] == '.' && name[l + 1] == '/' && (l == 0 || name[l - 1] == '/'))
+            l += 2;
+        else
+            name[w++] = name[l++];
+    }
+
+    /* b) remove trailing . path, segment */
+    if (w == 1 && name[0] == '.')
+        w--;
+    else if (w > 1 && name[w - 1] == '.' && name[w - 2] == '/')
+        w--;
+    name[w] = '\0';
+
+    /* c) remove all xx/../ segments. (including leading ../ and /../) */
+    l = 0;
+
+    while (name[l] != '\0') {
+        if (name[l] == '.' && name[l + 1] == '.' && name[l + 2] == '/' &&
+            (l == 0 || name[l - 1] == '/')) {
+            register int m = l + 3, n;
+
+            l = l - 2;
+            if (l >= 0) {
+                while (l >= 0 && name[l] != '/')
+                    l--;
+                l++;
+            }
+            else
+                l = 0;
+            n = l;
+            while ((name[n] = name[m]))
+                (++n, ++m);
+        }
+        else
+            ++l;
+    }
+
+    /* d) remove trailing xx/.. segment. */
+    if (l == 2 && name[0] == '.' && name[1] == '.')
+        name[0] = '\0';
+    else if (l > 2 && name[l - 1] == '.' && name[l - 2] == '.' && name[l - 3] == '/') {
+        l = l - 4;
+        if (l >= 0) {
+            while (l >= 0 && name[l] != '/')
+                l--;
+            l++;
+        }
+        else
+            l = 0;
+        name[l] = '\0';
+    }
+}
+
+
+
+
+static const char begin_cert [] = 
+	"-----BEGIN CERTIFICATE-----\r\n";
+
+static const char end_cert [] = 
+	"-----END CERTIFICATE-----\r\n";
+
+static const char basis_64[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+int jk_requtil_base64CertLen(int len)
+{
+    int n = ((len + 2) / 3 * 4) + 1; // base64 encoded size
+    n += (n + 63 / 64) * 2; // add CRLF's
+    n += sizeof(begin_cert) + sizeof(end_cert) - 2;  // add enclosing strings.
+    return n;
+}
+
+int jk_requtil_base64EncodeCert(char *encoded,
+                                const unsigned char *string, int len)
+{
+    int i,c;
+    char *p;
+    const char *t;
+    
+    p = encoded;
+
+    t = begin_cert;
+    while (*t != '\0')
+        *p++ = *t++;
+    
+    c = 0;
+    for (i = 0; i < len - 2; i += 3) {
+        *p++ = basis_64[(string[i] >> 2) & 0x3F];
+        *p++ = basis_64[((string[i] & 0x3) << 4) |
+                        ((int) (string[i + 1] & 0xF0) >> 4)];
+        *p++ = basis_64[((string[i + 1] & 0xF) << 2) |
+                        ((int) (string[i + 2] & 0xC0) >> 6)];
+        *p++ = basis_64[string[i + 2] & 0x3F];
+        c += 4;
+        if ( c >= 64 ) {
+            *p++ = '\r';
+            *p++ = '\n';
+            c = 0;
+		}
+    }
+    if (i < len) {
+        *p++ = basis_64[(string[i] >> 2) & 0x3F];
+        if (i == (len - 1)) {
+            *p++ = basis_64[((string[i] & 0x3) << 4)];
+            *p++ = '=';
+        }
+        else {
+            *p++ = basis_64[((string[i] & 0x3) << 4) |
+                            ((int) (string[i + 1] & 0xF0) >> 4)];
+            *p++ = basis_64[((string[i + 1] & 0xF) << 2)];
+        }
+        *p++ = '=';
+        c++;
+    }
+    if ( c != 0 ) {
+        *p++ = '\r';
+        *p++ = '\n';
+    }
+
+	t = end_cert;
+	while (*t != '\0')
+		*p++ = *t++;
+
+    *p++ = '\0';
+    return p - encoded;
+}
+
+
+
 
 /** Initialize the request 
  * 
