@@ -29,7 +29,7 @@
 #define JK_VERSTRING    "1.2.7"
 
 /* Beta number */
-#define JK_VERBETA      0
+#define JK_VERBETA      1
 #define JK_BETASTRING   "1"
 /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
 #define JK_VERISRELEASE 0
