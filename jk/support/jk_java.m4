@@ -213,6 +213,10 @@ dnl             AC_MSG_CHECKING([${GUESS}])
        AC_MSG_RESULT(${JAVA_PLATFORM})
 
       unset tempval
+    else
+      # no jni, then make sure JAVA_HOME is not picked up from env
+      JAVA_HOME=""
+      JAVA_PLATFORM=""
     fi
   ])
 
