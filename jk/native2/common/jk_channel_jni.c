@@ -112,16 +112,15 @@ typedef struct {
 /*
    Duplicate string and convert it to ASCII on EBDIC based systems
    Needed for at least AS/400 and BS2000 but what about other EBDIC systems ?
+   Implement as macro cause:   
+   we don't need to duplicate the strings if they are const on non EBDIS systems 
 */
-static void *strdup_ascii(jk_env_t *env, 
-                          char *s)
-{
+
 #if defined(AS400) || defined(_OSD_POSIX)
-	return (env->tmpPool->pstrdup2ascii(env, env->tmpPool, s));
+#define SSTRDUP_ASCII(e, s) ((e)->tmpPool->pstrdup2ascii(env, env->tmpPool, s)) 
 #else
-	return (env->tmpPool->pstrdup(env, env->tmpPool, s));
+#define SSTRDUP_ASCII(e, s) (s) 
 #endif
-}
 
 static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
                                           jk_bean_t *jniWB)
@@ -207,7 +206,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     endpoint->channelData=epData;
 
     /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
-    jniCh->jniBridge = (*jniEnv)->FindClass(jniEnv, strdup_ascii(env, jniCh->className) );
+    jniCh->jniBridge = (*jniEnv)->FindClass(jniEnv, SSTRDUP_ASCII(env, jniCh->className) );
     
     if( jniCh->jniBridge == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -235,8 +234,8 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
 
     /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
     jmethod=(*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
-                 strdup_ascii(env, "createJavaContext"), 
-                 strdup_ascii(env, "(Ljava/lang/String;J)Ljava/lang/Object;"));
+                 SSTRDUP_ASCII(env, "createJavaContext"), 
+                 SSTRDUP_ASCII(env, "(Ljava/lang/String;J)Ljava/lang/Object;"));
 
     if( jmethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -250,7 +249,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     }
     
     /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
-    jstr=(*jniEnv)->NewStringUTF(jniEnv, strdup_ascii(env, "channelJni" ));
+    jstr=(*jniEnv)->NewStringUTF(jniEnv, SSTRDUP_ASCII(env, "channelJni" ));
     
     jobj=(*jniEnv)->CallStaticObjectMethod( jniEnv, jniCh->jniBridge,
                                             jmethod,
@@ -276,8 +275,8 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     
     /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
     jmethod=(*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
-                                         strdup_ascii(env, "getBuffer"),
-                                         strdup_ascii(env, "(Ljava/lang/Object;I)[B"));
+                                         SSTRDUP_ASCII(env, "getBuffer"),
+                                         SSTRDUP_ASCII(env, "(Ljava/lang/Object;I)[B"));
     if( jmethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channel_jni.open() can't find getBuffer\n"); 
@@ -301,8 +300,8 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     /* AS400/BS2000 need EBCDIC to ASCII conversion for JNI */
     jniCh->writeMethod =
         (*jniEnv)->GetStaticMethodID(jniEnv, jniCh->jniBridge,
-                                     strdup_ascii(env, "jniInvoke"),
-                                     strdup_ascii(env, "(JLjava/lang/Object;)I"));
+                                     SSTRDUP_ASCII(env, "jniInvoke"),
+                                     SSTRDUP_ASCII(env, "(JLjava/lang/Object;)I"));
     
     if( jniCh->writeMethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
