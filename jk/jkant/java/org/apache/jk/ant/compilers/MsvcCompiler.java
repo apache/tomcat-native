@@ -89,6 +89,10 @@ public class MsvcCompiler extends CompilerAdapter {
         so.setExtension(".dll");
         so.duplicateTo( this );
         project.setProperty("win32", "true");
+        if (optG)
+            project.setProperty("win32.debug", "true");
+        else
+            project.setProperty("win32.release", "true");
     }
 
     /** Compile using msvc 
@@ -132,14 +136,16 @@ public class MsvcCompiler extends CompilerAdapter {
         String localCflags=cflags;
         File ccOpt = new File(buildDir, "cc.opt");
         if( localCflags==null ) {
-            localCflags=new String("-nologo -MT -W3 -GX -O2 -c");
+            localCflags=new String("-nologo -W3 -GX -O2 -c");
             if( extra_cflags!=null ) {
                 localCflags+=" " + extra_cflags;
             }
         }
 
         if (optG)
-            localCflags += " -g";
+            localCflags += " -MTd -Zi";
+        else
+            localCflags += " -MT";
 
         // create a cc.opt file 
         PrintWriter ccpw = null;

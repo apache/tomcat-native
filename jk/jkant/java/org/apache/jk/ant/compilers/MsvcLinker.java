@@ -84,6 +84,10 @@ public class MsvcLinker extends LinkerAdapter {
         so.setExtension(".dll");
         so.duplicateTo( this );
         project.setProperty("win32", "true");
+        if (optG)
+            project.setProperty("win32.debug", "true");
+        else
+            project.setProperty("win32.release", "true");
     }
 
     public void execute() throws BuildException {
@@ -142,7 +146,7 @@ public class MsvcLinker extends LinkerAdapter {
             // add debug information in if requested
             if (optG)
             {
-               //XXX: todo
+                linkOptPw.print("/debug ");
             }
             // def file
             linkOptPw.println("/def:link.def");
