@@ -97,6 +97,7 @@ public class JkCoyoteHandler extends JkHandler implements
 
     int headersMsgNote;
     int c2bConvertersNote;
+    int tmpMessageBytesNote;
     int utfC2bNote;
     int obNote;
     int epNote;
@@ -162,6 +163,7 @@ public class JkCoyoteHandler extends JkHandler implements
             jkMain.init();
 
             headersMsgNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "headerMsg" );
+            tmpMessageBytesNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "tmpMessageBytes" );
             utfC2bNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "utfC2B" );
             epNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "ep" );
             obNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "coyoteBuffer" );
@@ -297,9 +299,15 @@ public class JkCoyoteHandler extends JkHandler implements
         msg.appendByte(HandlerRequest.JK_AJP13_SEND_HEADERS);
         msg.appendInt( res.getStatus() );
         
-        // s->b conversion, message
-        msg.appendBytes( null );
-        
+        MessageBytes mb=(MessageBytes)ep.getNote( tmpMessageBytesNote );
+        if( mb==null ) {
+            mb=new MessageBytes();
+            ep.setNote( tmpMessageBytesNote, mb );
+        }
+        mb.setString( res.getMessage());
+        c2b.convert( mb );
+        msg.appendBytes(mb);
+
         // XXX add headers
         
         MimeHeaders headers=res.getMimeHeaders();
