@@ -431,8 +431,8 @@ public final class CharChunk implements Cloneable, Serializable {
 	System.arraycopy(buff, start, tmp, 0, end-start);
 	buff = tmp;
 	tmp = null;
-	start=0;
 	end=end-start;
+	start=0;
     }
     
     // -------------------- Conversion and getters --------------------
