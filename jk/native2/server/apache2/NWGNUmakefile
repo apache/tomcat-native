@@ -3,6 +3,10 @@
 # created by Guenter Knauf <eflash@gmx.net>
 #
 
+# The folloeing setting enables build with jni support. Either uncommend
+# the following line, or set an environment var.
+# WITH_JNI = 1
+
 #
 # Declare the sub-directories to be built here
 #
@@ -26,6 +30,7 @@ include $(AP_WORK)\build\NWGNUhead.inc
 
 JKCOMMON = ../../common
 JKINCLUDE = ../../include
+JKJNI = ../../jni
 
 #
 # These directories will be at the beginning of the include list, followed by
@@ -34,6 +39,7 @@ JKINCLUDE = ../../include
 XINCDIRS	+= \
 			$(JKCOMMON) \
 			$(JKINCLUDE) \
+			$(JKJNI) \
 			$(AP_WORK)/include \
 			$(NWOS) \
 			$(AP_WORK)/modules/arch/netware \
@@ -61,6 +67,10 @@ XDEFINES	+= \
 			-DHAS_APR \
 			-DHAS_AP_PCRE \
 			$(EOLIST)
+
+ifdef WITH_JNI
+	XDEFINES += -DHAVE_JNI
+endif
 
 #
 # These flags will be added to the link.opt file
@@ -126,6 +136,9 @@ NLM_NAME		= mod_jk2
 # If left blank, NLM_NAME will be used.
 #
 NLM_DESCRIPTION	= Apache $(VERSION_STR) plugin for Jakarta/Tomcat $(JK_VERSION_STR)
+ifdef WITH_JNI
+	NLM_DESCRIPTION += (JNI)
+endif
 
 #
 # This is used by the link '-copy ' directive.
@@ -148,7 +161,6 @@ NLM_VERSION	= $(JK_VERSION)
 #
 # If this is specified, it will override the default of 64K
 #
-#NLM_STACK_SIZE	= 32768
 NLM_STACK_SIZE	= 49152
 
 
@@ -238,6 +250,10 @@ FILES_nlm_objs = \
 	$(OBJDIR)/mod_jk2.o \
 	$(EOLIST)
 
+ifdef WITH_JNI
+	FILES_nlm_objs += $(OBJDIR)/jk_jni_aprImpl.o
+endif
+
 #
 # These are the LIB files needed to create the NLM target above.
 # These will be added as a library command in the link.opt file.
@@ -316,6 +332,10 @@ install :: nlms FORCE
 $(OBJDIR)/%.o: $(JKCOMMON)/%.c $(OBJDIR)\cc.opt
 	@echo Compiling $<
 	$(CC) $(JKCOMMON)/$(<F) -o=$(OBJDIR)\$(@F) @$(OBJDIR)\cc.opt
+
+$(OBJDIR)/%.o: $(JKJNI)/%.c $(OBJDIR)\cc.opt
+	@echo Compiling $<
+	$(CC) $(JKJNI)/$(<F) -o=$(OBJDIR)\$(@F) @$(OBJDIR)\cc.opt
 
 $(OBJDIR)/version.inc: $(JKINCLUDE)/jk_global.h $(OBJDIR)
 	@echo Creating $@
