@@ -208,7 +208,8 @@ CRTCMOD MODULE(MOD_JK/JK_WORKER)                    +
                '/QIBM/ProdData/HTTPA/Include')
 
 CRTSRVPGM SRVPGM(MOD_JK/MOD_JK)                              +
-          MODULE(MOD_JK/JK_AJP_COM MOD_JK/JK_AJP12_W         +
+          MODULE(MOD_JK/MOD_JK                               +
+                 MOD_JK/JK_AJP_COM MOD_JK/JK_AJP12_W         +
                  MOD_JK/JK_AJP13 MOD_JK/JK_AJP13_W           +
                  MOD_JK/JK_AJP14 MOD_JK/JK_AJP14_W           +
                  MOD_JK/JK_CONNECT MOD_JK/JK_CONTEXT         +
