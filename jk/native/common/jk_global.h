@@ -65,7 +65,7 @@
 #ifndef JK_GLOBAL_H
 #define JK_GLOBAL_H
 
-#define JK_EXPOSED_VERSION      ("mod_jk/1.1a1")
+#include "version.h"
 
 #include <stdio.h>
 #include <stdlib.h>

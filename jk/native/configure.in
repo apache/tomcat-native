@@ -6,11 +6,18 @@ AC_REVISION($Id$)dnl
 AC_PREREQ(2.13)
 AC_INIT(common/jk_ajp13.h)
 AC_CONFIG_AUX_DIR(scripts/build/unix)
+AM_CONFIG_HEADER(common/version.h)
 
+dnl package and version.
 PACKAGE=mod_jk
-VERSION=0.0.0
-AC_SUBST(PACKAGE)
-AC_SUBST(VERSION)
+VERMAJOR=1
+VERMINOR=2
+VERFIX=0
+VERBETA=1
+dnl set VERISRELEASE to 1 when release (do not forget to commit!)
+VERISRELEASE=0
+
+VERSION=${VERMAJOR}.${VERMINOR}.${VERFIX}
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})
 
@@ -42,6 +49,25 @@ AC_SUBST(CP)
 
 AC_PATH_PROG(MKDIR,mkdir,$PATH)dnl
 AC_SUBST(MKDIR)
+
+dnl prepare the string and value for mod_jk version logic
+JK_EXPOSED_VERSION=${PACKAGE}/${VERSION}
+if ${TEST} ${VERISRELEASE} -eq 0 ; then
+    JK_EXPOSED_VERSION=${JK_EXPOSED_VERSION}-beta-${VERBETA}
+else
+    VERBETA=255
+fi
+
+AC_SUBST(PACKAGE)
+AC_SUBST(VERSION)
+
+#
+# Adds in version.h
+#
+AC_DEFINE_UNQUOTED(JK_EXPOSED_VERSION,"$JK_EXPOSED_VERSION",
+	[ Printable string for version ] )
+AC_DEFINE_UNQUOTED(JK_VERSION,((($VERMAJOR) << 24) + (($VERMINOR) << 16) + (($VERFIX) << 8) + ($VERBETA)),
+	[ Version in hex :like 010200ff for release 01020001 for beta 1. ] )
 
 WEBSERVER=""
 apache_dir=""
