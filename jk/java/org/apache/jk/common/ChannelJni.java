@@ -77,14 +77,10 @@ import org.apache.jk.apr.*;
  *
  * @author Costin Manolache
  */
-public class ChannelJni extends Channel implements AprImpl.JniContextFactory {
-    private static org.apache.commons.logging.Log log=
-        org.apache.commons.logging.LogFactory.getLog( ChannelJni.class );
-
+public class ChannelJni extends JkHandler {
     int receivedNote=1;
-    AprImpl apr=AprImpl.getAprImpl();
+    AprImpl apr;
     
-
     public ChannelJni() {
         // we use static for now, it's easier on the C side.
         // Easy to change after we get everything working
@@ -93,11 +89,27 @@ public class ChannelJni extends Channel implements AprImpl.JniContextFactory {
 
     public void init() throws IOException {
         // static field init, temp
-        log.info("init ");
-        apr.addJniContextFactory( "channelJni", this );
+        apr=(AprImpl)wEnv.getHandler("apr");
+        if( apr==null ) { 
+            log.error("No apr, disabling jni channel ");
+            return;
+        }
+        apr.addJkHandler( "channelJni", this );
+        if( next==null ) {
+            if( nextName!=null ) 
+                setNext( wEnv.getHandler( nextName ) );
+            if( next==null )
+                next=wEnv.getHandler( "dispatch" );
+            if( next==null )
+                next=wEnv.getHandler( "request" );
+            if( log.isDebugEnabled() )
+                log.debug("Setting default next " + next.getClass().getName());
+        }
     }
 
-    // XXX Not used 
+    /** Receives does nothing - send will put the response
+     *  in the same buffer
+     */
     public int receive( Msg msg, MsgContext ep )
         throws IOException
     {
@@ -114,8 +126,6 @@ public class ChannelJni extends Channel implements AprImpl.JniContextFactory {
     {
         byte buf[]=msg.getBuffer();
 
-        JniEndpoint epData=(JniEndpoint)ep;
-
         // send and get the response
         if( log.isInfoEnabled() ) log.info( "Sending packet ");
         msg.end();
@@ -124,7 +134,7 @@ public class ChannelJni extends Channel implements AprImpl.JniContextFactory {
         // Will process the message in the current thread.
         // No wait needed to receive the response
         // 
-        int status=apr.sendPacket( epData.xEnv, epData.jkEndpointP,
+        int status=apr.sendPacket( ep.getJniEnv(), ep.getJniContext(),
                                    buf, msg.getLen() );
 
         ep.setNote( receivedNote, msg );
@@ -133,8 +143,46 @@ public class ChannelJni extends Channel implements AprImpl.JniContextFactory {
         return 0;
     }
 
-    public int receive( MsgContext ep, MsgAjp msg, long xEnv, long cEndpointP)
-    {
+    public MsgContext createMsgContext() {
+        MsgContext mc=new MsgContext();
+        mc.setMsg( 0, new MsgAjp());
+        mc.setNext( this );
+        return mc;
+    }
+    
+    /** Receive a packet from the C side. This is called from the C
+     *  code using invocation, but only for the first packet - to avoid
+     *  recursivity and thread problems.
+     *
+     *  This may look strange, but seems the best solution for the
+     *  problem ( the problem is that we don't have 'continuation' ).
+     *
+     *  sendPacket will move the thread execution on the C side, and
+     *  return when another packet is available. For packets that
+     *  are one way it'll return after it is processed too ( having
+     *  2 threads is far more expensive ).
+     *
+     *  Again, the goal is to be efficient and behave like all other
+     *  Channels ( so the rest of the code can be shared ). Playing with
+     *  java objects on C is extremely difficult to optimize and do
+     *  right ( IMHO ), so we'll try to keep it simple - byte[] passing,
+     *  the conversion done in java ( after we know the encoding and
+     *  if anyone asks for it - same lazy behavior as in 3.3 ).
+     */
+    public  int invoke(Msg msg, MsgContext ep )  throws IOException {
+        System.err.println("ChannelJni.invoke: "  + ep );
+        long xEnv=ep.getJniEnv();
+        long cEndpointP=ep.getJniContext();
+
+        int type=ep.getType();
+
+        switch( type ) {
+        case JkHandler.HANDLE_RECEIVE_PACKET:
+            return receive( msg, ep );
+        case JkHandler.HANDLE_SEND_PACKET:
+            return send( msg, ep );
+        }
+        // Default is FORWARD
         try {
             // first, we need to get an endpoint. It should be
             // per/thread - and probably stored by the C side.
@@ -142,9 +190,9 @@ public class ChannelJni extends Channel implements AprImpl.JniContextFactory {
             
             // The endpoint will store the message pt.
             msg.processHeader();
-            if( log.isInfoEnabled() ) msg.dump("Incoming msg ");
+            //            if( log.isInfoEnabled() ) msg.dump("Incoming msg ");
 
-            int status= this.invoke(  msg, ep );
+            int status= next.invoke(  msg, ep );
             
             if( log.isInfoEnabled() ) log.info("after processCallbacks " + status);
             
@@ -153,68 +201,9 @@ public class ChannelJni extends Channel implements AprImpl.JniContextFactory {
             ex.printStackTrace();
         }
         return 0;
-    }
-    
-    /* ==================== Native liaison ==================== */
-    
-    static class JniEndpoint extends MsgContext implements AprImpl.JniContext {
-        // c Context
-        long jkEndpointP;
-        long xEnv;
-        ChannelJni chJni;
-        MsgAjp msgAjp=new MsgAjp();
+    }    
 
-        public byte[] getBuffer( int id ) {
-            // We use a single buffer right now. 
-            return msgAjp.getBuffer();
-        }
-        
-        
-        /** Receive a packet from the C side. This is called from the C
-         *  code using invocation, but only for the first packet - to avoid
-         *  recursivity and thread problems.
-         *
-         *  This may look strange, but seems the best solution for the
-         *  problem ( the problem is that we don't have 'continuation' ).
-         *
-         *  sendPacket will move the thread execution on the C side, and
-         *  return when another packet is available. For packets that
-         *  are one way it'll return after it is processed too ( having
-         *  2 threads is far more expensive ).
-         *
-         *  Again, the goal is to be efficient and behave like all other
-         *  Channels ( so the rest of the code can be shared ). Playing with
-         *  java objects on C is extremely difficult to optimize and do
-         *  right ( IMHO ), so we'll try to keep it simple - byte[] passing,
-         *  the conversion done in java ( after we know the encoding and
-         *  if anyone asks for it - same lazy behavior as in 3.3 ).
-         */
-        /** Invoke a java hook. The xEnv is the representation of the current execution
-         *  environment ( the jni_env_t * )
-         */
-        public int jniInvoke( long xEnv ) {
-            this.xEnv=xEnv;
-            int status=chJni.receive( this, msgAjp, xEnv, jkEndpointP );
-            this.xEnv=0;
-            return status;
-        }
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( ChannelJni.class );
 
-    }
-
-    public AprImpl.JniContext createJniContext( String type, long cContext ) {
-        if( log.isInfoEnabled() ) log.info("createJniEndpoint() " + cContext );
-        JniEndpoint ep=new JniEndpoint();
-
-        ep.chJni=this;
-        ep.jkEndpointP=cContext;
-        
-        ep.setWorkerEnv( wEnv );
-        ep.setChannel( this );
-        
-        return ep;
-    }
-
-    
-
-    
 }
