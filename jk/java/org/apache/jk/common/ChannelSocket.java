@@ -458,6 +458,9 @@ public class ChannelSocket extends JkHandler {
                 ep.setSource(this);
                 ep.setWorkerEnv( wEnv );
                 this.accept(ep);
+
+                if( !running ) break;
+                
                 SocketConnection ajpConn=
                     new SocketConnection(this, ep);
                 tp.runIt( ajpConn );
