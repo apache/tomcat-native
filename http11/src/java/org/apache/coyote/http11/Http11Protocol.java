@@ -115,7 +115,9 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     }
 
     public Object getAttribute( String key ) {
-        return null;
+        if( log.isTraceEnabled())
+            log.trace(sm.getString("http11protocol.getattribute", key));
+        return attributes.get(key);
     }
 
     /**
