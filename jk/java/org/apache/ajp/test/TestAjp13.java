@@ -159,12 +159,7 @@ class Ajp13Server extends Thread {
 
     void shutdown() {
         this.shutdown = true;
-
-//          try {
-            this.interrupt();
-//          } catch (InterruptedException e) {
-//              throw new RuntimeException(e.toString());
-//          }
+        this.interrupt();
     }
 
     public void run() {
