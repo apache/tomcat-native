@@ -4,16 +4,21 @@
 
   <description>Build the native component of jk.</description>
   
+  <property environment="env" />
+
   <property file="${user.home}/.ant.properties" />
   <property file="${user.home}/build.properties" />
-  <property file="build.properties.${os.arch}.${os.name}" />
-  <property file="build.properties" />
+  <property file="${user.home}/build.properties.${os.arch}.${os.name}" />
+  <property file="../build.properties.${os.arch}.${os.name}" />
   <property file="../build.properties" />
+
+  <property name="arch.prefix" value="" />
+
 
   <!-- ========== Local paths, overriden in build.properties ========== -->
 
   <property name="netscape.home" location="${iplanet.home}/plugins" />
-  <property name="apache2.home" location="/opt/apache2" />
+  <property name="apache2.home" location="${env.APACHE2_HOME}" />
   <!-- That's the default RedHat package -->
   <property name="apache13.home" location="/usr" />
   
@@ -81,7 +86,7 @@
     <echo message="build.properties ${os.arch}.${os.name}" />
     <!-- What servers do we have ? -->
     <available property="apache13.detect" 
-               file="${apache13.home}/bin/htpasswd" />
+	    file="${apache13.home}/bin" />
     <available property="apache2.detect" 
                file="${apache2.home}" />
     <available property="iis.detect" 
@@ -135,6 +140,9 @@
 
   <target name="init" depends="init.taskdef,guess.env,init.win32,init.netware" >
     <mkdir dir="${build.dir}" />
+    <!-- set this to "" if you don't want the prefix. This will use the 
+          prefix in the target name, to allow multiple platforms to build in 
+          the same tree -->
   </target>
 
   <target name="jkant" >
@@ -148,7 +156,7 @@
     <typedef resource="cpptasks.types" classpathref="jkant" />
       
     <property name="apr.include" location="${apache2.home}/include" />
-    <mkdir dir="${build.dir}/apache2" />
+    <mkdir dir="${build.dir}/apache2${arch.prefix}" />
     
     <defineset id="jk2-defs">
            <define name="_REENTRANT" />
@@ -168,8 +176,8 @@
     <cc outtype="shared"
         subsystem="console"
         runtime="dynamic"
-        objdir="${build.dir}/apache2" 
-        outfile="${build.dir}/apache2/mod_jk2.so" >
+        objdir="${build.dir}/apache2${arch.prefix}" 
+        outfile="${build.dir}/apache2${arch.prefix}/mod_jk2.so" >
 
         <compiler name="msvc" if="use.msvc" >
         </compiler>
@@ -256,9 +264,9 @@
   
   <target name="apache20" depends="init" if="apache2.detect">
     <property name="apr.include" location="${apache2.home}/include" />
-    <mkdir dir="${build.dir}/apache2" />
+    <mkdir dir="${build.dir}/apache2${arch.prefix}" />
     <so sofile="mod_jk2" 
-	buildDir="${build.dir}/apache2"
+	buildDir="${build.dir}/apache2${arch.prefix}"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	taskDebug="0"
@@ -319,13 +327,13 @@
   </target>
   
   <target name="jni" depends="init">
-    <mkdir dir="${build.dir}/jni" />
+    <mkdir dir="${build.dir}/jni${arch.prefix}" />
     <!-- can be overriden -->
     <property name="apr.home" location="${apache2.home}" />
     <property name="apr.include" location="${apr.home}/include" />
     <property name="apr.lib" location="${apr.home}/lib" />
     <so sofile="libjkjni" 
-	buildDir="${build.dir}/jni" 
+	buildDir="${build.dir}/jni${arch.prefix}" 
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}" >
@@ -350,6 +358,7 @@
         <include name="${java.home}/../include/win32" if="win32" />
         <include name="${java.home}/../include/solaris" if="solaris" />        
         <include name="${java.home}/../include/linux" if="linux" />
+        <include name="${java.home}/../include/hp-ux" if="hpux" />        
       </includes>
       <depends>
 	<fileset dir="${native.dir}/common" includes="*.h" />
@@ -393,11 +402,13 @@
       <def name="_MBCS" if="win32" />
       <def name="_USRDLL" if="win32" />
       <def name="JNI_CONNECT_EXPORTS" if="win32" />
+
       <import fileName="libhttpd.lib" if="win32" />
       <import fileName="libapr.lib" if="win32" />
       <import fileName="libaprutil.lib" if="win32" />
       <import fileName="advapi32.lib" if="win32" />
       <import fileName="wsock32.lib" if="win32" />
+
       <linkOpt value="/libpath:&quot;${apr.lib}&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apr-util.lib}&quot;" if="win32" />
       <linkOpt value="/libpath:&quot;${apache2.home}/lib&quot;" if="win32" />
@@ -408,9 +419,9 @@
 
 
   <target name="apache13" depends="init" if="apache13.detect">
-    <mkdir dir="${jk.build}/jk2/apache13" />
+    <mkdir dir="${jk.build}/jk2/apache13${arch.prefix}" />
     <so sofile="mod_jk2" 
-	buildDir="${jk.build}/jk2/apache13"
+	buildDir="${jk.build}/jk2/apache13${arch.prefix}"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}">
@@ -419,8 +430,6 @@
 	<include name="server/apache13/*.c" />
 	<include name="common/*.c" />
         <exclude name="jk_nwmain.c" unless="netware" />
-        <exclude name="common/jk_pool_apr.c" unless="APACHE13_APR" />
-        <exclude name="common/jk_channel_apr_socket.c" unless="APACHE13_APR" />
       </src>
       <includes>
 	<include name="${native.dir}/include" />
@@ -451,6 +460,8 @@
       </depends>
 
       <def name="EAPI" info="Building with EAPI support " />
+      <def name="_REENTRANT" />
+      <def name="CHUNK_SIZE" value="4096" />
 
       <!-- Platform-specific tags -->
       <def name="N_PLAT_NLM" if="netware"
@@ -468,6 +479,8 @@
       <def name="_MBCS" if="win32" />
       <def name="_USRDLL" if="win32" />
       <def name="MOD_JK_EXPORTS" if="win32" />
+      <def name="HPUX11" if="hpux" />
+
       
       <nlmmodule value="apache" if="netware" />
       <import fileName="${novellndk.home}/imports/clib.imp" if="netware" />
@@ -477,23 +490,20 @@
       <import fileName="${novellndk.home}/imports/socklib.imp" if="netware" />
       <import fileName="${novellndk.home}/imports/ws2nlm.imp" if="netware" />
       <import fileName="${apache13.home}/os/netware/ApacheCore.imp" if="netware" />
-      <export symbol="jk_module" if="netware" />
+      <export symbol="jk2_module" if="netware" />
       <linkOpt value="-desc &quot;Apache 1.3 plugin for Tomcat&quot;" if="netware" />
       <linkOpt value="-screenname &quot;System Console&quot;" if="netware" />
       <linkOpt value="-nlmversion 1,20,2" if="netware" />
       <linkOpt value="-threadname &quot;mod_jk Thread&quot;" if="netware" />
       <linkOpt value="-stacksize 64000" if="netware" />
       
+      <export symbol="jk2_module" if="win32" />
       <import fileName="ApacheCore.lib" if="win32" />
       <import fileName="wsock32.lib" if="win32" />
-      <import fileName="kernel32.lib" if="win32" />
-      <import fileName="user32.lib" if="win32" />
-      <import fileName="gdi32.lib" if="win32" />
-      <import fileName="winspool.lib" if="win32" />
-      <import fileName="comdlg32.lib" if="win32" />
-      <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" />
-      <linkOpt value="/libpath:&quot;${apache13.home}/CoreR&quot;" if="win32" />
-      <linkOpt value="/libpath:&quot;${apache13.home}/Release&quot;" if="win32" />
+      <linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" 
+	       if="win32" />
+      <linkOpt value="/libpath:&quot;${apache13.home}/libexec&quot;" 
+	        if="win32" />
     </so>
   </target>
 
