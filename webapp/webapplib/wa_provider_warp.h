@@ -85,11 +85,23 @@ typedef struct wa_warp_conn_config {
 #define SOCKET_NOT_CREATED      -1
 
 /* Look in WarpConstants.java for a description of these definitions. */
-#define RID_CONNECTION     0x00000
-#define RID_DISCONNECT     0x0ffff
-#define TYP_HOST           0x00000
-#define TYP_HOST_ID        0x00001
-#define TYP_APPLICATION    0x00002
-#define TYP_APPLICATION_ID 0x00003
-#define TYP_REQUEST        0x00004
-#define TYP_REQUEST_ID     0x00005
+#define RID_CONNECTION  0x00000
+#define RID_DISCONNECT  0x0ffff
+
+#define TYP_CONINIT_HST 0x00000
+#define TYP_CONINIT_HID 0x00001
+#define TYP_CONINIT_APP 0x00002
+#define TYP_CONINIT_AID 0x00003
+#define TYP_CONINIT_REQ 0x00004
+#define TYP_CONINIT_RID 0x00005
+#define TYP_CONINIT_ERR 0x0000F
+
+#define TYP_REQINIT_MET 0x00010
+#define TYP_REQINIT_URI 0x00011
+#define TYP_REQINIT_ARG 0x00012
+#define TYP_REQINIT_PRO 0x00013
+#define TYP_REQINIT_HDR 0x00014
+#define TYP_REQINIT_VAR 0x00015
+#define TYP_REQINIT_RUN 0x0001D
+#define TYP_REQINIT_ERR 0x0001E
+#define TYP_REQINIT_ACK 0x0001F

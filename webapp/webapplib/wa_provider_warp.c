@@ -225,22 +225,40 @@ static wa_warp_packet *wa_warp_recv(wa_warp_conn_config *c, int r) {
     int rid=-1;
     int typ=-1;
     int siz=-1;
+    int ret=-1;
 
     // Get the packet RID
-    if ((rid=wa_warp_recv_short(c))<0) return(NULL);
+    if ((rid=wa_warp_recv_short(c))<0) {
+        fprintf(stderr,"NO RID (%d)\n",rid);
+        return(NULL);
+    }
+
     // Fix this for multithreaded environments (demultiplexing of packets)
-    if (rid!=r) return(NULL);
+    if (rid!=r) {
+        fprintf(stderr,"INVALID RID got %d expected %d\n",rid,r);
+        return(NULL);
+    }
+
     // Get the packet TYPE
-    if ((typ=wa_warp_recv_short(c))<0) return(NULL);
+    if ((typ=wa_warp_recv_short(c))<0) {
+        fprintf(stderr,"NO TYP rid=%d typ=%d\n",rid,typ);
+        return(NULL);
+    }
+
     // Get the packet payload size
-    if ((siz=wa_warp_recv_short(c))<0) return(NULL);
+    if ((siz=wa_warp_recv_short(c))<0) {
+        fprintf(stderr,"NO SIZ rid=%d typ=%d siz=%d\n",rid,typ,siz);
+        return(NULL);
+    }
+
     // Create the packet
     p=wa_warp_packet_create(siz);
     p->typ=typ;
     p->siz=siz;
     if (siz==0) return(p);
     // Read from the socket and fill the packet buffer
-    if (recv(c->sock,p->buf,siz,0)!=siz) {
+    if ((ret=recv(c->sock,p->buf,siz,0))!=siz) {
+        fprintf(stderr,"SHORT rid=%d typ=%d siz=%d ret=%d\n",rid,typ,siz,ret);
         wa_warp_packet_free(p);
         return(NULL);
     }
@@ -463,7 +481,7 @@ static void wa_warp_init(wa_connection *conn) {
         int hid=0;
 
         // Setup the packet
-        p->typ=TYP_HOST;
+        p->typ=TYP_CONINIT_HST;
         wa_warp_packet_set_string(p,host->name);
         wa_warp_packet_set_short(p,host->port);
 
@@ -483,7 +501,7 @@ static void wa_warp_init(wa_connection *conn) {
             return;
         }
         // Check if we got the right packet
-        if (in->typ!=TYP_HOST_ID) {
+        if (in->typ!=TYP_CONINIT_HID) {
             wa_warp_packet_free(p);
             wa_warp_packet_free(in);
             wa_warp_close(conf, "Cannot retrieve host ID (TYP)");
@@ -497,7 +515,7 @@ static void wa_warp_init(wa_connection *conn) {
             int aid=0;
             wa_warp_appl_config *cnf=NULL;
 
-            p->typ=TYP_APPLICATION;
+            p->typ=TYP_CONINIT_APP;
             wa_warp_packet_set_string(p,appl->name);
             wa_warp_packet_set_string(p,appl->path);
 
@@ -517,7 +535,7 @@ static void wa_warp_init(wa_connection *conn) {
                 return;
             }
             // Check if we got the right packet
-            if (in->typ!=TYP_APPLICATION_ID) {
+            if (in->typ!=TYP_CONINIT_AID) {
                 wa_warp_packet_free(p);
                 wa_warp_packet_free(in);
                 wa_warp_close(conf, "Cannot retrieve application ID (TYP)");
@@ -596,6 +614,7 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
     wa_warp_packet *in=NULL;
     wa_warp_packet *out=NULL;
     int rid=0;
+    int x=0;
 
     cc=(wa_warp_conn_config *)req->appl->conn->conf;
     ac=(wa_warp_appl_config *)req->appl->conf;
@@ -614,7 +633,7 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
     out=wa_warp_packet_create(4096);
 
     // Let's start requesting the RID for this request.
-    out->typ=TYP_REQUEST;
+    out->typ=TYP_CONINIT_REQ;
     wa_warp_packet_set_short(out,ac->host);
     wa_warp_packet_set_short(out,ac->appl);
     if (!wa_warp_send(cc,RID_CONNECTION,out)) {
@@ -634,7 +653,7 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
         return;
     }
     // Check if we got the right packet
-    if (in->typ!=TYP_REQUEST_ID) {
+    if (in->typ!=TYP_CONINIT_RID) {
         wa_warp_packet_free(out);
         wa_warp_packet_free(in);
         wa_warp_close(cc, "Cannot retrieve request RID (TYP)");
@@ -643,8 +662,70 @@ static void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
     }
     rid=wa_warp_packet_get_short(in);
     wa_warp_packet_free(in);
+    
+    // Send the request method
+    wa_warp_packet_reset(out);
+    out->typ=TYP_REQINIT_MET;
+    wa_warp_packet_set_string(out,req->meth);
+    wa_warp_send(cc,rid,out);
+    
+    // Send the request URI
+    wa_warp_packet_reset(out);
+    out->typ=TYP_REQINIT_URI;
+    wa_warp_packet_set_string(out,req->ruri);
+    wa_warp_send(cc,rid,out);
+    
+    // Send the request arguments
+    wa_warp_packet_reset(out);
+    out->typ=TYP_REQINIT_ARG;
+    wa_warp_packet_set_string(out,req->args);
+    wa_warp_send(cc,rid,out);
 
+    // Send the request protocol
+    wa_warp_packet_reset(out);
+    out->typ=TYP_REQINIT_PRO;
+    wa_warp_packet_set_string(out,req->prot);
+    wa_warp_send(cc,rid,out);
 
+    // Send the request headers
+    for (x=0; x<req->hnum; x++) {
+        wa_warp_packet_reset(out);
+        out->typ=TYP_REQINIT_HDR;
+        wa_warp_packet_set_string(out,req->hnam[x]);
+        wa_warp_packet_set_string(out,req->hval[x]);
+        wa_warp_send(cc,rid,out);
+    }
+
+    // Send the request variables (TODO)
+
+    // Try to issue a GO
+    wa_warp_packet_reset(out);
+    out->typ=TYP_REQINIT_RUN;
+    wa_warp_send(cc,rid,out);
+
+    // Retrieve the packet containing the ACK/ERR for this request
+    in=wa_warp_recv(cc,rid);
+    if (in==NULL) {
+        wa_warp_packet_free(out);
+        wa_warp_close(cc, "Cannot switch to passive mode");
+        wa_warp_handle_error(req,cb,"Cannot switch to passive mode");
+        return;
+    }
+    // Check if we got an ERR packet
+    if (in->typ==TYP_REQINIT_ERR) {
+        wa_warp_packet_free(out);
+        wa_warp_packet_free(in);
+        wa_warp_handle_error(req,cb,"Request not accepted by the server");
+        return;
+    }
+    // Check if we got the right (ACK) packet
+    if (in->typ!=TYP_REQINIT_ACK) {
+        wa_warp_packet_free(out);
+        wa_warp_packet_free(in);
+        wa_warp_handle_error(req,cb,"Unknown packet received (%d)",in->typ);
+        return;
+    }
+    wa_warp_packet_free(in);
 
     wa_callback_setstatus(cb,req,200);
     wa_callback_settype(cb,req,"text/html");
