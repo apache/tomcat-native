@@ -62,39 +62,85 @@ import java.io.*;
 import java.util.*;
 import java.security.*;
 
-// XXX This should be called MsgListener or MsgDecoder - 'handler' is too
-// overloaded. 
-
 /**
  *
  * @author Costin Manolache
  */
-public class Handler {
+public abstract class JkHandler {
     public static final int OK=0;
     public static final int LAST=1;
     public static final int ERROR=2;
 
-    protected WorkerEnv we;
-    protected Worker worker;
+    protected WorkerEnv wEnv;
+    protected JkHandler next;
+    protected String name;
+    protected int id;
     
     public void setWorkerEnv( WorkerEnv we ) {
-        this.we=we;
+        this.wEnv=we;
     }
 
-    public void setWorker( Worker worker ) {
-        this.worker=worker;
+    /** Set the name of the handler. Will allways be called by
+     *  worker env after creating the worker.
+     */
+    public void setName(String s ) {
+        name=s;
     }
-    
+
+    public String getName() {
+        return name;
+    }
+
+    /** Set the id of the worker. We use an id for faster dispatch.
+     *  Since we expect a decent number of handler in system, the
+     *  id is unique - that means we may have to allocate bigger
+     *  dispatch tables. ( easy to fix if needed )
+     */
+    public void setId( int id ) {
+        this.id=id;
+    }
+
+    String nextName=null;
+    /** Catalina-style "recursive" invocation.
+     *  A chain is used for Apache/3.3 style iterative invocation.
+     */
+    public void setNext( JkHandler h ) {
+        if( logL>0 ) log("setNext " + h.getClass().getName());
+        next=h;
+    }
+
+    public void setNext( String s ) {
+        nextName=s;
+    }
+
     /** Should register the request types it can handle,
      *   same style as apache2.
      */
-    public void init() {
+    public void init() throws IOException {
     }
 
-    public int callback(int type, Channel ch, Endpoint ep, Msg in)
-        throws IOException
-    {
-        return OK;
+    /** Clean up and stop the handler
+     */
+    public void destroy() throws IOException {
+    }
+
+    public abstract int invoke(Msg msg, MsgContext mc )  throws IOException;
+
+    
+    // This will use commons-logging to plug in a real logger
+
+    protected int logL=10;
+    private String prefix=null;
+
+    public void setDebug( int i ) {
+        logL=i;
     }
     
+    protected void log( String s ) {
+	if( prefix==null ) {
+	    String cname = this.getClass().getName();
+	    prefix = cname.substring( cname.lastIndexOf(".") +1) + ":";
+	}
+        System.out.println( prefix + s );
+    }
 }
