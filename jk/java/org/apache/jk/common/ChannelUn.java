@@ -152,8 +152,10 @@ public class ChannelUn extends Channel {
         }
         unixListenSocket=apr.unSocketListen( gPool, file, 10 );
         if (unixListenSocket<0)
-            throw(new IOException("Cannot create listening socket"));
+            throw(new IOException("Cannot create listening socket " + file));
 
+        log.info("Listening on unix socket: " + file );
+        
         // Run a thread that will accept connections.
         tp.start();
         AprAcceptor acceptAjp=new AprAcceptor(  this );

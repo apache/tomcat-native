@@ -80,7 +80,7 @@ public class AprImpl {
             // Use load()
             try {
                 System.loadLibrary( "apr" );
-                System.loadLibrary( "jni_connect" );
+                System.loadLibrary( "jkjni" );
             } catch( Throwable ex ) {
                 ok=false;
                 ex.printStackTrace();

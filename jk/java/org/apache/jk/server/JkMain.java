@@ -102,9 +102,8 @@ public class JkMain
     public void setProperty( String n, String v ) {
         if( "jkHome".equals( n ) ) {
             setJkHome( v );
-        } else {
-            props.put( n, v );
-        }
+        } 
+        props.put( n, v );
     }
 
     /**
@@ -217,19 +216,23 @@ public class JkMain
        up the clean get/set
     */
     public void setProperty( Object target, String name, String val ) {
+        if( val!=null )
+            val=IntrospectionUtils.replaceProperties( val, props );
         if( log.isDebugEnabled())
             log.debug( "setProperty " + target + " " + name + "=" + val );
+        
         IntrospectionUtils.setProperty( target, name, val );
     }
 
     /* 
      * Set a handler property
      */
-    public void setProperty( String handlerN, String name, String val ) {
+    public void setPropertyString( String handlerN, String name, String val ) {
         if( log.isDebugEnabled() )
             log.debug( "setProperty " + handlerN + " " + name + "=" + val );
         Object target=wEnv.getHandler( handlerN );
-        IntrospectionUtils.setProperty( target, name, val );
+
+        setProperty( target, name, val );
     }
 
     public long getStartTime() {
