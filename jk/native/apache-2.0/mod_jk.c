@@ -1624,7 +1624,7 @@ static int jk_map_to_storage(request_rec *r)
             r->filename = (char *)apr_filename_of_pathname(r->uri); */
 
         /* Absolute paths cannot be merged */
-        if(r->uri[0] == '/') ++uri_p;
+        while (*uri_p == '/') ++uri_p;
 	
         /* Need absolute path to stat */
         if (apr_filepath_merge(&r->filename, ap_document_root(r), uri_p,
