@@ -1195,9 +1195,11 @@ public final class CoyoteConnector
     public void stop() throws LifecycleException {
 
         // Validate and update our current state
-        if (!started)
-            throw new LifecycleException
-                (sm.getString("coyoteConnector.notStarted"));
+        if (!started) {
+            log.error(sm.getString("coyoteConnector.notStarted"));
+            return;
+
+        }
         lifecycle.fireLifecycleEvent(STOP_EVENT, null);
         started = false;
 
@@ -1274,6 +1276,35 @@ public final class CoyoteConnector
     }
 
     public void postDeregister() {
+        try {
+            if( started ) {
+                stop();
+            }
+        } catch( Throwable t ) {
+            log.error( "Unregistering - can't stop", t);
+        }
     }
 
+    public void init() throws Exception {
+
+        if( this.getService() != null ) {
+            log.info( "Already configured" );
+            return;
+        }
+
+        // Register to the service
+        ObjectName parentName=new ObjectName( domain + ":" +
+                "type=Service,name=Tomcat-Standalone");
+        log.info("Adding to " + parentName );
+
+        mserver.invoke(parentName, "addConnector", new Object[] { this },
+                new String[] {"org.apache.catalina.Connector"});
+        // initialize(); - is called by addConnector
+    }
+
+    public void destroy() throws Exception {
+        if( getService() == null)
+            return;
+        getService().removeConnector(this);
+    }
 }
