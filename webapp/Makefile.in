@@ -72,49 +72,9 @@ CFGS = config.cache \
 	apache-1.3/Makefile \
 	java/Makefile
 
-all: local
-	@for DIR in $(APRDIR) ; do \
-		echo "" ; \
-		echo "Compiling sources in $$DIR..." ; \
-		$(MAKE) -C $$DIR all ; \
-		RET=$$? ; \
-		if test "$$RET" != "0" ; then \
-			exit $$RET ; \
-		fi ; \
-	done
+all: apr_all local_all
 
-clean: localclean
-	@for DIR in $(APRDIR) ; do \
-		echo "" ; \
-		echo "Cleaning up $$DIR..." ; \
-		$(MAKE) -C $$DIR clean ; \
-		RET=$$? ; \
-		if test "$$RET" != "0" ; then \
-			exit $$RET ; \
-		fi ; \
-	done
-
-local:
-	@for DIR in $(LOCALDIRS) ; do \
-		echo "" ; \
-		echo "Compiling sources in $$DIR..." ; \
-		$(MAKE) -C $$DIR all ; \
-		RET=$$? ; \
-		if test "$$RET" != "0" ; then \
-			exit $$RET ; \
-		fi ; \
-	done
-
-localclean:
-	@for DIR in $(LOCALDIRS) ; do \
-		echo "" ; \
-		echo "Cleaning up $$DIR..." ; \
-		$(MAKE) -C $$DIR clean ; \
-		RET=$$? ; \
-		if test "$$RET" != "0" ; then \
-			exit $$RET ; \
-		fi ; \
-	done
+clean: apr_clean local_clean
 
 distclean: clean
 	@echo Removing configure generated files...
@@ -124,3 +84,46 @@ cvsclean: distclean
 	@echo Removing configure script...
 	@rm -f configure
 
+apr_all:
+	@for DIR in $(APRDIR) ; do \
+		echo "" ; \
+		echo "Compiling sources in $$DIR..." ; \
+		$(MAKE) -C $$DIR all ; \
+		RET=$$? ; \
+		if test "$$RET" != "0" ; then \
+			exit $$RET ; \
+		fi ; \
+	done
+
+apr_clean:
+	@for DIR in $(APRDIR) ; do \
+		echo "" ; \
+		echo "Cleaning up $$DIR..." ; \
+		$(MAKE) -C $$DIR clean ; \
+		RET=$$? ; \
+		if test "$$RET" != "0" ; then \
+			exit $$RET ; \
+		fi ; \
+	done
+
+local_all:
+	@for DIR in $(LOCALDIRS) ; do \
+		echo "" ; \
+		echo "Compiling sources in $$DIR..." ; \
+		$(MAKE) -C $$DIR all ; \
+		RET=$$? ; \
+		if test "$$RET" != "0" ; then \
+			exit $$RET ; \
+		fi ; \
+	done
+
+local_clean:
+	@for DIR in $(LOCALDIRS) ; do \
+		echo "" ; \
+		echo "Cleaning up $$DIR..." ; \
+		$(MAKE) -C $$DIR clean ; \
+		RET=$$? ; \
+		if test "$$RET" != "0" ; then \
+			exit $$RET ; \
+		fi ; \
+	done
