@@ -74,7 +74,7 @@ import org.apache.catalina.Request;
 import org.apache.catalina.Response;
 import org.apache.catalina.Service;
 import org.apache.catalina.net.DefaultServerSocketFactory;
-import org.apache.catalina.ServerSocketFactory;
+import org.apache.catalina.net.ServerSocketFactory;
 import org.apache.catalina.util.LifecycleSupport;
 
 public class WarpConnector implements Connector, Lifecycle, Runnable {
