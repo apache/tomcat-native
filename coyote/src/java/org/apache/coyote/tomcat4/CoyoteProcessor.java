@@ -83,6 +83,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.tomcat.util.buf.MessageBytes;
+
 import org.apache.coyote.Adapter;
 import org.apache.coyote.InputBuffer;
 import org.apache.coyote.OutputBuffer;
@@ -385,14 +387,25 @@ final class CoyoteProcessor
         else
             request.setServerPort(serverPort);
 
-        // Normalize URI is needed for security reasons on older versions 
-        // of Tomcat
-        if (connector.getUseURINormalizationHack()) {
-            String uri = normalize(request.getRequestURI());
+        if (!normalize(req.decodedURI())) {
+            res.setStatus(400);
+            res.setMessage("Invalid URI");
+            throw new IOException("Invalid URI");
+        }
+
+        // Additional URI normalization and validation is needed for security 
+        // reasons on Tomcat 4.0.x
+        if (connector.getUseURIValidationHack()) {
+            String uri = validate(request.getRequestURI());
             if (uri == null) {
                 res.setStatus(400);
                 res.setMessage("Invalid URI");
                 throw new IOException("Invalid URI");
+            } else {
+                req.requestURI().setString(uri);
+                // Redoing the URI decoding
+                req.decodedURI().duplicate(req.requestURI());
+                req.getURLDecoder().convert(req.decodedURI(), true);
             }
         }
 
@@ -523,9 +536,9 @@ final class CoyoteProcessor
      * boundaries of the current context (i.e. too many ".." path elements
      * are present), return <code>null</code> instead.
      *
-     * @param path Path to be normalized
+     * @param path Path to be validated
      */
-    protected String normalize(String path) {
+    protected String validate(String path) {
 
         if (path == null)
             return null;
@@ -596,6 +609,64 @@ final class CoyoteProcessor
 
         // Return the normalized path that we have completed
         return (normalized);
+
+    }
+
+
+    /**
+     * Normalize URI.
+     * <p>
+     * This method normalizes '/./' and '/../'.
+     * 
+     * @param uri URI to be normalized
+     */
+    public boolean normalize(MessageBytes uri) {
+
+        // FIXME: Write a GC friendly version of this
+
+        // Create a place for the normalized path
+        String normalized = uri.toString();
+
+        // Normalize slashes
+        if (normalized.indexOf('\\') >= 0)
+            normalized = normalized.replace('\\', '/');
+
+        // Resolve occurrences of "//" in the normalized path
+        while (true) {
+            int index = normalized.indexOf("//");
+            if (index < 0)
+                break;
+            normalized = normalized.substring(0, index) +
+                normalized.substring(index + 1);
+        }
+
+        if (normalized.endsWith("/.") || normalized.endsWith("/.."))
+            normalized = normalized + "/";
+
+        // Resolve occurrences of "/./" in the normalized path
+        while (true) {
+            int index = normalized.indexOf("/./");
+            if (index < 0)
+                break;
+            normalized = normalized.substring(0, index) +
+                normalized.substring(index + 2);
+        }
+
+        // Resolve occurrences of "/../" in the normalized path
+        while (true) {
+            int index = normalized.indexOf("/../");
+            if (index < 0)
+                break;
+            if (index == 0)
+                return false;  // Trying to go outside our context
+            int index2 = normalized.lastIndexOf('/', index - 1);
+            normalized = normalized.substring(0, index2) +
+                normalized.substring(index + 3);
+        }
+
+        uri.setString(normalized);
+
+        return true;
 
     }
 
