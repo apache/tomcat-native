@@ -60,14 +60,19 @@ dnl Author Pier Fumagalli <pier.fumagalli@sun.com>
 dnl Version $Id$
 dnl --------------------------------------------------------------------------
 
+dnl --------------------------------------------------------------------------
+dnl LOCAL_INIT
+dnl   Discover binaries required further on in the automake process and to
+dnl   process makefiles. Those are TRUE, ECHO, GREP, CAT, SED and RM
+dnl --------------------------------------------------------------------------
 AC_DEFUN(LOCAL_INIT,[
-  AC_PATH_PROG(TEST,test,${PATH})
-  AC_PATH_PROG(TRUE,true,${PATH})
-  AC_PATH_PROG(ECHO,echo,${PATH})
-  AC_PATH_PROG(GREP,grep,${PATH})
-  AC_PATH_PROG(CAT,cat,${PATH})
-  AC_PATH_PROG(SED,sed,${PATH})
-  AC_PATH_PROG(RM,rm,${PATH})
+  AC_CHECK_PROG(TEST,"test","test","",${PATH})
+  LOCAL_CHECK_PROG(TRUE,true)
+  LOCAL_CHECK_PROG(ECHO,echo)
+  LOCAL_CHECK_PROG(GREP,grep)
+  LOCAL_CHECK_PROG(CAT,cat)
+  LOCAL_CHECK_PROG(SED,sed)
+  LOCAL_CHECK_PROG(RM,rm)
   AC_SUBST(TEST)
   AC_SUBST(TRUE)
   AC_SUBST(ECHO)
@@ -77,6 +82,34 @@ AC_DEFUN(LOCAL_INIT,[
   AC_SUBST(RM)
 ])
 
+dnl --------------------------------------------------------------------------
+dnl LOCAL_CHECK_PROG
+dnl   Check wether a program exists in the current PATH or not and fail if
+dnl   this was not found.
+dnl
+dnl   Parameters:
+dnl     $1 - name of the variable where the program name must be stored
+dnl     $2 - binary name of the program to look for
+dnl --------------------------------------------------------------------------
+AC_DEFUN(LOCAL_CHECK_PROG,[
+  local_vnam="$1"
+  AC_CHECK_PROG($1,$2,$2,,${PATH})
+  local_vval=`eval "echo \\$$local_vnam"`
+  if ${TEST} -z "${local_vval}"
+  then
+    AC_MSG_ERROR([cannot find required binary \"$2\"])
+  fi
+  unset local_vnam
+  unset local_vval
+])
+
+dnl --------------------------------------------------------------------------
+dnl LOCAL_HEADER
+dnl   Output a header for a stage of the configure process
+dnl
+dnl   Parameters:
+dnl     $1 - message to be printed in the header
+dnl --------------------------------------------------------------------------
 AC_DEFUN(LOCAL_HEADER,[
   ${ECHO} ""
   ${ECHO} "$1" 1>&2
@@ -89,11 +122,29 @@ AC_DEFUN(LOCAL_HELP,[
   AC_DIVERT_POP()
 ])
 
+dnl --------------------------------------------------------------------------
+dnl LOCAL_FILTEREXEC
+dnl   Execute a program filtering its output (pretty printing).
+dnl
+dnl   Parameters:
+dnl     $1 - name of the variable containing the return value (error code).
+dnl     $2 - name of the binary/script to invoke
+dnl     $3 - message used for pretty printing output
+dnl --------------------------------------------------------------------------
 AC_DEFUN(LOCAL_FILTEREXEC,[
-  ${ECHO} "  Invoking: $1"
+  local_vnam="$1"
+  ${ECHO} "  Invoking: $2"
   ${ECHO} "-1" > retvalue.tmp
+
+  set local_file $2
+  local_file=[$]2
+  if ${TEST} ! -x "${local_file}"
+  then
+    AC_MSG_ERROR([cannot find or execute \"${local_file}\" in \"`pwd`\"])
+  fi
+
   {
-    $1
+    $2
     ${ECHO} retvalue $?
   }|{
     ret=0
@@ -108,25 +159,48 @@ AC_DEFUN(LOCAL_FILTEREXEC,[
         then
           ret="${line}"
         else
-          ${ECHO} "    $2: ${first} ${line}"
+          ${ECHO} "    $3: ${first} ${line}"
         fi
       fi
     done
+    echo "${ret}" > retvalue.tmp
     unset first
     unset line
-    echo "${ret}" > retvalue.tmp
+    unset ret
   }
-  ret=`${CAT} retvalue.tmp`
+
+  eval "$local_vnam=`${CAT} retvalue.tmp`"
+  local_vval=`eval "echo \\$$local_vnam"`
   ${RM} retvalue.tmp
-  ${ECHO} "  Execution of $1 returned ${ret}"
+  ${ECHO} "  Execution of $2 returned ${local_vval}"
+  unset local_vnam
+  unset local_vval
 ])
 
+dnl --------------------------------------------------------------------------
+dnl LOCAL_RESOLVEDIR
+dnl   Resolve the full path name of a directory.
+dnl
+dnl   Parameters:
+dnl     $1 - name of the variable in which the full path name will be stored
+dnl     $2 - directory name to resolve
+dnl     $3 - message used for this check
+dnl --------------------------------------------------------------------------
 AC_DEFUN(LOCAL_RESOLVEDIR,[
-  AC_MSG_CHECKING([for $2])
-  localdir="`pwd`"
-  cd "$1"
-  DIR=`pwd`
-  AC_MSG_RESULT([${DIR}])
+  AC_MSG_CHECKING([for $3])
+  if ${TEST} -d "$2"
+  then
+    curdir="`pwd`"
+    cd "$2"
+    newdir="`pwd`"
+    eval "$1=${newdir}"
+    AC_SUBST($1)
+    AC_MSG_RESULT([${newdir}])
+    cd "${curdir}"
+    unset curdir
+    unset newdir
+  else
+    AC_MSG_RESULT([error])
+    AC_MSG_ERROR([Directory not found \"$2\"])
+  fi
 ])
-  
-  
