@@ -82,54 +82,46 @@
 #define AJP13_DEF_PORT  (8009)
 
 /* -------------------- Impl -------------------- */
-static char *jk2_worker_ajp13_getAttributeInfo[]={ "lb_factor", "lb_value", 
-                                                   "route", "errorState", "graceful",
+static char *jk2_worker_ajp13_getAttributeInfo[]={ "lb_factor", "lb_value", "debug", "channel", "level",
+                                                   "route", "errorState", "graceful", "groups",
                                                    "epCount", "errorTime", NULL };
 
 static char *jk2_worker_ajp13_multiValueInfo[]={"group", NULL };
 
-static char *jk2_worker_ajp13_setAttributeInfo[]={"debug", "channel", "route",
+static char *jk2_worker_ajp13_setAttributeInfo[]={"debug", "channel", "route", "secretkey", "group", "graceful",
                                                   "lb_factor", "level", NULL };
 
 
 static void * JK_METHOD jk2_worker_ajp13_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
     jk_worker_t *worker=(jk_worker_t *)bean->object;
     
-    if( strcmp( name, "channelName" )==0 ) {
+    if( strcmp( name, "channelName" )==0 ||
+        strcmp( name, "channel" )==0   ) {
         if( worker->channel != NULL )
             return worker->channel->mbean->name;
         else
             return worker->channelName;
     } else if (strcmp( name, "route" )==0 ) {
         return worker->route;
+    } else if (strcmp( name, "debug" )==0 ) {
+        return jk2_env_itoa( env,  bean->debug );
+    } else if (strcmp( name, "groups" )==0 ) {
+        return jk2_map_concatKeys( env, worker->groups, ":" );
+    } else if (strcmp( name, "level" )==0 ) {
+        return jk2_env_itoa( env,  worker->level );
     } else if (strcmp( name, "errorTime" )==0 ) {
-        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
-        sprintf( buf, "%d", worker->error_time );
-        return buf;
+        return jk2_env_itoa( env, worker->error_time );
     } else if (strcmp( name, "lb_value" )==0 ) {
-        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
-        sprintf( buf, "%d", worker->lb_value );
-        return buf;
+        return jk2_env_itoa( env, worker->lb_value );
     } else if (strcmp( name, "lb_factor" )==0 ) {
-        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
-        sprintf( buf, "%d", worker->lb_factor );
-        return buf;
+        return jk2_env_itoa( env, worker->lb_factor );
     } else if (strcmp( name, "errorState" )==0 ) {
-        if( worker->in_error_state ) 
-            return "Y";
-        else
-            return "N";
+        return jk2_env_itoa( env, worker->in_error_state );
     } else if (strcmp( name, "graceful" )==0 ) {
-        if( worker->mbean->disabled != 0) 
-            return "Y";
-        else
-            return "N";
+        return jk2_env_itoa( env, worker->mbean->disabled );
     } else if (strcmp( name, "epCount" )==0 ) {
-        char *result;
         if( worker->endpointCache==NULL ) return "0";
-        result=env->tmpPool->calloc( env, env->tmpPool, 6 );
-        sprintf( result, "%d", worker->endpointCache->count );
-        return result;
+        return jk2_env_itoa( env, worker->endpointCache->count );
     } else {
         return NULL;
     }
@@ -152,6 +144,11 @@ jk2_worker_ajp13_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         ajp13->route=value;
     } else if( strcmp( name, "route" )==0 ) {
         ajp13->route=value;
+    } else if( strcmp( name, "graceful" )==0 ) {
+        if( strcmp( value, "0") )
+            ajp13->mbean->disabled=0;
+        else 
+            ajp13->mbean->disabled=1;
     } else if( strcmp( name, "group" )==0 ) {
         ajp13->groups->add( env, ajp13->groups, value, ajp13 );
     } else if( strcmp( name, "lb_factor" )==0 ) {

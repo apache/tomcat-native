@@ -130,7 +130,9 @@ int jk2_map_default_create(struct jk_env *env, jk_map_t **m,
                           struct jk_pool *pool); 
 
 int jk2_map_read(struct jk_env *env, jk_map_t *m,const char *file);
-    
+
+char *jk2_map_concatKeys( struct jk_env *env, jk_map_t *map, char *delim );
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

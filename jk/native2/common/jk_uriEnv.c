@@ -167,7 +167,11 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     return JK_OK;
 }
 
-
+static char *getAttInfo[]={ "host", "uri", "group", "context", "inheritGlobals", "match_type", "prefix", "suffix",
+                            "servlet", "timing", "aliases", "path", NULL };
+static char *setAttInfo[]={ "host", "uri", "group", "context", "inheritGlobals",
+                            "servlet", "timing", "alias", "path", NULL };
+    
 static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
                                      char *name )
 {
@@ -181,9 +185,26 @@ static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
         return uriEnv->workerName;
     } else if( strcmp( name, "context" )==0 ) {
         return uriEnv->contextPath;
+    } else if( strcmp( name, "servlet" )==0 ) {
+        return uriEnv->servlet;
+    } else if( strcmp( name, "prefix" )==0 ) {
+        return uriEnv->prefix;
+    } else if( strcmp( name, "suffix" )==0 ) {
+        return uriEnv->suffix;
+    } else if( strcmp( name, "match_type" )==0 ) {
+        return jk2_env_itoa(env, uriEnv->match_type);
+    } else if (strcmp("timing", name) == 0) {
+        return jk2_env_itoa(env, uriEnv->timing);
+    } else if (strcmp("aliases", name) == 0) {
+        return jk2_map_concatKeys( env, uriEnv->aliases, ":" );
+    } else if (strcmp("path", name) == 0) {
+        return uriEnv->uri;
+    } else if (strcmp("inheritGlobals", name) == 0) {
+        return jk2_env_itoa(env,uriEnv->inherit_globals);
     }
     return NULL;
 }
+
 
 static int JK_METHOD jk2_uriEnv_setAttribute(jk_env_t *env,
                                   jk_bean_t *mbean,
@@ -449,8 +470,6 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     return JK_OK;
 }
 
-static char *myAttInfo[]={ "host", "uri", "group", "context", NULL };
-    
 int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                  jk_bean_t *result,
                                  const char *type, const char *name)
@@ -474,7 +493,8 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
     result->getAttribute = jk2_uriEnv_getAttribute;
     uriEnv->mbean = result;
     result->object = uriEnv;
-    result->getAttributeInfo = myAttInfo;
+    result->getAttributeInfo = getAttInfo;
+    result->getAttributeInfo = setAttInfo;
 
     uriEnv->name = result->localName;
     if (jk2_uriEnv_parseName(env, uriEnv, result->localName) != JK_OK) {

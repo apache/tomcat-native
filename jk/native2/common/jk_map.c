@@ -333,6 +333,31 @@ static int jk2_map_append(jk_env_t *env, jk_map_t * dst, jk_map_t * src )
     return JK_OK;
 }
                                
+char * jk2_map_concatKeys( jk_env_t *env, jk_map_t *map, char *delim )
+{
+    int i;
+    char *buf;
+    int len=0;
+    int delimLen=strlen( delim );
+    
+    int sz=map->size( env, map );
+    for( i=0; i<sz; i++ ) {
+        if( map->keys[i] != NULL ) {
+            len+=strlen( map->keys[i] );
+            len++;
+        }
+    }
+    buf=env->tmpPool->calloc( env, env->tmpPool, len + 10 );
+    len=0;
+    for( i=0; i<sz; i++ ) {
+        if( map->keys[i] != NULL ) {
+            sprintf( buf + len, "%s%s", delim, map->keys[i] );
+            len += strlen( map->keys[i] ) + delimLen;
+        }
+    }
+    buf[len]='\0';
+    return buf;
+}
 
 
 /* ==================== */
@@ -376,7 +401,6 @@ int jk2_map_default_create(jk_env_t *env, jk_map_t **m, jk_pool_t *pool )
     _this->valueAt=jk2_map_default_valueAt;
     _this->init=jk2_map_default_init;
     _this->clear=jk2_map_default_clear;
-    
 
     return JK_OK;
 }

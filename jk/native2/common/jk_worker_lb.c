@@ -475,7 +475,39 @@ static int JK_METHOD jk2_lb_refresh(jk_env_t *env, jk_worker_t *lb)
 
 
 static char *jk2_worker_lb_multiValueInfo[]={"worker", NULL };
-static char *jk2_worker_lb_setAttributeInfo[]={"hwBalanceErr", "noWorkerMsg", "noWorkerCode", NULL };
+static char *jk2_worker_lb_setAttributeInfo[]={"attempts", "stickySession", "recovery", "timeout",
+                                               "hwBalanceErr", "noWorkerMsg", "noWorkerCode", "worker", NULL };
+
+static char *jk2_worker_lb_getAttributeInfo[]={"attempts", "stickySession", "recovery", "timeout",
+                                               "hwBalanceErr", "noWorkerMsg", "noWorkerCode", "workers", NULL };
+
+
+static void * JK_METHOD jk2_lb_getAttribute(jk_env_t *env, jk_bean_t *mbean, 
+                                            char *name)
+{
+    jk_worker_t *lb=mbean->object;
+    unsigned i = 0;
+    jk_worker_lb_private_t *lb_priv = lb->worker_private;
+    
+    if( strcmp( name, "workers") == 0 ) {
+        return jk2_map_concatKeys( env, lb->lbWorkerMap, ":" );
+    } else if( strcmp( name, "noWorkerMsg") == 0 ) {
+        return lb->noWorkerMsg;
+    } else if( strcmp( name, "noWorkerCode") == 0 ) {
+        return jk2_env_itoa( env, lb->noWorkerCode);
+    } else if( strcmp( name, "hwBalanceErr") == 0 ) {
+        return jk2_env_itoa( env, lb->hwBalanceErr);
+    } else if( strcmp( name, "timeout") == 0 ) {
+        return jk2_env_itoa( env, lb_priv->timeout);
+    } else if( strcmp( name, "recovery") == 0 ) {
+        return jk2_env_itoa( env, lb_priv->recovery);
+    } else if( strcmp( name, "stickySession") == 0 ) {
+        return jk2_env_itoa( env, lb_priv->sticky_session);
+    } else if( strcmp( name, "attempts") == 0 ) {
+        return jk2_env_itoa( env, lb_priv->attempts);
+    }
+    return NULL;
+}
 
 static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean, 
                                          char *name, void *valueP)
@@ -486,7 +518,7 @@ static int JK_METHOD jk2_lb_setAttribute(jk_env_t *env, jk_bean_t *mbean,
     jk_worker_lb_private_t *lb_priv = lb->worker_private;
     
     if( strcmp( name, "worker") == 0 ) {
-        if( lb->lbWorkerMap->get( env, lb->lbWorkerMap, name) != NULL ) {
+        if( lb->lbWorkerMap->get( env, lb->lbWorkerMap, value) != NULL ) {
             /* Already added */
             return JK_OK;
         }

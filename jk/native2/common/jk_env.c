@@ -478,6 +478,15 @@ static void JK_METHOD jk_env_jkClearException( jk_env_t *env ) {
     env->lastException=NULL;
 }
 
+/* -------------------- Util -------------------- */
+
+/* It should be in some util class */
+
+char * JK_METHOD jk2_env_itoa( jk_env_t *env, int i ) {
+    char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
+    sprintf( buf, "%d", i );
+    return buf;
+}
 
 /* -------------------- Init method -------------------- */
 

@@ -237,6 +237,7 @@ struct jk_env {
 
 void JK_METHOD jk2_registry_init(jk_env_t *env);
 
+char * JK_METHOD jk2_env_itoa( jk_env_t *env, int i );
     
 #ifdef __cplusplus
 }

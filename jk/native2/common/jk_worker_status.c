@@ -263,6 +263,7 @@ static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t 
     jk_map_t *map=wenv->initData;
     int i;
     int needHeader=JK_TRUE;
+    int typeLen=strlen( type );
 
     for( i=0; i < env->_objects->size( env, env->_objects ); i++ ) {
         char *name=env->_objects->nameAt( env, env->_objects, i );
@@ -279,7 +280,7 @@ static void jk2_worker_status_displayRuntimeType(jk_env_t *env, jk_ws_service_t 
         if( mbean->getAttribute == NULL )
             continue;
 
-        if( strncmp( type, mbean->type, 5 ) != 0 )
+        if( strncmp( type, mbean->type, typeLen ) != 0 )
             continue;
 
         if( needHeader ) {
@@ -687,15 +688,34 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
         s->jkprintf(env, s, "Updated config %d", shm->head->lbVer  );
     }
     
-    s->jkprintf(env, s, "Status information for child %d", s->workerEnv->childId  );
+    s->jkprintf(env, s, "Status information for child %d<br>", s->workerEnv->childId  );
+    s->jkprintf(env, s, " <a href='jkstatus?cfgOrig=1'>[Original config]</a>\n");
+    s->jkprintf(env, s, " <a href='jkstatus?cfgParsed=1'>[Processed config]</a>\n");
+    s->jkprintf(env, s, " <a href='jkstatus?scoreboard=1'>[Scoreboard info]</a>\n");
+    s->jkprintf(env, s, " <a href='jkstatus'>[Workers, Channels and URIs]</a>\n");
     
+    if( strncmp( s->query_string, "cfgOrig=", 8) == 0 ) {
+        jk2_worker_status_displayConfigProperties(env, s, s->workerEnv );
+        return JK_OK;
+    }
+
+    if( strncmp( s->query_string, "cfgParsed=", 10) == 0 ) {
+        jk2_worker_status_displayActiveProperties(env, s, s->workerEnv );
+        return JK_OK;
+    }
+
+    if( strncmp( s->query_string, "scoreboard=", 11) == 0 ) {
+        jk2_worker_status_displayScoreboardInfo(env, s, s->workerEnv );
+        jk2_worker_status_displayEndpointInfo( env, s, s->workerEnv );
+        return JK_OK;
+    }
+
     /* Body */
     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "ajp13" );
-    jk2_worker_status_displayScoreboardInfo(env, s, s->workerEnv );
-    jk2_worker_status_displayEndpointInfo( env, s, s->workerEnv );
+    jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "channel.socket" );
+    jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "channel.un" );
+    jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "channel.jni" );
     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "uri" );
-    jk2_worker_status_displayConfigProperties(env, s, s->workerEnv );
-    jk2_worker_status_displayActiveProperties(env, s, s->workerEnv );
     
     s->afterRequest( env, s);
     return JK_OK;

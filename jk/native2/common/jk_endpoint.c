@@ -126,9 +126,26 @@ static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
 	return JK_OK;
 }
 
+static char *getAttInfo[]={ "id", NULL };
+    
+static void * JK_METHOD jk2_endpoint_getAttribute(jk_env_t *env, jk_bean_t *bean,
+                                                  char *name )
+{
+    jk_endpoint_t *ep=(jk_endpoint_t *)bean->object;
+    
+    if( strcmp( name, "id" )==0 ) {
+        return  "1";
+    } else if (strcmp("inheritGlobals", name) == 0) {
+        return "";
+    }
+    return NULL;
+}
+
+
+
 int JK_METHOD
 jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
-                          jk_bean_t *result,
+                      jk_bean_t *result,
                       const char *type, const char *name)
 {
     jk_endpoint_t *e = (jk_endpoint_t *)pool->calloc(env, pool,
@@ -162,6 +179,8 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
     epId=atoi( result->localName );
     
     result->object = e;
+    result->getAttributeInfo=getAttInfo;
+    result->getAttribute=jk2_endpoint_getAttribute;
     e->mbean=result;
 
     e->workerEnv=env->getByName( env, "workerEnv" );

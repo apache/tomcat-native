@@ -113,10 +113,10 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host,
 static int JK_METHOD jk2_channel_socket_close(jk_env_t *env, jk_channel_t *ch,
                                              jk_endpoint_t *endpoint);
 
-static char *jk2_channel_socket_multiValueInfo[]={"group", NULL };
-static char *jk2_channel_socket_getAttributeInfo[]={"name", NULL };
-static char *jk2_channel_socket_setAttributeInfo[]={"host", "port", "route", "lb_factor",
-                                                    "level", NULL };
+static char *jk2_channel_socket_getAttributeInfo[]={"host", "port", "keepalive", "timeout", "nodelay",
+                                                    "debug", "disabled", NULL };
+static char *jk2_channel_socket_setAttributeInfo[]={"host", "port", "keepalive", "timeout", "nodelay",
+                                                    "debug", "disabled", NULL };
 
 static int JK_METHOD jk2_channel_socket_setAttribute(jk_env_t *env,
                                            jk_bean_t *mbean,
@@ -152,6 +152,20 @@ static void * JK_METHOD jk2_channel_socket_getAttribute(jk_env_t *env, jk_bean_t
     
     if( strcmp( name, "name" )==0 ) {
         return  bean->name;
+    } else if( strcmp( "host", name ) == 0 ) {
+        return socketInfo->host;
+    } else if( strcmp( "port", name ) == 0 ) {
+        return jk2_env_itoa( env, socketInfo->port );
+    } else if( strcmp( "nodelay", name ) == 0 ) {
+        return jk2_env_itoa( env, socketInfo->ndelay );
+    } else if( strcmp( "keepalive", name ) == 0 ) {
+        return jk2_env_itoa( env, socketInfo->keepalive );
+    } else if( strcmp( "timeout", name ) == 0 ) {
+        return jk2_env_itoa( env, socketInfo->timeout );
+    } else if( strcmp( "debug", name ) == 0 ) {
+        return jk2_env_itoa( env, ch->mbean->debug );
+    } else if( strcmp( "disabled", name ) == 0 ) {
+        return jk2_env_itoa( env, ch->mbean->disabled );
     }
     return NULL;
 }
@@ -670,7 +684,7 @@ int JK_METHOD jk2_channel_socket_factory(jk_env_t *env,
     result->init= jk2_channel_socket_init; 
 
     result->getAttributeInfo=jk2_channel_socket_getAttributeInfo;
-    result->multiValueInfo=jk2_channel_socket_multiValueInfo;
+    result->multiValueInfo=NULL;
     result->setAttributeInfo=jk2_channel_socket_setAttributeInfo;
     
     result->object= ch;
