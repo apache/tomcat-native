@@ -99,14 +99,10 @@ typedef struct {
 } jk_ch_jni_ep_private_t;
 
 
-int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
-                                      void **result,
-                                      const char *type, const char *name);
-
 
 static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
-                                                   jk_channel_t *_this, 
-                                                   char *name, char *value)
+                                                 jk_bean_t *mbean, 
+                                                 char *name, void *value)
 {
     return JK_TRUE;
 }
@@ -119,7 +115,7 @@ static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
        have it.
     */
     env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.init():  %s\n", 
-                  _this->worker->name );
+                  _this->worker->mbean->name );
 
     return JK_TRUE;
 }
@@ -592,22 +588,15 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
 
 
 
-int JK_METHOD jk2_channel_jni_factory(jk_env_t *env,
-                                     jk_pool_t *pool, 
-                                     void **result,
-                                     const char *type, const char *name)
+int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool, 
+                                      jk_bean_t *result,
+                                      const char *type, const char *name)
 {
-    jk_channel_t *_this;
+    jk_channel_t *_this=result->object;
     
-    if( strcmp( "channel", type ) != 0 ) {
-	/* Wrong type  XXX throw */
-	*result=NULL;
-	return JK_FALSE;
-    }
     _this=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
     _this->recv= jk2_channel_jni_recv;
-    _this->setProperty= jk2_channel_jni_setProperty; 
     _this->send= jk2_channel_jni_send; 
     _this->init= jk2_channel_jni_init; 
     _this->open= jk2_channel_jni_open; 
@@ -616,13 +605,13 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env,
     _this->beforeRequest= jk2_channel_jni_beforeRequest;
     _this->afterRequest= jk2_channel_jni_afterRequest;
     
-    _this->name="jni";
-
     _this->_privatePtr=(jk_channel_jni_private_t *)pool->calloc(env, pool,
                     sizeof(jk_channel_jni_private_t));
     _this->is_stream=JK_FALSE;
     
-    *result= _this;
+    result->setAttribute= jk2_channel_jni_setProperty;
+    _this->mbean=result;
+    result->object= _this;
     
     return JK_TRUE;
 }

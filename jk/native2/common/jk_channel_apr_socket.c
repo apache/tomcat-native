@@ -119,10 +119,6 @@ typedef struct jk_channel_socket_private jk_channel_socket_private_t;
   XXX We could also use properties or 'notes'
 */
 
-int JK_METHOD jk2_channel_socket_factory(jk_env_t *env, jk_pool_t *pool,
-                                         void **result,
-                                         const char *type, const char *name);
-
 static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host,
                                                 short port,
                                                 jk_channel_socket_private_t *rc);
@@ -130,17 +126,13 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host,
 static int JK_METHOD jk2_channel_socket_close(jk_env_t *env, jk_channel_t *_this,
                                               jk_endpoint_t *endpoint);
 
-static int JK_METHOD jk2_channel_socket_getProperty(jk_env_t *env,
-                                                    jk_channel_t *_this, 
-                                                    char *name, char **value)
-{
-    return JK_FALSE;
-}
 
 static int JK_METHOD jk2_channel_socket_setProperty(jk_env_t *env,
-                                                   jk_channel_t *_this, 
-                                                   char *name, char *value)
+                                                    jk_bean_t *mbean, 
+                                                    char *name, void *valueP)
 {
+    jk_channel_t *_this=(jk_channel_t *)mbean->object;
+    char *value=valueP;
     jk_channel_socket_private_t *socketInfo=
         (jk_channel_socket_private_t *)(_this->_privatePtr);
 
@@ -178,7 +170,7 @@ static int JK_METHOD jk2_channel_socket_init(jk_env_t *env,
     }
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "channel_socket.init(): %s:%d for %s\n", host,
-                  port, _this->worker->name );
+                  port, _this->worker->mbean->name );
 
     return rc;
 }
@@ -524,17 +516,12 @@ static int JK_METHOD jk2_channel_socket_recv( jk_env_t *env, jk_channel_t *_this
 
 
 int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
-                                        jk_pool_t *pool, 
-                                        void **result,
-                                        const char *type, const char *name)
+                                             jk_pool_t *pool, 
+                                             jk_bean_t *result,
+                                             const char *type, const char *name)
 {
     jk_channel_t *_this;
     
-    if( strcmp( "channel", type ) != 0 ) {
-        /* Wrong type  XXX throw */
-        *result=NULL;
-        return JK_FALSE;
-    }
     _this=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
     _this->_privatePtr= (jk_channel_socket_private_t *)
@@ -545,13 +532,11 @@ int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
     _this->init= jk2_channel_socket_init; 
     _this->open= jk2_channel_socket_open; 
     _this->close= jk2_channel_socket_close; 
-    /*     _this->getProperty= jk2_channel_socket_getProperty;  */
-    _this->setProperty= jk2_channel_socket_setProperty; 
-
-    _this->name="aprSocket";
-
-    *result= _this;
     _this->is_stream=JK_TRUE;
+
+    result->setAttribute= jk2_channel_socket_setProperty; 
+    _this->mbean=result;
+    result->object= _this;
     
     return JK_TRUE;
 }
