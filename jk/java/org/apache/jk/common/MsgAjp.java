@@ -90,16 +90,16 @@ import org.apache.jk.core.*;
  */
 public class MsgAjp extends Msg {
 
-    byte buf[]=new byte[8300];
+    private byte buf[]=new byte[8300];
     // The current read or write position in the buffer
-    int pos;    
+    private int pos;    
     /**
      * This actually means different things depending on whether the
      * packet is read or write.  For read, it's the length of the
      * payload (excluding the header).  For write, it's the length of
      * the packet as a whole (counting the header).  Oh, well.
      */
-    int len; 
+    private int len; 
 
 
     
@@ -128,7 +128,15 @@ public class MsgAjp extends Msg {
         buf[2]=  (byte)((dLen>>>8 ) & 0xFF );
         buf[3] = (byte)(dLen & 0xFF);
     }
-	
+
+    public byte[] getBuffer() {
+        return buf;
+    }
+
+    public int getLen() {
+        return len;
+    }
+    
     // ============ Data Writing Methods ===================
 
     /**
@@ -200,7 +208,8 @@ public class MsgAjp extends Msg {
      */
     public void appendBytes( byte b[], int off, int numBytes ) {
         if( pos + numBytes >= buf.length ) {
-            System.out.println("Buffer overflow " + buf.length + " " + pos + " " + numBytes );
+            System.out.println("Buffer overflow " + buf.length + " " +
+                               pos + " " + numBytes );
             return;
         }
         appendInt( numBytes );
@@ -210,7 +219,8 @@ public class MsgAjp extends Msg {
     
     private void cpBytes( byte b[], int off, int numBytes ) {
         if( pos + numBytes >= buf.length ) {
-            System.out.println("Buffer overflow " + buf.length + " " + pos + " " + numBytes );
+            System.out.println("Buffer overflow " + buf.length + " " +
+                               pos + " " + numBytes );
             return;
         }
         System.arraycopy( b, off, buf, pos, numBytes);
@@ -300,42 +310,11 @@ public class MsgAjp extends Msg {
         return  b1;
     }
 
-    /**
-     * Send a packet to the web server.  Works for any type of message.
-     *
-     * @param msg A packet with accumulated data to send to the server --
-     * this method will write out the length in the header.  
-     */
-    public void send(Channel ch, Endpoint ep) throws IOException {
-
-	this.end(); // Write the packet header
-
-        if (dL > 5 )
-            d("send() " + len + " " + buf[4] );
-
-	ch.write( ep, buf, 0, len );
+    public int getHeaderLength() {
+        return 4;
     }
 
-    public int receive(Channel ch, Endpoint ep) throws IOException {
-        if (dL > 0) {
-            d("receive()");
-        }
-
-	// XXX If the length in the packet header doesn't agree with the
-	// actual number of bytes read, it should probably return an error
-	// value.  Also, callers of this method never use the length
-	// returned -- should probably return true/false instead.
-
-        int rd = ch.read(ep, buf, 0, 4 );
-        
-        // XXX - connection closed (JK_AJP13_COMM_CLOSED)
-        //     - connection broken (JK_AJP13_COMM_BROKEN)
-        //
-        if(rd < 0) {
-            // Most likely normal apache restart.
-            return rd;
-        }
-        
+    public int processHeader() {
         pos = 0;
         int mark = getInt();
         len      = getInt();
@@ -348,30 +327,9 @@ public class MsgAjp extends Msg {
         }
     
 	if( dL > 5 )
-            d( "Received " + rd + " " + len + " " + buf[0] );
-        
-	// XXX check if enough space - it's assert()-ed !!!
-        
- 	int total_read = 0;
-        
-        total_read = ch.read(ep, buf, 4, len);
-        
-        if (total_read <= 0) {
-            d("can't read body, waited #" + len);
-            return  -1;
-        }
-        
-        if (total_read != len) {
-             d( "incomplete read, waited #" + len +
-                        " got only " + total_read);
-            return -2;
-        }
-        
-        if (dL > 0)
-             d("receive:  total read = " + total_read);
-	return total_read;
+            d( "Received " + len + " " + buf[0] );
+        return len;
     }
-
     
     public void dump(String msg) {
         System.out.println( msg + ": " + buf + " " + pos +"/" + (len + 4));

@@ -75,8 +75,10 @@ import org.apache.tomcat.util.buf.*;
  * Handle messages related with basic request information.
  *
  * This object can handle the following incoming messages:
- * - "FORWARD_REQUEST" input message ( sent when a request is passed from the web server )
- * - "RECEIVE_BODY_CHUNK" input ( sent by container to pass more body, in response to GET_BODY_CHUNK )
+ * - "FORWARD_REQUEST" input message ( sent when a request is passed from the
+ *   web server )
+ * - "RECEIVE_BODY_CHUNK" input ( sent by container to pass more body, in
+ *   response to GET_BODY_CHUNK )
  *
  * It can handle the following outgoing messages:
  * - SEND_HEADERS. Pass the status code and headers.
@@ -198,7 +200,7 @@ public class HandlerRequest extends Handler
     {
     }
 
-    public void init( WorkerEnv we ) {
+    public void init() {
 	// register incoming message handlers
 	we.registerMessageType( JK_AJP13_FORWARD_REQUEST,
                                 "JK_AJP13_FORWARD_REQUEST",
@@ -224,12 +226,6 @@ public class HandlerRequest extends Handler
     int postMsgNote=5;
     int tmpBufNote=6;
 
-    Worker w;
-
-    public void setWorker( Worker w ) {
-        this.w=w;
-    }
-    
     public int callback(int type, Channel ch, Endpoint ep, Msg msg)
         throws IOException
     {
@@ -244,7 +240,7 @@ public class HandlerRequest extends Handler
         decodeRequest( msg, req, ch, ep );
 
         /* XXX it should be computed from request, by workerEnv */
-        w.service( req, ch, ep );
+        worker.service( req, ch, ep );
         return OK;
     }
 
@@ -256,6 +252,7 @@ public class HandlerRequest extends Handler
         // Translate the HTTP method code to a String.
         byte methodCode = msg.getByte();
         String mName=methodTransArray[(int)methodCode - 1];
+
         req.method().setString(mName);
 
         msg.getBytes(req.protocol()); 
@@ -290,12 +287,12 @@ public class HandlerRequest extends Handler
             }
         
 	    /* Read present data */
-	    int err = postMsg.receive(ch, ep);
+	    int err = ch.receive(postMsg, ep);
     	}
     
         if (dL > 5) {
             d(req.toString());
-        }
+         }
 
         return OK;
     }
@@ -385,7 +382,7 @@ public class HandlerRequest extends Handler
                                  jsseCerts);
                 break;
 		
-	    case SC_A_SSL_CIPHER   :
+ 	    case SC_A_SSL_CIPHER   :
 		req.setSecure( true );
                 msg.getBytes(tmpMB);
 		req.setAttribute("javax.servlet.request.cipher_suite",
@@ -453,7 +450,7 @@ public class HandlerRequest extends Handler
         }
     }
 
-    private static final int dL=10;
+    private static final int dL=0;
     private static void d(String s ) {
         System.err.println( "HandlerRequest: " + s );
     }

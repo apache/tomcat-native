@@ -84,19 +84,10 @@ public class WorkerDummy extends Worker
 
     /* ==================== Start/stop ==================== */
 
-    /** Configuration. We'll extract and check the settings.
-     *  XXX We should be able to get info from the same
-     *  properties file as the C side, so port, etc could be
-     *  configured in only one place
-     */
-    public void validate(  Properties p ) 
-    {
-    }
-    
     /** Initialize the worker. After this call the worker will be
      *  ready to accept new requests.
      */
-    public void init(WorkerEnv we) throws IOException {
+    public void init() throws IOException {
         headersMsgNote=we.getNoteId( WorkerEnv.ENDPOINT_NOTE, "headerMsg" );
     }
  
@@ -124,8 +115,8 @@ public class WorkerDummy extends Worker
 
         msg.appendInt(0);
         
-        msg.send( ch, ep );
-        msg.dump("out:" );
+        ch.send( msg, ep );
+        //         msg.dump("out:" );
 
         msg.reset();
         msg.appendByte( HandlerRequest.JK_AJP13_SEND_BODY_CHUNK);
@@ -133,13 +124,13 @@ public class WorkerDummy extends Worker
         msg.appendBytes( body );
 
         
-        msg.send(ch, ep);
+        ch.send(msg, ep);
 
         msg.reset();
         msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
         msg.appendInt( 1 );
         
-        msg.send(ch, ep );
+        ch.send(msg, ep );
     }
     
     private static final int dL=10;
