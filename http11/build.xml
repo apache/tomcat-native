@@ -21,15 +21,19 @@
   <!-- The directories corresponding to your necessary dependencies -->
   <property name="junit.home"              value="/usr/local/junit3.5"/>
 
+  <!-- Dependencies within jakarta-tomcat-connectors -->
+  <property name="util.home" value="../util"/>
+  <property name="coyote.home" value="../coyote"/>
+
 
 <!-- ========== Derived Values ============================================ -->
 
 
   <!-- The locations of necessary jar files -->
-  <property name="tomcat-util.jar"  value="../util/build/lib/tomcat-util.jar"/>
-  <property name="tomcat-coyote.jar" value="../coyote/build/lib/tomcat-coyote.jar"/>
+  <property name="tomcat-util.jar"  value="${util.home}/build/lib/tomcat-util.jar"/>
+  <property name="tomcat-coyote.jar" value="${coyote.home}/build/lib/tomcat-coyote.jar"/>
   <property name="tomcat33-coyote.jar" 
-          value="../coyote/build/lib/tomcat33-coyote.jar"/>
+          value="${coyote.home}/build/lib/tomcat33-coyote.jar"/>
   <property name="junit.jar"        value="${junit.home}/junit.jar"/>
   <property name="jmx.jar" location="../lib/mx4j.jar" />
   <property name="commons-modeler.jar" location="../../jakarta-commons/modeler/dist/commons-modeler.jar" />
