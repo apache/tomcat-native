@@ -724,12 +724,12 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
 {
     int rc;
     ajp_worker_t *aw = ae->worker;
+    int sock = ae->sd;
 
     JK_ENTER_CS(&aw->cs, rc);
     if (rc) {
         unsigned int i;
         /* Close existing endpoint socket */
-        jk_close_socket(ae->sd);
         ae->sd = -1;
         for (i = 0; i < aw->ep_cache_sz; i++) {
             /* Find cache slot with usable socket */
@@ -741,6 +741,7 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
         }
         JK_LEAVE_CS(&aw->cs, rc);
     }
+    jk_close_socket(sock);
 }
 
 /*
@@ -2002,8 +2003,12 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
 
         JK_ENTER_CS(&w->cs, rc);
         if (rc) {
-            int i;
-
+            int i, sock = -1;
+            
+            if (p->sd > 0 && !p->reuse) {
+                sock  = p->sd;
+                p->sd = -1;
+            }
             for(i = w->ep_cache_sz - 1; i >= 0; i--) {
                 if (w->ep_cache[i] == NULL) {
                     w->ep_cache[i] = p;
@@ -2013,6 +2018,8 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
             }
             *e = NULL;
             JK_LEAVE_CS(&w->cs, rc);
+            if (sock >= 0)
+                jk_close_socket(sock);
             if (i >= 0) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
