@@ -21,12 +21,20 @@ tomcat33.home= ../../jakarta-tomcat/build/tomcat
 apache2.home=/opt/apache2
 apache13.home=/opt/apache13
 iplanet.home=/opt/iplanet6
-
+# iplanet.home=d:/tools/sdk/netscape
+# iis.home=e:/
 
 # APR location - by default the version included in Apache2 is used.
 # Don't edit unless you install 'standalone' apr.
-apr.include=${apache2.home}/include
-apr.lib=${apache2.home}/lib
+apr.home=$(apache2.home)
+
+apr.include=${apr.home}/include
+apr-util.include=${apr.home}/include
+
+apr.lib=${apr.home}/lib
+apr-util.lib=${apr.home}/lib
+apache2.lib=$(apache2.home)/lib
+
 
 # Compile-time options for native code
 so.debug=true
@@ -50,4 +58,10 @@ so.profile=false
 # build.compiler.base=c:/Program Files/Microsoft Visual Studio/VC98
 # build.compiler.cc=${build.compiler.base}/bin/cl
 # build.compiler.ld=${build.compiler.base}/bin/link
+
+# Microsft SDK
+
+# mssdk.home=c:/Program Files/Microsoft SDK
+# mssdk.include=$(mssdk.home)/include
+# mssdk.lib=$(mssdk.home)/lib
 

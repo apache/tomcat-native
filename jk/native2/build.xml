@@ -76,7 +76,6 @@
 
   <target name="apache20" depends="init" if="apache2.detect">
     <property name="apr.include" location="${apache2.home}/include" />
-    <echo message="${apr.include}"/>
     <mkdir dir="${build.dir}/apache2" />
     <so sofile="mod_jk2" 
 	buildDir="${build.dir}/apache2"
@@ -95,7 +94,6 @@
 	   info="Jni worker" />
       <def name="HPUX11" if="hpux" />
       <def name="WIN32" if="win32" />
-      <def name="NDEBUG" if="win32"  />
       <def name="_WINDOWS" if="win32" />
       <def name="_MBCS" if="win32" />
       <def name="_USRDLL" if="win32" />
@@ -234,7 +232,8 @@
       
       <def name="HPUX11" if="hpux" />
       <def name="WIN32" if="win32" />
-      <def name="NDEBUG" if="win32"  />
+      <def name="NDEBUG" if="win32.release" />
+      <def name="_DEBUG" if="win32.debug" />
       <def name="_WINDOWS" if="win32" />
       <def name="_MBCS" if="win32" />
       <def name="_USRDLL" if="win32" />
@@ -300,7 +299,6 @@
 	   info="Use the sprintf function to build strings" />
            
       <def name="WIN32" if="win32" />
-      <def name="NDEBUG" if="win32"  />
       <def name="_WINDOWS" if="win32" />
       <def name="_MBCS" if="win32" />
       <def name="_USRDLL" if="win32" />
@@ -335,28 +333,32 @@
   </target>
 
   <target name="iis" depends="init" if="iis.detect">
+    <mkdir dir="${build.dir}/isapi" />
     <so sofile="isapi_redirector" 
-        buildDir="iis"
+        buildDir="${build.dir}/isapi"
         optimize="${so.optimize}"
         debug="${so.debug}"
         profile="${so.profile}">
         
       <src dir=".">
-        <include name="iis/jk_isapi_plugin.c" />
+        <include name="server/isapi/*.c" />
         <include name="common/*.c" />
+        <exclude name="common/jk_channel_apr_socket.c"/>
+        <exclude name="common/jk_pool_apr.c"/>
         <exclude name="jk_nwmain.c" 
                  unless="netware" />
-        <include name="common/apr/*.c" unless="HAVE_APR" />
-	<include name="jni/*.c" />
+        <exclude name="jk_apr.c" 
+                 unless="netware" />
+        <include name="common/apr/*.c" unless="HAVE_APR"  />
+	<!-- include name="jni/*.c" /-->
       </src>
       <includes>
         <include name="${java.home}/../include" />
 	<include name="${native.dir}/include" />
         <include name="${java.home}/../include/win32" />
-        <!-- JFC why not conditional? -->
-        <include name="${java.home}/../include/linux" />
         <include name="${native.dir}/common" />
-        <include name="${build.compiler.base}/include" />
+        <!--include name="&quot;${build.compiler.base}/include&quot;" /-->
+        <include name="&quot;$(mssdk.include)&quot;"/>
       </includes>
       <depends>
         <fileset dir="${native.dir}/common" includes="*.h" />
@@ -364,8 +366,9 @@
         
       <!-- Platform-specific tags -->
       <def name="WIN32" />
-      <def name="NDEBUG" />
       <def name="_WINDOWS"  />
+      <def name="NDEBUG" if="win32.release" />
+      <def name="_DEBUG" if="win32.debug" />
       <def name="_MBCS" />
       <def name="_USRDLL" />
       <def name="ISAPI_EXPORTS" />
@@ -377,7 +380,8 @@
       <export symbol="HttpExtensionProc"/>
       <export symbol="TerminateFilter"/>
       <export symbol="TerminateExtension"/>
-      <linkOpt value="/libpath:${build.compiler.base}/lib" if="win32" />
+      <!--linkOpt value="/libpath:&quot;${build.compiler.base}/lib&quot;" if="win32" /-->
+      <linkOpt value="/libpath:&quot;$(mssdk.lib)&quot;" if="win32" />
     </so>
   </target>
 
@@ -434,7 +438,8 @@
 	   info="Use the sprintf function to build strings" />
            
       <def name="WIN32" if="win32" />
-      <def name="NDEBUG" if="win32"  />
+      <def name="NDEBUG" if="win32.release" />
+      <def name="_DEBUG" if="win32.debug" />
       <def name="_WINDOWS" if="win32" />
       <def name="_MBCS" if="win32" />
       <def name="_USRDLL" if="win32" />
