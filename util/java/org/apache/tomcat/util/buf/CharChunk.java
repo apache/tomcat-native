@@ -597,7 +597,8 @@ public final class CharChunk implements Cloneable, Serializable {
      * @param s the string
      */
     public int indexOf(char c, int starting) {
-	return indexOf( buff, start+starting, end, c );
+	int ret = indexOf( buff, start+starting, end, c );
+	return (ret >= start) ? ret - start : -1;
     }
 
     public static int indexOf( char chars[], int off, int cend, char qq )
