@@ -55,7 +55,9 @@
 #define SOCKET_KEEPALIVE_OF_WORKER  ("socket_keepalive")
 #define RECYCLE_TIMEOUT_OF_WORKER   ("recycle_timeout")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
+/* deprecated directive. Use balance_workers instead */
 #define BALANCED_WORKERS            ("balanced_workers")
+#define BALANCE_WORKERS             ("balance_workers")
 #define STICKY_SESSION              ("sticky_session")
 #define LOCAL_WORKER_ONLY_FLAG      ("local_worker_only")
 #define LOCAL_WORKER_FLAG           ("local_worker")
@@ -679,6 +681,14 @@ int jk_get_lb_worker_list(jk_map_t *m,
     if (m && list && num_of_wokers && lb_wname) {
         char **ar = NULL;
 
+        sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, lb_wname,
+                BALANCE_WORKERS);
+        ar = jk_map_get_string_list(m, buf, num_of_wokers, NULL);
+        if (ar) {
+            *list = ar;
+            return JK_TRUE;
+        }
+        /* Try old balanced_workers directive */
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, lb_wname,
                 BALANCED_WORKERS);
         ar = jk_map_get_string_list(m, buf, num_of_wokers, NULL);
