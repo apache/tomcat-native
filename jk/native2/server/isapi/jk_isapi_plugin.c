@@ -334,14 +334,14 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                            "In HttpFilterProc Virtual Host redirection of %s\n", 
                            Host);
-                    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host,uri, 0 );
+                    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host,uri );
                 }
 
                 if (uriEnv==NULL) {
                     env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                            "In HttpFilterProc test Default redirection of %s\n", 
                            uri);
-                    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,uri, 0 );
+                    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,uri );
                 }
 
                 if( uriEnv!=NULL ) {

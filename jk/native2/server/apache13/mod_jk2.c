@@ -438,18 +438,11 @@ static int jk2_translate(request_rec *r)
     /* get_env() */
     env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
         
-    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri, 0 );
+    uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri, );
     
     if(uriEnv==NULL || uriEnv->workerName==NULL) {
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
         return DECLINED;
-    }
-    else {
-        jk_uriEnv_t *rriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,NULL,r->uri, 1 );
-        if (rriEnv != NULL && rriEnv->workerName != NULL) {
-            workerEnv->globalEnv->releaseEnv(workerEnv->globalEnv, env );
-            return DECLINED;
-        }
     }
 
     ap_set_module_config( r->request_config, &jk2_module, uriEnv );
