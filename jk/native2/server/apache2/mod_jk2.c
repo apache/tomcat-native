@@ -412,7 +412,8 @@ static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
 {
     workerEnv->init(env, workerEnv );
     workerEnv->server_name   = (char *)ap_get_server_version();
-    ap_add_version_component(pconf, JK_EXPOSED_VERSION);
+    /* Should be done in post config instead (cf DAV2) */
+    /* ap_add_version_component(pconf, JK_EXPOSED_VERSION); */
     return NULL;
 }
 
@@ -464,6 +465,9 @@ static int jk2_post_config(apr_pool_t *pconf,
     
     if(s->is_virtual) 
         return OK;
+
+    /* Other apache 2.0 modules add version info at post_config */
+    ap_add_version_component(pconf, JK_EXPOSED_VERSION);
 
     env=workerEnv->globalEnv;
     
