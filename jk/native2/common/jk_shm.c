@@ -95,7 +95,7 @@
 #define SHM_DUMP 6
 
 
-#ifdef APR_HAS_MMAP    
+#if (APR_HAS_MMAP == 1)
 
 static int JK_METHOD jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
 {

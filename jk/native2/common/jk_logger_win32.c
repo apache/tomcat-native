@@ -229,6 +229,7 @@ jk2_logger_win32_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
 }
 
 #else
+int JK_METHOD 
 jk2_logger_win32_factory(jk_env_t *env, jk_pool_t *pool, jk_bean_t *result,
                            const char *type, const char *name)
 {

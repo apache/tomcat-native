@@ -59,7 +59,7 @@
 #include "jk_map.h"
 #include "jk_pool.h"
 
-#ifndef WIN32
+#if !(defined(WIN32) || defined(NETWARE))
 
 #include <unistd.h>
 #include <pwd.h>
