@@ -151,6 +151,12 @@ public class Http11Processor implements Processor, ActionHook {
 
 
     /**
+     * State flag.
+     */
+    protected boolean started = false;
+
+
+    /**
      * Error flag.
      */
     protected boolean error = false;
@@ -185,6 +191,13 @@ public class Http11Processor implements Processor, ActionHook {
      * List of restricted user agents.
      */
     protected String[] restrictedUserAgents = null;
+
+
+    /**
+     * Logger.
+     */
+    protected static org.apache.commons.logging.Log log 
+        = org.apache.commons.logging.LogFactory.getLog(Http11Processor.class);
 
 
     // --------------------------------------------------------- Public Methods
@@ -267,10 +280,8 @@ public class Http11Processor implements Processor, ActionHook {
         // Error flag
         error = false;
         keepAlive = true;
-        // TEMP
-        boolean stopped = false;
 
-        while (!stopped && !error && keepAlive) {
+        while (started && !error && keepAlive) {
 
             try {
                 inputBuffer.parseRequestLine();
@@ -279,8 +290,9 @@ public class Http11Processor implements Processor, ActionHook {
                 error = true;
                 break;
             } catch (Exception e) {
-                e.printStackTrace();
-                //SC_BAD_REQUEST
+                log.warn("Error parsing HTTP request", e);
+                // 500 - Bad Request
+                response.setStatus(400);
                 error = true;
             }
 
@@ -288,14 +300,17 @@ public class Http11Processor implements Processor, ActionHook {
             prepareRequest();
 
             // Process the request in the adapter
-            try {
-                adapter.service(request, response);
-            } catch (InterruptedIOException e) {
-                error = true;
-            } catch (Throwable t) {
-                // ISE
-                t.printStackTrace();
-                error = true;
+            if (!error) {
+                try {
+                    adapter.service(request, response);
+                } catch (InterruptedIOException e) {
+                    error = true;
+                } catch (Throwable t) {
+                    log.error("Error processing request", t);
+                    // 500 - Internal Server Error
+                    response.setStatus(500);
+                    error = true;
+                }
             }
 
             // Finish the handling of the request
@@ -304,8 +319,9 @@ public class Http11Processor implements Processor, ActionHook {
             } catch (IOException e) {
                 error = true;
             } catch (Throwable t) {
-                // Problem ...
-                t.printStackTrace();
+                log.error("Error finishing request", t);
+                // 500 - Internal Server Error
+                response.setStatus(500);
                 error = true;
             }
             try {
@@ -313,8 +329,7 @@ public class Http11Processor implements Processor, ActionHook {
             } catch (IOException e) {
                 error = true;
             } catch (Throwable t) {
-                // Problem ...
-                t.printStackTrace();
+                log.error("Error finishing response", t);
                 error = true;
             }
 
@@ -351,8 +366,7 @@ public class Http11Processor implements Processor, ActionHook {
             try {
                 outputBuffer.commit();
             } catch (IOException e) {
-                // Log the error, and set error flag
-                e.printStackTrace();
+                // Set error flag
                 error = true;
             }
 
@@ -363,12 +377,19 @@ public class Http11Processor implements Processor, ActionHook {
             // Send a 100 status back if it makes sense (response not committed
             // yet, and client specified an expectation for 100-continue)
 
-            try {
-                outputBuffer.sendAck();
-            } catch (IOException e) {
-                // Log the error, and set error flag
-                e.printStackTrace();
-                error = true;
+            if (response.isCommitted())
+                return;
+
+            MessageBytes expectMB = 
+                request.getMimeHeaders().getValue("expect");
+            if ((expectMB != null)
+                && (expectMB.indexOfIgnoreCase("100-continue", 0) != -1)) {
+                try {
+                    outputBuffer.sendAck();
+                } catch (IOException e) {
+                    // Set error flag
+                    error = true;
+                }
             }
 
         } else if (actionCode == ActionCode.ACTION_CLOSE) {
@@ -381,8 +402,7 @@ public class Http11Processor implements Processor, ActionHook {
             try {
                 outputBuffer.endRequest();
             } catch (IOException e) {
-                // Log the error, and set error flag
-                e.printStackTrace();
+                // Set error flag
                 error = true;
             }
 
@@ -397,6 +417,14 @@ public class Http11Processor implements Processor, ActionHook {
         } else if (actionCode == ActionCode.ACTION_CUSTOM) {
 
             // Do nothing
+
+        } else if (actionCode == ActionCode.ACTION_START) {
+
+            started = true;
+
+        } else if (actionCode == ActionCode.ACTION_STOP) {
+
+            started = false;
 
         }
 
@@ -488,14 +516,47 @@ public class Http11Processor implements Processor, ActionHook {
             }
         }
 
+        // Check for a full URI (including protocol://host:port/)
+        ByteChunk uriBC = request.requestURI().getByteChunk();
+        if (uriBC.startsWithIgnoreCase("http", 0)) {
+
+            // If the first character of the URI is 'h', the URI is either
+            // invalid, or is a full URI
+
+            int pos = uriBC.indexOf("://", 0, 3, 4);
+            int uriBCStart = uriBC.getStart();
+            int slashPos = -1;
+            if (pos != -1) {
+                byte[] uriB = uriBC.getBytes();
+                slashPos = uriBC.indexOf('/', pos + 3);
+                if (slashPos == -1) {
+                    slashPos = uriBC.getLength();
+                    // Set URI as "/"
+                    request.requestURI().setBytes
+                        (uriB, uriBCStart + pos + 1, 1);
+                } else {
+                    request.requestURI().setBytes
+                        (uriB, uriBCStart + slashPos, 
+                         uriBC.getLength() - slashPos);
+                }
+                MessageBytes hostMB = 
+                    request.getMimeHeaders().setValue("host");
+                hostMB.setBytes(uriB, uriBCStart + pos + 3, 
+                                slashPos - pos - 3);
+            }
+
+        }
+
         // URI decoding
         try {
             request.decodedURI().duplicate(request.requestURI());
             request.getURLDecoder().convert(request.decodedURI(), true);
             request.decodedURI().setEncoding("UTF-8");
         } catch (IOException e) {
-            // URL decoding failed
-            e.printStackTrace();
+            // 500 - Internal Server Error
+            response.setStatus(500);
+            log.warn("Error decoding URI");
+            error = true;
         }
 
         // Input filter setup
@@ -545,7 +606,7 @@ public class Http11Processor implements Processor, ActionHook {
         // Check host header
         if (http11 && (request.getMimeHeaders().getValue("host") == null)) {
             error = true;
-            // Send 400: Bad request
+            // 400 - Bad request
             response.setStatus(400);
         }
 
