@@ -104,10 +104,10 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
         uriEnv->virtual = uriEnv->pool->pstrdup(env, uriEnv->pool, host);
         return JK_OK;
     }
-    if (colon) {
-        *uri = '\0';
+    *uri = '\0';
+    if (colon)
         uriEnv->port = atoi(colon);
-    }
+   
     /* If it doesn't start with /, it must have a vhost */
     if (strlen(host) && uri != host) {
         uriEnv->virtual = uriEnv->pool->calloc( env, uriEnv->pool, strlen(host) + 1 );
@@ -133,6 +133,8 @@ static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
         return uriEnv->uri;
     } else if( strcmp( name, "group" )==0 ) {
         return uriEnv->workerName;
+    } else if( strcmp( name, "context" )==0 ) {
+        return uriEnv->contextPath;
     }
     return NULL;
 }
@@ -387,7 +389,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     return JK_OK;
 }
 
-static char *myAttInfo[]={ "host", "uri", "group", NULL };
+static char *myAttInfo[]={ "host", "uri", "group", "context", NULL };
     
 int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                  jk_bean_t *result,
