@@ -1,31 +1,68 @@
 <?xml version="1.0"?>
-<!-- edited with XML Spy v4.2 U (http://www.xmlspy.com) by Ba-k (ZonaWarez.com) -->
 <document>
 <properties>
 <title>Overview</title>
 <author email="jfrederic.clere@fujitsu-siemens.com">Jean-Frederic Clere</author>
 </properties>
-<section name="What is the mod_jk Module">
+<section name="What's mod_jk ?">
 <p>
-<b>mod_jk2</b> is originated back to the old <b>mod_jserv</b>.
-      <b>mod_jk2</b> is a rewrite of <b>mod_jk</b>.
-      The native part has been completly
-      restructured and the configuration has been simplified a lot.
-    </p>
-</section>
-<section name="Why should I use the mod_jk2 Module?">
+<b>mod_jk</b> is a replacement to the elderly mod_jserv. 
+It was a completely new Tomcat-Apache plug-in that handles the communication between Tomcat and Apache.
+</p>
 <p>
-      Because it offers a lot of different and flexible communications
-      between a Web Server and the Tomcat Servlet Engine. 
-    </p>
-<!-- Pier's mod_webapp text we need our building.xml
-    <p>
-      If instead you're an adventurous geek who's up for a challenge, skip
-      the rest of this document and go to the <a href="building.xml"/>
-      section, there's where the fun starts.
-    </p>
- -->
+The newest <b>mod_jk2</b> is a rewrite of <b>mod_jk</b>.
+The native part has been completly
+restructured and the configuration has been simplified a lot.
+</p>
 </section>
+
+<section name="Why should I use the mod_jk's Modules ?">
+<p>
+Several reasons:
+<ul>
+<li>
+mod_jserv was too complex. Because it was ported from Apache/JServ, it brought with it lots of JServ specific bits that aren't needed by Apache.
+</li>
+<li>
+mod_jserv supported only Apache. Tomcat supports many web servers through a compatibility layer named the jk library. 
+Supporting two different modes of work became problematic in terms of support, documentation and bug fixes. 
+mod_jk should fix that.
+The layered approach provided by the jk library makes it easier to support both Apache1.3.x and Apache2.xx.
+</li>
+<li>
+Better support for SSL. mod_jserv couldn't reliably identify whether a request was made via HTTP or HTTPS. mod_jk can, using the newer Ajpv13 protocol.
+</li>
+<li>
+mod_jk offers a lot of different and flexible communications between a Web Server 
+and the Tomcat Servlet Engine and could be used today by all of the ASF Tomcat Engine, 
+3.2.x, 3.3.x, 4.0.x, 4.1.x and 5.x
+</li>
+</ul>
+</p>
+</section>
+
+<section name="What's the difference between mod_jk and mod_jk2 modules ?">
+<p>
+mod_jk2 is a full rewrite of mod_jk and is much more powerfull
+
+<ul>
+<li>
+Even if it works with Apache 1.3, mod_jk2 has been developed with Apache 2.0 in mind,
+and sus is better suited for multi-threaded servers.
+</li>
+<li>
+mod_jk2 has a better separation between protocol and physical layer.
+As such mod_jk2 add support to the fast unix-socket, and could be extended to support others communications
+channels. More it's better suited for JNI and JDK 1.4 fast IO APIs</li>
+<li>
+mod_jk2 could be monitored via special URLs
+</li>
+</ul>
+</p>
+<br/>
+</section>
+
+
 <section name="Are there alternative ways to connect Apache and Tomcat?">
 <p>
       The alternative ways are better described in <b>mod_webapp</b>
