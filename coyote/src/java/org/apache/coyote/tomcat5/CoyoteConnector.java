@@ -70,8 +70,8 @@ import org.apache.commons.modeler.Registry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.tomcat.util.http.mapper.Mapper;
 import org.apache.tomcat.util.IntrospectionUtils;
+import org.apache.tomcat.util.http.mapper.Mapper;
 
 import org.apache.coyote.Adapter;
 import org.apache.coyote.ProtocolHandler;
@@ -327,6 +327,12 @@ public final class CoyoteConnector
       * Mapper.
       */
      private Mapper mapper = new Mapper();
+
+
+     /**
+      * Mapper listener.
+      */
+     private MapperListener mapperListener = new MapperListener(mapper);
 
 
     // ------------------------------------------------------------- Properties
@@ -1113,6 +1119,8 @@ public final class CoyoteConnector
                 (sm.getString
                  ("coyoteConnector.protocolHandlerStartFailed", e));
         }
+
+        mapperListener.init();
 
     }
 

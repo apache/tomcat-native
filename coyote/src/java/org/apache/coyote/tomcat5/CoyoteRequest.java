@@ -100,8 +100,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.FastHttpDateFormat;
 import org.apache.tomcat.util.http.Parameters;
+import org.apache.tomcat.util.http.mapper.MappingData;
+import org.apache.tomcat.util.net.SSLSupport;
 
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.Request;
@@ -123,9 +126,6 @@ import org.apache.catalina.util.ParameterMap;
 import org.apache.catalina.util.RequestUtil;
 import org.apache.catalina.util.StringManager;
 import org.apache.catalina.util.StringParser;
-
-import org.apache.tomcat.util.http.mapper.MappingData;
-import org.apache.tomcat.util.net.SSLSupport;
 
 /**
  * Wrapper object for the Coyote request.
@@ -272,24 +272,6 @@ public class CoyoteRequest
 
 
     /**
-     * Context path.
-     */
-    protected String contextPath = "";
-
-
-    /**
-     * Path info.
-     */
-    protected String pathInfo = null;
-
-
-    /**
-     * Servlet path.
-     */
-    protected String servletPath = null;
-
-
-    /**
      * User principal.
      */
     protected Principal userPrincipal = null;
@@ -396,9 +378,6 @@ public class CoyoteRequest
         inputBuffer.recycle();
         usingInputStream = false;
         usingReader = false;
-        contextPath = "";
-        pathInfo = null;
-        servletPath = null;
         userPrincipal = null;
         sessionParsed = false;
         requestParametersParsed = false;
@@ -1475,9 +1454,9 @@ public class CoyoteRequest
     public void setContextPath(String path) {
 
         if (path == null) {
-            this.contextPath = "";
+            mappingData.contextPath.setString("");
         } else {
-            this.contextPath = path;
+            mappingData.contextPath.setString(path);
         }
 
     }
@@ -1512,7 +1491,7 @@ public class CoyoteRequest
      * @param path The path information
      */
     public void setPathInfo(String path) {
-        this.pathInfo = path;
+        mappingData.pathInfo.setString(path);
     }
 
 
@@ -1589,6 +1568,16 @@ public class CoyoteRequest
 
 
     /**
+     * Get the decoded request URI.
+     * 
+     * @return the URL decoded request URI
+     */
+    public MessageBytes getDecodedRequestURIMB() {
+        return (coyoteRequest.decodedURI());
+    }
+
+
+    /**
      * Set the servlet path for this Request.  This will normally be called
      * when the associated Context is mapping the Request to a particular
      * Wrapper.
@@ -1596,7 +1585,8 @@ public class CoyoteRequest
      * @param path The servlet path
      */
     public void setServletPath(String path) {
-        this.servletPath = path;
+        if (path != null)
+            mappingData.wrapperPath.setString(path);
     }
 
 
@@ -1628,7 +1618,17 @@ public class CoyoteRequest
      * of the Request.
      */
     public String getContextPath() {
-        return (contextPath);
+        return (mappingData.contextPath.toString());
+    }
+
+
+    /**
+     * Get the context path.
+     * 
+     * @return the context path
+     */
+    public MessageBytes getContextPathMB() {
+        return (mappingData.contextPath);
     }
 
 
@@ -1740,7 +1740,17 @@ public class CoyoteRequest
      * Return the path information associated with this Request.
      */
     public String getPathInfo() {
-        return (pathInfo);
+        return (mappingData.pathInfo.toString());
+    }
+
+
+    /**
+     * Get the path info.
+     * 
+     * @return the path info
+     */
+    public MessageBytes getPathInfoMB() {
+        return (mappingData.pathInfo);
     }
 
 
@@ -1753,10 +1763,10 @@ public class CoyoteRequest
         if (context == null)
             return (null);
 
-        if (pathInfo == null) {
+        if (getPathInfo() == null) {
             return (null);
         } else {
-            return (context.getServletContext().getRealPath(pathInfo));
+            return (context.getServletContext().getRealPath(getPathInfo()));
         }
 
     }
@@ -1850,7 +1860,17 @@ public class CoyoteRequest
      * that will process this request.
      */
     public String getServletPath() {
-        return (servletPath);
+        return (mappingData.wrapperPath.toString());
+    }
+
+
+    /**
+     * Get the servlet path.
+     * 
+     * @return the servlet path
+     */
+    public MessageBytes getServletPathMB() {
+        return (mappingData.wrapperPath);
     }
 
 
