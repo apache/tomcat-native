@@ -30,6 +30,9 @@
   <xsl:param name="styles" select="''"/>
   <xsl:param name="images" select="'../images'"/>
   <xsl:param name="homedoc" select="'../'"/>
+  <xsl:param name="project-menu"     select="'menu'"/>
+  <xsl:param name="relative-path"    select="'.'"/>
+  <xsl:param name="printer-location" select="'printer/'"/>
 
   <!-- Defined variables (non-overrideable) -->
   <xsl:variable name="body-bg"       select="'@body-bg@'"/>
@@ -148,6 +151,8 @@
             Sidebar menu in a nested table and main content.
           -->
           <tr>
+            <xsl:choose>
+            <xsl:when test="$project-menu = 'menu'">
             <td bgcolor="#ffffff" width="150" valign="top">
 
               <!--
@@ -246,11 +251,37 @@
 
               </table>
             </td>
+            </xsl:when>
+            </xsl:choose>
 
             <!--
               Done with the sidebar, now, do we want some content as well or WHAT?
             -->
             <td bgcolor="#ffffff" width="*" valign="top" class="body">
+              <!--
+              Add printer friendly link.
+              -->
+              <table border="0" width="100%" cellspacing="4">
+                <tr>
+                  <td align="left" valign="top" nowrap="true">
+                    <!-- Not yet available in jk docs
+                    <h1><xsl:value-of select="project/title"/></h1>
+                    -->
+                    <h2><xsl:value-of select="properties/title"/></h2>
+                  </td>
+                  <td align="right" valign="top" nowrap="true">
+                    <!-- Add the printer friendly link for docs with a menu -->
+                    <xsl:if test="$project-menu = 'menu'">
+                      <xsl:call-template name="addprint">
+                      </xsl:call-template>
+                    </xsl:if>
+                    <xsl:if test="$project-menu != 'menu'">
+                      <img src="{$images}/void.gif" width="1" height="1" vspace="0" hspace="0" border="0"/>
+                    </xsl:if>
+                  </td>
+                </tr>
+              </table>
+
               <xsl:apply-templates select="section"/>
             </td>
           </tr>
@@ -735,6 +766,94 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
+
+  <!--
+    Build the name of the location of the printer friendly page
+  -->
+  <xsl:template name="printeruri">
+    <xsl:param name="attr" select="'href'"/>
+    <xsl:param name="href" select="''"/>
+
+    <!-- Extract the filename -->
+    <xsl:variable name="file">
+      <xsl:choose>
+        <xsl:when test="contains($href,'/')">
+          <xsl:value-of select="substring-after($href,'/')" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$href" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:variable name="filename">
+      <xsl:choose>
+        <xsl:when test="substring($file,string-length($file)-3) = '.xml'">
+          <xsl:value-of select="substring($file,1,string-length($file)-3)"/>
+          <xsl:value-of select="'html'"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$file"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+
+    <!-- Extract the directory name -->
+    <xsl:variable name="dirname">
+      <xsl:choose>
+        <xsl:when test="contains($href,'/')">
+          <xsl:value-of select="substring-before($href,'/')" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="''" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <!-- Build the target name -->
+    <xsl:variable name="target">
+      <xsl:value-of select="$homedoc"/>
+      <xsl:choose>
+        <xsl:when test="string-length($dirname) = 0">
+          <xsl:value-of select="$printer-location"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$dirname"/>
+          <xsl:value-of select="'/'"/>
+          <xsl:value-of select="$printer-location"/>
+        </xsl:otherwise>
+      </xsl:choose>
+      <xsl:value-of select="$filename"/>
+    </xsl:variable>
+
+    <xsl:attribute name="{$attr}">
+      <xsl:value-of select="$target"/>
+    </xsl:attribute>
+  </xsl:template>
+
+  <!--
+    Get the file (via the menu.idx) and build the printer friendly link
+  -->
+  <xsl:template name="addprint">
+    <xsl:variable name="root" select="/"/> 
+    <xsl:for-each select="document('menu.idx')/index/section">
+      <xsl:for-each select="./document">
+        <xsl:variable name="href" select="@href"/>
+        <xsl:if test="$root/document/properties/title = document(@href)/document/properties/title">
+
+          <small>
+            <a>
+              <xsl:call-template name="printeruri">
+                <xsl:with-param name="href" select="$href"/>
+              </xsl:call-template>
+              <img src="{$images}/printer.gif" border="0" alt="Printer Friendly Version"/>
+              <br />print-friendly<br />version
+            </a>
+          </small>
+
+        </xsl:if>
+      </xsl:for-each>
+    </xsl:for-each>
+  </xsl:template>
+
   <xsl:template match="copyright">
     <xsl:comment>
       <xsl:apply-templates select="text()" />

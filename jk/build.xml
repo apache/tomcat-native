@@ -436,13 +436,17 @@
   <!--
     Generate documentation from the XML sources.
   -->
+  <target name="docs"
+          depends="jkdocs,jkprinter,jk2printer" />
   <target
-      name="docs" unless="docs-uptodate"
+      name="jkdocs" unless="docs-uptodate"
       depends="docs.check,docs.init"
       description="Create Documentation">
  
     <!-- Create the directory where we're going to store the docs -->
     <mkdir dir="${build.docs}"/>
+    <mkdir dir="${build.docs}/printer"/>
+    <mkdir dir="${build.docs}/common/printer"/>
  
     <!-- Add some style to our otherwise  utterly ugly XML files -->
     <style
@@ -451,7 +455,7 @@
         style="${source.docs}/style.xsl" >
         
         <include name="*/**.xml" />
-        <exclude name="index.xml" />
+        <exclude name="*.xml" />
         <exclude name="jk/**"  if="nojkdoc"/>
         <exclude name="jk2/**" if="nojk2doc"/>
         <param name="styles" expression="../"/>
@@ -461,11 +465,32 @@
         basedir="${source.docs}"
         destdir="${build.docs}"
         style="${source.docs}/style.xsl" >
-        <include name="index.xml" />
-        <include name="faq.xml" />
+        <include name="**.xml" />
         <param name="images" expression="images"/>
         <param name="styles" expression="."/>
         <param name="homedoc" expression=""/>
+    </style>
+
+    <!-- Create the printer friendly pages -->
+    <style
+        basedir="${source.docs}"
+        destdir="${build.docs}/printer"
+        style="${source.docs}/style.xsl" >
+        
+        <include name="**.xml" />
+        <param name="images" expression="images"/>
+        <param name="styles" expression="."/>
+        <param name="homedoc" expression=""/>
+        <param name="project-menu" expression="nomenu"/>
+    </style>
+    <style
+        basedir="${source.docs}/common"
+        destdir="${build.docs}/common/printer"
+        style="${source.docs}/style.xsl" >
+        
+        <include name="**.xml" />
+        <param name="styles" expression="../"/>
+        <param name="project-menu" expression="nomenu"/>
     </style>
  
     <!-- Copy all relevant (non processed) files from the sources -->
@@ -485,7 +510,41 @@
       </fileset>
     </copy>
 
-  </target>                                                                     
+  </target>
 
+  <!-- build the printer friendly pages for jk -->
+  <target
+      name="jkprinter"
+      unless="docs-uptodate"
+      depends="docs.check,docs.init"
+      description="Create Printer Friendly Documentation for jk">
+        <mkdir dir="${build.docs}/jk/printer"/> 
+        <style
+            basedir="${source.docs}/jk"
+            destdir="${build.docs}/jk/printer"
+            style="${source.docs}/style.xsl" >
+        
+            <include name="**.xml" />
+            <param name="styles" expression="../"/>
+            <param name="project-menu" expression="nomenu"/>
+        </style>
+  </target>
+  <!-- build the printer friendly pages for jk2 -->
+  <target
+      name="jk2printer"
+      unless="docs-uptodate"
+      depends="docs.check,docs.init"
+      description="Create Printer Friendly Documentation for jk">
+        <mkdir dir="${build.docs}/jk2/printer"/> 
+        <style
+            basedir="${source.docs}/jk2"
+            destdir="${build.docs}/jk2/printer"
+            style="${source.docs}/style.xsl" >
+        
+            <include name="**.xml" />
+            <param name="styles" expression="../"/>
+            <param name="project-menu" expression="nomenu"/>
+        </style>
+  </target>
 
 </project>
