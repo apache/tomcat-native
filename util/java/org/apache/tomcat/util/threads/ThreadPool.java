@@ -644,17 +644,23 @@ public class ThreadPool  {
         }
 
         public void run() {
+            boolean _shouldRun = false;
+            boolean _shouldTerminate = false; 
+            ThreadPoolRunnable _toRun = null;
           try {
             while(true) {
                 try {
                     /* Wait for work. */
                     synchronized(this) {
-                        if(!shouldRun && !shouldTerminate) {
+                        while (!shouldRun && !shouldTerminate) {
                             this.wait();
                         }
+                        _shouldRun = shouldRun;
+                        _shouldTerminate = shouldTerminate;
+                        _toRun = toRun;
                     }
 
-                    if( shouldTerminate ) {
+                    if( _shouldTerminate ) {
                             if( p.log.isDebugEnabled())
                                 p.log.debug( "Terminate");
                             break;
@@ -663,8 +669,8 @@ public class ThreadPool  {
                     /* Check if should execute a runnable.  */
                     try {
                         if(noThData) {
-                            if( toRun != null ) {
-                                Object thData[]=toRun.getInitData();
+                            if( _toRun != null ) {
+                                Object thData[]=_toRun.getInitData();
                                 t.setThreadData(p, thData);
                                 if(p.log.isDebugEnabled())
                                     p.log.debug( "Getting new thread data");
@@ -672,9 +678,9 @@ public class ThreadPool  {
                             noThData = false;
                         }
 
-                        if(shouldRun) {
-			    if( toRun != null ) { 
-                                toRun.runIt(t.getThreadData(p));
+                        if(_shouldRun) {
+			    if( _toRun != null ) { 
+                                _toRun.runIt(t.getThreadData(p));
                             } else if( toRunRunnable != null ) { 
                                 toRunRunnable.run();
                             } else {
@@ -696,7 +702,7 @@ public class ThreadPool  {
                         shouldRun = false;
                         p.notifyThreadEnd(this);
                     } finally {
-                        if(shouldRun) {
+                        if(_shouldRun) {
                             shouldRun = false;
                             /*
 			     * Notify the pool that the thread is now idle.
@@ -709,7 +715,7 @@ public class ThreadPool  {
 		     * Check if should terminate.
 		     * termination happens when the pool is shutting down.
 		     */
-                    if(shouldTerminate) {
+                    if(_shouldTerminate) {
                         break;
                     }
                 } catch(InterruptedException ie) { /* for the wait operation */
