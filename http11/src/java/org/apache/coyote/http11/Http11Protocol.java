@@ -321,6 +321,10 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         //this.port=port;
     }
 
+    public InetAddress getAddress() {
+        return ep.getAddress();
+    }
+    
     public void setAddress(InetAddress ia) {
         ep.setAddress( ia );
         setAttribute("address", "" + ia);
@@ -774,11 +778,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     }
     }
 
-
-    public InetAddress getAddress() {
-        return ep.getAddress();
-    }
-
+    /*
     public boolean isKeystoreSet() {
         return (attributes.get("keystore") != null);
     }
@@ -802,7 +802,8 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
     public PoolTcpEndpoint getEndpoint() {
         return ep;
     }
-
+    */
+    
     protected String domain;
     protected ObjectName oname;
     protected MBeanServer mserver;
