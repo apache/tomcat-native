@@ -68,6 +68,7 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 import org.apache.tomcat.util.res.StringManager;
+import org.apache.tomcat.util.IntrospectionUtils;
 
 // Based on a merge of various catalina naming contexts
 // Name is used - it provide better oportunities for reuse and optimizations
@@ -122,9 +123,9 @@ public class BaseNaming {
                     // XXX We need a mechanism to select properties for
                     // this task. Maybe all contexts should use as property prefix the
                     // class name ? Or base class name ? 
-                    IntrospectionUtil.setProperty( this, entryName, entryValue );
+                    IntrospectionUtils.setAttribute( this, entryName, entryValue );
                 } catch(Exception ex ) {
-                    System.out.println("Unsuported property " + entryName + " " + ex.getMassage());
+                    System.out.println("Unsuported property " + entryName + " " + ex.getMessage());
                 }
             }
         }
@@ -299,7 +300,7 @@ public class BaseNaming {
         throws NamingException
     {
         // Override if needed
-        Object value = lookup(oldName, false, null);
+        Object value = lookup(oldName, false);
         bind(newName, value, null, false);
         unbind(oldName, true);
     }

@@ -134,21 +134,6 @@ public class BaseDirContext extends BaseContext implements DirContext {
         throw new OperationNotSupportedException();
     }
 
-    public void size() throws NamingException
-    {
-        throw new OperationNotSupportedException("size");
-    }
-
-    public Name childNameAt( int i ) throws NamingException
-    {
-        return null;
-    }
-
-    public Object childAt( int i ) throws NamingException
-    {
-        return null;
-    }
-    
     public DirContext createSubcontext(Name name, Attributes attrs)
         throws NamingException
     {
