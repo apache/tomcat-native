@@ -1,0 +1,25 @@
+## configure should make the Makefile out of this file.
+
+APXS=@APXS@
+OS=@OS@
+JAVA_HOME=@JAVA_HOME@
+APXSLDFLAGS=@APXSLDFLAGS@
+APXSCFLAGS=@APXSCFLAGS@
+
+JK=../../common/
+JKINC=../../include/
+JK_INCL=-DUSE_APACHE_MD5 -I ${JK} -I ${JKINC}
+JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
+JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
+
+## read the object (.c) from the list file.
+OEXT=.c
+include ../../common/list.mk
+
+all: mod_jk2.so
+
+mod_jk2.so: 
+	$(APXS) -c -o $@ -Wc,"${APXSCFLAGS} ${JK_INCL}" ${JAVA_INCL} "${APXSLDFLAGS}" mod_jk2.c ${APACHE_OBJECTS} 
+
+clean:
+	rm -f *.o *.so
