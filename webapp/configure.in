@@ -100,7 +100,7 @@ AC_DEFUN(LOCAL_FILTEREXEC,[
     unset first
     unset line
   }
-  ret=$?
+  ${echo} "  Execution of $1 returned $ret"
 ])
 
 dnl --------------------------------------------------------------------------
