@@ -43,6 +43,8 @@
         <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
         <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
         <pathelement 
+           location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
+        <pathelement 
            location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
     </path>
 
@@ -112,7 +114,7 @@
 
   <!-- ==================== Experimental tomcat33 build ================= -->
 
-  <target name="build-tomcat" depends="build-prepare" >
+  <target name="build-tomcat33" depends="build-prepare" >
     <ant dir="../util" antfile="../util/build.xml"/>
     <javac srcdir="java"
 	   destdir="${jk.build}/classes"
