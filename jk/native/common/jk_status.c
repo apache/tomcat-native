@@ -273,8 +273,13 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             continue;
         }
         jk_puts(s, "<hr />\n<h3>Worker Status for ");
-        jk_putv(s, "<a href=\"", s->req_uri, "?cmd=show&w=",
-                sw->we->worker_list[i], "\">", NULL); 
+        if (dworker && strcmp(dworker, sw->we->worker_list[i]) == 0) {
+            /* Next click will colapse the editor */
+            jk_putv(s, "<a href=\"", s->req_uri, "?cmd=show\">", NULL); 
+        }
+        else
+            jk_putv(s, "<a href=\"", s->req_uri, "?cmd=show&w=",
+                    sw->we->worker_list[i], "\">", NULL); 
         jk_putv(s, sw->we->worker_list[i], "</a></h3>\n", NULL);
         if (lb != NULL) {
             unsigned int j;
@@ -338,17 +343,19 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_puts(s, "<table>\n<input type=hidden name=\"cmd\" ");
                 jk_puts(s, "value=\"update\">\n");
                 jk_puts(s, "<input type=hidden name=\"w\" ");
-                jk_putv(s, "value=\"", wr->s->name, "\">\n</table>\n", NULL);
+                jk_putv(s, "value=\"", wr->s->name, "\">\n", NULL);
+                jk_puts(s, "<input type=hidden name=\"id\" ");
+                jk_printf(s, "value=\"%u\">\n</table>\n", selected);
 
-                jk_puts(s, "<table>\n<tr><td>Load factor:</td><td><input name=\"lf\" type=text ");
+                jk_puts(s, "<table>\n<tr><td>Load factor:</td><td><input name=\"wf\" type=text ");
                 jk_printf(s, "value=\"%d\"></td><tr>\n", wr->s->lb_factor);            
-                jk_puts(s, "<tr><td>Route Redirect:</td><td><input name=\"rr\" type=text ");
+                jk_puts(s, "<tr><td>Route Redirect:</td><td><input name=\"wr\" type=text ");
                 jk_putv(s, "value=\"", wr->s->redirect, NULL); 
                 jk_puts(s, "\"></td></tr>\n");
-                jk_puts(s, "<tr><td>Cluster Domain:</td><td><input name=\"cd\" type=text ");
+                jk_puts(s, "<tr><td>Cluster Domain:</td><td><input name=\"wc\" type=text ");
                 jk_putv(s, "value=\"", wr->s->domain, NULL); 
-                jk_puts(s, "\"></td></tr>\n");    
-                jk_puts(s, "<tr><td>Disabled:</td><td><input name=\"dw\" type=checkbox");
+                jk_puts(s, "\"></td></tr>\n");
+                jk_puts(s, "<tr><td>Disabled:</td><td><input name=\"wd\" type=checkbox");
                 if (wr->s->is_disabled)
                     jk_puts(s, " checked");
                 jk_puts(s, "></td></tr>\n");            
@@ -357,6 +364,38 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_puts(s, "<tr><td colspan=2><input type=submit value=\"Update Worker\">");
                 jk_puts(s, "</td></tr>\n</table>\n</form>\n");
 
+            }
+            else if (dworker && strcmp(dworker, sw->we->worker_list[i]) == 0) {
+                /* Edit Load balancer settings */
+                jk_putv(s, "<hr /><h3>Edit Load balancer settings for ",
+                        dworker, "</h3>\n", NULL);
+                jk_putv(s, "<form method=\"GET\" action=\"",
+                        s->req_uri, "\">\n", NULL);
+                jk_puts(s, "<table>\n<input type=hidden name=\"cmd\" ");
+                jk_puts(s, "value=\"update\">\n");
+                jk_puts(s, "<input type=hidden name=\"w\" ");
+                jk_putv(s, "value=\"", dworker, "\">\n", NULL);
+                jk_puts(s, "<input type=hidden name=\"id\" ");
+                jk_printf(s, "value=\"%u\">\n</table>\n", i);
+
+                jk_puts(s, "<table>\n<tr><td>Retries :</td><td><input name=\"lr\" type=text ");
+                jk_printf(s, "value=\"%d\"></td><tr>\n", lb->s->retries);            
+                jk_puts(s, "<tr><td>Recover time :</td><td><input name=\"lt\" type=text ");
+                jk_printf(s, "value=\"%d\"></td><tr>\n", lb->s->recover_wait_time);            
+                jk_puts(s, "<tr><td>Sticky session:</td><td><input name=\"ls\" type=checkbox");
+                if (lb->s->sticky_session)
+                    jk_puts(s, " checked");
+                jk_puts(s, "></td></tr>\n");
+                jk_puts(s, "<tr><td>Force Sticky session:</td><td><input name=\"lf\" type=checkbox");
+                if (lb->s->sticky_session_force)
+                    jk_puts(s, " checked");
+                jk_puts(s, "></td></tr>\n");
+                
+                /* TODO: display uri mappings with checkbox for disable */
+
+                jk_puts(s, "<tr><td colspan=2>&nbsp;</td></tr>\n");    
+                jk_puts(s, "<tr><td colspan=2><input type=submit value=\"Update Balancer\">");
+                jk_puts(s, "</td></tr>\n</table>\n</form>\n");
             }
         }
         else {
@@ -369,6 +408,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_putv(s, "<td>", jk_dump_hinfo(&aw->worker_inet_addr, buf),
                     "</td>\n</tr>\n", NULL);
             jk_puts(s, "</table>\n");
+            
         }
     }
     /* Display legend */
