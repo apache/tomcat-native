@@ -621,7 +621,7 @@ jk2_worker_ajp13_service(jk_env_t *env, jk_worker_t *w,
     jk2_worker_ajp13_getEndpoint( env, w, &e );
 
 #ifdef HAS_APR
-    if( s->uriEnv->timing == JK_TRUE ) {
+    if( s->uriEnv!=NULL && s->uriEnv->timing == JK_TRUE ) {
         e->stats->startTime=s->startTime;
         e->stats->jkStartTime=e->stats->connectedTime=apr_time_now();
         if(e->stats->startTime==0)
@@ -641,7 +641,7 @@ jk2_worker_ajp13_service(jk_env_t *env, jk_worker_t *w,
     }
 
 #ifdef HAS_APR
-    if( s->uriEnv->timing == JK_TRUE ) {
+    if( s->uriEnv!=NULL && s->uriEnv->timing == JK_TRUE ) {
         apr_time_t reqTime;
 
         e->stats->endTime=apr_time_now();
