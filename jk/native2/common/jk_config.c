@@ -160,7 +160,7 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
     
     name= cfg->pool->pstrdup( env, cfg->pool, name );
     val= cfg->pool->pstrdup( env, cfg->pool, val );
-
+    
     if (strlen(name) && *name == '$') {
         cfg->map->put(env, cfg->map, name + 1, val, NULL);
         return JK_OK;
@@ -222,10 +222,16 @@ int jk2_config_setProperty(jk_env_t *env, jk_config_t *cfg,
         return JK_OK;
     }
     if( strcmp( name, "disabled" ) == 0 ) {
+        int oldDisabled=mbean->disabled;
+        
         mbean->disabled=atoi( val );
         if(mbean->setAttribute) {
             mbean->setAttribute( env, mbean, name, val );
         }
+
+        /* State change ... - it needs to be handled at the end*/
+        /*         if( oldDisabled != mbean->disabled ) { */
+        /*         } */
         return JK_OK;
     }
     if( strcmp( name, "info" ) == 0 ) {
@@ -402,8 +408,9 @@ int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firs
     
     jk_map_t *prefNode=cfg->cfgData->get(env, cfg->cfgData, name);
     jk_bean_t *bean;
-    int ver;
+    long ver;
     char *verString;
+    int oldDisabled=0;
 
     if( cfg->mbean->debug > 5 ) 
     env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
@@ -417,7 +424,7 @@ int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firs
         }
         bean=env->createBean( env, cfg->pool, name );
     }
-
+    
     if( bean == NULL ) {
         /* Can't create it, save the value in our map */
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -425,14 +432,17 @@ int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firs
         return JK_ERR;
     }
 
+    oldDisabled=bean->disabled;
+    
     verString= prefNode->get( env, prefNode, "ver" );
     if( !firstTime ) {
+        /* No ver option - assume it didn't change */
         if( verString == NULL ) {
             return JK_OK;
         }
-        ver=atoi( verString );
+        ver=atol( verString );
         
-        if( ver <= bean->ver) {
+        if( ver == bean->ver) {
             /* Object didn't change
              */
             return JK_OK;
@@ -441,7 +451,7 @@ int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firs
     
     if( !firstTime )
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "config.update(): Updating %s\n", name );
+                      "config.update(): Updating %s %ld %ld %d\n", name, ver, bean->ver, getpid() );
     
     /* XXX Maybe we shoud destroy/init ? */
     
@@ -452,5 +462,31 @@ int jk2_config_processNode(jk_env_t *env, jk_config_t *cfg, char *name, int firs
         cfg->setProperty( env, cfg, bean, pname, pvalue );
     }
 
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "config.update(): done %s\n", name );
+    
+    if( !firstTime ) {
+        /* Deal with lifecycle - if a mbean has been enabled or disabled */
+        if( oldDisabled != bean->disabled ) {
+            /* State change ... */
+            if( bean->disabled==0 ) {
+                /* Start */
+                if( bean->init != NULL ) {
+                    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                                  "config.update(): Starting %s\n", name );
+                    bean->init(env, bean);
+                }
+            } else {
+                /* Stop */
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "config.update(): Stopping %s\n", name );
+                bean->destroy(env, bean);
+            }
+
+        }
+        
+    }
+    
+    
     return JK_OK;
 }
