@@ -45,6 +45,7 @@ public class TomcatStarter implements Runnable {
                     Thread startThread=new Thread( new TomcatStarter(c, args));
                     c=null;
                     startThread.start();
+                    break;
                 }
             }
             System.err.println("No class found  ");
