@@ -453,7 +453,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      * Lifecycle has no listeners registered, a zero-length array is returned.
      */
     public LifecycleListener[] findLifecycleListeners() {
-        return lifecycle.findLifecycleListeners();
+        return null; // FIXME: lifecycle.findLifecycleListeners();
     }
 
     /**
