@@ -611,7 +611,7 @@ static int read_registry_init_data(jk_env_t *env)
     jk_map_t *map;
    
     if (JK_OK==jk2_map_default_create(env, &map, workerEnv->pool )) {
-        if (JK_OK==jk2_map_read(env,map, ini_file_name)) {
+        if (JK_OK==jk2_config_file_read(env,map, ini_file_name)) {
             tmp = map->get(env,map,EXTENSION_URI_TAG);
             if (tmp) {
                 strcpy(extension_uri, tmp);

@@ -130,7 +130,7 @@ jk2_mutex_thread_destroy(jk_env_t *env, jk_bean_t  *mutexB)
 {
     jk_mutex_t *jkMutex=mutexB->object;
 
-    if( jkMutex==NULL || jkMutex->threadMutex==NULL ) return JK_ERR;
+    if( jkMutex==NULL ) return JK_ERR;
     DeleteCriticalSection( & jkMutex->threadMutex );
     return JK_OK;
 }

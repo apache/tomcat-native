@@ -143,6 +143,8 @@ char *jk2_config_replaceProperties(struct jk_env *env, struct jk_map *m,
                                    struct jk_pool *resultPool, 
                                    char *value);
 
+int jk2_config_file_read(struct jk_env *env, struct jk_map *m,const char *file);
+
 int jk2_config_processNode(struct jk_env *env, struct jk_config *cfg,
                            char *name, int firstTime );
 

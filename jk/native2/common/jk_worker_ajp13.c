@@ -810,7 +810,8 @@ int JK_METHOD jk2_worker_ajp13_factory( jk_env_t *env, jk_pool_t *pool,
 
     w->channel= NULL;
     w->secret= NULL;
-   
+
+    w->lb_factor=1;
     w->service = jk2_worker_ajp13_service;
 
     result->setAttribute= jk2_worker_ajp13_setAttribute;
