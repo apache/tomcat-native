@@ -1450,7 +1450,7 @@ public class Http11Processor implements Processor, ActionHook {
         if (!entityBody) {
             response.setContentLength(-1);
         } else {
-            String contentType = response.getContentTypeResponseHeader();
+            String contentType = response.getContentType();
             if (contentType != null) {
                 headers.setValue("Content-Type").setString(contentType);
             }
