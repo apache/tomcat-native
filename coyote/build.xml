@@ -241,7 +241,7 @@
   </target>
 
   <target name="compile" 
-   depends="static,report,compile.shared,compile.tomcat4,compile.tomcat33"
+   depends="static,report,compile.shared,compile.tomcat5,compile.tomcat4,compile.tomcat33"
    description="Compile Coyote and its Adapters">
     <jar    jarfile="${build.home}/lib/tomcat-${component.name}.jar"
             basedir="${build.home}/classes"
