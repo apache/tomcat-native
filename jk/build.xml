@@ -64,7 +64,7 @@
 	       verbose="off"
 	       excludes="**/CVS/**">
 	    <exclude name="org/apache/ajp/tomcat4/**" if="tomcat4.skip"/>
-	    <exclude name="org/apache/ajp/tomcat33/**" />
+        <exclude name="org/apache/ajp/tomcat33/**" if="tomcat3.skip"/>
 	    <classpath refid="build-main.classpath"/>
 	</javac>
 
