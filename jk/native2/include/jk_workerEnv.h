@@ -81,6 +81,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 struct jk_worker;
+struct jk_channel;
 struct jk_endpoint;
 struct jk_env;
 struct jk_config;
@@ -108,6 +109,10 @@ struct jk_workerEnv {
     /* Active workers hashtable. 
      */
     struct jk_map *worker_map;
+
+    /* Channels
+     */
+    struct jk_map *channel_map;
 
     /* worker.list - workers to load at startup
      */
@@ -219,6 +224,13 @@ struct jk_workerEnv {
                      struct jk_workerEnv *_this,
                      struct jk_worker *w);
 
+    int (*addChannel)(struct jk_env *env,
+                      struct jk_workerEnv *_this,
+                      struct jk_channel *w);
+    
+    int (*initChannel)(struct jk_env *env,
+                       struct jk_workerEnv *wEnv, struct jk_channel *ch);
+    
     /** Call the handler associated with the message type.
      */
     int (*dispatch)(struct jk_env *env, struct jk_workerEnv *_this,

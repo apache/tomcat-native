@@ -113,9 +113,10 @@ struct jk_channel {
        send/receive flow is hard to replicate on jni ) 
     */
     int is_stream;
-    struct jk_pool *pool;
     
+    struct jk_workerEnv *workerEnv;
     struct jk_worker *worker; 
+    char *workerName; 
     
     /** Prepare the channel, check the properties. This 
      * will resolve the host and do all the validations.
