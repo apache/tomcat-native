@@ -243,9 +243,6 @@ static int is_worker_candidate(worker_record_t *wr,
         case 5:
             return JK_TRUE;
     }
-    jk_log(l, JK_LOG_ERROR,
-        "wrong search id %d\n",
-        search_id);
     return JK_FALSE;
 }
 
@@ -279,10 +276,10 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
            search_type, search_string);
 
     for (i = start; i < stop; i++) {
-       jk_log(l, JK_LOG_DEBUG,
-             "testing worker %s (%d) for match with %s (%s)\n",
-             p->lb_workers[i].name, i, search_type, search_string);
         if (is_worker_candidate(&(p->lb_workers[i]), search_id, search_string, l)) {
+           jk_log(l, JK_LOG_DEBUG,
+                  "found candidate worker %s (%d) for match with %s (%s)\n",
+                  p->lb_workers[i].name, i, search_type, search_string);
             if (search_id == 1) {
                 *domain_id = i;
             }
@@ -344,7 +341,7 @@ static worker_record_t *get_suitable_worker(lb_worker_t *p,
     jk_log(l, JK_LOG_DEBUG,
            "found no %s (%s) worker\n",
            search_type, search_string);
-   JK_LEAVE_CS(&(p->cs), i);
+    JK_LEAVE_CS(&(p->cs), i);
     return rc;
 }
 
