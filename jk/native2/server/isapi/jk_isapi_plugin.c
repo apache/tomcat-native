@@ -86,6 +86,7 @@
 #define EXTENSION_URI_TAG       ("extensionUri")
 #define WORKERS_FILE_TAG        ("workersFile")
 #define USE_AUTH_COMP_TAG       ("authComplete")
+#define THREAD_POOL_TAG         ("threadPool")
 
 
 static char  file_name[_MAX_PATH];
@@ -95,9 +96,10 @@ static int   is_inited = JK_FALSE;
 static int   is_mapread = JK_FALSE;
 static int   was_inited = JK_FALSE;
 static int   auth_notification_flags = 0;
+static int   use_auth_notification_flags = 0;
 
 static jk_workerEnv_t *workerEnv;
-static apr_pool_t *jk_globalPool;
+apr_pool_t *jk_globalPool;
 
 static char extension_uri[INTERNET_MAX_URL_LENGTH] = "/jakarta/isapi_redirector2.dll";
 static char worker_file[MAX_PATH * 2] = "";
@@ -120,6 +122,10 @@ static int get_registry_config_parameter(HKEY hkey,
 static jk_env_t* jk2_create_config();
 static int get_auth_flags();
 
+/*  ThreadPool support
+ *
+ */
+int use_thread_pool = 0;
 
 static void write_error_response(PHTTP_FILTER_CONTEXT pfc,char *status,char * msg)
 {
@@ -141,14 +147,58 @@ static void write_error_response(PHTTP_FILTER_CONTEXT pfc,char *status,char * ms
     pfc->WriteClient(pfc, msg, &len, 0);
 }
 
+HANDLE jk2_starter_event;
+HANDLE jk2_inited_event;
+HANDLE jk2_starter_thread = NULL;
+
+DWORD WINAPI jk2_isapi_starter( LPVOID lpParam ) 
+{
+    Sleep(1000);
+    
+    apr_initialize();
+    apr_pool_create( &jk_globalPool, NULL );
+    initialize_extension();
+    if (is_inited) {
+        if (init_jk(NULL))
+            is_mapread = JK_TRUE;
+    }
+    SetEvent(jk2_inited_event);
+    WaitForSingleObject(jk2_starter_event, INFINITE);
+
+    if (is_inited) {
+        was_inited = JK_TRUE;
+        is_inited = JK_FALSE;
+        if (workerEnv) {
+            jk_env_t *env = workerEnv->globalEnv;
+            jk2_iis_close_pool(env);
+            workerEnv->close(env, workerEnv);
+        }
+        is_mapread = JK_FALSE;
+    }
+    apr_pool_destroy(jk_globalPool);
+    apr_terminate();
+    return 0; 
+} 
 
 BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
 {
     ULONG http_filter_revision = HTTP_FILTER_REVISION;
+    DWORD dwThreadId;
 
+    jk2_inited_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+    jk2_starter_event = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-    pVer->dwFilterVersion = pVer->dwServerFilterVersion;
+    jk2_starter_thread = CreateThread(NULL, 0,
+                                      jk2_isapi_starter,
+                                      NULL,
+                                      0,
+                                      &dwThreadId);
                         
+    WaitForSingleObject(jk2_inited_event, INFINITE);
+    if (!is_inited || !is_mapread) {
+        return FALSE;
+    }
+    pVer->dwFilterVersion = pVer->dwServerFilterVersion;
     if (pVer->dwFilterVersion > http_filter_revision) {
         pVer->dwFilterVersion = http_filter_revision;
     }
@@ -403,107 +453,108 @@ BOOL WINAPI GetExtensionVersion(HSE_VERSION_INFO  *pVer)
     return TRUE;
 }
 
-DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
+DWORD WINAPI HttpExtensionProcWorker(LPEXTENSION_CONTROL_BLOCK  lpEcb, 
+                                     jk_ws_service_t *service)
 {   
     DWORD rc = HSE_STATUS_ERROR;
     jk_env_t *env;
+    jk_ws_service_t sOnStack;
+    jk_ws_service_t *s;
+    char *worker_name;
+    char huge_buf[16 * 1024]; /* should be enough for all */
+    DWORD huge_buf_sz;        
+    jk_worker_t *worker;
+    jk_pool_t *rPool=NULL;
+    int rc1;
+
+    if (service)
+        s = service;
+    else
+        s = &sOnStack;
+
     lpEcb->dwHttpStatusCode = HTTP_STATUS_SERVER_ERROR;
+    env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
+    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+                  "HttpExtensionProc started\n");
 
-    if (!is_inited) {
-        initialize_extension();
+    GET_SERVER_VARIABLE_VALUE(workerEnv->pool,HTTP_WORKER_HEADER_NAME, ( worker_name ));
+    worker=env->getByName( env, worker_name);
+
+    env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+        "HttpExtensionProc %s a worker for name %s\n", 
+        worker ? "got" : "could not get",
+        worker_name);
+
+    if( worker==NULL ){
+        env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
+            "HttpExtensionProc worker is NULL\n");
+        return rc;            
+    }
+    /* Get a pool for the request XXX move it in workerEnv to
+    be shared with other server adapters */
+    rPool= worker->rPoolCache->get( env, worker->rPoolCache );
+    if( rPool == NULL ) {
+        rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
+        env->l->jkLog(env, env->l, JK_LOG_DEBUG,
+            "HttpExtensionProc: new rpool\n");
     }
 
-    /* Initialise jk */
-    if (is_inited && !is_mapread) {
-        char serverName[MAX_SERVERNAME];
-        DWORD dwLen = sizeof(serverName);
-        if (lpEcb->GetServerVariable(lpEcb->ConnID, SERVER_NAME, serverName, &dwLen)){
-            if (dwLen > 0) serverName[dwLen-1] = '\0';
-            if (init_jk(serverName))
-                is_mapread = JK_TRUE;
-        }
-        if (!is_mapread)
-            is_inited = JK_FALSE;
+    jk2_service_iis_init( env, s );
+    s->pool = rPool;
+    s->is_recoverable_error = JK_FALSE;
+    s->response_started = JK_FALSE;
+    s->content_read = 0;
+    s->ws_private = lpEcb;
+    s->workerEnv = workerEnv;
+
+    /* Initialize the ws_service structure */
+    s->init( env, s, worker, lpEcb );
+
+    if (JK_OK == worker->service(env, worker, s)){
+        rc=HSE_STATUS_SUCCESS;
+        lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
+        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+            "HttpExtensionProc service() returned OK\n");
+    } else {
+        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
+            "HttpExtensionProc service() Failed\n");
     }
 
+    s->afterRequest(env, s);
 
-    if (is_inited) {
-        jk_ws_service_t sOnStack;
-        jk_ws_service_t *s=&sOnStack;
-        char *worker_name;
-        char huge_buf[16 * 1024]; /* should be enough for all */
-        DWORD huge_buf_sz;
+    rPool->reset(env, rPool);
 
-        
-        jk_worker_t *worker;
-        jk_pool_t *rPool=NULL;
-        int rc1;
+    rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );       
 
-        env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
-        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-               "HttpExtensionProc started\n");
-
-        GET_SERVER_VARIABLE_VALUE(workerEnv->pool,HTTP_WORKER_HEADER_NAME, ( worker_name ));
-        worker=env->getByName( env, worker_name);
-
-        env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-               "HttpExtensionProc %s a worker for name %s\n", 
-               worker ? "got" : "could not get",
-               worker_name);
-        
-        if( worker==NULL ){
-            env->l->jkLog(env, env->l,  JK_LOG_ERROR, 
-                   "HttpExtensionProc worker is NULL\n");
-            return rc;            
-        }
-        /* Get a pool for the request XXX move it in workerEnv to
-           be shared with other server adapters */
-        rPool= worker->rPoolCache->get( env, worker->rPoolCache );
-        if( rPool == NULL ) {
-            rPool=worker->mbean->pool->create( env, worker->mbean->pool, HUGE_POOL_SIZE );
-            env->l->jkLog(env, env->l, JK_LOG_DEBUG,
-                          "HttpExtensionProc: new rpool\n");
-        }
-
-        jk2_service_iis_init( env, s );
-        s->pool = rPool;
-        s->is_recoverable_error = JK_FALSE;
-        s->response_started = JK_FALSE;
-        s->content_read = 0;
-        s->ws_private = lpEcb;
-        s->workerEnv = workerEnv;
-
-        /* Initialize the ws_service structure */
-        s->init( env, s, worker, lpEcb );
-        
-        if (JK_OK == worker->service(env, worker, s)){
-            rc=HSE_STATUS_SUCCESS;
-            lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
-            env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                   "HttpExtensionProc service() returned OK\n");
-        } else {
-            env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                   "HttpExtensionProc service() Failed\n");
-        }
-        
-        s->afterRequest(env, s);
-        
-        rPool->reset(env, rPool);
-        
-        rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );       
+    if (service != NULL) {
+        lpEcb->ServerSupportFunction(lpEcb->ConnID, 
+                                     HSE_REQ_DONE_WITH_SESSION, 
+                                     NULL, 
+                                     NULL, 
+                                     NULL);
     }
     return rc;
 }
 
-    
+DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
+{
+    if (is_inited) {
+        if (!use_thread_pool) {
+            return HttpExtensionProcWorker(lpEcb, NULL);
+        }
+        else {
+            /* Pass the request to the thread pool */
+            jk2_iis_thread_pool(lpEcb);
+            return HSE_STATUS_PENDING;
+        }
+    }
+    return HSE_STATUS_ERROR;
+}
 
 BOOL WINAPI TerminateExtension(DWORD dwFlags) 
 {
     return TerminateFilter(dwFlags);
 }
-
-HANDLE jk2_starter_event;
-HANDLE jk2_starter_thread = NULL;
 
 BOOL WINAPI TerminateFilter(DWORD dwFlags) 
 {
@@ -514,35 +565,6 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
 }
 
 
-DWORD WINAPI jk2_isapi_starter( LPVOID lpParam ) 
-{
-    Sleep(1000);
-    
-    apr_initialize();
-    apr_pool_create( &jk_globalPool, NULL );
-    initialize_extension();
-    if (is_inited) {
-        if (init_jk(NULL))
-            is_mapread = JK_TRUE;
-    }
-
-    WaitForSingleObject(jk2_starter_event, INFINITE);
-
-    if (is_inited) {
-        was_inited = JK_TRUE;
-        is_inited = JK_FALSE;
-        if (workerEnv) {
-            jk_env_t *env = workerEnv->globalEnv;
-            workerEnv->close(env, workerEnv);
-        }
-        is_mapread = JK_FALSE;
-    }
-    apr_pool_destroy(jk_globalPool);
-    apr_terminate();
-    ExitThread(0);
-    return 0; 
-} 
-
 
 BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
                     ULONG ulReason,         // Reason why NT called this DLL
@@ -552,11 +574,10 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
     char drive[_MAX_DRIVE];
     char dir[_MAX_DIR];
     char fname[_MAX_FNAME];
-    DWORD dwThreadId;
 
     switch (ulReason) {
         case DLL_PROCESS_DETACH:
-            WaitForSingleObject(jk2_starter_thread, INFINITE);
+            WaitForSingleObject(jk2_starter_thread, 1200000);
             CloseHandle(jk2_starter_thread);
             /* Dirty hack to unload the jvm */
             if (was_inited && jk_jni_status_code)
@@ -568,18 +589,6 @@ BOOL WINAPI DllMain(HINSTANCE hInst,        // Instance Handle of the DLL
                 _splitpath( file_name, drive, dir, fname, NULL );
                 _makepath( ini_file_name, drive, dir, fname, ".properties" );
                 
-                jk2_starter_event = CreateEvent(NULL,
-                                                FALSE,
-                                                FALSE,
-                                                NULL);
-
-                jk2_starter_thread = CreateThread( NULL,
-                                        0,
-                                        jk2_isapi_starter,
-                                        NULL,
-                                        0,
-                                        &dwThreadId);
-
             } else {
                 fReturn = JK_FALSE;
             }
@@ -622,6 +631,7 @@ static int initialize_extension()
 {
     jk_env_t *env=jk2_create_config();   
     if (read_registry_init_data(env)) {
+        jk2_iis_init_pool(env);
         is_inited = JK_TRUE;
     }
     return is_inited;
@@ -653,6 +663,14 @@ static int read_registry_init_data(jk_env_t *env)
             tmp = map->get(env,map,WORKERS_FILE_TAG);
             if (tmp) {
                 strcpy(worker_file, tmp);
+            }
+            tmp = map->get(env,map,THREAD_POOL_TAG);
+            if (tmp) {
+                use_thread_pool = atoi(tmp);
+            }
+            tmp = map->get(env,map,USE_AUTH_COMP_TAG);
+            if (tmp) {
+                use_auth_notification_flags = atoi(tmp);
             }
             using_ini_file=JK_TRUE;            
             return ok;
@@ -697,6 +715,19 @@ static int read_registry_init_data(jk_env_t *env)
     } else {
         ok = JK_FALSE;
     }
+    if(get_registry_config_parameter(hkey,
+                                     THREAD_POOL_TAG,
+                                     tmpbuf,
+                                     8)) {
+        use_thread_pool = atoi(tmpbuf);
+    }
+    if(get_registry_config_parameter(hkey,
+                                     USE_AUTH_COMP_TAG,
+                                     tmpbuf,
+                                     8)) {
+        use_auth_notification_flags = atoi(tmpbuf);
+    }
+
     RegCloseKey(hkey);
     return ok;
 } 
@@ -803,7 +834,7 @@ static int get_auth_flags()
     int maj, sz;
     int rv = SF_NOTIFY_PREPROC_HEADERS;
     int use_auth = JK_FALSE;
-    /* Retrieve the IIS version Major*/
+    /* Retreive the IIS version Major*/
     rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
                       W3SVC_REGISTRY_KEY,
                       (DWORD)0,
@@ -824,23 +855,7 @@ static int get_auth_flags()
         return rv;        
     }
     CloseHandle(hkey);
-    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-                      REGISTRY_LOCATION,
-                      (DWORD)0,
-                      KEY_READ,
-                      &hkey);
-    if(ERROR_SUCCESS != rc) {
-        return rv;
-    } 
-
-    rc = RegQueryValueEx(hkey,     
-                         USE_AUTH_COMP_TAG,      
-                         NULL,
-                         NULL,    
-                         (LPBYTE)&use_auth,
-                         &sz); 
-    CloseHandle(hkey);
-    if (use_auth && maj > 4)
+    if (use_auth_notification_flags && maj > 4)
         rv = SF_NOTIFY_AUTH_COMPLETE;
 
     return rv;
