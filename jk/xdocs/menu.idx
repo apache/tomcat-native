@@ -8,6 +8,7 @@
   <document href="jk/iishowto.xml"/>
   <document href="jk/neshowto.xml"/>
   <document href="jk/domhowto.xml"/>
+  <document href="jk/workershowto.xml"/>
   <document href="jk2/configtc.xml"/>
   <document href="jk2/configweb.xml"/>
   <document href="faq.xml"/>
