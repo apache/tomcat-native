@@ -112,6 +112,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         lastActiveFilter = -1;
 
         committed = false;
+        finished = false;
 
     }
 
@@ -142,9 +143,15 @@ public class InternalOutputBuffer implements OutputBuffer {
 
 
     /**
-     * State.
+     * Committed flag.
      */
     protected boolean committed;
+
+
+    /**
+     * Finished flag.
+     */
+    protected boolean finished;
 
 
     /**
@@ -315,6 +322,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         pos = 0;
         lastActiveFilter = -1;
         committed = false;
+        finished = false;
 
     }
 
@@ -342,6 +350,7 @@ public class InternalOutputBuffer implements OutputBuffer {
         pos = 0;
         lastActiveFilter = -1;
         committed = false;
+        finished = false;
 
     }
 
@@ -363,8 +372,13 @@ public class InternalOutputBuffer implements OutputBuffer {
 
         }
 
+        if (finished)
+            return;
+
         if (lastActiveFilter != -1)
             activeFilters[lastActiveFilter].end();
+
+        finished = true;
 
     }
 

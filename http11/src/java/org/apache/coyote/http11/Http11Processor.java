@@ -432,6 +432,9 @@ public class Http11Processor implements Processor, ActionHook {
 
             // Commit current response
 
+            if (response.isCommitted())
+                return;
+
             // Validate and write response headers
             prepareResponse();
             try {
