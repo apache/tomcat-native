@@ -64,7 +64,7 @@ AC_DEFUN([AP_PROG_JAVAC_WORKS],[
   AC_CACHE_CHECK([wether the Java compiler ($JAVAC) works],ap_cv_prog_javac_works,[
     echo "public class Test {}" > Test.java
     $JAVAC $JAVACFLAGS Test.java > /dev/null 2>&1
-    if test $? -eq 0
+    if ${test} $? -eq 0
     then
       rm -f Test.java Test.class
       ap_cv_prog_javac_works=yes
@@ -106,7 +106,7 @@ AC_DEFUN([AP_JAVA],[
         AC_MSG_RESULT([${JAVA_HOME}])
         ;;
     esac
-    if ! test -d "${JAVA_HOME}"
+    if ${test} ! -d "${JAVA_HOME}"
     then
       AC_MSG_ERROR([${JAVA_HOME} is not a directory])
     fi
