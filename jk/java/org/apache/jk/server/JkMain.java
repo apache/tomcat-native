@@ -284,7 +284,7 @@ public class JkMain
                     wEnv.getHandler(i).init();
                 } catch( IOException ex) {
                     if( "apr".equals(wEnv.getHandler(i).getName() )) {
-                        log.error( "APR error, disabling jni components: " + ex.toString());
+                        log.info( "APR error, disabling jni components: " + ex.toString());
                     } else {
                         log.error( "error initializing " + wEnv.getHandler(i).getName(), ex );
                     }
