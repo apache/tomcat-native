@@ -77,6 +77,12 @@
 static char  file_name[_MAX_PATH];
 #endif
 
+/* This is used to ensure that jk2_create_dir_config creates unique
+ * dir mappings. This prevents vhost configs as configured through
+ * httpd.conf from getting crossed.
+ */
+static int dirCounter=0;
+
 
 #define JK_HANDLER          ("jakarta-servlet2")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet2")
@@ -166,12 +172,12 @@ static const char *jk2_set3(cmd_parms *cmd,void *per_dir,
     if( mbean==NULL ) {
         ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
                       "mod_jk2: Creating object %s\n", name );
-        mbean=env->createBean( env, workerEnv->config->pool, name );
+        mbean=env->createBean( env, workerEnv->config->pool, (char *)name );
     }
 
     if( mbean == NULL ) {
         /* Can't create it, save the value in our map */
-        workerEnv->config->setProperty( env, workerEnv->config, workerEnv->config->mbean, name, value );
+        workerEnv->config->setProperty( env, workerEnv->config, workerEnv->config->mbean, (char *)name, value );
         return NULL;
     }
 
@@ -217,8 +223,40 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
 {
     jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)per_dir;
 
+    char *tmp;
+    char *tmp2;
+    char *tmp_virtual=NULL;
+    char *tmp_full_url=NULL;
+    server_rec *s = cmd->server;
+
     uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, (char *)name, (void *)val );
-    
+
+    /*
+     * all of the objects that get passed in now are unique. create_dir adds a incrementing counter to the
+     * uri that is used to create the object!
+     * Here we must now 'fix' the content of the object passed in.
+     * Apache doesn't care what we do here as it has the reference to the unique object that has been
+     * created. What we need to do is ensure that the data given to mod_jk2 is correct. Hopefully in the long run
+     * we can ignore some of the mod_jk details...
+     */
+
+    /* if applicable we will set the hostname etc variables. */
+    if ( s->server_hostname != NULL && (uriEnv->virtual==NULL  || !strchr( uriEnv->virtual, ':') || uriEnv->port != s->port ))
+    {
+          tmp_virtual  = (char *) ap_pcalloc(cmd->pool, sizeof(char *) * (strlen(s->server_hostname) + 8 )) ;
+          tmp_full_url = (char *) ap_pcalloc(cmd->pool, sizeof(char *) * (strlen(s->server_hostname) + strlen(uriEnv->uri)+8 )) ;
+          sprintf(tmp_virtual,  "%s:%d", s->server_hostname, s->port);
+          sprintf(tmp_full_url, "%s:%d%s", s->server_hostname, s->port, uriEnv->uri );
+
+          uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, "uri", tmp_full_url);
+          uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, "path", cmd->path);
+          uriEnv->name=tmp_virtual;
+          uriEnv->virtual=tmp_virtual;
+
+    }
+    /* now lets actually add the parameter set in the <Location> block */
+    uriEnv->mbean->setAttribute( workerEnv->globalEnv, uriEnv->mbean, (char *)name, (void *)val );
+
 /*     fprintf(stderr, "JkUriSet  %s %s dir=%s args=%s\n", */
 /*             uriEnv->workerName, cmd->path, */
 /*             cmd->directive->directive, */
@@ -251,12 +289,34 @@ static void *jk2_create_dir_config(apr_pool_t *p, char *path)
     /* We don't know the vhost yet - so path is not
      * unique. We'll have to generate a unique name
      */
-    jk_bean_t *jkb=workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
+    char *tmp=NULL;
+    int a=10;
+    jk_bean_t *jkb;
+    jk_uriEnv_t *newUri;
+
+    if( path!=NULL ) {
+        a=strlen(path)+10;
+    }
+    
+    /* Original patch: a * sizeof( char * ) - that's weird, we only use a chars, not char*
+       Maybe I wrote too much java...
+    */
+    tmp = (char *) ap_pcalloc(p, a); 
+    sprintf(tmp, "%s-%d", ((path==NULL)? "/" : path), dirCounter++);
+    /* I changed the default to /, otherwise it complains */
+
+    jkb=workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
                                                       workerEnv->pool, "uri",
-                                                      (path==NULL)? "":path );
-    jk_uriEnv_t *newUri = jkb->object;
+                                                      tmp );
+    newUri = jkb->object;
+
     newUri->workerEnv=workerEnv;
-    newUri->mbean->setAttribute( workerEnv->globalEnv, newUri->mbean, "path", path );
+    newUri->mbean->setAttribute( workerEnv->globalEnv, newUri->mbean, "path", tmp );
+    /* I'm hoping that setting the id won't break anything. I havn't noticed it breaking anything. */
+    newUri->mbean->id=(dirCounter -1);
+    /* this makes the display in the status display make more sense */
+    newUri->mbean->localName=path;
+
     return newUri;
 }
 
@@ -265,46 +325,41 @@ static void *jk2_merge_dir_config(apr_pool_t *p, void *childv, void *parentv)
 {
     jk_uriEnv_t *child =(jk_uriEnv_t *)childv;
     jk_uriEnv_t *parent = (jk_uriEnv_t *)parentv; 
+    jk_uriEnv_t *winner=NULL;
+    jk_uriEnv_t *loser=NULL;
 
-    if( child->uri==NULL )
-        return parentv;
-    
-    if( child->merged != JK_TRUE ) {
-        /* Merge options from parent. 
-         */
-        if( parent->mbean->debug > 0 ) /* Inherit debugging */
-            child->mbean->debug = parent->mbean->debug;
-
-        if( child->workerName==NULL ) {
-            child->workerName=parent->workerName;
-            child->worker=parent->worker;
-        }
-        if( child->virtual==NULL ) {
-            child->virtual=parent->virtual;
-            child->aliases=parent->aliases;
-        }
-        if( child->contextPath==NULL ) {
-            child->contextPath=parent->contextPath;
-            child->ctxt_len=parent->ctxt_len;
-        }
-        /* XXX Shuld we merge env vars ?
-         */
-        
-        /* When we merged to top - mark and stop duplicating the work
-         */
-        if( parent->uri == NULL ) 
-            child->merged=JK_TRUE;
-    
-        
-        if( child->mbean->debug > -1 ) {
-            fprintf(stderr, "mod_jk2:mergeDirConfig() Merged dir config %#lx %s %s %s %s\n",
-                    child, child->uri, parent->uri, child->workerName, parent->workerName);
-            fprintf(stderr, "mod_jk2:mergeDirConfig() Merged dir config %#lx %s %s %s %s\n",
-                    child, child->uri, parent->uri, child->workerName, parent->workerName);
-        }
+    if ( child == NULL || child->uri==NULL || child->workerName==NULL ) {
+           winner=parent;
+           loser=child;
+    } else if ( parent == NULL || parent->uri ==NULL || parent->workerName==NULL ) {
+           winner=child;
+           loser=parent;
+           /* interresting bit... so far they are equal ... */
+    } else if ( strlen(parent->uri) > strlen(child->uri) ) {
+           winner=parent;
+           loser=child;
+    } else {
+           winner=child;
+           loser=parent;
     }
 
-    return childv;
+    /* Do we merge loser into winner - i.e. inherit properties ? */
+
+    /*if ( winner == child )
+         fprintf(stderr, "Going with the child\n");
+      else if ( winner == parent )
+        fprintf(stderr, "Going with the parent\n");
+      else 
+        fprintf(stderr, "Going with NULL\n");
+   */
+    fprintf(stderr, "Merging %s %s %s\n",
+            (winner==NULL || winner->uri==NULL) ? "" : winner->uri,
+            (child==NULL || child->uri==NULL) ? "" : child->uri,
+            (parent==NULL || parent->uri==NULL) ? "" : parent->uri);
+            
+
+    return (void *) winner;
+
 }
 
 /** Basic initialization for jk2.
