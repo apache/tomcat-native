@@ -709,24 +709,31 @@ public final class Mapper {
      */
     private final void internalMapWildcardWrapper
         (Wrapper[] wrappers, CharChunk path, MappingData mappingData) {
+
+        int pathEnd = path.getEnd();
+        int pathOffset = path.getOffset();
+
         int length = -1;
         int pos = find(wrappers, path);
         if (pos != -1) {
+            int lastSlash = pathEnd;
             boolean found = false;
-            while (path.startsWith(wrappers[pos].name)) {
-                length = wrappers[pos].name.length();
-                if (path.getLength() == length) {
-                    found = true;
-                    break;
-                } else if (path.startsWithIgnoreCase("/", length)) {
-                    found = true;
-                    break;
+            while (pos >= 0) {
+                if (path.startsWith(wrappers[pos].name)) {
+                    length = wrappers[pos].name.length();
+                    if (path.getLength() == length) {
+                        found = true;
+                        break;
+                    } else if (path.startsWithIgnoreCase("/", length)) {
+                        found = true;
+                        break;
+                    }
                 }
-                pos--;
-                if (pos < 0) {
-                    break;
-                }
+                lastSlash = lastSlash(path);
+                path.setEnd(lastSlash);
+                pos = find(wrappers, path);
             }
+            path.setEnd(pathEnd);
             if (found) {
                 mappingData.wrapperPath.setString(wrappers[pos].name);
                 if (path.getLength() > length) {
@@ -741,6 +748,7 @@ public final class Mapper {
             }
         }
     }
+
 
     /**
      * Extension mappings.
@@ -916,6 +924,27 @@ public final class Mapper {
             }
         }
         return result;
+    }
+
+
+    /**
+     * Find the position of the last slash in the given char chunk.
+     */
+    private static final int lastSlash(CharChunk name) {
+
+        char[] c = name.getBuffer();
+        int end = name.getEnd();
+        int start = name.getStart();
+        int pos = end;
+
+        while (pos > start) {
+            if (c[--pos] == '/') {
+                break;
+            }
+        }
+
+        return (pos);
+
     }
 
 
