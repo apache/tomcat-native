@@ -229,7 +229,8 @@ public class JkMain
     static String defaultHandlers[]= { "apr",
                                        "shm",
                                        "request",
-                                       "container" };
+                                       "container",
+                                       "channelSocket"};
     
     public void start() throws IOException
     {
@@ -278,7 +279,7 @@ public class JkMain
         long initTime=System.currentTimeMillis() - start_time;
 
         this.saveProperties();
-        log.info("Jk running... init time=" + initTime + " ms");
+        log.info("Jk running ID=" + wEnv.getLocalId() + " ... init time=" + initTime + " ms");
     }
 
     // -------------------- Usefull methods --------------------

@@ -92,12 +92,21 @@ public class WorkerEnv {
     
     // base dir for the jk webapp
     String home;
+    int localId=0;
     
     public WorkerEnv() {
         for( int i=0; i<noteId.length; i++ ) {
             noteId[i]=7;
             noteName[i]=new String[20];
         }
+    }
+
+    public void setLocalId(int id) {
+        localId=id;
+    }
+    
+    public int getLocalId() {
+        return localId;
     }
     
     public void setJkHome( String s ) {
