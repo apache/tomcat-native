@@ -102,7 +102,7 @@
                     <img src="{$images}/jakarta.gif" border="0" width="270" height="75" align="left"/>
                   </td>
                   <td align="right">
-                    <img src="{$images}/mod_jk.jpeg" border="0" align="right"/>
+                    <img src="{$images}/mod_jk.jpg" border="0" align="right"/>
                   </td>
                 </tr>
               </table>
