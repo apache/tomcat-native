@@ -82,11 +82,6 @@ The apache sources should have been configured before configuring mod_jk.
 DIR is something like: /home/apache/apache_1.3.33
 It builds a static Apache module.</p>
   </attribute>
-  <attribute name="--enable-EAPI" required="false">
-  <p>This parameter is needed when using Apache-1.3 and mod_ssl, otherwise you will get the error message:
-"this module might crash under EAPI!" when loading mod_jk.so in httpd.
-Not needed when --with-apxs has been used.</p>
-  </attribute>
 </attributes>
 
 <p>JNI related parameters :</p>
