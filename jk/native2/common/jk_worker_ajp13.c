@@ -166,8 +166,6 @@ jk2_worker_ajp14_setAttribute(jk_env_t *env, jk_bean_t *mbean,
         ajp14->route=value;
     } else if( strcmp( name, "group" )==0 ) {
         ajp14->groups->add( env, ajp14->groups, value, ajp14 );
-    } else if( strcmp( name, "cachesize" )==0 ) {
-        ajp14->cache_sz=atoi( value );
     } else if( strcmp( name, "lb_factor" )==0 ) {
         ajp14->lb_factor=atoi( value );
     } else if( strcmp( name, "channel" )==0 ) {
@@ -220,10 +218,14 @@ static void jk2_close_endpoint(jk_env_t *env, jk_endpoint_t *ae)
     ae->reuse = JK_FALSE;
     if( ae->worker->channel != NULL )
         ae->worker->channel->close( env, ae->worker->channel, ae );
+    
     ae->cPool->reset( env, ae->cPool );
-    ae->cPool->close( env, ae->cPool );
-    ae->pool->reset( env, ae->pool );
-    ae->pool->close( env, ae->pool );
+    /* ae->cPool->close( env, ae->cPool ); */
+
+    /* Don't touch the ae->pool, the object has important
+       statistics */
+    /* ae->pool->reset( env, ae->pool ); */
+    /*     ae->pool->close( env, ae->pool ); */
 }
 
 /** Connect a channel, implementing the logging protocol if ajp14
@@ -252,6 +254,13 @@ static int jk2_worker_ajp14_connect(jk_env_t *env, jk_endpoint_t *ae) {
         return JK_ERR;
     }
 
+    /* We just reconnected, reset error state
+     */
+    ae->worker->in_error_state=0;
+    
+    /** XXX use a 'connected' field */
+    if( ae->sd == -1 ) ae->sd=0;
+    
     /* Check if we must execute a logon after the physical connect */
     if (ae->worker->secret == NULL)
         return JK_OK;
@@ -294,7 +303,7 @@ jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
                               jk_endpoint_t   *e )
 {
     int attempt;
-    int err;
+    int err=JK_OK;
     
     /*
      * Try to send the request on a valid endpoint. If one endpoint
@@ -306,11 +315,20 @@ jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
     for(attempt = 0 ; attempt < JK_RETRIES ;attempt++) {
         jk_channel_t *channel= worker->channel;
 
+        if( e->sd == -1 ) {
+            err=jk2_worker_ajp14_connect(env, e);
+            if( err!=JK_OK ) {
+                env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                              "ajp14.service() failed to connect endpoint errno=%d %s\n",
+                              errno, strerror( errno ));
+                return err;
+            }
+        }
         /* e->request->dump(env, e->request, "Before sending "); */
         err=e->worker->channel->send( env, e->worker->channel, e,
                                       e->request );
-
-	    if (err==JK_OK ) {
+        e->request->dump( env, e->request, "Sent" );
+        if (err==JK_OK ) {
             /* We sent the request, have valid endpoint */
             break;
         }
@@ -323,11 +341,10 @@ jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
         }
         
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                "ajp14.service() error sending, reconnect %s %s\n",
-                      e->worker->mbean->name, e->worker->channelName);
+                      "ajp14.service() error sending, reconnect %s %d %d %s\n",
+                      e->worker->channelName, err, errno, strerror(errno));
 
         channel->close( env, channel, e );
-
         err=jk2_worker_ajp14_connect(env, e); 
 
         if( err != JK_OK ) {
@@ -385,10 +402,6 @@ jk2_worker_ajp14_forwardStream(jk_env_t *env, jk_worker_t *worker,
         err= e->worker->channel->send( env, e->worker->channel, e,
                                        e->post );
     }
-
-    if( e->worker->mbean->debug > 0 )
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "ajp14.service() processing callbacks %s\n", e->worker->channel->mbean->name);
 
     err = e->worker->workerEnv->processCallbacks(env, e->worker->workerEnv,
                                                  e, s);
@@ -515,31 +528,35 @@ static int JK_METHOD
 jk2_worker_ajp14_done(jk_env_t *env, jk_worker_t *we, jk_endpoint_t *e)
 {
     jk_worker_t *w;
+    int rc=JK_OK;
     
     w= e->worker;
     
     if( e->cPool != NULL ) 
         e->cPool->reset(env, e->cPool);
-    if (! w->in_error_state && w->endpointCache != NULL ) {
-        int err=0;
-        err=w->endpointCache->put( env, w->endpointCache, e );
-        if( err==JK_OK ) {
-            if( w->mbean->debug > 0 ) 
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "ajp14.done() return to pool %s\n",
-                              w->mbean->name );
-            return JK_OK;
-        }
+
+    if( w->endpointCache == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "ajp14.done() No pool\n");
+        return JK_ERR;
     }
-
-    /* No reuse or put() failed */
-
-    jk2_close_endpoint(env, e);
+    
+    if ( w->in_error_state ) {
+        jk2_close_endpoint(env, e);
+        /*     if( w->mbean->debug > 0 )  */
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "ajp14.done() close endpoint %s error_state %d\n",
+                      w->mbean->name, w->in_error_state );
+    }
+        
+    rc=w->endpointCache->put( env, w->endpointCache, e );
+    if( rc!=JK_OK ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "ajp14.done() Error recycling ep\n");
+        return rc;        
+    }
     if( w->mbean->debug > 0 ) 
         env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "ajp14.done() close endpoint %s\n",
+                      "ajp14.done() return to pool %s\n",
                       w->mbean->name );
-    
     return JK_OK;
 }
 
@@ -555,25 +572,29 @@ jk2_worker_ajp14_getEndpoint(jk_env_t *env,
     if( ajp14->secret ==NULL ) {
     }
 
-    if (ajp14->endpointCache != NULL ) {
+    if( ajp14->endpointCache == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "ajp14.getEndpoint() No pool\n");
+        return JK_ERR;
+    }
 
-        e=ajp14->endpointCache->get( env, ajp14->endpointCache );
+    e=ajp14->endpointCache->get( env, ajp14->endpointCache );
 
-        if (e!=NULL) {
-            if( e->worker->mbean->debug > 0 )
-                env->l->jkLog(env, env->l, JK_LOG_INFO,
-                              "ajp14.getEndpoint(): Reusing endpoint %s %s\n",
-                              e->mbean->name, e->worker->mbean->name);
-            *eP = e;
-            return JK_OK;
-        }
+    if (e!=NULL) {
+        *eP = e;
+        return JK_OK;
     }
 
     jkb=env->createBean2( env,ajp14->pool,  "endpoint", NULL );
     if( jkb==NULL )
         return JK_ERR;
+    if( ajp14->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "ajp14.getEndpoint(): Creating endpoint %s %s \n",
+                      ajp14->mbean->name, jkb->name);
+    
     e = (jk_endpoint_t *)jkb->object;
     e->worker = ajp14;
+    e->sd=-1;
 
     *eP = e;
     return JK_OK;
@@ -617,21 +638,20 @@ jk2_worker_ajp14_init(jk_env_t *env, jk_worker_t *ajp14)
        ajp14->channel->mbean->disabled  )
         ajp14->mbean->disabled = JK_TRUE;
     
-    if( ajp14->cache_sz == -1 )
-        ajp14->cache_sz=JK_OBJCACHE_DEFAULT_SZ;
-
-    if (ajp14->cache_sz > 0) {
-        ajp14->endpointCache=jk2_objCache_create( env, ajp14->pool  );
+    ajp14->endpointCache=jk2_objCache_create( env, ajp14->pool  );
         
-        if( ajp14->endpointCache != NULL ) {
-            rc=ajp14->endpointCache->init( env, ajp14->endpointCache,
-                                           ajp14->cache_sz );
-            if( rc!= JK_OK ) {
-                ajp14->endpointCache=NULL;
-            }
-        }
-    } else {
-        ajp14->endpointCache=NULL;
+    if( ajp14->endpointCache == NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp14.init(): error creating endpoint cache\n");
+        return JK_ERR;
+    }
+    
+    /* Will grow */
+    rc=ajp14->endpointCache->init( env, ajp14->endpointCache, -1 );
+    if( rc!= JK_OK ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp14.init(): error creating endpoint cache\n");
+        return JK_ERR;
     }
 
     if( ajp14->channel == NULL ) {
