@@ -75,15 +75,8 @@
  * @author Costin Manolache
  */ 
 
-#include "jk_env.h"
-#include "jk_map.h"
-#include "jk_logger.h"
-#include <stdio.h>
-
-#include "httpd.h"
-#include "http_log.h"
-
 #include "jk_apache2.h"
+#include <stdio.h>
 
 #define HUGE_BUFFER_SIZE (8*1024)
 

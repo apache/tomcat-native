@@ -62,37 +62,13 @@
  * Version:     $Revision$                                           
  */
 
-#include "apu_compat.h"
-#include "ap_config.h"
-#include "apr_lib.h"
-#include "apr_date.h"
-#include "apr_strings.h"
-
-#include "httpd.h"
-#include "http_config.h"
-#include "http_request.h"
-#include "http_core.h"
-#include "http_protocol.h"
-#include "http_main.h"
-#include "http_log.h"
-
-#include "scoreboard.h"
-
-#include "util_script.h"
 /*
  * Jakarta (jk_) include files
  */
-#include "jk_global.h"
-#include "jk_map.h"
-#include "jk_pool.h"
-#include "jk_env.h"
-#include "jk_service.h"
-#include "jk_worker.h"
-#include "jk_workerEnv.h"
-#include "jk_uriMap.h"
-#include "jk_requtil.h"
-
 #include "jk_apache2.h"
+
+#include "scoreboard.h"
+#include "util_script.h"
 
 /* #define USE_APRTABLES  */
 

@@ -62,6 +62,26 @@
  * Version:     $Revision$                                           
  */
 
+#ifndef JK_APACHE2_H
+#define JK_APACHE2_H
+
+#include "apu_compat.h"
+#include "ap_config.h"
+#include "apr_lib.h"
+#include "apr_date.h"
+#include "apr_strings.h"
+#include "apr_pools.h"
+#include "apr_tables.h"
+#include "apr_hash.h"
+
+#include "httpd.h"
+#include "http_config.h"
+#include "http_request.h"
+#include "http_core.h"
+#include "http_protocol.h"
+#include "http_main.h"
+#include "http_log.h"
+
 #include "jk_global.h"
 #include "jk_map.h"
 #include "jk_pool.h"
@@ -72,6 +92,7 @@
 #include "jk_uriMap.h"
 #include "jk_requtil.h"
 
+extern module AP_MODULE_DECLARE_DATA jk2_module;
 
 int JK_METHOD jk2_service_apache2_init(jk_env_t *env, jk_ws_service_t *s);
 
@@ -85,6 +106,4 @@ int JK_METHOD jk2_map_aprtable_factory(jk_env_t *env, jk_pool_t *pool,
                                        jk_bean_t *result,
                                        const char *type, const char *name);
 
-
-
-     
+#endif /* JK_APACHE2_H */

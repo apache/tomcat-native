@@ -65,19 +65,9 @@
 /*
  * mod_jk: keeps all servlet/jakarta related ramblings together.
  */
-#include "apu_compat.h"
-#include "ap_config.h"
-#include "apr_lib.h"
-#include "apr_date.h"
-#include "apr_strings.h"
 
-#include "httpd.h"
-#include "http_config.h"
-#include "http_request.h"
-#include "http_core.h"
-#include "http_protocol.h"
-#include "http_main.h"
-#include "http_log.h"
+
+#include "jk_apache2.h"
 #include "scoreboard.h"
 
 #include "util_script.h"
@@ -86,20 +76,6 @@
 static char  file_name[_MAX_PATH];
 #endif
 
-/*
- * Jakarta (jk_) include files
- */
-#include "jk_global.h"
-#include "jk_map.h"
-#include "jk_pool.h"
-#include "jk_env.h"
-#include "jk_service.h"
-#include "jk_worker.h"
-#include "jk_workerEnv.h"
-#include "jk_uriMap.h"
-#include "jk_requtil.h"
-
-#include "jk_apache2.h"
 
 #define JK_HANDLER          ("jakarta-servlet2")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet2")
@@ -156,8 +132,9 @@ static const char *jk2_set2(cmd_parms *cmd,void *per_dir,
     int rc;
     
     rc=workerEnv->config->setPropertyString( env, workerEnv->config, (char *)name, value );
-    if( rc!=JK_OK ) {
-        fprintf( stderr, "mod_jk2: Unrecognized option %s %s\n", name, value);
+    if (rc!=JK_OK) {
+		ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, cmd->temp_pool,
+					  "mod_jk2: Unrecognized option %s %s\n", name, value);
     }
 
     return NULL;
