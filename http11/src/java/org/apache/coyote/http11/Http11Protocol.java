@@ -199,7 +199,8 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                 // XXX We should be able to configure it separately
                 // XXX It should be possible to use a single TP
                 tpOname=new ObjectName(domain + ":" + "type=ThreadPool,name=http" + ep.getPort());
-                Registry.getRegistry().registerComponent(tp, tpOname, null );
+                Registry.getRegistry(null, null)
+                    .registerComponent(tp, tpOname, null );
                 tp.setName("http" + ep.getPort());
                 tp.setDaemon(false);
                 tp.addThreadPoolListener(new MXPoolListener(this, tp));
@@ -209,8 +210,8 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             rgOname=new ObjectName( domain + 
                     ":type=GlobalRequestProcessor,name=http" +
                     ep.getPort());
-            Registry.getRegistry().registerComponent( cHandler.global,
-                    rgOname, null );
+            Registry.getRegistry(null, null).registerComponent
+                ( cHandler.global, rgOname, null );
         }
 
         try {
@@ -246,9 +247,9 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         log.info("Stoping http11 protocol on " + ep.getPort() + " " + tpOname);
         ep.stopEndpoint();
         if( tpOname!=null ) 
-            Registry.getRegistry().unregisterComponent(tpOname);
+            Registry.getRegistry(null, null).unregisterComponent(tpOname);
         if( rgOname != null ) 
-            Registry.getRegistry().unregisterComponent(rgOname);
+            Registry.getRegistry(null, null).unregisterComponent(rgOname);
     }
     
     // -------------------- Properties--------------------
@@ -643,7 +644,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
             }
             ObjectName oname=(ObjectName)tpData[Http11Protocol.THREAD_DATA_OBJECT_NAME];
             if( oname==null ) return;
-            Registry.getRegistry().unregisterComponent(oname);
+            Registry.getRegistry(null, null).unregisterComponent(oname);
             Http11Processor processor = 
                 (Http11Processor) tpData[Http11Protocol.THREAD_DATA_PROCESSOR];
             RequestInfo rp=processor.getRequest().getRequestProcessor();
@@ -693,7 +694,7 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
                     ObjectName rpName=new ObjectName(proto.getDomain() + 
                             ":type=RequestProcessor,worker=http" +
                             proto.ep.getPort() +",name=HttpRequest" + count++ );
-                    Registry.getRegistry().registerComponent( rp, rpName, null);
+                    Registry.getRegistry(null, null).registerComponent( rp, rpName, null);
                     thData[Http11Protocol.THREAD_DATA_OBJECT_NAME]=rpName;
                 } catch( Exception ex ) {
                     log.warn("Error registering request");
