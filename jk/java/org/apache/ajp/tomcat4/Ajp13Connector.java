@@ -788,7 +788,8 @@ public final class Ajp13Connector
                     socket.setSoTimeout(connectionTimeout);
                 }
             } catch (AccessControlException ace) {
-                logger.log("socket accept security exception: " + ace.getMessage());
+                logger.log("socket accept security exception: "
+                           + ace.getMessage());
                 continue;
 	    } catch (IOException e) {
 		if (started && !stopped)
@@ -797,7 +798,18 @@ public final class Ajp13Connector
                     if (serverSocket != null) {
                         serverSocket.close();
                     }
-                    serverSocket = open();
+                    if (stopped) {
+                        if (debug > 0) {
+                            logger.log("run():  stopped, so breaking");
+                        }
+                        break;
+                    } else {
+                        if (debug > 0) {
+                            logger.log("run():  not stopped, " +
+                                       "so reopening server socket");
+                        }
+                        serverSocket = open();
+                    }
                 } catch (IOException ex) {
                     // If reopening fails, exit
                     logger.log("socket reopen: ", ex);
