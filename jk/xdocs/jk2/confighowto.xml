@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<document>
+<properties>
+<title>Quick Start JK2 Configuration Guide</title>
+<author email="mturk@mappingsoft.com">Mladen Turk</author>
+<date>$Date$</date>
+</properties>
+<section name="Introduction">
+<p>
+  This document describes the configuration files used by JK2 on the
+  Tomcat and Web Server side:
+    <ul>
+    <li>
+    <b>jk2.properties</b> is used on the Tomcat side. It's installation path in
+    the $TOMCAT_HOME/conf directory.
+    </li>
+    <li>
+    <b>workers2.properties</b> is used on the webserver side. For the Apache
+    servers the default path is in the ServerRoot/conf directory.
+    </li>
+    </ul>    
+  Although JK2 has many things in common with mod_jk, the configuration is quite
+  different, and all the directives should be inside the workers2.properties.
+  This enables JK2 to have the same configuration file no mater what the web server
+  it's connected to.
+</p>
+</section>
+
+<section name="Minimum Configuration">
+<p>
+    Minimum configuration is the simplest one to make the JK2 working. The used
+    channel will be socket, and lot of options are used by default. Both the
+    Tomcat and web server are on the same computer.
+</p>
+<p>
+jk2.properties:
+<source>
+# The default port is 8009 but you can use onother one
+# channelSocket.port=8019
+</source>
+That is all needed on the Tomcat side to configure the JK2.
+</p>
+<p>
+workers2.properties:
+<source>
+# Define the comunication channel 
+[channel.socket:localhost:8009]
+info=Ajp13 forwarding over socket
+tomcatId=localhost:8009
+
+# Map the Tomcat examples webapp to the Web server uri space
+[uri:/examples/*]
+info=Map the whole webapp
+</source>
+</p>
+<p>
+Start the Tomcat and Web server and browse to the <a>http://localhost/examples/</a>
+</p>
+</section>
+
+</document>
