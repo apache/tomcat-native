@@ -139,7 +139,7 @@
   </target>
 
 
-  <target name="javadoc"
+  <target name="javadoc" unless="docs-uptodate"
    description="Create component Javadoc documentation">
     <mkdir dir="${build.home}/docs/api"/>
     <javadoc sourcepath="${source.home}"
@@ -170,6 +170,7 @@
     </copy>
     <property name="tomcat-http11.jar" value="${build.home}/lib/tomcat-${component.name}.jar"/>
     <jar    jarfile="${tomcat-http11.jar}"
+             index="true"
             basedir="${build.home}/classes"
              manifest="${conf.home}/MANIFEST.MF">
       <include name="org/apache/coyote/http11/**"/>
@@ -179,8 +180,9 @@
   <target name="compile" depends="static,compile-only"
           description="Compile shareable components">
     <jar jarfile="${build.home}/lib/tomcat33-resource.jar"
-            basedir="${build.home}/classes" 
-	    includes="**/*.properties" />
+         index="true"
+         basedir="${build.home}/classes" 
+         includes="**/*.properties" />
 
     <copy      file="${tomcat-util.jar}" 
              tofile="${build.home}/lib/tomcat-util.jar" />
