@@ -429,7 +429,7 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                 break;
             }
             case TYPE_ASK_SSL: {
-                wa_log(WA_MARK,"TYPE_ASK_SSL");
+                wa_debug(WA_MARK,"TYPE_ASK_SSL");
                 /* Request for client certificate */
                 if (r->ssld==NULL) {
                     pack->type=TYPE_REP_SSL_NO;
@@ -448,7 +448,7 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                 break;
             }
             case TYPE_ASK_SSL_CLIENT: {
-                wa_log(WA_MARK,"TYPE_ASK_SSL_CLIENT");
+                wa_debug(WA_MARK,"TYPE_ASK_SSL_CLIENT");
                 /* Request for client certificate */
                 if (r->ssld==NULL || r->ssld->cert==NULL) {
                     pack->type=TYPE_REP_SSL_NO;
