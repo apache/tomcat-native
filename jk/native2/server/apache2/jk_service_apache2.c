@@ -116,7 +116,7 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
              * If the script gave us a Last-Modified header, we can't just
              * pass it on blindly because of restrictions on future values.
              */
-            ap_update_mtime(r, ap_parseHTTPdate(val));
+            ap_update_mtime(r, apr_date_parse_http(val));
             ap_set_last_modified(r);
         }
 
@@ -162,7 +162,7 @@ static int JK_METHOD jk2_service_apache2_head(jk_env_t *env, jk_ws_service_t *s 
              * If the script gave us a Last-Modified header, we can't just
              * pass it on blindly because of restrictions on future values.
              */
-            ap_update_mtime(r, ap_parseHTTPdate(val));
+            ap_update_mtime(r, apr_date_parse_http(val));
             ap_set_last_modified(r);
             apr_table_set(r->headers_out, name, val);
         } else {     

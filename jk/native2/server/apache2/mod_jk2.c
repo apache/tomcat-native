@@ -242,9 +242,9 @@ static const char *jk2_uriSet(cmd_parms *cmd, void *per_dir,
     if (s->is_virtual && s->server_hostname != NULL &&
         (uriEnv->virtual==NULL  || !strchr(uriEnv->virtual, ':') ||
         uriEnv->port != s->port)) {
-        tmp_virtual  = (char *) ap_pcalloc(cmd->pool,
+        tmp_virtual  = (char *) apr_pcalloc(cmd->pool,
                         sizeof(char *) * (strlen(s->server_hostname) + 8 )) ;
-        tmp_full_url = (char *) ap_pcalloc(cmd->pool,
+        tmp_full_url = (char *) apr_pcalloc(cmd->pool,
                         sizeof(char *) * (strlen(s->server_hostname) +
                         strlen(uriEnv->uri)+8 )) ; 
         /* do not pass the hostname:0/ scheme */
@@ -310,7 +310,7 @@ static void *jk2_create_dir_config(apr_pool_t *p, char *path)
     /* Original patch: a * sizeof( char * ) - that's weird, we only use a chars, not char*
        Maybe I wrote too much java...
     */
-    tmp = (char *) ap_pcalloc(p, a); 
+    tmp = (char *) apr_pcalloc(p, a); 
     sprintf(tmp, "%s-%d", path, dirCounter++);
     /* I changed the default to /, otherwise it complains */
 
@@ -538,7 +538,7 @@ static int jk2_apache2_isValidating(apr_pool_t *gPool, apr_pool_t **mainPool) {
     int i;
     
     for( i=0; i<10; i++ ) {
-        tmpPool=apr_pool_get_parent( gPool );
+        tmpPool=apr_pool_parent_get( gPool );
         if( tmpPool == NULL ) {
             /* fprintf(stderr, "XXX Found Root pool %#lx\n", gPool ); */
             break;
@@ -890,11 +890,11 @@ static int jk2_map_to_storage(request_rec *r)
     if( uriEnv != NULL ) {
     
         /* First find just the name of the file, no directory */
-        r->filename = (char *)apr_filename_of_pathname(r->uri);
+        r->filename = (char *)apr_filepath_name_get(r->uri);
 
         /* Only if sub-request for a directory, most likely from mod_dir */
         if (r->main && r->main->filename &&
-            !*apr_filename_of_pathname(r->main->filename)){
+            !*apr_filepath_name_get(r->main->filename)){
 
             /* The filename from the main request will be set to what should
              * be picked up, aliases included. Tomcat will need to know about

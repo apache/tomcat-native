@@ -65,7 +65,6 @@
 #ifndef JK_APACHE2_H
 #define JK_APACHE2_H
 
-#include "apu_compat.h"
 #include "ap_config.h"
 #include "apr_lib.h"
 #include "apr_date.h"
@@ -91,6 +90,13 @@
 #include "jk_workerEnv.h"
 #include "jk_uriMap.h"
 #include "jk_requtil.h"
+
+/* changed with apr 1.0 */
+#include "apr_version.h"
+#if (APR_MAJOR_VERSION < 1) 
+#define apr_filepath_name_get apr_filename_of_pathname
+#define apr_pool_parent_get apr_pool_get_parent
+#endif
 
 extern module AP_MODULE_DECLARE_DATA jk2_module;
 

@@ -67,7 +67,6 @@
  * mod_jk: keeps all servlet/jakarta related ramblings together.
  */
 
-#include "apu_compat.h"
 #include "ap_config.h"
 #include "apr_lib.h"
 #include "apr_date.h"
@@ -88,7 +87,14 @@
 
 /* moved to apr since http-2.0.19-dev */
 #if (MODULE_MAGIC_NUMBER_MAJOR < 20010523)
+#define apr_date_parse_http ap_parseHTTPdate
 #include "util_date.h"
+#endif
+
+/* changed with apr 1.0 */
+#include "apr_version.h"
+#if (APR_MAJOR_VERSION < 1) 
+#define apr_filepath_name_get apr_filename_of_pathname
 #endif
 
 #include "apr_strings.h"
@@ -273,7 +279,7 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
              * If the script gave us a Last-Modified header, we can't just
              * pass it on blindly because of restrictions on future values.
              */
-            ap_update_mtime(r, ap_parseHTTPdate(header_values[h]));
+            ap_update_mtime(r, apr_date_parse_http(header_values[h]));
             ap_set_last_modified(r);
         } else {                
             apr_table_add(r->headers_out, 
@@ -833,7 +839,7 @@ static const char *jk_worker_property(cmd_parms *cmd,
         }                                
         value = tmpv;
     } else {
-        value = ap_pstrdup(cmd->pool, value);
+        value = apr_pstrdup(cmd->pool, value);
     }
     
     if(value) {
@@ -959,8 +965,8 @@ static void request_log_transaction(request_rec *r,
     int *strl;
     apr_array_header_t *format = conf->format;
 
-    strs = ap_palloc(r->pool, sizeof(char *) * (format->nelts));
-    strl = ap_palloc(r->pool, sizeof(int) * (format->nelts));
+    strs = apr_palloc(r->pool, sizeof(char *) * (format->nelts));
+    strl = apr_palloc(r->pool, sizeof(int) * (format->nelts));
     items = (request_log_format_item *) format->elts;
     for (i = 0; i < format->nelts; ++i) {
         strs[i] = process_item(r, &items[i]);
@@ -968,7 +974,7 @@ static void request_log_transaction(request_rec *r,
     for (i = 0; i < format->nelts; ++i) {
         len += strl[i] = strlen(strs[i]);
     }
-    str = ap_palloc(r->pool, len + 1);
+    str = apr_palloc(r->pool, len + 1);
     for (i = 0, s = str; i < format->nelts; ++i) {
         memcpy(s, strs[i], strl[i]);
         s += strl[i];
@@ -1006,13 +1012,13 @@ static const char *constant_item(request_rec *dummy, char *stuff)
 
 static const char *log_worker_name(request_rec *r, char *a)
 {
-    return ap_table_get(r->notes, JK_WORKER_ID);
+    return apr_table_get(r->notes, JK_WORKER_ID);
 }
 
 
 static const char *log_request_duration(request_rec *r, char *a)
 {
-    return ap_table_get(r->notes, JK_DURATION);
+    return apr_table_get(r->notes, JK_DURATION);
 }
  
 static const char *log_request_line(request_rec *r, char *a)
@@ -1022,7 +1028,7 @@ static const char *log_request_line(request_rec *r, char *a)
              * (note the truncation before the protocol string for HTTP/0.9 requests)
              * (note also that r->the_request contains the unmodified request)
              */
-    return (r->parsed_uri.password) ? ap_pstrcat(r->pool, r->method, " ",
+    return (r->parsed_uri.password) ? apr_pstrcat(r->pool, r->method, " ",
                                          apr_uri_unparse(r->pool, &r->parsed_uri, 0),
                                          r->assbackwards ? NULL : " ", r->protocol, NULL)
                                         : r->the_request;
@@ -1065,7 +1071,7 @@ static const char *log_request_protocol(request_rec *r, char *a)
 }
 static const char *log_request_query(request_rec *r, char *a)
 {
-    return (r->args != NULL) ? ap_pstrcat(r->pool, "?", r->args, NULL)
+    return (r->args != NULL) ? apr_pstrcat(r->pool, "?", r->args, NULL)
                              : "";
 }                  
 static const char *log_status(request_rec *r, char *a)
@@ -1171,7 +1177,7 @@ static char *parse_request_log_misc_string(apr_pool_t *p,
      * This might allocate a few chars extra if there's a backslash
      * escape in the format string.
      */
-    it->arg = ap_palloc(p, s - *sa + 1);
+    it->arg = apr_palloc(p, s - *sa + 1);
 
     d = it->arg;
     s = *sa;
@@ -1232,7 +1238,7 @@ static char *parse_request_log_item(apr_pool_t *p,
 
         dummy[0] = s[-1];
         dummy[1] = '\0';
-        return ap_pstrcat(p, "Unrecognized JkRequestLogFormat directive %",
+        return apr_pstrcat(p, "Unrecognized JkRequestLogFormat directive %",
                           dummy, NULL);
     }
     it->func = l->func;
@@ -1243,18 +1249,18 @@ static char *parse_request_log_item(apr_pool_t *p,
 static apr_array_header_t *parse_request_log_string(apr_pool_t *p, const char *s,
                                               const char **err)
 {
-    apr_array_header_t *a = ap_make_array(p, 15, sizeof(request_log_format_item));
+    apr_array_header_t *a = apr_array_make(p, 15, sizeof(request_log_format_item));
     char *res;
 
     while (*s) {
-        if ((res = parse_request_log_item(p, (request_log_format_item *) ap_push_array(a), &s))) {
+        if ((res = parse_request_log_item(p, (request_log_format_item *) apr_array_push(a), &s))) {
             *err = res;
             return NULL;
         }
     }    
      
     s = "\n";
-    parse_request_log_item(p, (request_log_format_item *) ap_push_array(a), &s);
+    parse_request_log_item(p, (request_log_format_item *) apr_array_push(a), &s);
     return a;
 }
 
@@ -1288,7 +1294,7 @@ static const char *jk_set_request_log_format(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->format_string = ap_pstrdup(cmd->pool,format);
+    conf->format_string = apr_pstrdup(cmd->pool,format);
     if( format != NULL ) {
         conf->format = parse_request_log_string(cmd->pool, format, &err_string);
     }
@@ -1333,7 +1339,7 @@ static const char *jk_set_https_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->https_indicator = ap_pstrdup(cmd->pool,indicator);
+    conf->https_indicator = apr_pstrdup(cmd->pool,indicator);
 
     return NULL;
 }
@@ -1352,7 +1358,7 @@ static const char *jk_set_certs_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->certs_indicator = ap_pstrdup(cmd->pool,indicator);
+    conf->certs_indicator = apr_pstrdup(cmd->pool,indicator);
 
     return NULL;
 }
@@ -1371,7 +1377,7 @@ static const char *jk_set_cipher_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->cipher_indicator = ap_pstrdup(cmd->pool,indicator);
+    conf->cipher_indicator = apr_pstrdup(cmd->pool,indicator);
 
     return NULL;
 }
@@ -1390,7 +1396,7 @@ static const char *jk_set_session_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->session_indicator = ap_pstrdup(cmd->pool,indicator);
+    conf->session_indicator = apr_pstrdup(cmd->pool,indicator);
 
     return NULL;
 }
@@ -1409,7 +1415,7 @@ static const char *jk_set_key_size_indicator(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->key_size_indicator = ap_pstrdup(cmd->pool,indicator);
+    conf->key_size_indicator = apr_pstrdup(cmd->pool,indicator);
 
     return NULL;
 }
@@ -1468,7 +1474,7 @@ const char *jk_set_options(cmd_parms *cmd,
             opt = JK_OPT_FWDDIRS;
         }
         else
-            return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '", w, "'", NULL);
+            return apr_pstrcat(cmd->pool, "JkOptions: Illegal option '", w, "'", NULL);
 
         conf->options &= ~mask;
 
@@ -1829,7 +1835,7 @@ static int jk_handler(request_rec *r)
                 micro = tv_end.tv_usec - tv_begin.tv_usec;
                 seconds = tv_end.tv_sec - tv_begin.tv_sec;
                 duration = apr_psprintf(r->pool,"%.1d.%.6d",seconds,micro);
-                ap_table_setn(r->notes, JK_DURATION, duration);
+                apr_table_setn(r->notes, JK_DURATION, duration);
                 request_log_transaction(r,conf);
             }
 #endif
@@ -2285,7 +2291,7 @@ static int jk_translate(request_rec *r)
 
                 return OK;
             } else if(conf->alias_dir != NULL) {
-                char *clean_uri = ap_pstrdup(r->pool, r->uri);
+                char *clean_uri = apr_pstrdup(r->pool, r->uri);
                 ap_no2slash(clean_uri);
                 /* Automatically map uri to a context static file */
                 jk_log(conf->log, JK_LOG_DEBUG,
@@ -2300,13 +2306,13 @@ static int jk_translate(request_rec *r)
                     char *suffix = strchr(index+1,'/');
                     if( suffix != NULL ) {
                         int size = suffix - index;
-                        context_dir = ap_pstrndup(r->pool,index,size);
+                        context_dir = apr_pstrndup(r->pool,index,size);
                         /* Get the context child directory name */
                         index = index + size + 1;
                         suffix = strchr(index,'/');
                         if( suffix != NULL ) {
                             size = suffix - index;
-                            child_dir = ap_pstrndup(r->pool,index,size);
+                            child_dir = apr_pstrndup(r->pool,index,size);
                         } else {
                             child_dir = index;
                         }
@@ -2323,10 +2329,10 @@ static int jk_translate(request_rec *r)
                             }
                         }
                     } else {
-                        context_dir = ap_pstrdup(r->pool,index);
+                        context_dir = apr_pstrdup(r->pool,index);
                     }
 
-                    context_path = ap_pstrcat(r->pool,conf->alias_dir,
+                    context_path = apr_pstrcat(r->pool,conf->alias_dir,
                                               ap_os_escape_path(r->pool,context_dir,1),
                                               NULL);
                     if( context_path != NULL ) {
@@ -2335,7 +2341,7 @@ static int jk_translate(request_rec *r)
                         apr_stat(&finfo,context_path,APR_FINFO_TYPE,r->pool);
                         if( finfo.filetype == APR_DIR ) {
                             char *escurl = ap_os_escape_path(r->pool, clean_uri, 1);
-                            char *ret = ap_pstrcat(r->pool,conf->alias_dir,escurl,NULL);
+                            char *ret = apr_pstrcat(r->pool,conf->alias_dir,escurl,NULL);
                             /* Add code to verify real path ap_os_canonical_name */
                             if( ret != NULL ) {
                                 jk_log(conf->log, JK_LOG_DEBUG,
@@ -2402,11 +2408,11 @@ static int jk_map_to_storage(request_rec *r)
     if (apr_table_get(r->notes, JK_WORKER_ID)) {
 
         /* First find just the name of the file, no directory */
-        r->filename = (char *)apr_filename_of_pathname(r->uri);
+        r->filename = (char *)apr_filepath_name_get(r->uri);
 
         /* Only if sub-request for a directory, most likely from mod_dir */
         if (r->main && r->main->filename &&
-            !*apr_filename_of_pathname(r->main->filename)){
+            !*apr_filepath_name_get(r->main->filename)){
     
             /* The filename from the main request will be set to what should
              * be picked up, aliases included. Tomcat will need to know about

@@ -77,6 +77,7 @@
 #include "apr_network_io.h"
 #include "apr_errno.h"
 #include "apr_general.h"
+#include "apr_version.h"
 
 
 #define DEFAULT_HOST "127.0.0.1"
@@ -223,7 +224,10 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     int connected = 0;
 
     while (remote_sa && !connected) {
-        if ((ret = apr_socket_create(&sock, remote_sa->family, SOCK_STREAM,
+        if ((ret = apr_socket_create(&sock, remote_sa->family, SOCK_STREAM, 
+#if (APR_MAJOR_VERSION > 0) 
+                                     APR_PROTO_TCP,
+#endif
                                      (apr_pool_t *)env->globalPool->_private))
                                     != APR_SUCCESS) {
             if (remote_sa->next) {
@@ -256,7 +260,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
 
         /* make the connection out of the socket */
         do { 
-            ret = apr_connect(sock, remote_sa);
+            ret = apr_socket_connect(sock, remote_sa);
         } while (APR_STATUS_IS_EINTR(ret));
         
         /* if an error occurred, loop round and try again */
@@ -289,7 +293,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     /* enable the use of keep-alive packets on TCP connection */
     if(keepalive) {
         int set = 1;
-        if((ret = apr_setsocketopt(sock, APR_SO_KEEPALIVE, set)) != APR_SUCCESS ) {
+        if((ret = apr_socket_opt_set(sock, APR_SO_KEEPALIVE, set)) != APR_SUCCESS ) {
             apr_socket_close(sock);
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "channelApr.open() keepalive failed %d %s\n",
@@ -301,7 +305,7 @@ static int JK_METHOD jk2_channel_apr_open(jk_env_t *env,
     /* Disable the Nagle algorithm if ndelay is set */
     if(ndelay) {
         int set = 1;
-        if((ret = apr_setsocketopt(sock, APR_TCP_NODELAY, set)) != APR_SUCCESS ) {
+        if((ret = apr_socket_opt_set(sock, APR_TCP_NODELAY, set)) != APR_SUCCESS ) {
             apr_socket_close(sock);
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "channelApr.open() nodelay failed %d %s\n",
@@ -378,7 +382,7 @@ static int JK_METHOD jk2_channel_apr_send(jk_env_t *env, jk_channel_t *ch,
     do {
         apr_size_t written = length;
 
-        stat = apr_send(sock, b, &written);
+        stat = apr_socket_send(sock, b, &written);
         if (stat!= APR_SUCCESS) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                 "jk2_channel_apr_send send failed %d %s\n",
@@ -420,7 +424,7 @@ static int JK_METHOD jk2_channel_apr_readN( jk_env_t *env,
     length = (apr_size_t)len;
     while (rdlen < len) {
 
-        stat =  apr_recv(sock, b + rdlen, &length);
+        stat =  apr_socket_recv(sock, b + rdlen, &length);
 
         if (stat == APR_EOF)
             return -1; /* socket closed. */
