@@ -446,7 +446,7 @@ public final class Parameters extends MultiMap {
 	    if( nameEnd== -1 ) nameEnd=end;
 	    
 	    if( ! noEq ) {
-		valStart=nameEnd+1;
+		valStart= (nameEnd < end) ? nameEnd+1 : end;
 		valEnd=CharChunk.indexOf(chars, valStart, end, '&');
 		if( valEnd== -1 ) valEnd = (valStart < end) ? end : valStart;
 	    }
