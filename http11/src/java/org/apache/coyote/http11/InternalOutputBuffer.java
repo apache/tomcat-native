@@ -226,8 +226,6 @@ public class InternalOutputBuffer implements OutputBuffer {
      */
     public void addFilter(OutputFilter filter) {
 
-        // FIXME: Check for null ?
-
         OutputFilter[] newFilterLibrary = 
             new OutputFilter[filterLibrary.length + 1];
         for (int i = 0; i < filterLibrary.length; i++) {
@@ -267,9 +265,6 @@ public class InternalOutputBuffer implements OutputBuffer {
      */
     public void addActiveFilter(OutputFilter filter) {
 
-        // FIXME: Check for null ?
-        // FIXME: Check index ?
-
         if (lastActiveFilter == -1) {
             filter.setBuffer(outputStreamOutputBuffer);
         } else {
@@ -284,6 +279,22 @@ public class InternalOutputBuffer implements OutputBuffer {
 
 
     // --------------------------------------------------------- Public Methods
+
+
+    /**
+     * Reset current response.
+     * 
+     * @throws IllegalStateException if the response has already been committed
+     */
+    public void reset() {
+
+        if (committed)
+            throw new IllegalStateException(/*FIXME:Put an error message*/);
+
+        // Recycle Request object
+        response.recycle();
+
+    }
 
 
     /**
@@ -355,6 +366,18 @@ public class InternalOutputBuffer implements OutputBuffer {
 
 
     // ------------------------------------------------ HTTP/1.1 Output Methods
+
+
+    /**
+     * Send an acknoledgement.
+     */
+    public void sendAck()
+        throws IOException {
+
+        if (!committed)
+            outputStream.write(Constants.ACK);
+
+    }
 
 
     /**

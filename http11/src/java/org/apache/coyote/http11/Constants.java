@@ -141,7 +141,7 @@ public final class Constants {
     /**
      * Default HTTP header buffer size.
      */
-    public static final int DEFAULT_HTTP_HEADER_BUFFER_SIZE = 128 * 1024;
+    public static final int DEFAULT_HTTP_HEADER_BUFFER_SIZE = 128 * 1000;
 
 
     /**
@@ -178,6 +178,13 @@ public final class Constants {
      * HTTP/1.1.
      */
     public static final String HTTP_11 = "HTTP/1.1";
+
+
+    /**
+     * Ack string when pipelining HTTP requests.
+     */
+    public static final byte[] ACK =
+        (new String("HTTP/1.1 100 Continue\r\n\r\n")).getBytes();
 
 
 }

@@ -163,6 +163,12 @@ public class Http11Connector implements Connector, ActionHook {
 
 
     /**
+     * HTTP/1.1 flag.
+     */
+    protected boolean http11 = true;
+
+
+    /**
      * Content delimitator for the request (if false, the connection will
      * be closed at the end of the request).
      */
@@ -360,7 +366,13 @@ public class Http11Connector implements Connector, ActionHook {
             // Send a 100 status back if it makes sense (response not committed
             // yet, and client specified an expectation for 100-continue)
 
-            // FIXME
+            try {
+                outputBuffer.sendAck();
+            } catch (IOException e) {
+                // Log the error, and set error flag
+                e.printStackTrace();
+                error = true;
+            }
 
         } else if (actionCode == ActionCode.ACTION_CLOSE) {
 
@@ -382,6 +394,8 @@ public class Http11Connector implements Connector, ActionHook {
             // Reset response
 
             // Note: This must be called before the response is committed
+
+            outputBuffer.reset();
 
         } else if (actionCode == ActionCode.ACTION_CUSTOM) {
 
@@ -423,7 +437,7 @@ public class Http11Connector implements Connector, ActionHook {
      */
     protected void prepareRequest() {
 
-        boolean http11 = true;
+        http11 = true;
         contentDelimitation = false;
 
         MessageBytes protocolMB = request.protocol();
@@ -434,6 +448,7 @@ public class Http11Connector implements Connector, ActionHook {
             keepAlive = false;
         } else {
             // Unsupported protocol
+            http11 = false;
             error = true;
             // Send 505; Unsupported HTTP version
             response.setStatus(505);
@@ -541,7 +556,6 @@ public class Http11Connector implements Connector, ActionHook {
      */
     protected void prepareResponse() {
 
-        boolean http11 = true;
         boolean http09 = false;
         contentDelimitation = false;
 
