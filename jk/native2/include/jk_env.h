@@ -88,8 +88,8 @@ typedef struct jk_env jk_env_t;
 
 /**
  * Factory used to create all jk objects. Factories are registered with 
- * jk_env_registerFactory ( or automatically - LATER ), and created
- * with jk_env_getFactory.
+ * jk2_env_registerFactory ( or automatically - LATER ), and created
+ * with jk2_env_getFactory.
  * 
  * Essentially, an abstract base class (or factory class) with a single
  * method -- think of it as createWorker() or the Factory Method Design
@@ -112,7 +112,7 @@ typedef int (JK_METHOD *jk_env_objectFactory_t)(jk_env_t *env,
 /** Get a pointer to the jk_env. We could support multiple 
  *  env 'instances' in future - for now it's a singleton.
  */
-jk_env_t* JK_METHOD jk_env_getEnv( char *id, struct jk_pool *pool );
+jk_env_t* JK_METHOD jk2_env_getEnv( char *id, struct jk_pool *pool );
 
 #define JK_LINE __FILE__,__LINE__
 
@@ -216,7 +216,7 @@ struct jk_env {
     struct jk_exception *lastException;
 };
 
-void JK_METHOD jk_registry_init(jk_env_t *env);
+void JK_METHOD jk2_registry_init(jk_env_t *env);
 
 
 #ifdef __cplusplus

@@ -77,10 +77,10 @@
 #include <sys/stat.h>
 
 /************** START OF AREA TO MODIFY BEFORE RELEASING *************/
-#define JK_VERMAJOR     1
-#define JK_VERMINOR     2
+#define JK_VERMAJOR     2
+#define JK_VERMINOR     0
 #define JK_VERFIX       0
-#define JK_VERSTRING    "1.2.0"
+#define JK_VERSTRING    "2.0.0"
 
 /* Beta number */
 #define JK_VERBETA      1

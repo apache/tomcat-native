@@ -118,7 +118,7 @@ struct jk_map {
     void *_private;
 };
 
-int jk_map_default_create(struct jk_env *env, jk_map_t **m, 
+int jk2_map_default_create(struct jk_env *env, jk_map_t **m, 
                           struct jk_pool *pool); 
 
 /* int map_open(jk_env *env, jk_map_t *m); */
@@ -130,10 +130,10 @@ int jk_map_default_create(struct jk_env *env, jk_map_t **m,
  *  on any map.
  */
 
-char *jk_map_getString(struct jk_env *env, struct jk_map *m,
+char *jk2_map_getString(struct jk_env *env, struct jk_map *m,
                        const char *name, char *def);
 
-int jk_map_getBool(struct jk_env *env, struct jk_map *m,
+int jk2_map_getBool(struct jk_env *env, struct jk_map *m,
                    const char *prop, const char *def);
 
 /** Get a string property, using the worker's style
@@ -141,18 +141,18 @@ int jk_map_getBool(struct jk_env *env, struct jk_map *m,
     will be used.
     Example worker.ajp13.host=localhost.
 */
-char *jk_map_getStrProp(struct jk_env *env, jk_map_t *m,
+char *jk2_map_getStrProp(struct jk_env *env, jk_map_t *m,
                         const char *objType, const char *objName,
                         const char *pname, char *def);
     
-int jk_map_getIntProp(struct jk_env *env, jk_map_t *m,
+int jk2_map_getIntProp(struct jk_env *env, jk_map_t *m,
                       const char *objType, const char *objName,
                       const char *pname,
                       int def);
 
 /** Add all the values from src into dst. Use dst's pool
  */
-int jk_map_append(struct jk_env *env, jk_map_t * dst,
+int jk2_map_append(struct jk_env *env, jk_map_t * dst,
                   jk_map_t * src );
 
 /* ========== Manipulating values   ========== */
@@ -164,11 +164,11 @@ int jk_map_append(struct jk_env *env, jk_map_t * dst,
  *  @param pool Pool on which the result will be allocated. Defaults
  *  to the map's pool XXX Use the env's tmp pool.
  */ 
-char **jk_map_split(struct jk_env *env,  jk_map_t *m,
+char **jk2_map_split(struct jk_env *env,  jk_map_t *m,
                     struct jk_pool *pool, /* XXX will be removed */
                     const char *listStr, const char *sep,unsigned *list_len );
 
-int jk_map_str2int(struct jk_env *env, char *value);
+int jk2_map_str2int(struct jk_env *env, char *value);
 
 /* Just atof...
   double jk_map_getDouble(jk_env *env, jk_map_t *m, */
@@ -180,14 +180,14 @@ int jk_map_str2int(struct jk_env *env, char *value);
 
 /** Read the properties from the file, doing $(prop) substitution
  */
-int jk_map_readFileProperties(struct jk_env *env, jk_map_t *m,
+int jk2_map_readFileProperties(struct jk_env *env, jk_map_t *m,
                               const char *f);
 
 /**
  *  Replace $(property) in value.
  * 
  */
-char *jk_map_replaceProperties(struct jk_env *env, jk_map_t *m,
+char *jk2_map_replaceProperties(struct jk_env *env, jk_map_t *m,
                                struct jk_pool *resultPool, 
                                char *value);
 
@@ -202,7 +202,7 @@ char *jk_map_replaceProperties(struct jk_env *env, jk_map_t *m,
  *       values or values separated by one of the sep's chars )
  *    
  */
-char *jk_map_getValuesString(struct jk_env *env, struct jk_map *m,
+char *jk2_map_getValuesString(struct jk_env *env, struct jk_map *m,
                              struct jk_pool *resultPool,
                              char *name, char *sep );
 
@@ -213,7 +213,7 @@ char *jk_map_getValuesString(struct jk_env *env, struct jk_map *m,
  * @param sep Optional separator, it'll be used to split existing values.
  *            Curently only single-char separators are supported. 
  */
-char **jk_map_getValues(struct jk_env *env, struct jk_map *m,
+char **jk2_map_getValues(struct jk_env *env, struct jk_map *m,
                         struct jk_pool *resultPool,
                         char *name, char *sep, int *count);
 
