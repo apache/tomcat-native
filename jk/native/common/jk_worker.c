@@ -40,8 +40,6 @@ static jk_map_t *worker_map;
 
 int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
 {
-    char **worker_list = NULL;
-    unsigned num_of_workers = 0;
 
     JK_TRACE_ENTER(l);
 
@@ -50,19 +48,23 @@ int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
         return JK_FALSE;
     }
 
-    if (!jk_get_worker_list(init_data, &worker_list, &num_of_workers)) {
+    if (!jk_get_worker_list(init_data, &(we->worker_list),
+                            &we->num_of_workers)) {
         JK_TRACE_EXIT(l);
+        we->num_of_workers = 0;
+        we->worker_list = NULL;
         return JK_FALSE;
     }
 
-    if (!build_worker_map(init_data, worker_list, num_of_workers, we, l)) {
+    if (!build_worker_map(init_data, we->worker_list,
+                          we->num_of_workers, we, l)) {
         close_workers(l);
+        we->num_of_workers = 0;
+        we->worker_list = NULL;
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
-    we->num_of_workers = num_of_workers;
-    we->first_worker = worker_list[0];
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
