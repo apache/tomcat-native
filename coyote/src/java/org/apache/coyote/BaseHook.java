@@ -61,6 +61,8 @@ package org.apache.coyote;
 import javax.management.MBeanRegistration;
 import javax.management.ObjectName;
 import javax.management.MBeanServer;
+import javax.management.NotificationListener;
+import javax.management.Notification;
 
 
 /**
@@ -69,21 +71,33 @@ import javax.management.MBeanServer;
  * @author Remy Maucherat
  * @author Costin Manolache
  */
-public class BaseHook implements ActionHook, MBeanRegistration {
+public class BaseHook
+        implements ActionHook, MBeanRegistration, NotificationListener
+ {
     protected BaseHook next;
 
     /**
+     * XXX DO WE REALLY NEED THIS ? handleNotification should be enough !!
+     *
      * Send an action to the connector.
      * Both recursive and iterative invocation is possible - the
      * hook may call itself the next hook ( like catalina ) or the
      * controller may call the next.
-     * 
+     *
+     * The call pattern for this is:
+     *   while( hook!=null ) {
+     *      hook=action( code, param );
+     *   }
+     * If the hooks has special needs - it can call next itself and decide
+     * to return null or whatever the next hook returned.
+     *
+     * The reason for iterative calls - smaller stacks ( and stack traces ).
+     *
      * @param param Action parameter
      * @return  A hook that can be executed next.
      */
     public BaseHook action(int code, Object param) {
-        if( next==null ) return next;
-        return next.action( code, param );
+        return next;
     };
 
     /** Backward compat
@@ -134,5 +148,13 @@ public class BaseHook implements ActionHook, MBeanRegistration {
     public void postDeregister() {
     }
 
+    // -------------------- Notification listener  --------------------
+
+    public void handleNotification(Notification notification, Object handback) {
+        // we need a special CoyoteNotification that will include the code
+        // and param.
+
+        // It would be better to use a generic class in modeler.
+    }
 
 }
