@@ -2,7 +2,7 @@
  *                                                                           *
  *                 The Apache Software License,  Version 1.1                 *
  *                                                                           *
- *          Copyright (c) 1999-2001 The Apache Software Foundation.          *
+ *          Copyright (c) 1999-2002 The Apache Software Foundation.          *
  *                           All rights reserved.                            *
  *                                                                           *
  * ========================================================================= *
@@ -78,7 +78,6 @@
 #include "jk_worker.h"
 
 #include "jk_iis.h"
-
 
 static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
     static char crlf[3] = { (char)13, (char)10, '\0' };
@@ -274,6 +273,62 @@ int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
     return JK_TRUE;
 }
 
+#define MAX_NAME 256
+
+char * jk2_service_iis_get_roles(jk_env_t *env, jk_ws_service_t *s)
+{
+    LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
+    HANDLE h;
+    DWORD len=0;
+    PTOKEN_GROUPS g=NULL;
+    unsigned i;
+    char *roles=NULL;
+    if ( lpEcb->ServerSupportFunction(lpEcb->ConnID,
+                                      HSE_REQ_GET_IMPERSONATION_TOKEN,
+                                      (LPVOID)&h, NULL,NULL) != FALSE ){
+        // First get the length of the user's groups array and gets the memory 
+        if ( !GetTokenInformation(h, TokenGroups, NULL, len , &len ) ) {
+            if ( ERROR_INSUFFICIENT_BUFFER == GetLastError() ){
+                g = (PTOKEN_GROUPS)s->pool->calloc(env,s->pool,len);
+            }
+        }
+        if ( g != NULL ){
+            if ( GetTokenInformation(h, TokenGroups, g, len, &len)) {
+                roles=s->pool->calloc(env,s->pool,(g->GroupCount)*MAX_NAME);
+                for (i=0; i < g->GroupCount ; i++){
+                    char name[MAX_NAME],domain[MAX_NAME];
+                    DWORD nLen = MAX_NAME, dLen = MAX_NAME;
+                    SID_NAME_USE eUse;
+                    // Get  the user name and the domain from the SID.
+                    env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                           "jk2_service_iis_get_roles requesting name for member:%d attributes:%#lx SID:%#lx \n",
+                            i,g->Groups[i].Attributes, g->Groups[i].Sid );
+                    if ( ! LookupAccountSid(NULL,g->Groups[i].Sid,name,&nLen,domain,&dLen,&eUse) ){
+                        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                               "jk2_service_iis_get_roles problems requesting name for member:%d attributes:%#lx SID:%#lx \n",
+                                i,g->Groups[i].Attributes, g->Groups[i].Sid );
+                            
+                    } else {
+                        strcpy(roles+strlen(roles),name);
+                        roles[strlen(roles)]=',';
+                        roles[strlen(roles)+1]='\0';
+                        env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
+                               "jk2_service_iis_get_roles member:%d attributes:%#lx SID:%#lx name:%s\n",
+                                i,g->Groups[i].Attributes, g->Groups[i].Sid,name );
+                    }
+                }
+                roles[strlen(roles)-1]='\0';
+                env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                       "jk_ws_service_t::jk2_service_iis_get_roles roles:%s \n",
+                        roles );
+            }
+            return roles;
+        } else {
+            return NULL;
+        }
+    }
+    return NULL;
+}
 
 static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_service_t *s,
                  struct jk_worker *w, void *serverObj )
@@ -340,6 +395,14 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
     /*
      * Add SSL IIS environment
      */
+
+    if ( strlen(s->remote_user) > 0 ){
+        char *groups=jk2_service_iis_get_roles(env, s);
+        if( groups != NULL){
+            s->attributes->put( env, s->attributes,"ROLES",groups,NULL);
+        }
+    }
+
     if (s->is_ssl) {         
         char *ssl_env_names[9] = {
             "CERT_ISSUER", 
@@ -373,10 +436,7 @@ static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_serv
             }
         }
         if (num_of_vars) {
-            unsigned j;
-
-            jk2_map_default_create(env, &s->attributes, s->pool );
-            j = 0;
+            unsigned j=0;
             for(i = 0 ; i < 9 ; i++) {                
                 if (ssl_env_values[i]) {
                     s->attributes->put( env, s->attributes, 
