@@ -515,8 +515,74 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                 </p>
             </subsection>
             <subsection name="status">
-                <p>Worker that outputs a page with usefull information to monitor JK2</p>
-                <p>To use it add a uri component assigned to this worker</p>
+                <p>An optional worker that outputs (HTML) pages with useful information to monitor JK2.</p>
+                <p>To create the worker, add a [status:] or [status:'a name'] section.</p>
+                <p>The status worker needs no 'local' name, although one can be used if desired.</p>
+                <p>To access the worker, add a [uri] section with the group= assigned to this worker.</p>
+                <p>The status worker has the following additional properties:
+                    <table>
+                        <tr>
+                            <th>Property name</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>styleMode</td>
+                            <td>0 (None)</td>
+                            <td>Defines if or how the status worker will apply a Style Sheet to returned pages.</td>
+                        </tr>
+                        <tr>
+                            <td>stylePath</td>
+                            <td>NULL</td>
+                            <td>For styleMode=2 or 3, where to find the Style Sheet file.</td>
+                        </tr>
+                    </table>
+                </p>
+                <p>The syleMode setting accepts the following values:
+                    <table>
+                        <tr>
+                            <th>styleMode value</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>0</td>
+                            <td>No Style settings are used. (Default)</td>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>Use the built-in Default Style Sheet. It is presented as an 'Internal Style Sheet' to HTML pages.</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Use stylePath as a URI context to an external Style Sheet file to be returned by the Web Server.</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Use stylePath as a file-system reference to a Style Sheet file. It is presented as an 'Internal Style
+                                Sheet' to HTML pages.</td>
+                        </tr>
+                    </table>
+                </p>
+                <p>If the stylePath has not been set, styleMode=2 and 3 are ignored.</p>
+                <p>The sylePath setting accepts the following values:
+                    <table>
+                        <tr>
+                            <th>styleMode value</th>
+                            <th>stylePath Description</th>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>A URI context to a file (e.g  /styles/jkstatus.css). It must begin with '/' and include the file name.</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>A file-system path (suitable for the OS in use) plus file name. Also ${serverRoot}/conf/'file name'
+                                allows the file to be located in Apache's conf directory.</td>
+                        </tr>
+                    </table>
+                </p>
+                <p>If the Style file cannot be found, Mode 2 and 3 record Apache log entries.</p>
+                <p>For styleMode=2 and 3, changes in the Style Sheet are effective on the next access to the status worker.</p>
             </subsection>
             <subsection name="lb">
                 <p>Loadbalanced worker</p>
