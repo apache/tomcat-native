@@ -93,8 +93,6 @@ public final class Response {
      */
     private static Locale DEFAULT_LOCALE = Locale.getDefault();
 
-    private static final int BEGIN_CHARSET_VALUE = "charset=".length();
-
 
     // ----------------------------------------------------- Instance Variables
 
@@ -486,11 +484,13 @@ public final class Response {
      * been set via a call to response.setContentType(), response.setLocale(),
      * or response.setCharacterEncoding().
      *
-     * @param contentType the content type
+     * @param type the content type
      */
-    public void setContentType(String contentType) {
+    public void setContentType(String type) {
 
-        if (contentType == null) {
+        int semicolonIndex = -1;
+
+        if (type == null) {
             this.contentType = null;
             return;
         }
@@ -499,33 +499,53 @@ public final class Response {
          * Remove the charset param (if any) from the Content-Type, and use it
          * to set the response encoding.
          * The most recent response encoding setting will be appended to the
-         * response Content-Type (as its charset param) by getContentType();
+         * response's Content-Type (as its charset param) by getContentType();
          */
-        int beginCharsetParam = contentType.indexOf("charset=");
-        if (beginCharsetParam == -1) {
-            // no charset
-            this.contentType = contentType;
+        boolean hasCharset = false;
+        int len = type.length();
+        int index = type.indexOf(';');
+        while (index != -1) {
+            semicolonIndex = index;
+            index++;
+            while (index < len && Character.isSpace(type.charAt(index))) {
+                index++;
+            }
+            if (index+8 < len
+                    && type.charAt(index) == 'c'
+                    && type.charAt(index+1) == 'h'
+                    && type.charAt(index+2) == 'a'
+                    && type.charAt(index+3) == 'r'
+                    && type.charAt(index+4) == 's'
+                    && type.charAt(index+5) == 'e'
+                    && type.charAt(index+6) == 't'
+                    && type.charAt(index+7) == '=') {
+                hasCharset = true;
+                break;
+            }
+            index = type.indexOf(';', index);
+        }
+
+        if (!hasCharset) {
+            this.contentType = type;
             return;
         }
 
-        this.contentType = contentType.substring(0, beginCharsetParam);
-        // Trim the semicolon preceding the charset
-        int charsetSemi = this.contentType.lastIndexOf(';');
-        if (charsetSemi != -1) {
-            this.contentType = this.contentType.substring(0, charsetSemi);
-        }
-        String tail = contentType.substring(beginCharsetParam);
+        this.contentType = type.substring(0, semicolonIndex);
+        String tail = type.substring(index+8);
         int nextParam = tail.indexOf(';');
         String charsetValue = null;
         if (nextParam != -1) {
             this.contentType += tail.substring(nextParam);
-            charsetValue = tail.substring(BEGIN_CHARSET_VALUE, nextParam);
+            charsetValue = tail.substring(0, nextParam);
         } else {
-            charsetValue = tail.substring(BEGIN_CHARSET_VALUE);
+            charsetValue = tail;
         }
+
         // The charset value may be quoted, but must not contain any quotes.
-        charsetValue = charsetValue.replace('"', ' ');
-        this.characterEncoding = charsetValue.trim();
+        if (charsetValue != null && charsetValue.length() > 0) {
+            charsetValue = charsetValue.replace('"', ' ');
+            this.characterEncoding = charsetValue.trim();
+        }
     }
 
     public String getContentType() {
