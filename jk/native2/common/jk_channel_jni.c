@@ -104,14 +104,14 @@ static int JK_METHOD jk2_channel_jni_setProperty(jk_env_t *env,
                                                  jk_bean_t *mbean, 
                                                  char *name, void *value)
 {
-    return JK_TRUE;
+    return JK_OK;
 }
 
 static int JK_METHOD jk2_channel_jni_init(jk_env_t *env,
                                           jk_channel_t *_this)
 {
 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /** Assume the jni-worker or someone else started
@@ -133,7 +133,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     if( endpoint->channelData != NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.open() already open, nothing else to do\n"); 
-        return JK_TRUE;
+        return JK_OK;
     }
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.init():  \n" );
@@ -142,14 +142,14 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     if( jniCh->vm == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.open() no VM found\n" ); 
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     jniEnv = (JNIEnv *)jniCh->vm->attach( env, jniCh->vm );
     if( jniEnv == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.open() can't attach\n" ); 
-        return JK_FALSE;
+        return JK_ERR;
     }
     /* Create the buffers used by the write method. We allocate a
        byte[] and jbyte[] - I have no idea what's more expensive,
@@ -174,7 +174,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     if( jniCh->jniBridge == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.open() can't find %s\n",jniCh->className ); 
-        return JK_FALSE;
+        return JK_ERR;
     }
 
 
@@ -191,7 +191,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     if( jmethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.open() can't find createJavaContext\n"); 
-        return JK_FALSE;
+        return JK_ERR;
     }
     
     jstr=(*jniEnv)->NewStringUTF(jniEnv, "channelJni" );
@@ -199,13 +199,13 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     jobj=(*jniEnv)->CallStaticObjectMethod( jniEnv, jniCh->jniBridge,
                                             jmethod,
                                             jstr, 
-                                            (jlong)(long)(void *)endpoint );
+                                            (jlong)(long)(void *)endpoint->mbean );
 
     if( jobj  == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channel_jni.open() Can't create java context\n" ); 
         epData->jniJavaContext=NULL;
-        return JK_FALSE;
+        return JK_ERR;
     }
     epData->jniJavaContext=(*jniEnv)->NewGlobalRef( jniEnv, jobj );
 
@@ -220,7 +220,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     if( jmethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channel_jni.open() can't find getBuffer\n"); 
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     epData->jarray=(*jniEnv)->CallStaticObjectMethod( jniEnv, jniCh->jniBridge,
@@ -244,7 +244,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
     if( jniCh->writeMethod == NULL ) {
 	env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "channel_jni.open() can't find jniInvoke\n"); 
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -255,7 +255,7 @@ static int JK_METHOD jk2_channel_jni_open(jk_env_t *env,
      *  closing in order for this to work )
      */
     /*     jniCh->vm->detach( env, jniCh->vm ); */
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -271,7 +271,7 @@ static int JK_METHOD jk2_channel_jni_close(jk_env_t *env,jk_channel_t *_this,
     /* (*jniEnv)->DeleteGlobalRef( jniEnv, epData->msgJ ); */
     /*     (*jniEnv)->DeleteGlobalRef( jniEnv, epData->jniJavaContext ); */
     
-    return JK_TRUE;
+    return JK_OK;
 
 }
 
@@ -313,7 +313,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     if( epData->jniJavaContext == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,"channel_jni.send() no java context\n" ); 
         
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     msg->end( env, msg );
@@ -328,7 +328,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     if( jniCh->writeMethod == NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
                       "channel_jni.send() no write method\n" ); 
-        return JK_FALSE;
+        return JK_ERR;
     }
     if( jniEnv==NULL ) {
         /* Try first getEnv, then attach */
@@ -336,7 +336,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
         if( jniEnv == NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_INFO,
                           "channel_jni.send() can't attach\n" ); 
-            return JK_FALSE;
+            return JK_ERR;
         }
     }
 
@@ -352,7 +352,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     if(nbuf==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_INFO,
                       "channelJni.send() Can't get java bytes");
-        return JK_FALSE;
+        return JK_ERR;
     }
 
     if( len > jlen ) {
@@ -375,7 +375,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
                                          epData->jniJavaContext );
     env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() result %d\n",
                   sent); 
-    return JK_TRUE;
+    return JK_OK;
 }
 
 
@@ -418,138 +418,6 @@ static int JK_METHOD jk2_channel_jni_recv(jk_env_t *env, jk_channel_t *_this,
     */
 }
 
-/* Process a message from java. We return in all cases,
-   with the response message if any. 
-*/
-static int jk2_channel_jni_processMsg(jk_env_t *env, jk_endpoint_t *e,
-                                      jk_ws_service_t *r)
-{
-//    int code;
-    jk_handler_t *handler;
-    int rc;
-    jk_handler_t **handlerTable=e->worker->workerEnv->handlerTable;
-    int maxHandler=e->worker->workerEnv->lastMessageId;
-
-    rc=-1;
-    handler=NULL;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelJniNative.processMsg()\n");
-    
-    /* e->reply->dump(env, e->reply, "Received ");  */
-
-    rc = e->worker->workerEnv->dispatch( env, e->worker->workerEnv, e, r );
-
-    /* Process the status code returned by handler */
-    switch( rc ) {
-    case JK_HANDLER_RESPONSE:
-        e->recoverable = JK_FALSE; 
-        /* XXX response must be put back into the buffer
-           rc = e->post->send(env, e->post, e ); */
-        if (rc < 0) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                 "jni.processCallbacks() error sending response data\n");
-            return JK_FALSE;
-        }
-        return JK_TRUE;
-    case JK_HANDLER_ERROR:
-        /*
-         * we won't be able to gracefully recover from this so
-         * set recoverable to false and get out.
-         */
-        e->recoverable = JK_FALSE;
-        return JK_FALSE;
-    case JK_HANDLER_FATAL:
-        /*
-         * Client has stop talking to us, so get out.
-         * We assume this isn't our fault, so just a normal exit.
-         * In most (all?)  cases, the ajp13_endpoint::reuse will still be
-         * false here, so this will be functionally the same as an
-         * un-recoverable error.  We just won't log it as such.
-         */
-        return JK_FALSE;
-    default:
-        /* All other cases */
-        return JK_TRUE;
-    }     
-    
-    /* not reached */
-    return JK_FALSE;
-}
-
-
-/*
-  Called from Java - the 2 pointers are exactly what we passed when we constructed
-  the endpoint and for the request.
- */
-int jk2_channel_jni_javaSendPacket(JNIEnv *jniEnv, jobject o,
-                                   jlong envJ, jlong eP,
-                                   jbyteArray data, jint dataLen)
-{
-    /* [V] Convert indirectly from jlong -> int -> pointer to shut up gcc */
-    /*     I hope it's okay on other compilers and/or machines...         */
-    jk_env_t *env = (jk_env_t *)(long)envJ;
-    jk_endpoint_t *e = (jk_endpoint_t *)(long)eP;
-    jk_ws_service_t *ps = e->currentRequest;
-
-    int cnt=0;
-    jint rc = -1;
-    jboolean iscommit;
-    jbyte *nbuf;
-    unsigned acc = 0;
-    int msgLen=(int)dataLen;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelJniNative.sendPacket()\n");
-        
-    if(!ps) {
-	env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "channelJniNative.sendPacket() NullPointerException\n");
-	return -1;
-    }
-
-    nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, data, &iscommit);
-
-    if(nbuf==NULL) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                    "channelJniNative.sendPacket() NullPointerException 2\n");
-	return -1;
-    }
-
-    /* Simulate a receive on the incoming packet. e->reply is what's
-     used when receiving data from java. This method is JAVA.sendPacket()
-    and corresponds to CHANNELJNI.receive */
-    e->currentData = nbuf;
-    e->currentOffset=0;
-    /* This was an workaround, no longer used ! */
-    
-    e->reply->reset(env, e->reply);
-
-    memcpy( e->reply->buf, nbuf , msgLen );
-    
-    rc=e->reply->checkHeader( env, e->reply, e );
-    if( rc < 0  ) {
-        env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "ajp14.service() Error reading reply\n");
-        /* we just can't recover, unset recover flag */
-        return JK_FALSE;
-    }
-
-    /* XXX check if the len in header matches our len */
-
-    /* Now execute it */
-    jk2_channel_jni_processMsg( env, e, ps );
-    
-    (*jniEnv)->ReleaseByteArrayElements(jniEnv, data, nbuf, 0);
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelJniNative.sendPacket() done\n");
-
-    return (jint)cnt;
-}
-
-
-
 
 /** Called before request processing, to initialize resources.
     All following calls will be in the same thread.
@@ -572,19 +440,19 @@ int JK_METHOD jk2_channel_jni_beforeRequest(struct jk_env *env,
         /* Try to attach */
         if( we->vm == NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR, "No VM to use\n");
-            return JK_FALSE;
+            return JK_ERR;
         }
         jniEnv = we->vm->attach(env, we->vm);
             
         if(jniEnv == NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR, "Attach failed\n");  
             /*   Is it recoverable ?? - yes, don't change the previous value*/
-            /*   r->is_recoverable_error = JK_TRUE; */
-            return JK_FALSE;
+            /*   r->is_recoverable_error = JK_OK; */
+            return JK_ERR;
         } 
         endpoint->endpoint_private = jniEnv;
     }
-    return JK_TRUE;
+    return JK_OK;
 }
 
 /** Called after request processing. Used to be worker.done()
@@ -603,16 +471,30 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
     
     env->l->jkLog(env, env->l, JK_LOG_INFO, 
                   "channelJni.afterRequest() ok\n");
-    return JK_TRUE;
+    return JK_OK;
 }
 
+/** Called by java. Will take the rest of the message and dispatch again to the real target.
+ */
+static int jk2_channel_jni_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_msg_t *msg)
+{
+    jk_bean_t *jniChB=(jk_bean_t *)target;
+    jk_channel_t *jniCh=(jk_channel_t *)jniChB->object;
+    int code;
+    
+    env->l->jkLog(env, env->l, JK_LOG_INFO,"channelJni.java2cInvoke() ok\n");
 
+    code = (int)msg->getByte(env, msg);
+    return ep->worker->workerEnv->dispatch( env, ep->worker->workerEnv,
+                                            ep->currentRequest, ep, code, ep->reply );
+}
 
 int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool, 
                                       jk_bean_t *result,
                                       const char *type, const char *name)
 {
     jk_channel_t *ch=result->object;
+    jk_workerEnv_t *wEnv;
     
     ch=(jk_channel_t *)pool->calloc(env, pool, sizeof( jk_channel_t));
     
@@ -628,13 +510,19 @@ int JK_METHOD jk2_channel_jni_factory(jk_env_t *env, jk_pool_t *pool,
     ch->_privatePtr=(jk_channel_jni_private_t *)pool->calloc(env, pool,
                     sizeof(jk_channel_jni_private_t));
     ch->is_stream=JK_FALSE;
-    
+
     result->setAttribute= jk2_channel_jni_setProperty;
     ch->mbean=result;
     result->object= ch;
 
-    ch->workerEnv=env->getByName( env, "workerEnv" );
-    ch->workerEnv->addChannel( env, ch->workerEnv, ch );
+    wEnv=env->getByName( env, "workerEnv" );
+    ch->workerEnv=wEnv;
+    wEnv->addChannel( env, wEnv, ch );
 
-    return JK_TRUE;
+    wEnv->registerHandler( env, wEnv, type,
+                           "sendResponse", JK_HANDLE_JNI_DISPATCH,
+                           jk2_channel_jni_dispatch, NULL );
+
+    
+    return JK_OK;
 }
