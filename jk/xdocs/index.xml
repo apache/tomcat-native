@@ -126,7 +126,7 @@ mechansim, and supporting both in-process and out-of process modes.
 
 <section name="Are there alternative ways to connect Apache and Tomcat&#63;">
 <p>
-<b>Tomcat's AJP stack and httpd-2.1 AJP proxy</b> that is a addition to the mod_proxy of http. It is developped in httpd-2.1 and integrated in it.
+<b>Tomcat's AJP stack and httpd-2.1 AJP proxy</b> that is an addition to the mod_proxy of http. It is developped in httpd-2.1 and integrated in it.
 (See <a href="proxy.xml">AJP proxy</a>).
 </p>
 <p>
