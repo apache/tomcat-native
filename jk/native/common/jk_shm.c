@@ -214,8 +214,8 @@ static int do_shm_open(const char *fname, int attached,
                    "Using process memory as shared memory");
         JK_TRACE_EXIT(l);
         return 0;
-    }    
-    
+    }
+
     if (!attached)
         flags |= (O_CREAT|O_TRUNC);
     fd = open(fname, flags, 0666);
