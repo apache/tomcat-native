@@ -190,6 +190,8 @@ public class JkMain
         }
         
         wEnv.start();
+        long initTime=System.currentTimeMillis() - start_time;
+        d("Jk running... init time=" + initTime + ms);
     }
 
     // -------------------- Usefull methods --------------------
@@ -217,7 +219,13 @@ public class JkMain
         IntrospectionUtils.setProperty( target, name, val );
     }
 
+    public long getStartTime() {
+        return start_time;
+    }
+    
     // -------------------- Main --------------------
+
+    static long start_time=System.currentTimeMillis();
     
     public static void main(String args[]) {
         try {
