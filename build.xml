@@ -11,7 +11,7 @@
         <ant dir="util" />
         <ant dir="coyote" target="compile" />
         <ant dir="http11" />
-        <ant dir="jk" />
+        <ant dir="jk" target="build-jk"/>
 
         <jar jarfile="jtc.jar" 
              manifest="coyote/src/conf/MANIFEST.MF" >
