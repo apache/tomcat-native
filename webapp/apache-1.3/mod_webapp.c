@@ -91,6 +91,12 @@ static void wam_destroy(void *nil) {
     wam_initialized=FALSE;
 }
 
+/* Startup the module and the WebApp Library */
+static void wam_startup(server_rec *s, pool *p) {
+    if (!wam_initialized) return;
+    wa_startup();
+}
+
 /* Initialize the module and the WebApp Library */
 static const char *wam_init(pool *p) {
     const char *ret=NULL;
@@ -261,7 +267,6 @@ void wam_handler_log(wa_request *r, const char *f, const int l, char *msg) {
 /* Set the HTTP status of the response. */
 void wam_handler_setstatus(wa_request *r, int status) {
     request_rec *req=(request_rec *)r->data;
-    server_rec *svr=req->server;
 
     req->status=status;
 }
@@ -269,7 +274,6 @@ void wam_handler_setstatus(wa_request *r, int status) {
 /* Set the MIME Content-Type of the response. */
 void wam_handler_setctype(wa_request *r, char *type) {
     request_rec *req=(request_rec *)r->data;
-    server_rec *svr=req->server;
 
     if (type==NULL) return;
 
@@ -280,7 +284,6 @@ void wam_handler_setctype(wa_request *r, char *type) {
 /* Set a header in the HTTP response. */
 void wam_handler_setheader(wa_request *r, char *name, char *value) {
     request_rec *req=(request_rec *)r->data;
-    server_rec *svr=req->server;
 
     if (name==NULL) return;
     if (value==NULL) value="";
@@ -292,7 +295,6 @@ void wam_handler_setheader(wa_request *r, char *name, char *value) {
 /* Commit the first part of the response (status and headers) */
 void wam_handler_commit(wa_request *r) {
     request_rec *req=(request_rec *)r->data;
-    server_rec *svr=req->server;
 
     ap_send_http_header(req);
     ap_rflush(req);
@@ -301,7 +303,6 @@ void wam_handler_commit(wa_request *r) {
 /* Flush all data in the response buffer */
 void wam_handler_flush(wa_request *r) {
     request_rec *req=(request_rec *)r->data;
-    server_rec *svr=req->server;
 
     ap_rflush(req);
 }
@@ -309,7 +310,6 @@ void wam_handler_flush(wa_request *r) {
 /* Read a chunk of text from the request body */
 int wam_handler_read(wa_request *r, char *buf, int len) {
     request_rec *req=(request_rec *)r->data;
-    server_rec *svr=req->server;
     long ret=0;
 
     /* Check if we have something to read. */
@@ -339,7 +339,6 @@ int wam_handler_read(wa_request *r, char *buf, int len) {
 /* Write a chunk of text into the response body. */
 int wam_handler_write(wa_request *r, char *buf, int len) {
     request_rec *req=(request_rec *)r->data;
-    server_rec *svr=req->server;
 
     return(ap_rwrite(buf, len, req));
 }
@@ -365,6 +364,9 @@ static int wam_match(request_rec *r) {
     wa_virtualhost *host=NULL;
     wa_application *appl=NULL;
     wa_chain *elem=NULL;
+
+    /* Paranoid check */
+    if (!wam_initialized) return;
 
     /* Check if this host was recognized */
     host=ap_get_module_config(r->server->module_config,&webapp_module);
@@ -400,6 +402,9 @@ static int wam_invoke(request_rec *r) {
     char *stmp=NULL;
     char *ctmp=NULL;
     int ret=0;
+
+    /* Paranoid check */
+    if (!wam_initialized) return;
 
     /* Try to get a hold on the webapp request structure */
     appl=(wa_application *)ap_get_module_config(r->request_config,
@@ -485,7 +490,7 @@ module webapp_module = {
     NULL,                               /* [8] fixups */
     NULL,                               /* [10] logger */
     NULL,                               /* [3] header parser */
-    NULL,                               /* child initializer */
+    wam_startup,                        /* child initializer */
     NULL,                               /* child exit/cleanup */
     NULL                                /* [1] post read_request handling */
 };
