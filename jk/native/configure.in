@@ -145,7 +145,11 @@ AC_ARG_WITH(apxs,
 		APXS_CPPFLAGS=""
             else
                 WEBSERVER="apache-2.0"
-              	APRINCLUDEDIR="-I`$APXS -q APR_INCLUDEDIR`"
+              	APRINCLUDEDIR=""
+              	INCTEMP="-I`$APXS -q APR_INCLUDEDIR`"
+              	for INC in ${INCTEMP}; do
+              	    APRINCLUDEDIR="${APRINCLUDEDIR} -I${INC}"
+              	done              	
               	APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR ${APRINCLUDEDIR}"
               	APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
                 APACHE_CONFIG_VARS="`${APXS} -q exp_installbuilddir`/config_vars.mk"
