@@ -102,8 +102,8 @@ public class XercesParser{
                             Class.forName("org.apache.xerces.impl.Version");
             // Will return Xerces-J 2.x.0
             Method method = 
-                versionClass.getMethod("getVersion", null); 
-            String version = (String)method.invoke(null,null);
+                versionClass.getMethod("getVersion", (Class[]) null); 
+            String version = (String)method.invoke(null, (Object[]) null);
             versionNumber = version.substring( "Xerces-J".length() , 
                                                version.lastIndexOf(".") ); 
         } catch (Exception ex){

@@ -48,7 +48,7 @@ public final class IntrospectionUtils {
         if (executeM == null) {
             throw new RuntimeException("No execute in " + proxy.getClass());
         }
-        executeM.invoke(proxy, null);//new Object[] { args });
+        executeM.invoke(proxy, (Object[]) null);//new Object[] { args });
     }
 
     /**
@@ -371,7 +371,7 @@ public final class IntrospectionUtils {
             for (int i = 0; i < methods.length; i++) {
                 Class paramT[] = methods[i].getParameterTypes();
                 if (getter.equals(methods[i].getName()) && paramT.length == 0) {
-                    return methods[i].invoke(o, null);
+                    return methods[i].invoke(o, (Object[]) null);
                 }
 
                 if ("getProperty".equals(methods[i].getName())) {
