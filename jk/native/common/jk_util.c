@@ -83,6 +83,7 @@
 #define BALANCED_WORKERS            ("balanced_workers")
 #define WORKER_AJP12                ("ajp12")
 #define DEFAULT_WORKER_TYPE         JK_AJP12_WORKER_NAME
+#define SECRET_KEY_OF_WORKER        ("secretkey")
 
 #define DEFAULT_WORKER              JK_AJP12_WORKER_NAME
 #define WORKER_LIST_PROPERTY_NAME   ("worker.list")
@@ -366,6 +367,18 @@ int jk_get_worker_cache_size(jk_map_t *m,
     return map_get_int(m, buf, def);
 }
 
+char * jk_get_worker_secret_key(jk_map_t *m,
+                                const char *wname)
+{
+    char buf[1024];
+
+    if(!m || !wname) {
+        return NULL;
+    }
+
+    sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, SECRET_KEY_OF_WORKER);
+	return map_get_string(m, buf, NULL);
+}
 
 int jk_get_worker_list(jk_map_t *m,
                        char ***list,
@@ -417,10 +430,7 @@ int jk_get_lb_worker_list(jk_map_t *m,
         char **ar = NULL;
 
         sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, lb_wname, BALANCED_WORKERS);
-        ar = map_get_string_list(m, 
-                                 buf, 
-                                 num_of_wokers, 
-                                 NULL);
+        ar = map_get_string_list(m, buf, num_of_wokers, NULL);
         if(ar)  {
             *list = ar;     
             return JK_TRUE;
