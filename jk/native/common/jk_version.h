@@ -56,9 +56,9 @@
  * ========================================================================= */
 
 /***************************************************************************
- * Description: Socket buffer header file                                  *
+ * Description: JK version header file                                     *
  * Author:      Jean-Frederic Clere <jfrederic.clere@fujitsu-siemens.com>  *
- * Version:     $Revision$                                                 *
+ * Version:     $Revision$                                           *
  ***************************************************************************/
 
 #ifndef __JK_VERSION_H
@@ -74,7 +74,7 @@
 #define JK_VERBETA      1
 #define JK_BETASTRING   "1"
 /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
-#define JK_VERISRELEASE 0
+#define JK_VERISRELEASE 1
 /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
 
 #define PACKAGE "mod_jk/"
