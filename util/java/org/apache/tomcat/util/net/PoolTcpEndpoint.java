@@ -519,12 +519,12 @@ class TcpWorkerThread implements ThreadPoolRunnable {
                         endpoint.getServerSocketFactory().handshake(s);
  		    }
                 } catch (Throwable t) {
-                    endpoint.log.info("Handshake failed", t);
+                    endpoint.log.debug("Handshake failed", t);
                     // Try to close the socket
                     try {
                         s.close();
                     } catch (IOException e) {}
-                    continue;
+                    break;
                 }
 
                 TcpConnection con = null;
@@ -536,8 +536,6 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 		    } else {
                         con = (TcpConnection) perThrData[0];
                         perThrData = (Object []) perThrData[1];
-                        if ( con == null )
-                            continue;
 		    }
 		    
 		    con.setEndpoint(endpoint);
