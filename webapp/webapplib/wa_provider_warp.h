@@ -88,8 +88,8 @@ typedef struct wa_warp_conn_config {
 #define RID_CONNECTION     0x00000
 #define RID_DISCONNECT     0x0ffff
 #define TYP_HOST           0x00000
-#define TYP_HOST_ID        0x00001 
-#define TYP_APPLICATION    0x00002 
-#define TYP_APPLICATION_ID 0x00003 
-#define TYP_REQUEST        0x00004 
-#define TYP_REQUEST_ID     0x00005 
+#define TYP_HOST_ID        0x00001
+#define TYP_APPLICATION    0x00002
+#define TYP_APPLICATION_ID 0x00003
+#define TYP_REQUEST        0x00004
+#define TYP_REQUEST_ID     0x00005

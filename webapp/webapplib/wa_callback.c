@@ -101,13 +101,13 @@ int wa_callback_printf(wa_callbacks *c, wa_request *r, const char *fmt, ...) {
     va_list ap;
     char buf[1024];
     int ret;
-    
+
     va_start(ap,fmt);
     ret=vsnprintf(buf,1024,fmt,ap);
     va_end(ap);
 
     if (ret<0) return(-1);
-    
+
     return(wa_callback_write(c,r,buf,ret));
 }
 

@@ -194,7 +194,7 @@ static boolean wa_warp_send(wa_warp_conn_config *c, int r, wa_warp_packet *p) {
     if (!wa_warp_send_short(c,p->typ)) return(FALSE);
     // Send the packet length
     if (!wa_warp_send_short(c,p->len)) return(FALSE);
-    
+
     // Check if we need to send the payload
     if (p->len<=0) return(TRUE);
     if (p->buf==NULL) return(FALSE);
@@ -212,7 +212,7 @@ static int wa_warp_recv_short(wa_warp_conn_config *c) {
 
     if (c->sock<0) return(-1);
     if ((k=recv(c->sock,buf,2,0))!=2) return(-1);
-    
+
     k=((((buf[0]<<8)&0x0ff00)|(buf[1]&0x0ff))&0x0ffff);
     return(k);
 }
@@ -225,7 +225,7 @@ static wa_warp_packet *wa_warp_recv(wa_warp_conn_config *c, int r) {
     int rid=-1;
     int typ=-1;
     int siz=-1;
-    
+
     // Get the packet RID
     if ((rid=wa_warp_recv_short(c))<0) return(NULL);
     // Fix this for multithreaded environments (demultiplexing of packets)
@@ -282,7 +282,7 @@ static boolean wa_warp_connect(wa_warp_conn_config *conf) {
         conf->sock=SOCKET_NOT_CONNECTED;
         return(FALSE);
     }
-    
+
     // Whohoo!
     return(TRUE);
 }
@@ -315,7 +315,7 @@ static boolean wa_warp_close(wa_warp_conn_config *conf, char *description) {
     conf->sock=SOCKET_NOT_CONNECTED;
 
     return(TRUE);
-}    
+}
 
 /**
  * Configure a connection with the parameter from the web server configuration
@@ -369,25 +369,37 @@ static const char *wa_warp_conn_configure(wa_connection *conn, char *param) {
  * @param conn The connection for wich a description must be produced.
  * @param buf The buffer where the description must be stored.
  * @param len The buffer length.
- * @return The number of bytes written to the buffer.
+ * @return The number of bytes written to the buffer (terminator included).
  */
 static int wa_warp_conninfo(wa_connection *conn, char *buf, int len) {
     wa_warp_conn_config *conf;
     char temp[1024];
+    char *msg=NULL;
+    int x=0;
 
     if ((buf==NULL)||(len==0)) return(0);
 
     // Check sanity
-    if(conn==NULL) return(strlcpy(buf,"Null connection specified",len));
-    if(conn->conf==NULL) return(strlcpy(buf,"Invalid configuration",len));
-    conf=(wa_warp_conn_config *)conn->conf;
+    if(conn==NULL) msg="Null connection specified\0";
+    else if(conn->conf==NULL) msg="Invalid configuration\0";
+    else {
+        conf=(wa_warp_conn_config *)conn->conf;
 
-    // Prepare and return description
-    sprintf(temp,"Host: %s (%d.%d.%d.%d) Port: %d",conf->name,
-            (int)((conf->addr>>0)&0x0ff),  (int)((conf->addr>>8)&0x0ff),  
-            (int)((conf->addr>>16)&0x0ff), (int)((conf->addr>>24)&0x0ff),
-            conf->port);
-    return(strlcpy(buf,temp,len));
+        // Prepare and return description
+        sprintf(temp,"Host: %s (%d.%d.%d.%d) Port: %d",conf->name,
+                (int)((conf->addr>>0)&0x0ff),  (int)((conf->addr>>8)&0x0ff),
+                (int)((conf->addr>>16)&0x0ff), (int)((conf->addr>>24)&0x0ff),
+                conf->port);
+        msg=temp;
+    }
+
+    // Copy the message string in the buffer and return
+    for (x=0; x<len; x++) {
+        buf[x]=msg[x];
+        if (msg[x]=='\0') return(x+1);
+    }
+    buf[x-1]='\0';
+    return(x);
 }
 
 /**
@@ -396,22 +408,34 @@ static int wa_warp_conninfo(wa_connection *conn, char *buf, int len) {
  * @param appl The application for wich a description must be produced.
  * @param buf The buffer where the description must be stored.
  * @param len The buffer length.
- * @return The number of bytes written to the buffer.
+ * @return The number of bytes written to the buffer (terminator included).
  */
 static int wa_warp_applinfo(wa_application *conn, char *buf, int len) {
     wa_warp_appl_config *conf;
     char temp[1024];
+    char *msg=NULL;
+    int x=0;
 
     if ((buf==NULL)||(len==0)) return(0);
 
     // Check sanity
-    if(conn==NULL) return(strlcpy(buf,"Null connection specified",len));
-    if(conn->conf==NULL) return(strlcpy(buf,"Invalid configuration",len));
-    conf=(wa_warp_appl_config *)conn->conf;
+    if(conn==NULL) msg="Null connection specified\0";
+    else if(conn->conf==NULL) msg="Invalid configuration\0";
+    else {
+        conf=(wa_warp_appl_config *)conn->conf;
 
-    // Prepare and return description
-    sprintf(temp,"Host ID: %d Application ID: %d",conf->host,conf->appl);
-    return(strlcpy(buf,temp,len));
+        // Prepare and return description
+        sprintf(temp,"Host ID: %d Application ID: %d",conf->host,conf->appl);
+        msg=temp;
+    }
+
+    // Copy the message string in the buffer and return
+    for (x=0; x<len; x++) {
+        buf[x]=msg[x];
+        if (msg[x]=='\0') return(x+1);
+    }
+    buf[x-1]='\0';
+    return(x);
 }
 
 /**
@@ -432,7 +456,7 @@ static void wa_warp_init(wa_connection *conn) {
 
     // Try to open a connection with the server
     if (!wa_warp_connect(conf)) return;
-    
+
     // Configure our list of hosts
     while(host!=NULL) {
         wa_application *appl=host->apps;
@@ -450,7 +474,7 @@ static void wa_warp_init(wa_connection *conn) {
             return;
         }
         wa_warp_packet_reset(p);
-        
+
         // Retrieve the packet for the host ID
         in=wa_warp_recv(conf,RID_CONNECTION);
         if (in==NULL) {
@@ -515,7 +539,7 @@ static void wa_warp_init(wa_connection *conn) {
         // Check the next configured host.
         host=host->next;
     }
-    
+
     // All done (free packet)
     wa_warp_packet_free(p);
 }
@@ -541,9 +565,9 @@ static void wa_warp_destroy(wa_connection *conn) {
  * @param req The request data.
  * @param cb The web-server callback information.
  */
-void wa_warp_handle(wa_request *req, wa_callbacks *cb) {    
+void wa_warp_handle(wa_request *req, wa_callbacks *cb) {
     wa_warp_conn_config *conf=NULL;
-    
+
     conf=(wa_warp_conn_config *)req->appl->conn->conf;
     if (conf->sock<0) {
         wa_callback_setstatus(cb,req,500);

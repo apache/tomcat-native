@@ -81,13 +81,22 @@ static const char *wa_info_configure(wa_connection *conn, char *param) {
  * @param conn The connection for wich a description must be produced.
  * @param buf The buffer where the description must be stored.
  * @param len The buffer length.
- * @return The number of bytes written to the buffer.
+ * @return The number of bytes written to the buffer (terminator included).
  */
 static int wa_info_conninfo(wa_connection *conn, char *buf, int len) {
-    if ((buf==NULL)||(len==0)) return(0);
+    int x=0;
+    char *msg="Null connection specified\0";
 
-    if(conn==NULL) return(strlcpy(buf,"Null connection specified",len));
-    return(strlcpy(buf,conn->conf,len));
+    if ((buf==NULL)||(len==0)) return(0);
+    if(conn!=NULL) msg=(char *)conn->conf;
+
+    // Copy the message string in the buffer and return
+    for (x=0; x<len; x++) {
+        buf[x]=msg[x];
+        if (msg[x]=='\0') return(x+1);
+    }
+    buf[x-1]='\0';
+    return(x);
 }
 
 /**
@@ -96,7 +105,7 @@ static int wa_info_conninfo(wa_connection *conn, char *buf, int len) {
  * @param appl The application for wich a description must be produced.
  * @param buf The buffer where the description must be stored.
  * @param len The buffer length.
- * @return The number of bytes written to the buffer.
+ * @return The number of bytes written to the buffer (terminator included).
  */
 static int wa_info_applinfo(wa_application *conn, char *buf, int len) {
     return(0);
@@ -139,7 +148,7 @@ void wa_info_handle(wa_request *req, wa_callbacks *cb) {
     wa_callback_printf(cb,req,"  <title>mod_webapp: status</title>\n");
     wa_callback_printf(cb,req," </head>\n");
     wa_callback_printf(cb,req," <body>\n");
-    
+
     // Dump configured connections
     while (conn!=NULL) {
         char desc[1024];
@@ -210,7 +219,7 @@ void wa_info_handle(wa_request *req, wa_callbacks *cb) {
     wa_callback_printf(cb,req,"    </code>\n");
     wa_callback_printf(cb,req,"   </dd>\n");
     wa_callback_printf(cb,req,"  </dl>\n");
-    
+
     // Finish the page
     wa_callback_printf(cb,req," </body>\n");
     wa_callback_printf(cb,req,"<html>\n");
