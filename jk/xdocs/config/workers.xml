@@ -107,13 +107,14 @@ embedded separated by the colon (':') character.
 Port number of the remote Tomcat instance listening for defined protocol requests.
 </directive>
 
-<directive name="socket_timeout" default="infinite" required="false">
+<directive name="socket_timeout" default="0" required="false">
 Socket timeout in seconds used for communication channel between JK and remote host.
 If remote host does not respond inside that timeout the JK will generate an error,
-and retry again. 
+and retry again. If set to value zero (default) the JK will wait for infinite
+on all socket operations.
 </directive>
 
-<directive name="socket_keepalive" required="false">
+<directive name="socket_keepalive" default="False" required="false">
 This directive should be used when you have a firewall between your webserver
 and the Tomcat engine, who tend to drop inactive connections. This flag will told Operating System
 to send <code>KEEP_ALIVE</code> message on inactive connections (interval depend on global OS settings,
@@ -125,13 +126,14 @@ have informations about the cut and couldn't handle it.
 </p>
 </directive>
 
-<directive name="recycle_timeout" required="false">
+<directive name="recycle_timeout" default="0" required="false">
 The number of seconds that told webserver to cut an ajp13 connection after some time of 
 inactivity. When choosing an endpoint for a request and the assigned socket is open, it will be
 closed if it was not used for the configured time.
 It's a good way to ensure that there won't too old threads living on Tomcat side, 
 with the extra cost you need to reopen the socket next time a request be forwarded.
-This property is very similar to <b>cache_timeout</b> but works also in non-cache mode. 
+This property is very similar to <b>cache_timeout</b> but works also in non-cache mode.
+If set to value zero (default) no recycle will took place. 
 </directive>
 
 <directive name="retries" default="3" required="false">
@@ -140,13 +142,13 @@ Tomcat. If the number of retries set is greater then three (the default value), 
 each retry after default an extra wait of 100ms will be inserted.
 </directive>
 
-<directive name="cachesize" default="0" required="false">
+<directive name="cachesize" default="1" required="false">
 Cachesize property is usefull when you're using JK in multithreaded 
 web servers such as Apache 2.0 (worker), IIS and Netscape. They will benefit the most by 
 setting this value to a higher level (such as the estimated average concurrent users for Tomcat).
 If cachesize is not set, the connection cache support is disabled.
 Cachesize determines the minimum number of open connections to backend Tomcat.
-<warn>Do not use cachesize with <b>prefork mpm</b> or <b>apache 1.3.x</b>!</warn>
+<warn>Do not use cachesize with values higer then 1 on <b>prefork mpm</b> or <b>apache 1.3.x</b>!</warn>
 </directive>
 
 <directive name="cache_timeout" default="0" required="false">
@@ -162,7 +164,7 @@ The problem is that after an ajp13 connection is created, the child won't drop i
 until killed. And since the webserver will keep its childs/threads running
 to handle high-load, even it the child/thread handle only static contents, you could
 finish having many unused ajp13 threads on the Tomcat side.
-</p>
+</p>. 
 </directive>
 
 <directive name="lb_factor" default="1" required="false">
@@ -173,7 +175,6 @@ The load-balancing factor is <i>how much we expect this worker to work</i>, or
 that makes the load balancer. For example if one worker has lb_factor 5 times higher then
 other worker, then it will receive five times more requests. 
 </directive>
-
 </directives>
 </subsection>
 
@@ -218,7 +219,7 @@ The following table specifies properties that the lb worker can accept:
 </p>
 
 <directives>
-<directive name="balance_workers" required="true">
+<directive name="balance_workers" default="" required="true">
 A comma separated list of workers that the load balancer
 need to manage.
 <p>
@@ -242,7 +243,7 @@ instances of Tomcat. By default sticky_session is set to True.
 <subsection name="Advanced worker directives">
 
 <directives>
-<directive name="connect_timeout" required="false">
+<directive name="connect_timeout" default="0" required="false">
 Connect timeout property told webserver to send a PING request on ajp13 connection after 
 connection is established. The parameter is the delay in milliseconds to wait for the PONG reply.
 <p>
@@ -252,7 +253,7 @@ Disabled by default.
 </p>
 </directive>
 
-<directive name="prepost_timeout" required="false">
+<directive name="prepost_timeout" default="0" required="false">
 Prepost timeout property told webserver to send a PING request on ajp13 connection before 
 forwarding to it a request. The parameter is the delay in milliseconds to wait for the PONG reply.
 <p>
@@ -262,7 +263,7 @@ Disabled by default.
 </p>
 </directive>
 
-<directive name="reply_timeout" required="false">
+<directive name="reply_timeout" default="0" required="false">
 Reply_timeout property told webserver to wait some time for reply to a forwarded request
 before considering the remote tomcat is dead and eventually switch to another tomcat in a cluster
 group. By default webserver will wait forever which could be an issue for you.
