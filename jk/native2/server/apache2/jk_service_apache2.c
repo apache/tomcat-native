@@ -372,9 +372,8 @@ static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     s->remote_host  = NULL_FOR_EMPTY(s->remote_host);
     s->remote_addr  = NULL_FOR_EMPTY(r->connection->remote_ip);
 
-    /* get server name */
-    s->server_name= (char *)(r->hostname ? r->hostname :
-                             r->server->server_hostname);
+    /* get server name like in jk 1.2.x */
+    s->server_name= (char *)ap_get_server_name(r);
 
     /* get the real port (otherwise redirect failed) */
     apr_sockaddr_port_get(&port,r->connection->local_addr);
