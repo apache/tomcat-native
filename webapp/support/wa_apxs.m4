@@ -151,10 +151,6 @@ AC_DEFUN(
       WA_ERROR([cannot execute $2])
     fi
     AC_MSG_RESULT([${wa_apxs_get_tempval}])
-    if test -z "${$1}" ; then
-      $1="${wa_apxs_get_tempval}"
-    else
-      $1="${$1} ${wa_apxs_get_tempval}"
-    fi
+    WA_APPEND([$1],[${wa_apxs_get_tempval}])
     unset wa_apxs_get_tempval
   ])

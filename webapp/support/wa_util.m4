@@ -86,6 +86,25 @@ AC_DEFUN(
   ])
 
 dnl --------------------------------------------------------------------------
+dnl WA_APPEND
+dnl   Append the extra value to the variable specified
+dnl   $1 => The environment variable name.
+dnl   $2 => The extra value
+dnl --------------------------------------------------------------------------
+AC_DEFUN(
+  [WA_APPEND],
+  [
+    wa_append_tempval="`echo $2`"
+    if test -n "${wa_append_tempval}" ; then
+      if test -z "${$1}" ; then
+        $1="${wa_append_tempval}"
+      else 
+        $1="${$1} ${wa_append_tempval}"
+      fi
+    fi 
+  ])
+
+dnl --------------------------------------------------------------------------
 dnl WA_PATH_DIR
 dnl   Resolve the FULL path name of a directory.
 dnl   $1 => The variable where the full path name will be stored.

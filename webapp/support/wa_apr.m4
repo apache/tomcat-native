@@ -111,11 +111,7 @@ AC_DEFUN(
     fi
     wa_apr_get_tempval=`echo ${wa_apr_get_tempval} | sed 's/^$3="//g'`
     wa_apr_get_tempval=`echo ${wa_apr_get_tempval} | sed 's/"$//g'`
-    if test -z "${$1}" ; then
-      $1="${wa_apr_get_tempval}"
-    else
-      $1="${$1} ${wa_apr_get_tempval}"
-    fi
+    WA_APPEND([$1],[${wa_apr_get_tempval}])
     AC_MSG_RESULT([${wa_apr_get_tempval}])
     unset wa_apr_get_tempval
   ])
