@@ -362,12 +362,7 @@ public class CoyoteRequestFacade
 
 
     public HttpSession getSession(boolean create) {
-        HttpSession session =
-            request.getSession(create);
-        if (session == null)
-            return null;
-        else
-            return new StandardSessionFacade(session);
+        return request.getSession(create);
     }
 
 
