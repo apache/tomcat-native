@@ -69,6 +69,7 @@
 #include "jk_worker.h"
 #include "jk_map.h"
 #include "jk_uriMap.h"
+#include "jk_webapp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,6 +79,7 @@ struct jk_worker;
 struct jk_endpoint;
 struct jk_env;
 struct jk_uriMap;
+struct jk_webapp;
 struct jk_map;
 
 /*
@@ -95,6 +97,10 @@ struct jk_workerEnv {
     */
     /*     struct jk_map *uri_to_context; */
 
+    /* Use this pool for all global settings
+     */
+    struct jk_pool *pool;
+    
     /* Workers hashtable. You can also access workers by id
      */
     struct jk_map *worker_map;
@@ -146,6 +152,9 @@ struct jk_workerEnv {
 
     struct jk_uriMap *uriMap;
 
+    struct jk_webapp *rootWebapp;
+    struct jk_map *webapps;
+
     /** If 'global' server mappings will be visible in virtual hosts
         as well. XXX Not sure this is needed
     */
@@ -195,6 +204,10 @@ struct jk_workerEnv {
                                       const char *name, 
                                       struct jk_map *init_data);
 
+    struct jk_webapp *(*createWebapp)(struct jk_workerEnv *_this,
+                                      const char *vhost,
+                                      const char *name, 
+                                      struct jk_map *init_data);
 
     /**
      *  Init the workers, prepare the worker environment.

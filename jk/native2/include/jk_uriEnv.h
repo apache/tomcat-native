@@ -82,6 +82,11 @@ struct jk_endpoint;
 struct jk_env;
 struct jk_uri_worker_map;
 struct jk_map;
+struct jk_webapp;
+
+struct jk_uriEnv;
+typedef struct jk_uriEnv jk_uriEnv_t;
+
 
 #define MATCH_TYPE_EXACT    (0)
 #define MATCH_TYPE_CONTEXT  (1)
@@ -92,35 +97,18 @@ struct jk_map;
 struct jk_uriEnv {
     struct jk_workerEnv *workerEnv;
 
+    struct jk_webapp *webapp;
+    
     /* Generic name/value properties. Some workers may use it.
      */
     struct jk_map *properties;
-    
-    /** Worker associated with this location.
-        Inherited by virtual host, context ( i.e. you can override
-        it if you want, the default will be the 'global' default worker,
-        or the virtual host worker ).
-    */
-    struct jk_worker *worker;
-    /** worker name - allow this to be set before the worker is defined.
-     *  XXX do we need it ?
-     */
-    char *workerName; 
-    
-    /* Virtual server handled - "*" is all virtual. 
-     */
-    char *virtual;
 
+    /* Original uri ( unparsed )
+     */
     char *uri;
-    
-    /** Web application. No need to compute it again in tomcat.
-     *  The 'id' is the index in the context table ( todo ), it
-     *  reduce the ammount of trafic ( and string creation on java )
-     */
-    char *context;
-    int contextId;
 
-    char *docbase;
+    /** XXX todo.
+     */
     int status;
     
     /** Servlet. No need to compute it again in tomcat
@@ -128,46 +116,20 @@ struct jk_uriEnv {
     char *servlet;
     int servletId;
 
-    /* ---------- For our internal mapper use ---------- */
+    /* Extracted suffix, for extension-based mathces */
     char *suffix;
-    int ctxt_len;
+    char *prefix;
+    
+    int prefix_len;
+    int suffix_len;
+
     int match_type;
-
-    /** You can fine-tune the logging level per location
-     */
-    int log_level;
-
-    /** Different apps can have different loggers.
-     */
-    jk_logger_t *l;
-
-    /* SSL Support - you can fine tune this per application.
-     * ( most likely you only do it per virtual host or globally )
-     * XXX shouldn't SSL be enabled by default ???
-     */
-    int  ssl_enable;
-    char *https_indicator;
-    char *certs_indicator;
-    char *cipher_indicator;
-    char *session_indicator;
-    char *key_size_indicator;
-
-    /* Jk Options. Bitflag. 
-     */
-    int options;
-
-    /* Environment variables support
-     */
-    int envvars_in_use;
-    jk_map_t * envvars;
 
     /* -------------------- Methods -------------------- */
 
     /* get/setProperty */
 };
 
-
-typedef struct jk_uriEnv jk_uriEnv_t;
 
 
 #ifdef __cplusplus

@@ -170,6 +170,10 @@ struct jk_worker {
     struct jk_workerEnv *workerEnv;
     char *name;
 
+    /** Pool for worker specific informations.
+        In future we may start/stop/reload workers at runtime, but that's
+        far away
+    */
     jk_pool_t *pool;
     
     /* 

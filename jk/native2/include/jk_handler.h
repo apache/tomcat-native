@@ -97,6 +97,7 @@ struct jk_handler;
 typedef struct jk_handler jk_handler_t;
 
 struct jk_handler {
+    struct jk_workerEnv *workerEnv;
     
     int (*init)( jk_worker_t *w );
 

@@ -138,13 +138,10 @@ struct jk_uriMap {
     /* -------------------- @deprecated -------------------- */
     /* used by the mapper, temp storage ( ??? )*/
 
-    /* Memory Pool */
-    jk_pool_t           p;
-    jk_pool_atom_t      buf[SMALL_POOL_SIZE];
-
-    /* Temp Pool */
-    jk_pool_t tp; 
-    jk_pool_atom_t tbuf[SMALL_POOL_SIZE];
+    /* pool for mappings. Mappings will change at runtime, we can't
+     * recycle the main pool.
+    */
+    jk_pool_t  *pool;
 };
     
 #ifdef __cplusplus

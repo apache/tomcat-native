@@ -135,7 +135,8 @@ struct jk_ws_service {
      * allocated within this pool, which can then be reclaimed at the end
      * of the request handling cycle. 
      *
-     * Alive as long as the request is alive.  
+     * Alive as long as the request is alive.
+     * You can use endpoint pool for communication - it is recycled.
      */
     jk_pool_t *pool;
 

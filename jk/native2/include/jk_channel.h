@@ -105,11 +105,8 @@ struct jk_channel {
      */
     char **supportedProperties;
     
-    struct jk_worker *worker; /* XXX Do we need it ? */
-    jk_logger_t *logger;
+    struct jk_worker *worker; 
     jk_map_t *properties;
-    jk_pool_t *pool; /* XXX Do we need it ? */
-    
     
     /** Prepare the channel, check the properties. This 
      * will resolve the host and do all the validations.

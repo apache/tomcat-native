@@ -80,6 +80,7 @@ extern "C" {
  * @author Costin Manolache
  * 
  */
+struct jk_pool;
 struct jk_env;
 typedef struct jk_env jk_env_t;
 
@@ -101,6 +102,7 @@ typedef struct jk_env jk_env_t;
  * jk_worker_list.h).  
  */
 typedef int (JK_METHOD *jk_env_objectFactory_t)(jk_env_t *env,
+                                                jk_pool_t *pool,
                                                 void **result, 
                                                 const char *type,
                                                 const char *name);
@@ -108,7 +110,7 @@ typedef int (JK_METHOD *jk_env_objectFactory_t)(jk_env_t *env,
 /** Get a pointer to the jk_env. We could support multiple 
  *  env 'instances' in future - for now it's a singleton.
  */
-jk_env_t* JK_METHOD jk_env_getEnv( char *id );
+jk_env_t* JK_METHOD jk_env_getEnv( char *id, struct jk_pool *pool );
 
 
 /**
@@ -120,7 +122,7 @@ jk_env_t* JK_METHOD jk_env_getEnv( char *id );
  */
 struct jk_env {
     jk_logger_t *logger;
-    /*jk_pool_t   global_pool; */
+    jk_pool_t   *globalPool; 
     
     /** Global properties ( similar with System properties in java)
      */
@@ -136,7 +138,7 @@ struct jk_env {
         call it. This is a very frequent operation.
     */
     void *
-    (JK_METHOD *getInstance)( jk_env_t *env, const char *type,
+    (JK_METHOD *getInstance)( jk_env_t *env, jk_pool_t *pool, const char *type,
                               const char *name );
     
 

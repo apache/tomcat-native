@@ -120,18 +120,24 @@ struct jk_pool;
 typedef struct jk_pool jk_pool_t;
 
 
-/** XXX Move it to impl, make it incomplete 
- */
+/** The pool can grow by (m)allocating more storage, but it'll first use buf.
+*/
 struct jk_pool {
-
-    void (*open)(jk_pool_t *_this, 
-                 jk_pool_atom_t *buf,
-                 unsigned size);
+    /** Create a child pool. Size is a hint for the
+     *  estimated needs of the child.
+     */
+    jk_pool_t *(*create)(jk_pool_t *_this,
+                         int size );
     
     void (*close)(jk_pool_t *_this);
-    
+
+    /** Empty the pool using the same space.
+     *  XXX should we rename it to clear() - consistent with apr ?
+     */
     void (*reset)(jk_pool_t *_this);
 
+    /* Memory allocation */
+    
     void *(*alloc)(jk_pool_t *_this, size_t size);
 
     void *(*realloc)(jk_pool_t *_this, size_t size,
@@ -144,31 +150,15 @@ struct jk_pool {
     /** Points to the private data. In the case of APR,
         it's a apr_pool you can use directly */
     void *_private;
-    
-    /* Private data - XXX move to impl */
-    unsigned size;      
-    unsigned pos;       
-    jk_pool_atom_t  *buf;
-    int own_buffer;
-    unsigned dyn_size;  
-    unsigned dyn_pos;   
-    void     **dynamic;
 };
 
-/** Create a pool
+/** Create a pool. Use it for the initial allocation ( in mod_jk ). All other
+    pools should be created using the virtual method.
+
+    XXX move this to the factory
  */
 int jk_pool_create( jk_pool_t **newPool, jk_pool_t *parent, int size );
 
-/** Open a pool using allocated space. The pool can grow by
-    (m)allocating more storage, but it'll first use buf.
-    This is used in jk with stack-allocated pools.
-*/
-void jk_pool_open(jk_pool_t *p, jk_pool_atom_t *buf, unsigned size);
-
-
-void jk_open_pool(jk_pool_t *p,
-                  jk_pool_atom_t *buf,
-                  unsigned size);
 
 #ifdef __cplusplus
 }

@@ -127,8 +127,9 @@ struct jk_endpoint {
 
     struct jk_worker *worker;
 
-    jk_pool_t pool;
-    jk_pool_atom_t buf[BIG_POOL_SIZE];
+    /** Each thread has it's own endpoint instance and is recycled.
+        This pool can be unsynchronized */ 
+    jk_pool_t *pool;
     
     int proto;	/* PROTOCOL USED AJP13/AJP14 */
 

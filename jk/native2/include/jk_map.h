@@ -64,16 +64,19 @@
 #ifndef JK_MAP_H
 #define JK_MAP_H
 
+#include "jk_pool.h"
+#include "jk_logger.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-
+struct jk_logger;
+struct jk_pool;
 struct jk_map;
 typedef struct jk_map jk_map_t;
 
-int map_alloc(jk_map_t **m);
+int map_alloc(jk_map_t **m, struct jk_pool *pool);
 
 int map_free(jk_map_t **m);
 
@@ -97,7 +100,13 @@ char *map_get_string(jk_map_t *m,
                      const char *name,
                      const char *def);
 
+/** Extract a String[] property. It'll split the value on
+ *  ' ', tab, ',', '*'.
+ *  @param pool Pool on which the result will be allocated. Defaults to the map's
+ *              pool
+ */ 
 char **map_get_string_list(jk_map_t *m,
+                           struct jk_pool *pool,
                            const char *name,
                            unsigned *list_len,
                            const char *def);
@@ -152,9 +161,11 @@ char **map_getListProp(jk_map_t *m,
                        const char *pname, 
                        unsigned *size);
 
+int map_copy(jk_pool_t *pool, jk_map_t * src, jk_map_t * dst);
+
 /* XXX Very strange hack to deal with special properties
  */
-    int jk_is_some_property(const char *prp_name, const char *suffix);
+int jk_is_some_property(const char *prp_name, const char *suffix);
     
 #ifdef __cplusplus
 }

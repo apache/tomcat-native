@@ -71,6 +71,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+struct jk_map;
+struct jk_logger;
 typedef struct jk_logger jk_logger_t;
 
 /* Logger object.
@@ -91,7 +93,7 @@ struct jk_logger {
                                    const char *def );
 
     int (JK_METHOD *open)( jk_logger_t *_this,
-                            jk_map_t *properties );
+                           struct jk_map *properties );
 
     void (JK_METHOD *close)( jk_logger_t *_this );
 
