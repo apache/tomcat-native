@@ -75,6 +75,7 @@
 
 #include "apr.h"
 #include "apr_strings.h"
+#include "apr_general.h"
 #include "apr_portable.h"
 #include "apr_lib.h"
 
@@ -202,6 +203,7 @@ static int JK_METHOD jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
     /* We don't want to have to recreate the scoreboard after
      * restarts, so we'll create a global pool and never clean it.
      */
+    apr_initialize(); 
     rv = apr_pool_create(&globalShmPool, NULL);
 
     if (rv != APR_SUCCESS) {
