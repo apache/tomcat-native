@@ -39,9 +39,7 @@
 #include "http_log.h"
 #include "util_script.h"
 
-#ifndef AS400
 #include "ap_mpm.h"
-#endif
 
 #ifdef AS400
 #include "ap_charset.h"
@@ -2363,10 +2361,8 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
 
     /* Set default connection cache size for worker mpm */
 #if APR_HAS_THREADS
-#ifndef AS400
     if (ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_threads) != APR_SUCCESS)
         mpm_threads = 1;
-#endif
 #endif
      jk_set_worker_def_cache_size(mpm_threads);
 
