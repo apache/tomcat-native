@@ -112,14 +112,14 @@ typedef struct private_ws {
 
 #if defined(TESTING)
 static void AddInLogMessageText(char *fmt, unsigned short err, ...) {
-	va_list ap;
-	va_start(ap, err);
+    va_list ap;
+    va_start(ap, err);
 
-	printf("Debug: ");
-	vprintf(fmt, ap);
-	printf("\n");
+    printf("Debug: ");
+    vprintf(fmt, ap);
+    printf("\n");
 
-	va_end(ap);
+    va_end(ap);
 }
 #endif
 
@@ -648,8 +648,9 @@ static unsigned int rejectWithError(FilterContext *context, const char *diagnost
         diagnostic = "Unspecified error";
     }
 
-    // This assumes that we're just going to expand the diagnostic into
-    // the page body.
+    /* This assumes that we're just going to expand the diagnostic into
+     * the page body.
+     */
     bufSz = strlen(msg) + strlen(diagnostic) + 1;
 
     mbuf = context->AllocMem(context, bufSz, 0, &errID);
@@ -669,7 +670,7 @@ static int getLookupInfo(FilterContext *context, char *pMatch, WORD itemNumber, 
     WORD lValue, type;
     STATUS error;
 
-    if (NULL == pMatch || NULL == pInfo || (itemNumber < 0)) {
+    if (NULL == pMatch || NULL == pInfo) {
         return -1;
     }
 
@@ -684,7 +685,7 @@ static int getLookupInfo(FilterContext *context, char *pMatch, WORD itemNumber, 
     }
 
     lValue -= sizeof(WORD); /* remove datatype word included in the list length */
-	lValue++; /* Include length of terminator */
+    lValue++; /* Include length of terminator */
 
     /* check the value type */
     if (type != TYPE_TEXT_LIST && type != TYPE_TEXT) {
