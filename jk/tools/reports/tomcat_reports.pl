@@ -218,7 +218,7 @@ sub RequestGraph {
   $graph->set_y_axis_font(GD::gdSmallFont);
   $graph->set_legend_font(GD::gdSmallFont);
   $gd = $graph->plot(\@data);
-  die "\$gd not defined" unless defined $gd;
+  die "Graph Plot Failed: " . $graph->error unless defined $gd;
 
   open IMG, ">$outfile" or die $!;
   print IMG $gd->png or die $gd->error;
@@ -261,7 +261,7 @@ sub MedianGraph {
   $graph->set_y_axis_font(GD::gdSmallFont);
   $graph->set_legend_font(GD::gdSmallFont);
   $gd = $graph->plot(\@data);
-  die "\$gd not defined" unless defined $gd;
+  die "Graph Plot Failed: " . $graph->error unless defined $gd;
 
   open IMG, ">$outfile" or die $!;
   print IMG $gd->png or die $gd->error;
@@ -301,7 +301,7 @@ sub DeviationGraph {
   $graph->set_y_axis_font(GD::gdSmallFont);
   $graph->set_legend_font(GD::gdSmallFont);
   $gd = $graph->plot(\@data);
-  die "\$gd not defined" unless defined $gd;
+  die "Graph Plot Failed: " . $graph->error unless defined $gd;
 
   open IMG, ">$outfile" or die $!;
   print IMG $gd->png or die $gd->error;
@@ -349,7 +349,7 @@ sub ErrorGraph {
   $graph->set_y_axis_font(GD::gdSmallFont);
   $graph->set_legend_font(GD::gdSmallFont);
   $gd = $graph->plot(\@data);
-  die "\$gd not defined" unless defined $gd;
+  die "Graph Plot Failed: " . $graph->error unless defined $gd;
 
   open IMG, ">$outfile" or die $!;
   print IMG $gd->png or die $gd->error;
@@ -397,7 +397,7 @@ sub ClientGraph {
   $graph->set_y_axis_font(GD::gdSmallFont);
   $graph->set_legend_font(GD::gdSmallFont);
   $gd = $graph->plot(\@data);
-  die "\$gd not defined" unless defined $gd;
+  die "Graph Plot Failed: " . $graph->error unless defined $gd;
 
   open IMG, ">$outfile" or die $!;
   print IMG $gd->png or die $gd->error;
