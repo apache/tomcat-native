@@ -103,6 +103,7 @@ public class JniHandler extends JkHandler {
     public static final int MSG_NOTE=0;
     public static final int C2B_NOTE=1;
     public static final int MB_NOTE=2;
+    private boolean paused = false;
 
 
     public JniHandler() {
@@ -177,11 +178,35 @@ public class JniHandler extends JkHandler {
         msg.appendByteChunk( bc );
     }
 
+    public void pause() throws Exception {
+        synchronized(this) {
+            paused = true;
+        }
+    }
+
+    public void resume() throws Exception {
+        synchronized(this) {
+            paused = false;
+            notifyAll();
+        }
+    }
+
+
     /** Create a msg context to be used with the shm channel
      */
     public MsgContext createMsgContext() {
         if( nativeJkHandlerP==0 || apr==null  )
             return null;
+
+        synchronized(this) {
+            try{ 
+                while(paused) {
+                    wait();
+                }
+            }catch(InterruptedException ie) {
+                // Ignore, since it can't happen
+            }
+        }
 
         try {
             MsgContext msgCtx=new MsgContext();

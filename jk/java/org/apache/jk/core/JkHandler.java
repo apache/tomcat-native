@@ -229,4 +229,10 @@ public class JkHandler implements MBeanRegistration, NotificationListener {
     public void postDeregister() {
     }
 
+    public void pause() throws Exception {
+    }
+
+    public void resume() throws Exception {
+    }
+
 }

@@ -277,13 +277,38 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
     
     /* ==================== ==================== */
     ServerSocket sSocket;
-    int socketNote=1;
-    int isNote=2;
-    int osNote=3;
-    int notifNote=4;
+    final int socketNote=1;
+    final int isNote=2;
+    final int osNote=3;
+    final int notifNote=4;
+    boolean paused = false;
+
+    public void pause() throws Exception {
+        synchronized(this) {
+            paused = true;
+            unLockSocket();
+        }
+    }
+
+    public void resume() throws Exception {
+        synchronized(this) {
+            paused = false;
+            notify();
+        }
+    }
+
 
     public void accept( MsgContext ep ) throws IOException {
         if( sSocket==null ) return;
+        synchronized(this) {
+            while(paused) {
+                try{ 
+                    wait();
+                } catch(InterruptedException ie) {
+                    //Ignore, since can't happen
+                }
+            }
+        }
         Socket s=sSocket.accept();
         ep.setNote( socketNote, s );
         if(log.isDebugEnabled() )
@@ -412,6 +437,20 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
         s.close();
     }
 
+    private void unLockSocket() throws IOException {
+	// Need to create a connection to unlock the accept();
+	Socket s;
+	if (inet == null) {
+	    s=new Socket("127.0.0.1", port );
+	}else{
+	    s=new Socket(inet, port );
+	    // setting soLinger to a small value will help shutdown the
+	    // connection quicker
+	    s.setSoLinger(true, 0);
+	}
+	s.close();
+    }
+
     public void destroy() throws IOException {
         running = false;
         try {
@@ -420,17 +459,10 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
                 return;
             tp.shutdown();
 
-            // Need to create a connection to unlock the accept();
-            Socket s;
-            if (inet == null) {
-                s=new Socket("127.0.0.1", port );
-            }else{
-                s=new Socket(inet, port );
-                // setting soLinger to a small value will help shutdown the
-                // connection quicker
-                s.setSoLinger(true, 0);
-            }
-            s.close();
+	    if(!paused) {
+		unLockSocket();
+	    }
+
             sSocket.close(); // XXX?
             
             if( tpOName != null )  {
@@ -575,6 +607,11 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
             log.debug("Accepting ajp connections on " + port);
         while( running ) {
             try {
+                synchronized(this) {
+                    while(paused) {
+                        wait();
+                    }
+                }
                 MsgContext ep=new MsgContext();
                 ep.setSource(this);
                 ep.setWorkerEnv( wEnv );
@@ -600,6 +637,9 @@ public class ChannelSocket extends JkHandler implements NotificationBroadcaster 
         try {
             MsgAjp recv=new MsgAjp();
             while( running ) {
+                if(paused) { // Drop the connection on pause
+                    break;
+                }
                 int status= this.receive( recv, ep );
                 if( status <= 0 ) {
                     if( status==-3)

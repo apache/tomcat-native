@@ -236,11 +236,11 @@ public class JkCoyoteHandler extends JkHandler implements
     }
 
     public void pause() throws Exception {
-        // FIXME
+        getJkMain().pause();
     }
 
     public void resume() throws Exception {
-        // FIXME
+        getJkMain().resume();
     }
 
     public void destroy() {
