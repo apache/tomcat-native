@@ -2373,6 +2373,8 @@ public class Digester extends DefaultHandler {
     
     public void reset() {
         root = null;
+        setErrorHandler(null);
+        clear();
     }
 
 
