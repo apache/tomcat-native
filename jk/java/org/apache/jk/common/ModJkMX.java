@@ -64,7 +64,6 @@ import java.io.InputStreamReader;
 import java.net.URLConnection;
 import java.net.URL;
 import java.util.List;
-import java.util.StringTokenizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -80,6 +79,7 @@ import org.apache.commons.modeler.Registry;
 import org.apache.commons.modeler.BaseModelMBean;
 import org.apache.commons.modeler.ManagedBean;
 import org.apache.commons.modeler.AttributeInfo;
+import org.apache.commons.modeler.OperationInfo;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -219,22 +219,36 @@ public class ModJkMX extends JkHandler
             // connect to apache, get a list of mbeans
             BufferedReader is=getStream( "dmp=*");
             if( is==null ) return;
+
+            String name=null;
+            String att=null;
+            String val=null;
             while(true) {
                 String line=is.readLine();
                 if( line==null ) break;
+                line=line.trim();
+                if( "".equals(line) || line.startsWith("#") ) continue;
+
                 // for each mbean, create a proxy
                 if(log.isDebugEnabled())
                     log.debug("Read " + line);
-                StringTokenizer st=new StringTokenizer(line,"|");
-                if( st.countTokens() < 4 ) continue;
-                String key=st.nextToken();
-                if( ! "G".equals( key )) continue;
-                String name=st.nextToken();
-                String att=st.nextToken();
-                String val=st.nextToken("").substring(1);
+
+                if(line.startsWith( "[")) {
+                    name=line.substring(1);
+                    if( name.endsWith("]")) {
+                        name=name.substring(0, name.length()-1);
+                    }
+                }
+                // Name/value pair
+                int idx=line.indexOf('=');
+                if( idx < 0 ) continue;
+                att=line.substring(0, idx );
+                val=line.substring(idx+1);
+
                 if( log.isDebugEnabled())
-                    log.debug("Token: " + key + " name: " + name + " att=" + att +
-                        " val=" + val);
+                    log.debug("name: " + name + " att=" + att +
+                            " val=" + val);
+
                 MBeanProxy proxy=(MBeanProxy)mbeans.get(name);
                 if( proxy==null ) {
                     log.info( "Unknown object " + name);
@@ -271,63 +285,58 @@ public class ModJkMX extends JkHandler
             int newCnt=0;
             BufferedReader is=getStream("lst=*");
             if( is==null ) return;
-            String current=null;
+            String name=null;
+            String type=null;
             ArrayList getters=new ArrayList();
             ArrayList setters=new ArrayList();
-            StringTokenizer st=null;
-            String key=null;
+            ArrayList methods=new ArrayList();
             while(true) {
                 String line=is.readLine();
                 if( log.isDebugEnabled())
                     log.debug("Read " + line);
-                // for each mbean, create a proxy
-                if( line!= null ) {
-                    st=new StringTokenizer(line,"|");
-                    if( st.countTokens() < 3 ) continue;
-                    key=st.nextToken();
-                }
-                if( line==null ||  "N".equals( key )) {
-                    if( current!=null ) {
-                        // switched to a different object or end
+
+                // end of section
+                if( line == null || line.startsWith("[") ) {
+                    if( name != null ) {
                         cnt++;
-                        if( mbeans.get( current ) ==null ) {
+                        if( mbeans.get( name ) ==null ) {
                             // New component
                             newCnt++;
                             MBeanProxy mproxy=new MBeanProxy(this);
-                            mproxy.init( current, getters, setters);
-                            mbeans.put( current, mproxy );
+                            mproxy.init( name, getters, setters, methods);
+                            mbeans.put( name, mproxy );
                         }
+                        if( log.isDebugEnabled())
+                            log.debug("mbean name: " + name + " type=" + type);
 
                         getters.clear();
                         setters.clear();
+                        methods.clear();
                     }
-                    if( line==null ) break;
-                    String type=st.nextToken();
-                    String name=st.nextToken();
-                    current=name;
-                    if( log.isDebugEnabled())
-                        log.debug("Token: " + key + " name: " + name + " type=" + type);
                 }
-                if( "G".equals( key )) {
-                    String name=st.nextToken();
-                    if( ! name.equals( current )) {
-                        log.error("protocol error, name=" + name + " current=" + current);
-                        break;
-                    }
-                    String att=st.nextToken();
-                    getters.add(att);
-                }
-                if( "S".equals( key )) {
-                    String name=st.nextToken();
-                    if( ! name.equals( current )) {
-                        log.error("protocol error, name=" + name + " current=" + current);
-                        break;
-                    }
-                    String att=st.nextToken();
-                    setters.add(att);
-                }
+                // end of data
+                if( line==null ) break;
 
+                line=line.trim();
+                if( "".equals( line ) || line.startsWith("#"))  continue;
 
+                // for each mbean, create a proxy
+
+                if(line.startsWith( "[") && line.endsWith("]")) {
+                    name=line.substring(1, line.length()-1);
+                }
+                if(line.startsWith( "T=")) {
+                    type=line.substring(2);
+                }
+                if( line.startsWith("G=")) {
+                    getters.add(line.substring(2));
+                }
+                if( line.startsWith("S=")) {
+                    setters.add(line.substring(2));
+                }
+                if( line.startsWith("M=")) {
+                    methods.add(line.substring(2));
+                }
             }
             log.info( "Refreshing metadata " + cnt + " " +  newCnt);
         } catch( Exception ex ) {
@@ -356,7 +365,7 @@ public class ModJkMX extends JkHandler
             return oname;
         }
 
-        void init( String name, List getters, List setters )
+        void init( String name, List getters, List setters, List methods )
             throws Exception
         {
             if(log.isDebugEnabled())
@@ -399,6 +408,14 @@ public class ModJkMX extends JkHandler
                 ai.setReadable(false);
                 mbean.addAttribute(ai);
             }
+            for( int i=0; i<methods.size(); i++ ) {
+                String att=(String)methods.get(i);
+                // Register metadata
+                OperationInfo oi=new OperationInfo();
+                oi.setName( att );
+                oi.setReturnType("void");
+                mbean.addOperation(oi);
+            }
 
             this.setModelMBeanInfo(mbean.createMBeanInfo());
 
@@ -433,14 +450,38 @@ public class ModJkMX extends JkHandler
                 BufferedReader is=jkmx.getStream("set=" + jkName + "|" +
                         name + "|" + val);
                 if( is==null ) return;
+                String res=is.readLine();
                 if( log.isDebugEnabled())
-                    log.debug( "Setting " + jkName + " " + name + " result " + is.readLine());
+                    log.debug( "Setting " + jkName + " " + name + " result " + res);
+
                 jkmx.refreshMetadata();
                 jkmx.refreshAttributes();
             } catch( Exception ex ) {
                 throw new MBeanException(ex);
             }
         }
+
+        public Object invoke(String name, Object params[], String signature[])
+            throws MBeanException, ReflectionException {
+            try {
+                // we support only string values
+                BufferedReader is=jkmx.getStream("inv=" + jkName + "|" +
+                        name );
+                if( is==null ) return null;
+                String res=is.readLine();
+                if( log.isDebugEnabled())
+                    log.debug( "Invoking " + jkName + " " + name + " result " + res);
+
+                jkmx.refreshMetadata();
+                jkmx.refreshAttributes();
+            } catch( Exception ex ) {
+                throw new MBeanException(ex);
+            }
+            return null;
+        }
+
     }
+
+
 }
 
