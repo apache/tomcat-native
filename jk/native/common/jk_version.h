@@ -33,8 +33,8 @@
 #define JK_BETASTRING   "0"
 /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
 #define JK_VERISRELEASE 0
-#define JK_VERRC        0
-#define JK_RCSTRING     "0"
+#define JK_VERRC        1
+#define JK_RCSTRING     "1"
 
 /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
 
@@ -60,6 +60,7 @@
 #endif
 
 #if (JK_VERRC != 0)
+#undef JK_EXPOSED_VERSION
 #define JK_EXPOSED_VERSION JK_RELEASE_STR "-rc-" JK_RCSTRING
 #endif
 
