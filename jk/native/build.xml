@@ -16,7 +16,7 @@
   <property name="apache2.home" location="/opt/apache2" />
   <property name="apache13.home" location="/usr" />
 
-  <target name="main" depends="init,apache13,apache20,jni">
+  <target name="main" depends="init,apache20,jni">
   </target>
 
   <target name="init" >
@@ -28,7 +28,7 @@
     <so sofile="jni_connect" buildDir="jni" >
       <jniConfig />
       <src dir="${native.dir}">
-	<include name="jni/jk_jnicb.c" />
+	<include name="jni/*.c" />
 	<include name="common/jk_map.c" />
 	<include name="common/jk_util.c" />
 	<include name="common/jk_pool.c" />
@@ -36,6 +36,7 @@
       <includes>
 	<pathelement location="${native.dir}/common" />
 	<pathelement location="${java.home}/../include" />
+	<pathelement location="${apache2.home}/include" />
       </includes>
       <depends>
 	<fileset dir="${native.dir}/common" includes="*.h" />
@@ -45,6 +46,12 @@
 
   <target name="apache20" >
     <so sofile="mod_jk" buildDir="apache-2.0">
+      <def name="CHUNK_SIZE" value="4096" 
+	   info="Read/Write buffer size" />
+      <def name="REUSE_WORKER" 
+	   unless="option_no_reuse_worker"
+	   info="Reuse the worker endpoint, using per thread data" />
+
       <apacheConfig apxs="${apxs20}" />
       <jniConfig />
       <src dir=".">
