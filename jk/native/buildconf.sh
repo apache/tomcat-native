@@ -6,7 +6,7 @@ echo "aclocal"
 #aclocal --acdir=`aclocal --print-ac-dir`
 #aclocal --acdir=/usr/local/share/aclocal
 aclocal
-echo "automake -a --foreign -i --copy"
-automake -a --foreign -i --copy
+echo "automake -a --foreign --copy"
+automake -a --foreign --copy
 echo "autoconf"
 autoconf
