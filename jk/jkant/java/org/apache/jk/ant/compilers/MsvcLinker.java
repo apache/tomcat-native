@@ -127,6 +127,15 @@ public class MsvcLinker extends SoTask implements LinkerAdapter {
             linkOptPw.print("/dll ");
             linkOptPw.print("/incremental:no ");
 
+            // write out any additional link options
+            Enumeration opts = linkOpts.elements();
+            while( opts.hasMoreElements() ) {
+                JkData opt = (JkData) opts.nextElement();
+                String option = opt.getValue();
+                if( option == null ) continue;
+                linkOptPw.println( option );
+            }
+
             // add debug information in if requested
             if (optG)
             {
@@ -145,14 +154,18 @@ public class MsvcLinker extends SoTask implements LinkerAdapter {
             }
             // Write the library name to the def file
             linkDefPw.println("LIBRARY\t\""+soFile+"\"");
-            // write the exports to link with to the .def file
+
+            // write the exported symbols to the .def file
             Enumeration exps = exports.elements();
-            linkDefPw.println("EXPORTS");
-            while( exps.hasMoreElements() ) {
-                JkData exp = (JkData) exps.nextElement();
-                String name = exp.getValue();
-                if( name==null ) continue;
-                linkDefPw.println("\t" + name);
+            if ( exps.hasMoreElements() )
+            {
+                linkDefPw.println("EXPORTS");
+                while( exps.hasMoreElements() ) {
+                    JkData exp = (JkData) exps.nextElement();
+                    String name = exp.getValue();
+                    if( name==null ) continue;
+                    linkDefPw.println("\t" + name);
+                }
             }
         }
         catch (IOException ioe)
