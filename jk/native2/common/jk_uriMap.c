@@ -209,7 +209,7 @@ static jk_uriEnv_t *jk2_uriMap_prefixMap(jk_env_t *env, jk_uriMap_t *uriMap,
     int sz = mapTable->size(env, mapTable);
     for (i = 0; i < sz; i++) {
         jk_uriEnv_t *uwr = mapTable->valueAt(env, mapTable, i);
-
+        /* XXX: the maps are already sorted by length. Should we skip that ??? */
         if (uriLen < uwr->prefix_len)
             continue;
         if (strncmp(uri, uwr->prefix, uwr->prefix_len) == 0) {
@@ -608,12 +608,15 @@ static int jk2_uriMap_createMappings(jk_env_t *env, jk_uriMap_t *uriMap)
         switch (uriEnv->match_type) {
             case MATCH_TYPE_EXACT:
                 ctxEnv->exactMatch->add(env, ctxEnv->exactMatch, uri, uriEnv);
+                ctxEnv->exactMatch->sort(env, ctxEnv->exactMatch);
                 break;
             case MATCH_TYPE_SUFFIX:
                 ctxEnv->suffixMatch->add(env, ctxEnv->suffixMatch, uri, uriEnv);
+                ctxEnv->suffixMatch->sort(env, ctxEnv->suffixMatch);
                 break;
             case MATCH_TYPE_PREFIX:
                 ctxEnv->prefixMatch->add(env, ctxEnv->prefixMatch, uri, uriEnv);
+                ctxEnv->suffixMatch->sort(env, ctxEnv->prefixMatch);
                 break;
             case MATCH_TYPE_REGEXP:
                 if (uriEnv->regexp)
