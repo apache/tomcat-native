@@ -96,10 +96,6 @@ SOURCE=.\isapi.def
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\jk_channel_socket.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\common\jk_ajp13.c
 # End Source File
 # Begin Source File
@@ -120,11 +116,19 @@ SOURCE=..\common\jk_ajp_common.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_channel_socket.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_connect.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\common\jk_context.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_env.c
 # End Source File
 # Begin Source File
 
@@ -160,19 +164,15 @@ SOURCE=..\common\jk_pool.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_registry.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_uri_worker_map.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\common\jk_util.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_env.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_registry.c
 # End Source File
 # Begin Source File
 
@@ -182,10 +182,6 @@ SOURCE=..\common\jk_worker.c
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
-# Begin Source File
-
-SOURCE=..\common\jk_channel.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\common\jk_ajp13.h
@@ -208,11 +204,19 @@ SOURCE=..\common\jk_ajp_common.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_channel.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_connect.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\common\jk_context.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_env.h
 # End Source File
 # Begin Source File
 
@@ -269,10 +273,6 @@ SOURCE=..\common\jk_version.h
 # Begin Source File
 
 SOURCE=..\common\jk_worker.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\jk_env.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

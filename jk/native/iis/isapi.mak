@@ -41,14 +41,15 @@ ALL : "$(OUTDIR)\isapi_redirect.dll"
 
 
 CLEAN :
-	-@erase "$(INTDIR)\jk_ajp12_worker.obj"
 	-@erase "$(INTDIR)\jk_ajp13.obj"
 	-@erase "$(INTDIR)\jk_ajp13_worker.obj"
 	-@erase "$(INTDIR)\jk_ajp14.obj"
 	-@erase "$(INTDIR)\jk_ajp14_worker.obj"
 	-@erase "$(INTDIR)\jk_ajp_common.obj"
+	-@erase "$(INTDIR)\jk_channel_socket.obj"
 	-@erase "$(INTDIR)\jk_connect.obj"
 	-@erase "$(INTDIR)\jk_context.obj"
+	-@erase "$(INTDIR)\jk_env.obj"
 	-@erase "$(INTDIR)\jk_isapi_plugin.obj"
 	-@erase "$(INTDIR)\jk_jni_worker.obj"
 	-@erase "$(INTDIR)\jk_lb_worker.obj"
@@ -57,7 +58,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jk_msg_buff.obj"
 	-@erase "$(INTDIR)\jk_nwmain.obj"
 	-@erase "$(INTDIR)\jk_pool.obj"
-	-@erase "$(INTDIR)\jk_sockbuf.obj"
+	-@erase "$(INTDIR)\jk_registry.obj"
 	-@erase "$(INTDIR)\jk_uri_worker_map.obj"
 	-@erase "$(INTDIR)\jk_util.obj"
 	-@erase "$(INTDIR)\jk_worker.obj"
@@ -69,7 +70,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /Fp"$(INTDIR)\isapi.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=-nologo -MT -W3 -GX -O2 -I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "ISAPI_EXPORTS" /Fp"$(INTDIR)\isapi.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\isapi.bsc" 
@@ -80,7 +81,7 @@ LINK32_FLAGS=wsock32.lib advapi32.lib /nologo /dll /incremental:no /pdb:"$(OUTDI
 DEF_FILE= \
 	".\isapi.def"
 LINK32_OBJS= \
-	"$(INTDIR)\jk_ajp12_worker.obj" \
+	"$(INTDIR)\jk_channel_socket.obj" \
 	"$(INTDIR)\jk_ajp13.obj" \
 	"$(INTDIR)\jk_ajp13_worker.obj" \
 	"$(INTDIR)\jk_ajp14.obj" \
@@ -96,9 +97,10 @@ LINK32_OBJS= \
 	"$(INTDIR)\jk_msg_buff.obj" \
 	"$(INTDIR)\jk_nwmain.obj" \
 	"$(INTDIR)\jk_pool.obj" \
-	"$(INTDIR)\jk_sockbuf.obj" \
 	"$(INTDIR)\jk_uri_worker_map.obj" \
 	"$(INTDIR)\jk_util.obj" \
+	"$(INTDIR)\jk_env.obj" \
+	"$(INTDIR)\jk_registry.obj" \
 	"$(INTDIR)\jk_worker.obj"
 
 "$(OUTDIR)\isapi_redirect.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -118,8 +120,6 @@ ALL : "$(OUTDIR)\isapi_redirect.dll" "$(OUTDIR)\isapi.bsc"
 
 
 CLEAN :
-	-@erase "$(INTDIR)\jk_ajp12_worker.obj"
-	-@erase "$(INTDIR)\jk_ajp12_worker.sbr"
 	-@erase "$(INTDIR)\jk_ajp13.obj"
 	-@erase "$(INTDIR)\jk_ajp13.sbr"
 	-@erase "$(INTDIR)\jk_ajp13_worker.obj"
@@ -130,10 +130,14 @@ CLEAN :
 	-@erase "$(INTDIR)\jk_ajp14_worker.sbr"
 	-@erase "$(INTDIR)\jk_ajp_common.obj"
 	-@erase "$(INTDIR)\jk_ajp_common.sbr"
+	-@erase "$(INTDIR)\jk_channel_socket.obj"
+	-@erase "$(INTDIR)\jk_channel_socket.sbr"
 	-@erase "$(INTDIR)\jk_connect.obj"
 	-@erase "$(INTDIR)\jk_connect.sbr"
 	-@erase "$(INTDIR)\jk_context.obj"
 	-@erase "$(INTDIR)\jk_context.sbr"
+	-@erase "$(INTDIR)\jk_env.obj"
+	-@erase "$(INTDIR)\jk_env.sbr"
 	-@erase "$(INTDIR)\jk_isapi_plugin.obj"
 	-@erase "$(INTDIR)\jk_isapi_plugin.sbr"
 	-@erase "$(INTDIR)\jk_jni_worker.obj"
@@ -150,8 +154,8 @@ CLEAN :
 	-@erase "$(INTDIR)\jk_nwmain.sbr"
 	-@erase "$(INTDIR)\jk_pool.obj"
 	-@erase "$(INTDIR)\jk_pool.sbr"
-	-@erase "$(INTDIR)\jk_sockbuf.obj"
-	-@erase "$(INTDIR)\jk_sockbuf.sbr"
+	-@erase "$(INTDIR)\jk_registry.obj"
+	-@erase "$(INTDIR)\jk_registry.sbr"
 	-@erase "$(INTDIR)\jk_uri_worker_map.obj"
 	-@erase "$(INTDIR)\jk_uri_worker_map.sbr"
 	-@erase "$(INTDIR)\jk_util.obj"
@@ -175,15 +179,15 @@ MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\isapi.bsc" 
 BSC32_SBRS= \
-	"$(INTDIR)\jk_isapi_plugin.sbr" \
-	"$(INTDIR)\jk_worker.sbr" \
-	"$(INTDIR)\jk_ajp12_worker.sbr" \
+	"$(INTDIR)\jk_channel_socket.sbr" \
 	"$(INTDIR)\jk_ajp13.sbr" \
 	"$(INTDIR)\jk_ajp13_worker.sbr" \
 	"$(INTDIR)\jk_ajp14.sbr" \
 	"$(INTDIR)\jk_ajp14_worker.sbr" \
+	"$(INTDIR)\jk_ajp_common.sbr" \
 	"$(INTDIR)\jk_connect.sbr" \
 	"$(INTDIR)\jk_context.sbr" \
+	"$(INTDIR)\jk_isapi_plugin.sbr" \
 	"$(INTDIR)\jk_jni_worker.sbr" \
 	"$(INTDIR)\jk_lb_worker.sbr" \
 	"$(INTDIR)\jk_map.sbr" \
@@ -191,10 +195,11 @@ BSC32_SBRS= \
 	"$(INTDIR)\jk_msg_buff.sbr" \
 	"$(INTDIR)\jk_nwmain.sbr" \
 	"$(INTDIR)\jk_pool.sbr" \
-	"$(INTDIR)\jk_sockbuf.sbr" \
 	"$(INTDIR)\jk_uri_worker_map.sbr" \
 	"$(INTDIR)\jk_util.sbr" \
-	"$(INTDIR)\jk_ajp_common.sbr"
+	"$(INTDIR)\jk_env.sbr" \
+	"$(INTDIR)\jk_registry.sbr" \
+	"$(INTDIR)\jk_worker.sbr"
 
 "$(OUTDIR)\isapi.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
@@ -206,7 +211,7 @@ LINK32_FLAGS=wsock32.lib advapi32.lib /nologo /dll /incremental:yes /pdb:"$(OUTD
 DEF_FILE= \
 	".\isapi.def"
 LINK32_OBJS= \
-	"$(INTDIR)\jk_ajp12_worker.obj" \
+	"$(INTDIR)\jk_channel_socket.obj" \
 	"$(INTDIR)\jk_ajp13.obj" \
 	"$(INTDIR)\jk_ajp13_worker.obj" \
 	"$(INTDIR)\jk_ajp14.obj" \
@@ -222,9 +227,10 @@ LINK32_OBJS= \
 	"$(INTDIR)\jk_msg_buff.obj" \
 	"$(INTDIR)\jk_nwmain.obj" \
 	"$(INTDIR)\jk_pool.obj" \
-	"$(INTDIR)\jk_sockbuf.obj" \
 	"$(INTDIR)\jk_uri_worker_map.obj" \
 	"$(INTDIR)\jk_util.obj" \
+	"$(INTDIR)\jk_env.obj" \
+	"$(INTDIR)\jk_registry.obj" \
 	"$(INTDIR)\jk_worker.obj"
 
 "$(OUTDIR)\isapi_redirect.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -275,24 +281,6 @@ LINK32_OBJS= \
 
 
 !IF "$(CFG)" == "isapi - Win32 Release" || "$(CFG)" == "isapi - Win32 Debug"
-SOURCE=..\common\jk_ajp12_worker.c
-
-!IF  "$(CFG)" == "isapi - Win32 Release"
-
-
-"$(INTDIR)\jk_ajp12_worker.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ELSEIF  "$(CFG)" == "isapi - Win32 Debug"
-
-
-"$(INTDIR)\jk_ajp12_worker.obj"	"$(INTDIR)\jk_ajp12_worker.sbr" : $(SOURCE) "$(INTDIR)"
-	$(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
-
 SOURCE=..\common\jk_ajp13.c
 
 !IF  "$(CFG)" == "isapi - Win32 Release"
@@ -383,6 +371,24 @@ SOURCE=..\common\jk_ajp_common.c
 
 !ENDIF 
 
+SOURCE=..\common\jk_channel_socket.c
+
+!IF  "$(CFG)" == "isapi - Win32 Release"
+
+
+"$(INTDIR)\jk_channel_socket.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "isapi - Win32 Debug"
+
+
+"$(INTDIR)\jk_channel_socket.obj"	"$(INTDIR)\jk_channel_socket.sbr" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ENDIF 
+
 SOURCE=..\common\jk_connect.c
 
 !IF  "$(CFG)" == "isapi - Win32 Release"
@@ -414,6 +420,24 @@ SOURCE=..\common\jk_context.c
 
 
 "$(INTDIR)\jk_context.obj"	"$(INTDIR)\jk_context.sbr" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ENDIF 
+
+SOURCE=..\common\jk_env.c
+
+!IF  "$(CFG)" == "isapi - Win32 Release"
+
+
+"$(INTDIR)\jk_env.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "isapi - Win32 Debug"
+
+
+"$(INTDIR)\jk_env.obj"	"$(INTDIR)\jk_env.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -561,19 +585,19 @@ SOURCE=..\common\jk_pool.c
 
 !ENDIF 
 
-SOURCE=..\common\jk_sockbuf.c
+SOURCE=..\common\jk_registry.c
 
 !IF  "$(CFG)" == "isapi - Win32 Release"
 
 
-"$(INTDIR)\jk_sockbuf.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_registry.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "isapi - Win32 Debug"
 
 
-"$(INTDIR)\jk_sockbuf.obj"	"$(INTDIR)\jk_sockbuf.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\jk_registry.obj"	"$(INTDIR)\jk_registry.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
