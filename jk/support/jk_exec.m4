@@ -56,115 +56,75 @@ dnl
 dnl  =========================================================================
 
 dnl --------------------------------------------------------------------------
-dnl Author Henri Gomez <hgomez@apache.org>
 dnl
 dnl Inspired by Pier works on webapp m4 macros :)
-dnl 
+dnl
 dnl Version $Id$
 dnl --------------------------------------------------------------------------
 
 dnl --------------------------------------------------------------------------
-dnl JK_APXS
+dnl JK_EXEC
+dnl   Execute a program filtering its output (pretty printing).
 dnl
-dnl Get APXS to be used, determine if Apache 1.3 or 2.0 are target
-dnl $1 => blank/2 if you want to detect Apache 1.3 & 2.0 
-dnl $2 => comment for --with-apxs
+dnl   Parameters:
+dnl     $1 => name of the variable containing the return value (error code).
+dnl     $2 => name of the binary/script to invoke
+dnl     $3 => message used for pretty printing output
+dnl     $4 => the directory where the command must be executed
 dnl --------------------------------------------------------------------------
 AC_DEFUN(
-  [JK_APXS],
+  [JK_EXEC],
   [
-    tempval=""
-    AC_ARG_WITH(apxs$1,
-    [  --with-apxs$1[=FILE]      $2],
-    [
-      case "${withval}" in 
-        y | yes | true) find_apxs=true ;;
-        n | no | false) find_apxs=false ;;
-        *) find_apxs=false ;;
-      esac
+    jk_exec_curdir="`pwd`"
+    if test -d "$4" ; then
+      cd "$4"
+    else
+      AC_MSG_ERROR([can't switch to directory $4])
+    fi
 
-      if ${TEST} ${find_apxs} ; then    
-        AC_MSG_RESULT([need to check for Perl first, apxs depends on it...])
-        AC_PATH_PROG(PERL,perl,$PATH)dnl
-    
-        if ${TEST} ${find_apxs} ; then
-            APXS$1=${withval}
+    echo "  invoking \"$2\""
+    echo "  in directory \"$4\""
+    echo "-1" > retvalue.tmp
+
+    set $2
+    jk_exec_file=[$]1
+    if test ! -x "${jk_exec_file}" ; then
+      cd "${jk_exec_curdir}"
+      AC_MSG_ERROR([cannot find or execute \"${jk_exec_file}\" in \"$4\"])
+      exit 1
+    fi
+    unset jk_exec_file
+
+    {
+      $2
+      echo "jk_exec_retvalue $?"
+    } | {
+      jk_exec_ret=0
+      while true ; do
+        read jk_exec_first jk_exec_line
+        if test ! "$?" -eq "0" ; then
+          break
         else
-            AC_PATH_PROG(APXS$1,apxs$1,$PATH)dnl
+          if test "${jk_exec_first}" = "jk_exec_retvalue" ; then
+            jk_exec_ret="${jk_exec_line}"
+          else
+            if test -n "${jk_exec_line}" ; then
+             echo "    $3: ${jk_exec_first} ${jk_exec_line}"
+            fi
+          fi
         fi
-    
-		use_apxs$1=true;
-		
-        if ${TEST} -n "${APXS$1}" ; then
-            dnl Seems that we have it, but have to check if it is OK first        
-            if ${TEST} ! -x "${APXS$1}" ; then
-                AC_MSG_ERROR(Invalid location for apxs: '${APXS$1}')
-            fi
-            
-            ${APXS$1} -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
-    
-            if ${TEST} "${apxs_support}" = "false" ; then
-                AC_MSG_RESULT(could not find ${APXS$1})
-                AC_MSG_ERROR(You must specify a valid --with-apxs$1 path)
-            fi
+      done
+      echo "${jk_exec_ret}" > retvalue.tmp
+      unset jk_exec_first
+      unset jk_exec_line
+      unset jk_exec_ret
+    }
 
-            dnl apache_dir and apache_include are also needed.
-            APACHE$1_HOME=`${APXS$1} -q PREFIX`
-            APACHE$1_INCL="-I`${APXS$1} -q INCLUDEDIR`"
-            APACHE$1_INCDIR="`${APXS$1} -q INCLUDEDIR`"
-            APACHE$1_LIBEXEC="`${APXS$1} -q LIBEXECDIR`"
-            APACHE$1_CC="`${APXS$1} -q CC`"
+    $1="`cat retvalue.tmp`"
+    rm -f retvalue.tmp
+    echo "  execution of \"$2\""
+    echo "  returned with value \"${$1}\""
 
-            dnl test apache version
-            APA=`${GREP} STANDARD20 ${APXS$1}`
-
-            dnl check if we have an apxs for Apache 1.3 or 2.0
-            if ${TEST} -z "$APA" ; then
-	      if ${TEST} ! -z "$1" ; then
-                AC_MSG_ERROR(Do not use --with-apxs$1 but --with-apxs)
-	      fi
-              WEBSERVERS="${WEBSERVERS} server/apache13"
-              RWEBSERVER="apache-1.3"
-              APXS$1_CFLAGS="`${APXS$1} -q CFLAGS`"
-              APXS$1_CPPFLAGS=""
-            else
-	      if ${TEST} -z "$1" ; then
-                AC_MSG_ERROR(Do not use --with-apxs but --with-apxs2)
-	      fi
-              WEBSERVERS="${WEBSERVERS} server/apache2"
-              RWEBSERVER="apache-2.0"
-              APACHE2_CONFIG_VARS=${apache_dir}/build/config_vars.mk
-              JK_CHANNEL_APR_SOCKET="\${JK}jk_channel_apr_socket\${OEXT}"
-              JK_POOL_APR="\${JK}jk_pool_apr\${OEXT}"
-              HAS_APR="-DHAS_APR"
-              APXS$1_CFLAGS="`${APXS$1} -q CFLAGS` `${APXS$1} -q EXTRA_CFLAGS`"
-              APXS$1_CPPFLAGS="`${APXS$1} -q EXTRA_CPPFLAGS`"
-            fi
-            
-            AC_MSG_RESULT([building connector for \"$RWEBSERVER\"])
-        fi
-
-      fi
-  ],
-  [
-	  AC_MSG_RESULT(no apxs$1 given)
+    cd "${jk_exec_curdir}"
+    unset jk_exec_curdir
   ])
-
-  unset tempval
-
-  AC_SUBST(APXS$1)
-  AC_SUBST(APXS$1_CFLAGS)
-  AC_SUBST(APACHE$1_CONFIG_VARS)
-  AC_SUBST(APXS$1_CPPFLAGS)
-  AC_SUBST(APACHE$1_DIR)
-  AC_SUBST(APACHE$1_HOME)
-  AC_SUBST(APACHE$1_INCDIR)
-  AC_SUBST(APACHE$1_INCL)
-  AC_SUBST(APACHE$1_LIBEXEC)
-  AC_SUBST(APACHE$1_CC)
-  AC_SUBST(APXS$1_LDFLAGS)
-
-])
-
-dnl vi:set sts=2 sw=2 autoindent:
-
