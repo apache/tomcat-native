@@ -1,0 +1,7 @@
+This is a source release of the mod_jk 1.2 web server connector for
+Tomcat. Only the web server connector source is included.  The Tomcat
+side of the connector is available with the normal Tomcat distribution.
+
+Documentation for how to build mod_jk 1.2 from source and configure
+it for your webserver is located in the jk/docs directory in this
+source distribution.
