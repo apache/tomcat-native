@@ -490,20 +490,6 @@ then
   fi
   LOCAL_RESOLVEDIR(APR_SRCDIR,[${APR_SRCDIR}],[full APR directory path])
   
-  dnl ------------------------------
-  dnl Build the APR configure script
-  dnl ------------------------------
-dnl  LOCAL_HEADER([Building APR configure script])
-dnl  LOCAL_FILTEREXEC(local_return,
-dnl    [./buildconf],
-dnl    [APR buildconf],
-dnl    [${APR_SRCDIR}])
-
-dnl  if ${TEST} "${local_return}" -ne "0"
-dnl  then
-dnl    AC_MSG_ERROR([APR buildconf terminated with error code ${local_return}])
-dnl  fi
-  
   dnl ----------------------------
   dnl Run the APR configure script
   dnl ----------------------------
