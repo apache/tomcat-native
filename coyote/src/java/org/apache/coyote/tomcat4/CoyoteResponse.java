@@ -78,6 +78,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -120,6 +121,16 @@ public class CoyoteResponse
     implements HttpResponse, HttpServletResponse {
 
 
+    // ----------------------------------------------------------- Constructors
+
+
+    public CoyoteResponse() {
+
+        format.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+    }
+
+
     // ----------------------------------------------------- Instance Variables
 
 
@@ -127,7 +138,7 @@ public class CoyoteResponse
      * The date format we will use for creating date headers.
      */
     protected final SimpleDateFormat format =
-        new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz",Locale.US);
+        new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
 
 
     /**
