@@ -67,11 +67,7 @@ import org.apache.jk.*;
 import org.apache.jk.core.*;
 import org.apache.jk.common.*;
 import org.apache.jk.util.*;
-import org.apache.tomcat.modules.server.PoolTcpConnector;
 
-import org.apache.tomcat.core.*;
-
-import org.apache.tomcat.util.net.*;
 import org.apache.tomcat.util.buf.*;
 import org.apache.tomcat.util.log.*;
 import org.apache.tomcat.util.http.*;
@@ -106,6 +102,10 @@ public class JkCoyoteHandler implements ProtocolHandler
 
     }
     
+    public Object getAttribute( String name ) {
+        return null;
+    }
+
     /** The adapter, used to call the connector 
      */
     public void setAdapter(Adapter adapter) {
