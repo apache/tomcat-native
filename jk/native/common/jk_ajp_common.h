@@ -302,7 +302,7 @@ struct ajp_worker {
  
 
 /*
- * endpoint, the remote which will does the work
+ * endpoint, the remote connector which does the work
  */
 struct ajp_endpoint {
     ajp_worker_t *worker;

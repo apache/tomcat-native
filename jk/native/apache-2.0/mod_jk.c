@@ -103,14 +103,16 @@
 #define __arpa_inet_h__
 #define __sys_timeval_h__
 #endif
+
+#include "jk_ajp13.h"
 #include "jk_global.h"
-#include "jk_util.h"
+#include "jk_logger.h"
 #include "jk_map.h"
 #include "jk_pool.h"
 #include "jk_service.h"
-#include "jk_worker.h"
 #include "jk_uri_worker_map.h"
-#include "jk_logger.h"
+#include "jk_util.h"
+#include "jk_worker.h"
 
 #define JK_WORKER_ID        ("jakarta.worker")
 #define JK_HANDLER          ("jakarta-servlet")
@@ -233,59 +235,57 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        const char * const *header_values,
                                        unsigned num_of_headers)
 {
-    if(s && s->ws_private) {
-        unsigned h;
-        apache_private_data_t *p = s->ws_private;
-        request_rec *r = p->r;
-        
-        if(!reason) {
-            reason = "";
-        }
-        r->status = status;
-        r->status_line = apr_psprintf(r->pool, "%d %s", status, reason);
-
-        for(h = 0 ; h < num_of_headers ; h++) {
-            if(!strcasecmp(header_names[h], "Content-type")) {
-                char *tmp = apr_pstrdup(r->pool, header_values[h]);
-                ap_content_type_tolower(tmp);
-                /* It should be done like this in Apache 2.0 */
-                /* This way, Apache 2.0 will be able to set the output filter */
-                /* and it make jk useable with deflate using AddOutputFilterByType DEFLATE text/html */
-                ap_set_content_type(r, tmp);
-            } else if(!strcasecmp(header_names[h], "Location")) {
-#ifdef AS400 
-                /* Fix escapes in Location Header URL*/
-                ap_fixup_escapes((char *)header_values[h], 
-                strlen(header_values[h]), ap_hdrs_from_ascii);
-#endif 
-                apr_table_set(r->headers_out, 
-                              header_names[h], header_values[h]);
-            } else if(!strcasecmp(header_names[h], "Content-Length")) {
-                apr_table_set(r->headers_out, 
-                              header_names[h], header_values[h]);
-            } else if(!strcasecmp(header_names[h], "Transfer-Encoding")) {
-                apr_table_set(r->headers_out, 
-                              header_names[h], header_values[h]);
-            } else if(!strcasecmp(header_names[h], "Last-Modified")) {
-                /*
-                 * If the script gave us a Last-Modified header, we can't just
-                 * pass it on blindly because of restrictions on future values.
-                 */
-                ap_update_mtime(r, ap_parseHTTPdate(header_values[h]));
-                ap_set_last_modified(r);
-            } else {                
-                apr_table_add(r->headers_out, 
-                              header_names[h], header_values[h]);
-            }
-        }
-
-        /* this NOP function was removed in apache 2.0 alpha14 */
-        /* ap_send_http_header(r); */
-        p->response_started = JK_TRUE;
-        
-        return JK_TRUE;
+    unsigned h;
+    apache_private_data_t *p = s->ws_private;
+    request_rec *r = p->r;
+    
+    if(!reason) {
+        reason = "";
     }
-    return JK_FALSE;
+    r->status = status;
+    r->status_line = apr_psprintf(r->pool, "%d %s", status, reason);
+
+    for(h = 0 ; h < num_of_headers ; h++) {
+        if(!strcasecmp(header_names[h], "Content-type")) {
+            char *tmp = apr_pstrdup(r->pool, header_values[h]);
+            ap_content_type_tolower(tmp);
+            /* It should be done like this in Apache 2.0 */
+            /* This way, Apache 2.0 will be able to set the output filter */
+            /* and it make jk useable with deflate using
+            /* AddOutputFilterByType DEFLATE text/html */
+            ap_set_content_type(r, tmp);
+        } else if(!strcasecmp(header_names[h], "Location")) {
+#ifdef AS400 
+            /* Fix escapes in Location Header URL*/
+            ap_fixup_escapes((char *)header_values[h], 
+            strlen(header_values[h]), ap_hdrs_from_ascii);
+#endif 
+            apr_table_set(r->headers_out, 
+                          header_names[h], header_values[h]);
+        } else if(!strcasecmp(header_names[h], "Content-Length")) {
+            apr_table_set(r->headers_out, 
+                          header_names[h], header_values[h]);
+        } else if(!strcasecmp(header_names[h], "Transfer-Encoding")) {
+            apr_table_set(r->headers_out, 
+                          header_names[h], header_values[h]);
+        } else if(!strcasecmp(header_names[h], "Last-Modified")) {
+            /*
+             * If the script gave us a Last-Modified header, we can't just
+             * pass it on blindly because of restrictions on future values.
+             */
+            ap_update_mtime(r, ap_parseHTTPdate(header_values[h]));
+            ap_set_last_modified(r);
+        } else {                
+            apr_table_add(r->headers_out, 
+                          header_names[h], header_values[h]);
+        }
+    }
+
+    /* this NOP function was removed in apache 2.0 alpha14 */
+    /* ap_send_http_header(r); */
+    p->response_started = JK_TRUE;
+    
+    return JK_TRUE;
 }
 
 /*
@@ -454,7 +454,7 @@ static int get_content_length(request_rec *r)
 {
     if(r->clength > 0) {
         return r->clength;
-    } else {
+    } else if(r->main == NULL || r->main == r) {
         char *lenp = (char *)apr_table_get(r->headers_in, "Content-Length");
 
         if(lenp) {
@@ -494,15 +494,15 @@ static int init_ws_service(apache_private_data_t *private_data,
     s->remote_host  = NULL_FOR_EMPTY(s->remote_host);
     s->remote_addr  = NULL_FOR_EMPTY(r->connection->remote_ip);
 
-    jk_log(main_log, JK_LOG_DEBUG, 
-                 "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d \n",
-                ap_get_server_port( r ),
-                ap_get_server_name( r ),
-                r->hostname,
-                r->server->server_hostname,
-                r->connection->base_server->port,
-                r->server->port
-                );
+    jk_log(conf->log, JK_LOG_DEBUG, 
+           "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d \n",
+           ap_get_server_port( r ),
+           ap_get_server_name( r ),
+           r->hostname,
+           r->server->server_hostname,
+           r->connection->base_server->port,
+           r->server->port
+           );
 
     /* get server name */
     /* s->server_name= (char *)(r->hostname ? r->hostname : r->server->server_hostname); */
@@ -977,7 +977,7 @@ static int request_log_transaction(request_rec *r,
     }
     *s = 0;
     
-    jk_log(main_log, JK_LOG_REQUEST, str);
+    jk_log(conf->log, JK_LOG_REQUEST, str);
 }
 
 /*****************************************************************
@@ -1660,6 +1660,11 @@ static int jk_handler(request_rec *r)
     jk_server_conf_t *conf;
     int              rc,dmt=1;
 
+    /* If the remote client has aborted, just return */
+    if (r->connection->aborted) {
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
     /* We do DIR_MAGIC_TYPE here to make sure TC gets all requests, even
      * if they are directory requests, in case there are no static files
      * visible to Apache and/or DirectoryIndex was not used. This is only
@@ -1694,24 +1699,22 @@ static int jk_handler(request_rec *r)
               I'm not sure how ). We also have a manual config directive that
               explicitely give control to us. */
           worker_name=  worker_env.first_worker;
-          jk_log(main_log, JK_LOG_DEBUG, 
+          jk_log(xconf->log, JK_LOG_DEBUG, 
                  "Manual configuration for %s %s %d\n",
                  r->uri, worker_env.first_worker, worker_env.num_of_workers); 
       } else {
-          worker_name = map_uri_to_worker(xconf->uw_map, r->uri, main_log);
+          worker_name = map_uri_to_worker(xconf->uw_map, r->uri, xconf->log);
           if( worker_name == NULL ) 
               worker_name=  worker_env.first_worker;
-          jk_log(main_log, JK_LOG_DEBUG, 
+          jk_log(xconf->log, JK_LOG_DEBUG, 
                  "Manual configuration for %s %d\n",
                  r->uri, worker_env.first_worker); 
       }
     }
 
-    if (1) {
-        jk_log(main_log, JK_LOG_DEBUG, "Into handler r->proxyreq=%d "
-               "r->handler=%s r->notes=%d worker=%s\n", 
-               r->proxyreq, r->handler, r->notes, worker_name); 
-    }
+    jk_log(xconf->log, JK_LOG_DEBUG, "Into handler r->proxyreq=%d "
+           "r->handler=%s r->notes=%d worker=%s\n", 
+           r->proxyreq, r->handler, r->notes, worker_name); 
 
     conf=(jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
                                                   &jk_module);
@@ -1723,7 +1726,7 @@ static int jk_handler(request_rec *r)
 
     if(conf && ! worker_name ) {
         /* Direct mapping ( via setHandler ). Try overrides */
-        worker_name = map_uri_to_worker(conf->uw_map, r->uri, main_log);
+        worker_name = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
         if( ! worker_name ) {
             /* Since we are here, an explicit (native) mapping has been used */
             /* Use default worker */
@@ -1735,7 +1738,7 @@ static int jk_handler(request_rec *r)
     }
       
     if(worker_name) {
-        jk_worker_t *worker = wc_get_worker_for_name(worker_name, main_log);
+        jk_worker_t *worker = wc_get_worker_for_name(worker_name, xconf->log);
 
         if(worker) {
         	struct timeval tv_begin,tv_end;
@@ -1775,18 +1778,18 @@ static int jk_handler(request_rec *r)
         
         apr_pool_userdata_get( (void **)&end, "jk_thread_endpoint", tpool );
         if(end==NULL ) {
-            worker->get_endpoint(worker, &end, main_log);
+            worker->get_endpoint(worker, &end, xconf->log);
             apr_pool_userdata_set( end , "jk_thread_endpoint", 
                                    &jk_cleanup_endpoint,  tpool );
         }
 #else */
         /* worker->get_endpoint might fail if we are out of memory so check */
         /* and handle it */
-        if (worker->get_endpoint(worker, &end, main_log))
+        if (worker->get_endpoint(worker, &end, xconf->log))
 /* #endif */
         {   
             int is_recoverable_error = JK_FALSE;
-                rc = end->service(end, &s, main_log, &is_recoverable_error);
+            rc = end->service(end, &s, xconf->log, &is_recoverable_error);
 
             if (s.content_read < s.content_length ||
                 (s.is_chunked && ! s.no_more_chunks)) {
@@ -1796,8 +1799,8 @@ static int jk_handler(request_rec *r)
                 * request data, consume and discard all further
                 * characters left to read from client
                 */
-                    char *buff = apr_palloc(r->pool, 2048);
-                    if (buff != NULL) {
+                char *buff = apr_palloc(r->pool, 2048);
+                if (buff != NULL) {
                     int rd;
                     while ((rd = ap_get_client_block(r, buff, 2048)) > 0) {
                         s.content_read += rd;
@@ -1806,7 +1809,7 @@ static int jk_handler(request_rec *r)
             }
                                                                             
 /* #ifndef REUSE_WORKER */
-            end->done(&end, main_log); 
+            end->done(&end, xconf->log); 
 /* #endif */
                 }
                 else /* this means we couldn't get an endpoint */
@@ -1833,18 +1836,22 @@ static int jk_handler(request_rec *r)
 
             jk_close_pool(&private_data.p);
 
-            if(rc) {
+            if (rc > 0) {
                 /* If tomcat returned no body and the status is not OK,
                    let apache handle the error code */
                 if( !r->sent_bodyct && r->status >= HTTP_BAD_REQUEST ) {
                     return r->status;
                 }
                 return OK;    /* NOT r->status, even if it has changed. */
-            } else
+            } else if (rc == JK_CLIENT_ERROR) {
+                r->connection->aborted = 1;
                 return HTTP_INTERNAL_SERVER_ERROR;
+            } else {
+                return HTTP_INTERNAL_SERVER_ERROR;
+            }
+        } else {
+            return HTTP_INTERNAL_SERVER_ERROR;
         }
-	else
-		return HTTP_INTERNAL_SERVER_ERROR;
 
     }
 
@@ -1856,13 +1863,12 @@ static int jk_handler(request_rec *r)
 static apr_status_t jk_apr_pool_cleanup(void *data)
 {
     server_rec *s = data;
-    
-    while (NULL != s)
-    {
+
+    while (NULL != s) {
         jk_server_conf_t *conf =
-            (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
-    
-    
+            (jk_server_conf_t *)ap_get_module_config(s->module_config,
+                                                     &jk_module);
+
         if (conf)
         {
             wc_close(conf->log);
@@ -1878,7 +1884,7 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
         }
         s = s->next;
     }
-	return APR_SUCCESS;
+    return APR_SUCCESS;
 }
 
 /** Create default jk_config. XXX This is mostly server-independent,
@@ -2042,7 +2048,8 @@ static int jk_log_to_file(jk_logger_t *l,
                 if (status != APR_SUCCESS) {
                     apr_strerror(status, error, 254);
                     ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_NOERRNO, 0,
-                             NULL, "mod_jk: jk_log_to_file failed: %s\n",error);
+                             NULL, "mod_jk: jk_log_to_file %s failed: %s\n",
+                             what, error);
                 }
                 rv = apr_global_mutex_unlock(jk_log_lock);
                 if (rv != APR_SUCCESS) {           
@@ -2083,7 +2090,6 @@ static void open_jklog(server_rec *s, apr_pool_t *p)
     if (main_log != NULL) {
         conf->log = main_log;
     }
-
     if (conf->log_file == NULL) {
         return;
     }
@@ -2130,12 +2136,6 @@ static void open_jklog(server_rec *s, apr_pool_t *p)
             main_log = conf->log;
         return;
     }
-    if(jkl) {
-        free(jkl);
-    }
-    if(flp) {
-        free(flp);
-    }
 
     exit(1);
 }
@@ -2176,7 +2176,7 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
             return;
         }
     }
-    
+
     /* we add the URI->WORKER MAP since workers using AJP14
        will feed it */
     worker_env.uri_to_worker = conf->uw_map;
@@ -2185,7 +2185,7 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
     if(wc_open(init_map, &worker_env, conf->log)) {
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);
         return;
-    }            
+    }
     return;
 }
 
@@ -2221,15 +2221,15 @@ static int jk_post_config(apr_pool_t *pconf,
                      "mod_jk: Could not set permissions on "
                      "jk_log_lock; check User and Group directives");
         return HTTP_INTERNAL_SERVER_ERROR;
-    }      
-#endif     
-     
+    }
+#endif
+
     /* step through the servers and
      * - open each jk logfile
      */    
     for (; s; s = s->next) {
         open_jklog(s, pconf);
-    }      
+    }
     return OK;
 }
 
@@ -2254,7 +2254,7 @@ static int jk_translate(request_rec *r)
                        "Manually mapped, no need to call uri_to_worker\n");
                 return DECLINED;
             }
-            worker = map_uri_to_worker(conf->uw_map, r->uri, main_log);
+            worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
 
             if(worker) {
                 r->handler=apr_pstrdup(r->pool,JK_HANDLER);

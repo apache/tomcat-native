@@ -118,23 +118,23 @@ static int sc_for_req_method(const char    *method,
     } else if(0 == strcmp(method, "TRACE")) {
         *sc = SC_M_TRACE;
     } else if(0 == strcmp(method, "PROPFIND")) {
-    *sc = SC_M_PROPFIND;
+        *sc = SC_M_PROPFIND;
     } else if(0 == strcmp(method, "PROPPATCH")) {
-    *sc = SC_M_PROPPATCH;
+        *sc = SC_M_PROPPATCH;
     } else if(0 == strcmp(method, "MKCOL")) {
-    *sc = SC_M_MKCOL;
+        *sc = SC_M_MKCOL;
     } else if(0 == strcmp(method, "COPY")) {
-    *sc = SC_M_COPY;
+        *sc = SC_M_COPY;
     } else if(0 == strcmp(method, "MOVE")) {
-    *sc = SC_M_MOVE;
+        *sc = SC_M_MOVE;
     } else if(0 == strcmp(method, "LOCK")) {
-    *sc = SC_M_LOCK;
+        *sc = SC_M_LOCK;
     } else if(0 == strcmp(method, "UNLOCK")) {
-    *sc = SC_M_UNLOCK;
+        *sc = SC_M_UNLOCK;
     } else if(0 == strcmp(method, "ACL")) {
-    *sc = SC_M_ACL;
+        *sc = SC_M_ACL;
     } else if(0 == strcmp(method, "REPORT")) {
-    *sc = SC_M_REPORT;
+        *sc = SC_M_REPORT;
     } else if(0 == strcmp(method, "VERSION-CONTROL")) {
         *sc = SC_M_VERSION_CONTROL;
     } else if(0 == strcmp(method, "CHECKIN")) {
@@ -295,7 +295,9 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
     jk_log(l, JK_LOG_DEBUG, "Into ajp_marshal_into_msgb\n");
 
     if (!sc_for_req_method(s->method, &method)) { 
-        jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - No such method %s\n", s->method);
+        jk_log(l, JK_LOG_ERROR,
+               "Error ajp_marshal_into_msgb - No such method %s\n",
+               s->method);
         return JK_FALSE;
     }
 
@@ -310,7 +312,9 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
         jk_b_append_byte(msg, (unsigned char)(s->is_ssl)) ||
         jk_b_append_int(msg, (unsigned short)(s->num_headers))) {
 
-        jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the message begining\n");
+        jk_log(l, JK_LOG_ERROR,
+               "Error ajp_marshal_into_msgb - "
+               "Error appending the message begining\n");
         return JK_FALSE;
     }
 
@@ -319,18 +323,24 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
 
         if (sc_for_req_header(s->headers_names[i], &sc)) {
             if (jk_b_append_int(msg, sc)) {
-                jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the header name\n");
+                jk_log(l, JK_LOG_ERROR,
+                       "Error ajp_marshal_into_msgb - "
+                       "Error appending the header name\n");
                 return JK_FALSE;
             }
         } else {
             if (jk_b_append_string(msg, s->headers_names[i])) {
-                jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the header name\n");
+                jk_log(l, JK_LOG_ERROR,
+                       "Error ajp_marshal_into_msgb - "
+                       "Error appending the header name\n");
                 return JK_FALSE;
             }
         }
         
         if (jk_b_append_string(msg, s->headers_values[i])) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the header value\n");
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_marshal_into_msgb - "
+                   "Error appending the header value\n");
             return JK_FALSE;
         }
     }
@@ -339,7 +349,8 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
         if (jk_b_append_byte(msg, SC_A_SECRET) ||
             jk_b_append_string(msg, s->secret)) {
             jk_log(l, JK_LOG_ERROR,
-                   "Error ajp_marshal_into_msgb - Error appending secret\n");
+                   "Error ajp_marshal_into_msgb - "
+                   "Error appending secret\n");
             return JK_FALSE;
         }
     }
@@ -347,14 +358,18 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
     if (s->remote_user) {
         if (jk_b_append_byte(msg, SC_A_REMOTE_USER) ||
             jk_b_append_string(msg, s->remote_user)) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the remote user\n");
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_marshal_into_msgb - "
+                   "Error appending the remote user\n");
             return JK_FALSE;
         }
     }
     if (s->auth_type) {
         if (jk_b_append_byte(msg, SC_A_AUTH_TYPE) ||
             jk_b_append_string(msg, s->auth_type)) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the auth type\n");
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_marshal_into_msgb - "
+                   "Error appending the auth type\n");
             return JK_FALSE;
         }
     }
@@ -365,21 +380,27 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
 #else
             jk_b_append_string(msg, s->query_string)) {
 #endif
-            jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the query string\n");
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_marshal_into_msgb - "
+                   "Error appending the query string\n");
             return JK_FALSE;
         }
     }
     if (s->jvm_route) {
         if (jk_b_append_byte(msg, SC_A_JVM_ROUTE) ||
             jk_b_append_string(msg, s->jvm_route)) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the jvm route\n");
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_marshal_into_msgb - "
+                   "Error appending the jvm route\n");
             return JK_FALSE;
         }
     }
     if (s->ssl_cert_len) {
         if (jk_b_append_byte(msg, SC_A_SSL_CERT) ||
             jk_b_append_string(msg, s->ssl_cert)) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the SSL certificates\n");
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_marshal_into_msgb - "
+                   "Error appending the SSL certificates\n");
             return JK_FALSE;
         }
     }
@@ -387,14 +408,18 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
     if (s->ssl_cipher) {
         if (jk_b_append_byte(msg, SC_A_SSL_CIPHER) ||
             jk_b_append_string(msg, s->ssl_cipher)) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the SSL ciphers\n");
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_marshal_into_msgb - "
+                   "Error appending the SSL ciphers\n");
             return JK_FALSE;
         }
     }
     if (s->ssl_session) {
         if (jk_b_append_byte(msg, SC_A_SSL_SESSION) ||
             jk_b_append_string(msg, s->ssl_session)) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the SSL session\n");
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_marshal_into_msgb - "
+                   "Error appending the SSL session\n");
             return JK_FALSE;
         }
     }
@@ -407,7 +432,9 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
     if (s->ssl_key_size != -1) {
         if (jk_b_append_byte(msg, SC_A_SSL_KEY_SIZE) ||
             jk_b_append_int(msg, (unsigned short) s->ssl_key_size)) {
-            jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the SSL key size\n");
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_marshal_into_msgb - "
+                   "Error appending the SSL key size\n");
             return JK_FALSE;
         }
     }
@@ -417,7 +444,9 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
             if (jk_b_append_byte(msg, SC_A_REQ_ATTRIBUTE)       ||
                 jk_b_append_string(msg, s->attributes_names[i]) ||
                 jk_b_append_string(msg, s->attributes_values[i])) {
-                jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending attribute %s=%s\n",
+                jk_log(l, JK_LOG_ERROR,
+                      "Error ajp_marshal_into_msgb - "
+                      "Error appending attribute %s=%s\n",
                       s->attributes_names[i], s->attributes_values[i]);
                 return JK_FALSE;
             }
@@ -425,7 +454,9 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t    *msg,
     }
 
     if (jk_b_append_byte(msg, SC_A_ARE_DONE)) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp_marshal_into_msgb - Error appending the message end\n");
+        jk_log(l, JK_LOG_ERROR,
+               "Error ajp_marshal_into_msgb - "
+               "Error appending the message end\n");
         return JK_FALSE;
     }
     
@@ -469,7 +500,8 @@ static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
     d->status = jk_b_get_int(msg);
 
     if (!d->status) {
-        jk_log(l, JK_LOG_ERROR, "Error ajp_unmarshal_response - Null status\n");
+        jk_log(l, JK_LOG_ERROR,
+               "Error ajp_unmarshal_response - Null status\n");
         return JK_FALSE;
     }
 
@@ -480,12 +512,15 @@ static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
 #endif
     }
 
-    jk_log(l, JK_LOG_DEBUG, "ajp_unmarshal_response: status = %d\n", d->status);
+    jk_log(l, JK_LOG_DEBUG,
+           "ajp_unmarshal_response: status = %d\n", d->status);
 
     d->num_headers = jk_b_get_int(msg);
     d->header_names = d->header_values = NULL;
 
-    jk_log(l, JK_LOG_DEBUG, "ajp_unmarshal_response: Number of headers is = %d\n", d->num_headers);
+    jk_log(l, JK_LOG_DEBUG,
+           "ajp_unmarshal_response: Number of headers is = %d\n",
+           d->num_headers);
 
     if (d->num_headers) {
         d->header_names = jk_pool_alloc(p, sizeof(char *) * d->num_headers);
@@ -500,15 +535,21 @@ static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
                     jk_b_get_int(msg);
                     name = name & 0X00FF;
                     if (name <= SC_RES_HEADERS_NUM) {
-                        d->header_names[i] = (char *)long_res_header_for_sc(name);
+                        d->header_names[i] =
+                            (char *)long_res_header_for_sc(name);
                     } else {
-                        jk_log(l, JK_LOG_ERROR, "Error ajp_unmarshal_response - No such sc (%d)\n", name);
+                        jk_log(l, JK_LOG_ERROR,
+                               "Error ajp_unmarshal_response - "
+                               "No such sc (%d)\n",
+                               name);
                         return JK_FALSE;
                     }
                 } else {
                     d->header_names[i] = (char *)jk_b_get_string(msg);
                     if (!d->header_names[i]) {
-                        jk_log(l, JK_LOG_ERROR, "Error ajp_unmarshal_response - Null header name\n");
+                        jk_log(l, JK_LOG_ERROR,
+                               "Error ajp_unmarshal_response - "
+                               "Null header name\n");
                         return JK_FALSE;
                     }
 #if defined(AS400) || defined(_OSD_POSIX)
@@ -520,7 +561,9 @@ static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
 
                 d->header_values[i] = (char *)jk_b_get_string(msg);
                 if (!d->header_values[i]) {
-                    jk_log(l, JK_LOG_ERROR, "Error ajp_unmarshal_response - Null header value\n");
+                    jk_log(l, JK_LOG_ERROR,
+                           "Error ajp_unmarshal_response - "
+                           "Null header value\n");
                     return JK_FALSE;
                 }
 
@@ -529,7 +572,8 @@ static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
                              strlen(d->header_values[i]));
 #endif
 
-                jk_log(l, JK_LOG_DEBUG, "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
+                jk_log(l, JK_LOG_DEBUG,
+                       "ajp_unmarshal_response: Header[%d] [%s] = [%s]\n", 
                        i,
                        d->header_names[i],
                        d->header_values[i]);
@@ -565,7 +609,9 @@ void ajp_close_endpoint(ajp_endpoint_t *ae,
 
     if (ae->sd > 0) { 
         jk_close_socket(ae->sd);
-        jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::ajp_close_endpoint, closed sd = %d\n", ae->sd);
+        jk_log(l, JK_LOG_DEBUG,
+               "In jk_endpoint_t::ajp_close_endpoint, closed sd = %d\n",
+               ae->sd);
         ae->sd = -1; /* just to avoid twice close */
     }
 
@@ -608,10 +654,14 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
 {
     unsigned attempt;
 
-    for(attempt = 0 ; attempt < ae->worker->connect_retry_attempts ; attempt++) {
-        ae->sd = jk_open_socket(&ae->worker->worker_inet_addr, JK_TRUE, ae->worker->keepalive, l);
+    for(attempt = 0; attempt < ae->worker->connect_retry_attempts; attempt++) {
+        ae->sd = jk_open_socket(&ae->worker->worker_inet_addr, JK_TRUE,
+                                ae->worker->keepalive, l);
         if(ae->sd >= 0) {
-            jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::ajp_connect_to_endpoint, connected sd = %d\n", ae->sd);
+            jk_log(l, JK_LOG_DEBUG,
+                   "In jk_endpoint_t::ajp_connect_to_endpoint, "
+                   "connected sd = %d\n",
+                   ae->sd);
 
              /* set last_access */
              ae->last_access = time(NULL);
@@ -624,7 +674,8 @@ int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
     }
 
     jk_log(l, JK_LOG_INFO,
-           "Error connecting to tomcat. Tomcat is probably not started or is listenning on the wrong port. Failed errno = %d\n",
+           "Error connecting to tomcat. Tomcat is probably not started or is "
+           "listenning on the wrong port. Failed errno = %d\n",
            errno);
     return JK_FALSE;
 }
@@ -646,7 +697,10 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t *ae,
         jk_dump_buff(l, JK_LOG_DEBUG, "sending to ajp14", msg);
     }
     else {
-        jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::ajp_connection_tcp_send_message, unknown protocol %d, supported are AJP13/AJP14\n", ae->proto);
+        jk_log(l, JK_LOG_ERROR,
+               "In jk_endpoint_t::ajp_connection_tcp_send_message, "
+               "unknown protocol %d, supported are AJP13/AJP14\n",
+               ae->proto);
         return JK_FALSE;
     }
 
@@ -671,14 +725,20 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     unsigned int  header;
 
     if ((ae->proto != AJP13_PROTO) && (ae->proto != AJP14_PROTO)) {
-        jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Can't handle unknown protocol %d\n", ae->proto);
+        jk_log(l, JK_LOG_ERROR,
+               "ajp_connection_tcp_get_message: "
+               "Can't handle unknown protocol %d\n",
+               ae->proto);
         return JK_FALSE;
     }
 
     rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN);
 
     if(rc < 0) {
-        jk_log(l, JK_LOG_ERROR, "ERROR: can't receive the response message from tomcat, network problems or tomcat is down. err=%d\n", rc);
+        jk_log(l, JK_LOG_ERROR,
+               "ERROR: can't receive the response message from tomcat, "
+               "network problems or tomcat is down. err=%d\n",
+               rc);
         return JK_FALSE;
     }
 
@@ -687,22 +747,32 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     if (ae->proto == AJP13_PROTO) {
         if (header != AJP13_SW_HEADER) {
 
-            if (header == AJP14_SW_HEADER)
-                jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - received AJP14 reply on an AJP13 connection\n");
-            else
-                jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - Wrong message format 0x%04x\n", header);
-
+            if (header == AJP14_SW_HEADER) {
+                jk_log(l, JK_LOG_ERROR,
+                       "ajp_connection_tcp_get_message: "
+                       "Error - received AJP14 reply on an AJP13 connection\n");
+            } else {
+                jk_log(l, JK_LOG_ERROR,
+                       "ajp_connection_tcp_get_message: "
+                       "Error - Wrong message format 0x%04x\n",
+                       header);
+            }
             return JK_FALSE;
         }
     }
     else if (ae->proto == AJP14_PROTO) {
         if (header != AJP14_SW_HEADER) {
 
-            if (header == AJP13_SW_HEADER)
-                jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - received AJP13 reply on an AJP14 connection\n");
-            else
-                jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - Wrong message format 0x%04x\n", header);
-
+            if (header == AJP13_SW_HEADER) {
+                jk_log(l, JK_LOG_ERROR,
+                       "ajp_connection_tcp_get_message: "
+                       "Error - received AJP13 reply on an AJP14 connection\n");
+            } else {
+                jk_log(l, JK_LOG_ERROR,
+                       "ajp_connection_tcp_get_message: "
+                       "Error - Wrong message format 0x%04x\n",
+                       header);
+            }
             return JK_FALSE;
         }
     }   
@@ -711,7 +781,9 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
     msglen += (head[3] & 0xFF);
 
     if(msglen > jk_b_get_size(msg)) {
-        jk_log(l, JK_LOG_ERROR, "ajp_connection_tcp_get_message: Error - Wrong message size %d %d\n",
+        jk_log(l, JK_LOG_ERROR,
+               "ajp_connection_tcp_get_message: "
+               "Error - Wrong message size %d %d\n",
                msglen, jk_b_get_size(msg));
         return JK_FALSE;
     }
@@ -721,23 +793,26 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
 
     rc = jk_tcp_socket_recvfull(ae->sd, jk_b_get_buff(msg), msglen);
     if(rc < 0) {
-        jk_log(l, JK_LOG_ERROR, "ERROR: can't receive the response message from tomcat, network problems or tomcat is down %d\n", rc);
+        jk_log(l, JK_LOG_ERROR,
+               "ERROR: can't receive the response message from tomcat, "
+               "network problems or tomcat is down %d\n",
+               rc);
         return JK_FALSE;
     }
 
-    if (ae->proto == AJP13_PROTO) 
+    if (ae->proto == AJP13_PROTO) {
         jk_dump_buff(l, JK_LOG_DEBUG, "received from ajp13", msg);
-    else if (ae->proto == AJP14_PROTO)
+    } else if (ae->proto == AJP14_PROTO) {
         jk_dump_buff(l, JK_LOG_DEBUG, "received from ajp14", msg);
-    
+    }
     return JK_TRUE;
 }
 
 /*
  * Read all the data from the socket.
  *
- * Socket API didn't garanty all the data will be kept in a single 
- * read, so we must loop up to all awaited data are received 
+ * Socket API doesn't guaranty that all the data will be kept in a
+ * single read, so we must loop until all awaited data is received 
  */
 
 static int ajp_read_fully_from_server(jk_ws_service_t *s,
@@ -748,7 +823,7 @@ static int ajp_read_fully_from_server(jk_ws_service_t *s,
     unsigned padded_len = len;
 
     if (s->is_chunked && s->no_more_chunks) {
-    return 0;
+        return 0;
     }
     if (s->is_chunked) {
         /* Corner case: buf must be large enough to hold next
@@ -763,13 +838,14 @@ static int ajp_read_fully_from_server(jk_ws_service_t *s,
     while(rdlen < padded_len) {
         unsigned this_time = 0;
         if(!s->read(s, buf + rdlen, len - rdlen, &this_time)) {
-            return -1;
+            /* Remote Client read failed. */
+            return JK_CLIENT_ERROR;
         }
 
         if(0 == this_time) {
-        if (s->is_chunked) {
-        s->no_more_chunks = 1; /* read no more */
-        }
+            if (s->is_chunked) {
+                s->no_more_chunks = 1; /* read no more */
+            }
             break;
         }
         rdlen += this_time;
@@ -799,12 +875,14 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t  *ae,
 
     /* Pick the max size since we don't know the content_length */
     if (r->is_chunked && len == 0) {
-    len = AJP13_MAX_SEND_BODY_SZ;
+        len = AJP13_MAX_SEND_BODY_SZ;
     }
 
     if ((len = ajp_read_fully_from_server(r, read_buf, len)) < 0) {
-        jk_log(l, JK_LOG_ERROR, "ERROR: receiving data from server failed, the client aborted the connection or network errors.\n");
-        return -1;
+        jk_log(l, JK_LOG_INFO,
+               "ERROR: receiving data from client failed. "
+               "Connection aborted or network problems\n");
+        return JK_CLIENT_ERROR;
     }
 
     if (!r->is_chunked) {
@@ -812,13 +890,13 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t  *ae,
     }
 
     if (len > 0) {
-    /* Recipient recognizes empty packet as end of stream, not
-       an empty body packet */
+        /* Recipient recognizes empty packet as end of stream, not
+           an empty body packet */
         if(0 != jk_b_append_int(msg, (unsigned short)len)) {
-            jk_log(l, JK_LOG_ERROR, 
+            jk_log(l, JK_LOG_INFO, 
                    "read_into_msg_buff: Error - jk_b_append_int failed\n");
-            return -1;
-    }
+            return JK_CLIENT_ERROR;
+        }
     }
 
     jk_b_set_len(msg, jk_b_get_len(msg) + len);
@@ -850,8 +928,10 @@ static int ajp_send_request(jk_endpoint_t *e,
     /*
      * First try to reuse open connections...
     */
-    while ((ae->sd > 0) && ! ajp_connection_tcp_send_message(ae, op->request, l)) {
-        jk_log(l, JK_LOG_INFO, "Error sending request try another pooled connection\n");
+    while ((ae->sd > 0) &&
+           !ajp_connection_tcp_send_message(ae, op->request, l)) {
+        jk_log(l, JK_LOG_INFO,
+               "Error sending request try another pooled connection\n");
         jk_close_socket(ae->sd);
         ae->sd = -1;
         ajp_reuse_connection(ae, l);
@@ -862,16 +942,18 @@ static int ajp_send_request(jk_endpoint_t *e,
      */
     if (ae->sd < 0) {
         if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
-        /*
-         * After we are connected, each error that we are going to
-         * have is probably unrecoverable
-         */
-        if (!ajp_connection_tcp_send_message(ae, op->request, l)) {
-            jk_log(l, JK_LOG_INFO, "Error sending request on a fresh connection\n");
-            return JK_FALSE;
-        }
+            /*
+             * After we are connected, each error that we are going to
+             * have is probably unrecoverable
+             */
+            if (!ajp_connection_tcp_send_message(ae, op->request, l)) {
+                jk_log(l, JK_LOG_INFO,
+                       "Error sending request on a fresh connection\n");
+                return JK_FALSE;
+            }
         } else {
-            jk_log(l, JK_LOG_INFO, "Error connecting to the Tomcat process.\n");
+            jk_log(l, JK_LOG_INFO, 
+                   "Error connecting to the Tomcat process.\n");
             return JK_FALSE;
         }
     }
@@ -881,8 +963,10 @@ static int ajp_send_request(jk_endpoint_t *e,
      * or Tomcat crashed. In any case we cannot recover this.
      */
 
-    jk_log(l, JK_LOG_DEBUG, "ajp_send_request 2: request body to send %d - request body to resend %d\n", 
-        ae->left_bytes_to_send, jk_b_get_len(op->reply) - AJP_HEADER_LEN);
+    jk_log(l, JK_LOG_DEBUG,
+           "ajp_send_request 2: "
+           "request body to send %d - request body to resend %d\n", 
+           ae->left_bytes_to_send, jk_b_get_len(op->reply) - AJP_HEADER_LEN);
 
     /*
      * POST recovery job is done here.
@@ -898,15 +982,15 @@ static int ajp_send_request(jk_endpoint_t *e,
             return JK_FALSE;
         }
     }
-    else
-    {
-        /* We never sent any POST data and we check it we have to send at
-         * least of block of data (max 8k). These data will be kept in reply
+    else {
+        /* We never sent any POST data and we check if we have to send at
+         * least one block of data (max 8k). These data will be kept in reply
          * for resend if the remote Tomcat is down, a fact we will learn only
          * doing a read (not yet) 
          */
-	/* || s->is_chunked - this can't be done here. The original protocol sends the first
-	   chunk of post data ( based on Content-Length ), and that's what the java side expects.
+	/* || s->is_chunked - this can't be done here. The original protocol
+           sends the first chunk of post data ( based on Content-Length ),
+           and that's what the java side expects.
 	   Sending this data for chunked would break other ajp13 serers.
 
 	   Note that chunking will continue to work - using the normal read.
@@ -914,12 +998,13 @@ static int ajp_send_request(jk_endpoint_t *e,
 
         if (ae->left_bytes_to_send > 0) {
             int len = ae->left_bytes_to_send;
-            if (len > AJP13_MAX_SEND_BODY_SZ) 
+            if (len > AJP13_MAX_SEND_BODY_SZ) {
                 len = AJP13_MAX_SEND_BODY_SZ;
-                    if ((len = ajp_read_into_msg_buff(ae, s, op->post, len, l)) < 0) {
+            }
+            if ((len = ajp_read_into_msg_buff(ae, s, op->post, len, l)) < 0) {
                 /* the browser stop sending data, no need to recover */
                 op->recoverable = JK_FALSE;
-                return JK_FALSE;
+                return JK_CLIENT_ERROR;
             }
             s->content_read = len;
             if (!ajp_connection_tcp_send_message(ae, op->post, l)) {
@@ -948,18 +1033,15 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             {
                 jk_res_data_t res;
                 if (!ajp_unmarshal_response(msg, &res, ae, l)) {
-                    jk_log(l, JK_LOG_ERROR, "Error ajp_process_callback - ajp_unmarshal_response failed\n");
+                    jk_log(l, JK_LOG_ERROR,
+                           "Error ajp_process_callback - "
+                           "ajp_unmarshal_response failed\n");
                     return JK_AJP13_ERROR;
                 }
-                if (!r->start_response(r, 
-                                       res.status, 
-                                       res.msg, 
-                                       (const char * const *)res.header_names,
-                                       (const char * const *)res.header_values,
-                                       res.num_headers)) {
-                    jk_log(l, JK_LOG_ERROR, "Error ajp_process_callback - start_response failed\n");
-                    return JK_CLIENT_ERROR;
-                }
+                r->start_response(r, res.status, res.msg, 
+                                  (const char * const *)res.header_names,
+                                  (const char * const *)res.header_values,
+                                  res.num_headers);
             }
         break;
 
@@ -967,7 +1049,9 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             {
                 unsigned len = (unsigned)jk_b_get_int(msg);
                 if(!r->write(r, jk_b_get_buff(msg) + jk_b_get_pos(msg), len)) {
-                    jk_log(l, JK_LOG_ERROR, "ERROR sending data to client. Connection aborted or network problems\n");
+                    jk_log(l, JK_LOG_INFO,
+                           "ERROR sending data to client. "
+                           "Connection aborted or network problems\n");
                     return JK_CLIENT_ERROR;
                 }
             }
@@ -993,9 +1077,10 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                     return JK_AJP13_HAS_RESPONSE;
                 }                  
 
-                jk_log(l, JK_LOG_ERROR, "ERROR reading POST data from client. "
-                                        "Connection aborted or network problems\n");
-                return JK_INTERNAL_ERROR;       
+                jk_log(l, JK_LOG_INFO,
+                       "ERROR reading POST data from client. "
+                       "Connection aborted or network problems\n");
+                return JK_CLIENT_ERROR;       
             }
         break;
 
@@ -1017,7 +1102,8 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
         break;
 
         default:
-            jk_log(l, JK_LOG_ERROR, "Error ajp_process_callback - Invalid code: %d\n", code);
+            jk_log(l, JK_LOG_ERROR,
+                   "Error ajp_process_callback - Invalid code: %d\n", code);
             return JK_AJP13_ERROR;
     }
     
@@ -1048,7 +1134,9 @@ static int ajp_get_reply(jk_endpoint_t *e,
         int rc = 0;
 
         if(!ajp_connection_tcp_get_message(p, op->reply, l)) {
-            jk_log(l, JK_LOG_ERROR, "Error reading reply from tomcat. Tomcat is down or network problems.\n");
+            jk_log(l, JK_LOG_ERROR,
+                   "Error reading reply from tomcat. "
+                   "Tomcat is down or network problems.\n");
             /* we just can't recover, unset recover flag */
             return JK_FALSE;
         }
@@ -1056,12 +1144,12 @@ static int ajp_get_reply(jk_endpoint_t *e,
         rc = ajp_process_callback(op->reply, op->post, p, s, l);
 
         /* no more data to be sent, fine we have finish here */
-            if(JK_AJP13_END_RESPONSE == rc)
-                return JK_TRUE;
-            else if(JK_AJP13_HAS_RESPONSE == rc) {
+        if(JK_AJP13_END_RESPONSE == rc) {
+            return JK_TRUE;
+        } else if(JK_AJP13_HAS_RESPONSE == rc) {
             /* 
              * in upload-mode there is no second chance since
-             * we may have allready send part of uploaded data 
+             * we may have allready sent part of the uploaded data 
              * to Tomcat.
              * In this case if Tomcat connection is broken we must 
              * abort request and indicate error.
@@ -1070,26 +1158,29 @@ static int ajp_get_reply(jk_endpoint_t *e,
              */
             op->recoverable = JK_FALSE; 
             rc = ajp_connection_tcp_send_message(p, op->post, l);
-                if (rc < 0) {
-                jk_log(l, JK_LOG_ERROR, "Error sending request data %d. Tomcat is down or network problems.\n", rc);
-                        return JK_FALSE;
+            if (rc < 0) {
+                jk_log(l, JK_LOG_ERROR,
+                       "Error sending request data %d. "
+                       "Tomcat is down or network problems.\n",
+                       rc);
+                return JK_FALSE;
             }
         } else if(JK_FATAL_ERROR == rc) {
-          /*
-           * we won't be able to gracefully recover from this so
-           * set recoverable to false and get out.
-           */
+            /*
+             * we won't be able to gracefully recover from this so
+             * set recoverable to false and get out.
+             */
             op->recoverable = JK_FALSE;
             return JK_FALSE;
         } else if(JK_CLIENT_ERROR == rc) {
-                  /*
-                   * Client has stop talking to us, so get out.
-                   * We assume this isn't our fault, so just a normal exit.
-                   * In most (all?)  cases, the ajp13_endpoint::reuse will still be
-                   * false here, so this will be functionally the same as an
-                   * un-recoverable error.  We just won't log it as such.
-                   */
-                return JK_TRUE;
+            /*
+             * Client has stop talking to us, so get out.
+             * We assume this isn't our fault, so just a normal exit.
+             * In most (all?)  cases, the ajp13_endpoint::reuse will still be
+             * false here, so this will be functionally the same as an
+             * un-recoverable error.  We just won't log it as such.
+             */
+            return JK_CLIENT_ERROR;
         } else if(rc < 0) {
             return (JK_FALSE); /* XXX error */
         }
@@ -1110,7 +1201,7 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
                 jk_logger_t     *l,
                 int             *is_recoverable_error)
 {
-    int i;
+    int i, err;
     ajp_operation_t oper;
     ajp_operation_t *op = &oper;
 
@@ -1137,7 +1228,8 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
         p->reuse = JK_FALSE;
         *is_recoverable_error = JK_TRUE;
 
-                s->secret = p->worker->secret;
+        s->secret = p->worker->secret;
+
         /* 
          * We get here initial request (in reqmsg)
          */
@@ -1150,21 +1242,25 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
          * JK_RETRIES could be replaced by the number of workers in
          * a load-balancing configuration 
          */
-        for (i = 0; i < JK_RETRIES; i++)
-        {
+        for (i = 0; i < JK_RETRIES; i++) {
             /*
              * We're using reqmsg which hold initial request
              * if Tomcat is stopped or restarted, we will pass reqmsg
              * to next valid tomcat. 
              */
-            if (ajp_send_request(e, s, l, p, op)) {
+            err = ajp_send_request(e, s, l, p, op);
+            if (err == JK_TRUE) {
 
-                /* If we have the no recoverable error, it's probably because the sender (browser)
-                 * stop sending data before the end (certainly in a big post)
+                /* If we have the no recoverable error, it's probably because
+                 * the sender (browser) stopped sending data before the end
+                 * (certainly in a big post)
                  */
                 if (! op->recoverable) {
                     *is_recoverable_error = JK_FALSE;
-                    jk_log(l, JK_LOG_ERROR, "ERROR: sending request to tomcat failed without recovery in send loop %d\n", i);
+                    jk_log(l, JK_LOG_ERROR,
+                           "ERROR: sending request to tomcat failed "
+                           "without recovery in send loop %d\n",
+                           i);
                     return JK_FALSE;
                 }
 
@@ -1172,38 +1268,65 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
                 *is_recoverable_error = JK_TRUE;
                 op->recoverable = JK_TRUE;
 
-                if (ajp_get_reply(e, s, l, p, op))
+                err = ajp_get_reply(e, s, l, p, op);
+                if (err > 0) {
                     return (JK_TRUE);
-
-                /* if we can't get reply, check if no recover flag was set 
-                 * if is_recoverable_error is cleared, we have started received 
-                 * upload data and we must consider that operation is no more recoverable
-                 */
-                if (! op->recoverable) {
-                    *is_recoverable_error = JK_FALSE;
-                    jk_log(l, JK_LOG_ERROR, "ERROR: receiving reply from tomcat failed without recovery in send loop %d\n", i);
-                    return JK_FALSE;
                 }
-                
-                jk_log(l, JK_LOG_ERROR, "ERROR: Receiving from tomcat failed, recoverable operation. err=%d\n", i);
+
+                if (err != JK_CLIENT_ERROR) {
+                    /* if we can't get reply, check if no recover flag was set 
+                     * if is_recoverable_error is cleared, we have started
+                     * receiving upload data and we must consider that
+                     * operation is no more recoverable
+                     */
+                    if (! op->recoverable) {
+                        *is_recoverable_error = JK_FALSE;
+                        jk_log(l, JK_LOG_ERROR,
+                               "ERROR: receiving reply from tomcat failed "
+                               "without recovery in send loop %d\n",
+                               i);
+                        return JK_FALSE;
+                    }
+                    jk_log(l, JK_LOG_ERROR,
+                           "ERROR: Receiving from tomcat failed, "
+                           "recoverable operation. err=%d\n",
+                           i);
+                }
             }
-            else
-                jk_log(l, JK_LOG_INFO, "sending request to tomcat failed in send loop. err=%d\n", i);
-        
+
             jk_close_socket(p->sd);
-            p->sd = -1;
+            p->sd = -1;         
             ajp_reuse_connection(p, l);
+
+            if (err == JK_CLIENT_ERROR) {
+                *is_recoverable_error = JK_FALSE;
+                jk_log(l, JK_LOG_ERROR,
+                       "ERROR: "
+                       "Client connection aborted or network problems\n");
+                return JK_CLIENT_ERROR;
+            }
+            else {
+                jk_log(l, JK_LOG_INFO,
+                       "sending request to tomcat failed in send loop. "
+                       "err=%d\n",
+                       i);
+            }
+
         }
         
         /* Log the error only once per failed request. */
-        jk_log(l, JK_LOG_ERROR, "Error connecting to tomcat. Tomcat is probably not started or is listenning on the wrong port. Failed errno = %d\n", errno);
+        jk_log(l, JK_LOG_ERROR,
+               "Error connecting to tomcat. Tomcat is probably not started "
+               "or is listening on the wrong port. Failed errno = %d\n",
+               errno);
 
     } else {
-            jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, NULL parameters\n");
+        jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, NULL parameters\n");
     }
 
     return JK_FALSE;
 }
+
 /*
  * Validate the worker (ajp13/ajp14)
  */
@@ -1228,7 +1351,8 @@ int ajp_validate(jk_worker_t *pThis,
         host = AJP14_DEF_HOST;
     }
     else {
-        jk_log(l, JK_LOG_DEBUG, "In jk_worker_t::validate unknown protocol %d\n", proto);
+        jk_log(l, JK_LOG_DEBUG,
+               "In jk_worker_t::validate unknown protocol %d\n", proto);
         return JK_FALSE;
     } 
 
@@ -1237,15 +1361,20 @@ int ajp_validate(jk_worker_t *pThis,
         port = jk_get_worker_port(props, p->name, port);
         host = jk_get_worker_host(props, p->name, host);
 
-        jk_log(l, JK_LOG_DEBUG, "In jk_worker_t::validate for worker %s contact is %s:%d\n", p->name, host, port);
+        jk_log(l, JK_LOG_DEBUG,
+              "In jk_worker_t::validate for worker %s contact is %s:%d\n",
+               p->name, host, port);
 
         if(port > 1024 && host) {
             if(jk_resolve(host, (short)port, &p->worker_inet_addr)) {
                 return JK_TRUE;
             }
-            jk_log(l, JK_LOG_ERROR, "ERROR: can't resolve tomcat address %s\n", host);
+            jk_log(l, JK_LOG_ERROR,
+                   "ERROR: can't resolve tomcat address %s\n", host);
         }
-        jk_log(l, JK_LOG_ERROR, "ERROR: invalid host and port %s %d\n", (( host==NULL ) ? "NULL" : host ), port);
+        jk_log(l, JK_LOG_ERROR,
+               "ERROR: invalid host and port %s %d\n",
+               (( host==NULL ) ? "NULL" : host ), port);
     } else {
         jk_log(l, JK_LOG_ERROR, "In jk_worker_t::validate, NULL parameters\n");
     }
@@ -1274,18 +1403,24 @@ int ajp_init(jk_worker_t *pThis,
         cache = AJP13_DEF_CACHE_SZ;
     }
     else {
-        jk_log(l, JK_LOG_DEBUG, "In jk_worker_t::init, unknown protocol %d\n", proto);
+        jk_log(l, JK_LOG_DEBUG,
+               "In jk_worker_t::init, unknown protocol %d\n", proto);
         return JK_FALSE;
     }
 
     if (pThis && pThis->worker_private) {
         ajp_worker_t *p = pThis->worker_private;
         int cache_sz = jk_get_worker_cache_size(props, p->name, cache);
-        int socket_timeout = jk_get_worker_socket_timeout(props, p->name, AJP13_DEF_TIMEOUT);
-        int socket_keepalive = jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
-        int cache_timeout = jk_get_worker_cache_timeout(props, p->name, AJP_DEF_CACHE_TIMEOUT);
+        int socket_timeout =
+           jk_get_worker_socket_timeout(props, p->name, AJP13_DEF_TIMEOUT);
+        int socket_keepalive =
+            jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
+        int cache_timeout =
+            jk_get_worker_cache_timeout(props, p->name, AJP_DEF_CACHE_TIMEOUT);
 
-        jk_log(l, JK_LOG_DEBUG, "In jk_worker_t::init, setting socket timeout to %d\n", socket_timeout);
+        jk_log(l, JK_LOG_DEBUG,
+               "In jk_worker_t::init, setting socket timeout to %d\n",
+               socket_timeout);
         p->socket_timeout = socket_timeout;
         p->keepalive = socket_keepalive;
         p->cache_timeout = cache_timeout;
@@ -1298,7 +1433,8 @@ int ajp_init(jk_worker_t *pThis,
         p->ep_cache_sz = 0;
         p->ep_mincache_sz = 0;
         if (cache_sz > 0) {
-            p->ep_cache = (ajp_endpoint_t **)malloc(sizeof(ajp_endpoint_t *) * cache_sz);
+            p->ep_cache =
+                (ajp_endpoint_t **)malloc(sizeof(ajp_endpoint_t *) * cache_sz);
             if(p->ep_cache) {
                 int i;
                 p->ep_cache_sz = cache_sz;
@@ -1329,7 +1465,9 @@ int ajp_destroy(jk_worker_t **pThis,
 
         free(aw->name);
 
-        jk_log(l, JK_LOG_DEBUG, "Into jk_worker_t::destroy up to %d endpoint to close\n", aw->ep_cache_sz);
+        jk_log(l, JK_LOG_DEBUG,
+               "Into jk_worker_t::destroy up to %d endpoint to close\n",
+               aw->ep_cache_sz);
 
         if(aw->ep_cache_sz) {
             unsigned i;
@@ -1380,13 +1518,16 @@ int JK_METHOD ajp_done(jk_endpoint_t **e,
                     }
                     JK_LEAVE_CS(&w->cs, rc);
                     if(i < w->ep_cache_sz) {
-                        jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done, recycling connection\n");
+                        jk_log(l, JK_LOG_DEBUG,
+                               "Into jk_endpoint_t::done, "
+                               "recycling connection\n");
                         return JK_TRUE;
                     }
                 }
             }
         }
-        jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done, closing connection %d\n", reuse_ep);
+        jk_log(l, JK_LOG_DEBUG,
+               "Into jk_endpoint_t::done, closing connection %d\n", reuse_ep);
         ajp_close_endpoint(p, l);
         *e = NULL;
 
@@ -1428,7 +1569,7 @@ int ajp_get_endpoint(jk_worker_t    *pThis,
                 if (aw->cache_timeout) {
                     for ( ; i < aw->ep_cache_sz ; i++) {
                         if (aw->ep_cache[i]) {
-                            unsigned elapsed = (unsigned)(now - ae->last_access);
+                            unsigned elapsed = (unsigned)(now-ae->last_access);
                             if (elapsed > aw->cache_timeout) {
                                 jk_log(l, JK_LOG_DEBUG, 
                                     "In jk_endpoint_t::ajp_get_endpoint," \
@@ -1446,11 +1587,17 @@ int ajp_get_endpoint(jk_worker_t    *pThis,
                         /* Handle timeouts for open sockets */
                         unsigned elapsed = (unsigned)(now - ae->last_access);
                         ae->last_access = now;
-                        jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::ajp_get_endpoint, time elapsed since last request = %d seconds\n", elapsed);
-                        if (aw->socket_timeout > 0 && elapsed > aw->socket_timeout) {
+                        jk_log(l, JK_LOG_DEBUG,
+                              "In jk_endpoint_t::ajp_get_endpoint, "
+                              "time elapsed since last request = %d seconds\n",
+                               elapsed);
+                        if (aw->socket_timeout > 0 &&
+                            elapsed > aw->socket_timeout) {
                             jk_close_socket(ae->sd);
                             jk_log(l, JK_LOG_DEBUG, 
-                                   "In jk_endpoint_t::ajp_get_endpoint, reached socket timeout, closed sd = %d\n", ae->sd);
+                                   "In jk_endpoint_t::ajp_get_endpoint, "
+                                   "reached socket timeout, closed sd = %d\n",
+                                    ae->sd);
                             ae->sd = -1; /* just to avoid twice close */
                         }
                     }
@@ -1474,9 +1621,11 @@ int ajp_get_endpoint(jk_worker_t    *pThis,
             *je = &ae->endpoint;
             return JK_TRUE;
         }
-        jk_log(l, JK_LOG_ERROR, "In jk_worker_t::get_endpoint, malloc failed\n");
+        jk_log(l, JK_LOG_ERROR,
+              "In jk_worker_t::get_endpoint, malloc failed\n");
     } else {
-        jk_log(l, JK_LOG_ERROR, "In jk_worker_t::get_endpoint, NULL parameters\n");
+        jk_log(l, JK_LOG_ERROR,
+               "In jk_worker_t::get_endpoint, NULL parameters\n");
     }
 
     return JK_FALSE;

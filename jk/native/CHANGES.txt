@@ -11,7 +11,13 @@ Changes with JK 1.2.3:
       let Apache handle processing the error returned by Tomcat.
     * Added the load balancer sticky_session property. If set to 0
       requests with servlet SESSION ID's can be routed to any Tomcat
-      worker. Default is 1, sessions are sticky.
+      worker. Default is 1, sessions are sticky. [glenn]
+    * Cleaned up detection and reporting of aborted client connections.
+      This cleanup also makes sure that mod_jk does not pass any requests
+      on to Tomcat if the remote client aborted its connection. [glenn]
+    * Fixed a bug in Apache 2.0 which caused a POST request forwarded to
+      Tomcat to fail if it generated SSI directives which were post
+      processed by mod_include. [glenn]
 
 Changes with JK 1.2.2:
     * tomcat_trend.pl updated script to support changed logging of 
