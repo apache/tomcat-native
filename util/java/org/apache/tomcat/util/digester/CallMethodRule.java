@@ -572,7 +572,6 @@ public class CallMethodRule extends Rule {
             sb.append(")");
             digester.log.debug(sb.toString());
         }
-        IntrospectionUtils.callMethodN(target, methodName, paramValues, paramTypes);
         Object result = IntrospectionUtils.callMethodN(target, methodName,
                 paramValues, paramTypes);   
         processMethodCallResult(result);
