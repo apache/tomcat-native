@@ -121,6 +121,9 @@
 				RelativePath=".\ajp_link.c">
 			</File>
 			<File
+				RelativePath=".\ajp_logon.c">
+			</File>
+			<File
 				RelativePath=".\ajp_msg.c">
 			</File>
 			<File
@@ -139,6 +142,9 @@
 			</File>
 			<File
 				RelativePath=".\ajp_header.h">
+			</File>
+			<File
+				RelativePath=".\ajp_logon.h">
 			</File>
 			<File
 				RelativePath=".\httpd_wrap.h">
