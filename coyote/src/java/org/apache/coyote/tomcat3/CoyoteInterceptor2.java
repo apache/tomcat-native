@@ -80,6 +80,7 @@ public class CoyoteInterceptor2 extends BaseInterceptor
     private String processorClassName="org.apache.coyote.http11.Http11Protocol";
     Tomcat3Adapter adapter;
     ProtocolHandler proto;
+    int protocolNote;
     
     public CoyoteInterceptor2() {
 	super();
@@ -112,11 +113,14 @@ public class CoyoteInterceptor2 extends BaseInterceptor
      */
     public void engineInit(ContextManager cm) throws TomcatException {
 	super.engineInit( cm );
-        
+
+        protocolNote = cm.getNoteId(ContextManager.MODULE_NOTE,
+				    "coyote.protocol");
         adapter=new Tomcat3Adapter(cm);
         try {
             Class c=Class.forName(processorClassName);
             proto=(ProtocolHandler)c.newInstance();
+	    setNote(protocolNote, proto);
         } catch( Exception ex ) {
             ex.printStackTrace();
         }
