@@ -90,7 +90,7 @@ struct jk_logger {
                                    const char *name,
                                    const char *def );
 
-    void (JK_METHOD *open)( jk_logger_t *_this,
+    int (JK_METHOD *open)( jk_logger_t *_this,
                             jk_map_t *properties );
 
     void (JK_METHOD *close)( jk_logger_t *_this );

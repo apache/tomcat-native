@@ -188,13 +188,20 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
     
     /* make sure we have space */
     err=uriMap_realloc(_this);
+    if (err != JK_TRUE ) {
+        l->jkLog(l, JK_LOG_ERROR,"Allocation error\n");
+        return NULL;
+    }
+
     uwr = (jk_uriEnv_t *)jk_pool_alloc(&_this->p,
                                        sizeof(jk_uriEnv_t));
     
     uri = jk_pool_strdup(&_this->p, puri);
     worker = jk_pool_strdup(&_this->p, pworker);
 
-    if (err || !uri || ! worker || ! uwr ) {
+    if (uri==NULL ||
+        worker==NULL ||
+        uwr==NULL ) {
         l->jkLog(l, JK_LOG_ERROR,"Allocation error\n");
         return NULL;
     }
@@ -325,13 +332,16 @@ int jk_uriMap_init(jk_uriMap_t *_this,
     
     rc = JK_TRUE;
     for(i = 0; i < sz ; i++) {
-        jk_uriEnv_t *uriEnv=_this->addMapping(_this,NULL,
-                                              map_name_at(init_data, i),
-                                              map_value_at(init_data, i));
-        if ( uriEnv==NULL) {
-            l->jkLog(l, JK_LOG_ERROR, "Parsing error %s\n",
-                   map_name_at(init_data, i));
-            rc=JK_FALSE;
+        char *name=map_name_at(init_data, i);
+        if( name!=NULL && name[0]=='/' ) {
+            jk_uriEnv_t *uriEnv=_this->addMapping(_this,NULL,
+                                                  name,
+                                                  map_value_at(init_data, i));
+            if ( uriEnv==NULL) {
+                l->jkLog(l, JK_LOG_ERROR, "Parsing error %s\n",
+                         map_name_at(init_data, i));
+                rc=JK_FALSE;
+            }
         }
     }
 

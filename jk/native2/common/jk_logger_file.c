@@ -103,20 +103,20 @@ static int jk_logger_file_log(jk_logger_t *l,
                               int level,
                               const char *what)
 {
+    FILE *f = (FILE *)l->logger_private;
+
+    if( f==NULL ) {
+        /* This is usefull to debug what happens before logger is set.
+           On apache you need -X option ( no detach, single process ) */
+        printf("%s", what );
+        return JK_TRUE;
+    }
     if(l && l->level <= level && l->logger_private && what) {       
         unsigned sz = strlen(what);
         if(sz) {
-            FILE *f = (FILE *)l->logger_private;
-
-            if( f==NULL ) {
-                /* This is usefull to debug what happens before logger is set.
-                   On apache you need -X option ( no detach, single process ) */
-                printf("%s", what );
-            } else { 
-                fwrite(what, 1, sz, f);
-                /* [V] Flush the dam' thing! */
-                fflush(f);
-            }
+            fwrite(what, 1, sz, f);
+            /* [V] Flush the dam' thing! */
+            fflush(f);
         }
 
         return JK_TRUE;
@@ -150,18 +150,24 @@ static int jk_logger_file_open(jk_logger_t *_this,
     char *file=map_getStrProp(properties,"logger","file",
                               "name","mod_jk.log");
     int level;
-    char *levelS=map_getIntProp(properties,"logger","file",
+    char *levelS=map_getStrProp(properties,"logger","file",
                                 "level", "ERROR");
-    char *logformat=map_getIntProp(properties,"logger","file",
+    char *logformat=map_getStrProp(properties,"logger","file",
                                    "timeFormat", JK_TIME_FORMAT);
     FILE *f;
 
     _this->level = jk_logger_file_parseLogLevel(levelS);
-
+    if( _this->level == 0 )
+        _this->jkLog( _this, JK_LOG_ERROR, "Level %s %d \n", levelS, _this->level ); */
+    
+    if( logformat==NULL ) {
+        logformat=JK_TIME_FORMAT;
+    }
     jk_logger_file_logFmt = logformat;
 
     f = fopen(file, "a+");
-    if(!f) {
+    if(f==NULL) {
+        _this->jkLog(_this,JK_LOG_ERROR,"Can't open log file %s\n", file );
         return JK_FALSE;
     }
     _this->logger_private = f;
@@ -193,7 +199,7 @@ static int jk_logger_file_jkLog(jk_logger_t *l,
         return -1;
     }
 
-    if(l==NULL ||
+    if(l->logger_private==NULL ||
        l->level <= level) {
 #ifdef NETWARE
 /* On NetWare, this can get called on a thread that has a limited stack so */
@@ -267,7 +273,7 @@ int jk_logger_file_factory(jk_env_t *env,
 
     l->log = jk_logger_file_log;
     l->logger_private = NULL;
-    l->open = jk_logger_file_open;
+    l->open =jk_logger_file_open;
     l->jkLog = jk_logger_file_jkLog;
 
     *result=(void *)l;

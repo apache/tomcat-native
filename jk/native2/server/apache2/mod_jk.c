@@ -1414,11 +1414,6 @@ static void init_jk( apr_pool_t *pconf, jk_workerEnv_t *workerEnv, server_rec *s
     
     l->open( l, workerEnv->init_data );
 
-    if( err != JK_TRUE ) {
-        l->jkLog( l, JK_LOG_ERROR,
-                  "Can't open logger %s \n", workerEnv->log_file );
-    }
-
     /* local initialization */
     workerEnv->virtual       = "*";     /* for now */
     workerEnv->server_name   = (char *)ap_get_server_version();
