@@ -319,9 +319,9 @@ public class PoolTcpEndpoint { // implements Endpoint {
     }
 
     protected void closeServerSocket() {
+        Socket s = null;
         try {
             // Need to create a connection to unlock the accept();
-            Socket s;
             if (inet == null) {
                 s=new Socket("127.0.0.1", port );
             }else{
@@ -330,10 +330,17 @@ public class PoolTcpEndpoint { // implements Endpoint {
                     // connection quicker
                 s.setSoLinger(true, 0);
             }
-            s.close();
         } catch(Exception e) {
             log.error("Caught exception trying to unlock accept on " + port
                     + " " + e.toString());
+        } finally {
+            if (s != null) {
+                try {
+                    s.close();
+                } catch (Exception e) {
+                    // Ignore
+                }
+            }
         }
         try {
             if( serverSocket!=null)
