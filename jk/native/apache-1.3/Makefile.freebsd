@@ -18,7 +18,7 @@ CFLAGS=-DHAVE_CONFIG_H -g -fpic  -DSHARED_MODULE -O2 -D_REENTRANT -pthread -DLIN
 SRCS=jk_ajp12_worker.c jk_connect.c jk_msg_buff.c jk_util.c jk_ajp13.c \
      jk_jni_worker.c jk_pool.c jk_worker.c jk_ajp13_worker.c jk_lb_worker.c \
      jk_sockbuf.c jk_map.c jk_uri_worker_map.c jk_ajp14.c jk_ajp14_worker.c \
-     jk_md5.c jk_context.c
+     jk_md5.c jk_context.c jk_ajp_common.c
 
 
 OBJS=${patsubst %.c,%.o,${SRCS}}

@@ -15,7 +15,7 @@ APXS=/usr/sbin/apxs
 SRCS=${JK}/jk_ajp12_worker.c ${JK}/jk_connect.c ${JK}/jk_msg_buff.c ${JK}/jk_util.c ${JK}/jk_ajp13.c \
      ${JK}/jk_jni_worker.c ${JK}/jk_pool.c ${JK}/jk_worker.c ${JK}/jk_ajp13_worker.c ${JK}/jk_lb_worker.c \
      ${JK}/jk_sockbuf.c  ${JK}/jk_map.c ${JK}/jk_uri_worker_map.c ${JK}/jk_ajp14.c ${JK}/jk_ajp14_worker.c \
-     ${JK}/jk_md5.c ${JK}/jk_context.c  
+     ${JK}/jk_md5.c ${JK}/jk_context.c ${JK}/jk_ajp_common.c
 
 all: mod_jk.so
 
@@ -23,4 +23,4 @@ mod_jk.so:
 	$(APXS) ${JK_INCL} ${JAVA_INCL} -c -o $@ mod_jk.c $(SRCS) 
 
 clean:
-	rm *.o *.so
+	rm -f *.o *.so
