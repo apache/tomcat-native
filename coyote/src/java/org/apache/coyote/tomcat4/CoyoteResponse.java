@@ -485,6 +485,7 @@ public class CoyoteResponse
         throws IOException {
         // Writing leftover bytes
         outputBuffer.close();
+        coyoteResponse.finish();
     }
 
 
