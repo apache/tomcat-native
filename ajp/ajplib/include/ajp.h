@@ -114,7 +114,7 @@ struct ajp_msg
 };
 
 /**
- * @defgroup AJP defines 
+ * @defgroup AJP_defines AJP definitions 
  * @{
  */
 /**
@@ -147,6 +147,10 @@ struct ajp_msg
 
 /** @} */
 
+/**
+ * @defgroup AJP_api AJP API functions
+ * @{
+ */
 /**
  * Check a new AJP Message by looking at signature and return its size
  *
@@ -435,6 +439,8 @@ apr_status_t ajp_parse_headers(request_rec  *r, ajp_msg_t *msg);
  */
 apr_status_t  ajp_parse_data(request_rec  *r, ajp_msg_t *msg,
                              apr_uint16_t *len, char **ptr);
+
+/** @} */
 
 #endif /* AJP_H */
 
