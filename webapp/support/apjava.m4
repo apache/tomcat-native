@@ -26,10 +26,10 @@ dnl
 dnl    Alternately, this acknowlegement may appear in the software itself, if
 dnl    and wherever such third-party acknowlegements normally appear.
 dnl
-dnl 4. The names  "The  Jakarta  Project",  "WebApp",  and  "Apache  Software
-dnl    Foundation"  must not be used  to endorse or promote  products derived
-dnl    from this  software without  prior  written  permission.  For  written
-dnl    permission, please contact <apache@apache.org>.
+dnl 4. The names "The Jakarta Project",  "Apache WebApp Module",  and "Apache
+dnl    Software Foundation"  must not be used to endorse or promote  products
+dnl    derived  from this  software  without  prior  written  permission. For
+dnl    written permission, please contact <apache@apache.org>.
 dnl
 dnl 5. Products derived from this software may not be called "Apache" nor may
 dnl    "Apache" appear in their names without prior written permission of the
@@ -55,38 +55,44 @@ dnl on the Apache Software Foundation, please see <http://www.apache.org/>.
 dnl
 dnl =========================================================================
 
-dnl -------------------------------------------------------------------------
-dnl Author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
+dnl --------------------------------------------------------------------------
+dnl Author Pier Fumagalli <pier.fumagalli@eng.sun.com>
 dnl Version $Id$
-dnl -------------------------------------------------------------------------
+dnl --------------------------------------------------------------------------
 
 AC_DEFUN([AP_PROG_JAVAC_WORKS],[
-  AC_CACHE_CHECK([wether the Java compiler ($JAVAC) works],ap_cv_prog_javac_works,[
+  AC_CACHE_CHECK([wether the Java compiler (${JAVAC}) works],
+    ap_cv_prog_javac_works,[
     echo "public class Test {}" > Test.java
-    $JAVAC $JAVACFLAGS Test.java > /dev/null 2>&1
-    if ${test} $? -eq 0
+    ${JAVAC} ${JAVACFLAGS} Test.java > /dev/null 2>&1
+    if ${TEST} ${?} -eq 0
     then
       rm -f Test.java Test.class
       ap_cv_prog_javac_works=yes
     else
       rm -f Test.java Test.class
       AC_MSG_RESULT(no)
-      AC_MSG_ERROR([installation or configuration problem: javac cannot compile])
+      AC_MSG_ERROR([${JAVAC} cannot compile])
     fi
   ])
 ])
 
 AC_DEFUN([AP_PROG_JAVAC],[
-  AC_PATH_PROG(JAVAC,javac,AC_MSG_ERROR([javac not found]),$JAVA_HOME/bin:$PATH)
+  AC_PATH_PROG(JAVAC,javac,
+    AC_MSG_ERROR([javac not found]),
+    ${JAVA_HOME}/bin:${PATH}
+  )
   AP_PROG_JAVAC_WORKS()
-  AC_PROVIDE([$0])
+  AC_PROVIDE([${0}])
   AC_SUBST(JAVAC)
   AC_SUBST(JAVACFLAGS)
 ])
 
 AC_DEFUN([AP_PROG_JAR],[
-  AC_PATH_PROG(JAR,jar,AC_MSG_ERROR([jar not found]),$JAVA_HOME/bin:$PATH)
-  AC_PROVIDE([$0])
+  AC_PATH_PROG(JAR,jar,
+    AC_MSG_ERROR([jar not found]),
+    ${JAVA_HOME}/bin:${PATH})
+  AC_PROVIDE([${0}])
   AC_SUBST(JAR)
 ])
 
@@ -106,7 +112,7 @@ AC_DEFUN([AP_JAVA],[
         AC_MSG_RESULT([${JAVA_HOME}])
         ;;
     esac
-    if ${test} ! -d "${JAVA_HOME}"
+    if ${TEST} ! -d "${JAVA_HOME}"
     then
       AC_MSG_ERROR([${JAVA_HOME} is not a directory])
     fi
