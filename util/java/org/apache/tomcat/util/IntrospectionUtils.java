@@ -114,6 +114,26 @@ public final class IntrospectionUtils {
 	return; 
     }
 
+
+    /** 
+     *  Call void getAttribute( String )
+     */
+    public static Object getAttribute( Object proxy, String n)
+	throws Exception
+    {
+	Method executeM=null;
+	Class c=proxy.getClass();
+	Class params[]=new Class[1];
+	params[0]= String.class;
+	executeM=findMethod( c, "getAttribute", params );
+	if( executeM == null ) {
+	    System.out.println("No getAttribute in " + proxy.getClass() );
+	    return null;
+	}
+	return executeM.invoke(proxy, new Object[] { n });
+    }
+
+
     /** Construct a URLClassLoader. Will compile and work in JDK1.1 too.
      */
     public static ClassLoader getURLClassLoader( URL urls[],
@@ -372,6 +392,58 @@ public final class IntrospectionUtils {
 	}
     }
 
+    public static Object getProperty( Object o, String name ) {
+	String getter= "get" +capitalize(name);
+
+	try {
+	    Method methods[]=findMethods( o.getClass() );
+	    Method getPropertyMethod=null;
+
+	    // First, the ideal case - a getFoo() method
+	    for( int i=0; i< methods.length; i++ ) {
+		Class paramT[]=methods[i].getParameterTypes();
+		if( getter.equals( methods[i].getName() ) &&
+		    paramT.length == 0 ) {
+		    return methods[i].invoke( o, null );
+		}
+	    
+		if( "getProperty".equals( methods[i].getName())) {
+		    getPropertyMethod=methods[i];
+		}
+		if( "getAttribute".equals( methods[i].getName())) {
+		    getPropertyMethod=methods[i];
+		}
+	    }
+
+	    // Ok, no setXXX found, try a getProperty("name")
+	    if( getPropertyMethod != null ) {
+		Object params[]=new Object[1];
+		params[0]=name;
+		getPropertyMethod.invoke( o, params );
+	    }
+
+	} catch( IllegalArgumentException ex2 ) {
+            System.err.println("IAE " + o + " " + name );
+            ex2.printStackTrace();
+	} catch( SecurityException ex1 ) {
+	    if( dbg > 0 )
+		d("SecurityException for " + o.getClass() + " " +
+			name + ")" );
+	    if( dbg > 1 ) ex1.printStackTrace();
+	} catch (IllegalAccessException iae) {
+	    if( dbg > 0 )
+		d("IllegalAccessException for " +
+			o.getClass() + " " +  name  +")" );
+	    if( dbg > 1 ) iae.printStackTrace();
+	} catch (InvocationTargetException ie) {
+	    if( dbg > 0 )
+		d("InvocationTargetException for " + o.getClass() +
+			" " +  name   +")" );
+	    if( dbg > 1 ) ie.printStackTrace();
+	}
+        return null;
+    }
+
     /** 
      */
     public static void setProperty( Object o, String name ) {
@@ -396,12 +468,27 @@ public final class IntrospectionUtils {
     }
     
     /** Replace ${NAME} with the property value
+     *  @deprecated. Use the explicit method
      */
     public static String replaceProperties(String value,
 					   Object getter )
     {
+        if( getter instanceof Hashtable )
+            return replaceProperties( value, (Hashtable)getter, null );
+
+        if( getter instanceof PropertySource ) {
+            PropertySource src[]=new PropertySource[] {(PropertySource)getter};
+            return replaceProperties( value, null,  src);
+        }
+        return value;
+    }
+
+    /** Replace ${NAME} with the property value
+     */
+    public static String replaceProperties(String value,
+					   Hashtable staticProp, PropertySource dynamicProp[] )
+    {
         StringBuffer sb=new StringBuffer();
-        int i=0;
         int prev=0;
         // assert value!=nil
         int pos;
@@ -425,10 +512,16 @@ public final class IntrospectionUtils {
                 }
                 String n=value.substring( pos+2, endName );
 		String v= null;
-		if( getter instanceof Hashtable ) {
-		    v=(String)((Hashtable)getter).get(n);
-		} else if ( getter instanceof PropertySource ) {
-		    v=((PropertySource)getter).getProperty( n );
+		if( staticProp != null ) {
+		    v=(String)((Hashtable)staticProp).get(n);
+		}
+                if( v==null && dynamicProp != null) {
+                    for( int i=0; i<dynamicProp.length; i++ ) {
+                        v=dynamicProp[i].getProperty( n );
+                        if( v!=null ) {
+                            break;
+                        }
+                    }
 		}
 		if( v== null )
 		    v = "${"+n+"}"; 
@@ -889,7 +982,7 @@ public final class IntrospectionUtils {
 	
     }
 
-    
+
     // debug --------------------
     static final int dbg=0;
     static void d(String s ) {
