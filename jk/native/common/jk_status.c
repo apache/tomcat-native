@@ -509,19 +509,31 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
     }
     else  {
         int n = status_int("lb", s->query_string, -1);
-        worker_record_t *wr;
+        worker_record_t *wr = NULL;
         ajp_worker_t *a;
-        if (n < 0 || n >= (int)sw->we->num_of_workers)
-            return;
-        w = wc_get_worker_for_name(sw->we->worker_list[n], l);
+        if (n >= 0 && n < (int)sw->we->num_of_workers)
+            w = wc_get_worker_for_name(sw->we->worker_list[n], l);
+        else {
+            if (!(b = status_cmd("l", s->query_string, buf, sizeof(buf))))
+                return;
+            w = wc_get_worker_for_name(b, l);
+        }
         if (!w || w->type != JK_LB_WORKER_TYPE)
             return;
         lb = (lb_worker_t *)w->worker_private;
         i = status_int("id", s->query_string, -1);
-        if (i < 0 || i >= (int)lb->num_of_workers)
+        if (i >= 0 && i < (int)lb->num_of_workers)
+            wr = &(lb->lb_workers[i]);
+        else {
+            for (i = 0; i < (int)lb->num_of_workers; i++) {
+                if (strcmp(dworker, lb->lb_workers[i].s->name) == 0) {
+                    wr = &(lb->lb_workers[i]);
+                    break;            
+                }
+            }
+        }
+        if (!wr)
             return;
-
-        wr = &(lb->lb_workers[i]);
         a  = (ajp_worker_t *)wr->w->worker_private;
 
         if ((b = status_cmd("wr", s->query_string, buf, sizeof(buf))))
