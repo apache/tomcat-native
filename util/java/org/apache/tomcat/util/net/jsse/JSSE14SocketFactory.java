@@ -124,11 +124,15 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
                 keystoreType = defaultKeystoreType;
             }
 
+	    String trustAlgorithm = (String)attributes.get("truststoreAlgorithme");
+	    if( trustAlgorithm == null ) {
+		trustAlgorithm = algorithm;
+	    }
             // Create and init SSLContext
             SSLContext context = SSLContext.getInstance(protocol); 
             context.init(getKeyManagers(keystoreType, algorithm,
                                         (String) attributes.get("keyAlias")),
-                         getTrustManagers(keystoreType),
+                         getTrustManagers(keystoreType, trustAlgorithm),
                          new SecureRandom());
 
             // create proxy
@@ -177,14 +181,14 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
     /**
      * Gets the intialized trust managers.
      */
-    protected TrustManager[] getTrustManagers(String keystoreType)
+    protected TrustManager[] getTrustManagers(String keystoreType, String algorithm)
                 throws Exception {
 
         TrustManager[] tms = null;
 
         KeyStore trustStore = getTrustStore(keystoreType);
         if (trustStore != null) {
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(algorithm);
             tmf.init(trustStore);
             tms = tmf.getTrustManagers();
         }
