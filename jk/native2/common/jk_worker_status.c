@@ -971,8 +971,14 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     /* Generate the header */
     s->status=200;
     s->msg="OK";
-    s->headers_out->put(env, s->headers_out,
-                        "Content-Type", "text/html", NULL);
+    if( s->query_string != NULL &&
+        strncmp( s->query_string, "qry=", 4) == 0 ) {
+        s->headers_out->put(env, s->headers_out,
+                            "Content-Type", "text/plain", NULL);
+    } else {
+        s->headers_out->put(env, s->headers_out,
+                            "Content-Type", "text/html", NULL);
+    }
     s->head(env, s );
 
     /** Process the query string.
