@@ -61,6 +61,7 @@ AC_DEFUN(
             $2_CFLAGS="-I ${tempval}/include"
             $2_DIR=${tempval}
             $2_HOME="${tempval}"
+            $2_LIBDIR=""
 	    if ${TEST} -d ${withval}/include ; then
 	      $2_INCL="-I${tempval}/include"
               $2_INCDIR="${tempval}/include"
@@ -87,6 +88,7 @@ AC_DEFUN(
 	      APR_CFLAGS=`${tempval}/srclib/apr/apr-config --cflags`
 	      APR_UTIL_INCDIR=-I${tempval}/srclib/apr-util/include
 	      APR_LIBDIR_LA=`${tempval}/srclib/apr/apr-config --apr-la-file`
+              $2_LIBDIR=${tempval}/lib
 
 	      AC_SUBST(APR_INCDIR)
 	      AC_SUBST(APR_CFLAGS)
@@ -94,7 +96,6 @@ AC_DEFUN(
 	      AC_SUBST(APR_UTIL_INCDIR)
 	    fi
             $2_LDFLAGS=""
-            $2_LIBDIR=""
 	    WEBSERVERS="${WEBSERVERS} $4"
 
 	    AC_SUBST($2_BUILD)
