@@ -83,6 +83,7 @@ class CoyoteResponse extends  Response {
     String reportedname=null;
     org.apache.coyote.Response coyoteResponse=null;
     ByteChunk outputChunk = new ByteChunk();
+    boolean  acknowledged=false;
     
     public CoyoteResponse() {
         super();
@@ -103,6 +104,7 @@ class CoyoteResponse extends  Response {
 	super.recycle();
 	if(coyoteResponse != null) coyoteResponse.recycle();
 	outputChunk.recycle();
+	acknowledged=false;
     }
 
     public void setReported(String reported) {
@@ -141,6 +143,9 @@ class CoyoteResponse extends  Response {
     public void sendAcknowledgement()
         throws IOException {
 
+	// Don't ACK twice on the same request. (e.g. on a forward)
+	if(acknowledged)
+	    return;
         // Ignore any call from an included servlet
         if (isIncluded())
             return; 
@@ -149,5 +154,6 @@ class CoyoteResponse extends  Response {
                 (sm.getString("hsrf.error.ise"));
 
         coyoteResponse.acknowledge();
+	acknowledged=true;
     }
 }
