@@ -85,7 +85,7 @@
           </tr>
 
           <!--
-            Our first row contains the Jakarta and the WebApp logos.
+            Our first row contains the Jakarta and the JK logos.
           -->
           <tr>
             <td bgcolor="{$body-bg}" class="logo" colspan="2" width="*">
@@ -324,7 +324,7 @@
   </xsl:template>
 
   <xsl:template match="th">
-    <td bgcolor="{$table-th-bg}" valign="top">
+    <td bgcolor="{$table-th-bg}" valign="top" align="middle">
         <xsl:if test="@colspan">
             <xsl:attribute name="colspan">
             <xsl:value-of select="@colspan"/>
@@ -359,7 +359,7 @@
       <div align="center">
         <table width="80%" border="1" cellspacing="0" cellpadding="2" bgcolor="#cccccc">
           <tr>
-            <td bgcolor="#cccccc">
+            <td bgcolor="#cccccc" align="left">
               <xsl:apply-templates select="note|wait|type|typenext|read"/>
             </td>
           </tr>
@@ -373,7 +373,7 @@
       <div align="center">
         <table width="80%" border="1" cellspacing="0" cellpadding="2" bgcolor="#000000">
           <tr>
-            <td bgcolor="#000000">
+            <td bgcolor="#000000" align="left">
               <xsl:apply-templates select="notedos|waitdos|typedos|typedosnext|readdos"/>
             </td>
           </tr>
@@ -387,7 +387,7 @@
       <div align="center">
         <table width="80%" border="1" cellspacing="0" cellpadding="2" bgcolor="#000000">
           <tr>
-            <td bgcolor="#000000">
+            <td bgcolor="#000000" align="left">
               <xsl:apply-templates select="note5250|wait5250|type5250|type5250next|read5250"/>
             </td>
           </tr>
