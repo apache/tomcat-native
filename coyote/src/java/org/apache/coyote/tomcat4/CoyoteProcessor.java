@@ -305,6 +305,10 @@ final class CoyoteProcessor
             // Calling the container
             connector.getContainer().invoke(request, response);
             response.finishResponse();
+        } catch (IOException e) {
+            ;
+        } catch (Throwable t) {
+            log(sm.getString("coyoteProcessor.service"), t);
         } finally {
             // Recycle the wrapper request and response
             request.recycle();
@@ -372,7 +376,16 @@ final class CoyoteProcessor
         request.setSecure(connector.getSecure());
         req.scheme().setString(connector.getScheme());
 
+        request.setAuthorization
+            (req.getHeader(Constants.AUTHORIZATION_HEADER));
+
+        if (proxyPort != 0)
+            request.setServerPort(proxyPort);
+        else
+            request.setServerPort(serverPort);
+
         parseHost();
+        parseSessionId();
         parseCookies();
 
     }
@@ -417,6 +430,38 @@ final class CoyoteProcessor
                     request.setServerPort(port);
                 }
             }
+        }
+
+    }
+
+
+    /**
+     * Parse session id in URL.
+     */
+    protected void parseSessionId() {
+
+        String uri = request.getRequestURI();
+
+        int semicolon = uri.indexOf(match);
+        if (semicolon >= 0) {
+            String rest = uri.substring(semicolon + match.length());
+            int semicolon2 = rest.indexOf(';');
+            if (semicolon2 >= 0) {
+                request.setRequestedSessionId(rest.substring(0, semicolon2));
+                rest = rest.substring(semicolon2);
+            } else {
+                request.setRequestedSessionId(rest);
+                rest = "";
+            }
+            request.setRequestedSessionURL(true);
+            uri = uri.substring(0, semicolon) + rest;
+            if (debug >= 1)
+                log(" Requested URL session id is " +
+                    ((HttpServletRequest) request.getRequest())
+                    .getRequestedSessionId());
+        } else {
+            request.setRequestedSessionId(null);
+            request.setRequestedSessionURL(false);
         }
 
     }
@@ -507,6 +552,8 @@ final class CoyoteProcessor
             input = socket.getInputStream();
             output = socket.getOutputStream();
             processor.process(input, output);
+        } catch (IOException e) {
+            ;
         } catch (Throwable t) {
             log(sm.getString("coyoteProcessor.process"), t);
         }

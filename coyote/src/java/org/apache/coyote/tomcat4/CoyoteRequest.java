@@ -83,6 +83,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -113,6 +114,7 @@ import org.apache.catalina.util.Enumerator;
 import org.apache.catalina.util.ParameterMap;
 import org.apache.catalina.util.RequestUtil;
 import org.apache.catalina.util.StringManager;
+import org.apache.catalina.util.StringParser;
 
 
 /**
@@ -275,12 +277,6 @@ public class CoyoteRequest
 
 
     /**
-     * Query string.
-     */
-    protected String queryString = null;
-
-
-    /**
      * User principal.
      */
     protected Principal userPrincipal = null;
@@ -296,12 +292,6 @@ public class CoyoteRequest
      * Request parameters parsed flag.
      */
     protected boolean requestParametersParsed = false;
-
-
-    /**
-     * Authorization parsed flag.
-     */
-    protected boolean authorizationParsed = false;
 
 
     /**
@@ -353,6 +343,18 @@ public class CoyoteRequest
     protected Socket socket = null;
 
 
+    /**
+     * Parse locales.
+     */
+    protected boolean localesParsed = false;
+
+
+    /**
+     * The string parser we will use for parsing request lines.
+     */
+    private StringParser parser = new StringParser();
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -373,12 +375,14 @@ public class CoyoteRequest
         contextPath = "";
         pathInfo = null;
         servletPath = null;
-        queryString = null;
         reader = null;
+        inputStream.recycle();
         userPrincipal = null;
         sessionParsed = false;
+        authorization = null;
         requestParametersParsed = false;
-        authorizationParsed = false;
+        locales.clear();
+        localesParsed = false;
         secure = false;
 
         attributes.clear();
@@ -408,12 +412,6 @@ public class CoyoteRequest
      * Return the authorization credentials sent with this request.
      */
     public String getAuthorization() {
-
-        if (!authorizationParsed) {
-            setAuthorization(coyoteRequest.getHeader
-                             (Constants.AUTHORIZATION_HEADER));
-            authorizationParsed = true;
-        }
 
         return (this.authorization);
 
@@ -828,6 +826,9 @@ public class CoyoteRequest
      */
     public Locale getLocale() {
 
+        if (!localesParsed)
+            parseLocales();
+
         if (locales.size() > 0) {
             return ((Locale) locales.get(0));
         } else {
@@ -844,6 +845,9 @@ public class CoyoteRequest
      * preferred language, the server's default Locale is returned.
      */
     public Enumeration getLocales() {
+
+        if (!localesParsed)
+            parseLocales();
 
         if (locales.size() > 0)
             return (new Enumerator(locales));
@@ -955,6 +959,10 @@ public class CoyoteRequest
         usingReader = true;
         if (reader == null) {
             String encoding = getCharacterEncoding();
+            if (encoding == null) {
+                encoding = 
+                    org.apache.coyote.Constants.DEFAULT_CHARACTER_ENCODING;
+            }
             InputStreamReader r = new InputStreamReader(inputStream, encoding);
             reader = new BufferedReader(r);
         }
@@ -1498,7 +1506,7 @@ public class CoyoteRequest
      * Return the query string associated with this request.
      */
     public String getQueryString() {
-        return (queryString);
+        return (coyoteRequest.queryString().toString());
     }
 
 
@@ -1521,7 +1529,7 @@ public class CoyoteRequest
      * Return the session identifier included in this request, if any.
      */
     public String getRequestedSessionId() {
-        return null;
+        return (requestedSessionId);
     }
 
 
@@ -1850,6 +1858,120 @@ public class CoyoteRequest
             offset += inputLen;
         } while ((len - offset) > 0);
         return len;
+
+    }
+
+
+    /**
+     * Parse request locales.
+     */
+    protected void parseLocales() {
+
+        localesParsed = true;
+
+        Enumeration values = getHeaders("accept-language");
+
+        while (values.hasMoreElements()) {
+            String value = values.nextElement().toString();
+            parseLocalesHeader(value);
+        }
+
+    }
+
+
+    /**
+     * Parse accept-language header value.
+     */
+    protected void parseLocalesHeader(String value) {
+
+        // Store the accumulated languages that have been requested in
+        // a local collection, sorted by the quality value (so we can
+        // add Locales in descending order).  The values will be ArrayLists
+        // containing the corresponding Locales to be added
+        TreeMap locales = new TreeMap();
+
+        // Preprocess the value to remove all whitespace
+        int white = value.indexOf(' ');
+        if (white < 0)
+            white = value.indexOf('\t');
+        if (white >= 0) {
+            StringBuffer sb = new StringBuffer();
+            int len = value.length();
+            for (int i = 0; i < len; i++) {
+                char ch = value.charAt(i);
+                if ((ch != ' ') && (ch != '\t'))
+                    sb.append(ch);
+            }
+            value = sb.toString();
+        }
+
+        // Process each comma-delimited language specification
+        parser.setString(value);        // ASSERT: parser is available to us
+        int length = parser.getLength();
+        while (true) {
+
+            // Extract the next comma-delimited entry
+            int start = parser.getIndex();
+            if (start >= length)
+                break;
+            int end = parser.findChar(',');
+            String entry = parser.extract(start, end).trim();
+            parser.advance();   // For the following entry
+
+            // Extract the quality factor for this entry
+            double quality = 1.0;
+            int semi = entry.indexOf(";q=");
+            if (semi >= 0) {
+                try {
+                    quality = Double.parseDouble(entry.substring(semi + 3));
+                } catch (NumberFormatException e) {
+                    quality = 0.0;
+                }
+                entry = entry.substring(0, semi);
+            }
+
+            // Skip entries we are not going to keep track of
+            if (quality < 0.00005)
+                continue;       // Zero (or effectively zero) quality factors
+            if ("*".equals(entry))
+                continue;       // FIXME - "*" entries are not handled
+
+            // Extract the language and country for this entry
+            String language = null;
+            String country = null;
+            int dash = entry.indexOf('-');
+            if (dash < 0) {
+                language = entry;
+                country = "";
+            } else {
+                language = entry.substring(0, dash);
+                country = entry.substring(dash + 1);
+            }
+
+            // Add a new Locale to the list of Locales for this quality level
+            Locale locale = new Locale(language, country);
+            Double key = new Double(-quality);  // Reverse the order
+            ArrayList values = (ArrayList) locales.get(key);
+            if (values == null) {
+                values = new ArrayList();
+                locales.put(key, values);
+            }
+            values.add(locale);
+
+        }
+
+        // Process the quality values in highest->lowest order (due to
+        // negating the Double value when creating the key)
+        Iterator keys = locales.keySet().iterator();
+        while (keys.hasNext()) {
+            Double key = (Double) keys.next();
+            ArrayList list = (ArrayList) locales.get(key);
+            Iterator values = list.iterator();
+            while (values.hasNext()) {
+                Locale locale = (Locale) values.next();
+                addLocale(locale);
+            }
+        }
 
     }
 
