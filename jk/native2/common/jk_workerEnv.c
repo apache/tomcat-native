@@ -65,6 +65,7 @@
 #include "jk_workerEnv.h" 
 #include "jk_env.h"
 #include "jk_worker.h"
+#include "jk_channel.h"
 
 #define DEFAULT_WORKER              ("ajp13")
 
@@ -243,7 +244,8 @@ static void jk_workerEnv_close(jk_env_t *env, jk_workerEnv_t *_this)
             env->l->jkLog(env, env->l, JK_LOG_DEBUG,
                           "destroy worker %s\n",
                           _this->worker_map->nameAt(env, _this->worker_map, i));
-            w->destroy(env,w);
+            if( w->destroy !=NULL ) 
+                w->destroy(env,w);
         }
     }
     env->l->jkLog(env, env->l, JK_LOG_DEBUG,
@@ -359,7 +361,40 @@ static void jk_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *_this)
     }
 }
 
+static int jk_workerEnv_dispatch(jk_env_t *env, jk_workerEnv_t *_this,
+                                 jk_endpoint_t *e, jk_ws_service_t *r )
+{
+    int code;
+    jk_handler_t *handler;
+    int rc;
+    jk_handler_t **handlerTable=e->worker->workerEnv->handlerTable;
+    int maxHandler=e->worker->workerEnv->lastMessageId;
+    
+    rc=-1;
+    handler=NULL;
+        
+    code = (int)e->reply->getByte(env, e->reply);
+    if( code < maxHandler ) {
+        handler=handlerTable[ code ];
+    }
+    
+    if( handler==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "ajp14.dispath() Invalid code: %d\n", code);
+        e->reply->dump(env, e->reply, "Message: ");
+        return JK_FALSE;
+    }
+        
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
+                  "ajp14.dispath() Calling %d %s\n", handler->messageId,
+                  handler->name);
+    
+    /* Call the message handler */
+    rc=handler->callback( env, e->reply, r, e );
+    return rc;
+}
 
+/* XXX This should go to channel ( or a base class for socket channels ) */
 /*
  * Process incoming messages.
  *
@@ -393,7 +428,8 @@ static int jk_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
                         "ajp14.processCallbacks() Waiting reply\n");
         e->reply->reset(env, e->reply);
         
-        rc= e->reply->receive( env, e->reply, e );
+        rc= e->worker->channel->recv( env, e->worker->channel,  e,
+                                         e->reply);
         if( rc!=JK_TRUE ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "ajp14.service() Error reading reply\n");
@@ -402,26 +438,9 @@ static int jk_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
         }
 
         /* e->reply->dump(env, e->reply, "Received ");  */
-        
-        code = (int)e->reply->getByte(env, e->reply);
-        if( code < maxHandler ) {
-            handler=handlerTable[ code ];
-        }
 
-        if( handler==NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                          "ajp14.processCallback() Invalid code: %d\n", code);
-            e->reply->dump(env, e->reply, "Message: ");
-            return JK_FALSE;
-        }
-        
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "ajp14.dispath() Calling %d %s\n", handler->messageId,
-                      handler->name);
-        
-        /* Call the message handler */
-        rc=handler->callback( env, e->reply, r, e );
-        
+        rc=jk_workerEnv_dispatch( env, _this, e, r );
+
         /* Process the status code returned by handler */
         switch( rc ) {
         case JK_HANDLER_LAST:
@@ -441,7 +460,7 @@ static int jk_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
              * data to file and replay for it
              */
             e->recoverable = JK_FALSE; 
-            rc = e->post->send(env, e->post, e );
+            rc = e->worker->channel->send(env, e->worker->channel, e, e->post );
             if (rc < 0) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "ajp14.processCallbacks() error sending response data\n");
@@ -472,7 +491,13 @@ static int jk_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *_this,
     return JK_FALSE;
 }
 
-
+static jk_worker_t *jk_workerEnv_releasePool(jk_env_t *env,
+                                             jk_workerEnv_t *_this,
+                                             const char *name, 
+                                             jk_map_t *init_data)
+{
+    
+}
 
 
 static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
@@ -480,7 +505,7 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
                                               const char *name, 
                                               jk_map_t *init_data)
 {
-    int err;
+    int err=JK_TRUE;
     char *type;
     jk_env_objectFactory_t fac;
     jk_worker_t *w = NULL;
@@ -517,21 +542,29 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
     w->name=(char *)name;
     w->pool=workerPool;
     w->workerEnv=_this;
-    
-    err=w->validate(env, w, init_data, _this);
+
+    w->rPoolCache= jk_objCache_create( env, workerPool  );
+    err=w->rPoolCache->init( env, w->rPoolCache,
+                                    1024 ); /* XXX make it unbound */
+
+    if( w->validate!=NULL ) 
+        err=w->validate(env, w, init_data, _this);
     
     if( err!=JK_TRUE ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerEnv.createWorker(): validate failed for %s:%s\n", 
                       type, name); 
-        w->destroy(env, w);
+        if( w->destroy != NULL ) 
+            w->destroy(env, w);
         return NULL;
     }
-    
-    err=w->init(env, w, init_data, _this);
+
+    if( w->init != NULL )
+        err=w->init(env, w, init_data, _this);
     
     if(err!=JK_TRUE) {
-        w->destroy(env, w);
+        if( w->destroy != NULL ) 
+            w->destroy(env, w);
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerEnv.createWorker() init failed for %s\n", 
                       name); 
@@ -548,7 +581,8 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerEnv.createWorker() duplicated %s worker \n",
                       name);
-        oldW->destroy(env, oldW);
+        if( w->destroy != NULL )
+            oldW->destroy(env, oldW);
     }
     
     return w;
@@ -652,6 +686,7 @@ int JK_METHOD jk_workerEnv_factory( jk_env_t *env, jk_pool_t *pool, void **resul
     _this->createWorker=&jk_workerEnv_createWorker;
     _this->createWebapp=&jk_workerEnv_createWebapp;
     _this->processCallbacks=&jk_workerEnv_processCallbacks;
+    _this->dispatch=&jk_workerEnv_dispatch;
 
     _this->rootWebapp=_this->createWebapp( env, _this, NULL, "/", NULL );
 
