@@ -81,8 +81,12 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/apache13/%.c
 
 all: prepare ${BUILD_DIR}/mod_jk2.so
 
-${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
-	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}
+${BUILD_DIR}/mod_jk2.so: ${BUILD_DIR}/$(APACHE_LIBEXEC)/mod_jk2.so
+	$(CP) $^ $@
+
+${BUILD_DIR}/$(APACHE_LIBEXEC)/mod_jk2.so: ${BUILD_DIR}/mod_jk2.la
+	mkdir -p ${BUILD_DIR}$(APACHE_LIBEXEC)
+	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}/$(APACHE_LIBEXEC)
 
 ${BUILD_DIR}/mod_jk2.la: ${COMMON_LO_FILES} ${A_LO_FILES}
 	${MOD_LINK} -o $@ $^ ${APR_LDFLAGS}
