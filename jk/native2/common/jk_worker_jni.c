@@ -434,8 +434,7 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_bean_t *bean)
                 apr_thread_yield();
             }
 #endif
-            (*jniEnv)->UnregisterNatives(jniEnv, jniWorker->jk_java_bridge_apri_class);
-            vm->destroy(env, vm);
+            vm->detach(env, vm);
         }
     }
     env->l->jkLog(env, env->l, JK_LOG_INFO, "jni.destroy() done\n");
