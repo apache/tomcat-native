@@ -175,7 +175,7 @@
            destdir="${build.dir}/${dist.name}"
          extension=".html"
              style="style.xsl"
-          excludes="build.xml project.xml"
+          excludes="build.xml project.xml empty.xml"
           includes="*.xml">
       <param name="relative-path" expression="."/>
     </style>
