@@ -188,6 +188,7 @@ public class ModJkMX extends JkHandler
             if( time - lastRefresh < updateInterval ) {
                 return;
             }
+            log.debug( "Refreshing attributes");
             lastRefresh=time;
             // connect to apache, get a list of mbeans
             BufferedReader is=getStream( "dmp=*");
@@ -197,16 +198,20 @@ public class ModJkMX extends JkHandler
                 // for each mbean, create a proxy
                 log.info("Read " + line);
                 StringTokenizer st=new StringTokenizer(line,"|");
-                if( st.countTokens() < 5 ) continue;
+                if( st.countTokens() < 4 ) continue;
                 String key=st.nextToken();
                 if( ! "G".equals( key )) continue;
                 String name=st.nextToken();
                 String att=st.nextToken();
-                String val=st.nextToken(null);
+                String val=st.nextToken("").substring(1);
                 log.info("Token: " + key + " name: " + name + " att=" + att +
                         " val=" + val);
                 MBeanProxy proxy=(MBeanProxy)mbeans.get(name);
-                proxy.update(att, val);
+                if( proxy==null ) {
+                    log.info( "Unknown object " + name);
+                } else {
+                    proxy.update(att, val);
+                }
 
             }
         } catch( Exception ex ) {
@@ -301,6 +306,7 @@ public class ModJkMX extends JkHandler
         {
             log.info("Register " + name );
             int col=name.indexOf( ':' );
+            this.jkName=name;
             String type=name.substring(0, col );
             String id=name.substring(col+1);
             id=id.replace(':', '%');
@@ -339,6 +345,7 @@ public class ModJkMX extends JkHandler
         }
 
         private void update( String name, String val ) {
+            log.debug( "Updating " + jkName + " " + name + " " + val);
             atts.put( name, val);
         }
 
@@ -353,7 +360,16 @@ public class ModJkMX extends JkHandler
             throws AttributeNotFoundException, MBeanException,
             ReflectionException
         {
-
+            try {
+                // we support only string values
+                String val=(String)attribute.getValue();
+                String name=attribute.getName();
+                BufferedReader is=jkmx.getStream("set=" + jkName + "|" +
+                        name + "|" + val);
+                log.info( "Setting " + jkName + " " + name + " result " + is.readLine());
+            } catch( Exception ex ) {
+                throw new MBeanException(ex);
+            }
         }
     }
 }
