@@ -246,7 +246,7 @@ public class JkCoyoteHandler extends JkHandler implements
         
         if( ep.getNote( headersMsgNote ) == null ) {
             Msg msg2=new MsgAjp();
-            ep.setNote( headersMsgNote, msg );
+            ep.setNote( headersMsgNote, msg2 );
         }
         
         res.setNote( epNote, ep );
