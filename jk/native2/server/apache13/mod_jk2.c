@@ -437,7 +437,6 @@ static int jk2_translate(request_rec *r)
 {
     jk_uriEnv_t *uriEnv;
     jk_env_t *env;
-    int port;
             
     if(r->proxyreq) {
         return DECLINED;
@@ -450,13 +449,10 @@ static int jk2_translate(request_rec *r)
     /* get_env() */
     env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
         
-    port = ap_get_server_port(r);
-    if (ap_is_default_port(port, r))
-        port = 0;
     uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,
-                r->server->is_virtual ? ap_get_server_name(r) : NULL,
-                port,
-                r->uri);
+                                       ap_get_server_name(r),
+                                       ap_get_server_port(r),
+                                       r->uri);
     
     if(uriEnv==NULL || uriEnv->workerName==NULL) {
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );

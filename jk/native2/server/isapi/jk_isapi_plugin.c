@@ -270,6 +270,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             DWORD szHost = sizeof(Host);
             DWORD szTranslate = sizeof(Translate);
             DWORD szPort = sizeof(Port);
+            int   nPort;
 #ifdef SF_NOTIFY_AUTH_COMPLETE
             if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
                 GetHeader=((PHTTP_FILTER_AUTH_COMPLETE_INFO)pvNotification)->GetHeader;
@@ -341,13 +342,11 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                         Port[szPort-1] = '\0';
                     }
                 }
-                szPort = atoi(Port);
-                if (szPort == 80 || szPort == 443)
-                    szPort = 0;
+                nPort = atoi(Port);
                 env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
-                            "In HttpFilterProc Virtual Host redirection of %s : %d\n", 
+                            "In HttpFilterProc Virtual Host redirection of %s : %s\n", 
                             Host, Port);
-                uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host, szPort, uri );
+                uriEnv = workerEnv->uriMap->mapUri(env, workerEnv->uriMap,Host, nPort, uri );
 
                 if( uriEnv!=NULL ) {
                     char *forwardURI;
