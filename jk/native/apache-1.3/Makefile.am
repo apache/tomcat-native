@@ -6,6 +6,8 @@ JAVA_HOME=@JAVA_HOME@
 CP=@CP@
 APACHE_DIR=@APACHE_DIR@
 MKDIR=@MKDIR@
+DESTDIR=@APACHE_DIR@
+libdir=/libexec
 
 APACHE_FILES = Makefile.tmpl Makefile.libdir libjk.module
 
