@@ -483,3 +483,46 @@ char *map_replace_properties(const char *value, jk_map_t *m)
     return rc;
 }
 
+
+/** Get a string property, using the worker's style
+    for properties.
+    Example worker.ajp13.host=localhost.
+*/
+char *map_getStrProp(jk_map_t *m,
+                     char *objType,
+                     char *objName,
+                     char *pname,
+                     char *def)
+{
+    char buf[1024];
+
+    if( m==NULL ||
+        objType==NULL ||
+        objName==NULL ||
+        pname==NULL ) {
+        return def;
+    }
+
+    sprintf(buf, "%s.%s.%s", objType, objName, pname);
+    return map_get_string(m, buf, NULL);
+}
+
+int map_getIntProp(jk_map_t *m,
+                   char *objType,
+                   char *objName,
+                   char *pname,
+                   int def)
+{
+    char buf[1024];
+
+    if( m==NULL ||
+        objType==NULL ||
+        objName==NULL ||
+        pname==NULL ) {
+        return def;
+    }
+
+    sprintf(buf, "%s.%s.%s", objType, objName, pname);
+    return map_get_int(m, buf, def);
+}
+
