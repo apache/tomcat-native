@@ -80,12 +80,6 @@
 #include "jk_iis.h"
 
 
-static char *SERVER_NAME = "SERVER_NAME";
-static char *SERVER_SOFTWARE = "SERVER_SOFTWARE";
-
-
-
-
 static int JK_METHOD jk2_service_iis_head(jk_env_t *env, jk_ws_service_t *s ){
     static char crlf[3] = { (char)13, (char)10, '\0' };
     char *reason;
@@ -262,7 +256,7 @@ static int JK_METHOD jk2_service_iis_write(jk_env_t *env, jk_ws_service_t *s,
     return JK_FALSE;
 }
 
-static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
+static int get_server_value(struct jk_env *env, LPEXTENSION_CONTROL_BLOCK lpEcb,
                             char *name,
                             char  *buf,
                             DWORD bufsz,
@@ -286,36 +280,19 @@ static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
 }
 
 
-int JK_METHOD jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s)
-{
-    if(s==NULL ) {
-        return JK_FALSE;
-    }
-
-    s->head   = jk2_service_iis_head;
-    s->read   = jk2_service_iis_read;
-    s->write  = jk2_service_iis_write;
-    s->init   = jk2_service_iis_init_ws_service;
-    
-    return JK_TRUE;
-}
-
-static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_service_t *s,
+static int JK_METHOD jk2_service_iis_initService( struct jk_env *env, jk_ws_service_t *s,
                  struct jk_worker *w, void *serverObj )
 /* */
 {
     LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)serverObj;
-    char **worker_name;
-	
+    char *worker_name;
+	char huge_buf[16 * 1024]; /* should be enough for all */
+
     DWORD huge_buf_sz;
 
     s->jvm_route = NULL;
 
-    s->head = jk_service_iis_head;
-    s->read = read;
-    s->write = write;
-
-    GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, ( worker->name ));
+    GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, ( worker_name ));
     GET_SERVER_VARIABLE_VALUE(HTTP_URI_HEADER_NAME, s->req_uri);     
     GET_SERVER_VARIABLE_VALUE(HTTP_QUERY_HEADER_NAME, s->query_string);     
     
@@ -394,7 +371,7 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
             for(i = 0 ; i < 9 ; i++) {                
                 if (ssl_env_values[i]) {
                     s->attributes->put( env, s->attributes, 
-                                        ssl_env_names[i], ssl_env_values[i]);
+                                        ssl_env_names[i], ssl_env_values[i],NULL);
                     j++;
                 }
             }
@@ -425,7 +402,8 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
 
     
     huge_buf_sz = sizeof(huge_buf);         
-    if (get_server_value(lpEcb,
+    if (get_server_value(env,
+						lpEcb,
                          "ALL_HTTP",             
                          huge_buf,           
                          huge_buf_sz,        
@@ -486,7 +464,7 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
                 }
 
                 if (real_header) {
-                    s->headers_in->put( env, s->headers_in, headerName, tmp );
+                    s->headers_in->put( env, s->headers_in, headerName, tmp, NULL );
                 }
                 
                 while(*tmp != '\n' && *tmp != '\r') {
@@ -510,7 +488,7 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
              */
             if(need_content_length_header) {
                 s->headers_in->put( env, s->headers_in,
-                                    "content-length", "0");
+                                    "content-length", "0",NULL);
                 cnt++;
             }
         } else {
@@ -524,15 +502,15 @@ static int JK_METHOD jk2_service_iis_init_ws_service( struct jk_env *env, jk_ws_
     return JK_TRUE;
 }
 
-static void jk2_service_iis_afterRequest(jk_env_t *env, jk_ws_service_t *s )
+static void JK_METHOD jk2_service_iis_afterRequest(jk_env_t *env, jk_ws_service_t *s )
 {
     
     if (s->content_read < s->content_length ||
         (s->is_chunked && ! s->no_more_chunks)) {
-        
-        request_rec *r=s->ws_private;
 
-        char *buff = apr_palloc(r->pool, 2048);
+		LPEXTENSION_CONTROL_BLOCK  lpEcb=(LPEXTENSION_CONTROL_BLOCK)s->ws_private;
+
+        char *buff = s->pool->calloc(env,s->pool, 2048);
         if (buff != NULL) {
             int rd;
             /* Is there a IIS equivalent ? */
