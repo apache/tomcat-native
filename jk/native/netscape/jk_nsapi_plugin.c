@@ -68,11 +68,11 @@
 #include "jk_pool.h"
 #include "jk_service.h"
 #include "jk_worker.h"
-#include "jk_ajp12_worker.h"
 
 #include "nsapi.h"
 
 #define URI_PATTERN "path"
+#define DEFAULT_WORKER_NAME ("ajp13")
 
 struct nsapi_private_data {
     jk_pool_t p;
@@ -355,7 +355,7 @@ NSAPI_PUBLIC int jk_service(pblock *pb,
     }
 
     if(!worker_name) {
-        worker_name = JK_AJP12_WORKER_NAME;
+        worker_name = DEFAULT_WORKER_NAME;
     }
 
     worker = wc_get_worker_for_name(worker_name, logger);

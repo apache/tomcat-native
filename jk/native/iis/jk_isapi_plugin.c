@@ -76,11 +76,11 @@
 #include "jk_pool.h"
 #include "jk_service.h"
 #include "jk_worker.h"
-#include "jk_ajp12_worker.h"
 #include "jk_uri_worker_map.h"
 
 #define VERSION_STRING "Jakarta/ISAPI/1.0b1"
 
+#define DEFAULT_WORKER_NAME ("ajp13")
 /*
  * We use special headers to pass values from the filter to the 
  * extension. These values are:
@@ -1068,7 +1068,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
         s->query_string = t;
     } else {
         s->query_string = private_data->lpEcb->lpszQueryString;
-        *worker_name    = JK_AJP12_WORKER_NAME;
+        *worker_name    = DEFAULT_WORKER_NAME;
         GET_SERVER_VARIABLE_VALUE("URL", s->req_uri);       
         if (unescape_url(s->req_uri) < 0)
             return JK_FALSE;

@@ -81,7 +81,6 @@
 #include "jk_pool.h"
 #include "jk_service.h"
 #include "jk_worker.h"
-#include "jk_ajp12_worker.h"
 #include "jk_uri_worker_map.h"
 
 #include <stdarg.h>
