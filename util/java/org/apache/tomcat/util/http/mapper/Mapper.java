@@ -862,10 +862,6 @@ public final class Mapper {
         if (b == -1) {
             return -1;
         }
-        if( name==null || map.length ==0 ) {
-            System.out.println("XXX Mapper: unexpected null " + name + " " + map);
-            return -1;
-        }
         if (name.compareTo(map[0].name) < 0) {
             return -1;
         }
