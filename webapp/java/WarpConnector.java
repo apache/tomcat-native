@@ -462,6 +462,7 @@ public class WarpConnector implements Connector, Lifecycle, Runnable {
      * Start accepting connections by this <code>Connector</code>.
      */
     public void start() throws LifecycleException {
+        if (!initialized) this.initialize();
         if (started) throw new LifecycleException("Already started");
 
         // Can't get a hold of a server socket
