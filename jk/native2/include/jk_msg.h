@@ -61,14 +61,25 @@
 #include "jk_global.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
-#include "jk_msg_buff.h"
+#include "jk_endpoint.h"
+#include "jk_service.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
+struct jk_msg;
+typedef struct jk_msg jk_msg_t;
+
+struct jk_endpoint;
+struct jk_ws_service;
+struct jk_logger;
+    
+#define DEF_BUFFER_SZ (8 * 1024)
+#define AJP13_MAX_SEND_BODY_SZ      (DEF_BUFFER_SZ - 6)
+    
 /**
- * Abstract interface to jk marshalling. Different encodings and
+ * Abstract interface to marshalling. Different encodings and
  * communication mechanisms can be supported.
  *
  * This object is recyclable, but is not thread safe - it can
@@ -94,14 +105,6 @@ struct jk_msg {
      */
     int id;
  
-    /** List of properties. The handler can be configured.
-     *  ( password for login, etc ).
-     */
-    /*
-      char **supportedProperties;
-      jk_map_t *properties;
-    */
-
     /*
      * Prepare the buffer for a new invocation 
      */
@@ -116,37 +119,85 @@ struct jk_msg {
      * Dump the buffer header
      *   @param err Message text
      */
-    void (*dump)(struct jk_msg *_this, char *err);
+    void (*dump)(struct jk_msg *_this, struct jk_logger *log, char *err);
 
-    void (*appendByte)(struct jk_msg *_this, unsigned char val);
+    int (*appendByte)(struct jk_msg *_this, unsigned char val);
     
-    void (*appendBytes)(struct jk_msg *_this, 
-                       const unsigned char * param,
-                       const int len);
+    int (*appendBytes)(struct jk_msg *_this, 
+                        const unsigned char * param,
+                        const int len);
 
-    void (*appendInt)(struct jk_msg *_this, 
-                      const unsigned short val);
+    int (*appendInt)(struct jk_msg *_this, 
+                     const unsigned short val);
 
-    void (*appendLong)(struct jk_msg *_this, 
+    int (*appendLong)(struct jk_msg *_this, 
                        const unsigned long val);
 
-    void (*appendString)(struct jk_msg *_this, 
+    int (*appendString)(struct jk_msg *_this, 
                          const char *param);
 
     unsigned char (*getByte)(struct jk_msg *_this);
 
     unsigned short (*getInt)(struct jk_msg *_this);
 
+    /** Look at the next int, without reading it
+     */
+    unsigned short (*peekInt)(struct jk_msg *_this);
+
     unsigned long (*getLong)(struct jk_msg *_this);
 
-    char * (*getString)(struct jk_msg *_this);
-                             
-    
-    void (*getBytes)(struct jk_msg *_this, char *buf, int len);
-                             
-    
+    /** Return a string. 
+        The buffer is internal to the message, you must save
+        or make sure the message lives long enough.
+     */ 
+    unsigned char *(*getString)(struct jk_msg *_this);
+
+    /** Return a byte[] and it's length.
+        The buffer is internal to the message, you must save
+        or make sure the message lives long enough.
+     */ 
+    unsigned char *(*getBytes)(struct jk_msg *_this, int *len);
+
+
+    /*
+     * Receive a message from endpoint
+     */
+    int (*receive)(jk_msg_t *_this, struct jk_endpoint *ae );
+
+    /*
+     * Send a message to endpoint
+     */
+    int (*send)(jk_msg_t *_this, struct jk_endpoint *ae );
+
+    /** 
+     * Special method. Will read data from the server and add them as
+     * bytes. It is equivalent with jk_requtil_readFully() in a buffer
+     * and then jk_msg_appendBytes(), except that we use directly the
+     * internal buffer.
+     *
+     * Returns -1 on error, else number of bytes read
+     */
+    int (*appendFromServer)(struct jk_msg *_this,
+                            struct jk_ws_service *r,
+                            struct jk_endpoint  *ae,
+                            int            len );
+
     void *_privatePtr;
+    
+    /* Temporary, don't use */
+    struct jk_pool *pool;
+    struct jk_logger *l;
+    
+    unsigned char *buf;
+    int pos; 
+    int len;
+    int maxlen;
+
 };
+
+/* Temp */
+jk_msg_t *jk_msg_ajp_create(struct jk_pool *p,
+                            struct jk_logger *l, int buffSize);
     
 #ifdef __cplusplus
 }
