@@ -256,31 +256,40 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
 {
     int i, j, n;
     char *name;
-    char hostame[1024] = {0};
+    char hostname[1024] = {0};
 
     if (port) {
         if (vhost) {
             if (strchr(vhost, ':'))
-                strcpy(hostame, vhost);
+                strcpy(hostname, vhost);
             else
-               sprintf(hostame, "%s:%d", vhost, port);
+               sprintf(hostname, "%s:%d", vhost, port);
         }
         else
-            sprintf(hostame, "*:%d", port);
+            sprintf(hostname, "*:%d", port);
     }
     else if (vhost)
-        strcpy(hostame, vhost); 
+        strcpy(hostname, vhost); 
     else /* Return default host if vhost and port wasn't suplied */
         return uriMap->vhosts->get(env, uriMap->vhosts, "*");
     
     n = uriMap->vhosts->size(env, uriMap->vhosts);
-    /* Check the hostnames first */
+    /* Check the exact hostname:port first */
     for (i = 0 ; i < n ; i++) {
         jk_uriEnv_t *uriEnv = uriMap->vhosts->valueAt(env, uriMap->vhosts, i);
         name = uriMap->vhosts->nameAt(env, uriMap->vhosts, i);
         /* Host name is not case sensitive */
-        if (strcasecmp(name, hostame) == 0) {
-            if (port == 0 || port == uriEnv->port)
+        if (strcasecmp(name, hostname) == 0 && port == uriEnv->port)
+            return uriEnv;
+    }
+
+    if (vhost) {
+        /* Check the hostname */
+        for (i = 0 ; i < n ; i++) {
+            jk_uriEnv_t *uriEnv = uriMap->vhosts->valueAt(env, uriMap->vhosts, i);
+            name = uriMap->vhosts->nameAt(env, uriMap->vhosts, i);
+            /* Host name is not case sensitive */
+            if (strcasecmp(name, vhost) == 0)
                 return uriEnv;
         }
     }
@@ -292,10 +301,8 @@ static jk_uriEnv_t *jk2_uriMap_hostMap(jk_env_t *env, jk_uriMap_t *uriMap,
             int m = uriEnv->aliases->size(env, uriEnv->aliases);
             for (j = 0; j < m; j++) {
                 name = uriEnv->aliases->nameAt(env, uriEnv->aliases, j);
-                if (strcasecmp(name, hostame) == 0) {
-                    if (port == 0 || port == uriEnv->port)
-                        return uriEnv;
-                }
+                if (strcasecmp(name, hostname) == 0)
+                    return uriEnv;
             }
         }
     }
@@ -574,7 +581,7 @@ static INLINE int jk2_last_index_of(const char *str,char ch)
     const char *str_minus_one=str-1;
     const char *s=str+strlen(str);
     while(s!=str_minus_one && ch!=*s) {
-	--s;
+    --s;
     }
     return (s-str);
 }
@@ -632,7 +639,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     */
     
     if (uriMap == NULL || uri==NULL) 
-	    return NULL;
+        return NULL;
     
     if (uriMap->mbean->debug > 1)
         env->l->jkLog(env, env->l, JK_LOG_DEBUG,
