@@ -555,14 +555,14 @@ public class ChannelSocket extends JkHandler {
                 }
             }
         } catch( Exception ex ) {
-            if( ex.getMessage().indexOf( "Connection reset" ) >=0 ||
-                ex.getMessage().indexOf( "Read timed out" ) >=0 ) 
+            if( ex.getMessage().indexOf( "Connection reset" ) >= 0)
                 log.info( "Server has been restarted or reset this connection");
+            else if (ex.getMessage().indexOf( "Read timed out" ) >=0 )
+                log.info( "connection timeout reached");            
             else
                 log.error( "Error, processing connection", ex);
         }
-	    finally {
-	    	
+        finally {
 	    	/*
 	    	 * Whatever happened to this connection (remote closed it, timeout, read error)
 	    	 * the socket SHOULD be closed, or we may be in situation where the webserver
@@ -572,10 +572,10 @@ public class ChannelSocket extends JkHandler {
             try {
                 this.close( ep );
             }
-            catch( Exception ex) {
-                log.error( "Error, closing connection", ex);
+            catch( Exception e) {
+                log.error( "Error, closing connection", e);
             }
-	    }
+        }
     }
 
     public int invoke( Msg msg, MsgContext ep ) throws IOException {
