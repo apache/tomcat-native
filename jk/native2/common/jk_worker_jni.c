@@ -69,18 +69,14 @@
 #include "jni.h"
 
 /* default only, will be  configurable  */
-#define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/server/JniMain")
+#define JAVA_BRIDGE_CLASS_NAME ("org/apache/jk/server/JkMain")
 
 struct jni_worker_data {
-
     jclass      jk_java_bridge_class;
-    jmethodID   jk_startup_method;
-    jmethodID   jk_shutdown_method;
-
+    jmethodID   jk_main_method;
     char *className;
-    char *tomcat_cmd_line;
-    char *stdout_name;
-    char *stderr_name;
+    char **args;
+    int nArgs;
 };
 
 typedef struct jni_worker_data jni_worker_data_t;
@@ -92,26 +88,17 @@ typedef struct jni_worker_data jni_worker_data_t;
  */
 static int jk2_get_method_ids(jk_env_t *env, jni_worker_data_t *p, JNIEnv *jniEnv )
 {
-
-    p->jk_startup_method =
+    p->jk_main_method =
         (*jniEnv)->GetStaticMethodID(jniEnv, p->jk_java_bridge_class,
-                                     "startup", 
-               "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");
+                                     "main", 
+                                     "([Ljava/lang/String;)V");
+
     
-    if(!p->jk_startup_method) {
-	env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find startup()\n"); 
+    if(!p->jk_main_method) {
+	env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find main()\n"); 
 	return JK_FALSE;
     }
 
-    p->jk_shutdown_method = (*jniEnv)->GetStaticMethodID(jniEnv,
-                                                   p->jk_java_bridge_class, 
-                                                   "shutdown", 
-                                                   "()V");   
-    if(!p->jk_shutdown_method) {
-	env->l->jkLog(env, env->l, JK_LOG_EMERG, "Can't find shutdown()\n"); 
-        return JK_FALSE;
-    }    
-    
     return JK_TRUE;
 }
 
@@ -143,12 +130,9 @@ static int JK_METHOD jk2_jni_worker_setProperty(jk_env_t *env, jk_bean_t *mbean,
 
     if( strcmp( name, "class" )==0 ) {
         jniWorker->className = value;
-    } else if( strcmp( name, "cmd_line" )==0 ) {
-        jniWorker->tomcat_cmd_line = value;
-    } else if( strcmp( name, "stdout" )==0 ) {
-        jniWorker->stdout_name=value;
-    } else if( strcmp( name, "stderr" )==0 ) {
-        jniWorker->stderr_name=value;
+    } else if( strcmp( name, "ARG" )==0 ) {
+        jniWorker->args[jniWorker->nArgs]=value;
+        jniWorker->nArgs++;
     } else {
         return JK_FALSE;
     }
@@ -168,6 +152,9 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
     jk_map_t *props=_this->workerEnv->initData;
     jk_bean_t *chB;
     jk_vm_t *vm=_this->workerEnv->vm;
+    jclass jstringClass;
+    jarray jargs;
+    int i=0;
     
     if(! _this || ! _this->worker_private) {
         env->l->jkLog(env, env->l, JK_LOG_EMERG,
@@ -187,17 +174,14 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
         jniWorker->className=JAVA_BRIDGE_CLASS_NAME;
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "jni.validate() cmd: %s %s %s %s\n",
-                  jniWorker->className, jniWorker->tomcat_cmd_line,
-                  jniWorker->stdout_name, jniWorker->stderr_name);
-    
+                  "jni.validate() class= %s \n",
+                  jniWorker->className);
 
     jniEnv = (JNIEnv *)vm->attach( env, vm );
 
     if( jniEnv==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "workerJni.init() Can't attach to VM\n");
-        
         return JK_FALSE;
     }
     
@@ -212,7 +196,7 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
         return JK_FALSE;
     }
     
-    env->l->jkLog(env, env->l, JK_LOG_EMERG,
+    env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "Loaded %s\n", jniWorker->className);
 
     rc=jk2_get_method_ids(env, jniWorker, jniEnv);
@@ -224,27 +208,27 @@ static int JK_METHOD jk2_jni_worker_init(jk_env_t *env, jk_worker_t *_this)
         return JK_FALSE;
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "jni.init()\n");
+    jstringClass=(*jniEnv)->FindClass(jniEnv, "java/lang/String" );
 
-    if(jniWorker->tomcat_cmd_line) {
-        cmd_line = (*jniEnv)->NewStringUTF(jniEnv, jniWorker->tomcat_cmd_line);
-    }
-    if(jniWorker->stdout_name) {
-        stdout_name = (*jniEnv)->NewStringUTF(jniEnv, jniWorker->stdout_name);
-    }
-    if(jniWorker->stdout_name) {
-        stderr_name = (*jniEnv)->NewStringUTF(jniEnv, jniWorker->stderr_name);
+    jargs=(*jniEnv)->NewObjectArray(jniEnv, jniWorker->nArgs, jstringClass, NULL);
+
+    for( i=0; i<jniWorker->nArgs; i++ ) {
+        jstring arg=NULL;
+        if( jniWorker->args[i] != NULL ) {
+            arg=(*jniEnv)->NewStringUTF(jniEnv, jniWorker->args[i] );
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "jni.init() ARG %s\n", jniWorker->args[i]);
+        }
+        (*jniEnv)->SetObjectArrayElement(jniEnv, jargs, i, arg );        
     }
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "jni.init() calling Tomcat to intialize itself...\n");
+                  "jni.init() calling main()...\n");
     
-    rc = (*jniEnv)->CallStaticIntMethod(jniEnv,
-                                        jniWorker->jk_java_bridge_class,
-                                        jniWorker->jk_startup_method,
-                                        cmd_line,
-                                        stdout_name,
-                                        stderr_name);
+    (*jniEnv)->CallStaticVoidMethod(jniEnv,
+                                    jniWorker->jk_java_bridge_class,
+                                    jniWorker->jk_main_method,
+                                    jargs);
     
     vm->detach(env, vm);
     return JK_TRUE;
@@ -264,20 +248,27 @@ static int JK_METHOD jk2_jni_worker_destroy(jk_env_t *env, jk_worker_t *_this)
 
     jniWorker = _this->worker_private;
 
-    if(! jniWorker->jk_shutdown_method) {
-        env->l->jkLog(env, env->l, JK_LOG_EMERG,
-                      "In destroy, Tomcat not intantiated\n");
-        return JK_FALSE;
-    }
+    /* A MUCH better solution is to use the standard JDK1.3 mechanism.
+       Or Ajp13 shutdown.
+       I'll implement JDK1.3 after I check if I do need to do anything
+       on the C side ( i.e. call System.exit() explicitely - I have a feeling
+       the smart VM guys have added a hook to at_exit ). 
+    */
+    
+/*     if(! jniWorker->jk_shutdown_method) { */
+/*         env->l->jkLog(env, env->l, JK_LOG_EMERG, */
+/*                       "In destroy, Tomcat not intantiated\n"); */
+/*         return JK_FALSE; */
+/*     } */
 
-    if((jniEnv = vm->attach(env, vm))) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                      "jni.destroy(), shutting down Tomcat...\n");
-        (*jniEnv)->CallStaticVoidMethod(jniEnv,
-                                  jniWorker->jk_java_bridge_class,
-                                  jniWorker->jk_shutdown_method);
-        vm->detach(env, vm);
-    }
+/*     if((jniEnv = vm->attach(env, vm))) { */
+/*         env->l->jkLog(env, env->l, JK_LOG_INFO,  */
+/*                       "jni.destroy(), shutting down Tomcat...\n"); */
+/*         (*jniEnv)->CallStaticVoidMethod(jniEnv, */
+/*                                   jniWorker->jk_java_bridge_class, */
+/*                                   jniWorker->jk_shutdown_method); */
+/*         vm->detach(env, vm); */
+/*     } */
 
     _this->pool->close(env, _this->pool);
 
@@ -318,12 +309,9 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     _this->pool=pool;
 
     jniData->jk_java_bridge_class  = NULL;
-    jniData->jk_startup_method     = NULL;
-    jniData->jk_shutdown_method    = NULL;
 
-    jniData->tomcat_cmd_line       = NULL;
-    jniData->stdout_name           = NULL;
-    jniData->stderr_name           = NULL;
+    jniData->args = pool->calloc( env, pool, 64 * sizeof( char *));
+    jniData->nArgs =0;
 
     _this->init           = jk2_jni_worker_init;
     _this->destroy        = jk2_jni_worker_destroy;
