@@ -1025,14 +1025,18 @@ static int ajp_send_request(jk_endpoint_t *e,
 				err++;
 		}	
 
+        /* If we got an error or can't send data, then try to get a pooled */
+        /* connection and try again.  If we are succesful, break out of this */
+        /* loop. */
         if (err || ajp_connection_tcp_send_message(ae, op->request, l) == JK_FALSE) {
 	        jk_log(l, JK_LOG_INFO,
 	               "Error sending request try another pooled connection\n");
 	        jk_close_socket(ae->sd);
 	        ae->sd = -1;
 	        ajp_reuse_connection(ae, l);
-	        break;
 	    }
+        else
+            break;
 	}
 	
     /*
