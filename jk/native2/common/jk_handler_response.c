@@ -111,7 +111,7 @@ body_chunk :=
     body    length*(var binary)
 
  */
-static int jk2_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
+static int JK_METHOD jk2_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
                                     jk_ws_service_t  *s, jk_endpoint_t *ae )
 {
     int err=JK_FALSE;
@@ -197,7 +197,7 @@ static int jk2_handler_startResponse(jk_env_t *env, jk_msg_t   *msg,
 
 /** SEND_BODY_CHUNK handler
  */
-static int jk2_handler_sendChunk(jk_env_t *env, jk_msg_t   *msg,
+static int JK_METHOD jk2_handler_sendChunk(jk_env_t *env, jk_msg_t   *msg,
                                 jk_ws_service_t  *r, jk_endpoint_t *ae)
 {
     int err;
@@ -215,7 +215,7 @@ static int jk2_handler_sendChunk(jk_env_t *env, jk_msg_t   *msg,
     return JK_HANDLER_OK;
 }
 
-static int jk2_handler_endResponse(jk_env_t *env, jk_msg_t   *msg,
+static int JK_METHOD jk2_handler_endResponse(jk_env_t *env, jk_msg_t   *msg,
                                   jk_ws_service_t  *r,jk_endpoint_t *ae)
 {
     ae->reuse = (int)msg->getByte(env, msg);
@@ -231,7 +231,7 @@ static int jk2_handler_endResponse(jk_env_t *env, jk_msg_t   *msg,
 
 /** SEND_BODY_CHUNK handler
  */
-static int jk2_handler_getChunk(jk_env_t *env, jk_msg_t   *msg,
+static int JK_METHOD jk2_handler_getChunk(jk_env_t *env, jk_msg_t   *msg,
                                jk_ws_service_t  *r, jk_endpoint_t *ae)
 {
     int len = msg->getInt(env, msg);
@@ -299,7 +299,7 @@ int JK_METHOD jk2_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
                                             jk_bean_t *result,
                                             const char *type, const char *name)
 {
-    jk_map_t *map;
+//    jk_map_t *map;
     jk_handler_t *h;
     
     h=(jk_handler_t *)pool->calloc( env, pool, sizeof( jk_handler_t));

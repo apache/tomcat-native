@@ -140,7 +140,7 @@ struct jk_handler {
 
     jk_handler_callback callback;
 
-    int (*init)( struct jk_env *env, struct jk_handler *handler,
+    int (JK_METHOD *init)( struct jk_env *env, struct jk_handler *handler,
                  struct jk_workerEnv *workerEnv);
 };
                                         

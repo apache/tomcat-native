@@ -119,7 +119,7 @@
  *   String  serverName
  *
  */
-static int jk2_handler_login(jk_env_t *env, jk_msg_t *msg,
+static int JK_METHOD jk2_handler_login(jk_env_t *env, jk_msg_t *msg,
                             jk_ws_service_t *s, jk_endpoint_t *ae)
 {
     int rc;
@@ -182,12 +182,12 @@ static int jk2_handler_login(jk_env_t *env, jk_msg_t *msg,
  * +--------------------+------------------------+---------------------------
  *
  */
-static int jk2_handler_logok(jk_env_t *env, jk_msg_t *msg,
+static int JK_METHOD jk2_handler_logok(jk_env_t *env, jk_msg_t *msg,
                             jk_ws_service_t *s, jk_endpoint_t *ae )
 {
     unsigned long nego;
     char *sname;
-    int rc;
+//    int rc;
 
     nego = msg->getLong(env, msg);
     
@@ -229,7 +229,7 @@ static int jk2_handler_logok(jk_env_t *env, jk_msg_t *msg,
  * +---------------------+-----------------------+
  *
  */
-static int jk2_handler_lognok(jk_env_t *env, jk_msg_t *msg,
+static int JK_METHOD jk2_handler_lognok(jk_env_t *env, jk_msg_t *msg,
                              jk_ws_service_t *s, jk_endpoint_t *ae )
 {
     unsigned long   status;

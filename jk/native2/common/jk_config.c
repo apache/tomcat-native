@@ -140,7 +140,7 @@ static int jk2_config_saveConfig( jk_env_t *env,
                                   char *workerFile)
 {
     FILE *fp;
-    char buf[LENGTH_OF_LINE + 1];            
+//    char buf[LENGTH_OF_LINE + 1];            
     int i,j;
         
     fp= fopen(workerFile, "w");
@@ -201,16 +201,16 @@ static int jk2_config_processBeanPropertyString( jk_env_t *env,
     jk_bean_t *w = NULL;
     char *type=NULL;
     char *dot=0;
-    int i;
-    char **comp;
-    int nrComp;
+//    int i;
+//    char **comp;
+//    int nrComp;
     char *lastDot;
     char *lastDot1;
     
     propertyString=cfg->pool->pstrdup( env, cfg->pool, propertyString );
     
-    lastDot= rindex( propertyString, (int)'.' );
-    lastDot1= rindex( propertyString, (int)':' );
+    lastDot= strrchr( propertyString, (int)'.' );
+    lastDot1= strrchr( propertyString, (int)':' );
 
     if( lastDot1==NULL )
         lastDot1=lastDot;
@@ -582,7 +582,7 @@ int jk2_config_read(jk_env_t *env, jk_config_t *cfg, jk_map_t *m, const char *f)
     FILE *fp;
     char buf[LENGTH_OF_LINE + 1];            
     char *prp;
-    char *v;
+//    char *v;
         
     if(m==NULL || f==NULL )
         return JK_FALSE;
@@ -769,7 +769,7 @@ char *jk2_config_replaceProperties(jk_env_t *env, jk_map_t *m,
 
 /** Set a property for this config object
  */
-static int jk2_config_setAttribute( struct jk_env *env, struct jk_bean *mbean,
+static int JK_METHOD jk2_config_setAttribute( struct jk_env *env, struct jk_bean *mbean,
                                     char *name, void *valueP)
 {
     jk_config_t *cfg=mbean->object;
@@ -816,7 +816,7 @@ static int jk2_trim(char *s)
     return strlen(s);
 }
 
-int jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_config_factory( jk_env_t *env, jk_pool_t *pool,
                         jk_bean_t *result,
                         const char *type, const char *name)
 {

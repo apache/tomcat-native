@@ -183,10 +183,10 @@ struct jk_bean {
      *  workers.properties doc.
      *  XXX Implement run-time change in the status/ctl workers.
      */
-    int (*setAttribute)(struct jk_env *env, struct jk_bean *bean,
+    int  ( JK_METHOD *setAttribute)(struct jk_env *env, struct jk_bean *bean,
                          char *name, void *value );
 
-    void *(*getAttribute)(struct jk_env *env, struct jk_bean *bean, char *name );
+    void *  ( JK_METHOD *getAttribute)(struct jk_env *env, struct jk_bean *bean, char *name );
 
     /* getBeanInfo() */
 
@@ -218,11 +218,11 @@ struct jk_env {
      *  The env will store the exception status and the tmp pool - the pool will
      *  be recycled when the env is released, use it only for tmp things.
      */
-    struct jk_env *(*getEnv)(struct jk_env *parent);
+    struct jk_env *(JK_METHOD *getEnv)(struct jk_env *parent);
 
     /** Release the env instance. The tmpPool will be recycled.
      */
-    int (*releaseEnv)(struct jk_env *parent, struct jk_env *chld);
+    int (JK_METHOD *releaseEnv)(struct jk_env *parent, struct jk_env *chld);
 
     /* -------------------- Exceptions -------------------- */
     
@@ -273,7 +273,7 @@ struct jk_env {
     
     /** Register an alias for a name ( like the local part, etc ), for simpler config.
      */
-    void (JK_METHOD *alias)(struct jk_env *env, char *name, char *alias );
+    void (JK_METHOD *alias)(struct jk_env *env, const char *name, const char *alias );
     
     /** Get an object by name, using the full name
      */
@@ -283,17 +283,17 @@ struct jk_env {
     /** Get an object by name, using the split name ( type + localName )
      */
     void *
-    (JK_METHOD *getByName2)(struct jk_env *env, char *type, char *localName);
+    (JK_METHOD *getByName2)(struct jk_env *env, const char *type, const char *localName);
 
     /** Return the configuration object
      */
     struct jk_bean *
-    (JK_METHOD *getBean)( struct jk_env *env, char *name );
+    (JK_METHOD *getBean)( struct jk_env *env, const char *name );
     
     /** Return the configuration object
      */
     struct jk_bean *
-    (JK_METHOD *getBean2)( struct jk_env *env, char *type, char *localName );
+    (JK_METHOD *getBean2)( struct jk_env *env, const char *type, const char *localName );
 
     /** Register a factory for a type ( channel, worker ).
      */

@@ -82,7 +82,7 @@
  *    avg_time, max_time
  *    
  */
-static void *jk2_endpoint_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
+static void * JK_METHOD jk2_endpoint_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
     return NULL;
 }
 

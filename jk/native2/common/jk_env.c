@@ -136,7 +136,7 @@ static int JK_METHOD jk2_env_put( jk_env_t *parent, jk_env_t *chld )
 static jk_bean_t *jk2_env_createBean( jk_env_t *env, jk_pool_t *pool, char *objName )
 {
     char *type=NULL;
-    void *obj;
+//    void *obj;
     char *localName;
 
     localName=strchr( objName, ':' );
@@ -245,7 +245,7 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
 
 /** Define an alias, for simpler config / less typing
  */
-static void jk2_env_alias(jk_env_t *env, char *name, char *alias)
+static void JK_METHOD jk2_env_alias(jk_env_t *env, const char *name, const char *alias)
 {
     jk_bean_t *jkb=env->getBean(env, name);
 
@@ -264,7 +264,7 @@ static void jk2_env_alias(jk_env_t *env, char *name, char *alias)
 
 /** Get the object by name. Returns the real object, not the wrapper
  */
-static void *jk2_env_getByName(jk_env_t *env, char *name)
+static void * JK_METHOD jk2_env_getByName(jk_env_t *env, const char *name)
 {
     jk_bean_t *result=env->getBean( env, name );
         
@@ -273,7 +273,7 @@ static void *jk2_env_getByName(jk_env_t *env, char *name)
     return result->object;
 }    
 
-static void *jk2_env_getByName2(jk_env_t *env, char *type, char *localName)
+static void* JK_METHOD jk2_env_getByName2(jk_env_t *env, const char *type, const char *localName)
 {
     jk_bean_t *result = env->getBean2( env, type, localName);
     if( result==NULL ) return NULL;
@@ -282,7 +282,7 @@ static void *jk2_env_getByName2(jk_env_t *env, char *type, char *localName)
 
 /** Get the wrapper for the named object
  */
-static jk_bean_t JK_METHOD *jk2_env_getBean(jk_env_t *env, char *name)
+static jk_bean_t* JK_METHOD jk2_env_getBean(jk_env_t *env, const char *name)
 {
     if( name==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
@@ -293,7 +293,7 @@ static jk_bean_t JK_METHOD *jk2_env_getBean(jk_env_t *env, char *name)
     return (jk_bean_t *)env->_objects->get( env, env->_objects, name );
 }    
 
-static jk_bean_t JK_METHOD *jk2_env_getBean2(jk_env_t *env, char *type, char *localName)
+static jk_bean_t* JK_METHOD jk2_env_getBean2(jk_env_t *env, const char *type, const char *localName)
 {
     char *name;
     if( type==NULL || localName==NULL ) {
@@ -334,7 +334,7 @@ static void JK_METHOD jkThrow( jk_env_t *env,
                                const char *fmt, ... )
 {
     va_list args;
-    char *buf;
+//    char *buf;
 
     va_start(args, fmt);
     env->l->jkVLog(env, env->l, file, line, JK_LOG_ERROR_LEVEL, fmt, args );
@@ -346,7 +346,7 @@ static void JK_METHOD jkThrow( jk_env_t *env,
  *  in the stack trace
  *  XXX Not implemented/not used
  */
-static JK_METHOD void jkReThrow( jk_env_t *env,
+static void JK_METHOD jkReThrow( jk_env_t *env,
                                  const char *file, int line )
 {
     /* Nothing yet. It should record the file/line for stack trace */
@@ -354,7 +354,7 @@ static JK_METHOD void jkReThrow( jk_env_t *env,
 
 /* Last exception that occured
  */
-static JK_METHOD jk_exception_t *jk_env_jkException( jk_env_t *env ) 
+static jk_exception_t* JK_METHOD  jk_env_jkException( jk_env_t *env ) 
 {
     return env->lastException;
 }

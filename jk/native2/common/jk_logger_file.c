@@ -97,7 +97,7 @@ static void jk2_logger_file_setTimeStr(jk_env_t *env,char * str, int len)
 	strftime(str, len, jk2_logger_file_logFmt, tms);
 }
 
-static int jk2_logger_file_log(jk_env_t *env,jk_logger_t *l,                                 
+static int JK_METHOD jk2_logger_file_log(jk_env_t *env,jk_logger_t *l,                                 
                                int level,
                                const char *what)
 {
@@ -143,7 +143,7 @@ int jk2_logger_file_parseLogLevel(jk_env_t *env, const char *level)
 }
 
 
-static int jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
+static int JK_METHOD jk2_logger_file_init(jk_env_t *env,jk_logger_t *_this )
 {
     FILE *oldF=(FILE *)_this->logger_private;
     FILE *f=NULL;
@@ -209,11 +209,11 @@ jk2_logger_file_setProperty(jk_env_t *env, jk_bean_t *mbean,
 }
 
 
-static int jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
+static int JK_METHOD jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
                                   const char *file,
                                   int line,
                                   int level,
-                                  char *fmt,
+                                  const char *fmt,
                                   va_list args)
 {
     int rc = 0;
@@ -242,7 +242,7 @@ static int jk2_logger_file_jkVLog(jk_env_t *env, jk_logger_t *l,
         }
 
 #ifdef WIN32
-	set_time_str(buf, HUGE_BUFFER_SIZE);
+	jk2_logger_file_setTimeStr(env,buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
         if( level >= JK_LOG_DEBUG_LEVEL )
             used += _snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
@@ -300,7 +300,7 @@ static int jk2_logger_file_jkLog(jk_env_t *env, jk_logger_t *l,
     return rc;
 }
 
-int jk2_logger_file_factory(jk_env_t *env, jk_pool_t *pool, 
+int JK_METHOD jk2_logger_file_factory(jk_env_t *env, jk_pool_t *pool, 
                             jk_bean_t *result,
                             const char *type, const char *name)
 {

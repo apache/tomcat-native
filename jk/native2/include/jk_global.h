@@ -190,11 +190,17 @@ extern "C" {
     #define FILE_SEPERATOR          ('\\')
     #define FILE_SEPARATOR_STR      ("\\")
     #define PATH_ENV_VARIABLE       ("PATH")
-
+	
     /* incompatible names... */
     #ifndef strcasecmp 
         #define strcasecmp stricmp
     #endif
+    #ifndef strncasecmp 
+        #define strncasecmp strnicmp
+	#endif
+	#ifndef vsnprintf
+		#define vsnprintf _vsnprintf
+	#endif
 #else
     #define JK_METHOD
     #define C_LEVEL_TRY_START       
@@ -206,6 +212,7 @@ extern "C" {
     #define PATH_SEPARATOR_STR      (":")
     #define FILE_SEPARATOR_STR      ("/")
     #define PATH_ENV_VARIABLE       ("LD_LIBRARY_PATH")
+	#define HAVE_UNIXSOCKETS
 #endif
 
 /*

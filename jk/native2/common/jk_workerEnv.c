@@ -79,7 +79,7 @@ static int  jk2_workerEnv_init1(jk_env_t *env, jk_workerEnv_t *wEnv);
 /* ==================== Setup ==================== */
 
 
-static int jk2_workerEnv_setAttribute( struct jk_env *env, struct jk_bean *mbean,
+static int JK_METHOD jk2_workerEnv_setAttribute( struct jk_env *env, struct jk_bean *mbean,
                                        char *name, void *valueP)
 {
     jk_workerEnv_t *wEnv=mbean->object;
@@ -279,7 +279,7 @@ static void jk2_workerEnv_initHandlers(jk_env_t *env, jk_workerEnv_t *wEnv)
     }
 }
 
-static void jk2_workerEnv_registerHandler(jk_env_t *env, jk_workerEnv_t *wEnv,
+static int jk2_workerEnv_registerHandler(jk_env_t *env, jk_workerEnv_t *wEnv,
                                           jk_handler_t *handler)
 {
     jk2_workerEnv_checkSpace( env, wEnv->pool,
@@ -458,7 +458,7 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
             return JK_FALSE;
         default:
             /* Unknown status */
-            /* return JK_FALSE; */
+            break;
         }
     }
     return JK_FALSE;
@@ -558,7 +558,7 @@ int JK_METHOD jk2_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
 
     result->object=wEnv;
     wEnv->mbean=result;
-    result->setAttribute=&jk2_workerEnv_setAttribute;
+    result->setAttribute=jk2_workerEnv_setAttribute;
     
     wEnv->pool=pool;
 

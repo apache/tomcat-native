@@ -88,7 +88,7 @@
 static char *myAttInfo[]={ "channelName", "route", "errorState", "recovering",
                            "epCount", NULL };
 
-static void *jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
+static void * JK_METHOD jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
     jk_worker_t *worker=(jk_worker_t *)bean->object;
     
     if( strcmp( name, "channelName" )==0 ) {
@@ -122,7 +122,7 @@ static void *jk2_worker_ajp14_getAttribute(jk_env_t *env, jk_bean_t *bean, char 
 /*
  * Initialize the worker.
  */
-static int 
+static int JK_METHOD 
 jk2_worker_ajp14_setAttribute(jk_env_t *env, jk_bean_t *mbean, 
                               char *name, void *valueP )
 {

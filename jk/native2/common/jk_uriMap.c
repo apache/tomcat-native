@@ -228,7 +228,7 @@ static jk_uriEnv_t *jk2_uriEnv_createUriEnv(jk_env_t *env,
 /*     uwr->mbean->setAttribute( env, uwr->mbean, "worker", (char *)pworker ); */
 
 
-static int jk2_uriMap_setProperty(jk_env_t *env, jk_bean_t *mbean,
+static int JK_METHOD jk2_uriMap_setProperty(jk_env_t *env, jk_bean_t *mbean,
                                   char *name, void *valueP)
 {
     jk_uriMap_t *_this=mbean->object;

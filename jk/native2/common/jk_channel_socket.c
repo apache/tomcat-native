@@ -117,7 +117,7 @@ static int JK_METHOD jk2_channel_socket_resolve(jk_env_t *env, char *host,
 static int JK_METHOD jk2_channel_socket_close(jk_env_t *env, jk_channel_t *ch,
                                              jk_endpoint_t *endpoint);
 
-static int jk2_channel_socket_setAttribute(jk_env_t *env,
+static int JK_METHOD jk2_channel_socket_setAttribute(jk_env_t *env,
                                            jk_bean_t *mbean,
                                            char *name, void *valueP)
 {
@@ -248,7 +248,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
                                             jk_channel_t *ch,
                                             jk_endpoint_t *endpoint)
 {
-    int err;
+//    int err;
     jk_channel_socket_private_t *socketInfo=
 	(jk_channel_socket_private_t *)(ch->_privatePtr);
 
@@ -261,7 +261,7 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if(sock < 0) {
 #ifdef WIN32
-        if(SOCKET_ERROR == ret) { 
+        if(INVALID_SOCKET == sock) { 
             errno = WSAGetLastError() - WSABASEERR;
         }
 #endif /* WIN32 */

@@ -696,7 +696,7 @@ static char *jk2_guessClassPath(jk_env_t *env, jk_map_t *props)
     return NULL;
 }
 
-static int 
+static int JK_METHOD
 jk2_jk_vm_setProperty(jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP )
 {
     jk_vm_t *_this=mbean->object;

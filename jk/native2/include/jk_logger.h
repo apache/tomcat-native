@@ -109,7 +109,7 @@ struct jk_logger {
                             const char *file,
                             int line,
                             int level,
-                            char *fmt,
+                            const char *fmt,
                             va_list msg);
 
 };

@@ -107,7 +107,7 @@ static int jk2_uriEnv_parseUri( jk_env_t *env, jk_uriEnv_t *uriEnv,
     return JK_TRUE;
 }
 
-static void *jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
+static void * JK_METHOD jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
                                      char *name )
 {
     jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)bean->object;
@@ -122,7 +122,7 @@ static void *jk2_uriEnv_getAttribute(jk_env_t *env, jk_bean_t *bean,
     return NULL;
 }
 
-static int jk2_uriEnv_setProperty(jk_env_t *env,
+static int JK_METHOD jk2_uriEnv_setProperty(jk_env_t *env,
                                   jk_bean_t *mbean,
                                   char *nameParam,
                                   void *valueP)
@@ -163,7 +163,7 @@ static int jk2_uriEnv_setProperty(jk_env_t *env,
 
 static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
 {
-    int err;
+//    int err;
     char *asterisk;
     char *uri=uriEnv->pool->pstrdup( env, uriEnv->pool, uriEnv->uri);
 
@@ -270,7 +270,7 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
                                  const char *type, const char *name)
 {
     jk_pool_t *uriPool;
-    int err;
+//    int err;
     jk_uriEnv_t *uriEnv;
 
     uriPool=(jk_pool_t *)pool->create( env, pool,
@@ -285,8 +285,8 @@ int JK_METHOD jk2_uriEnv_factory(jk_env_t *env, jk_pool_t *pool,
 
     uriEnv->init=jk2_uriEnv_init;
 
-    result->setAttribute=&jk2_uriEnv_setProperty;
-    result->getAttribute=&jk2_uriEnv_getAttribute;
+    result->setAttribute=jk2_uriEnv_setProperty;
+    result->getAttribute=jk2_uriEnv_getAttribute;
     uriEnv->mbean=result;
     result->object=uriEnv;
     result->getAttributeInfo=myAttInfo;
