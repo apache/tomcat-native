@@ -22,13 +22,16 @@
   <property name="apache2.home" location="/opt/apache2" />
   <property name="apache13.home" location="/usr" />
   
+  <property name="apache2.include" location="${apache2.home}/include" />
+  <property name="apache13.include" location="${apache13.home}/include" />
+
   <property name="so.debug" value="true" />
   <property name="so.optimize" value="false" />
   <property name="so.profile" value="false" />
 
   <!-- ==================== Targets ==================== -->
 
-  <target name="main" depends="init,apache20,jni">
+  <target name="main" depends="init,apache20,apache13,jni">
   </target>
 
   <target name="init" >
@@ -126,7 +129,7 @@
       </src>
       <includes>
 	<include name="${native.dir}/common" />
-	<include name="${apache2.home}/include" />
+	<include name="${apache2.include}" />
 	<include name="${java.home}/../include" />
       </includes>
       <depends>
@@ -154,8 +157,7 @@
       <includes>
 	<include name="${native.dir}/common" />
 	<include name="${build.compiler.base}/include" />
-	<include name="${apache13.home}/include/apache" />
-	<include name="${apache13.home}/include" />
+	<include name="${apache13.include}" />
 	<include name="${java.home}/../include" />
 
         <!-- Platform specific includes -->
