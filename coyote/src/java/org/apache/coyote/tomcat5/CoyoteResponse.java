@@ -814,11 +814,10 @@ public class CoyoteResponse
      */
     public String[] getHeaderValues(String name) {
 
-        MimeHeaders headers = coyoteResponse.getMimeHeaders();
+        Enumeration enum = coyoteResponse.getMimeHeaders().values(name);
         Vector result = new Vector();
-        for (int i = 0; i < headers.size(); i++) {
-            if (name.equals( headers.getName(i).toString() ))
-                result.addElement( headers.getValue(i).toString() );
+        while (enum.hasMoreElements()) {
+            result.addElement(enum.nextElement());
         }
         String[] resultArray = new String[result.size()];
         result.copyInto(resultArray);
