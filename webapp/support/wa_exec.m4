@@ -73,7 +73,7 @@ dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_EXEC],
   [
-    local_curdir="`pwd`"
+    wa_exec_curdir="`pwd`"
     if test -d "$4" ; then
       cd "$4"
     else
@@ -85,36 +85,36 @@ AC_DEFUN(
     echo "-1" > retvalue.tmp
 
     set $2
-    local_file=[$]1
-    if test ! -x "${local_file}" ; then
-      AC_MSG_ERROR([cannot find or execute \"${local_file}\" in \"$4\"])
+    wa_exec_file=[$]1
+    if test ! -x "${wa_exec_file}" ; then
+      AC_MSG_ERROR([cannot find or execute \"${wa_exec_file}\" in \"$4\"])
       exit 1
     fi
-    unset local_file
+    unset wa_exec_file
 
     {
       $2
-      echo _retvalue_ $?
+      echo "wa_exec_retvalue $?"
     } | {
-      ret=0
+      wa_exec_ret=0
       while true ; do
-        read first line
+        read wa_exec_first wa_exec_line
         if test ! "$?" -eq "0" ; then
           break
         else
-          if test "${first}" = "_retvalue_" ; then
-            ret="${line}"
+          if test "${wa_exec_first}" = "wa_exec_retvalue" ; then
+            wa_exec_ret="${wa_exec_line}"
           else
-            if test -n "${line}" ; then
-             echo "    $3: ${first} ${line}"
+            if test -n "${wa_exec_line}" ; then
+             echo "    $3: ${wa_exec_first} ${wa_exec_line}"
             fi
           fi
         fi
       done
-      echo "${ret}" > retvalue.tmp
-      unset first
-      unset line
-      unset ret
+      echo "${wa_exec_ret}" > retvalue.tmp
+      unset wa_exec_first
+      unset wa_exec_line
+      unset wa_exec_ret
     }
 
     $1="`cat retvalue.tmp`"
@@ -122,6 +122,6 @@ AC_DEFUN(
     echo "  execution of \"$2\""
     echo "  returned with value \"$1\""
 
-    cd "${local_curdir}"
-    unset local_curdir
+    cd "${wa_exec_curdir}"
+    unset wa_exec_curdir
   ])
