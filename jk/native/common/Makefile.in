@@ -1,0 +1,16 @@
+OEXT=.lo
+include ../apache-1.3/list.mk
+
+JAVA_INCL=-I @JAVA_HOME@/include -I @JAVA_HOME@/include/@OS@
+CFLAGS=@apache_include@ @CFLAGS@ ${JAVA_INCL}
+
+include ../scripts/build/rules.mk
+
+JK=.
+
+all: ${APACHE_OBJECTS}
+
+install:
+
+clean:
+	-rm *.o *.slo *.lo

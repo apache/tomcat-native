@@ -1,0 +1,5 @@
+Name: jk_module
+ConfigStart
+	LIBS="-Lmodules/jk -L../modules/jk -L../../modules/jk -ljk $LIBS"
+	RULE_HIDE=yes
+ConfigEnd
