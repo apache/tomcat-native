@@ -1,4 +1,13 @@
  
+  Building from the cvs tree: (for develloppers only).
+  -----------------------------------
+  When using a cvs tree buildconf.sh must be run before configure.
+  The today version of buildconf.sh build the following files:
+  libtool files in scripts/build/unix (should copy them?).
+  Makefile.in from Makefile.am
+  aclocal.m4 from different m4 files located in the local machine.
+  configure from configure.in and aclocal.m4.
+  
   Installation
   ------------
  
