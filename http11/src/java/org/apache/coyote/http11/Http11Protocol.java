@@ -164,6 +164,7 @@ public class Http11Protocol implements ProtocolHandler
     protected String sslImplementationName=null;
 
     private int maxKeepAliveRequests=100; // as in Apache HTTPD server
+    private int	timeout = 300000;	// 5 minutes as in Apache HTTPD server
     private String reportedname;
     private int socketCloseDelay=-1;
 
@@ -288,6 +289,9 @@ public class Http11Protocol implements ProtocolHandler
 	return (ServerSocketFactory)chC.newInstance();
     }
 
+    public void setTimeout( int timeouts ) {
+	timeout = timeouts * 1000;
+    }
     public void setReportedname( String reportedName) {
 	reportedname = reportedName;
     }
@@ -317,6 +321,7 @@ public class Http11Protocol implements ProtocolHandler
             Http11Processor  processor = new Http11Processor();
             processor.setAdapter( proto.adapter );
             processor.setMaxKeepAliveRequests( proto.maxKeepAliveRequests );
+            processor.setTimeout( proto.timeout );
 
             //thData[0]=adapter;
             thData[1]=processor;
