@@ -78,6 +78,8 @@
 #define MATCH_TYPE_CONTEXT  (1)
 #define MATCH_TYPE_SUFFIX   (2)
 #define MATCH_TYPE_GENERAL_SUFFIX (3) /* match all URIs of the form *ext */
+/* match all context path URIs with a path component suffix */
+#define MATCH_TYPE_CONTEXT_PATH (4)
 
 struct uri_worker_record {
     /* Original uri for logging */
@@ -275,7 +277,18 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
              */
              asterisk--;
              if ('/' == asterisk[0]) {
-                if ('.' == asterisk[2]) {
+                if ( 0 == strncmp("/*/",uri,3) ) {
+                    /* general context path */
+                    asterisk[1] = '\0';
+                    uwr->worker_name = worker;
+                    uwr->context = uri;
+                    uwr->suffix  = asterisk + 2;
+                    uwr->match_type = MATCH_TYPE_CONTEXT_PATH;
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Into jk_uri_worker_map_t::uri_worker_map_open, "
+                           "general context path rule %s*%s=%s was added\n",
+                           uri, asterisk + 2, worker);
+                } else if ('.' == asterisk[2]) {
                     /* suffix rule */
                     asterisk[1]      = 
                     asterisk[2]      = '\0';
@@ -507,6 +520,22 @@ char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 			    longest_match = uwr->ctxt_len;
 			    best_match = i;
 			}
+                    }
+                } else if(MATCH_TYPE_CONTEXT_PATH == uwr->match_type) {
+                    char *suffix_path = NULL;
+                    if (strlen(uri) > 1 && (suffix_path = strchr(uri+1,'/')) != NULL) {
+                        if (0 == strncmp(suffix_path,uwr->suffix,strlen(uwr->suffix))) {
+                            if(uwr->ctxt_len >= longest_match) {
+                                jk_log(l,
+                                       JK_LOG_DEBUG,
+                                       "jk_uri_worker_map_t::map_uri_to_worker, "
+                                       "Found a general context path match %s -> *%s\n",
+                                       uwr->worker_name,
+                                       uwr->suffix );   
+                                longest_match = uwr->ctxt_len;
+                                best_match = i;
+                            }
+                        }
                     }
                 } else /* suffix match */ {
                     int suffix_start;

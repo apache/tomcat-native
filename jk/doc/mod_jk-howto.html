@@ -71,6 +71,7 @@
 <li><a href="#s71">Removing mod_jserv directives</a></li>
 <li><a href="#s72">Configuring Apache to use mod_jk</a></li>
 <li><a href="#s73">Assigning URLs to be redirected to Tomcat</a></li>
+<li><a href="#s74">Configuring Apache to serve static web application files</a></li>
 </ul></li>
 <li><a href="#s8">Configuring Tomcat</a>
   <ul>
@@ -507,11 +508,35 @@ configuration file, such as <tt>TOMCAT_HOME/conf/jk/mod_jk.conf-local</tt>.</p>
  <li>You should specify a location where mod_jk is going to place its log file
      and a log level to be used. Use the <tt>JkLogFile</tt> and <tt>JkLogLevel</tt>
      configuration directives. Possible log levels are <i>debug</i>, <i>info</i>,
-     <i>error</i> and <i>emerg</i>, but <i>info</i> should be your default
-     selection.</li>
+     <i>error</i>, and <i>emerg</i>, but <i>info</i> should be your
+     default selection.</li>
  <li>The directive <tt>JkLogStampFormat</tt> will configure the date/time format
      found on mod_jk logfile. Using <tt>strftime()</tt> format string it's set by
      default to "[%a %b %d %H:%M:%S %Y] "</li> 
+ <li>The directive <tt>JkRequestLogFormat</tt> will configure the format of mod_jk
+     individual request logging. Request logging is configured and enabled on a per
+     virtual host basis.  To enable request logging for a virtual host just add
+     a JkRequestLogFormat config.
+     The syntax of the format string is similiar to the Apache LogFormat command,
+     here is a list of the avaialbe request log format options:
+     <ul>
+       <li>%b - Bytes sent, excluding HTTP headers. In CLF format</li>
+       <li>%B - Bytes sent, excluding HTTP headers.</li>
+       <li>%H - The request protocol</li>
+       <li>%m - The request method</li>
+       <li>%p - The canonical Port of the server serving the request</li>
+       <li>%q - The query string (prepended with a ? if a query string exists,
+                otherwise an empty string)</li>
+       <li>%r - First line of request</li>
+       <li>%s - request HTTP status code</li>
+       <li>%T - Requset duration, elapsed time to handle request in seconds '.'
+                micro seconds</li>
+       <li>%U - The URL path requested, not including any query string.</li>
+       <li>%v - The canonical ServerName of the server serving the request.</li>
+       <li>%V - The server name according to the UseCanonicalName setting.</li>
+       <li>%w - Tomcat worker name</li>
+     </ul>
+ </li>
 </ul>
 A simple example would be to include the following lines in your <tt>httpd.conf</tt> file:
 <blockquote><pre>
@@ -537,16 +562,57 @@ JkMount <i>&lt;URL prefix&gt;</i> <i>&lt;Worker name&gt;</i>
 </pre>
 
 <p>For example the following directives will send all requests ending in
-<tt>.jsp</tt> or beginning with <tt>/servlet</tt> to the &quot;<tt>ajp13</tt>&quot; worker,
-but jsp requests to files located in /otherworker will go to &quot;<tt>remoteworker</tt>&quot;.
+<tt>.jsp</tt> or with <tt>/servlet</tt> as the second path componenet to
+the &quot;<tt>ajp13</tt>&quot; worker, but jsp requests to files located
+in /otherworker will go to &quot;<tt>remoteworker</tt>&quot;.
 
 <blockquote><pre>
 JkMount /*.jsp ajp13
-JkMount /servlet/* ajp13
+JkMount /*/servlet/ ajp13
 JkMount /otherworker/*.jsp remoteworker
 </pre></blockquote>
 You  can use the <tt>JkMount</tt> directive at the top level or inside <tt>&lt;VirtualHost&gt;</tt>
 sections of your httpd.conf file.
+</div>
+
+<h3><a name="s74">Configuring Apache to serve static web application files</a></h3>
+<div class=subsection>
+<p>If the Tomcat Host appBase (webapps) directory is accessible by the Apache
+web server, Apache can be configured to serve web application context directory
+static files instead of passing the request to Tomcat.</p>
+
+<p><b>Caution:</b> If Apache is configured to serve static pages for a web
+application it bypasses any security contraints you may have configured in
+your web application web.xml config file.</p>
+
+<p>Use Apache's Alias directive to map a single web application context directory
+into Apache's document space for a VirtualHost:
+
+<pre>
+# Static files in the examples webapp are served by apache
+Alias /examples /export/home/web/host1/webapps/examples
+
+JkMount /*.jsp ajp13
+JkMount /*/servlet/ ajp13
+</pre>
+</p>
+
+<p>Use the mod_jk JkAutoAlias directive to map all web application context
+directories into Apache's document space. Attempts to access the <code>WEB-INF</code>
+or <code>META-INF</code> directories within a web application context or a
+Web Archive <code>*.war</code> within the Tomcat Host appBase (webapps) directory
+will fail with an HTTP 403, Access Forbidden.</p>
+<p>
+Example configuration for an Apache VirtualHost:
+
+<pre>
+# Static files in all Tomcat webapp context directories are served by apache
+JkAutoAlias /export/home/web/host2/webapps
+
+JkMount /*.jsp ajp13
+JkMount /*/servlet/ ajp13
+</pre>
+</p>
 </div>
 
 <hr>
@@ -741,13 +807,14 @@ JkWorkersFile /usr/local/jakarta-tomcat/conf/jk/workers.properties
 JkLogFile     /usr/local/apache/logs/mod_jk.log
 JkLogLevel    info
 
-# First Virtual Host.
+# First Virtual Host. Request logging is enabled.
 #
 &lt;VirtualHost 10.0.0.1:80&gt;
   DocumentRoot /web/host1
   ServerName host1.apache.org
+  JkRequestLogFormat "%w \"%r\" %s %T"
   JkMount /*.jsp ajp13
-  JkMount /servlet/* ajp13
+  JkMount /*/servlet/ ajp13
 &lt;/VirtualHost&gt;
 
 # Second Virtual Host. Also accessible via HTTPS
@@ -756,7 +823,7 @@ JkLogLevel    info
   DocumentRoot /web/host2
   ServerName host2.apache.org
   JkMount /*.jsp ajp13
-  JkMount /servlet/* ajp13
+  JkMount /*/servlet/ ajp13
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 10.0.0.2:443&gt;
@@ -764,7 +831,7 @@ JkLogLevel    info
   ServerName host2.apache.org
   SSLEngine On
   JkMount /*.jsp ajp13
-  JkMount /servlet/* ajp13
+  JkMount /*/servlet/ ajp13
 &lt;/VirtualHost&gt;
 
 </pre></blockquote>

@@ -81,20 +81,22 @@ struct jk_logger {
 
 };
 
-#define JK_LOG_DEBUG_LEVEL 0
-#define JK_LOG_INFO_LEVEL  1
-#define JK_LOG_ERROR_LEVEL 2
-#define JK_LOG_EMERG_LEVEL 3
+#define JK_LOG_DEBUG_LEVEL   0
+#define JK_LOG_INFO_LEVEL    1
+#define JK_LOG_ERROR_LEVEL   2
+#define JK_LOG_EMERG_LEVEL   3
+#define JK_LOG_REQUEST_LEVEL 4
 
 #define JK_LOG_DEBUG_VERB   "debug"
 #define JK_LOG_INFO_VERB    "info"
 #define JK_LOG_ERROR_VERB   "error"
 #define JK_LOG_EMERG_VERB   "emerg"
 
-#define JK_LOG_DEBUG __FILE__,__LINE__,JK_LOG_DEBUG_LEVEL
-#define JK_LOG_INFO  __FILE__,__LINE__,JK_LOG_INFO_LEVEL
-#define JK_LOG_ERROR __FILE__,__LINE__,JK_LOG_ERROR_LEVEL
-#define JK_LOG_EMERG __FILE__,__LINE__,JK_LOG_EMERG_LEVEL
+#define JK_LOG_DEBUG   __FILE__,__LINE__,JK_LOG_DEBUG_LEVEL
+#define JK_LOG_INFO    __FILE__,__LINE__,JK_LOG_INFO_LEVEL
+#define JK_LOG_ERROR   __FILE__,__LINE__,JK_LOG_ERROR_LEVEL
+#define JK_LOG_EMERG   __FILE__,__LINE__,JK_LOG_EMERG_LEVEL
+#define JK_LOG_REQUEST __FILE__,NULL,JK_LOG_REQUEST_LEVEL
 
 #ifdef __cplusplus
 }

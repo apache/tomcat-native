@@ -127,7 +127,9 @@ static int JK_METHOD log_to_file(jk_logger_t *l,
                                  int level,
                                  const char *what)
 {
-    if(l && l->level <= level && l->logger_private && what) {       
+    if( l &&
+        (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
+        l->logger_private && what) {
         unsigned sz = strlen(what);
         if(sz) {
             file_logger_t *p = l->logger_private;
@@ -214,7 +216,7 @@ int jk_log(jk_logger_t *l,
         return -1;
     }
 
-    if(l->level <= level) {
+    if((l->level <= level) || (level == JK_LOG_REQUEST_LEVEL)) {
 #ifdef NETWARE
 /* On NetWare, this can get called on a thread that has a limited stack so */
 /* we will allocate and free the temporary buffer in this function         */
@@ -236,7 +238,8 @@ int jk_log(jk_logger_t *l,
 #ifdef WIN32
 	set_time_str(buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
-        used += _snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
+        if(line)
+            used += _snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
 #elif defined(NETWARE) /* until we get a snprintf function */
         buf = (char *) malloc(HUGE_BUFFER_SIZE);
         if (NULL == buf)
@@ -244,11 +247,13 @@ int jk_log(jk_logger_t *l,
 
 	set_time_str(buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
-        used += sprintf(&buf[used], " [%s (%d)]: ", f, line);
+        if(line)
+            used += sprintf(&buf[used], " [%s (%d)]: ", f, line);
 #else 
 	set_time_str(buf, HUGE_BUFFER_SIZE);
 	used = strlen(buf);
-        used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
+        if(line)
+            used += snprintf(&buf[used], HUGE_BUFFER_SIZE, " [%s (%d)]: ", f, line);        
 #endif
         if(used < 0) {
             return 0; /* [V] not sure what to return... */
