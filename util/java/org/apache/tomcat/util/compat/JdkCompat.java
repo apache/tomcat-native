@@ -225,14 +225,4 @@ public class JdkCompat {
         // do nothing
     }
 
-    /**
-     * Obtain a MessageFormat for the correct pattern and Locale.
-     *
-     * @param pattern The pattern to format with.
-     * @param locale The Locale to use.
-     */
-    public MessageFormat getMessageFormat(String pattern, Locale locale) {
-        return new MessageFormat(pattern);
-    }
-
  }

@@ -118,7 +118,4 @@ public class Jdk14Compat extends JdkCompat {
         wrapper.initCause(wrapped);
     }
 
-    public MessageFormat getMessageFormat(String pattern, Locale locale) {
-        return new MessageFormat(pattern, locale);
-    }
  }
