@@ -244,7 +244,7 @@ public class CoyoteInterceptor2 extends BaseInterceptor
 		// Only allowed a single cert under the 2.2 Spec.
 		Object [] value = (Object []) cReq.getAttribute(SSLSupport.CERTIFICATE_KEY);
 		if( value != null ) {
-		    cReq.setAttribute(key, value[0]);
+		    cReq.setAttribute(SSLSupport.CERTIFICATE_KEY, value[0]);
 		}
 		
                 return cReq.getAttribute(key);
