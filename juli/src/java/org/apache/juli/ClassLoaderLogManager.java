@@ -40,39 +40,40 @@ import java.util.logging.Logger;
  */
 public final class ClassLoaderLogManager extends LogManager {
 
+
+    // -------------------------------------------------------------- Variables
+
+
+    /**
+     * Map containing the classloader information, keyed per classloader. A
+     * weak hashmap is used to ensure no classloader reference is leaked from 
+     * application redeployment.
+     */
     private final Map classLoaderLoggers = new WeakHashMap();
 
-    private Logger rootLogger;
-
-    private Logger globalLogger;
     
+    /**
+     * This prefix is used to allow using prefixes for the properties names
+     * of handlers and their subcomponents.
+     */
     private ThreadLocal prefix = new ThreadLocal();
 
+    
+    // --------------------------------------------------------- Public Methods
+
+
+    /**
+     * Add the specified logger to the classloader local configuration.
+     * 
+     * @param logger The logger to be added
+     */
     public synchronized boolean addLogger(final Logger logger) {
+
         final String loggerName = logger.getName();
-        if ("".equals(loggerName)) {
-            final boolean unset = rootLogger == null;
-            if (unset) {
-                rootLogger = logger;
-                if (globalLogger != null) {
-                    doSetParentLogger(globalLogger, rootLogger);
-                }
-            }
-            return unset;
-        }
-        if ("global".equals(loggerName)) {
-            final boolean unset = globalLogger == null;
-            if (unset) {
-                globalLogger = logger;
-                if (rootLogger != null) {
-                    doSetParentLogger(globalLogger, rootLogger);
-                }
-            }
-            return unset;
-        }
+
         ClassLoader classLoader = 
             Thread.currentThread().getContextClassLoader();
-        if (classLoader == null) {
+        if (classLoader == null || ("global".equals(loggerName))) {
             return super.addLogger(logger);
         }
         ClassLoaderLogInfo info = getClassLoaderInfo(classLoader);
@@ -82,34 +83,22 @@ public final class ClassLoaderLogManager extends LogManager {
 
         info.loggers.put(loggerName, logger);
 
-        // apply initial level for new logger
-        String levelString = getProperty(loggerName + ".level");
-        final Level level;
+        // Apply initial level for new logger
+        final String levelString = getProperty(loggerName + ".level");
         if (levelString != null) {
-            Level parsedLevel = null;
             try {
-                parsedLevel = Level.parse(levelString.trim());
-            } catch (IllegalArgumentException e) {
-                // leave level set to null
-            }
-            level = parsedLevel;
-        } else {
-            level = null;
-        }
-        if (level != null) {
-            if (System.getSecurityManager() == null) {
-                logger.setLevel(level);
-            } else {
                 AccessController.doPrivileged(new PrivilegedAction() {
                     public Object run() {
-                        logger.setLevel(level);
+                        logger.setLevel(Level.parse(levelString.trim()));
                         return null;
                     }
                 });
+            } catch (IllegalArgumentException e) {
+                // Leave level set to null
             }
         }
 
-        // if any parent loggers have levels definied, make sure they are
+        // If any parent loggers have levels definied, make sure they are
         // instantiated
         int dotIndex = loggerName.lastIndexOf('.');
         while (dotIndex >= 0) {
@@ -121,17 +110,17 @@ public final class ClassLoaderLogManager extends LogManager {
             dotIndex = loggerName.lastIndexOf('.', dotIndex - 1);
         }
 
-        // find node
+        // Find associated node
         LogNode node = info.rootNode.findNode(loggerName);
         node.logger = logger;
 
-        // set parent logger
+        // Set parent logger
         Logger parentLogger = node.findParentLogger();
         if (parentLogger != null) {
             doSetParentLogger(logger, parentLogger);
         }
 
-        // tell children we are their new parent
+        // Tell children we are their new parent
         node.setParentLogger(logger);
 
         // Add associated handlers, if any are defined using the .handlers property.
@@ -171,33 +160,32 @@ public final class ClassLoaderLogManager extends LogManager {
         return true;
     }
 
+    
+    /**
+     * Get the logger associated with the specified name inside 
+     * the classloader local configuration. If this returns null,
+     * and the call originated for Logger.getLogger, a new
+     * logger with the specified name will be instantiated and
+     * added using addLogger.
+     * 
+     * @param name The name of the logger to retrieve
+     */
     public synchronized Logger getLogger(final String name) {
-        if (rootLogger == null && globalLogger == null) {
-            // this ends up being called during initialization, we don't
-            // want do anything unless the root logger has been set up.
-            return null;
-        }
-        if (name == null || name.length() == 0) {
-            return rootLogger;
-        }
-        if ("global".equals(name)) {
-            return globalLogger;
-        }
         final ClassLoader classLoader = Thread.currentThread()
                 .getContextClassLoader();
-        if (classLoader == null) {
+        if (classLoader == null || ("global".equals(name))) {
             return super.getLogger(name);
         }
         final Map loggers = getClassLoaderInfo(classLoader).loggers;
         return (Logger) loggers.get(name);
     }
     
+    
+    /**
+     * Get an enumeration of the logger names currently defined in the 
+     * classloader local configuration.
+     */
     public synchronized Enumeration getLoggerNames() {
-        if (rootLogger == null && globalLogger == null) {
-            // this ends up being called during initialization, we don't
-            // want do anything unless the root logger has been set up.
-            return Collections.enumeration(Collections.EMPTY_LIST);
-        }
         final ClassLoader classLoader = Thread.currentThread()
                 .getContextClassLoader();
         if (classLoader == null) {
@@ -209,8 +197,10 @@ public final class ClassLoaderLogManager extends LogManager {
 
     
     /**
-     * Get the value of the specified property in the current classloader
-     * context.
+     * Get the value of the specified property in the classloader local
+     * configuration.
+     * 
+     * @param name The property name
      */    
     public String getProperty(String name) {
         final ClassLoader classLoader = Thread.currentThread()
@@ -260,6 +250,17 @@ public final class ClassLoaderLogManager extends LogManager {
         return result;
     }
     
+
+    // -------------------------------------------------------- Private Methods
+
+
+    /**
+     * Retrieve the configuration associated with the specified classloader. If
+     * it does not exist, it will be created.
+     * 
+     * @param classLoader The classloader for which we will retrieve or build the 
+     *                    configuration
+     */
     private ClassLoaderLogInfo getClassLoaderInfo(final ClassLoader classLoader) {
         
         ClassLoaderLogInfo info = (ClassLoaderLogInfo) classLoaderLoggers
@@ -282,7 +283,8 @@ public final class ClassLoaderLogManager extends LogManager {
                     localRootLogger = 
                         getClassLoaderInfo(classLoader.getParent()).rootNode.logger;
                 } else {
-                    localRootLogger = rootLogger;
+                    // Retrieve the system root logger
+                    localRootLogger = super.getLogger("");
                 }
             }
             info = new ClassLoaderLogInfo(new LogNode(null, localRootLogger));
@@ -359,19 +361,26 @@ public final class ClassLoaderLogManager extends LogManager {
         return info;
     }
 
+    
+    /**
+     * Set parent child relationship between the two specified loggers.
+     * 
+     * @param logger
+     * @param parent
+     */
     private static void doSetParentLogger(final Logger logger,
             final Logger parent) {
-        if (System.getSecurityManager() != null) {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    logger.setParent(parent);
-                    return null;
-                }
-            });
-        } else {
-            logger.setParent(parent);
-        }
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                logger.setParent(parent);
+                return null;
+            }
+        });
     }
+
+    
+    // ---------------------------------------------------- LogNode Inner Class
+
 
     private static final class LogNode {
         Logger logger;
@@ -438,6 +447,9 @@ public final class ClassLoaderLogManager extends LogManager {
 
     }
 
+    // -------------------------------------------- ClassLoaderInfo Inner Class
+
+
     private static final class ClassLoaderLogInfo {
         final LogNode rootNode;
         final Map loggers = new HashMap();
@@ -450,8 +462,13 @@ public final class ClassLoaderLogManager extends LogManager {
 
     }
     
+
+    // ------------------------------------------------- RootLogger Inner Class
+
+
     /**
-     * This is needed to instantiate the root of each per classloader hierarchy.
+     * This class is needed to instantiate the root of each per classloader 
+     * hierarchy.
      */
     private class RootLogger extends Logger {
         public RootLogger() {
@@ -459,4 +476,5 @@ public final class ClassLoaderLogManager extends LogManager {
         }
     }
 
+    
 }
