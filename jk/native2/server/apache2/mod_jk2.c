@@ -598,16 +598,14 @@ static int jk2_handler(request_rec *r)
  */
 static int jk2_translate(request_rec *r)
 {
-    jk_workerEnv_t *workerEnv;
     jk_uriEnv_t *uriEnv;
     jk_env_t *env;
             
-    if(r->proxyreq) {
+    if(r->proxyreq || workerEnv==NULL) {
         return DECLINED;
     }
     
     uriEnv=ap_get_module_config( r->per_dir_config, &jk2_module );
-    workerEnv=uriEnv->workerEnv;
     
     /* get_env() */
     env = workerEnv->globalEnv->getEnv( workerEnv->globalEnv );
