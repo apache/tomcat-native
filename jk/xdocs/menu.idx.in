@@ -13,6 +13,7 @@
   <section name="Commons">
   <document href="common/AJPv13.xml"/>
   <document href="common/AJPv13-extensions-proposal.xml"/>
+  <document href="common/doccontrib.xml"/>
   <document href="faq.xml"/>
   </section>
   
