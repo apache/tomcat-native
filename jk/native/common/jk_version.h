@@ -67,11 +67,11 @@
 /************** START OF AREA TO MODIFY BEFORE RELEASING *************/
 #define JK_VERMAJOR     1
 #define JK_VERMINOR     2
-#define JK_VERFIX       0
+#define JK_VERFIX       2
 #define JK_VERSTRING    "1.2.2"
 
 /* Beta number */
-#define JK_VERBETA      1
+#define JK_VERBETA      0
 #define JK_BETASTRING   "1"
 /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
 #define JK_VERISRELEASE 0
@@ -82,11 +82,17 @@
 #define JK_EXPOSED_VERSION_INT PACKAGE JK_VERSTRING
 
 #if ( JK_VERISRELEASE == 1 )
-#define JK_EXPOSED_VERSION JK_EXPOSED_VERSION_INT
-#undef JK_VERBETA
-#define JK_VERBETA 255
+  #define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT
 #else
-#define JK_EXPOSED_VERSION JK_EXPOSED_VERSION_INT "-beta-" JK_BETASTRING
+  #define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT "-dev"
+#endif
+
+#if ( JK_VERBETA == 0 )
+    #define JK_EXPOSED_VERSION JK_RELEASE_STR
+    #undef JK_VERBETA
+    #define JK_VERBETA 255
+#else
+    #define JK_EXPOSED_VERSION JK_RELEASE_STR "-beta-" JK_BETASTRING
 #endif
 
 #define JK_MAKEVERSION(major, minor, fix, beta) (((major) << 24) + ((minor) << 16) + ((fix) << 8) + (beta))
