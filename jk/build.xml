@@ -175,9 +175,9 @@
                verbose="off" >
             <exclude name="org/apache/ajp/**" if="tomcat5.detect"/>
             <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat40.detect"/>
-            <exclude name="org/apache/ajp/tomcat33/**" 
-                     unless="tomcat33.detect"/>
+            <exclude name="org/apache/ajp/tomcat33/**" unless="tomcat33.detect"/>
 	    <exclude name="org/apache/jk/common/JkMX.java" unless="jmx.detect"/>
+	    <exclude name="org/apache/jk/common/ModJkMX.java" unless="jmx.detect"/>
 	    <exclude name="org/apache/jk/common/Shm14.java" unless="jdk14.detect"/>
 	    <classpath>
 	       <path refid="xml-apis.classpath"/>
