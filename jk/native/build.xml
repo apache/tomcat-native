@@ -13,7 +13,7 @@
   <property name="jk.build" location="../build" /> 
 
   <path id="cp.jkant" >
-    <pathelement location="${jk.build}/WEB-INF/lib/jkant.jar"/>
+    <pathelement location="${jk.build}/lib/jkant.jar"/>
   </path>
 
   <property name="native.dir" location="." />
@@ -25,7 +25,7 @@
   <property name="apache13.home" location="/usr" />
   
   <property name="apache2.include" location="${apache2.home}/include" />
-  <property name="apache13.include" location="${apache13.home}/include" />
+  <property name="apache13.include" location="${apache13.home}/include/apache" />
 
   <property name="so.debug" value="true" />
   <property name="so.optimize" value="false" />
@@ -37,6 +37,7 @@
   </target>
 
   <target name="init" >
+    <echo message="${user.home}" />
     <taskdef resource="META-INF/ant.tasks" 
 	     classpathref="cp.jkant" />
     <available property="apache13.detect" 
@@ -49,13 +50,13 @@
                file="${iplanet.home}" />
     <available property="HAVE_APR" 
                file="${apr.include}/apr.h" />
-    <mkdir dir="${jk.build}/WEB-INF/jk" />
+    <mkdir dir="${jk.build}/jk" />
   </target>
 
   <target name="jni" depends="init">
-    <mkdir dir="${jk.build}/WEB-INF/jk/jni" />
+    <mkdir dir="${jk.build}/jk/jni" />
     <so sofile="jni_connect" 
-	buildDir="${jk.build}/WEB-INF/jk/jni" 
+	buildDir="${jk.build}/jk/jni" 
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}"
@@ -124,9 +125,9 @@
   </target>
 
   <target name="apache20" depends="init" if="apache2.detect">
-    <mkdir dir="${jk.build}/WEB-INF/jk/apache2" />
+    <mkdir dir="${jk.build}/jk/apache2" />
     <so sofile="mod_jk" 
-	buildDir="${jk.build}/WEB-INF/jk/apache2"
+	buildDir="${jk.build}/jk/apache2"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	taskDebug="0"
@@ -183,9 +184,9 @@
   
 
   <target name="apache13" depends="init" if="apache13.detect">
-    <mkdir dir="${jk.build}/WEB-INF/jk/apache13" />
+    <mkdir dir="${jk.build}/jk/apache13" />
     <so sofile="mod_jk" 
-	buildDir="${jk.build}/WEB-INF/jk/apache13"
+	buildDir="${jk.build}/jk/apache13"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}">
@@ -263,9 +264,9 @@
   </target>
 
   <target name="iis" depends="init" if="iis.detect">
-    <mkdir dir="${jk.build}/WEB-INF/jk/iis" />
+    <mkdir dir="${jk.build}/jk/iis" />
     <so sofile="isapi_redirector" 
-        buildDir="${jk.build}/WEB-INF/jk/iis"
+        buildDir="${jk.build}/jk/iis"
         optimize="${so.optimize}"
         debug="${so.debug}"
         profile="${so.profile}">
@@ -307,11 +308,11 @@
   </target>
 
   <target name="netscape" depends="init" if="iplanet.detect">
-    <mkdir dir="${jk.build}/WEB-INF/jk/netscape" />
+    <mkdir dir="${jk.build}/jk/netscape" />
     <property name="netscape.home" value="${iplanet.home}/plugins" />
     <available property="unix" file="/etc/passwd" />
     <so sofile="nsapi_redirector" 
-	buildDir="${jk.build}/WEB-INF/jk/netscape"
+	buildDir="${jk.build}/jk/netscape"
 	optimize="${so.optimize}"
 	debug="${so.debug}"
 	profile="${so.profile}">
@@ -392,7 +393,7 @@
   </target>
 
   <target name="clean" >
-    <delete dir="${jk.build}/WEB-INF/jk"/>
+    <delete dir="${jk.build}/jk"/>
   </target>
 
 </project>
