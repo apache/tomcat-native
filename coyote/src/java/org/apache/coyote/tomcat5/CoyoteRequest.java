@@ -374,7 +374,17 @@ public class CoyoteRequest
      */
     protected String remoteHost = null;
 
-
+    
+    /**
+     * Remote port
+     */
+    protected int remotePort = -1;
+    
+    /**
+     * Local address
+     */
+    protected String localAddr = null;
+    
     // --------------------------------------------------------- Public Methods
 
 
@@ -402,6 +412,8 @@ public class CoyoteRequest
         secure = false;
         remoteAddr = null;
         remoteHost = null;
+        remotePort = -1;
+        localAddr = null;
 
         attributes.clear();
         notes.clear();
@@ -622,6 +634,8 @@ public class CoyoteRequest
         this.socket = socket;
         remoteHost = null;
         remoteAddr = null;
+        remotePort = -1;
+        localAddr = null;
     }
 
 
@@ -1172,7 +1186,58 @@ public class CoyoteRequest
         return remoteHost;
     }
 
+    /**
+     * Returns the Internet Protocol (IP) source port of the client
+     * or last proxy that sent the request.
+     */    
+    public int getRemotePort(){
+        if (remotePort == -1) {
+            if (socket != null) {
+                remotePort = socket.getPort();
+            } else {
+                coyoteRequest.action
+                    (ActionCode.ACTION_REQ_HOST_ATTRIBUTE, coyoteRequest);
+                remotePort = coyoteRequest.getRemotePort();
+            }
+        }
+        return remotePort;    
+    }
 
+    /**
+     * Returns the host name of the Internet Protocol (IP) interface on
+     * which the request was received.
+     */
+    public String getLocalName(){
+        return getServerName();
+    }
+
+    /**
+     * Returns the Internet Protocol (IP) address of the interface on
+     * which the request  was received.
+     */       
+    public String getLocalAddr(){
+        if (localAddr == null) {
+            if (socket != null) {
+                InetAddress inet = socket.getLocalAddress();
+                localAddr = inet.getHostAddress();
+            } else {
+                coyoteRequest.action
+                    (ActionCode.ACTION_REQ_HOST_ATTRIBUTE, coyoteRequest);
+                localAddr = coyoteRequest.localAddr().toString();
+            }
+        }
+        return localAddr;    
+    }
+
+
+    /**
+     * Returns the Internet Protocol (IP) port number of the interface
+     * on which the request was received.
+     */
+    public int getLocalPort(){
+        return getServerPort();
+    }
+    
     /**
      * Return a RequestDispatcher that wraps the resource at the specified
      * path, which may be interpreted as relative to the current request path.

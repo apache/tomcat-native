@@ -134,6 +134,8 @@ public final class Request {
     private MessageBytes serverNameMB = new MessageBytes();
 
     private String localHost;
+    
+    private int remotePort;
 
     private MessageBytes schemeMB = new MessageBytes();
 
@@ -146,8 +148,10 @@ public final class Request {
 
     // remote address/host
     private MessageBytes remoteAddrMB = new MessageBytes();
+    private MessageBytes localAddr = new MessageBytes();
     private MessageBytes remoteHostMB = new MessageBytes();
-    
+    private MessageBytes localAddrMB = new MessageBytes();
+     
     private MimeHeaders headers = new MimeHeaders();
 
     private MessageBytes instanceId = new MessageBytes();
@@ -280,12 +284,24 @@ public final class Request {
 	return remoteHostMB;
     }
 
+    public MessageBytes localAddr() {
+	return localAddrMB;
+    }
+    
     public String getLocalHost() {
 	return localHost;
     }
 
     public void setLocalHost(String host) {
 	this.localHost = host;
+    }    
+    
+    public int getRemotePort(){
+        return remotePort;
+    }
+        
+    public void setRemotePort(int port){
+        this.remotePort = port;
     }
 
 
@@ -493,7 +509,7 @@ public final class Request {
         parameters.recycle();
 
         unparsedURIMB.recycle();
-        uriMB.recycle();
+        uriMB.recycle(); 
         decodedUriMB.recycle();
 	queryMB.recycle();
 	methodMB.recycle();

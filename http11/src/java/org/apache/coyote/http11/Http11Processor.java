@@ -236,7 +236,18 @@ public class Http11Processor implements Processor, ActionHook {
      */
     protected String remoteHost = null;
 
-
+    
+    /**
+     * Remote port to which the socket is connected
+     */
+    protected int remotePort = -1;
+    
+    
+    /**
+     *
+     */
+    protected String localAddr = null; 
+    
     /**
      * Maximum timeout on uploads.
      */
@@ -561,6 +572,8 @@ public class Http11Processor implements Processor, ActionHook {
         // Set the remote address
         remoteAddr = null;
         remoteHost = null;
+        localAddr = null;
+        remotePort = -1;
 
         // Setting up the I/O
         inputBuffer.setInputStream(input);
@@ -783,6 +796,14 @@ public class Http11Processor implements Processor, ActionHook {
             if (remoteHost == null) {
                 remoteHost = socket.getInetAddress().getHostName();
                 request.remoteHost().setString(remoteHost);
+            }           
+            if (remotePort == -1){
+                remotePort = socket.getPort();
+                request.setRemotePort(remotePort);
+            }            
+            if (localAddr == null){
+               localAddr = socket.getLocalAddress().getHostAddress();
+               request.localAddr().setString(localAddr);
             }
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
@@ -1008,7 +1029,6 @@ public class Http11Processor implements Processor, ActionHook {
             InetAddress localAddress = socket.getLocalAddress();
             // Setting the socket-related fields. The adapter doesn't know 
             // about socket.
-            request.setLocalHost(localAddress.getHostName());
             request.serverName().setString(localAddress.getHostName());
             return;
         }
