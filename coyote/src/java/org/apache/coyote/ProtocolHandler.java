@@ -101,6 +101,17 @@ public interface ProtocolHandler {
     public void start()
         throws Exception;
 
+    /**
+     * Pause the protocol (optional).
+     */
+    public void pause()
+        throws Exception;
+
+    /**
+     * Resume the protocol (optional).
+     */
+    public void resume()
+        throws Exception;
 
     public void destroy()
         throws Exception;

@@ -222,6 +222,26 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         log.info(sm.getString("http11protocol.start", "" + ep.getPort()));
     }
 
+    public void pause() throws Exception {
+        try {
+            ep.pauseEndpoint();
+        } catch (Exception ex) {
+            log.error(sm.getString("http11protocol.endpoint.pauseerror"), ex);
+            throw ex;
+        }
+        log.info(sm.getString("http11protocol.pause", "" + ep.getPort()));
+    }
+
+    public void resume() throws Exception {
+        try {
+            ep.resumeEndpoint();
+        } catch (Exception ex) {
+            log.error(sm.getString("http11protocol.endpoint.resumeerror"), ex);
+            throw ex;
+        }
+        log.info(sm.getString("http11protocol.resume", "" + ep.getPort()));
+    }
+
     public void destroy() throws Exception {
         log.info("Stoping http11 protocol on " + ep.getPort() + " " + tpOname);
         ep.stopEndpoint();

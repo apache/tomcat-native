@@ -142,6 +142,14 @@ public class MemoryProtocolHandler
     }
 
 
+    public void pause() 
+        throws Exception {
+    }
+
+    public void resume() 
+        throws Exception {
+    }
+
     public void destroy()
         throws Exception {
         protocolHandler = null;
