@@ -80,8 +80,7 @@ public final class Constants {
     /**
      * Server string.
      */
-    public static final String SERVER = 
-        "Apache Coyote/1.0";
+    public static final String SERVER = "Apache-Coyote/1.1";
 
 
     /**
