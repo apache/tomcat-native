@@ -100,6 +100,12 @@ static char *get_path_param(jk_ws_service_t *s,
                 if(id_end = strchr(id_start, '?')) { 
                     *id_end = '\0';
                 }
+                /*
+                 * Remove any trailing path element.
+                 */
+                if((id_end = strchr(id_start, ';')) != NULL) {
+                    *id_end = '\0';
+                }
                 return id_start;
             }
         }
@@ -114,6 +120,7 @@ static char *get_cookie(jk_ws_service_t *s,
                         const char *name)
 {
     unsigned i;
+    char *result = NULL;
 
     for(i = 0 ; i < s->num_headers ; i++) {
         if(0 == strcasecmp(s->headers_names[i], "cookie")) {
@@ -142,14 +149,22 @@ static char *get_cookie(jk_ws_service_t *s,
                         if((id_end = strchr(id_start, ',')) != NULL) {
                             *id_end = '\0';
                         }
-                        return id_start;
+                        if(result == NULL) {
+                            result = id_start;
+                        } else {
+                            int osz = strlen(result)+1;
+                            int sz  = osz + strlen(id_start)+1;
+                            result = jk_pool_realloc(s->pool, sz, result, osz);
+                            strcat(result,";");
+                            strcat(result, id_start);
+                        }
                     }
                 }
             }
         }
     }
 
-    return NULL;
+    return result;
 }
 
 
@@ -164,29 +179,6 @@ static char *get_sessionid(jk_ws_service_t *s)
         val = get_cookie(s, JK_SESSION_IDENTIFIER);
     }
     return val;
-}
-
-static char *get_session_route(jk_ws_service_t *s)
-{
-    char *sessionid = get_sessionid(s);
-    char *ch;
-
-    if(!sessionid) {
-        return NULL;
-    }
-
-    /*
-     * Balance parameter is appended to the end
-     */  
-    ch = strrchr(sessionid, '.');
-    if(!ch) {
-        return 0;
-    }
-    ch++;
-    if(*ch == '\0') {
-        return NULL;
-    }
-    return ch;
 }
 
 static void close_workers(lb_worker_t *p, 
@@ -223,26 +215,37 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t *p,
     worker_record_t *rc = NULL;
     double lb_min = 0.0;    
     unsigned i;
-    char *session_route = NULL;
+    char *sessionid = NULL;
 
     if (p->sticky_session) {
-        session_route = get_session_route(s);
+        sessionid = get_sessionid(s);
     }
 
-    if(session_route) {
-        for(i = 0 ; i < p->num_of_workers ; i++) {
-            if(0 == strcmp(session_route, p->lb_workers[i].name)) {
-                /* First attempt will allways be to the
-                   correct host. If this is indeed down and no
-                   hope of recovery, we'll go to fail-over
-                */
-                if(attempt>0 && p->lb_workers[i].in_error_state) {
-                   break;
-                } else {
-                    return &(p->lb_workers[i]);
-                }
-            }
+    while(sessionid) {
+        char *next = strchr(sessionid, ';');
+        char *session_route;
+        if(next) {
+            *next++ = '\0';
         }
+        session_route = strchr(sessionid, '.');
+        if(session_route) {
+          ++session_route;
+          for(i = 0 ; i < p->num_of_workers ; i++) {
+            if(0 == strcmp(session_route, p->lb_workers[i].name)) {
+              /* First attempt will allways be to the
+                 correct host. If this is indeed down and no
+                 hope of recovery, we'll go to fail-over
+              */
+              if(attempt>0 && p->lb_workers[i].in_error_state) {
+                next = NULL; /* Double break; */
+                break;
+              } else {
+                return &(p->lb_workers[i]);
+              }
+            }
+          }
+        }
+        sessionid = next;
     }
 
     for(i = 0 ; i < p->num_of_workers ; i++) {
