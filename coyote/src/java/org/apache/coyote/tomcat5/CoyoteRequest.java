@@ -84,6 +84,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -111,6 +112,7 @@ import org.apache.catalina.Logger;
 import org.apache.catalina.Manager;
 import org.apache.catalina.Realm;
 import org.apache.catalina.Session;
+import org.apache.catalina.ValveContext;
 import org.apache.catalina.Wrapper;
 
 import org.apache.catalina.util.Enumerator;
@@ -482,6 +484,28 @@ public class CoyoteRequest
 
 
     /**
+     * Filter chain associated with the request.
+     */
+    protected FilterChain filterChain = null;
+
+    /**
+     * Get filter chain associated with the request.
+     */
+    public FilterChain getFilterChain() {
+        return (this.filterChain);
+    }
+
+    /**
+     * Set filter chain associated with the request.
+     * 
+     * @param filterChain new filter chain
+     */
+    public void setFilterChain(FilterChain filterChain) {
+        this.filterChain = filterChain;
+    }
+
+
+    /**
      * Descriptive information about this Request implementation.
      */
     protected static final String info =
@@ -572,6 +596,28 @@ public class CoyoteRequest
      */
     public void setStream(InputStream stream) {
         // Ignore
+    }
+
+
+    /**
+     * The valve context associated with this request.
+     */
+    protected ValveContext valveContext = null;
+
+    /**
+     * Get valve context.
+     */
+    public ValveContext getValveContext() {
+        return (this.valveContext);
+    }
+
+    /**
+     * Set valve context.
+     * 
+     * @param valveContext New valve context object
+     */
+    public void setValveContext(ValveContext valveContext) {
+        this.valveContext = valveContext;
     }
 
 
