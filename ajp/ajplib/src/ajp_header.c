@@ -240,9 +240,9 @@ static int sc_for_req_header(const char *header_name)
                     p += 6;
                     if (memcmp(p, "CHARSET", 7) == 0)
                         return SC_ACCEPT_CHARSET;
-                    else if (memcmp(p,  "ENCODING", 8))
+                    else if (memcmp(p,  "ENCODING", 8) == 0)
                         return SC_ACCEPT_ENCODING;
-                    else if (memcmp(p, "LANGUAGE", 8))
+                    else if (memcmp(p, "LANGUAGE", 8) == 0)
                         return SC_ACCEPT_LANGUAGE;
                     else
                         return UNKNOWN_METHOD;
@@ -260,9 +260,9 @@ static int sc_for_req_header(const char *header_name)
                 return SC_COOKIE;
             else if(memcmp(p, "ONNECTION", 9) == 0)
                 return SC_CONNECTION;
-            else if(memcmp(p, "ONTENT_TYPE", 11) == 0)
+            else if(memcmp(p, "ONTENT-TYPE", 11) == 0)
                 return SC_CONTENT_TYPE;
-            else if(memcmp(p, "ONTENT_LENGTH", 13) == 0)
+            else if(memcmp(p, "ONTENT-LENGTH", 13) == 0)
                 return SC_CONTENT_LENGTH;
             else if(memcmp(p, "OOKIE2", 6) == 0)
                 return SC_COOKIE2;
@@ -288,7 +288,7 @@ static int sc_for_req_header(const char *header_name)
                 return UNKNOWN_METHOD;
         break;
         case 'U':
-            if(memcmp(p, "SER_AGENT", 9) == 0)
+            if(memcmp(p, "SER-AGENT", 9) == 0)
                 return SC_USER_AGENT;
             else
                 return UNKNOWN_METHOD;
