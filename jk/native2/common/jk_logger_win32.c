@@ -137,7 +137,7 @@ static int JK_METHOD jk2_logger_win32_jkVLog(jk_env_t *env, jk_logger_t *l,
                                      const char *fmt,
                                      va_list args)
 {
-    int rc;
+    int rc = 0;
     if(l->level <= level) {
         char buf[HUGE_BUFFER_SIZE];
         char *f = (char *)(file + strlen(file) - 1);
