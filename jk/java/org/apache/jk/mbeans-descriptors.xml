@@ -35,6 +35,10 @@
                description="Base directory for jk"
                type="java.lang.String"/>
 
+    <attribute name="managedResource"
+               description="Access to the object"
+               type="java.lang.Object" writeable="false" />
+
     <attribute name="handlersObjectName"
                description="List of all jk handlers"
                type="[Ljavax.management.ObjectName;"/>
