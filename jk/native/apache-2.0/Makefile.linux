@@ -14,9 +14,9 @@ JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_thre
 # which postfix all apache2 stuff with 2, ie apxs = apxs2. 
 # It will allow to have both apache 1.3 and 2.0 the same time on the system
 #
-#ifndef APXS
+ifndef APXS
 APXS=/usr/sbin/apxs2
-#endif
+endif
 
 SRCS=${JK}/jk_ajp12_worker.c ${JK}/jk_connect.c ${JK}/jk_msg_buff.c ${JK}/jk_util.c ${JK}/jk_ajp13.c \
      ${JK}/jk_jni_worker.c ${JK}/jk_pool.c ${JK}/jk_worker.c ${JK}/jk_ajp13_worker.c ${JK}/jk_lb_worker.c \
