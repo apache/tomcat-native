@@ -1,0 +1,482 @@
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; iso-8859-1">
+    <title>WebApp Library - Packages List</title>
+  </head>
+  <body link="#0000ff" vlink="#0000ff" alink="#0000ff"
+        bgcolor="#ffffff" text="#000000">
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff">
+          <table border="0" width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td bgcolor="ccccff" align="left">
+                <font size="+1" face="arial,helvetica,sans serif">
+                  <b>WebApp Library</b>
+                </font>
+              </td>
+              <td bgcolor="ccccff" align="right">
+                <font size="+1" face="arial,helvetica,sans serif">
+                  <b>Main package</b>
+                </font>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Classes</b>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <dl>
+            <dt>
+              <font face="arial,helvetica,sans serif">
+                <nobr><a href="doc.main.html#wa_chain">struct wa_chain</a></nobr>
+              </font>
+            </dt>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.main.html#wa_chain-curr">    void *curr</a></nobr>
+              </font>
+            </dd>
+
+            <dd>
+              <font size="-1" face="arial,helvetica,sans serif">
+                <nobr><a href="doc.main.html#wa_chain-next">    wa_chain *next</a></nobr>
+              </font>
+            </dd>
+
+          </dl>
+        </td>
+      </tr>
+
+    </table>
+    <br>
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Global Functions</b>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.main.html#wa_debug">void wa_debug(const char *f, const int l, const char *fmt, ...)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.main.html#wa_deploy">const char *wa_deploy(wa_application *a, wa_virtualhost *h, wa_connection *c)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.main.html#wa_destroy">const char *wa_destroy(void)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.main.html#wa_init">const char *wa_init(void)</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+    </table>
+    <br>
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Global Variables</b>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.main.html#wa_configuration">extern wa_chain *wa_configuration</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <font face="arial,helvetica,sans serif">
+            <nobr><a href="doc.main.html#wa_pool">extern apr_pool_t *wa_pool</a></nobr>
+          </font>
+        </td>
+      </tr>
+
+    </table>
+    <br>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <a name="wa_chain">
+              <b>Class &quot;wa_chain&quot; Detail:</b>
+            </a>
+          </font>
+        </td>
+      </tr>
+    </table>
+      <font size="+1" face="arial,helvetica,sans serif">
+        <b>wa_chain</b>
+      </font>
+    <dl>
+      <dt><code>struct wa_chain {</code></dt>
+
+      <dd><code>    void *curr;</code></dd>
+
+      <dd><code>    wa_chain *next;</code></dd>
+
+      <dt><code>};</code></dt>
+    </dl>
+    <p>
+      <font face="arial,helvetica,sans serif">
+        A simple chain structure holding lists of pointers.
+      </font>
+    </p>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="eeeeff" align="left">
+          <font face="arial,helvetica,sans serif">
+            <b>Class &quot;wa_chain&quot; Variables:</b>
+          </font>
+        </td>
+      </tr>
+    </table>
+
+    <a name="wa_chain-curr">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>curr</b>
+    </font>
+    <dl>
+      <dt><code>    void *curr;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The pointer to the current element in the chain.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_chain-next">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>next</b>
+    </font>
+    <dl>
+      <dt><code>    wa_chain *next;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The pointer to the next chain structure containing the next element
+or <b>NULL</b> if this is the last element in the chain.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <b>Global Functions Detail:</b>
+          </font>
+        </td>
+      </tr>
+    </table>
+
+    <a name="wa_debug">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_debug</b>
+    </font>
+    <dl>
+      <dt><code>void wa_debug(const char *f, const int l, const char *fmt, ...);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Dump some debugging information.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Parameters</b>
+            </font>
+          </dt>
+
+          <dd>
+            <code>f</code> -
+            <font face="arial,helvetica,sans serif">
+              The file where this function was called.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>l</code> -
+            <font face="arial,helvetica,sans serif">
+              The line number where this function was called.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>fmt</code> -
+            <font face="arial,helvetica,sans serif">
+              The format string of the debug message (printf style).
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>others</code> -
+            <font face="arial,helvetica,sans serif">
+              The parameters to the format string.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_deploy">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_deploy</b>
+    </font>
+    <dl>
+      <dt><code>const char *wa_deploy(wa_application *a, wa_virtualhost *h, wa_connection *c);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Deploy a web-application.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Parameters</b>
+            </font>
+          </dt>
+
+          <dd>
+            <code>a</code> -
+            <font face="arial,helvetica,sans serif">
+              The <code>wa_application</code> member of the web-application to
+         deploy.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>h</code> -
+            <font face="arial,helvetica,sans serif">
+              The <code>wa_virtualhost</code> member of the host under which the
+         web-application has to be deployed.
+
+            </font>
+          </dd>
+
+          <dd>
+            <code>c</code> -
+            <font face="arial,helvetica,sans serif">
+              The <code>wa_connection</code> member of the connection used to
+         reach the application.
+            </font>
+          </dd>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Return Value</b>
+            </font>
+          </dt>
+          <dd>
+            <font face="arial,helvetica,sans serif">
+              <b>NULL</b> on success or an error message on faliure.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_destroy">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_destroy</b>
+    </font>
+    <dl>
+      <dt><code>const char *wa_destroy(void);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Clean up the WebApp Library.
+This function releases all memory and resouces used by the WebApp library
+and must be called before the underlying web server process exits. Any call
+to any other WebApp Library function after this function has been invoked
+will result in impredictable results.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Return Value</b>
+            </font>
+          </dt>
+          <dd>
+            <font face="arial,helvetica,sans serif">
+              <b>NULL</b> on success or an error message on faliure.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_init">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_init</b>
+    </font>
+    <dl>
+      <dt><code>const char *wa_init(void);</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              Initialize the WebApp Library.
+This function must be called <b>before</b> any other calls to any other
+function to set up the APR and WebApp Library internals. If any other
+function is called before this function has been invoked will result in
+impredictable results.
+            </font>
+          </dt>
+
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              <b>Return Value</b>
+            </font>
+          </dt>
+          <dd>
+            <font face="arial,helvetica,sans serif">
+              <b>NULL</b> on success or an error message on faliure.
+            </font>
+          </dd>
+
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <table width="100%" cellspacing="0" cellpadding="2" border="1">
+      <tr>
+        <td bgcolor="ccccff" align="left">
+          <font size="+1" face="arial,helvetica,sans serif">
+            <b>Global Variables Detail:</b>
+          </font>
+        </td>
+      </tr>
+    </table>
+
+    <a name="wa_configuration">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_configuration</b>
+    </font>
+    <dl>
+      <dt><code>extern wa_chain *wa_configuration;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The configuration member of the library.
+<br>
+This list of <code>wa_chain</code> structure contain the configuration of
+the WebApp Library in the form of all deployed <code>wa_application</code>,
+<code>wa_virtualhost</code> and <code>wa_connection</code> structures.
+<br>
+The <code>curr</code> member in the <code>wa_chain</code> structure contains
+always a <code>wa_virtualhost</code> structure, from which all configured
+<code>wa_application</code> members and relative <code>wa_connection</code>
+members can be retrieved.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <a name="wa_pool">
+
+    <font size="+1" face="arial,helvetica,sans serif">
+      <b>wa_pool</b>
+    </font>
+    <dl>
+      <dt><code>extern apr_pool_t *wa_pool;</code></dt>
+      <dd>
+        <dl>
+          <dt>
+            <font face="arial,helvetica,sans serif">
+              The WebApp library memory pool.
+            </font>
+          </dt>
+        </dl>
+      </dd>
+    </dl>
+    <hr>
+
+    <font size="-2" face="arial,helvetica,sans serif">
+      <div align="center">
+        Copyright &copy; 2001, The Apache Software Foundation.<br>
+        All Rights Reserved.<br>
+        Generated with <a href="http://scandoc.sourceforge.net/">ScanDoc
+        0.12</a> on Thu May 10  7:37:11 2001
+
+      </div>
+    </font>
+  </body>
+</html>
