@@ -121,3 +121,12 @@ AC_DEFUN(LOCAL_FILTEREXEC,[
   ${ECHO} "  Execution of $1 returned ${ret}"
 ])
 
+AC_DEFUN(LOCAL_RESOLVEDIR,[
+  AC_MSG_CHECKING([for $2])
+  localdir="`pwd`"
+  cd "$1"
+  DIR=`pwd`
+  AC_MSG_RESULT([${DIR}])
+])
+  
+  
