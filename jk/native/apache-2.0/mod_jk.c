@@ -1643,6 +1643,12 @@ static int jk_handler(request_rec *r)
 
     xconf = (jk_server_conf_t *)ap_get_module_config(r->server->module_config, 
                                                      &jk_module);
+    if (apr_table_get(r->subprocess_env, "no-jk")) {
+        jk_log(xconf->log, JK_LOG_DEBUG, "Into handler no-jk env var detected for uri=%s, declined\n",
+           r->uri);
+
+        return DECLINED;
+    }
 
     /* Was the option to forward directories to Tomcat set? */
     if(!dmt && !(xconf->options & JK_OPT_FWDDIRS))
@@ -2245,6 +2251,13 @@ static int jk_translate(request_rec *r)
                 return DECLINED;
             }
 
+            if (apr_table_get(r->subprocess_env, "no-jk")) {
+                jk_log(conf->log, JK_LOG_DEBUG, "Into translate no-jk env var detected for uri=%s, declined\n",
+                 r->uri);
+                                                                                                                                          
+                 return DECLINED;
+            }
+
             /* Special case to make sure that apache can serve a directory
                listing if there are no matches for the DirectoryIndex and
                Tomcat webapps are mapped into apache using JkAutoAlias. */
@@ -2393,6 +2406,14 @@ static int jk_map_to_storage(request_rec *r)
                        "Manually mapped, no need to call uri_to_worker\n");
                 return DECLINED;
             }
+
+            if (apr_table_get(r->subprocess_env, "no-jk")) {
+                jk_log(conf->log, JK_LOG_DEBUG, "Into map_to_storage no-jk env var detected for uri=%s, declined\n",
+                r->uri);
+                                                                                                                                          
+                return DECLINED;
+            }
+
             uri = apr_pstrdup(r->pool, r->uri);
             worker = map_uri_to_worker(conf->uw_map, uri, conf->log);
 
