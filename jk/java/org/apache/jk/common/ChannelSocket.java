@@ -866,5 +866,6 @@ class SocketConnection implements ThreadPoolRunnable {
     
     public void runIt(Object perTh[]) {
         wajp.processConnection(ep);
+        ep = null;
     }
 }
