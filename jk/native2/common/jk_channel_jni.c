@@ -335,7 +335,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
                                           jk_endpoint_t *endpoint,
                                           jk_msg_t *msg) 
 {
-//    int sd;
+/*    int sd; */
     int  sent=0;
     char *b;
     int len;
@@ -446,10 +446,10 @@ static int JK_METHOD jk2_channel_jni_recv(jk_env_t *env, jk_channel_t *_this,
                                          jk_endpoint_t *endpoint,
                                          jk_msg_t *msg) 
 {
-//    jbyte *nbuf;
-//    jbyteArray jbuf;
-//    int jlen;
-//    jboolean iscommit;    
+/*    jbyte *nbuf; */
+/*    jbyteArray jbuf; */
+/*    int jlen; */
+/*    jboolean iscommit;     */
     jk_channel_jni_private_t *jniCh=_this->_privatePtr;
 
     env->l->jkLog(env, env->l, JK_LOG_ERROR,

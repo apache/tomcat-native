@@ -392,7 +392,7 @@ Java_org_apache_jk_apr_AprImpl_unSocketConnect(JNIEnv *jniEnv, jobject _jthis,
                    sizeof( unixAddr.sun_family) );
     
     if( status < 0 ) {
-        // Return error
+        /* Return error */
         return -1;
     }
 
