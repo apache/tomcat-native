@@ -58,10 +58,6 @@
 /* @version $Id$ */
 #include <wa.h>
 
-#ifndef DEBUG
-#define DEBUG
-#endif
-
 /* The current APR memory pool. */
 apr_pool_t *wa_pool=NULL;
 /* The list of all deployed applications. */
