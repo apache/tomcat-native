@@ -372,7 +372,8 @@ void jk_dump_buff(jk_logger_t *l,
 
         for (j = 0; j < 16; j++) {
             unsigned char x = (msg->buf[i + j]);
-
+            if ((i + j) >= len)
+                x = 0;
             *current++ = jk_HEX[x >> 4];
             *current++ = jk_HEX[x & 0x0f];
             *current++ = ' ';
@@ -382,7 +383,8 @@ void jk_dump_buff(jk_logger_t *l,
         *current++ = ' ';
         for (j = 0; j < 16; j++) {
             unsigned char x = msg->buf[i + j];
-
+            if ((i + j) >= len)
+                x = 0;
             if (x > 0x20 && x < 0x7F) {
                 *current++ = x;
             }
