@@ -149,13 +149,14 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
             ret = jk_socket_timeout_set(sock, -1, timeout);
             if (ret) {
                 jk_close_socket(sock);
-                jk_log(l, JK_LOG_INFO,
-                       "jk_open_socket, timeout_set failed errno = %d\n",
+                jk_log(l, JK_LOG_ERROR,
+                       "timeout_set failed with errno = %d\n",
                        ret);
+                JK_TRACE_EXIT(l);
                 return -1;
             }
             jk_log(l, JK_LOG_DEBUG,
-                "jk_open_socket, set timeout to %d with status %d\n",
+                "set timeout to %d with status %d\n",
                 timeout, ret);
 
         }
@@ -163,7 +164,7 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
         /* Tries to connect to Tomcat (continues trying while error is EINTR) */
         do {
             jk_log(l, JK_LOG_DEBUG,
-                   "jk_open_socket, try to connect socket = %d to %s\n", sock,
+                   "try to connect socket = %d to %s\n", sock,
                    jk_dump_hinfo(addr, buf));
 
 /* Need more infos for BSD 4.4 and Unix 98 defines, for now only 
@@ -180,14 +181,15 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
             }
 #endif /* WIN32 */
             jk_log(l, JK_LOG_DEBUG,
-                   "jk_open_socket, after connect ret = %d\n", ret);
+                   "after connect ret = %d\n", ret);
         } while (-1 == ret && EINTR == errno);
 
         /* Check if we connected */
         if (ret == -1) {
             jk_log(l, JK_LOG_INFO,
-                   "jk_open_socket, connect() failed errno = %d\n", errno);
+                   "connect() failed errno = %d\n", errno);
             jk_close_socket(sock);
+            JK_TRACE_EXIT(l);
             return -1;
         }
         if (ndelay) {
@@ -211,8 +213,9 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
                        sizeof(len))) {
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
-                   "ERROR: jk_open_socket, failed setting sndbuf errno = %d\n", errno);
+                   "failed setting sndbuf errno = %d\n", errno);
             jk_close_socket(sock);
+            JK_TRACE_EXIT(l);
             return -1;
         }
         /* Set socket receive buffer size */
@@ -220,18 +223,19 @@ int jk_open_socket(struct sockaddr_in *addr, int ndelay,
                               sizeof(len))) {
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
-                   "ERROR: jk_open_socket, failed setting rcvbuf errno = %d\n", errno);
+                   "failed setting rcvbuf errno = %d\n", errno);
             jk_close_socket(sock);
+            JK_TRACE_EXIT(l);
             return -1;
         }
 
-        jk_log(l, JK_LOG_DEBUG, "jk_open_socket, return, sd = %d\n",
+        jk_log(l, JK_LOG_DEBUG, "connected sd = %d\n",
                sock);
     }
     else {
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
-               "jk_open_socket, socket() failed errno = %d\n", errno);
+               "socket() failed with errno = %d\n", errno);
     }
 
     JK_TRACE_EXIT(l);
