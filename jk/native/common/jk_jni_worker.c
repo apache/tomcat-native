@@ -253,7 +253,7 @@ static void detach_from_jvm(jni_worker_t *p,
    Needed for at least AS/400, what about BS2000 ?
 */
 static void *strdup_ascii(jk_pool_t *p, 
-                          const char *s)
+                          char *s)
 {
 	char * rc;	
 	rc = jk_pool_strdup(p, s);
@@ -884,7 +884,8 @@ static int open_jvm1(jni_worker_t *p,
     }
 
     if(p->sysprops) {
-        vm_args.properties = strdup_ascii(&p->p, p->sysprops);
+        /* No EBCDIC to ASCII conversion here for AS/400 - later */
+	vm_args.properties = p->sysprops;
     }
 
     jk_log(l, JK_LOG_DEBUG, "In open_jvm1, about to create JVM...\n");
@@ -991,21 +992,21 @@ static int open_jvm2(jni_worker_t *p,
     	jk_log(l, JK_LOG_DEBUG, "In open_jvm2, setting classpath to %s\n", p->tomcat_classpath);
 	    tmp = build_opt_str(&p->p, "-Djava.class.path=", p->tomcat_classpath, l);
 	    null_check(tmp);
-        options[optn++].optionString = strdup_ascii(p->&p, tmp);
+        options[optn++].optionString = strdup_ascii(&p->p, tmp);
     }
 
     if(p->tomcat_mx) {
 	    jk_log(l, JK_LOG_DEBUG, "In open_jvm2, setting max heap to %d\n", p->tomcat_mx);
     	tmp = build_opt_int(&p->p, "-Xmx", p->tomcat_mx, l);
 	    null_check(tmp);
-        options[optn++].optionString = strdup_ascii(p->&p, tmp);
+        options[optn++].optionString = strdup_ascii(&p->p, tmp);
     }
 
     if(p->tomcat_ms) {
     	jk_log(l, JK_LOG_DEBUG, "In open_jvm2, setting start heap to %d\n", p->tomcat_ms);
         tmp = build_opt_int(&p->p, "-Xms", p->tomcat_ms, l);
 	    null_check(tmp);
-        options[optn++].optionString = strdup_ascii(p->&p, tmp);
+        options[optn++].optionString = strdup_ascii(&p->p, tmp);
     }
 
     if(p->sysprops) {
@@ -1014,7 +1015,7 @@ static int open_jvm2(jni_worker_t *p,
 	        jk_log(l, JK_LOG_DEBUG, "In open_jvm2, setting %s\n", p->sysprops[i]);
 	        tmp = build_opt_str(&p->p, "-D", p->sysprops[i], l);
 	        null_check(tmp);
-	        options[optn++].optionString = strdup_ascii(p->&p, tmp);
+	        options[optn++].optionString = strdup_ascii(&p->p, tmp);
 	        i++;
 	    }
     }
@@ -1025,7 +1026,7 @@ static int open_jvm2(jni_worker_t *p,
 	    while(p->java2opts[i]) {
 	        jk_log(l, JK_LOG_DEBUG, "In open_jvm2, using option: %s\n", p->java2opts[i]);
 	        /* Pass it "as is" */
-	        options[optn++].optionString = strdup_ascii(p->&p, p->java2opts[i++]);
+	        options[optn++].optionString = strdup_ascii(&p->p, p->java2opts[i++]);
 	    }
     }
 
@@ -1100,7 +1101,7 @@ static int get_bridge_object(jni_worker_t *p,
 /* OS400 need conversion from EBCDIC to ASCII before passing to JNI */
 /* for others, strdup_ascii is just jk_pool_strdup */
 
-	char *ctype = strdup_ascii(&p->p, btype);
+    ctype = strdup_ascii(&p->p, btype);
 
     p->jk_java_bridge_class = (*env)->FindClass(env, ctype);
 
