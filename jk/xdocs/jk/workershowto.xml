@@ -313,6 +313,87 @@ These workers should not appear in the worker.list property.
 
 </subsection>
 
+<subsection name="Advanced lb Worker properties">
+<p>
+With JK 1.2.x, new load-balancing and fault-tolerant support has been added via
+2 new properties, <b>local_worker_only</b> and <b>local_worker</b>.
+</p>
+
+<p>
+Let's take an example environment:
+</p>
+
+<p>
+A cluster with two nodes (worker1+worker2), running a webserver + tomcat tandem on each node and 
+a loadbalancer in front of the nodes.
+</p>
+
+<screen>
+<note>The advanced router LB worker</note>
+<read>worker.list=router</read>
+<note># Define a 'local_worker' worker using ajp13</note>
+<read>worker.worker1.port=8009</read>
+<read>worker.worker1.host=node1.domain.org</read>
+<read>worker.worker1.type=ajp13</read>
+<read>worker.worker1.lbfactor=1</read>
+<read>worker.worker1.local_worker=1</read>
+<note># Define another 'local_worker' worker using ajp13</note>
+<read>worker.worker2.port=8009</read>
+<read>worker.worker2.host=node2.domain.org</read>
+<read>worker.worker2.type=ajp13</read>
+<read>worker.worker2.lbfactor=1</read>
+<read>worker.worker2.local_worker=0</read>
+<note># Define the LB worker</note>
+<read>worker.router.type=lb</read>
+<read>worker.router.balanced_workers=worker1,worker2</read>
+<read>worker.router.local_worker_only=1</read>
+</screen>
+
+<p>
+The <b>local_worker</b> flag on worker1 and worker2 tells the <b>lb_worker</b> which connections are going 
+to the local worker. 
+</p>
+
+<p>
+If local_worker is an int and is not 0 it is set to JK_TRUE and marked as local worker, JK_FALSE otherwise. 
+If in minimum one worker is marked as local worker, lb_worker is in local worker mode. 
+All local workers are moved to the beginning of the internal worker list in lb_worker during validation.
+</p>
+
+<p>
+This means that if a request with a session id comes in it would be routed to the appropriate worker. 
+If this worker is down it will be send to the first local worker which is not in error state.
+</p>
+
+<p>
+If a request without a session comes in, it would be routed to the first local worker. 
+If all local worker are in error state, then the 'local_worker_only' flag is important. 
+If it was set to an int and this wasn't 0 it is set to JK_TRUE, JK_FALSE otherwise. With set to JK_TRUE, this request gets an error response. If set to JK_FALSE lb_worker tries to route the request to another balanced worker.
+</p>
+
+<p>
+If one of the worker was in error state and has recovered nothing changes. 
+The local worker will be check for requests without a session id (and with a session on himself) and 
+the other worker will only be checked if a request with a session id of this worker comes in.
+</p>
+
+<p>
+Why do we need souch a complex behavior ?
+</p>
+
+<p>
+We need a graceful shut down of a node for maintenance. The balancer in front asks a special port on each 
+node periodically. If we want to remove a node from the cluster, we switch off this port. 
+The loadbalancer can't connect to it and marks the node as down. 
+But we don't move the sessions to another node. In this environment it is an error if the balancer sends a request without a session to an apache+mod_jk+tomcat which port is switched off. And if the load balancer determines that a node is down no other node is allowed to send a request without a session to it. Only requests with old sessions on the switched off node would be routed to this node. After some time nobody uses the old sessions and the sessions will time out. Then nobody uses this node, because all session are gone and the node is unreachable without a session-id in the request. If someone uses a session which timed out, our servlet system sends a redirect response without a session id to the browser. This is necessary for me, because on a switched off node apache and tomcat can still be up and running, but they are in an old state and should only be asked for valid old sessions. After the last session timed out, I could update the node etc. without killing sessions or moving them to another node. Sometimes we have a lot of big objects in our sessions, so it would be really time consuming to move them.
+</p>
+
+<p>
+The defaults are still local_worker: 0 and local_worker_only:0
+</p>
+
+</subsection>
+
 <subsection name="jni Worker properties">
 <p>
 The jni worker opens a JVM inside the web server process and executes Tomcat within it (that is in-process). 
