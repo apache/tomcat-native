@@ -226,6 +226,7 @@
 
   <target name="jar.tomcat5" depends="compile.shared,compile.tomcat5" >
     <jar  jarfile="${tomcat-coyote.jar}"
+         index="true"
          basedir="${build.home}/classes"
          manifest="${conf.home}/MANIFEST.MF"
          excludes="**/tomcat3/*" >
@@ -269,15 +270,17 @@
    depends="static,report,compile.shared,compile.tomcat5,compile.tomcat4,compile.tomcat33"
    description="Compile Coyote and its Adapters">
     <jar    jarfile="${build.home}/lib/tomcat-${component.name}.jar"
+            index="true"
             basedir="${build.home}/classes"
            manifest="${build.home}/conf/MANIFEST.MF"
            includes="org/apache/coyote/**" 
 	   excludes="**/tomcat3/*" />
     <jar    jarfile="${build.home}/lib/tomcat33-${component.name}.jar"
-            basedir="${build.home}/classes"
-           manifest="${build.home}/conf/MANIFEST.MF"
-           includes="org/apache/coyote/**" 
-	   excludes="**/tomcat4/*" />
+         index="true"
+         basedir="${build.home}/classes"
+         manifest="${build.home}/conf/MANIFEST.MF"
+         includes="org/apache/coyote/**" 
+         excludes="**/tomcat4/*" />
   </target>
 
   <target name="compile.tests" depends="compile"
@@ -305,7 +308,7 @@
    description="Clean and compile all components"/>
 
 
-  <target name="javadoc"
+  <target name="javadoc" unless="docs-uptodate"
    description="Create component Javadoc documentation">
     <mkdir dir="${build.home}/docs/api"/>
     <javadoc sourcepath="${source.home}"
