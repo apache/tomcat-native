@@ -80,6 +80,8 @@
 	#define closesocket			close
 #endif
 
+#define DEFAULT_HOST "127.0.0.1"
+
 /** Information specific for the socket channel
  */
 struct jk_channel_socket_private {
@@ -105,8 +107,9 @@ typedef struct jk_channel_socket_private jk_channel_socket_private_t;
   XXX We could also use properties or 'notes'
 */
 
-int JK_METHOD jk_channel_socket_factory(jk_env_t *env, void **result,
-					char *type, char *name);
+int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool,
+                                        void **result,
+					const char *type, const char *name);
 
 static int JK_METHOD jk_channel_socket_resolve(char *host, short port,
 				     struct sockaddr_in *rc);
@@ -156,8 +159,10 @@ static int JK_METHOD jk_channel_socket_init(jk_channel_t *_this,
     host = map_getStrProp( props, "worker", worker_name, "host", host);
 
     _this->worker=worker;
-    _this->logger=l;
     _this->properties=props;
+
+    if( host==NULL )
+        host=DEFAULT_HOST;
     
     err=jk_channel_socket_resolve( host, port, rc );
     if( err!= JK_TRUE ) {
@@ -226,7 +231,7 @@ static int jk_close_socket(int s)
 static int JK_METHOD jk_channel_socket_open(jk_channel_t *_this,
                                             jk_endpoint_t *endpoint)
 {
-    jk_logger_t *l=_this->logger;
+    jk_logger_t *l=_this->worker->workerEnv->l;
     int err=l->jkLog(l, JK_LOG_DEBUG, "Into jk_channel_socket_open\n");
     jk_channel_socket_private_t *socketInfo=
 	(jk_channel_socket_private_t *)(_this->_privatePtr);
@@ -394,39 +399,38 @@ static int JK_METHOD jk_channel_socket_recv( jk_channel_t *_this,
 
 
 
-int JK_METHOD jk_channel_socket_factory(jk_env_t *env,
-                                        void **result,
-					char *type,
-                                        char *name)
+int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+					const char *type, const char *name)
 {
-    jk_channel_t *channel;
+    jk_channel_t *_this;
     
     if( strcmp( "channel", type ) != 0 ) {
 	/* Wrong type  XXX throw */
 	*result=NULL;
 	return JK_FALSE;
     }
-    channel=(jk_channel_t *)malloc( sizeof( jk_channel_t));
-    channel->_privatePtr= (jk_channel_socket_private_t *)
-	malloc( sizeof( jk_channel_socket_private_t));
-
-    channel->recv= &jk_channel_socket_recv; 
-    channel->send= &jk_channel_socket_send; 
-    channel->init= &jk_channel_socket_init; 
-    channel->open= &jk_channel_socket_open; 
-    channel->close= &jk_channel_socket_close; 
-    channel->getProperty= &jk_channel_socket_getProperty; 
-    channel->setProperty= &jk_channel_socket_setProperty; 
-
-    channel->supportedProperties=( char ** )malloc( 4 * sizeof( char * ));
-    channel->supportedProperties[0]="host";
-    channel->supportedProperties[1]="port";
-    channel->supportedProperties[2]="defaultPort";
-    channel->supportedProperties[3]="\0";
-
-    channel->name="file";
+    _this=(jk_channel_t *)pool->alloc(pool, sizeof( jk_channel_t));
     
-    *result= channel;
+    _this->_privatePtr= (jk_channel_socket_private_t *)
+	pool->alloc( pool, sizeof( jk_channel_socket_private_t));
+
+    _this->recv= &jk_channel_socket_recv; 
+    _this->send= &jk_channel_socket_send; 
+    _this->init= &jk_channel_socket_init; 
+    _this->open= &jk_channel_socket_open; 
+    _this->close= &jk_channel_socket_close; 
+    _this->getProperty= &jk_channel_socket_getProperty; 
+    _this->setProperty= &jk_channel_socket_setProperty; 
+
+    _this->supportedProperties=( char ** )pool->alloc( pool, 4 * sizeof( char * ));
+    _this->supportedProperties[0]="host";
+    _this->supportedProperties[1]="port";
+    _this->supportedProperties[2]="defaultPort";
+    _this->supportedProperties[3]="\0";
+
+    _this->name="file";
+
+    *result= _this;
     
     return JK_TRUE;
 }

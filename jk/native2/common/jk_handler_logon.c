@@ -224,7 +224,7 @@ static int handle_logon(jk_endpoint_t *ae,
 static int jk_handler_logon_logon(jk_endpoint_t *ae,
                            jk_logger_t    *l)
 {
-    jk_pool_t     *p = &ae->pool;
+    jk_pool_t     *p = ae->pool;
     jk_msg_buf_t  *msg;
     int 	  rc;
     

@@ -78,6 +78,7 @@
 #define ADDITINAL_WAIT_LOAD (20)
 
 int JK_METHOD jk_worker_lb_factory(jk_env_t *env,
+                                   jk_pool_t *pool,
                                    void **result,
                                    char *type,
                                    char *name);
@@ -348,27 +349,33 @@ static int JK_METHOD init(jk_worker_t *pThis,
     return JK_TRUE;
 }
 
-static int JK_METHOD get_endpoint(jk_worker_t *pThis,
+static int JK_METHOD get_endpoint(jk_worker_t *_this,
                                   jk_endpoint_t **pend,
                                   jk_logger_t *l)
 {
     jk_endpoint_t *e;
+    jk_pool_t *endpointPool;
     
     l->jkLog(l, JK_LOG_DEBUG, "lb_worker.getEndpoint()\n");
 
-    if(pThis==NULL || pend==NULL ) {        
+    if(_this==NULL || pend==NULL ) {        
         l->jkLog(l, JK_LOG_ERROR, 
                "lb_worker.getEndpoint() NPE\n");
     }
 
-    e = (jk_endpoint_t *)malloc(sizeof(jk_endpoint_t));
+    endpointPool=_this->pool->create( _this->pool, HUGE_POOL_SIZE);
+    
+    e = (jk_endpoint_t *)endpointPool->calloc(endpointPool,
+                                              sizeof(jk_endpoint_t));
     if(e==NULL) {
         l->jkLog(l, JK_LOG_ERROR, 
                  "lb_worker.getEndpoint() OutOfMemoryException\n");
         return JK_FALSE;
     }
+
+    e->pool = endpointPool;
     
-    e->worker = pThis;
+    e->worker = _this;
     e->service = service;
     e->done = done;
     e->channelData = NULL;
@@ -403,6 +410,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
 
 
 int JK_METHOD jk_worker_lb_factory(jk_env_t *env,
+                                   jk_pool_t *pool,
                                    void **result,
                                    char *type,
                                    char *name)
@@ -412,17 +420,19 @@ int JK_METHOD jk_worker_lb_factory(jk_env_t *env,
     
     l->jkLog(l, JK_LOG_DEBUG, "lb_worker.factory()\n");
 
-    if(NULL != name ) {
+    if(NULL == name ) {
         l->jkLog(l, JK_LOG_ERROR,"lb_worker.factory() NullPointerException\n");
         return JK_FALSE;
     }
     
-    _this = (jk_worker_t *)malloc(sizeof(jk_worker_t));
+    _this = (jk_worker_t *)pool->calloc(pool, sizeof(jk_worker_t));
 
     if(_this==NULL) {
         l->jkLog(l, JK_LOG_ERROR,"lb_worker.factory() OutOfMemoryException\n");
         return JK_FALSE;
     }
+
+    _this->pool=pool;
 
     _this->lb_workers = NULL;
     _this->num_of_workers = 0;

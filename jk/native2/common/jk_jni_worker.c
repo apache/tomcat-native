@@ -105,8 +105,7 @@ struct jni_worker {
     int was_verified;
     int was_initialized;
 
-    jk_pool_t p;
-    jk_pool_atom_t buf[TINY_POOL_SIZE];
+    jk_pool_t *pool;
 
     /*
      * JVM Object pointer.
@@ -193,7 +192,7 @@ struct jni_endpoint {
 };
 typedef struct jni_endpoint jni_endpoint_t;
 
-int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
+int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool, void **result,
                                     char *type, char *name);
 
 static int load_jvm_dll(jni_worker_t *p,
@@ -463,7 +462,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
     str_config= map_getStrProp( props, "worker", p->name, "class_path", NULL );
     if(str_config != NULL ) {
-        p->tomcat_classpath = p->p.pstrdup(&p->p, str_config);
+        p->tomcat_classpath = p->pool->pstrdup(p->pool, str_config);
     }
 
     if(!p->tomcat_classpath) {
@@ -473,7 +472,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
     str_config= map_getStrProp( props, "worker", p->name, "jvm_lib", NULL );
     if(str_config != NULL ) {
-        p->jvm_dll_path  = p->p.pstrdup(&p->p, str_config);
+        p->jvm_dll_path  = p->pool->pstrdup(p->pool, str_config);
     }
 
     if(!p->jvm_dll_path || !jk_file_exists(p->jvm_dll_path)) {
@@ -483,29 +482,29 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
     str_config= map_getStrProp( props, "worker", p->name, "cmd_line", NULL ); 
     if(str_config != NULL ) {
-        p->tomcat_cmd_line  = p->p.pstrdup(&p->p, str_config);
+        p->tomcat_cmd_line  = p->pool->pstrdup(p->pool, str_config);
     }
 
     str_config=  map_getStrProp( props, "worker", p->name, "stdout", NULL ); 
     if(str_config!= NULL ) {
-        p->stdout_name  = p->p.pstrdup(&p->p, str_config);
+        p->stdout_name  = p->pool->pstrdup(p->pool, str_config);
     }
 
     str_config=  map_getStrProp( props, "worker", p->name, "stderr", NULL ); 
     if(str_config!= NULL ) {
-        p->stderr_name  = p->p.pstrdup(&p->p, str_config);
+        p->stderr_name  = p->pool->pstrdup(p->pool, str_config);
     }
 
     str_config=  map_getStrProp( props, "worker", p->name, "sysprops", NULL ); 
     if(str_config!= NULL ) {
-        p->sysprops  = jk_parse_sysprops(&p->p, str_config);
+        p->sysprops  = jk_parse_sysprops(p->pool, str_config);
     }
 
 #ifdef JNI_VERSION_1_2
     str_config= map_getStrProp( props, "worker", p->name, "java2opts", NULL );
     if( str_config != NULL ) {
     	/* l->jkLog(l, JK_LOG_DEBUG, "Got opts: %s\n", str_config); */
-        p->java2opts = jk_parse_sysprops(&p->p, str_config);
+        p->java2opts = jk_parse_sysprops(p->pool, str_config);
     }
     mem_config= map_getIntProp( props, "worker", p->name, "java2lax", -1 );
     if(mem_config != -1 ) {
@@ -515,7 +514,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
     str_config=  map_getStrProp( props, "worker", p->name, "ld_path", NULL ); 
     if(str_config!= NULL ) {
-        jk_append_libpath(&p->p, str_config);
+        jk_append_libpath(p->pool, str_config);
     }
 
     if(!load_jvm_dll(p, l)) {
@@ -699,7 +698,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
         detach_from_jvm(p, l);
     }
 
-    p->p.close(&p->p);
+    p->pool->close(p->pool);
     free(p);
 
     l->jkLog(l, JK_LOG_DEBUG, "Done destroy\n");
@@ -707,7 +706,7 @@ static int JK_METHOD destroy(jk_worker_t **pThis,
     return JK_TRUE;
 }
 
-int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
+int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool, void **result,
                                     char *type, char *name)
 {
     jk_logger_t *l=env->logger;
@@ -728,7 +727,7 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
         return JK_TRUE;
     }
 
-    private_data = (jni_worker_t *)malloc(sizeof(jni_worker_t ));
+    private_data = (jni_worker_t *)pool->calloc(pool, sizeof(jni_worker_t ));
 
     if(!private_data) {
 	    l->jkLog(l, JK_LOG_ERROR, 
@@ -736,16 +735,14 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
 	    return JK_FALSE;
     }
 
-    jk_open_pool(&private_data->p,
-                 private_data->buf,
-                 sizeof(jk_pool_atom_t) * TINY_POOL_SIZE);
-
-    private_data->name = private_data->p.pstrdup(&private_data->p, name);
+    private_data->pool=pool;
+    
+    private_data->name = private_data->pool->pstrdup(private_data->pool, name);
 
     if(!private_data->name) {
         l->jkLog(l, JK_LOG_ERROR, 
                  "In jni_worker_factory, memory allocation error\n");
-        private_data->p.close(&private_data->p);
+        private_data->pool->close(private_data->pool);
         free(private_data);
         return JK_FALSE;
     }
@@ -780,6 +777,7 @@ int JK_METHOD jk_worker_jni_factory(jk_env_t *env, void **result,
 
     *result = &private_data->worker;
     the_singleton_jni_worker = &private_data->worker;
+    private_data->worker.pool=pool;
 
     l->jkLog(l, JK_LOG_DEBUG, "Done jni_worker_factory\n");
     return JK_TRUE;
@@ -908,7 +906,7 @@ static int open_jvm1(jni_worker_t *p,
         unsigned len = strlen(vm_args.classpath) + 
                        strlen(p->tomcat_classpath) + 
                        3;
-        char *tmp = p->p.alloc(&p->p, len);
+        char *tmp = p->pool->alloc(p->pool, len);
         if(tmp) {
             sprintf(tmp, "%s%c%s", 
                     p->tomcat_classpath, 
@@ -1047,21 +1045,21 @@ static int open_jvm2(jni_worker_t *p,
 
     if(p->tomcat_classpath) {
     	l->jkLog(l, JK_LOG_DEBUG, "In open_jvm2, setting classpath to %s\n", p->tomcat_classpath);
-	    tmp = build_opt_str(&p->p, "-Djava.class.path=", p->tomcat_classpath, l);
+	    tmp = build_opt_str(p->pool, "-Djava.class.path=", p->tomcat_classpath, l);
 	    null_check(tmp);
         options[optn++].optionString = tmp;
     }
 
     if(p->tomcat_mx) {
 	    l->jkLog(l, JK_LOG_DEBUG, "In open_jvm2, setting max heap to %d\n", p->tomcat_mx);
-    	tmp = build_opt_int(&p->p, "-Xmx", p->tomcat_mx, l);
+    	tmp = build_opt_int(p->pool, "-Xmx", p->tomcat_mx, l);
 	    null_check(tmp);
         options[optn++].optionString = tmp;
     }
 
     if(p->tomcat_ms) {
     	l->jkLog(l, JK_LOG_DEBUG, "In open_jvm2, setting start heap to %d\n", p->tomcat_ms);
-        tmp = build_opt_int(&p->p, "-Xms", p->tomcat_ms, l);
+        tmp = build_opt_int(p->pool, "-Xms", p->tomcat_ms, l);
 	    null_check(tmp);
         options[optn++].optionString = tmp;
     }
@@ -1070,7 +1068,7 @@ static int open_jvm2(jni_worker_t *p,
 	    int i = 0;
 	    while(p->sysprops[i]) {
 	        l->jkLog(l, JK_LOG_DEBUG, "In open_jvm2, setting %s\n", p->sysprops[i]);
-	        tmp = build_opt_str(&p->p, "-D", p->sysprops[i], l);
+	        tmp = build_opt_str(p->pool, "-D", p->sysprops[i], l);
 	        null_check(tmp);
 	        options[optn++].optionString = tmp;
 	        i++;

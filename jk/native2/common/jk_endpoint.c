@@ -86,7 +86,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
 void ajp_reset_endpoint(jk_endpoint_t *ae)
 {
     ae->reuse = JK_FALSE;
-    ae->pool.reset( &ae->pool );
+    ae->pool->reset( ae->pool );
 }
 
 /*
@@ -98,7 +98,7 @@ void ajp_close_endpoint(jk_endpoint_t *ae,
     l->jkLog(l, JK_LOG_DEBUG, "In jk_endpoint_t::ajp_close_endpoint\n");
 
     ajp_reset_endpoint(ae);
-    ae->pool.close( &ae->pool );
+    ae->pool->close( ae->pool );
     {
 	jk_channel_t *channel=ae->worker->channel;
 	int err=channel->close( channel, ae );
@@ -429,7 +429,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
 
     switch(code) {
     case JK_AJP13_SEND_HEADERS:
-        err=ajp_handle_response( msg, r, ae, l );
+        err=ajp_handle_startResponse( msg, r, ae, l );
         return err;
         break;
         
@@ -511,6 +511,7 @@ int ajp_get_reply(jk_endpoint_t *e,
             l->jkLog(l, JK_LOG_ERROR, "Error reading reply\n");
             /* we just can't recover, unset recover flag */
             return JK_FALSE;
+
         }
         
         rc = ajp_process_callback(e->reply, e->post, e, s, l);

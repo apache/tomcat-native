@@ -190,7 +190,7 @@ static int ajp_unmarshal_response(jk_msg_buf_t   *msg,
                                   jk_endpoint_t *ae,
                                   jk_logger_t    *l)
 {
-    jk_pool_t * p = &ae->pool;
+    jk_pool_t * p = ae->pool;
 
     s->status = jk_b_get_int(msg);
 

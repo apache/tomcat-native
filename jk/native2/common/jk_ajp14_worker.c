@@ -72,8 +72,8 @@
 #include "jk_service.h"
 #include "jk_env.h"
 
-int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, void **result,
-                                       char *type, char *name);
+int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool, void **result,
+                                       const char *type, const char *name);
 
 static int JK_METHOD
 jk_worker_ajp14_service(jk_endpoint_t   *e, jk_ws_service_t *s,
@@ -102,19 +102,19 @@ jk_worker_ajp14_destroy(jk_worker_t **pThis, jk_logger_t *l);
 
 /* -------------------- Impl -------------------- */
 
-int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, void **result,
-                                       char *type, char *name)
+int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool, void **result,
+                                       const char *type, const char *name)
 {
     jk_logger_t *l=env->logger;
-    jk_worker_t *w=(jk_worker_t *)malloc(sizeof(jk_worker_t));
-   
+    jk_worker_t *w=(jk_worker_t *)pool->calloc(pool, sizeof(jk_worker_t));
+
     l->jkLog(l, JK_LOG_DEBUG, "Into ajp14_worker_factory\n");
 
     if (name == NULL || w == NULL) {
         l->jkLog(l, JK_LOG_ERROR, "In ajp14_worker_factory, NULL parameters\n");
         return JK_FALSE;
     }
-
+    w->pool = pool;
     w->name = strdup(name);
     
     w->proto= AJP14_PROTO;
@@ -176,15 +176,15 @@ jk_worker_ajp14_service(jk_endpoint_t   *e,
 	return JK_FALSE;
     }
 	
-    e->request = jk_b_new(&(e->pool));
+    e->request = jk_b_new(e->pool);
     jk_b_set_buffer_size(e->request, DEF_BUFFER_SZ); 
     jk_b_reset(e->request);
     
-    e->reply = jk_b_new(&(e->pool));
+    e->reply = jk_b_new(e->pool);
     jk_b_set_buffer_size(e->reply, DEF_BUFFER_SZ);
     jk_b_reset(e->reply); 
 	
-    e->post = jk_b_new(&(e->pool));
+    e->post = jk_b_new(e->pool);
     jk_b_set_buffer_size(e->post, DEF_BUFFER_SZ);
     jk_b_reset(e->post); 
     
@@ -311,14 +311,11 @@ jk_worker_ajp14_validate(jk_worker_t *pThis,
 	/* Create a default channel */
 	jk_env_t *env= we->env;
 
-	jk_env_objectFactory_t fac = 
-	    (jk_env_objectFactory_t)env->getFactory(env, "channel", "socket" );
-	l->jkLog( l, JK_LOG_DEBUG, "Got socket channel factory \n");
+	pThis->channel=env->getInstance(env, pThis->pool,"channel", "socket" );
 
-	err=fac( env, (void **)&pThis->channel, "channel", "socket" );
-	if( err != JK_TRUE ) {
-	    l->jkLog(l, JK_LOG_ERROR, "Error creating socket factory\n");
-	    return err;
+	if( pThis->channel == NULL ) {
+	    l->jkLog(l, JK_LOG_ERROR, "Error creating socket channel\n");
+	    return JK_FALSE;
 	}
 	l->jkLog(l, JK_LOG_ERROR, "Got channel %lx %lx\n", pThis, pThis->channel);
     }
@@ -385,7 +382,8 @@ jk_worker_ajp14_getEndpoint(jk_worker_t *_this,
                             jk_logger_t    *l)
 {
     jk_endpoint_t *ae = NULL;
-
+    jk_pool_t *endpointPool;
+    
     if( _this->login->secret_key ==NULL ) {
     }
 
@@ -413,14 +411,19 @@ jk_worker_ajp14_getEndpoint(jk_worker_t *_this,
         }
     }
 
-    ae = (jk_endpoint_t *)malloc(sizeof(jk_endpoint_t));
-    if (!ae) {
+    endpointPool = _this->pool->create( _this->pool, HUGE_POOL_SIZE );
+    
+    ae = (jk_endpoint_t *)endpointPool->alloc(endpointPool,
+                                              sizeof(jk_endpoint_t));
+    if (ae==NULL) {
         l->jkLog(l, JK_LOG_ERROR, "ajp14.get_endpoint OutOfMemoryException\n");
         return JK_FALSE;
     }
     
     ae->reuse = JK_FALSE;
-    jk_open_pool(&ae->pool, ae->buf, sizeof(ae->buf));
+
+    ae->pool = endpointPool;
+
     ae->worker = _this;
     ae->proto = _this->proto;
     ae->channelData = NULL;

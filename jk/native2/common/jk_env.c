@@ -68,9 +68,10 @@ static void jk_env_initEnv( jk_env_t *env, char *id );
    The env will provide access to pools, etc 
 */
 
-jk_env_t* JK_METHOD jk_env_getEnv( char *id ) {
+jk_env_t* JK_METHOD jk_env_getEnv( char *id, jk_pool_t *pool ) {
   if( jk_env_singleton == NULL ) {
-    jk_env_singleton=(jk_env_t *)calloc( 1, sizeof( jk_env_t ));
+    jk_env_singleton=(jk_env_t *)pool->calloc( pool, sizeof( jk_env_t ));
+    jk_env_singleton->globalPool = pool;
     jk_env_initEnv( (jk_env_t *)jk_env_singleton, id );
   }
   return jk_env_singleton;
@@ -101,7 +102,7 @@ static jk_env_objectFactory_t JK_METHOD jk_env_getFactory(jk_env_t *env,
   return result;
 }
 
-static void *jk_env_getInstance( jk_env_t *_this, const char *type, const char *name )
+static void *jk_env_getInstance( jk_env_t *_this, jk_pool_t *pool, const char *type, const char *name )
 {
     jk_env_objectFactory_t fac;
     void *result;
@@ -114,7 +115,7 @@ static void *jk_env_getInstance( jk_env_t *_this, const char *type, const char *
         return NULL;
     }
 
-    fac( _this, &result, type, name );
+    fac( _this, pool, &result, type, name );
     if( result==NULL ) {
         if( _this->logger )
             _this->logger->jkLog(_this->logger, JK_LOG_ERROR,
@@ -135,7 +136,7 @@ static void JK_METHOD jk_env_registerFactory(jk_env_t *env,
   char *typeName;
   int size=( sizeof( char ) * (strlen(name) + strlen(type) + 2 ));
 
-  typeName=(char *)calloc(size, sizeof(char));
+  typeName=(char *)env->globalPool->calloc(env->globalPool, size);
 
 
   strcpy(typeName, type );
@@ -150,7 +151,7 @@ static void jk_env_initEnv( jk_env_t *env, char *id ) {
   env->getFactory= jk_env_getFactory; 
   env->registerFactory= jk_env_registerFactory;
   env->getInstance= jk_env_getInstance; 
-  map_alloc( & env->_registry);
+  map_alloc( & env->_registry, env->globalPool );
   jk_registry_init(env);
 }
 
