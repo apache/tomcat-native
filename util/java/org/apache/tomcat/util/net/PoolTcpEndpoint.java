@@ -122,6 +122,7 @@ public class PoolTcpEndpoint { // implements Endpoint {
     ThreadPoolRunnable listener;
     private volatile boolean running = false;
     private boolean initialized = false;
+    private boolean reinitializing = false;
     static final int debug=0;
 
     ThreadPool tp;
@@ -311,28 +312,34 @@ public class PoolTcpEndpoint { // implements Endpoint {
 	if (running) {
 	    tp.shutdown();
 	    running = false;
-	    try {
-		// Need to create a connection to unlock the accept();
-		Socket s;
-		if (inet == null) {
-		    s=new Socket("127.0.0.1", port );
-		}else{
-		    s=new Socket(inet, port );
+            if (serverSocket != null) {
+                closeServerSocket();
+            }
+	}
+    }
+
+    protected void closeServerSocket() {
+        try {
+            // Need to create a connection to unlock the accept();
+            Socket s;
+            if (inet == null) {
+                s=new Socket("127.0.0.1", port );
+            }else{
+                s=new Socket(inet, port );
                     // setting soLinger to a small value will help shutdown the
                     // connection quicker
-                    s.setSoLinger(true, 0);
-		}
-		s.close();
-	    } catch(Exception e) {
-                log.error("Caught exception trying to unlock accept.", e);
-	    }
-	    try {
-		serverSocket.close();
-	    } catch(Exception e) {
-                log.error("Caught exception trying to close socket.", e);
-	    }
-	    serverSocket = null;
-	}
+                s.setSoLinger(true, 0);
+            }
+            s.close();
+        } catch(Exception e) {
+            log.error("Caught exception trying to unlock accept.", e);
+        }
+        try {
+            serverSocket.close();
+        } catch(Exception e) {
+            log.error("Caught exception trying to close socket.", e);
+        }
+        serverSocket = null;
     }
 
     // -------------------- Private methods
@@ -362,49 +369,62 @@ public class PoolTcpEndpoint { // implements Endpoint {
         }
         catch (IOException e) {
 
-            if (running) {
+            String msg = null;
 
-                String msg = sm.getString("endpoint.err.nonfatal",
+            if (running) {
+                msg = sm.getString("endpoint.err.nonfatal",
                         serverSocket, e);
                 log.error(msg, e);
+            }
 
-                if (accepted != null) {
-                    try {
-                        accepted.close();
-                        accepted = null;
-                    } catch(Exception ex) {
-                        msg = sm.getString("endpoint.err.nonfatal",
-                                accepted, ex);
-                        log.warn(msg, ex);
-                    }
+            if (accepted != null) {
+                try {
+                    accepted.close();
+                    accepted = null;
+                } catch(Exception ex) {
+                    msg = sm.getString("endpoint.err.nonfatal",
+                                       accepted, ex);
+                    log.warn(msg, ex);
                 }
-                // Restart endpoint when getting an IOException during accept
-                synchronized (threadSync) {
+            }
+
+            reinitializing = true;
+            // Restart endpoint when getting an IOException during accept
+            synchronized (threadSync) {
+                if (reinitializing) {
+                    reinitializing = false;
+                    // 1) Attempt to close server socket
+                    closeServerSocket();
+                    initialized = false;
+                    // 2) Reinit endpoint (recreate server socket)
                     try {
-                        serverSocket.close();
-                    } catch(Exception ex) {
-                        msg = sm.getString("endpoint.err.nonfatal",
-                                serverSocket, ex);
-                        log.warn(msg, ex);
-                    }
-                    serverSocket = null;
-                    try {
-                        if (inet == null) {
-                            serverSocket = factory.createSocket(port, backlog);
-                        } else {
-                            serverSocket =
-                                    factory.createSocket(port, backlog, inet);
-                        }
-                        if (serverTimeout >= 0)
-                            serverSocket.setSoTimeout(serverTimeout);
+                        msg = sm.getString("endpoint.warn.reinit");
+                        log.warn(msg);
+                        initEndpoint();
                     } catch (Throwable t) {
-                        msg = sm.getString("endpoint.err.fatal",
-                                serverSocket, t);
+                        msg = sm.getString("endpoint.err.nonfatal",
+                                           serverSocket, t);
                         log.error(msg, t);
-                        stopEndpoint();
+                    }
+                    // 3) If failed, attempt to restart endpoint
+                    if (!initialized) {
+                        msg = sm.getString("endpoint.warn.restart");
+                        log.warn(msg);
+                        try {
+                            stopEndpoint();
+                            initEndpoint();
+                            startEndpoint();
+                        } catch (Throwable t) {
+                            msg = sm.getString("endpoint.err.fatal",
+                                               serverSocket, t);
+                            log.error(msg, t);
+                        } finally {
+                            // Current thread is now invalid: kill it
+                            throw new IllegalStateException
+                                ("Terminating thread");
+                        }
                     }
                 }
-
             }
 
         }
@@ -509,6 +529,7 @@ class TcpWorkerThread implements ThreadPoolRunnable {
 		s = endpoint.acceptSocket();
 	    } catch (Throwable t) {
 		endpoint.log.error("Exception in acceptSocket", t);
+                throw new IllegalStateException("Terminating thread");
 	    }
 	    if(null != s) {
 		// Continue accepting on another thread...
