@@ -84,6 +84,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.Cookies;
 import org.apache.tomcat.util.http.ServerCookie;
@@ -292,6 +293,12 @@ final class CoyoteProcessor
     private int status = Constants.PROCESSOR_IDLE;
 
 
+    /**
+     * Host name.
+     */
+    private char[] hostName = new char[128];
+
+
     // -------------------------------------------------------- Adapter Methods
 
 
@@ -416,7 +423,7 @@ final class CoyoteProcessor
             }
         }
 
-        parseHost();
+        parseHost(req);
         parseCookies(req);
 
     }
@@ -425,38 +432,59 @@ final class CoyoteProcessor
     /**
      * Parse host.
      */
-    protected void parseHost()
+    protected void parseHost(Request req)
         throws IOException {
 
-        String value = request.getHeader("host");
-        if (value != null) {
-            int n = value.indexOf(':');
-            if (n < 0) {
+        MessageBytes valueMB = req.getMimeHeaders().getValue("host");
+        ByteChunk valueBC = null;
+        if (valueMB != null) {
+            valueBC = valueMB.getByteChunk();
+            byte[] valueB = valueBC.getBytes();
+            int valueL = valueBC.getLength();
+            int valueS = valueBC.getStart();
+            int colonPos = -1;
+            if (valueL > hostName.length) {
+                hostName = new char[valueL];
+            }
+            for (int i = 0; i < valueL; i++) {
+                char b = (char) valueB[i + valueS];
+                if (b == ':') {
+                    colonPos = i;
+                    break;
+                }
+                hostName[i] = b;
+            }
+            if (colonPos < 0) {
                 if (connector.getScheme().equals("http")) {
                     request.setServerPort(80);
                 } else if (connector.getScheme().equals("https")) {
                     request.setServerPort(443);
                 }
-                if (proxyName != null)
+                if (proxyName != null) {
                     request.setServerName(proxyName);
-                else
-                    request.setServerName(value);
+                } else {
+                    request.setServerName(new String(hostName, 0, valueL));
+                }
             } else {
-                if (proxyName != null)
+                if (proxyName != null) {
                     request.setServerName(proxyName);
-                else
-                    request.setServerName(value.substring(0, n).trim());
-                if (proxyPort != 0)
+                } else {
+                    request.setServerName(new String(hostName, 0, colonPos));
+                }
+                if (proxyPort != 0) {
                     request.setServerPort(proxyPort);
-                else {
-                    int port = 80;
-                    try {
-                        port =
-                            Integer.parseInt(value.substring(n + 1).trim());
-                    } catch (Exception e) {
-                        throw new IOException
-                            (sm.getString
-                             ("coyoteProcessor.parseHeaders.portNumber"));
+                } else {
+                    int port = 0;
+                    int mult = 1;
+                    for (int i = valueL - 1; i > colonPos; i--) {
+                        int charValue = HexUtils.DEC[(int) valueB[i + valueS]];
+                        if (charValue == -1) {
+                            throw new IOException
+                                (sm.getString
+                                 ("coyoteProcessor.parseHeaders.portNumber"));
+                        }
+                        port = port + (charValue * mult);
+                        mult = 10 * mult;
                     }
                     request.setServerPort(port);
                 }
@@ -516,9 +544,6 @@ final class CoyoteProcessor
 
     /**
      * Parse cookies.
-     * Note: Using Coyote native cookie parser to parse cookies would be faster
-     * but a conversion to Catalina own cookies would then be needed, which 
-     * would take away most if not all of the performance benefit.
      */
     protected void parseCookies(Request req) {
 
