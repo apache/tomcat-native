@@ -248,6 +248,8 @@ public class ChannelUn extends JniHandler {
                 MsgAjp endM = new MsgAjp();
                 endM.reset();
                 endM.appendByte((byte)HANDLE_THREAD_END);
+                endM.end();
+                endM.processHeader();
                 next.invoke(endM, ep);
             } catch( Exception ee) {
                 log.error( "Error, releasing connection",ee);
