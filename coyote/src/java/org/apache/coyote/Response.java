@@ -403,7 +403,7 @@ public final class Response {
      *  interceptors to fix headers.
      */
     public void sendHeaders() throws IOException {
-        // XXX This code doesn't send any notification :-)
+        action(ActionCode.ACTION_COMMIT, this);
 	commited = true;
     }
 
