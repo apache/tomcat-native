@@ -91,7 +91,9 @@
 #include "apr_shm.h"
 #endif
 
+#ifdef HAVE_SIGNAL
 #include "signal.h"
+#endif
 
 static apr_pool_t *jniAprPool;
 static jk_workerEnv_t *workerEnv;
@@ -152,55 +154,86 @@ Java_org_apache_jk_apr_AprImpl_terminate(JNIEnv *jniEnv, jobject _jthis)
     return 0;
 }
 
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_poolCreate(JNIEnv *jniEnv, jobject _jthis, jlong parentP)
-{
-    apr_pool_t *parent;
-    apr_pool_t *child;
-
-    parent=(apr_pool_t *)(void *)(long)parentP;
-    apr_pool_create( &child, parent );
-    return (jlong)(long)child;
-}
-
-JNIEXPORT jlong JNICALL 
-Java_org_apache_jk_apr_AprImpl_poolClear(JNIEnv *jniEnv, jobject _jthis,
-                                         jlong poolP)
-{
-    apr_pool_t *pool;
-
-    pool=(apr_pool_t *)(void *)(long)poolP;
-    apr_pool_clear( pool );
-    return 0;
-}
-
 /* -------------------- Signals -------------------- */
+
 #ifdef HAVE_SIGNALS
 static struct sigaction jkAction;
 
+/* We use a jni channel to send the notification to java
+ */
+static jk_channel_t *jniChannel;
+
+/* XXX we should sync or use multiple endpoints if multiple signals
+   can be concurent
+*/
+static jk_endpoint_t *signalEndpoint;
+
 static void jk2_SigAction(int sig) {
-    fprintf(stderr, "Signal %d\n", sig );
+    jk_env_t *env;
     
     /* Make a callback using the jni channel */
+    fprintf(stderr, "Signal %d\n", sig );
+
+    if( jk_env_globalEnv == NULL ) {
+        return;
+    }
+
+    env=jk_env_globalEnv->getEnv( jk_env_globalEnv );
+
+    if( jniChannel==NULL ) {
+        jniChannel=env->getByName( env, "channel.jni:jni" );
+        fprintf(stderr, "Got jniChannel %p\n", jniChannel );
+    }
+    if( jniChannel==NULL ) {
+        return;
+    }
+    if( signalEndpoint == NULL ) {
+        jk_bean_t *component=env->createBean2( env, NULL, "endpoint", NULL );
+        if( component == NULL ) {
+            fprintf(stderr, "Can't create endpoint\n" );
+            return;
+        }
+        component->init( env, component );
+        fprintf(stderr, "Create endpoint %p\n", component->object );
+        signalEndpoint=component->object;
+    }
+
+    /* Channel:jni should be initialized by the caller */
+
+    /* XXX make the callback */
     
-    signal( sig, jk2_SigAction );
+    jk_env_globalEnv->releaseEnv( jk_env_globalEnv, env );
+
 }
-#endif
+
 
 /* XXX We need to: - preserve the old signal ( or get them ) - either
      implement "waitSignal" or use invocation in jk2_SigAction
 
      Probably waitSignal() is better ( we can have a thread that waits )
-*/
+ */
 
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *jniEnv, jobject _jthis, jint signalNr )
 {
-#ifdef HAVE_SIGNALS
     memset(& jkAction, 0, sizeof(jkAction));
     jkAction.sa_handler=jk2_SigAction;
     sigaction((int)signalNr, &jkAction, (void *) NULL);
-#endif
+    return 0;
+}
+
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_sendSignal(JNIEnv *jniEnv, jobject _jthis, jint target ,
+                                          jint signo)
+{
+    return kill( (pid_t)target, (int)signo );
+}
+
+#else /* ! HAVE_SIGNALS */
+
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_signal(JNIEnv *jniEnv, jobject _jthis, jint signalNr )
+{
     return 0;
 }
 
@@ -208,9 +241,11 @@ JNIEXPORT jint JNICALL
 Java_org_apache_jk_apr_AprImpl_sendSignal(JNIEnv *jniEnv, jobject _jthis, jint signo,
                                           jlong target)
 {
-    
     return 0;
 }
+
+#endif
+
 
 /* -------------------- User related functions -------------------- */
 
@@ -262,10 +297,13 @@ Java_org_apache_jk_apr_AprImpl_setUser(JNIEnv *jniEnv, jobject _jthis,
    'native' calls. For 'tcp' sockets we just use what java provides.
 */
 
+/* XXX @deprecated !!! All this will move to jk_channel_un, and we'll
+   use the same dispatch that we use for the jni channel !!!
+*/
    
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_unSocketClose(JNIEnv *jniEnv, jobject _jthis, 
-                                             jlong poolJ, jlong socketJ, jint typeJ )
+                                             jlong socketJ, jint typeJ )
 {
     int socket=(int)socketJ;
     int type=(int)typeJ;
@@ -276,9 +314,8 @@ Java_org_apache_jk_apr_AprImpl_unSocketClose(JNIEnv *jniEnv, jobject _jthis,
 
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_unSocketListen(JNIEnv *jniEnv, jobject _jthis, 
-                                              jlong poolJ, jstring hostJ, jint backlog )
+                                              jstring hostJ, jint backlog )
 {
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     const char *host;
     int status;
     int unixSocket=-1L;
@@ -325,9 +362,8 @@ Java_org_apache_jk_apr_AprImpl_unSocketListen(JNIEnv *jniEnv, jobject _jthis,
 
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_unSocketConnect(JNIEnv *jniEnv, jobject _jthis, 
-                                               jlong poolJ, jstring hostJ )
+                                               jstring hostJ )
 {
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     const char *host;
     int status;
     int unixSocket=-1L;
@@ -366,7 +402,7 @@ Java_org_apache_jk_apr_AprImpl_unSocketConnect(JNIEnv *jniEnv, jobject _jthis,
 
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis, 
-                                      jlong poolJ, jlong unSocketJ)
+                                      jlong unSocketJ)
 {
 #ifdef HAVE_UNIXSOCKETS
     int listenUnSocket=(int)unSocketJ;
@@ -381,10 +417,6 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
 
         fprintf(stderr, "unAccept %d\n", listenUnSocket );
 
-#ifdef HAVE_SIGNALS
-/*         signal( SIGCHLD, SIG_IGN ); */
-/*         signal( SIGIO, jk2_SigAction ); */
-#endif        
         clientlen=sizeof( client );
         
         connfd=accept( listenUnSocket, (struct sockaddr *)&client, &clientlen );
@@ -410,11 +442,10 @@ Java_org_apache_jk_apr_AprImpl_unAccept(JNIEnv *jniEnv, jobject _jthis,
 
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_unRead(JNIEnv *jniEnv, jobject _jthis, 
-                                      jlong poolJ, jlong unSocketJ,
+                                      jlong unSocketJ,
                                       jbyteArray jbuf, jint from, jint cnt)
 {
 #ifdef HAVE_UNIXSOCKETS
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     jbyte *nbuf;
     int rd;
     jboolean iscopy;
@@ -455,10 +486,9 @@ Java_org_apache_jk_apr_AprImpl_unRead(JNIEnv *jniEnv, jobject _jthis,
 
 JNIEXPORT jint JNICALL 
 Java_org_apache_jk_apr_AprImpl_unWrite(JNIEnv *jniEnv, jobject _jthis, 
-                                     jlong poolJ, jlong unSocketJ, jbyteArray jbuf, jint from, jint cnt)
+                                     jlong unSocketJ, jbyteArray jbuf, jint from, jint cnt)
 {
     apr_status_t status;
-    apr_pool_t *pool=(apr_pool_t *)(void *)(long)poolJ;
     jbyte *nbuf;
     int rd=0;
 #ifdef HAVE_UNIXSOCKETS
@@ -549,7 +579,7 @@ Java_org_apache_jk_apr_AprImpl_releaseJkEnv
 }
 
 /*
-  Recycle the jk env 
+  Recycle the jk endpoint
 */
 JNIEXPORT void JNICALL 
 Java_org_apache_jk_apr_AprImpl_jkRecycle
@@ -596,7 +626,7 @@ Java_org_apache_jk_apr_AprImpl_getJkHandler
 }
 
 /*
-  Create a jk handler
+  Create a jk handler XXX It should be createJkBean
 */
 JNIEXPORT jlong JNICALL 
 Java_org_apache_jk_apr_AprImpl_createJkHandler
@@ -638,6 +668,44 @@ Java_org_apache_jk_apr_AprImpl_jkSetAttribute
 
 /*
 */
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_jkInit
+  (JNIEnv *jniEnv, jobject o, jlong xEnv, jlong componentP )
+{
+    jk_env_t *env=(jk_env_t *)(void *)(long)xEnv;
+    jk_bean_t *component=(jk_bean_t *)(void *)(long)componentP;
+    int rc;
+    
+    if( component->init ==NULL )
+        return JK_OK;
+    
+    rc=component->init( env, component );
+
+    return rc;
+}
+
+/*
+*/
+JNIEXPORT jint JNICALL 
+Java_org_apache_jk_apr_AprImpl_jkDestroy
+  (JNIEnv *jniEnv, jobject o, jlong xEnv, jlong componentP )
+{
+    jk_env_t *env=(jk_env_t *)(void *)(long)xEnv;
+    jk_bean_t *component=(jk_bean_t *)(void *)(long)componentP;
+    int rc;
+    
+    if( component->destroy ==NULL )
+        return JK_OK;
+    
+    rc=component->destroy( env, component );
+
+    /* XXX component->pool->reset( env, component->pool ); */
+    
+    return rc;
+}
+
+/*
+*/
 JNIEXPORT jstring JNICALL 
 Java_org_apache_jk_apr_AprImpl_jkGetAttribute
   (JNIEnv *jniEnv, jobject o, jlong xEnv, jlong componentP, jstring nameJ)
@@ -659,26 +727,6 @@ Java_org_apache_jk_apr_AprImpl_jkGetAttribute
     (*jniEnv)->ReleaseStringUTFChars(jniEnv, nameJ, name);
     
     return valueJ;
-}
-
-/*
-*/
-JNIEXPORT jint JNICALL 
-Java_org_apache_jk_apr_AprImpl_jkGetId
-  (JNIEnv *jniEnv, jobject o, jlong xEnv, jstring nsJ, jstring nameJ)
-{
-    jk_env_t *env=(jk_env_t *)(void *)(long)xEnv;
-    char *name=(char *)(*jniEnv)->GetStringUTFChars(jniEnv, nameJ, 0);
-    char *value;
-    int rc=-1;
-    int i=0;
-
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "aprImpl.getId()  %d %s\n", rc, name );
-        
-    (*jniEnv)->ReleaseStringUTFChars(jniEnv, nameJ, name);
-    
-    return rc;
 }
 
 
@@ -749,4 +797,5 @@ Java_org_apache_jk_apr_AprImpl_jkInvoke
 
     return rc;
 }
+
 

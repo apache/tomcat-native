@@ -36,21 +36,6 @@ JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_initialize
 JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_terminate
   (JNIEnv *, jobject);
 
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    poolCreate
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_poolCreate
-  (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    poolClear
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_poolClear
-  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     org_apache_jk_apr_AprImpl
@@ -58,7 +43,7 @@ JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_poolClear
  * Signature: (JJI)J
  */
 JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unSocketClose
-  (JNIEnv *, jobject, jlong, jlong, jint);
+  (JNIEnv *, jobject, jlong, jint);
 
 /*
  * Class:     org_apache_jk_apr_AprImpl
@@ -66,7 +51,7 @@ JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unSocketClose
  * Signature: (JLjava/lang/String;I)J
  */
 JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unSocketListen
-  (JNIEnv *, jobject, jlong, jstring, jint);
+  (JNIEnv *, jobject, jstring, jint);
 
 /*
  * Class:     org_apache_jk_apr_AprImpl
@@ -74,7 +59,7 @@ JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unSocketListen
  * Signature: (JLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unSocketConnect
-  (JNIEnv *, jobject, jlong, jstring);
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     org_apache_jk_apr_AprImpl
@@ -82,7 +67,7 @@ JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unSocketConnect
  * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unAccept
-  (JNIEnv *, jobject, jlong, jlong);
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     org_apache_jk_apr_AprImpl
@@ -90,7 +75,7 @@ JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_unAccept
  * Signature: (JJ[BII)I
  */
 JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_unRead
-  (JNIEnv *, jobject, jlong, jlong, jbyteArray, jint, jint);
+  (JNIEnv *, jobject, jlong, jbyteArray, jint, jint);
 
 /*
  * Class:     org_apache_jk_apr_AprImpl
@@ -98,47 +83,7 @@ JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_unRead
  * Signature: (JJ[BII)I
  */
 JNIEXPORT jint JNICALL Java_org_apache_jk_apr_AprImpl_unWrite
-  (JNIEnv *, jobject, jlong, jlong, jbyteArray, jint, jint);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    mutexCreate
- * Signature: (JLjava/lang/String;I)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_mutexCreate
-  (JNIEnv *, jobject, jlong, jstring, jint);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    mutexLock
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_mutexLock
-  (JNIEnv *, jobject, jlong, jlong);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    mutexUnLock
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_mutexUnLock
-  (JNIEnv *, jobject, jlong, jlong);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    mutexTryLock
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_mutexTryLock
-  (JNIEnv *, jobject, jlong, jlong);
-
-/*
- * Class:     org_apache_jk_apr_AprImpl
- * Method:    mutexDestroy
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL Java_org_apache_jk_apr_AprImpl_mutexDestroy
-  (JNIEnv *, jobject, jlong, jlong);
+  (JNIEnv *, jobject, jlong, jbyteArray, jint, jint);
 
 /*
  * Class:     org_apache_jk_apr_AprImpl
