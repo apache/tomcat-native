@@ -67,33 +67,35 @@ dnl --------------------------------------------------------------------------
 AC_DEFUN([JAVA_INIT],[
   AC_MSG_CHECKING([for java support])
   AC_ARG_ENABLE(java,
-  [  --enable-java[=JAVA_HOME]  enable Java compilation (if JAVA_HOME is not
+    [  --enable-java[=JAVA_HOME]
+                          enable Java compilation (if JAVA_HOME is not
                           specified its value will be inherited from the
                           JAVA_HOME environment variable).],
-  [
-    case "${withval}" in
-    yes|YES|true|TRUE)
-      JAVA_ENABLE="TRUE"
-      ;;
-    *)
-      JAVA_ENABLE="TRUE"
-      JAVA_HOME="${withval}"
-      ;;
-    esac
+    [
+      case "${withval}" in
+      yes|YES|true|TRUE)
+        JAVA_ENABLE="TRUE"
+        ;;
+      *)
+        JAVA_ENABLE="TRUE"
+        JAVA_HOME="${withval}"
+        ;;
+      esac
 
-    AC_MSG_RESULT([yes])
+      AC_MSG_RESULT([yes])
 
-    if ${TEST} ! -z "${JAVA_HOME}"
-    then
-      LOCAL_RESOLVEDIR(JAVA_HOME,${JAVA_HOME},[java home directory])
-      AC_MSG_RESULT([error])
-      AC_MSG_ERROR([java home not specified and not found in environment])
-    fi
+      if ${TEST} ! -z "${JAVA_HOME}"
+      then
+        LOCAL_RESOLVEDIR(JAVA_HOME,${JAVA_HOME},[java home directory])
+        AC_MSG_RESULT([error])
+        AC_MSG_ERROR([java home not specified and not found in environment])
+      fi
 
-  ],[
-    JAVA_ENABLE="FALSE"
-    AC_MSG_RESULT([no])
-  ])
+    ],[
+      JAVA_ENABLE="FALSE"
+      AC_MSG_RESULT([no])
+    ]
+  )
   AC_SUBST(JAVA_ENABLE)
   AC_SUBST(JAVA_HOME)
 ])
