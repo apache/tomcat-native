@@ -81,28 +81,15 @@ import org.apache.tomcat.util.buf.HexUtils;
  * @author Kevin Seguin
  * @author Costin Manolache
  */
-public abstract class Channel {
-    protected WorkerEnv we;
-    protected Worker worker;
+public abstract class Channel extends JkHandler {
 
-    public void setWorkerEnv( WorkerEnv we ) {
-        this.we=we;
-    }
-    
-    public void setWorker(Worker worker) {
-        this.worker=worker;
-    }
-
-    public void init() throws IOException {
-    }
-            
     /** This method is used to receive messages. It shouldn't
      *  be exposed, as most processing is driven by sending
      *   messages and dispatching on incoming messages. The
      *   only current use is the aberant post packet after
      *   the first request, which doesn't fit anything.
      */
-    public abstract int receive( Msg msg, Endpoint ep )
+    public abstract int receive( Msg msg, MsgContext ep )
         throws IOException;
 
     /**
@@ -111,10 +98,23 @@ public abstract class Channel {
      * @param msg A packet with accumulated data to send to the server --
      * this method will write out the length in the header.  
      */
-    public abstract int send( Msg msg, Endpoint ep )
+    public abstract int send( Msg msg, MsgContext ep )
         throws IOException;
 
+    public int invoke( Msg msg, MsgContext mc ) throws IOException {
+        if( next==null ) {
+            if( nextName!=null ) 
+                setNext( wEnv.getHandler( nextName ) );
+            if( next==null )
+                next=wEnv.getHandler( "dispatch" );
+            if( next==null )
+                next=wEnv.getHandler( "request" );
+            log("Setting default next " + next.getClass().getName());
+        }
 
-    
-
+        if(logL >0 )
+            log("Calling next " + next.getName() + " " +
+                next.getClass().getName());
+        return next.invoke(msg, mc );
+    }
 }
