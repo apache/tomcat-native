@@ -35,10 +35,6 @@
 #include "apr_general.h"
 #endif
 
-#if defined(WIN32)
-typedef u_long in_addr_t;
-#endif
-
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 #define JK_IS_SOCKET_ERROR(x) ((x) == SOCKET_ERROR)
 #define JK_GET_SOCKET_ERRNO() errno = WSAGetLastError() - WSABASEERR
@@ -53,15 +49,7 @@ typedef u_long in_addr_t;
 int jk_resolve(char *host, int port, struct sockaddr_in *rc)
 {
     int x;
-
-    /* TODO: Should be updated for IPV6 support. */
-    /* for now use the correct type, in_addr_t */
-    /* except on NetWare since the MetroWerks compiler is so strict */
-#if defined(NETWARE)
-    u_long laddr;
-#else
-    in_addr_t laddr;
-#endif
+    struct in_addr laddr;
 
     memset(rc, 0, sizeof(struct sockaddr_in));
 
@@ -105,7 +93,7 @@ int jk_resolve(char *host, int port, struct sockaddr_in *rc)
             return JK_FALSE;
 
         apr_sockaddr_ip_get(&remote_ipaddr, remote_sa);
-        laddr = inet_addr(remote_ipaddr);
+        laddr.s_addr = inet_addr(remote_ipaddr);
 
         /* May be we could avoid to delete it each time ? */
         apr_pool_destroy(context);
@@ -119,13 +107,13 @@ int jk_resolve(char *host, int port, struct sockaddr_in *rc)
             return JK_FALSE;
         }
 
-        laddr = ((struct in_addr *)hoste->h_addr_list[0])->s_addr;
+        laddr = *((struct in_addr *)hoste->h_addr_list[0]);
 
 #endif /* HAVE_APR */
     }
     else {
         /* If we found only digits we use inet_addr() */
-        laddr = inet_addr(host);
+        laddr.s_addr = inet_addr(host);
     }
     memcpy(&(rc->sin_addr), &laddr, sizeof(laddr));
 
