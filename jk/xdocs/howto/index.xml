@@ -25,5 +25,29 @@ manual is described in more detail below.</p>
 
 </section>
 
+<section name="Sticky Sessions">
+<p>
+TODO
+</p>
+</section>
+
+<section name="Failover">
+<p>
+TODO
+</p>
+</section>
+
+<section name="Domain Clustering">
+<p>
+TODO
+</p>
+</section>
+
+<section name="Hot Standby">
+<p>
+TODO
+</p>
+</section>
+
 </body>
 </document>

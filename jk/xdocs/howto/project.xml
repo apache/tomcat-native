@@ -15,6 +15,7 @@
     <menu name="Generic Howto">
         <item name="For the impatient"          href="quick.html"/>
         <item name="All about workers"          href="workers.html"/>
+        <item name="Load Balancing"             href="loadbalancers.html"/>
     </menu>
     <menu name="Webservers">
         <item name="Apache"                     href="apache.html"/>

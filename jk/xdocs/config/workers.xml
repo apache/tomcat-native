@@ -182,6 +182,7 @@ The load-balancing factor is <i>how much we expect this worker to work</i>, or
 that makes the load balancer. For example if one worker has lb_factor 5 times higher then
 other worker, then it will receive five times more requests. 
 </directive>
+
 </directives>
 </subsection>
 
@@ -243,6 +244,28 @@ sticky_session is set to <b>False</b>. Set sticky_session to <b>False</b> when T
 is using a Session Manager which can persist session data across multiple
 instances of Tomcat. By default sticky_session is set to True.
 </directive>
+
+<directive name="sticky_session_force" default="False" required="false">
+Specifies whether requests with SESSION ID's for workers that are in error state
+should be rejected. If sticky_session_force is set to <b>True</b> or <b>1</b>
+and the worker that matches that SESSION ID is in error state, client will
+recieve 500 (Server Error). If set to <b>False</b> or <b>0</b> failover on
+another worker will be issued with loosing client session. This directive is
+used only when you set <b>sticky_session=True</b>.
+<p>
+This feature has been added in <b>jk 1.2.9</b>.
+</p>
+</directive>
+
+<directive name="method" default="Request" required="false">
+Specifies what method load balancer is using for electing best worker.
+If method is set to <b>R[equest]</b> balancer will use number of requests
+to find the best worker. If set to <b>T[raffic]</b> balancer will use
+the network traffic between JK and Tomcat to find the best worker.
+<p>
+This feature has been added in <b>jk 1.2.9</b>.
+</p>
+</directive>
 </directives>
 
 </subsection>
@@ -298,73 +321,39 @@ Full recovery by default.
 </p>
 </directive>
 
+<directive name="domain" default="" required="false">
+Domain directive can be used only when the worker is a member of the load balancer.
+Workers that share the same domain name are treated as single worker. If sticky_session
+is used, then the domain name is used as session route.
+<p>This directive is used for large system with more then 6 Tomcats, to be able
+to cluster the Tomcats in two groups and thus lowering the session replication
+transfer between them.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.8</b>.
+</p>
+</directive>
+
+<directive name="redirect" default="" required="false">
+Set to the preferred failover worker. If worker matching SESSION ID is in
+error state then the redirect worker will be used instead. It will be used
+even if being disabled, thus offering hot standby.
+<p>
+This feature has been added in <b>jk 1.2.9</b>.
+</p>
+</directive>
+
+<directive name="disabled" default="False" required="false">
+If set to <b>True</b> or <b>1</b> the worker will be disabled if member
+of load balancer. This flag can be changed at runtime using status worker.
+<p>
+This feature has been added in <b>jk 1.2.9</b>.
+</p>
+</directive>
+
 </directives>
 </subsection>
 
-<subsection name="Advanced load balancer directives">
-<p>
-With JK 1.2.x, new load-balancing and fault-tolerant support has been added via
-2 new properties, <b>local_worker_only</b> and <b>local_worker</b>.
-</p>
- 
-<directives>
-<directive name="local_worker" default="False" required="false">
-If local_worker is set to <b>True</b> it is marked as local worker. 
-If in minimum one worker is marked as local worker, lb_worker is in local worker mode. 
-All local workers are moved to the beginning of the internal worker list
-in lb_worker during validation. 
-</directive>
-
-<directive name="local_worker_only" default="False" required="false">
-If local_worker_only is set to <b>True</b> it is marked as local only worker. 
-If all local worker are in error state, and if set to <b>False</b>
-lb_worker tries to route the request to another balanced worker. If set to
-<b>True</b> error is returned.
-</directive>
-</directives>
-
-<p>
-The <b>local_worker</b> flag on worker tells the <b>lb_worker</b> which connections
-are going to the local worker. 
-</p>
-<p>
-This means that if a request with a session id comes in it would be routed to the appropriate worker. 
-If this worker is down it will be send to the first local worker which is not in error state.
-</p>
-<p>
-If a request without a session comes in, it would be routed to the first local worker. 
-If all local worker are in error state, then the <b>local_worker_only</b> flag is important. 
-With set to True, this request gets an error response.
-If set to False lb_worker tries to route the request to another balanced worker.
-</p>
-<p>
-If one of the worker was in error state and has recovered nothing changes. 
-The local worker will be check for requests without a session id (and with a session on himself) and 
-the other worker will only be checked if a request with a session id of this worker comes in.
-</p>
-<p>
-Why do we need such a complex behavior ?
-</p>
-<p>
-We need a graceful shut down of a node for maintenance. The balancer in front asks a special port on each 
-node periodically. If we want to remove a node from the cluster, we switch off this port. 
-The loadbalancer can't connect to it and marks the node as down. 
-But we don't move the sessions to another node. In this environment it is an error
-if the balancer sends a request without a session to an apache+mod_jk+tomcat which
-port is switched off. And if the load balancer determines that a node is down no
-other node is allowed to send a request without a session to it. Only requests with
-old sessions on the switched off node would be routed to this node. After some time
-nobody uses the old sessions and the sessions will time out.
-Then nobody uses this node, because all session are gone and the node is
-unreachable without a session-id in the request. If someone uses a session which
-timed out, our servlet system sends a redirect response without a session id to the browser.
-This is necessary, because on a switched off node apache and tomcat can still be up and running,
-but they are in an old state and should only be asked for valid old sessions.
-After the last session timed out, you can update the node etc. without killing
-sessions or moving them to another node. Sometimes we have a lot of big objects
-in our sessions, so it would be really time consuming to move them.
-</p>
-</subsection>
 </section>
  
 </body>

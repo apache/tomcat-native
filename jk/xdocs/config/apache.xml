@@ -31,6 +31,9 @@ Full or server relative path to the Jakarta Tomcat Connector module log file
 <attribute name="JkMount" required="false"><p>
 A mount point from a context to a Tomcat worker
 </p></attribute>
+<attribute name="JkMountFile" required="false"><p>
+File containing multiple mappings from a context to a Tomcat worker
+</p></attribute>
 <attribute name="JkUnMount" required="false"><p>
 A no mount point from a context to a Tomcat worker
 This directive is available in jk1.2.7 version and later.
@@ -79,6 +82,13 @@ details about this directive
 </p></attribute>
 <attribute name="JkEnvVar" required="false"><p>
 Adds a name of environment variable that should be sent to servlet-engine
+</p></attribute>
+
+<attribute name="JkShmFile" required="false"><p>
+Shared memory file name. Used only on unix platforms.
+</p></attribute>
+<attribute name="JkShmSize" required="false"><p>
+Size of the shared memory file name. Default is 1MB.
 </p></attribute>
 
 </attributes>
@@ -411,7 +421,34 @@ that directive is raw line from workers.properties file.
   JkWorkerProperty worker.ajp13w.host=localhost
   JkWorkerProperty worker.ajp13w.port=8009   
 </source>
+<p>
+<b>JkMountFile</b> is a new directive available from JK 1.2.9
+version. It is used for dynamic updates of mount points at runtime.
+When the mount file is changed, JK will reload it's content.
+</p>
+<source>
+  # Load mount points
 
+  JkMountFile conf/uriworkermap.properties
+</source>
+<p>If mount point uri starts with minus '-' char the mount point
+will be disabled.
+</p>
+<source>
+  # Sample uriworkermap.properties file
+
+  /servlets-examples/*=ajp13w
+  # Do not map .jpeg files
+  !/servlets-examples/*.jpeg=ajp13w
+  # Make jsp examples initially disabled  
+  -/jsp-examples/*=ajp13w
+</source>
+<p>At run time you can change the content of this file. For example
+removing minus char will enable the uri mapping. You can add any
+number of new entries at runtime that reflects the newly deployed
+applications. Apache will reload the file and update the mount
+points within 60 second interval.
+</p>
 
 </subsection>
  </section>

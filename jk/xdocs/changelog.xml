@@ -25,6 +25,30 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      If socket_timeout is set check if socket is alive before
+      sending any request to Tomcat. (mturk)
+      </update>
+      <update>
+      Added JkMountFile for Apache web servers. This file can contain
+      uri mappings in the form (/url=worker), and is checked for
+      updates at regular 60 second interval. (mturk)
+      </update>
+      <update>
+      Added status worker for managing worker runtime data using
+      web page. (mturk)
+      </update>
+      <update>
+      Added load balancer method directive that is used for setting
+      the algorithm used for balancing workers. Method can be either
+      Request (default) or Traffic. (mturk)
+      </update>
+      <update>
+      Added shared memory to allow dynamic configuration. Shared memory
+      is needed only for unix platform and web servers having multiple
+      child processes. For Apache web server two new directives has been
+      added (JkShmFile and JkShmSize). (mturk)
+      </update>
       <fix>
       <bug>33562</bug>: Fix Reply_timeout when recovery_options
       is larger than 1. Patch provided by Takashi Satou. (mturk)
