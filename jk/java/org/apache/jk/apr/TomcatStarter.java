@@ -17,7 +17,7 @@ public class TomcatStarter implements Runnable {
     String args[];
     
     public static String mainClasses[]={ "org.apache.tomcat.startup.Main",
-                                         "org.apache.catalina.startup.Bootstrap" };
+                                         "org.apache.catalina.startup.BootstrapService" };
     
     // If someone has time - we can also guess the classpath and do other
     // fancy guessings.
@@ -28,8 +28,13 @@ public class TomcatStarter implements Runnable {
         try {
             // Destroy out, it is lost since the server is detached
             // err goes to error.log
-            System.setOut(System.err);
-            
+            String out="/tmp/out";
+            String err="/tmp/err";
+            PrintStream outS=new PrintStream(new FileOutputStream(out));
+            System.setOut(outS);
+            PrintStream errS=new PrintStream(new FileOutputStream(err));
+            System.setErr(errS);
+
             // Find the class
             Class c=null;
             for( int i=0; i<mainClasses.length; i++ ) {
