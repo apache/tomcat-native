@@ -228,6 +228,7 @@ int main(int argc, const char * const * argv, const char * const *env)
 
     /* 5. Display results                   */
 
+    ajp_msg_dump(msg, "");
     /* 6. Release the connection            */
 
 
