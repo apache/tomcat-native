@@ -47,6 +47,7 @@
 #define AJP13_DEF_PORT 8009
 #endif
 
+
 #if APR_CHARSET_EBCDIC
 
 #define USE_CHARSET_EBCDIC
@@ -112,19 +113,37 @@ struct ajp_msg
     int         server_side;
 };
 
+/**
+ * @defgroup AJP defines 
+ * @{
+ */
+/**
+ * Signature for the messages sent from Apache to tomcat
+ */
+#define AJP13_WS_HEADER             0x1234
 #define AJP_HEADER_LEN              4
 #define AJP_HEADER_SZ_LEN           2
 #define AJP_MSG_BUFFER_SZ           (8*1024)
 #define AJP13_MAX_SEND_BODY_SZ      (AJP_MSG_BUFFER_SZ - 6)
 
-/* Webserver ask container to take control (logon phase) */
+/** Send a request from web server to container*/
+#define CMD_AJP13_FORWARD_REQUEST   (unsigned char)2
+/** Write a body chunk from the servlet container to the web server */
+#define CMD_AJP13_SEND_BODY_CHUNK   (unsigned char)3
+/** Send response headers from the servlet container to the web server. */
+#define CMD_AJP13_SEND_HEADERS      (unsigned char)4
+/** Marks the end of response. */
+#define CMD_AJP13_END_RESPONSE      (unsigned char)5
+/** XXX: Have no idea */
+#define CMD_AJP13_GET_BODY_CHUNK    (unsigned char)6
+/** Webserver ask container to take control (logon phase) */
 #define CMD_AJP13_PING              (unsigned char)8
-
-/* Webserver check if container is alive, since container should respond by cpong */
+/** Container response to cping request */
+#define CMD_AJP13_CPONG             (unsigned char)9
+/** Webserver check if container is alive, since container should respond by cpong */
 #define CMD_AJP13_CPING             (unsigned char)10
 
-/* Container response to cping request */
-#define CMD_AJP13_CPONG             (unsigned char)9
+/** @} */
 
 /**
  * Check a new AJP Message by looking at signature and return its size
