@@ -644,9 +644,9 @@ static int initialize_extension(void)
             if(map_alloc(&map)) {
                 if(map_read_properties(map, worker_file)) {
 					/* we add the URI->WORKER MAP since workers using AJP14 will feed it */
-					worker_env.uri_to_worker = uw_map;
-					GET_SERVER_VARIABLE_VALUE("SERVER_SOFTWARE", worker_end.server_name);
-                    if(wc_open(map, worker_env, logger)) {
+					/*worker_env.uri_to_worker = uw_map;
+					GET_SERVER_VARIABLE_VALUE("SERVER_SOFTWARE", worker_env.server_name);*/
+                    if(wc_open(map, &worker_env, logger)) {
                         rc = JK_TRUE;
                     }
                 }
@@ -800,7 +800,7 @@ static int init_ws_service(isapi_private_data_t *private_data,
     s->ssl_cert_len = 0;
     s->ssl_cipher   = NULL;
     s->ssl_session  = NULL;
-	s->ssl_keysize  = -1;
+	s->ssl_key_size = -1;
 
     s->headers_names    = NULL;
     s->headers_values   = NULL;
