@@ -85,6 +85,10 @@ const char *wa_init(void) {
             return("Cannot create WebApp Library memory pool");
         if (wa_pool==NULL)
             return("Invalid WebApp Library memory pool created");
+#if APR_HAS_THREADS
+        if (apr_atomic_init(wa_pool)!=APR_SUCCESS)
+            return("Cannot initialize atomic integer library");
+#endif
     }
 
     /* Initialize providers */

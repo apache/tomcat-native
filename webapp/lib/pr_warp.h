@@ -74,11 +74,31 @@ extern wa_provider wa_provider_warp;
 /* STRUCTURES                                                                */
 /* ************************************************************************* */
 
+/* Structure to maintain a pool of sockets to be used for a given
+   WARP connection */
+typedef struct warp_socket_pool {
+    wa_chain * available_socket_list;
+#if APR_HAS_THREADS 
+    apr_thread_mutex_t * pool_mutex;
+#endif
+    int available_socket_list_size;
+    wa_chain * available_elem_blocks;
+} warp_socket_pool;
+
+
 /* The WARP connection configuration structure */
 typedef struct warp_config {
+    warp_socket_pool * socket_pool;
     apr_sockaddr_t *addr;
-    apr_socket_t *sock;
-    int serv;
+
+#if APR_HAS_THREADS 
+    apr_atomic_t open_socket_count;
+    apr_atomic_t serv;
+#else
+    unsigned int open_socket_count;
+    unsigned int serv;
+#endif
+
 } warp_config;
 
 /* The WARP packet structure */
@@ -95,6 +115,7 @@ typedef struct warp_header {
     wa_connection *conn;
     warp_packet *pack;
     wa_boolean fail;
+    apr_socket_t *sock;
 } warp_header;
 
 /* ************************************************************************* */
@@ -123,13 +144,25 @@ wa_boolean p_write_string(warp_packet *pack, char *x);
 /* ************************************************************************* */
 wa_boolean n_recv(apr_socket_t *sock, warp_packet *pack);
 wa_boolean n_send(apr_socket_t *sock, warp_packet *pack);
-wa_boolean n_connect(wa_connection *conn);
-void n_disconnect(wa_connection *conn);
+apr_socket_t *n_connect(wa_connection *conn);
+void n_disconnect(wa_connection *conn, apr_socket_t * sock);
 
 /* ************************************************************************* */
 /* CONFIGURATION FUNCTIONS FROM PR_WARP_CONFIG.C                             */
 /* ************************************************************************* */
-wa_boolean c_check(wa_connection *conn, warp_packet *pack);
-wa_boolean c_configure(wa_connection *conn);
+wa_boolean c_check(wa_connection *conn, warp_packet *pack, apr_socket_t * sock);
+wa_boolean c_configure(wa_connection *conn, apr_socket_t *sock);
+
+
+/* ************************************************************************* */
+/* SOCKET POOL FUNCTIONS FROM PR_WARP_SOCKETPOOL.C                           */
+/* ************************************************************************* */
+
+warp_socket_pool * warp_sockpool_create();
+void warp_sockpool_destroy(warp_socket_pool * pool);
+apr_socket_t * warp_sockpool_acquire(warp_socket_pool * pool);
+void warp_sockpool_release(warp_socket_pool * pool, 
+                           wa_connection *conn, 
+                           apr_socket_t * sock);
 
 #endif /* ifndef _PR_WARP_H_ */

@@ -70,11 +70,18 @@ static void warp_startup(void) {
     /* Open all connections having deployed applications */
     while (elem!=NULL) {
         wa_connection *curr=(wa_connection *)elem->curr;
+        warp_config *conf=(warp_config *)curr->conf;
+        apr_socket_t * sock = 0;
         wa_debug(WA_MARK,"Opening connection \"%s\"",curr->name);
-        if (n_connect(curr)==wa_true) {
+
+        sock=n_connect(curr);
+        if (sock!=NULL) {
             wa_debug(WA_MARK,"Connection \"%s\" opened",curr->name);
-            if (c_configure(curr)==wa_true) {
+            if (c_configure(curr,sock)==wa_true) {
                 wa_debug(WA_MARK,"Connection \"%s\" configured",curr->name);
+
+                warp_sockpool_release(conf->socket_pool, curr, sock);
+
             } else {
                 wa_log(WA_MARK,"Cannot configure connection \"%s\"",curr->name);
             }
@@ -116,9 +123,19 @@ static const char *warp_connect(wa_connection *conn, const char *param) {
     if (r!=APR_SUCCESS) return("Cannot get socket address information");
 
     /* Done */
-    conf->sock=NULL;
-    conf->serv=0;
+#if APR_HAS_THREADS
+    apr_atomic_set(&conf->serv, (unsigned) 0);
+    apr_atomic_set(&conf->open_socket_count, (unsigned) 0);
+#else
+    conf->serv = 0;
+    conf->open_socket_count = 0;
+#endif
     conn->conf=conf;
+
+    /* Create the socket pool */
+    conf->socket_pool = warp_sockpool_create();
+    if (conf->socket_pool == NULL) return("Cannot create socket pool");
+
     return(NULL);
 }
 
@@ -166,20 +183,23 @@ static char *warp_conninfo(wa_connection *conn, apr_pool_t *pool) {
     apr_port_t port=0;
     char *addr=NULL;
     char *name=NULL;
-    char *mesg=NULL;
     char *buff=NULL;
 
+#if APR_HAS_THREADS
+    apr_uint32_t socket_count = apr_atomic_read(&conf->open_socket_count);
+    apr_uint32_t server_id = apr_atomic_read(&conf->serv);
+#else
+    apr_uint32_t socket_count = conf->open_socket_count;
+    apr_uint32_t server_id = conf->serv;
+#endif
     if (conf==NULL) return("Invalid configuration member");
 
     apr_sockaddr_port_get(&port,conf->addr);
     apr_sockaddr_ip_get(&addr,conf->addr);
     apr_getnameinfo(&name,conf->addr,0);
 
-    if (conf->sock==NULL) mesg="Not Connected";
-    else mesg="Connected";
-
-    buff=apr_psprintf(pool,"Host: %s Port:%d Address:%s (%s) Server ID: %d",
-                      name,port,addr,mesg,conf->serv);
+    buff=apr_psprintf(pool,"Host: %s Port:%d Address:%s Socket Count: %d Server ID: %d",
+                      name,port,addr,socket_count,server_id);
     return(buff);
 }
 
@@ -198,7 +218,7 @@ static int headers(void *d, const char *n, const char *v) {
     pack->type=TYPE_REQ_HEADER;
     p_write_string(pack,(char *)n);
     p_write_string(pack,(char *)v);
-    if (n_send(conf->sock,pack)!=wa_true) {
+    if (n_send(data->sock,pack)!=wa_true) {
         data->fail=wa_true;
         return(FALSE);
     }
@@ -212,6 +232,9 @@ static int warp_handle(wa_request *r, wa_application *appl) {
     wa_connection *conn=appl->conn;
     warp_config *conf=(warp_config *)conn->conf;
     warp_packet *pack=p_create(r->pool);
+
+    apr_socket_t * sock = NULL;
+
     int status=0;
 
     /* Check packet */
@@ -222,11 +245,14 @@ static int warp_handle(wa_request *r, wa_application *appl) {
     if (((int)(appl->conf))==-1)
         return(wa_rerror(WA_MARK,r,404,"Application not deployed"));
 
+    sock = warp_sockpool_acquire(conf->socket_pool);
+
     /* Attempt to reconnect if disconnected */
-    if (conf->sock==NULL) {
-        if (n_connect(conn)==wa_true) {
+    if (sock==NULL) {
+        sock=n_connect(conn);
+        if (sock!=NULL) {
             wa_debug(WA_MARK,"Connection \"%s\" opened",conn->name);
-            if (c_configure(conn)==wa_true) {
+            if (c_configure(conn,sock)==wa_true) {
                 wa_debug(WA_MARK,"Connection \"%s\" configured",conn->name);
             } else {
                 wa_log(WA_MARK,"Cannot configure connection %s",conn->name);
@@ -248,11 +274,12 @@ static int warp_handle(wa_request *r, wa_application *appl) {
     p_write_string(pack,r->ruri);
     p_write_string(pack,r->args);
     p_write_string(pack,r->prot);
-    if (n_send(conf->sock,pack)!=wa_true) {
-        n_disconnect(conn);
-        if (n_connect(conn)==wa_true) {
+    if (n_send(sock,pack)!=wa_true) {
+        n_disconnect(conn, sock);
+        sock=n_connect(conn);
+        if (sock!=NULL) {
             wa_debug(WA_MARK,"Connection \"%s\" reopened",conn->name);
-            if (c_configure(conn)==wa_true) {
+            if (c_configure(conn,sock)==wa_true) {
                 wa_debug(WA_MARK,"Connection \"%s\" reconfigured",conn->name);
             } else {
                 wa_log(WA_MARK,"Cannot reconfigure connection %s",conn->name);
@@ -260,9 +287,10 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                                  "Cannot reconfigure connection \"%s\"",
                                  conn->name));
             }
-            if (n_send(conf->sock,pack)!=wa_true) {
+            if (n_send(sock,pack)!=wa_true) {
+              n_disconnect(conn, sock);
               return(wa_rerror(WA_MARK,r,500,
-                     "Communitcation broken while reconnecting"));
+                     "Communication broken while reconnecting"));
             } else {
                 wa_debug(WA_MARK,"Re-Req. %s %s %s",r->meth,r->ruri,r->prot);
             }
@@ -279,9 +307,9 @@ static int warp_handle(wa_request *r, wa_application *appl) {
     pack->type=TYPE_REQ_CONTENT;
     p_write_string(pack,r->ctyp);
     p_write_int(pack,r->clen);
-    if (n_send(conf->sock,pack)!=wa_true) {
-        n_disconnect(conn);
-        return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+    if (n_send(sock,pack)!=wa_true) {
+        n_disconnect(conn, sock);
+        return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
     } else {
         wa_debug(WA_MARK,"Req. content typ=%s len=%d",r->ctyp,r->clen);
     }
@@ -290,9 +318,9 @@ static int warp_handle(wa_request *r, wa_application *appl) {
         p_reset(pack);
         pack->type=TYPE_REQ_SCHEME;
         p_write_string(pack,r->schm);
-        if (n_send(conf->sock,pack)!=wa_true) {
-            n_disconnect(conn);
-            return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+        if (n_send(sock,pack)!=wa_true) {
+            n_disconnect(conn,sock);
+            return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
         } else {
             wa_debug(WA_MARK,"Req. scheme %s",r->schm);
         }
@@ -305,9 +333,9 @@ static int warp_handle(wa_request *r, wa_application *appl) {
         if (r->auth==NULL) r->auth="\0";
         p_write_string(pack,r->user); 
         p_write_string(pack,r->auth); 
-        if (n_send(conf->sock,pack)!=wa_true) {
-            n_disconnect(conn);
-            return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+        if (n_send(sock,pack)!=wa_true) {
+            n_disconnect(conn,sock);
+            return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
         } else {
             wa_debug(WA_MARK,"Req. user %s auth %s",r->user,r->auth);
         }
@@ -317,10 +345,11 @@ static int warp_handle(wa_request *r, wa_application *appl) {
     h->conn=conn;
     h->pack=pack;
     h->fail=wa_false;
+    h->sock=sock;
     apr_table_do(headers,h,r->hdrs,NULL);
     if (h->fail==wa_true) {
-        n_disconnect(conn);
-        return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+        n_disconnect(conn,sock);
+        return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
     }
 
     /* The request client data */
@@ -330,9 +359,9 @@ static int warp_handle(wa_request *r, wa_application *appl) {
         p_write_string(pack,r->clnt->host);
         p_write_string(pack,r->clnt->addr);
         p_write_ushort(pack,r->clnt->port);
-        if (n_send(conf->sock,pack)!=wa_true) {
-            n_disconnect(conn);
-            return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+        if (n_send(sock,pack)!=wa_true) {
+            n_disconnect(conn,sock);
+            return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
         } else {
             wa_debug(WA_MARK,"Req. server %s:%d (%s)",r->clnt->host,
                      r->clnt->port,r->clnt->addr);
@@ -346,9 +375,9 @@ static int warp_handle(wa_request *r, wa_application *appl) {
         p_write_string(pack,r->serv->host);
         p_write_string(pack,r->serv->addr);
         p_write_ushort(pack,r->serv->port);
-        if (n_send(conf->sock,pack)!=wa_true) {
-            n_disconnect(conn);
-            return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+        if (n_send(sock,pack)!=wa_true) {
+            n_disconnect(conn,sock);
+            return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
         } else {
             wa_debug(WA_MARK,"Req. client %s:%d (%s)",r->serv->host,
                      r->serv->port,r->serv->addr);
@@ -357,16 +386,16 @@ static int warp_handle(wa_request *r, wa_application *appl) {
 
     p_reset(pack);
     pack->type=TYPE_REQ_PROCEED;
-    if (n_send(conf->sock,pack)!=wa_true) {
-        n_disconnect(conn);
-        return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+    if (n_send(sock,pack)!=wa_true) {
+        n_disconnect(conn,sock);
+        return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
     }
 
     
     while (1) {
-        if (n_recv(conf->sock,pack)!=wa_true) {
-            n_disconnect(conn);
-            return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+        if (n_recv(sock,pack)!=wa_true) {
+            n_disconnect(conn,sock);
+            return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
         }
         switch (pack->type) {
             case TYPE_RES_STATUS: {
@@ -402,6 +431,9 @@ static int warp_handle(wa_request *r, wa_application *appl) {
             }
             case TYPE_RES_DONE: {
                 wa_debug(WA_MARK,"=== DONE ===");
+                if (sock != NULL) {
+                    warp_sockpool_release(conf->socket_pool, conn, sock);
+                }
                 return(status);
                 break;
             }
@@ -422,9 +454,9 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                     p_write_string(pack,"Transfer interrupted");
                 }
                 wa_debug(WA_MARK,"Request body bytes: (Sent=%d)",pack->size);
-                if (n_send(conf->sock,pack)!=wa_true) {
-                    n_disconnect(conn);
-                    return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+                if (n_send(sock,pack)!=wa_true) {
+                    n_disconnect(conn,sock);
+                    return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
                 }
                 break;
             }
@@ -441,9 +473,9 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                     p_write_int(pack,r->ssld->size);
                 }
                 wa_debug(WA_MARK,"CC bytes: (Sent=%d)",pack->size);
-                if (n_send(conf->sock,pack)!=wa_true) {
-                    n_disconnect(conn);
-                    return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+                if (n_send(sock,pack)!=wa_true) {
+                    n_disconnect(conn,sock);
+                    return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
                 }
                 break;
             }
@@ -458,23 +490,33 @@ static int warp_handle(wa_request *r, wa_application *appl) {
                     p_write_string(pack,r->ssld->cert);
                 }
                 wa_debug(WA_MARK,"CC bytes: (Sent=%d)",pack->size);
-                if (n_send(conf->sock,pack)!=wa_true) {
-                    n_disconnect(conn);
-                    return(wa_rerror(WA_MARK,r,500,"Communitcation interrupted"));
+                if (n_send(sock,pack)!=wa_true) {
+                    n_disconnect(conn,sock);
+                    return(wa_rerror(WA_MARK,r,500,"Communication interrupted"));
                 }
                 break;
             }
             case TYPE_ERROR: {
                 char *mesg=NULL;
                 p_read_string(pack,&mesg);
+                if (sock != NULL) {
+                    warp_sockpool_release(conf->socket_pool, 
+                                                   conn, sock);
+                }
                 return(wa_rerror(WA_MARK,r,500,"%s",mesg));
             }
             default: {
-                n_disconnect(conn);
+                n_disconnect(conn,sock);
                 return(wa_rerror(WA_MARK,r,500,"Invalid packet %d",pack->type));
             }
         }           
     }
+
+    if (sock != NULL) {
+        warp_sockpool_release(conf->socket_pool, conn, sock);
+    }
+
+    return status;
 }
 
 /* The list of all configured connections */

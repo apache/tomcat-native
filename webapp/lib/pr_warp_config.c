@@ -57,13 +57,13 @@
 /* @version $Id$ */
 #include "pr_warp.h"
 
-wa_boolean c_check(wa_connection *conn, warp_packet *pack) {
+wa_boolean c_check(wa_connection *conn, warp_packet *pack, apr_socket_t * sock) {
     warp_config *conf=(warp_config *)conn->conf;
     int maj=-1;
     int min=-1;
     int sid=-1;
 
-    if (n_recv(conf->sock,pack)!=wa_true) {
+    if (n_recv(sock,pack)!=wa_true) {
         wa_log(WA_MARK,"Cannot receive handshake WARP packet");
         return(wa_false);
     }
@@ -93,14 +93,18 @@ wa_boolean c_check(wa_connection *conn, warp_packet *pack) {
         return(wa_false);
     }
 
-    conf->serv=sid;
+#if APR_HAS_THREADS
+    apr_atomic_set(&conf->serv, (unsigned) sid);
+#else
+    conf->serv = (unsigned) sid;
+#endif
+    
     wa_debug(WA_MARK,"Connection \"%s\" checked WARP/%d.%d (SERVER ID=%d)",
         conn->name,maj,min,conf->serv);
     return(wa_true);
 }
 
-wa_boolean c_configure(wa_connection *conn) {
-    warp_config *conf=(warp_config *)conn->conf;
+wa_boolean c_configure(wa_connection *conn, apr_socket_t * sock) {
     wa_chain *elem=warp_applications;
     apr_pool_t *pool=NULL;
     wa_boolean ret=wa_false;
@@ -109,18 +113,18 @@ wa_boolean c_configure(wa_connection *conn) {
 
     if (apr_pool_create(&pool,wa_pool)!=APR_SUCCESS) {
         wa_log(WA_MARK,"Cannot create WARP temporary configuration pool");
-        n_disconnect(conn);
+        n_disconnect(conn, sock);
         return(wa_false);
     }
 
     if ((pack=p_create(wa_pool))==NULL) {
         wa_log(WA_MARK,"Cannot create WARP configuration packet");
-        n_disconnect(conn);
+        n_disconnect(conn, sock);
         apr_pool_destroy(pool);
         return(wa_false);
     }
 
-    if ((ret=c_check(conn,pack))==wa_false) n_disconnect(conn);
+    if ((ret=c_check(conn,pack, sock))==wa_false) n_disconnect(conn, sock);
 
     while (elem!=NULL) {
         wa_application *appl=(wa_application *)elem->curr;
@@ -140,11 +144,11 @@ wa_boolean c_configure(wa_connection *conn) {
         p_write_string(pack,appl->host->name);
         p_write_ushort(pack,appl->host->port);
         p_write_string(pack,appl->rpth);
-        n_send(conf->sock,pack);
+        n_send(sock,pack);
 
-        if (n_recv(conf->sock,pack)!=wa_true) {
+        if (n_recv(sock,pack)!=wa_true) {
             wa_log(WA_MARK,"Cannot read packet (%s:%d)",WA_MARK);
-            n_disconnect(conn);
+            n_disconnect(conn, sock);
             return(wa_false);
         }
         if (pack->type==TYPE_ERROR) {
@@ -157,8 +161,8 @@ wa_boolean c_configure(wa_connection *conn) {
             p_reset(pack);
             pack->type=TYPE_FATAL;
             p_write_string(pack,"Invalid packet received");
-            n_send(conf->sock,pack);
-            n_disconnect(conn);
+            n_send(sock,pack);
+            n_disconnect(conn, sock);
         }
         p_read_int(pack,(int *)&appl->conf);
         p_read_string(pack,&temp);
@@ -183,12 +187,12 @@ wa_boolean c_configure(wa_connection *conn) {
             p_reset(pack);
             pack->type=TYPE_CONF_MAP;
             p_write_int(pack,(int)appl->conf);
-            n_send(conf->sock,pack);
+            n_send(sock,pack);
             
             while(1) {
-                if (n_recv(conf->sock,pack)!=wa_true) {
+                if (n_recv(sock,pack)!=wa_true) {
                     wa_log(WA_MARK,"Cannot read packet (%s:%d)",WA_MARK);
-                    n_disconnect(conn);
+                    n_disconnect(conn,sock);
                     return(wa_false);
                 }
                 if (pack->type==TYPE_CONF_MAP_DONE) {
@@ -220,11 +224,11 @@ wa_boolean c_configure(wa_connection *conn) {
 
     p_reset(pack);
     pack->type=TYPE_CONF_DONE;
-    n_send(conf->sock,pack);
+    n_send(sock,pack);
 
-    if (n_recv(conf->sock,pack)!=wa_true) {
+    if (n_recv(sock,pack)!=wa_true) {
         wa_log(WA_MARK,"Cannot read packet (%s:%d)",WA_MARK);
-        n_disconnect(conn);
+        n_disconnect(conn,sock);
         return(wa_false);
     }
     if (pack->type!=TYPE_CONF_PROCEED) {
@@ -232,8 +236,8 @@ wa_boolean c_configure(wa_connection *conn) {
         p_reset(pack);
         pack->type=TYPE_FATAL;
         p_write_string(pack,"Expected PROCEED packet not received");
-        n_send(conf->sock,pack);
-        n_disconnect(conn);
+        n_send(sock,pack);
+        n_disconnect(conn,sock);
         return(wa_false);
     }
 

@@ -68,7 +68,8 @@ SRCS =  pr_info.c \
 	pr_warp_packet.c \
 	wa_config.c \
 	wa_main.c \
-	wa_request.c
+	wa_request.c \
+	pr_warp_socketpool.c
 
 OBJS =  wa_main.lo \
 	wa_config.lo \
@@ -78,7 +79,8 @@ PROVS = pr_info.lo \
 	pr_warp.lo \
 	pr_warp_packet.lo \
 	pr_warp_network.lo \
-	pr_warp_config.lo
+	pr_warp_config.lo \
+	pr_warp_socketpool.lo
 
 LIB =	$(TGTDIR)/lib/libwebapp.a
 

@@ -137,54 +137,58 @@ wa_boolean n_send(apr_socket_t *sock, warp_packet *pack) {
 
 /* Attempt to connect to the remote endpoint of the WARP connection (if not
    done already). */
-wa_boolean n_connect(wa_connection *conn) {
+apr_socket_t *n_connect(wa_connection *conn) {
     warp_config *conf=(warp_config *)conn->conf;
     apr_status_t ret=APR_SUCCESS;
+    apr_socket_t *sock=NULL;
 
-    /* Create the APR socket if that has not been yet created */
-    if (conf->sock!=NULL) {
-        wa_debug(WA_MARK,"Connection \"%s\" already opened",conn->conf);
-        return(wa_true);
-    }
-
-    ret=apr_socket_create(&conf->sock,AF_INET,SOCK_STREAM,wa_pool);
+    ret=apr_socket_create(&sock,AF_INET,SOCK_STREAM,wa_pool);
     if (ret!=APR_SUCCESS) {
-        conf->sock=NULL;
+        sock=NULL;
         wa_log(WA_MARK,"Cannot create socket for conn. \"%s\"",conn->name);
-        return(wa_false);
+        return(sock);
     }
 
     /* Attempt to connect to the remote endpoint */
-    ret=apr_connect(conf->sock, conf->addr);
+    ret=apr_connect(sock, conf->addr);
     if (ret!=APR_SUCCESS) {
-        apr_shutdown(conf->sock,APR_SHUTDOWN_READWRITE);
-        conf->sock=NULL;
+        apr_shutdown(sock,APR_SHUTDOWN_READWRITE);
+        sock=NULL;
         wa_log(WA_MARK,"Connection \"%s\" cannot connect",conn->name);
-        return(wa_false);
+        return(sock);
     }
 
-    return(wa_true);
+#if APR_HAS_THREADS
+    apr_atomic_inc(&conf->open_socket_count);
+#else
+    conf->open_socket_count++;
+#endif
+
+    return(sock);
 }
 
 /* Attempt to disconnect a connection if connected. */
-void n_disconnect(wa_connection *conn) {
+void n_disconnect(wa_connection *conn, apr_socket_t * sock) {
     warp_config *conf=(warp_config *)conn->conf;
     apr_status_t ret=APR_SUCCESS;
 
     wa_debug(WA_MARK,"Disconnecting \"%s\"",conn->name);
 
     /* Create the APR socket if that has not been yet created */
-    if (conf->sock==NULL) return;
+    if (sock==NULL) return;
 
     /* Shutdown and close the socket (ignoring errors) */
-    ret=apr_shutdown(conf->sock,APR_SHUTDOWN_READWRITE);
+    ret=apr_shutdown(sock,APR_SHUTDOWN_READWRITE);
     if (ret!=APR_SUCCESS)
         wa_log(WA_MARK,"Cannot shutdown \"%s\"",conn->name);
-    ret=apr_socket_close(conf->sock);
+    ret=apr_socket_close(sock);
     if (ret!=APR_SUCCESS)
         wa_log(WA_MARK,"Cannot close \"%s\"",conn->name);
 
-    /* Reset the state */
-    conf->sock=NULL;
+#if APR_HAS_THREADS
+    apr_atomic_dec(&conf->open_socket_count);
+#else
+    conf->open_socket_count--;
+#endif
 }
 
