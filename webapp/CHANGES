@@ -1,4 +1,6 @@
 Changes with webapp-1.1:
+  *) Update to Apache licence 2.0
+  
   *) Fix some the of the bugs.
 
   *) Add SSL support for Apache-1.3. [JFrederic.Clere@fujitsu-siemens.com]
