@@ -204,6 +204,22 @@ static worker_record_t *find_by_session(lb_worker_t *p,
         if (strcmp(p->lb_workers[i].s->name, name) == 0) {
             rc = &p->lb_workers[i];
             rc->r = &(rc->s->name[0]);
+            if (!JK_WORKER_IN_ERROR(rc->s) &&
+                p->lbmethod == JK_LB_BYREQUESTS) {
+                unsigned int j;
+                int total_factor = 0;
+                for (j = 0; j < p->num_of_workers; j++) {
+                    if (JK_WORKER_USABLE(p->lb_workers[i].s) &&
+                        strlen(rc->s->domain) && 
+                        (strlen(p->lb_workers[i].s->domain) == 0 ||
+                         strcmp(p->lb_workers[i].s->domain, rc->s->domain)))
+                        continue;
+                    p->lb_workers[i].s->lb_value += p->lb_workers[i].s->lb_factor;
+                    total_factor += p->lb_workers[i].s->lb_factor;
+                }
+                rc->s->lb_value -= total_factor;
+            }
+
             break;
         }
     }
