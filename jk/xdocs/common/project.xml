@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="Application Developer's Guide"
+        href="http://jakarta.apache.org/tomcat/">
+
+    <title>Jakarta Tomcat Connector</title>
+
+    <logo href="/images/tomcat.gif">
+    Jakarta Tomcat Connector
+    </logo>    
+<body>
+
+    <menu name="Links">
+        <item name="Docs Home"             href="../index.html"/>
+    </menu>
+
+    <menu name="AJP Protocol">
+        <item name="AJPv13"                     href="ajpv13a.html"/>
+        <item name="AJPv13 extension Proposal"  href="ajpv13ext.html"/>
+    </menu>
+
+</body>
+</project>
