@@ -24,7 +24,7 @@
 #ifndef JK_GLOBAL_H
 #define JK_GLOBAL_H
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined(AS400)
 #include "portable.h"
 #else
 #define HAVE_VSNPRINTF
