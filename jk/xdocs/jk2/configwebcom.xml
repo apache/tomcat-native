@@ -61,12 +61,38 @@ and  provides access to all other objects</p>
                         <td>Default loger used by jk2 components, can be changed in the config file, normally it defaults to "logger" the Alias for the default logger for the Server/platform.</td>
                     </tr>
                     <tr>
+                        <td>sslEnable</td>
+                        <td>1 (true)</td>
+                        <td>Enable handling of SSL</td>
+                    </tr>
+                    <tr>
                         <td>timing</td>
                         <td>0</td>
                         <td>Will jk2 get request timing (needs APR?)</td>
                     </tr>
+                    <tr>
+                        <td>forwardKeySize</td>
+                        <td>not set</td>
+                        <td>Enable filling of javax.servlet.request.key_size</td>
+                    </tr>
+                    <tr>
+                        <td>forwardURICompat</td>
+                        <td>set</td>
+                        <td>Past the URI untouched.</td>
+                    </tr>
+                    <tr>
+                        <td>forwardURICompatUnparsed</td>
+                        <td>not set</td>
+                        <td>Parse the URI until the '?'.</td>
+                    </tr>
+                    <tr>
+                        <td>forwardURIEscaped</td>
+                        <td>not set</td>
+                        <td>Past the URI escaped.</td>
+                    </tr>
                 </table>
             </p>
+            <p>Only one of the forwardURI option could be used it replaces the default value.</p>
         </section>
         <section name="config">
             <p>The config component, hold the detail of the conifg system, such config file name, create global defines</p>
