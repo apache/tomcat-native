@@ -161,6 +161,9 @@ struct jk_pool {
  */
 int jk2_pool_create( struct jk_env *env, jk_pool_t **newPool, jk_pool_t *parent, int size );
 
+int JK_METHOD jk2_pool_apr_create( struct jk_env *env, struct jk_pool **newPool,
+                                   struct jk_pool *parent, void *aprPool );
+
 
 #ifdef __cplusplus
 }

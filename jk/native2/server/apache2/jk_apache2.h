@@ -85,10 +85,6 @@ int JK_METHOD jk2_map_aprtable_factory(jk_env_t *env, jk_pool_t *pool,
                                        jk_bean_t *result,
                                        const char *type, const char *name);
 
-/* Temp. - we should use the factory ( we may need few changes ) */
-int jk2_pool_apr_create( jk_env_t *env, jk_pool_t **newPool, jk_pool_t *parent,
-                         apr_pool_t *aprPool);
-
 
 
      

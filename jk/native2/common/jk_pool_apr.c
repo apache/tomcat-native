@@ -80,8 +80,6 @@
 */
 
 
-int jk2_pool_apr_create( jk_env_t *env, jk_pool_t **newPool, jk_pool_t *parent,
-                        apr_pool_t *aprPool );
 /** Nothing - apache will take care ??
  */
 static void jk2_pool_apr_close(jk_env_t *env, jk_pool_t *p)
@@ -173,10 +171,11 @@ static jk_pool_t *jk2_pool_apr_createChild( jk_env_t *env, jk_pool_t *_this,
 }
 
 
-int jk2_pool_apr_create( jk_env_t *env, jk_pool_t **newPool, jk_pool_t *parent,
-                        apr_pool_t *aprPool)
+int JK_METHOD jk2_pool_apr_create( jk_env_t *env, jk_pool_t **newPool, jk_pool_t *parent,
+                                   void *aprPoolV)
 {
     jk_pool_t *_this;
+    apr_pool_t *aprPool=(apr_pool_t *)aprPoolV;
 
     _this=(jk_pool_t *)apr_palloc(aprPool, sizeof( jk_pool_t ));
     *newPool = _this;
