@@ -59,8 +59,8 @@
  * Description: URI to worker map object.                                  *
  * Maps can be                                                             *
  *                                                                         *
- * Exact Context -> /exact/uri=worker e.g. /examples/do *=ajp12             *
- * Context Based -> /context/ *=worker e.g. /examples/ *=ajp12               *
+ * Exact Context -> /exact/uri=worker e.g. /examples/do*=ajp12             *
+ * Context Based -> /context/*=worker e.g. /examples/*=ajp12               *
  * Context and suffix ->/context/*.suffix=worker e.g. /examples/ *.jsp=ajp12*
  *                                                                         *
  * This lets us either partition the work among the web server and the     *
@@ -71,7 +71,6 @@
  ***************************************************************************/
 
 #include "jk_pool.h"
-#include "jk_util.h"
 #include "jk_env.h"
 #include "jk_uriMap.h"
 
@@ -125,31 +124,11 @@ static int jk_uriMap_checkUri(jk_uriMap_t *_this,
 }
 
 
-/* int uriMap_free(jk_uriMap_t **_this, */
-/*                 jk_logger_t *l) */
-/* { */
-/*     l->jkLog(l, JK_LOG_DEBUG,  */
-/*            "Into jk_uriMap_t::uriMap_free\n");     */
-
-/*     if(_this && *_this) { */
-/*         jk_uriMap_destroy(*_this, l);   */
-/*         free(*_this); */
-/*         *_this = NULL; */
-/* 	return JK_TRUE; */
-/*     } */
-/*     else  */
-/*     	l->jkLog(l, JK_LOG_ERROR,  */
-/*            "In jk_uriMap_t::uriMap_free, NULL parameters\n");     */
-
-/*     return JK_FALSE; */
-/* } */
+#define UW_INC_SIZE 4   /* 4 URI->WORKER STEP */
 
 /*
  * Ensure there will be memory in context info to store Context Bases
  */
-
-#define UW_INC_SIZE 4   /* 4 URI->WORKER STEP */
-
 static int uriMap_realloc(jk_uriMap_t *_this)
 {
     if (_this->size == _this->capacity) {
@@ -173,6 +152,15 @@ static int uriMap_realloc(jk_uriMap_t *_this)
     return JK_TRUE;
 }
 
+static jk_uriEnv_t *jk_uriMap_createUriEnv(jk_uriMap_t *_this ) {
+    jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)jk_pool_alloc(&_this->p,
+                                                     sizeof(jk_uriEnv_t));
+    memset(uriEnv, 0, sizeof(jk_uriEnv_t));
+    
+    uriEnv->workerEnv=_this->workerEnv;
+    
+    return uriEnv;
+}
 
 static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
                                          char *vhost,
@@ -193,11 +181,11 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
         return NULL;
     }
 
-    uwr = (jk_uriEnv_t *)jk_pool_alloc(&_this->p,
-                                       sizeof(jk_uriEnv_t));
+    uwr = jk_uriMap_createUriEnv(_this);
     
     uri = jk_pool_strdup(&_this->p, puri);
     worker = jk_pool_strdup(&_this->p, pworker);
+    uwr->workerName = worker;
 
     if (uri==NULL ||
         worker==NULL ||
@@ -213,16 +201,16 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
          * I have fixed jk_mount_context() in apaches/mod_jk.c so we should
          * not arrive here when using Apache.
          */
-        l->jkLog(l, JK_LOG_ERROR,
+         l->jkLog(l, JK_LOG_ERROR,
                "uriMap.addMapping() context must start with '/' in %s\n",
                uri);
         return NULL;
     }
 
-    uwr->ctxt_len = strlen(uwr->context);
-    
     _this->maps[_this->size] = uwr;
     _this->size++;
+
+    l->jkLog(l, JK_LOG_DEBUG,"uriMap.addMapping(%s)\n", uri );
 
     asterisk = strchr(uri, '*');
 
@@ -230,7 +218,6 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
     if (!asterisk) {
         /* Something like:  JkMount /login/j_security_check ajp13 */
         uwr->uri         = uri;
-        uwr->workerName = worker;
         uwr->context     = uri;
         uwr->suffix      = NULL;
         uwr->match_type  = MATCH_TYPE_EXACT;
@@ -259,7 +246,6 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
             /* suffix rule */
             asterisk[1]      = '\0';
             asterisk[2]      = '\0';
-            uwr->workerName = worker;
             uwr->context     = uri;
             uwr->suffix      = asterisk + 3;
             uwr->match_type  = MATCH_TYPE_SUFFIX;
@@ -269,7 +255,6 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
         } else if ('\0' != asterisk[2]) {
             /* general suffix rule */
             asterisk[1] = '\0';
-            uwr->workerName = worker;
             uwr->context = uri;
             uwr->suffix  = asterisk + 2;
             uwr->match_type = MATCH_TYPE_GENERAL_SUFFIX;
@@ -279,7 +264,6 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
         } else {
             /* context based */
             asterisk[1]      = '\0';
-            uwr->workerName = worker;
             uwr->context     = uri;
             uwr->suffix      = NULL;
             uwr->match_type  = MATCH_TYPE_CONTEXT;
@@ -290,7 +274,6 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
     } else {
         /* Something like : JkMount /servlets/exampl* ajp13 */
         uwr->uri         = uri;
-        uwr->workerName = worker;
         uwr->context     = uri;
         uwr->suffix      = NULL;
         uwr->match_type  = MATCH_TYPE_EXACT;
@@ -298,6 +281,8 @@ static jk_uriEnv_t *jk_uriMap_addMapping(jk_uriMap_t *_this,
                    "uriMap.addMapping() prefix mapping %s=%s\n",
                uri, worker);
     }
+
+    uwr->ctxt_len = strlen(uwr->context);
     
     return uwr;
 }
@@ -306,7 +291,7 @@ int jk_uriMap_init(jk_uriMap_t *_this,
                    jk_workerEnv_t *workerEnv,
                    jk_map_t *init_data )
 {
-    int rc;
+    int rc=JK_TRUE;
     int sz;
     int err;
     int i;
@@ -319,23 +304,15 @@ int jk_uriMap_init(jk_uriMap_t *_this,
     jk_open_pool(&_this->tp,_this->tbuf,
                  sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
 
-    _this->size = 0;
-    _this->maps = NULL;
-        
     sz = map_size(init_data);
 
-    l->jkLog(l, JK_LOG_DEBUG, "uriMap.open(): initializing %d rules\n", sz);
-
-    if (sz <= 0) {
-        return JK_TRUE;
-    }
-    
-    rc = JK_TRUE;
     for(i = 0; i < sz ; i++) {
         char *name=map_name_at(init_data, i);
-        if( name!=NULL && name[0]=='/' ) {
-            jk_uriEnv_t *uriEnv=_this->addMapping(_this,NULL,
-                                                  name,
+        if( name==NULL || name[0]!='/' ) {
+            l->jkLog(l, JK_LOG_DEBUG, "uriMap.init(): Ignoring %s\n",
+                     name);
+        } else {
+            jk_uriEnv_t *uriEnv=_this->addMapping(_this,NULL,name,
                                                   map_value_at(init_data, i));
             if ( uriEnv==NULL) {
                 l->jkLog(l, JK_LOG_ERROR, "Parsing error %s\n",
@@ -344,7 +321,23 @@ int jk_uriMap_init(jk_uriMap_t *_this,
             }
         }
     }
+    
+    l->jkLog(l, JK_LOG_DEBUG, "uriMap.init(): %d rules out of %d\n",
+             _this->size, sz );
 
+    /* Set uriEnv->worker ( can't be done earlier since we might not have
+       the workers set up */
+    for(i = 0 ; i < _this->size ; i++) {
+        char *wname=_this->maps[i]->workerName;
+        /* assert( wname != NULL ); */
+        _this->maps[i]->worker= workerEnv->getWorkerForName( workerEnv, wname );
+        if( _this->maps[i]->worker==NULL ) {
+            l->jkLog(l, JK_LOG_ERROR, "Map to invalid worker %s %s\n",
+                     _this->maps[i]->uri, wname);
+        }
+    }
+    
+    
     return rc;
 }
 
@@ -352,8 +345,7 @@ static void jk_uriMap_destroy(jk_uriMap_t *_this)
 {
     jk_logger_t *l=_this->workerEnv->l;
     
-    l->jkLog(l, JK_LOG_DEBUG, 
-           "uriMap.destroy()\n"); 
+    l->jkLog(l, JK_LOG_DEBUG, "uriMap.destroy()\n"); 
 
     /* this can't be null ( or a NPE would have been generated */
     
@@ -399,7 +391,7 @@ INLINE const char *findExtension( const char *uri ) {
     return suffix;
 }
 
-jk_worker_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
+jk_uriEnv_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
                               const char *vhost,
                               const char *uri )
 {
@@ -420,12 +412,11 @@ jk_worker_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
     if( _this->size <= 0 )
 	return NULL;
 
-    l->jkLog(l, JK_LOG_DEBUG, 
-           "uriMap.mapUri() %s %s\n", vhost, uri);    
+    if( _this->debug > 1 )
+        l->jkLog(l, JK_LOG_DEBUG, "uriMap.mapUri() %s %s\n", vhost, uri);    
 
     if( '/' != uri[0]) {
-        l->jkLog(l, JK_LOG_ERROR, 
-               "uriMap.mapUri() uri must start with /\n");
+        l->jkLog(l, JK_LOG_ERROR, "uriMap.mapUri() uri must start with /\n");
         return NULL;
     }
 
@@ -436,6 +427,9 @@ jk_worker_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
         clean_uri = jk_pool_strdup(&_this->tp,uri);
         url_rewrite = strstr(clean_uri, JK_PATH_SESSION_IDENTIFIER);
         *url_rewrite = '\0';
+        if( _this->debug > 0 )
+            l->jkLog(l, JK_LOG_DEBUG, "uriMap.mapUri() rewrote uri %s %s\n",
+                     uri, clean_uri );
         uri = clean_uri;
     }
 
@@ -457,7 +451,7 @@ jk_worker_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
                 l->jkLog(l, JK_LOG_DEBUG,
                        "uriMap.mapUri() exact match %s:%s \n",
                        uwr->worker->name, uwr->context );
-                return uwr->worker;
+                return uwr;
             }
         } else if(MATCH_TYPE_CONTEXT == uwr->match_type) {
             if(uwr->ctxt_len > longest_match) {
@@ -504,11 +498,14 @@ jk_worker_t *jk_uriMap_mapUri(jk_uriMap_t *_this,
     }
 
     if(-1 != best_match) {
-        return _this->maps[best_match]->worker;
+        if( _this->debug > 0 )
+            l->jkLog(l, JK_LOG_DEBUG, "uriMap.mapUri() matched %s %s\n",
+                     uri, _this->maps[best_match]->worker->name ); 
+        return _this->maps[best_match];
     }
     
-    l->jkLog(l, JK_LOG_DEBUG, 
-           "uriMap.mapUri() no match found\n"); 
+    if( _this->debug > 1 )
+        l->jkLog(l, JK_LOG_DEBUG, "uriMap.mapUri() no match found\n"); 
 
     return NULL;
 }
@@ -518,7 +515,7 @@ int JK_METHOD jk_uriMap_factory( jk_env_t *env, void **result,
 {
     jk_uriMap_t *_this;
     jk_map_t *init_data;
-    jk_logger_t *l;
+    jk_logger_t *l=env->logger;
 
     _this = (jk_uriMap_t *)calloc(1,sizeof(jk_uriMap_t));
     _this->size     = 0;
@@ -535,8 +532,10 @@ int JK_METHOD jk_uriMap_factory( jk_env_t *env, void **result,
     _this->addMapping=jk_uriMap_addMapping;
     _this->checkUri=jk_uriMap_checkUri;
     _this->mapUri=jk_uriMap_mapUri;
-    
-    
+    _this->maps = NULL;
+    _this->debug= 1;
+            
+    l->jkLog(l, JK_LOG_DEBUG, "uriMap.new()\n");
     return JK_TRUE;
 }
 
