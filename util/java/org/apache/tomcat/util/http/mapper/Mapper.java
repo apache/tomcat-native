@@ -519,9 +519,7 @@ public final class Mapper {
                     MappingData mappingData)
         throws Exception {
 
-        if (host != null) {
-            host.toChars();
-        }
+        host.toChars();
         uri.toChars();
         internalMap(host.getCharChunk(), uri.getCharChunk(), mappingData);
 
@@ -1113,7 +1111,7 @@ public final class Mapper {
     // ------------------------------------------------- MapElement Inner Class
 
 
-    protected abstract class MapElement {
+    protected static abstract class MapElement {
 
         public String name = null;
         public Object object = null;
@@ -1124,7 +1122,7 @@ public final class Mapper {
     // ------------------------------------------------------- Host Inner Class
 
 
-    protected final class Host
+    protected static final class Host
         extends MapElement {
 
         public ContextList contextList = null;
@@ -1135,7 +1133,7 @@ public final class Mapper {
     // ------------------------------------------------ ContextList Inner Class
 
 
-    protected final class ContextList {
+    protected static final class ContextList {
 
         public Context[] contexts = new Context[0];
         public int nesting = 0;
@@ -1146,7 +1144,7 @@ public final class Mapper {
     // ---------------------------------------------------- Context Inner Class
 
 
-    protected final class Context
+    protected static final class Context
         extends MapElement {
 
         public String path = null;
@@ -1164,7 +1162,7 @@ public final class Mapper {
     // ---------------------------------------------------- Wrapper Inner Class
 
 
-    protected class Wrapper
+    protected static class Wrapper
         extends MapElement {
 
         public String path = null;
