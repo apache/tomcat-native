@@ -166,12 +166,15 @@ static int jk2_workerEnv_initWorkers(jk_env_t *env,
                                      jk_workerEnv_t *wEnv)
 {
     int i;
+    jk_worker_t *lb=wEnv->defaultWorker;
 
     for( i=0; i< wEnv->worker_map->size( env, wEnv->worker_map ); i++ ) {
 
         char *name= wEnv->worker_map->nameAt( env, wEnv->worker_map, i );
         jk_worker_t *w= wEnv->worker_map->valueAt( env, wEnv->worker_map, i );
         int err;
+
+        w->workerEnv=wEnv;
 
         if( w->init != NULL ) {
             err=w->init(env, w);
@@ -182,6 +185,17 @@ static int jk2_workerEnv_initWorkers(jk_env_t *env,
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "workerEnv.initWorkers() init failed for %s\n", 
                               name); 
+            } else {
+                /* Add the worker automatically in the 'default' lb and in any group */
+                if( strncmp( "worker.ajp13", w->mbean->name, 12 ) == 0 ) {
+                    /* It's a forwarding worker */
+                    lb->mbean->setAttribute(env, lb->mbean, "balanced_workers",
+                                            w->mbean->name);
+                }
+
+                /* XXX Find any 'group' property - find or create an lb for that
+                   and register it
+                */
             }
         }
     }
@@ -293,7 +307,20 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
                                          "config.file",
                                          "${serverRoot}/conf/workers2.properties" );
     }
-    
+
+    /* Set default worker. It'll be used for all uris that have no worker
+     */
+    if( wEnv->defaultWorker == NULL ) {
+        jk_worker_t *w=wEnv->worker_map->get( env, wEnv->worker_map, "worker.lb" );
+        
+        if( w==NULL ) {
+            jk_bean_t *jkb=env->createBean2(env, wEnv->pool, "worker.lb", "" );
+            w=jkb->object;
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create default worker %s\n",  jkb->name );
+        }
+        wEnv->defaultWorker= w;
+    }
+
     jk2_workerEnv_initChannels( env, wEnv );
     jk2_workerEnv_initWorkers( env, wEnv );
     jk2_workerEnv_initHandlers( env, wEnv );
@@ -462,6 +489,8 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
     int err=JK_TRUE;
     jk_worker_t *oldW = NULL;
 
+    w->workerEnv=wEnv;
+
     w->rPoolCache= jk2_objCache_create( env, w->pool  );
 
     err=w->rPoolCache->init( env, w->rPoolCache,
@@ -476,9 +505,6 @@ static int jk2_workerEnv_addWorker(jk_env_t *env, jk_workerEnv_t *wEnv,
         if( w->destroy != NULL )
             oldW->destroy(env, oldW);
     }
-    
-    if( wEnv->defaultWorker == NULL )
-        wEnv->defaultWorker=w;
     
     return JK_TRUE;
 }
@@ -513,13 +539,6 @@ static jk_worker_t *jk2_workerEnv_createWorker(jk_env_t *env,
     }
     w=(jk_worker_t *)jkb->object;
 
-    w->workerEnv=wEnv;
-
-    w->rPoolCache= jk2_objCache_create( env, w->pool  );
-    err=w->rPoolCache->init( env, w->rPoolCache,
-                                    1024 ); /* XXX make it unbound */
-    wEnv->worker_map->put(env, wEnv->worker_map, name, w, (void *)&oldW);
-            
     return w;
 }
 
