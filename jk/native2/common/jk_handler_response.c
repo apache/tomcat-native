@@ -64,6 +64,8 @@
 #include "jk_handler.h"
 #include "jk_endpoint.h"
 
+#include "jk_registry.h"
+
 /*
  * Write a body chunk from the servlet container to the web server
  */

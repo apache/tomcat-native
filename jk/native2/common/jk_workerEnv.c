@@ -240,8 +240,6 @@ static void jk_workerEnv_initHandlers(jk_workerEnv_t *_this)
         char *name=map_name_at( registry, i );
         if( strstr( name, "handler" ) == name ) {
             char *type=name+ strlen( "handler" ) +1;
-            printf("XXX Found handler: %s %s\n", name, type );
-
             localHandlers=(jk_map_t *)_this->env->getInstance(_this->env,
                                                               _this->pool,
                                                               "handler",
@@ -255,8 +253,8 @@ static void jk_workerEnv_initHandlers(jk_workerEnv_t *_this)
                                          &_this->lastMessageId,
                                          handler->messageId );
                 _this->handlerTable[ handler->messageId ]=handler;
-                _this->l->jkLog( _this->l, JK_LOG_INFO, "Registerd %s %d \n",
-                                 handler->name, handler->messageId);
+                /*_this->l->jkLog( _this->l, JK_LOG_INFO, "Registered %s %d\n",*/
+                /*           handler->name, handler->messageId); */
             }
         }
     }
@@ -414,8 +412,8 @@ static jk_worker_t *jk_workerEnv_createWorker(jk_workerEnv_t *_this,
         return NULL;
     }
 
-    w->pool=workerPool;
     w->name=(char *)name;
+    w->pool=workerPool;
     w->workerEnv=_this;
     
     err=w->validate(w, init_data, _this, l);

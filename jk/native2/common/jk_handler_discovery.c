@@ -70,6 +70,7 @@
 #include "jk_handler.h"
 #include "jk_webapp.h"
 #include "jk_workerEnv.h"
+#include "jk_registry.h"
 
 int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
                                             void **result,

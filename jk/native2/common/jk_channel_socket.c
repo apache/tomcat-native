@@ -77,6 +77,7 @@
 #include "jk_global.h"
 
 #include <string.h>
+#include "jk_registry.h"
 
 #ifndef WIN32
 	#define closesocket			close

@@ -82,7 +82,7 @@ jk_worker_ajp14_service(jk_endpoint_t   *e, jk_ws_service_t *s,
                         jk_logger_t     *l, int *is_recoverable_error);
 
 static int JK_METHOD
-jk_worker_ajp14_validate(jk_worker_t *pThis, jk_map_t    *props,
+jk_worker_ajp14_validate(jk_worker_t *_this, jk_map_t    *props,
                          jk_workerEnv_t *we, jk_logger_t *l );
 
 static int JK_METHOD
@@ -97,7 +97,7 @@ jk_worker_ajp14_init(jk_worker_t *_this, jk_map_t    *props,
                      jk_workerEnv_t *we, jk_logger_t *l);
 
 static int JK_METHOD
-jk_worker_ajp14_destroy(jk_worker_t **pThis, jk_logger_t *l);
+jk_worker_ajp14_destroy(jk_worker_t **_this, jk_logger_t *l);
 
 
 #define AJP_DEF_RETRY_ATTEMPTS    (2)
@@ -123,7 +123,7 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
         return JK_FALSE;
     }
     w->pool = pool;
-    w->name = (char *)pool->pstrdup(pool, name);
+    w->name = NULL;
     
     w->proto= AJP14_PROTO;
 
@@ -139,9 +139,6 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
     w->destroy=jk_worker_ajp14_destroy;
 
     *result = w;
-
-    l->jkLog(l, JK_LOG_INFO, "ajp14.factory() Created %s %s\n",
-             w->name, name);
 
     return JK_TRUE;
 }
@@ -167,8 +164,6 @@ jk_worker_ajp14_validate(jk_worker_t *_this,
     secret_key = map_getStrProp( props, "worker", aw->name, "secretkey", NULL );
     
     if ((!secret_key) || (!strlen(secret_key))) {
-        l->jkLog(l, JK_LOG_INFO,
-               "ajp14.validate() No secretkey, use AJP13\n");
         proto=AJP13_PROTO;
         aw->proto= AJP13_PROTO;
     }
@@ -205,7 +200,8 @@ jk_worker_ajp14_validate(jk_worker_t *_this,
 	return err;
     }
 
-    l->jkLog(l, JK_LOG_INFO, "ajp14.validate() %s\n", _this->name);
+    l->jkLog(l, JK_LOG_INFO, "ajp14.validate() %s protocol=%s\n", _this->name,
+             ((_this->secret==NULL) ? "ajp13" : "ajp14"));
     
     return JK_TRUE;
 }
@@ -219,11 +215,11 @@ static void jk_close_endpoint(jk_endpoint_t *ae,
     l->jkLog(l, JK_LOG_INFO, "endpoint.close() %s\n", ae->worker->name);
 
     ae->reuse = JK_FALSE;
-    ae->pool->reset( ae->pool );
-    ae->pool->close( ae->pool );
+    ae->worker->channel->close( ae->worker->channel, ae );
     ae->cPool->reset( ae->cPool );
     ae->cPool->close( ae->cPool );
-    ae->worker->channel->close( ae->worker->channel, ae );
+    ae->pool->reset( ae->pool );
+    ae->pool->close( ae->pool );
 }
 
 /** Connect a channel, implementing the logging protocol if ajp14
@@ -442,7 +438,7 @@ jk_worker_ajp14_done(jk_endpoint_t **eP,jk_logger_t    *l)
     *eP = NULL;
     l->jkLog(l, JK_LOG_INFO, "ajp14.done() close endpoint %s\n",
              w->name );
-    
+
     return JK_TRUE;
 }
 
@@ -548,7 +544,8 @@ jk_worker_ajp14_init(jk_worker_t *_this,
 
     if (_this->secret == NULL) {
         /* No extra initialization for AJP13 */
-        l->jkLog(l, JK_LOG_INFO, "ajp14.init() ajp13 mode %s\n",_this->name);
+        l->jkLog(l, JK_LOG_INFO, "ajp14.init() ajp1x worker name=%s\n",
+                 _this->name);
         return JK_TRUE;
     }
 
@@ -580,19 +577,19 @@ jk_worker_ajp14_init(jk_worker_t *_this,
 
 
 static int JK_METHOD
-jk_worker_ajp14_destroy(jk_worker_t **pThis, jk_logger_t *l)
+jk_worker_ajp14_destroy(jk_worker_t **_thisP, jk_logger_t *l)
 {
-    jk_worker_t *aw = *pThis;
+    jk_worker_t *_this = *_thisP;
     int i;
     
     l->jkLog(l, JK_LOG_DEBUG, "ajp14.destroy()\n");
 
-    if( aw->endpointCache != NULL ) {
+    if( _this->endpointCache != NULL ) {
         
-        for( i=0; i< aw->endpointCache->ep_cache_sz; i++ ) {
+        for( i=0; i< _this->endpointCache->ep_cache_sz; i++ ) {
             jk_endpoint_t *e;
             
-            e= aw->endpointCache->get( aw->endpointCache );
+            e= _this->endpointCache->get( _this->endpointCache );
             
             if( e==NULL ) {
                 // we finished all endpoints in the cache
@@ -601,11 +598,14 @@ jk_worker_ajp14_destroy(jk_worker_t **pThis, jk_logger_t *l)
             
             jk_close_endpoint(e, l);
         }
-        aw->endpointCache->destroy( aw->endpointCache );
+        _this->endpointCache->destroy( _this->endpointCache );
 
         l->jkLog(l, JK_LOG_DEBUG, "ajp14.destroy() closed %d cached endpoints\n",
                  i);
     }
 
+    _this->pool->close( _this->pool );
+
+    *_thisP=NULL;
     return JK_TRUE;
 }

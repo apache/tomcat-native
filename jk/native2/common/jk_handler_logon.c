@@ -69,6 +69,7 @@
 #include "jk_service.h"
 #include "jk_env.h"
 #include "jk_handler.h"
+#include "jk_registry.h"
 
 /* Private definitions */
 

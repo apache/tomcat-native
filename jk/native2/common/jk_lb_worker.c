@@ -507,8 +507,7 @@ int JK_METHOD jk_worker_lb_factory(jk_env_t *env,
     
     *result=_this;
 
-    l->jkLog(l, JK_LOG_INFO, "lb_worker.factory() New lb worker %s\n",
-             _this->name);
+    l->jkLog(l, JK_LOG_INFO, "lb_worker.factory() New lb worker\n");
     
     /* name, pool will be set by workerEnv ( our factory ) */
     

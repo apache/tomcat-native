@@ -67,6 +67,8 @@
 #include "jk_logger.h"
 #include <stdio.h>
 
+#include "jk_registry.h"
+
 #define LOG_FORMAT		    ("log_format")
 
 #define HUGE_BUFFER_SIZE (8*1024)
