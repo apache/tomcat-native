@@ -7,8 +7,7 @@ CRTCMOD MODULE(MOD_JK/MOD_JK)                                 +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_AJP_COM)                                +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp_common.c') +
@@ -19,8 +18,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP_COM)                                +
         TGTCCSID(*JOB)                               +
         OPTION(*LOGMSG )                             +
         INCDIR('/home/apache/jk/native/common'       +
-               '/QIBM/ProdData/HTTPA/Include'        +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_AJP12_W)                                  +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp12_worker.c') +
@@ -31,8 +29,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP12_W)                                  +
         TGTCCSID(*JOB)                                 +
         OPTION(*LOGMSG )                               +
         INCDIR('/home/apache/jk/native/common'         +
-               '/QIBM/ProdData/HTTPA/Include'          +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_AJP13)                                 +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp13.c')     +
@@ -43,8 +40,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP13)                                 +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_AJP13_W)                                  +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp13_worker.c') +
@@ -55,8 +51,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP13_W)                                  +
         TGTCCSID(*JOB)                                 +
         OPTION(*LOGMSG )                               +
         INCDIR('/home/apache/jk/native/common'         +
-               '/QIBM/ProdData/HTTPA/Include'          +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_AJP14)                     +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp14.c')     +
@@ -67,8 +62,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14)                     +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_AJP14_W)                                  +
         SRCSTMF('/home/apache/jk/native/common/jk_ajp14_worker.c') +
@@ -79,8 +73,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14_W)                                  +
         TGTCCSID(*JOB)                                 +
         OPTION(*LOGMSG )                               +
         INCDIR('/home/apache/jk/native/common'         +
-               '/QIBM/ProdData/HTTPA/Include'          +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_CONNECT)                               +
         SRCSTMF('/home/apache/jk/native/common/jk_connect.c')   +
@@ -91,8 +84,7 @@ CRTCMOD MODULE(MOD_JK/JK_CONNECT)                               +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_CONTEXT)                               +
         SRCSTMF('/home/apache/jk/native/common/jk_context.c')   +
@@ -103,20 +95,17 @@ CRTCMOD MODULE(MOD_JK/JK_CONTEXT)                               +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include' +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
-CRTCMOD MODULE(MOD_JK/JNI_WORKER)                             +
-        SRCSTMF('/home/apache/jk/native/common/jni_worker.c') +
-        DEFINE('AS400' 'HAVE_JNI' 'USE_APACHE_MD5') +
-        TEXT('jk_util.c')                           +
+CRTCMOD MODULE(MOD_JK/JNI_WORKER)                                  +
+        SRCSTMF('/home/apache/jk/native/common/jk_jni_worker.c')   +
+        DEFINE('AS400' 'HAVE_JNI' 'OS400_JVM_12' 'USE_APACHE_MD5') +
+        TEXT('jk_jni_worker.c')                     +
         SYSIFCOPT(*IFSIO)                           +
         LANGLVL(*ANSI)                              +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
-        INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+        INCDIR('/home/apache/jk/native/common')
 
 CRTCMOD MODULE(MOD_JK/JK_LB_WORK)                               +
         SRCSTMF('/home/apache/jk/native/common/jk_lb_worker.c') +
@@ -127,8 +116,7 @@ CRTCMOD MODULE(MOD_JK/JK_LB_WORK)                               +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_MAP)                       +
         SRCSTMF('/home/apache/jk/native/common/jk_map.c')       +
@@ -139,8 +127,7 @@ CRTCMOD MODULE(MOD_JK/JK_MAP)                       +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_MD5)                             +
         SRCSTMF('/home/apache/jk/native/common/jk_md5.c') +
@@ -151,8 +138,7 @@ CRTCMOD MODULE(MOD_JK/JK_MD5)                             +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_MSG_BUF)                              +
         SRCSTMF('/home/apache/jk/native/common/jk_msg_buff.c') +
@@ -163,8 +149,7 @@ CRTCMOD MODULE(MOD_JK/JK_MSG_BUF)                              +
         TGTCCSID(*JOB)                             +
         OPTION(*LOGMSG )                           +
         INCDIR('/home/apache/jk/native/common'     +
-               '/QIBM/ProdData/HTTPA/Include'      +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_POOL)                             +
         SRCSTMF('/home/apache/jk/native/common/jk_pool.c') +
@@ -175,8 +160,7 @@ CRTCMOD MODULE(MOD_JK/JK_POOL)                             +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_SOCKBUF)                             +
         SRCSTMF('/home/apache/jk/native/common/jk_sockbuf.c') +
@@ -187,8 +171,7 @@ CRTCMOD MODULE(MOD_JK/JK_SOCKBUF)                             +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_URI_W_M)                                    +
         SRCSTMF('/home/apache/jk/native/common/jk_uri_worker_map.c') +
@@ -199,8 +182,7 @@ CRTCMOD MODULE(MOD_JK/JK_URI_W_M)                                    +
         TGTCCSID(*JOB)                                   +
         OPTION(*LOGMSG )                                 +
         INCDIR('/home/apache/jk/native/common'           +
-               '/QIBM/ProdData/HTTPA/Include'            +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_UTIL)                             +
         SRCSTMF('/home/apache/jk/native/common/jk_util.c') +
@@ -211,8 +193,7 @@ CRTCMOD MODULE(MOD_JK/JK_UTIL)                             +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_WORKER)                    +
         SRCSTMF('/home/apache/jk/native/common/jk_worker.c')    +
@@ -223,8 +204,7 @@ CRTCMOD MODULE(MOD_JK/JK_WORKER)                    +
         TGTCCSID(*JOB)                              +
         OPTION(*LOGMSG )                            +
         INCDIR('/home/apache/jk/native/common'      +
-               '/QIBM/ProdData/HTTPA/Include'       +
-               '/QIBM/ProdData/Java/Include')
+               '/QIBM/ProdData/HTTPA/Include')
 
 CRTSRVPGM SRVPGM(MOD_JK/MOD_JK)                              +
           MODULE(MOD_JK/JK_AJP_COM MOD_JK/JK_AJP12_W         +
