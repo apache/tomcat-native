@@ -111,6 +111,8 @@ public class InternalInputBuffer implements InputBuffer {
         headerBuffer2 = new byte[headerBufferSize];
         bodyBuffer = new byte[headerBufferSize];
 
+        inputStreamInputBuffer = new InputStreamInputBuffer();
+
         filterLibrary = new InputFilter[0];
         activeFilters = new InputFilter[0];
 
@@ -190,6 +192,12 @@ public class InternalInputBuffer implements InputBuffer {
      * Underlying input stream.
      */
     protected InputStream inputStream;
+
+
+    /**
+     * Underlying input buffer.
+     */
+    protected InputBuffer inputStreamInputBuffer;
 
 
     /**
@@ -285,7 +293,13 @@ public class InternalInputBuffer implements InputBuffer {
         // FIXME: Check for null ?
         // FIXME: Check index ?
 
-        activeFilters[lastActiveFilter++] = filter;
+        if (lastActiveFilter == 0) {
+            filter.setBuffer(inputStreamInputBuffer);
+        } else {
+            filter.setBuffer(activeFilters[lastActiveFilter]);
+        }
+
+        activeFilters[++lastActiveFilter] = filter;
 
     }
 
@@ -656,28 +670,7 @@ public class InternalInputBuffer implements InputBuffer {
     public int doRead(ByteChunk chunk) 
         throws IOException {
 
-        if (pos >= lastValid) {
-            if (!fill())
-                return -1;
-        }
-
-        chunk.setBytes(buf, pos, lastValid - pos);
-
-        int n = -1;
-
-        if (lastActiveFilter > 0) {
-            // Parsing through the filter list
-            for (int i = 0; i < lastActiveFilter; i++) {
-                int nRead = activeFilters[i].doRead(chunk);
-                if ((n < 0) && (nRead >= 0)) {
-                    n = nRead;
-                }
-            }
-        }
-
-        pos = pos + n;
-
-        return n;
+        return activeFilters[lastActiveFilter].doRead(chunk);
 
     }
 
@@ -720,6 +713,38 @@ public class InternalInputBuffer implements InputBuffer {
         }
 
         return (nRead >= 0);
+
+    }
+
+
+    // ------------------------------------- InputStreamInputBuffer Inner Class
+
+
+    /**
+     * This class is an input buffer which will read its data from an input
+     * stream.
+     */
+    protected class InputStreamInputBuffer 
+        implements InputBuffer {
+
+
+        /**
+         * Read bytes into the specified chunk.
+         */
+        public int doRead(ByteChunk chunk) 
+            throws IOException {
+
+            if (pos >= lastValid) {
+                if (!fill())
+                    return -1;
+            }
+
+            chunk.setBytes(buf, pos, lastValid - pos);
+
+            return (lastValid - pos);
+
+        }
+
 
     }
 

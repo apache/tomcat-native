@@ -59,6 +59,8 @@
 
 package org.apache.coyote.http11;
 
+import java.io.EOFException;
+import java.io.InterruptedIOException;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -156,17 +158,56 @@ public class Http11Connector implements Connector, ActionHook {
         inputBuffer.setInputStream(input);
         outputBuffer.setOutputStream(output);
 
+        // Ok flag
+        boolean ok = true;
+        // TEMP
+        boolean stopped = false;
 
+        while (!stopped && ok) {
 
+            try {
+                inputBuffer.parseRequestLine();
+                // Check for HTTP/0.9
+                
+                inputBuffer.parseHeaders();
+            } catch (EOFException e) {
+                ok = false;
+            } catch (InterruptedIOException e) {
+                //HttpServletResponse.SC_BAD_REQUEST
+                ok = false;
+            } catch (Exception e) {
+                //SC_BAD_REQUEST
+                ok = false;
+            }
 
-        try {
-            adapter.service(request, response);
-        } catch (Exception e) {
-            ;
+            // Setting up filters, and parse some request headers
+            prepareRequest();
+
+            // Process the request in the adapter
+            try {
+                adapter.service(request, response);
+            } catch (InterruptedIOException e) {
+                ok = false;
+            } catch (Throwable t) {
+                // ISE
+                ok = false;
+            }
+
+            // Finish the handling of the request
+            try {
+                outputBuffer.endRequest();
+            } catch (IOException e) {
+                ok = false;
+            } catch (Throwable t) {
+                // Problem ...
+                ok = false;
+            }
+
+            // FIXME: Next request
+
         }
 
-
-
+        // FIXME: Recycle
 
     }
 

@@ -105,6 +105,8 @@ public class InternalOutputBuffer implements OutputBuffer {
         headerBuffer = new byte[headerBufferSize];
         buf = headerBuffer;
 
+        outputStreamOutputBuffer = new OutputStreamOutputBuffer();
+
         filterLibrary = new OutputFilter[0];
         activeFilters = new OutputFilter[0];
 
@@ -169,6 +171,12 @@ public class InternalOutputBuffer implements OutputBuffer {
 
 
     /**
+     * Underlying output buffer.
+     */
+    protected OutputBuffer outputStreamOutputBuffer;
+
+
+    /**
      * Filter library.
      * Note: Filter[0] is always the "chunked" filter.
      */
@@ -176,7 +184,7 @@ public class InternalOutputBuffer implements OutputBuffer {
 
 
     /**
-     * Active filters (in order).
+     * Active filter (which is actually the top of the pipeline).
      */
     protected OutputFilter[] activeFilters;
 
@@ -185,12 +193,6 @@ public class InternalOutputBuffer implements OutputBuffer {
      * Index of the last active filter.
      */
     protected int lastActiveFilter;
-
-
-    /**
-     * Chunk used when closing the response.
-     */
-    protected ByteChunk closeChunk = new ByteChunk(4096);
 
 
     // ------------------------------------------------------------- Properties
@@ -267,7 +269,13 @@ public class InternalOutputBuffer implements OutputBuffer {
         // FIXME: Check for null ?
         // FIXME: Check index ?
 
-        activeFilters[lastActiveFilter++] = filter;
+        if (lastActiveFilter == 0) {
+            filter.setBuffer(outputStreamOutputBuffer);
+        } else {
+            filter.setBuffer(activeFilters[lastActiveFilter]);
+        }
+
+        activeFilters[++lastActiveFilter] = filter;
 
     }
 
@@ -288,7 +296,6 @@ public class InternalOutputBuffer implements OutputBuffer {
         pos = 0;
         lastActiveFilter = 0;
         committed = false;
-        closeChunk.recycle();
 
     }
 
@@ -317,7 +324,6 @@ public class InternalOutputBuffer implements OutputBuffer {
         pos = 0;
         lastActiveFilter = 0;
         committed = false;
-        closeChunk.recycle();
 
     }
 
@@ -339,19 +345,6 @@ public class InternalOutputBuffer implements OutputBuffer {
 
             commit();
 
-        }
-
-        if (lastActiveFilter > 0) {
-            // Parsing through the filter list
-            for (int i = 0; i < lastActiveFilter; i++) {
-                activeFilters[i].close(closeChunk);
-            }
-        }
-
-        if (closeChunk.getLength() > 0) {
-            outputStream.write(closeChunk.getBytes(), closeChunk.getStart(), 
-                               closeChunk.getLength());
-            outputStream.flush();
         }
 
     }
@@ -475,19 +468,7 @@ public class InternalOutputBuffer implements OutputBuffer {
 
         }
 
-        int n = -1;
-
-        if (lastActiveFilter > 0) {
-            // Parsing through the filter list
-            for (int i = 0; i < lastActiveFilter; i++) {
-                n = activeFilters[i].doWrite(chunk);
-            }
-        }
-
-        outputStream.write(chunk.getBytes(), chunk.getStart(), 
-                           chunk.getLength());
-
-        return n;
+        return activeFilters[lastActiveFilter].doWrite(chunk);
 
     }
 
@@ -593,6 +574,33 @@ public class InternalOutputBuffer implements OutputBuffer {
     protected void write(int i) {
 
         write(String.valueOf(i));
+
+    }
+
+
+    // ----------------------------------- OutputStreamOutputBuffer Inner Class
+
+
+    /**
+     * This class is an output buffer which will write data to an output
+     * stream.
+     */
+    protected class OutputStreamOutputBuffer 
+        implements OutputBuffer {
+
+
+        /**
+         * Write chunk.
+         */
+        public int doWrite(ByteChunk chunk) 
+            throws IOException {
+
+            outputStream.write(chunk.getBuffer(), chunk.getStart(), 
+                               chunk.getLength());
+            return chunk.getLength();
+
+        }
+
 
     }
 

@@ -105,6 +105,12 @@ public class IdentityInputFilter implements InputBuffer {
     protected long remaining = -1;
 
 
+    /**
+     * Next buffer in the pipeline.
+     */
+    protected InputBuffer buffer;
+
+
     // ------------------------------------------------------------- Properties
 
 
@@ -138,6 +144,8 @@ public class IdentityInputFilter implements InputBuffer {
      */
     public int doRead(ByteChunk chunk)
         throws IOException {
+
+        buffer.doRead(chunk);
 
         int result = chunk.getLength();
 
@@ -182,6 +190,14 @@ public class IdentityInputFilter implements InputBuffer {
     public void setRequest(Request request) {
         contentLength = request.getContentLength();
         remaining = contentLength;
+    }
+
+
+    /**
+     * Set the next buffer in the filter pipeline.
+     */
+    public void setBuffer(InputBuffer buffer) {
+        this.buffer = buffer;
     }
 
 

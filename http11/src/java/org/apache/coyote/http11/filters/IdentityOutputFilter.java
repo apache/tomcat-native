@@ -105,6 +105,12 @@ public class IdentityOutputFilter implements OutputFilter {
     protected long remaining = -1;
 
 
+    /**
+     * Next buffer in the pipeline.
+     */
+    protected OutputBuffer buffer;
+
+
     // ------------------------------------------------------------- Properties
 
 
@@ -162,6 +168,8 @@ public class IdentityOutputFilter implements OutputFilter {
             }
         }
 
+        buffer.doWrite(chunk);
+
         return result;
 
     }
@@ -181,18 +189,29 @@ public class IdentityOutputFilter implements OutputFilter {
 
 
     /**
+     * Set the next buffer in the filter pipeline.
+     */
+    public void setBuffer(OutputBuffer buffer) {
+        this.buffer = buffer;
+    }
+
+
+    /**
      * Don't do anything in particular when flushing.
      */
+    /*
     public int flush(ByteChunk chunk)
         throws IOException {
         return doWrite(chunk);
     }
+    */
 
 
     /**
      * Write the remaining bytes, and check that the number of bytes written
      * is correct.
      */
+    /*
     public int close(ByteChunk chunk)
         throws IOException {
 
@@ -207,6 +226,7 @@ public class IdentityOutputFilter implements OutputFilter {
         return n;
 
     }
+    */
 
 
     /**

@@ -107,4 +107,10 @@ public interface InputFilter extends InputBuffer {
     public ByteChunk getEncodingName();
 
 
+    /**
+     * Set the next buffer in the filter pipeline.
+     */
+    public void setBuffer(InputBuffer buffer);
+
+
 }
