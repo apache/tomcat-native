@@ -74,7 +74,7 @@ Back to the "httpd.conf" file, you need to add something like:
 In this example, I'm instructing the WebApp connector to connect to the
 servlet container waiting for requests on the current "localhost" host and
 bound to port 8008 (note, this port is the one you specified in your
-"server.xml" file for the "org.apache.catalina.connectors.warp.WarpConnector"
+"server.xml" file for the "org.apache.catalina.connector.warp.WarpConnector"
 connector, not your HTTP one).
 
 A brief detailed description of the above-mentioned directives is:
