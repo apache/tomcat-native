@@ -2,6 +2,8 @@ JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:			-*-text-*-
 Last modified at [$Date$]
 
 Changes with JK 1.2.5
+    * Fix a thread safe bug when mapping URI's.
+      [bbarker]
     * Fix a thread safe bug when resolving worker host name
       when using mod_jk with Apache 2 and the worker MPM.
       [hgomez]
