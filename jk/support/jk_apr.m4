@@ -129,7 +129,7 @@ AC_DEFUN(
             tempret="0"
             JK_EXEC(
               [tempret],
-              [./configure --enable-static --disable-shared ${APR_CONFIGURE_ARGS}],
+              [${SHELL} ./configure --enable-static --disable-shared ${APR_CONFIGURE_ARGS}],
               [apr],
               [${APR_DIR}])
             if ${TEST} "${tempret}" = "0"; then
