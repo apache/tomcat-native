@@ -134,7 +134,7 @@ To check out if everything is correctly configured, issue the following:
 
 If the output of the apachectl command doesn't include "Syntax OK", something
 went wrong with the build process. Please report that through our bug tracking
-database at <http://nagoya.apache.org/bugzilla> or to the Tomcat developers
+database at <http://issues.apache.org/bugzilla> or to the Tomcat developers
 mailing list <mailto:tomcat-dev@jakarta.apache.org>
 
 Have fun...

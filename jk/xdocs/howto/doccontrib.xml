@@ -242,10 +242,10 @@ patch.txt.</read>
 <p>
     Patches to the documentation are handled just like a bug report.  You 
 should submit your patches to <a 
-href="http://nagoya.apache.org/bugzilla/">http://nagoya.apache.org/bugzilla/</a>
+href="http://issues.apache.org/bugzilla/">http://issues.apache.org/bugzilla/</a>
  and include a good one line subject.  If this is your first time to use the 
 bug database then you should read  <a 
-href="http://nagoya.apache.org/bugzilla/bugwritinghelp.html">http://nagoya.apach
+href="http://issues.apache.org/bugzilla/bugwritinghelp.html">http://issues.apach
 e.org/bugzilla/bugwritinghelp.html.</a>  You will need to create a user 
 account.  At the web site paste your patch into the web form and don't forget 
 to describe what it is your patch is for.  Sooner or later a someone with 
@@ -300,10 +300,10 @@ you are creating new files for submission.
 Beginner's Guide</a>
 </li>
 <li>
-<a href="http://nagoya.apache.org/bugzilla/">Bugzilla</a>
+<a href="http://issues.apache.org/bugzilla/">Bugzilla</a>
 </li>
 <li>
-<a href="http://nagoya.apache.org/bugzilla/bugwritinghelp.html">Bugzilla Bug 
+<a href="http://issues.apache.org/bugzilla/bugwritinghelp.html">Bugzilla Bug 
 Writing Guide</a>
 </li>
 <li>
