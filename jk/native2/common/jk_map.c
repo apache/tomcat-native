@@ -93,6 +93,7 @@ static void *jk_map_default_get(jk_env_t *env, jk_map_t *m,
 
     for(i = 0 ; i < mPriv->size ; i++) {
         if(0 == strcmp(mPriv->names[i], name)) {
+            /*fprintf(stderr, "jk_map.get found %s %s \n", name, mPriv->values[i]  ); */
             return  mPriv->values[i];
         }
     }
@@ -138,6 +139,7 @@ static int jk_map_default_put(jk_env_t *env, jk_map_t *m,
         mPriv->names[mPriv->size] =  (char *)name; 
         */
         mPriv->names[mPriv->size] = m->pool->pstrdup(env,m->pool, name);
+        /* fprintf(stderr, "jk_map.set %s %s \n", name, value  ); */
         mPriv->size ++;
         rc = JK_TRUE;
     }
@@ -286,10 +288,13 @@ char *jk_map_getStrProp(jk_env_t *env, jk_map_t *m,
 {
     char buf[1024];
 
-    if( m==NULL || objType==NULL || objName==NULL || pname==NULL ) {
+    if( m==NULL || objName==NULL || pname==NULL ) {
         return def;
     }
-    sprintf(buf, "%s.%s.%s", objType, objName, pname);
+    if( objType==NULL ) 
+        sprintf(buf, "%s.%s", objName, pname);
+    else
+        sprintf(buf, "%s.%s.%s", objType, objName, pname);
     return m->get(env, m, buf );
 }
 
@@ -352,6 +357,7 @@ int jk_map_str2int(jk_env_t *env, char *val )
 char **jk_map_split(jk_env_t *env, jk_map_t *m,
                     jk_pool_t *pool,
                     const char *listStr,
+                    const char *sep,
                     unsigned *list_len )
 {
     char **ar = NULL;
@@ -360,10 +366,14 @@ char **jk_map_split(jk_env_t *env, jk_map_t *m,
     char *v;
     char *l;
 
-    if( pool == NULL )
-        pool=m->pool;
+    if( sep==NULL )
+        sep=" \t,*";
     
-    *list_len = 0;
+    if( pool == NULL && m!=NULL )
+        pool=m->pool;
+
+    if( list_len != NULL )
+        *list_len = 0;
 
     if(listStr==NULL)
         return NULL;
@@ -379,8 +389,9 @@ char **jk_map_split(jk_env_t *env, jk_map_t *m,
      * strtok also by a "*"
      */
 
-    for(l = strtok(v, " \t,*") ; l ; l = strtok(NULL, " \t,*")) {
-        if(idex == capacity) {
+    for(l = strtok(v, sep) ; l ; l = strtok(NULL, sep)) {
+        /* We want at least one space after idex for the null*/
+        if(idex+1 >= capacity) {
             ar = pool->realloc(env, pool, 
                                sizeof(char *) * (capacity + 5),
                                ar,
@@ -393,8 +404,12 @@ char **jk_map_split(jk_env_t *env, jk_map_t *m,
         ar[idex] = pool->pstrdup(env, pool, l);
         idex ++;
     }
-        
-    *list_len = idex;
+
+    /* Append a NULL, we have space */
+    ar[idex]=NULL;
+
+    if( list_len != NULL )
+        *list_len = idex;
 
     return ar;
 }
@@ -569,9 +584,9 @@ char **jk_map_getValues(jk_env_t *env, jk_map_t *m,
  */
 char *jk_map_replaceProperties(jk_env_t *env, jk_map_t *m,
                                struct jk_pool *resultPool, 
-                               const char *value)
+                               char *value)
 {
-    char *rc = (char *)value;
+    char *rc = value;
     char *env_start = rc;
     int rec = 0;
 
@@ -587,10 +602,10 @@ char *jk_map_replaceProperties(jk_env_t *env, jk_map_t *m,
             *env_end = ')';
 
             env_value = m->get(env, m, env_name);
-            
-	    if(env_value != NULL ) {
+	    if(env_value == NULL ) {
 	      env_value=getenv( env_name );
 	    }
+            /* fprintf(stderr, "XXXjk_map %s %s \n", env_name, env_value ); */
 
             if(env_value != NULL ) {
                 int offset=0;

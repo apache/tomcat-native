@@ -305,7 +305,7 @@ static int JK_METHOD validate(jk_env_t *env, jk_worker_t *_this,
     }
 
     worker_names=jk_map_split( env, props, props->pool,
-                               tmp, &num_of_workers );
+                               tmp, NULL, &num_of_workers );
 
     if( worker_names==NULL || num_of_workers==0 ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
