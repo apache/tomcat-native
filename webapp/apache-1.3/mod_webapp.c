@@ -451,6 +451,7 @@ static int wam_invoke(request_rec *r) {
     req->user=apr_pstrdup(req->pool,con->user);
     req->auth=apr_pstrdup(req->pool,con->ap_auth_type);
     req->clen=0;
+    req->ctyp="\0";
     req->rlen=0;
 
     /* Copy headers into webapp request structure */
@@ -467,6 +468,8 @@ static int wam_invoke(request_rec *r) {
                                     apr_pstrdup(req->pool,ele[x].val));
             if (strcasecmp(ele[x].key,"Content-Length")==0)
                 req->clen=atol(ele[x].val);
+            if (strcasecmp(ele[x].key,"Content-Type")==0)
+                req->ctyp=apr_pstrdup(req->pool,ele[x].val);
         }
     }
 
