@@ -28,6 +28,8 @@
   <!-- The locations of necessary jar files -->
   <property name="tomcat-util.jar"  value="../util/build/lib/tomcat-util.jar"/>
   <property name="tomcat-coyote.jar" value="../coyote/build/lib/tomcat-coyote.jar"/>
+  <property name="tomcat33-coyote.jar" 
+          value="../coyote/build/lib/tomcat33-coyote.jar"/>
   <property name="junit.jar"        value="${junit.home}/junit.jar"/>
 
 
@@ -166,6 +168,8 @@
              tofile="${build.home}/lib/tomcat-util.jar" />
     <copy      file="${tomcat-coyote.jar}" 
              tofile="${build.home}/lib/tomcat-coyote.jar" />
+    <copy      file="${tomcat33-coyote.jar}" 
+             tofile="${build.home}/lib/tomcat33-coyote.jar" />
   </target>
 
 
