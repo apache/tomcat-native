@@ -328,7 +328,7 @@
   -->
   <target
       name="docs.check"
-      depends="prepare"
+      depends="detect"
       description="Fail if we don't find Xalan"
       unless="avail.xalan">
  
