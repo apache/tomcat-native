@@ -30,7 +30,11 @@
 #define jk_gettid()    ((int)GetCurrentThreadId())
 #elif defined(NETWARE)
 #define jk_gettid()    ((int)GetThreadID())
+#if !defined(__NOVELL_LIBC__)
+#define getpid()       ((int)GetThreadGroupID())
+#endif /* __NOVELL_LIBC__ */
 #endif
+
 
 /*
  * All WIN32 code is MT, UNIX code that uses pthreads is marked by the POSIX 
