@@ -777,6 +777,9 @@ static int ParseHeaders(private_ws_t *ws, const char *hdrs, int hdrsz, jk_ws_ser
 	const char *name, *nameEnd;
 	const char *value, *valueEnd;
 
+    	/* Clear RECO status */
+    	s->reco_status  = RECO_NONE;
+
 	while (hdrs < limit)
 	{
 		/* Skip line *before* doing anything, cos we want to lose the first line which

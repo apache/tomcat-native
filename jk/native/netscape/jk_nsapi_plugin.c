@@ -404,6 +404,9 @@ static int init_ws_service(nsapi_private_data_t *private_data,
     s->read = ws_read;
     s->write = ws_write;
     
+    /* Clear RECO status */
+    s->reco_status  = RECO_NONE;
+
     s->auth_type        = pblock_findval("auth-type", private_data->rq->vars);
     s->remote_user      = pblock_findval("auth-user", private_data->rq->vars);
 
