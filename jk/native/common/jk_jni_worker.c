@@ -337,6 +337,7 @@ static int JK_METHOD done(jk_endpoint_t **e,
 
 static int JK_METHOD validate(jk_worker_t *pThis,
                               jk_map_t *props,
+                              jk_worker_env_t *we,
                               jk_logger_t *l)
 {
     jni_worker_t *p;
@@ -451,6 +452,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
 static int JK_METHOD init(jk_worker_t *pThis,
                           jk_map_t *props,
+                          jk_worker_env_t *we,
                           jk_logger_t *l)
 {
     jni_worker_t *p;

@@ -72,6 +72,7 @@ static worker_factory get_factory_for(char *type);
 static int build_worker_map(jk_map_t *init_data, 
                             char **worker_list, 
                             unsigned num_of_workers,
+                            jk_worker_env_t *we,
                             jk_logger_t *l);
 
 int wc_open(jk_map_t *init_data,
@@ -96,6 +97,7 @@ int wc_open(jk_map_t *init_data,
     if(!build_worker_map(init_data, 
                          worker_list, 
                          num_of_workers,
+                         we,
                          l)) {
         close_workers();
         return JK_FALSE;
@@ -135,6 +137,7 @@ jk_worker_t *wc_get_worker_for_name(const char *name,
 int wc_create_worker(const char *name, 
                      jk_map_t *init_data,
                      jk_worker_t **rc,
+                     jk_worker_env_t *we,
                      jk_logger_t *l)
 {
     jk_log(l, JK_LOG_DEBUG, "Into wc_create_worker\n"); 
@@ -161,14 +164,14 @@ int wc_create_worker(const char *name,
         }
         
         jk_log(l, JK_LOG_DEBUG, "wc_create_worker, about to validate and init %s\n", name);         
-        if(!w->validate(w, init_data, l)) {
+        if(!w->validate(w, init_data, we, l)) {
             w->destroy(&w, l);
             jk_log(l, JK_LOG_ERROR, "wc_create_worker validate failed for %s\n", 
                    name); 
             return JK_FALSE;
         }
     
-        if(!w->init(w, init_data, l)) {
+        if(!w->init(w, init_data, we, l)) {
             w->destroy(&w, l);
             jk_log(l, JK_LOG_ERROR, "wc_create_worker init failed for %s\n", 
                    name); 
@@ -202,6 +205,7 @@ static void close_workers(void)
 static int build_worker_map(jk_map_t *init_data, 
                             char **worker_list, 
                             unsigned num_of_workers,
+                            jk_worker_env_t *we,
                             jk_logger_t *l)
 {
     unsigned i;
@@ -215,7 +219,7 @@ static int build_worker_map(jk_map_t *init_data,
         jk_log(l, JK_LOG_DEBUG, 
                "build_worker_map, creating worker %s\n", worker_list[i]); 
 
-        if(wc_create_worker(worker_list[i], init_data, &w, l)) {
+        if(wc_create_worker(worker_list[i], init_data, &w, we, l)) {
             jk_worker_t *oldw = NULL;
             if(!map_put(worker_map, worker_list[i], w, (void *)&oldw)) {
                 w->destroy(&w, l);

@@ -67,17 +67,19 @@
 /* -------------------- Method -------------------- */
 static int JK_METHOD validate(jk_worker_t *pThis,
                               jk_map_t *props,                            
+                              jk_worker_env_t *we,
                               jk_logger_t *l)
 {
-	return (ajp_validate(pThis, props, l, AJP13_PROTO));
+	return (ajp_validate(pThis, props, we, l, AJP13_PROTO));
 }
 
 
 static int JK_METHOD init(jk_worker_t *pThis,
                           jk_map_t *props, 
+                          jk_worker_env_t *we,
                           jk_logger_t *l)
 {
-	return (ajp_init(pThis, props, l, AJP13_PROTO));
+	return (ajp_init(pThis, props, we, l, AJP13_PROTO));
 }
 
 
@@ -134,6 +136,8 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
     aw->worker.get_endpoint    = get_endpoint;
     aw->worker.destroy         = destroy;
     
+	aw->logon				   = NULL;	/* No Logon on AJP13 */
+
     *w = &aw->worker;
     return JK_TRUE;
 }

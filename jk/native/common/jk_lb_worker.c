@@ -398,6 +398,7 @@ static int JK_METHOD done(jk_endpoint_t **e,
 
 static int JK_METHOD validate(jk_worker_t *pThis,
                               jk_map_t *props,                            
+                              jk_worker_env_t *we,
                               jk_logger_t *l)
 {
     jk_log(l, JK_LOG_DEBUG, 
@@ -432,6 +433,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 if(!wc_create_worker(p->lb_workers[i].name, 
                                      props, 
                                      &(p->lb_workers[i].w), 
+                                     we,
                                      l) || !p->lb_workers[i].w) {
                     break;
                 }
@@ -458,6 +460,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 
 static int JK_METHOD init(jk_worker_t *pThis,
                           jk_map_t *props, 
+                          jk_worker_env_t *we,
                           jk_logger_t *log)
 {
     /* Nothing to do for now */

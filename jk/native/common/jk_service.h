@@ -69,11 +69,28 @@
 #include "jk_global.h"
 #include "jk_logger.h"
 #include "jk_pool.h"
+#include "jk_uri_worker_map.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
     
+/*
+ * Env Information to be provided to worker at init time
+ * With AJP14 support we need to have access to many informations
+ * about web-server, uri to worker map....
+ */
+
+struct jk_worker_env {
+
+    /* The URI to WORKER map, will be feeded by AJP14 autoconf feature */
+    jk_uri_worker_map_t *uri_to_worker;
+
+    /* Web-Server we're running on (Apache/IIS/NES) */
+    char          		*server_name;
+};
+typedef struct jk_worker_env jk_worker_env_t;
+
 struct jk_ws_service;
 struct jk_endpoint;
 struct jk_worker;
@@ -359,6 +376,7 @@ struct jk_worker {
      */
     int (JK_METHOD *validate)(jk_worker_t *w,
                               jk_map_t *props, 
+                              jk_worker_env_t *we,
                               jk_logger_t *l);
 
     /*
@@ -367,6 +385,7 @@ struct jk_worker {
      */
     int (JK_METHOD *init)(jk_worker_t *w,
                           jk_map_t *props, 
+                          jk_worker_env_t *we,
                           jk_logger_t *l);
 
 

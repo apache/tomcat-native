@@ -72,22 +72,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-/*
- * Env Information to be provided to worker at init time
- * With AJP14 support we need to have access to many informations
- * about web-server, uri to worker map....
- */
-
-struct jk_worker_env {
-
-	/* The URI to WORKER map, will be feeded by AJP14 autoconf feature */
-    jk_uri_worker_map_t	*uri_to_worker;
-
-	/* Web-Server we're running on (Apache/IIS/NES) */
-	const char 			*server_name;
-};
-typedef struct jk_worker_env jk_worker_env_t;
-
 int wc_open(jk_map_t *init_data,
 			jk_worker_env_t *we,
             jk_logger_t *l);
@@ -100,6 +84,7 @@ jk_worker_t *wc_get_worker_for_name(const char *name,
 int wc_create_worker(const char *name, 
                      jk_map_t *init_data,
                      jk_worker_t **rc,
+                     jk_worker_env_t *we,
                      jk_logger_t *l);
 
 
