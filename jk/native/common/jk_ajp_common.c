@@ -843,8 +843,9 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
                    "connected sd = %d to %s",
                    ae->sd, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
 
-            /* set last_access */
-            ae->last_access = time(NULL);
+            /* set last_access only if needed */
+            if (ae->worker->cache_timeout > 0 || ae->worker->recycle_timeout > 0)
+                ae->last_access = time(NULL);
             if (ae->worker->socket_timeout) {
                 int rc = 0;
                 if ((rc = jk_is_socket_connected(ae->sd, ae->worker->socket_timeout)) != 1) {
@@ -1159,13 +1160,7 @@ static int ajp_send_request(jk_endpoint_t *e,
      */
     while ((ae->sd > 0)) {
         err = 0;
-        /* handle cping/cpong before request if timeout is set */
-        if (ae->worker->prepost_timeout != 0) {
-            if (ajp_handle_cping_cpong(ae, ae->worker->prepost_timeout, l) ==
-                JK_FALSE)
-                err++;
-        }
-        else if (ae->worker->socket_timeout) {
+        if (ae->worker->socket_timeout) {
             int rc = 0;
             if ((rc = jk_is_socket_connected(ae->sd, ae->worker->socket_timeout)) != 1) {
                     jk_log(l, JK_LOG_INFO,
@@ -1174,6 +1169,15 @@ static int ajp_send_request(jk_endpoint_t *e,
                 ae->sd = -1;
                 err++;
             }
+        }
+        else if (ae->worker->prepost_timeout != 0 && !err) {
+            /* handle cping/cpong if prepost_timeout is set
+             * If the socket is disconnected no need to handle
+             * the cping/cpong
+             */
+            if (ajp_handle_cping_cpong(ae, ae->worker->prepost_timeout, l) ==
+                JK_FALSE)
+                err++;
         }
 
         /* If we got an error or can't send data, then try to get a pooled
