@@ -355,9 +355,13 @@ static int JK_METHOD jk2_channel_socket_send(jk_env_t *env, jk_channel_t *ch,
     len=msg->len;
     b=msg->buf;
 
-    
+
     while(sent < len) {
+#ifdef WIN32
+        int this_time = send(sd, (char *)b + sent , len - sent, 0);
+#else
         int this_time = write(sd, (char *)b + sent , len - sent);
+#endif
 	if(0 == this_time) {
 	    return -2;
 	}
@@ -393,9 +397,16 @@ static int JK_METHOD jk2_channel_socket_readN( jk_env_t *env,
     if( sd<0 ) return JK_ERR;
     
     while(rdlen < len) {
+#ifdef WIN32
+	/* WIN32 read cannot operate on sockets */
+	int this_time = recv(sd, 
+			     (char *)b + rdlen, 
+			     len - rdlen, 0);	
+#else
 	int this_time = read(sd, 
 			     (char *)b + rdlen, 
 			     len - rdlen);	
+#endif
 	if(-1 == this_time) {
 #ifdef WIN32
 	    if(SOCKET_ERROR == this_time) { 
@@ -430,9 +441,16 @@ static int JK_METHOD jk2_channel_socket_readN2( jk_env_t *env,
     if( sd<0 ) return JK_ERR;
     
     while(rdlen < minLen ) {
+#ifdef WIN32
+	/* WIN32 read cannot operate on sockets */
+	int this_time = recv(sd, 
+			     (char *)b + rdlen, 
+			     maxLen - rdlen, 0);	
+#else
 	int this_time = read(sd, 
 			     (char *)b + rdlen, 
-			     maxLen - rdlen);
+			     maxLen - rdlen);	
+#endif
 /*         fprintf(stderr, "XXX received %d\n", this_time ); */
 	if(-1 == this_time) {
 #ifdef WIN32
