@@ -644,7 +644,7 @@ static void jk2_child_init(apr_pool_t * pconf, server_rec * s)
              if (workerEnv->childId == -1) {
                  env->l->jkLog(env, env->l, JK_LOG_ERROR, 
                     "jk2_init() Can't find child %d in any of the %d scoreboard slots\n",
-                     proc.pid, max_daemons_limit);
+                     proc.pid, workerEnv->maxDaemons);
                  workerEnv->childId = -2;
              }
         }
