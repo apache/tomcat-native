@@ -40,20 +40,6 @@ import java.util.logging.Logger;
  */
 public final class ClassLoaderLogManager extends LogManager {
 
-    private static void doSetParentLogger(final Logger logger,
-            final Logger parent) {
-        if (System.getSecurityManager() != null) {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    logger.setParent(parent);
-                    return null;
-                }
-            });
-        } else {
-            logger.setParent(parent);
-        }
-    }
-
     private final Map classLoaderLoggers = new WeakHashMap();
 
     private Logger rootLogger;
@@ -86,6 +72,9 @@ public final class ClassLoaderLogManager extends LogManager {
         }
         ClassLoader classLoader = 
             Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+            return super.addLogger(logger);
+        }
         ClassLoaderLogInfo info = getClassLoaderInfo(classLoader);
         if (info.loggers.containsKey(loggerName)) {
             return false;
@@ -196,6 +185,9 @@ public final class ClassLoaderLogManager extends LogManager {
         }
         final ClassLoader classLoader = Thread.currentThread()
                 .getContextClassLoader();
+        if (classLoader == null) {
+            return super.getLogger(name);
+        }
         final Map loggers = getClassLoaderInfo(classLoader).loggers;
         return (Logger) loggers.get(name);
     }
@@ -208,6 +200,9 @@ public final class ClassLoaderLogManager extends LogManager {
         }
         final ClassLoader classLoader = Thread.currentThread()
                 .getContextClassLoader();
+        if (classLoader == null) {
+            return super.getLoggerNames();
+        }
         final Map loggers = getClassLoaderInfo(classLoader).loggers;
         return Collections.enumeration(loggers.keySet());
     }
@@ -218,12 +213,15 @@ public final class ClassLoaderLogManager extends LogManager {
      * context.
      */    
     public String getProperty(String name) {
+        final ClassLoader classLoader = Thread.currentThread()
+            .getContextClassLoader();
+        if (classLoader == null) {
+            return super.getProperty(name);
+        }
         String prefix = (String) this.prefix.get();
         if (prefix != null) {
             name = prefix + name;
         }
-        final ClassLoader classLoader = Thread.currentThread()
-                .getContextClassLoader();
         ClassLoaderLogInfo info = getClassLoaderInfo(classLoader);
         String result = info.props.getProperty(name);
         // If the property was not found, and the current classloader had no 
@@ -263,10 +261,6 @@ public final class ClassLoaderLogManager extends LogManager {
     }
     
     private ClassLoaderLogInfo getClassLoaderInfo(final ClassLoader classLoader) {
-        
-        if (classLoader == null) {
-            return null;
-        }
         
         ClassLoaderLogInfo info = (ClassLoaderLogInfo) classLoaderLoggers
                 .get(classLoader);
@@ -363,6 +357,20 @@ public final class ClassLoaderLogManager extends LogManager {
             }
         }
         return info;
+    }
+
+    private static void doSetParentLogger(final Logger logger,
+            final Logger parent) {
+        if (System.getSecurityManager() != null) {
+            AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    logger.setParent(parent);
+                    return null;
+                }
+            });
+        } else {
+            logger.setParent(parent);
+        }
     }
 
     private static final class LogNode {
