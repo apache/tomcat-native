@@ -133,7 +133,7 @@ public class FileTester {
         // The second argument is the output file
         File outputFile = new File(args[1]);
 
-        Adapter testAdapter = new TestAdapter();
+        Adapter testAdapter = new RandomAdapter();
         Connector http11Connector = new Http11Connector();
 
         FileTester tester = new FileTester(testAdapter, http11Connector,
