@@ -74,26 +74,26 @@
 #include "jk_env.h"
 #include "jk_uriMap.h"
 
-int JK_METHOD jk_uriMap_factory( jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, void **result,
                                  const char *type, const char *name);
 
-static int jk_uriMap_init( jk_env_t *env, jk_uriMap_t *_this,
-                          jk_workerEnv_t *workerEnv,
-                          jk_map_t *init_data );
+static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this,
+                           jk_workerEnv_t *workerEnv,
+                           jk_map_t *init_data);
 
-static jk_uriEnv_t *jk_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
-                                         const char *vhost,
-                                         const char *puri, 
-                                         const char *pworker );
+static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
+                                          const char *vhost,
+                                          const char *puri, 
+                                          const char *pworker);
 
-static INLINE const char *findExtension(  jk_env_t *env, const char *uri );
+static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri);
 
-static jk_uriEnv_t *jk_uriMap_mapUri( jk_env_t *env, jk_uriMap_t *_this,
-                                     const char *vhost,
-                                     const char *uri );
+static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
+                                      const char *vhost,
+                                      const char *uri);
 
-static int jk_uriMap_checkUri( jk_env_t *env, jk_uriMap_t *_this, 
-                              const char *uri );
+static int jk2_uriMap_checkUri(jk_env_t *env, jk_uriMap_t *_this, 
+                               const char *uri);
 
 /*
  * We are now in a security nightmare, it maybe that somebody sent 
@@ -106,8 +106,8 @@ static int jk_uriMap_checkUri( jk_env_t *env, jk_uriMap_t *_this,
  *
  * Was: check_security_fraud
  */
-static int jk_uriMap_checkUri( jk_env_t *env, jk_uriMap_t *_this, 
-                              const char *uri )
+static int jk2_uriMap_checkUri(jk_env_t *env, jk_uriMap_t *_this, 
+                               const char *uri)
 {
     int i;    
 
@@ -150,7 +150,7 @@ static int jk_uriMap_checkUri( jk_env_t *env, jk_uriMap_t *_this,
 /*
  * Ensure there will be memory in context info to store Context Bases
  */
-static int uriMap_realloc( jk_env_t *env,jk_uriMap_t *_this)
+static int jk2_uriMap_realloc(jk_env_t *env,jk_uriMap_t *_this)
 {
     if (_this->size == _this->capacity) {
         jk_uriEnv_t **uwr=NULL;
@@ -174,8 +174,8 @@ static int uriMap_realloc( jk_env_t *env,jk_uriMap_t *_this)
     return JK_TRUE;
 }
 
-static jk_uriEnv_t *jk_uriMap_createUriEnv( jk_env_t *env, jk_uriMap_t *_this,
-                                           const char *vhost, const char *uri )
+static jk_uriEnv_t *jk2_uriMap_createUriEnv(jk_env_t *env, jk_uriMap_t *_this,
+                                            const char *vhost, const char *uri)
 {
     jk_uriEnv_t *uriEnv=(jk_uriEnv_t *)_this->pool->calloc(env, _this->pool,
                                                            sizeof(jk_uriEnv_t));
@@ -187,10 +187,10 @@ static jk_uriEnv_t *jk_uriMap_createUriEnv( jk_env_t *env, jk_uriMap_t *_this,
     return uriEnv;
 }
 
-static jk_uriEnv_t *jk_uriMap_addMapping( jk_env_t *env, jk_uriMap_t *_this,
-                                         const char *vhost,
-                                         const char *puri, 
-                                         const char *pworker )
+static jk_uriEnv_t *jk2_uriMap_addMapping(jk_env_t *env, jk_uriMap_t *_this,
+                                          const char *vhost,
+                                          const char *puri, 
+                                          const char *pworker)
 {
     jk_uriEnv_t *uwr;
     char *uri;
@@ -199,14 +199,14 @@ static jk_uriEnv_t *jk_uriMap_addMapping( jk_env_t *env, jk_uriMap_t *_this,
     char *asterisk;
 
     /* make sure we have space */
-    err=uriMap_realloc(env, _this);
+    err=jk2_uriMap_realloc(env, _this);
     if (err != JK_TRUE ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "uriMap.addMappint() OutOfMemoryException\n");
         return NULL;
     }
 
-    uwr = jk_uriMap_createUriEnv(env, _this,vhost,puri);
+    uwr = jk2_uriMap_createUriEnv(env, _this,vhost,puri);
     
     uri = _this->pool->pstrdup(env, _this->pool, puri);
     uwr->uri = _this->pool->pstrdup(env, _this->pool, uri);
@@ -316,9 +316,9 @@ static jk_uriEnv_t *jk_uriMap_addMapping( jk_env_t *env, jk_uriMap_t *_this,
     return uwr;
 }
 
-static int jk_uriMap_init( jk_env_t *env, jk_uriMap_t *_this,
-                          jk_workerEnv_t *workerEnv,
-                          jk_map_t *init_data )
+static int jk2_uriMap_init(jk_env_t *env, jk_uriMap_t *_this,
+                           jk_workerEnv_t *workerEnv,
+                           jk_map_t *init_data)
 {
     int rc=JK_TRUE;
     int sz;
@@ -329,7 +329,7 @@ static int jk_uriMap_init( jk_env_t *env, jk_uriMap_t *_this,
                                            
     sz = init_data->size(env, init_data);
 
-    _this->debug=jk_map_getIntProp(env,
+    _this->debug=jk2_map_getIntProp(env,
                                    init_data,"urimap", "default", "debug", 0 );
     
     for(i = 0; i < sz ; i++) {
@@ -369,7 +369,7 @@ static int jk_uriMap_init( jk_env_t *env, jk_uriMap_t *_this,
     return rc;
 }
 
-static void jk_uriMap_destroy( jk_env_t *env, jk_uriMap_t *_this)
+static void jk2_uriMap_destroy(jk_env_t *env, jk_uriMap_t *_this)
 {
 
     if( _this->debug > 0 ) 
@@ -383,7 +383,7 @@ static void jk_uriMap_destroy( jk_env_t *env, jk_uriMap_t *_this)
 
 /* returns the index of the last occurrence of the 'ch' character
    if ch=='\0' returns the length of the string str  */
-static INLINE int last_index_of(const char *str,char ch)
+static INLINE int jk2_last_index_of(const char *str,char ch)
 {
     const char *str_minus_one=str-1;
     const char *s=str+strlen(str);
@@ -397,7 +397,7 @@ static INLINE int last_index_of(const char *str,char ch)
    we check only the last component, as required by
    servlet spec
 */
-static INLINE const char *findExtension( jk_env_t *env, const char *uri ) {
+static INLINE const char *jk2_findExtension(jk_env_t *env, const char *uri) {
     int suffix_start;
     const char *suffix;
     
@@ -420,9 +420,9 @@ static INLINE const char *findExtension( jk_env_t *env, const char *uri ) {
 
 #define SAFE_URI_SIZE 8192
 
-static jk_uriEnv_t *jk_uriMap_mapUri( jk_env_t *env, jk_uriMap_t *_this,
-                                     const char *vhost,
-                                     const char *uri )
+static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *_this,
+                                      const char *vhost,
+                                      const char *uri)
 {
     int i;
     int best_match = -1;
@@ -472,7 +472,7 @@ static jk_uriEnv_t *jk_uriMap_mapUri( jk_env_t *env, jk_uriMap_t *_this,
     uriLen=strlen( uri );
     
     /* Only once, no need to compute it for each extension match */
-    suffix=findExtension( env, uri );
+    suffix=jk2_findExtension( env, uri );
 
     for(i = 0 ; i < _this->size ; i++) {
         jk_uriEnv_t *uwr = _this->maps[i];
@@ -509,7 +509,7 @@ static jk_uriEnv_t *jk_uriMap_mapUri( jk_env_t *env, jk_uriMap_t *_this,
             }
         } else if(MATCH_TYPE_GENERAL_SUFFIX == uwr->match_type) {
             if(uwr->prefix_len >= longest_match) {
-                int suffix_start=last_index_of(uri,uwr->suffix[0]);
+                int suffix_start=jk2_last_index_of(uri,uwr->suffix[0]);
                 if (suffix_start>=0 && 0==strcmp(uri+suffix_start,uwr->suffix)) {
                     if( _this->debug > 0 )
                         env->l->jkLog(env, env->l, JK_LOG_INFO,
@@ -564,7 +564,7 @@ static jk_uriEnv_t *jk_uriMap_mapUri( jk_env_t *env, jk_uriMap_t *_this,
     return NULL;
 }
 
-int JK_METHOD jk_uriMap_factory( jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk2_uriMap_factory(jk_env_t *env, jk_pool_t *pool, void **result,
                                  const char *type, const char *name)
 {
     jk_uriMap_t *_this;
@@ -584,11 +584,11 @@ int JK_METHOD jk_uriMap_factory( jk_env_t *env, jk_pool_t *pool, void **result,
 
     *result=_this;
 
-    _this->init=jk_uriMap_init;
-    _this->destroy=jk_uriMap_destroy;
-    _this->addMapping=jk_uriMap_addMapping;
-    _this->checkUri=jk_uriMap_checkUri;
-    _this->mapUri=jk_uriMap_mapUri;
+    _this->init=jk2_uriMap_init;
+    _this->destroy=jk2_uriMap_destroy;
+    _this->addMapping=jk2_uriMap_addMapping;
+    _this->checkUri=jk2_uriMap_checkUri;
+    _this->mapUri=jk2_uriMap_mapUri;
     _this->maps = NULL;
     _this->debug= 1;
             

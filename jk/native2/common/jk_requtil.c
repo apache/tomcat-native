@@ -70,7 +70,7 @@
 
 #define CHUNK_BUFFER_PAD          (12)
 
-const char *response_trans_headers[] = {
+static const char *response_trans_headers[] = {
     "Content-Type", 
     "Content-Language", 
     "Content-Length", 
@@ -89,7 +89,7 @@ const char *response_trans_headers[] = {
  *
  * long_res_header_for_sc
  */
-const char *jk_requtil_getHeaderById(jk_env_t *env, int sc) 
+const char *jk2_requtil_getHeaderById(jk_env_t *env, int sc) 
 {
     const char *rc = NULL;
     if(sc <= SC_RES_HEADERS_NUM && sc > 0) {
@@ -104,7 +104,7 @@ const char *jk_requtil_getHeaderById(jk_env_t *env, int sc)
  *
  * sc_for_req_method
  */
-int jk_requtil_getMethodId(jk_env_t *env, const char *method,
+int jk2_requtil_getMethodId(jk_env_t *env, const char *method,
                            unsigned char *sc) 
 {
     int rc = JK_TRUE;
@@ -162,7 +162,7 @@ int jk_requtil_getMethodId(jk_env_t *env, const char *method,
  *
  * sc_for_req_header
  */
-int  jk_requtil_getHeaderId(jk_env_t *env, const char *header_name,
+int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
                             unsigned short *sc) 
 {
     switch(header_name[0]) {
@@ -251,7 +251,7 @@ int  jk_requtil_getHeaderId(jk_env_t *env, const char *header_name,
 
 /** Retrieve the cookie with the given name
  */
-char *jk_requtil_getCookieByName(jk_env_t *env, jk_ws_service_t *s,
+char *jk2_requtil_getCookieByName(jk_env_t *env, jk_ws_service_t *s,
                                  const char *name)
 {
     int i;
@@ -289,7 +289,7 @@ char *jk_requtil_getCookieByName(jk_env_t *env, jk_ws_service_t *s,
 
 /* Retrieve the parameter with the given name
  */
-char *jk_requtil_getPathParam(jk_env_t *env, jk_ws_service_t *s,
+char *jk2_requtil_getPathParam(jk_env_t *env, jk_ws_service_t *s,
                               const char *name)
 {
     char *id_start = NULL;
@@ -323,12 +323,12 @@ char *jk_requtil_getPathParam(jk_env_t *env, jk_ws_service_t *s,
 /** Retrieve session id from the cookie or the parameter                      
  * (parameter first)
  */
-char *jk_requtil_getSessionId(jk_env_t *env, jk_ws_service_t *s)
+char *jk2_requtil_getSessionId(jk_env_t *env, jk_ws_service_t *s)
 {
     char *val;
-    val = jk_requtil_getPathParam(env, s, JK_PATH_SESSION_IDENTIFIER);
+    val = jk2_requtil_getPathParam(env, s, JK_PATH_SESSION_IDENTIFIER);
     if(!val) {
-        val = jk_requtil_getCookieByName(env, s, JK_SESSION_IDENTIFIER);
+        val = jk2_requtil_getCookieByName(env, s, JK_SESSION_IDENTIFIER);
     }
     return val;
 }
@@ -337,9 +337,9 @@ char *jk_requtil_getSessionId(jk_env_t *env, jk_ws_service_t *s)
  *  the id of the worker that generated the session and where all
  *  further requests in that session will be sent.
 */
-char *jk_requtil_getSessionRoute(jk_env_t *env, jk_ws_service_t *s)
+char *jk2_requtil_getSessionRoute(jk_env_t *env, jk_ws_service_t *s)
 {
-    char *sessionid = jk_requtil_getSessionId(env, s);
+    char *sessionid = jk2_requtil_getSessionId(env, s);
     char *ch;
 
     if(!sessionid) {
@@ -367,7 +367,7 @@ char *jk_requtil_getSessionRoute(jk_env_t *env, jk_ws_service_t *s)
  * Socket API didn't garanty all the data will be kept in a single 
  * read, so we must loop up to all awaited data are received 
  */
-int jk_requtil_readFully(jk_env_t *env, jk_ws_service_t *s,
+int jk2_requtil_readFully(jk_env_t *env, jk_ws_service_t *s,
                          unsigned char *buf,
                          unsigned  len)
 {
@@ -409,7 +409,7 @@ int jk_requtil_readFully(jk_env_t *env, jk_ws_service_t *s,
  * 
  * jk_init_ws_service
  */ 
-void jk_requtil_initRequest(jk_env_t *env, jk_ws_service_t *s)
+void jk2_requtil_initRequest(jk_env_t *env, jk_ws_service_t *s)
 {
     s->ws_private           = NULL;
     s->method               = NULL;

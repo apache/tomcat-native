@@ -86,7 +86,7 @@
 
 #define JK_AJP13_SHUTDOWN           (unsigned char)7
 
-#define JK_AJP13_PING           (unsigned char)8
+#define JK_AJP13_PING               (unsigned char)8
 
 /* 
  * Build the ping cmd. Tomcat will get control and will be able 
@@ -99,8 +99,8 @@
  * XXX Add optional Key/Value set .
  *  
  */
-int jk_serialize_ping(jk_env_t *env, jk_msg_t *msg,
-                      jk_endpoint_t *ae)
+int jk2_serialize_ping(jk_env_t *env, jk_msg_t *msg,
+                       jk_endpoint_t *ae)
 {
     int rc;
     
@@ -169,15 +169,15 @@ AJPV13_REQUEST/AJPV14_REQUEST=
 
     Was: ajp_marshal_into_msgb
  */
-int jk_serialize_request13(jk_env_t *env, jk_msg_t *msg,
-                           jk_ws_service_t *s,
-                           jk_endpoint_t *ae)
+int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
+                            jk_ws_service_t *s,
+                            jk_endpoint_t *ae)
 {
     unsigned char method;
     int i;
     int headerCount;
 
-    if (!jk_requtil_getMethodId(env, s->method, &method)) { 
+    if (!jk2_requtil_getMethodId(env, s->method, &method)) { 
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "Error ajp_marshal_into_msgb - No such method %s\n",
                       s->method);
@@ -207,7 +207,7 @@ int jk_serialize_request13(jk_env_t *env, jk_msg_t *msg,
 
         char *name=s->headers_in->nameAt(env, s->headers_in, i);
 
-        if (jk_requtil_getHeaderId(env, name, &sc)) {
+        if (jk2_requtil_getHeaderId(env, name, &sc)) {
             if (msg->appendInt(env, msg, sc)) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "handle.request() Error serializing header id\n");
@@ -345,9 +345,9 @@ int jk_serialize_request13(jk_env_t *env, jk_msg_t *msg,
 
 /** The inital BODY chunk 
  */
-int jk_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
-                          jk_ws_service_t  *r,
-                          jk_endpoint_t *e)
+int jk2_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
+                           jk_ws_service_t  *r,
+                           jk_endpoint_t *e)
 {
     int len = r->left_bytes_to_send;
 
@@ -380,8 +380,8 @@ int jk_serialize_postHead(jk_env_t *env, jk_msg_t   *msg,
  * +-----------------------+
  *
  */
-int jk_serialize_shutdown(jk_env_t *env, jk_msg_t *msg,
-                          jk_ws_service_t  *r)
+int jk2_serialize_shutdown(jk_env_t *env, jk_msg_t *msg,
+                           jk_ws_service_t  *r)
 {
     int rc;
     
