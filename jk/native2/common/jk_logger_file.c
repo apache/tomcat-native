@@ -103,8 +103,17 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env, jk_logger_t *_this)
     apr_status_t rv;
     apr_file_t *oldF = (apr_file_t *) _this->logger_private;
 
+    int closeOld;
     apr_file_t *f = NULL;
     jk_workerEnv_t *workerEnv = env->getByName(env, "workerEnv");
+
+    /* workaround for APR insanity - APR closes the global system
+       stderr handle and invalidates all references to stderr if you
+       call apr_file_close on any stderr reference. Just don't close
+       stderr references. */
+    closeOld = oldF != NULL && _this->name != NULL &&
+        strcmp("stderr", _this->name) != 0;
+
     if (!_this->name) {
         _this->name = "${serverRoot}/logs/jk2.log";
     }
@@ -133,9 +142,11 @@ static int JK_METHOD jk2_logger_file_init(jk_env_t *env, jk_logger_t *_this)
     }
     _this->jkLog(env, _this, JK_LOG_INFO,
                  "Initializing log file %s\n", _this->name);
-    if (oldF) {
-        apr_file_close(oldF);
+
+    if (closeOld) {
+         apr_file_close(oldF);
     }
+
     return JK_OK;
 }
 
