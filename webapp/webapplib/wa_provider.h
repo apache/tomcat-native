@@ -84,6 +84,7 @@ extern wa_provider *wa_providers[];
 
 /* Pointers to the different providers */
 extern wa_provider wa_provider_info;
+extern wa_provider wa_provider_warp;
 
 /* Function prototype declaration */
 // Retrieve a provider.
