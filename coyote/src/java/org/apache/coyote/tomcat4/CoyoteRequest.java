@@ -98,6 +98,7 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.tomcat.util.http.Parameters;
 
+import org.apache.coyote.ActionCode;
 import org.apache.coyote.Request;
 
 import org.apache.catalina.Connector;
@@ -1032,14 +1033,14 @@ public class CoyoteRequest
      */
     public String getRemoteHost() {
         if (remoteHost == null) {
-            if (socket != null) {
-                if (connector.getEnableLookups()) {
-                    InetAddress inet = socket.getInetAddress();
-                    remoteHost = inet.getHostName();
-                } else {
-                    remoteHost = getRemoteAddr();
-                }
+            if (connector.getEnableLookups()) {
+                remoteHost = getRemoteAddr();
+            } else if (socket != null) {
+                InetAddress inet = socket.getInetAddress();
+                remoteHost = inet.getHostName();
             } else {
+                coyoteRequest.action
+                    (ActionCode.ACTION_REQ_HOST_ATTRIBUTE, coyoteRequest);
                 remoteHost = coyoteRequest.remoteHost().toString();
             }
         }
