@@ -1,0 +1,24 @@
+OEXT=.lo
+
+JNI_OBJECTS=jk_jnicb${OEXT} ../common/jk_map${OEXT} ../common/jk_util${OEXT} \
+	 ../common/jk_pool${OEXT}
+
+JAVA_INCL=-I @JAVA_HOME@/include -I @JAVA_HOME@/include/@OS@ -I../common
+CFLAGS=@apache_include@ @CFLAGS@ ${JAVA_INCL} -D_REENTRANT -Wall
+
+include ../scripts/build/rules.mk
+
+JK=.
+
+all: jni_connect.so
+
+jni_connect.la: ${JNI_OBJECTS}
+	$(LIBTOOL) --mode=link $(COMPILE) -o $@ -module  -export-dynamic -avoid-version ${JNI_OBJECTS} 
+
+jni_connect.so: jni_connect.la
+	cp $< $@ 
+
+install:
+
+clean:
+	rm -f *.o *.slo *.lo *.so *.la
