@@ -28,11 +28,12 @@ This directive is available in jk1.2.7 version and later.
 <attribute name="JkLogFile" required="false"><p>
 Full or server relative path to the Jakarta Tomcat Connector module log file
 </p></attribute>
-<attribute name="JkAutoMount" required="false"><p>
-Automatic mount points to a Tomcat worker
-</p></attribute>
 <attribute name="JkMount" required="false"><p>
 A mount point from a context to a Tomcat worker
+</p></attribute>
+<attribute name="JkUnMount" required="false"><p>
+A no mount point from a context to a Tomcat worker
+This directive is available in jk1.2.7 version and later.
 </p></attribute>
 <attribute name="JkMountCopy" required="false"><p>
 Should the base server mounts be copied to the virtual server.
@@ -324,14 +325,12 @@ The directive <b>JkEnvVar</b> allow you to forward an environment vars from Apac
 If you have created a custom or local version of mod_jk.conf-local as noted above, 
 you can change settings such as the workers or URL prefix.
 </p>
-
 <p>
 <b>JkMount</b> directive assign specific URLs to Tomcat. 
 In general the structure of a JkMount directive is:
 </p>
 
-<source>
-  
+<source>  
   JkMount [URL prefix] [Worker name]
 </source>
 
@@ -345,8 +344,21 @@ In general the structure of a JkMount directive is:
 </source>
 
 <p>
-You can use the JkMount directive at the top level or inside &lt;VirtualHost&gt; sections of your httpd.conf file.
+You can use the JkMount directive at the top level or inside &lt;VirtualHost&gt;
+sections of your httpd.conf file.
 </p>
+<p><b>JkUnmount</b> directive acts as an opposite to JkMount and blocks access
+to a particular URL. The purpose is to be able to filter out the particular content
+types from mounted context. The following example mounts /servlet/*
+context, but all .jpg files that belongs to that context are not served.
+</p>
+<source>
+  # send all requests ending with /servlet to worker1
+  JkMount /servlet/* worker1
+  # do not send requests ending with .gif to worker1
+  JkUnMount /servlet/*.gif worker1
+</source>
+
 </subsection>
  </section>
 </body>

@@ -66,9 +66,10 @@ Jakarta Binary Download</a> page.
 </subsection>
 
 <subsection name="What's the difference between JK and mod_jk ?">
+<br />
 <p>
 <b>JK</b> is a project covering web-servers to Tomcat connectors,
-whereas <b>mod_jk</b> is the <a href="jk/aphowto.html">Apache module</a> developped in JK.
+whereas <b>mod_jk</b> is the <a href="howto/apache.html">Apache module</a> developped in JK.
 </p>
 
 <p>

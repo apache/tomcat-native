@@ -39,10 +39,10 @@ To create the configure script just type :
 <subsection name="Using configure to build mod_jk">
 <p>The configure file produced using buildconf script will create all necesary make files.
 Here's how to use configure to prepare mod_jk for building, just type: 
-<source>
+<screen>
 <read />
 <type>./configure [autoconf arguments] [jakarta-tomcat-connectors arguments]</type>
-</source>
+</screen>
 </p>
 
 <p>

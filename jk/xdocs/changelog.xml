@@ -22,10 +22,37 @@
   </p>
 </section>
 
-<section name="JK 1">
+<section name="Changes from JK 1.2.6">
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Added new property named recover_time that can be used to change the
+      default 60 second recover time. (mturk)
+      </update>
+      <update>
+      Added custom retries for worker, so we don't depend on default setting.
+      If set to a number grater then 3, it will sleep for 100ms on retry greater
+      then 3 and then try again. (mturk)
+      </update>
+      <update>
+      Added JkWorkerProperty directive that enables omiting workers.properties file.
+      For example: JkWorkerProperty worker.ajp13a.port=8009. (mturk)
+      </update>
+      <fix>
+      Check all JSESSIONID cookies for a valid jvmRoute. If you have multiple Tomcats
+      with overlapping domains, then you can get multiple cookies without a defined order.
+      This will route correctly as long as the different domains don't have any
+      Tomcats in common. (billbarker)
+      </fix>
+      <update>
+      Added JkUnMount directive for negative mappings that works as opposite to JkMount directives.
+      It is used for blocking of particular URL or content type. (mturk)
+      </update>
+      <update>
+      Added wildchar match uri mappings. One can now use JkMount to
+      map /app/*/servlet/* or /app?/*/*.jsp. (mturk)      
+      </update>
       <update>
       Rewrite the logging by adding Trace options. (mturk)
       </update>
@@ -33,10 +60,10 @@
       Added socket_timeout property that sets the timeout
       for the socket itself. (mturk)
       </update>
-      <update>
+      <fix>
       Changed socket_timeout property to recycle_timeout. This better
       explains what the directive actually does. (mturk)
-      </update>
+      </fix>
       <fix>
         Changed the load balancer algorithm.
         The idea behind this new scheduler is the following:

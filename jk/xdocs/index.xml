@@ -28,6 +28,12 @@ manual is described in more detail below.</p>
 <section name="Headlines">
 <br />
 <ul>
+<li><a href="news/20041100.html#20041130.1">30 November 2004 - <b>JK-1.2.7-beta released</b></a>
+<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
+of Jakarta Tomcat Connectors 1.2.7-beta. The release contains a significant number
+of bug fixes and new features. 
+</p>
+</li>
 <li><a href="news/20041100.html#20041115.1">15 November 2004 - <b>JK2 is officially unsupported!</b></a>
 <p>JK2 has been put in maintainer mode and no further development will take place.
 The reason for shutting down JK2 development was the lack of developers interest.
