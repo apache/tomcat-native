@@ -14,15 +14,6 @@
  *  limitations under the License.
  */
 
-/*
- *
- * This class was originally written by Jason Hunter <jhunter@acm.org>
- * as part of the book "Java Servlet Programming" (O'Reilly).  
- * See http://www.servlets.com/book for more information.
- * Used by Sun Microsystems with permission.
- *
- */
-
 package org.apache.tomcat.util.http;
 
 import java.util.*;
@@ -30,11 +21,8 @@ import java.util.*;
 /** 
  * A mapping to determine the (somewhat arbitrarily) preferred charset for 
  * a given locale.  Supports all locales recognized in JDK 1.1.
- * This class was originally written by Jason Hunter [jhunter@acm.org]
- * as part of the book "Java Servlet Programming" (O'Reilly).
- * See <a href="http://www.servlets.com/book">
- * http://www.servlets.com/book</a> for more information.
- * Used by Sun Microsystems with permission.
+ * 
+ * @author Jason Hunter
  */
 public class LocaleToCharsetMap {
 
