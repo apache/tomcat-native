@@ -377,7 +377,6 @@ public class Http11Protocol implements ProtocolHandler, MBeanRegistration
         public void threadEnd(ThreadPool tp, Thread t) {
             // Register our associated processor
             // TP uses only TWA
-            System.out.println("XXXX thread ending ");
             ThreadWithAttributes ta=(ThreadWithAttributes)t;
             Object tpData[]=ta.getThreadData(tp);
             if( tpData==null ) return;
