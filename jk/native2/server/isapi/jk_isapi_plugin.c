@@ -355,8 +355,8 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                         forwardURI = uri;
                     }
                     else if (workerEnv->options == JK_OPT_FWDURIESCAPED) {
-                        if (!jk_requtil_escapeUrl
-                            (uri, snuri, INTERNET_MAX_URL_LENGTH)) {
+                        if (jk_requtil_escapeUrl
+                           (uri,snuri,INTERNET_MAX_URL_LENGTH) != JK_OK) {
                             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                                           "HttpFilterProc [%s] re-encoding request exceeds maximum buffer size.\n",
                                           uri);
