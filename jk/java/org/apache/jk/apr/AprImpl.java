@@ -90,27 +90,6 @@ public class AprImpl extends JkHandler { // This will be o.a.t.util.handler.TcHa
     public native int unWrite( long pool, long unSocket,
                                 byte buf[], int off, int len );
 
-    // -------------------- Shared memory methods --------------------
-
-    public native long shmAttach( long pool, String file );
-
-    public native long shmCreate( long pool, long size, String file );
-
-    public native long shmBaseaddrGet( long pool, long shmP );
-
-    public native long shmSizeGet( long pool, long shmP );
-
-    public native long shmDetach( long pool, long shmP );
-
-    public native long shmDestroy( long pool, long shmP );
-
-    public native int shmRead( long pool, long mP, 
-                               byte buf[], int off, int len );
-    
-    public native int shmWrite( long pool, long mP, 
-                                byte buf[], int off, int len );
-
-
     // -------------------- Mutexes --------------------
 
     public native long mutexCreate( long pool, String file, int type );
