@@ -74,6 +74,7 @@
 #define MX_OF_WORKER                ("mx")
 #define MS_OF_WORKER                ("ms")
 #define CP_OF_WORKER                ("class_path")
+#define BRIDGE_OF_WORKER			("bridge")
 #define JVM_OF_WORKER               ("jvm_lib")
 #define LIBPATH_OF_WORKER           ("ld_path")
 #define CMD_LINE_OF_WORKER          ("cmd_line")
@@ -97,7 +98,13 @@
 #define DEFAULT_WORKER              JK_AJP12_WORKER_NAME
 #define WORKER_LIST_PROPERTY_NAME   ("worker.list")
 #define DEFAULT_LB_FACTOR           (1.0)
-#define LOG_FORMAT          ("log_format")
+#define LOG_FORMAT          		("log_format")
+
+#define TOMCAT32_BRIDGE_NAME   		("tomcat32")
+#define TOMCAT33_BRIDGE_NAME   		("tomcat33")
+#define TOMCAT40_BRIDGE_NAME   		("tomcat40")
+#define TOMCAT41_BRIDGE_NAME   		("tomcat41")
+#define TOMCAT50_BRIDGE_NAME   		("tomcat5")
 
 #define HUGE_BUFFER_SIZE (8*1024)
 #define LOG_LINE_SIZE    (1024)
@@ -595,6 +602,38 @@ int jk_get_worker_classpath(jk_map_t *m,
 
         *cp = map_get_string(m, buf, NULL);
         if(*cp) {
+            return JK_TRUE;
+        }
+    }
+
+    return JK_FALSE;
+}
+
+int jk_get_worker_bridge_type(jk_map_t *m, 
+                              const char *wname,
+                              unsigned *bt)
+{
+    char buf[1024];
+	char *type;
+	    
+    if(m && bt && wname) {
+        int i;
+        sprintf(buf, "%s.%s.%s", PREFIX_OF_WORKER, wname, BRIDGE_OF_WORKER);
+
+        type = map_get_string(m, buf, NULL);
+        
+        if(type) {
+        	if (! strcasecmp(type, TOMCAT32_BRIDGE_NAME))
+        		*bt = TC32_BRIDGE_TYPE;
+        	else if (! strcasecmp(type, TOMCAT33_BRIDGE_NAME))
+        		*bt = TC33_BRIDGE_TYPE;
+        	else if (! strcasecmp(type, TOMCAT40_BRIDGE_NAME))
+        		*bt = TC40_BRIDGE_TYPE;
+        	else if (! strcasecmp(type, TOMCAT41_BRIDGE_NAME))
+        		*bt = TC41_BRIDGE_TYPE;
+        	else if (! strcasecmp(type, TOMCAT50_BRIDGE_NAME))
+        		*bt = TC50_BRIDGE_TYPE;
+        		
             return JK_TRUE;
         }
     }

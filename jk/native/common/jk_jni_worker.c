@@ -109,9 +109,8 @@ jint (JNICALL *jni_get_default_java_vm_init_args)(void *) = NULL;
 jint (JNICALL *jni_create_java_vm)(JavaVM **, JNIEnv **, void *) = NULL;
 jint (JNICALL *jni_get_created_java_vms)(JavaVM **, int, int *) = NULL;
 
-#define JAVA_BRIDGE_CLASS_NAME ("org/apache/tomcat/modules/server/JNIEndpoint")
-/* #define JAVA_BRIDGE_CLASS_NAME ("org/apache/tomcat/service/JNIEndpoint")
- */
+#define TC33_JAVA_BRIDGE_CLASS_NAME ("org/apache/tomcat/modules/server/JNIEndpoint")
+#define TC32_JAVA_BRIDGE_CLASS_NAME ("org/apache/tomcat/service/JNIEndpoint")
 
 static jk_worker_t *the_singleton_jni_worker = NULL;
 
@@ -151,6 +150,11 @@ struct jni_worker {
      */
     char *tomcat_cmd_line;
 
+	/*
+	 * Bridge Type, Tomcat 32/33/40/41/5
+	 */
+	unsigned	bridge_type;
+	
     /*
      * Classpath
      */
@@ -363,6 +367,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
 {
     jni_worker_t *p;
     int mem_config = 0;
+    int	btype      = 0;
     char *str_config = NULL;
     JNIEnv *env;
 
@@ -396,6 +401,10 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         jk_log(l, JK_LOG_EMERG, "Fail-> no classpath\n");
         return JK_FALSE;
     }
+
+    if(jk_get_worker_bridge_type(props, p->name, (unsigned int *)&btype)) {
+    	p->bridge_type = btype;
+    }	
 
     if(jk_get_worker_jvm_path(props, p->name, &str_config)) {
         p->jvm_dll_path  = jk_pool_strdup(&p->p, str_config);
@@ -678,6 +687,7 @@ int JK_METHOD jni_worker_factory(jk_worker_t **w,
     private_data->jk_shutdown_method    = NULL;
     private_data->tomcat_cmd_line       = NULL;
     private_data->tomcat_classpath      = NULL;
+    private_data->bridge_type      		= TC33_BRIDGE_TYPE;
     private_data->jvm_dll_path          = NULL;
     private_data->tomcat_ms             = 0;
     private_data->tomcat_mx             = 0;
@@ -1040,29 +1050,48 @@ static int get_bridge_object(jni_worker_t *p,
                              JNIEnv *env,
                              jk_logger_t *l)
 {
+	char *	btype;
+	char *	ctype;
+	
     jmethodID  constructor_method_id;
 
     jk_log(l, JK_LOG_DEBUG, 
            "Into get_bridge_object\n");
 
-/* OS400 need conversion from EBCDIC to ASCII before passing to JNI*/
+	switch (p->bridge_type)
+	{
+		case TC32_BRIDGE_TYPE :
+			btype = TOMCAT32_JAVA_BRIDGE_CLASS_NAME;
+			break;
+			
+		case TC33_BRIDGE_TYPE :
+			btype = TOMCAT33_JAVA_BRIDGE_CLASS_NAME;
+			break;
+			
+		case TC40_BRIDGE_TYPE :
+		case TC41_BRIDGE_TYPE :
+		case TC50_BRIDGE_TYPE :
+	    	jk_log(l, JK_LOG_EMERG, "Bridge type %d not supported\n", p->bridge_type);
+	    	return JK_FALSE;
+	}
+	
+/* OS400 need conversion from EBCDIC to ASCII before passing to JNI */
 
 #ifdef AS400
-#pragma convert(819)
+	char *ctype = jk_pool_strdup(&p->p, btype);
+	jk_xlate_to_ascii(ctype, strlen(ctype));
+#else
+	ctype = btype;
 #endif
 
-    p->jk_java_bridge_class = (*env)->FindClass(env, JAVA_BRIDGE_CLASS_NAME);
-
-#ifdef AS400
-#pragma convert(0)
-#endif
+    p->jk_java_bridge_class = (*env)->FindClass(env, ctype);
 
     if(!p->jk_java_bridge_class) {
-	    jk_log(l, JK_LOG_EMERG, "Can't find class %s\n", JAVA_BRIDGE_CLASS_NAME);
+	    jk_log(l, JK_LOG_EMERG, "Can't find class %s\n", btype);
 	    return JK_FALSE;
     }
     jk_log(l, JK_LOG_DEBUG, 
-           "In get_bridge_object, loaded %s bridge class\n", JAVA_BRIDGE_CLASS_NAME);
+           "In get_bridge_object, loaded %s bridge class\n", btype);
 
 #ifdef AS400
 #pragma convert(819)
