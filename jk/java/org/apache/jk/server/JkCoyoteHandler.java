@@ -291,6 +291,11 @@ public class JkCoyoteHandler extends JkHandler implements
             } else if( actionCode==ActionCode.ACTION_RESET ) {
                 if( log.isInfoEnabled() )
                     log.info("RESET " );
+            } else if( actionCode==ActionCode.ACTION_CLIENT_FLUSH ) {
+                org.apache.coyote.Response res=(org.apache.coyote.Response)param;
+                MsgContext ep=(MsgContext)res.getNote( epNote );
+                ep.setType( JkHandler.HANDLE_FLUSH );
+                ep.getSource().invoke( null, ep );
             } else if( actionCode==ActionCode.ACTION_CLOSE ) {
                 if( log.isDebugEnabled() )
                     log.debug("CLOSE " );
@@ -303,6 +308,9 @@ public class JkCoyoteHandler extends JkHandler implements
                 msg.appendByte( 1 );
                 
                 ep.setType( JkHandler.HANDLE_SEND_PACKET );
+                ep.getSource().invoke( msg, ep );
+
+                ep.setType( JkHandler.HANDLE_FLUSH );
                 ep.getSource().invoke( msg, ep );
             } else if( actionCode==ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
                 

@@ -163,7 +163,7 @@ public class ChannelJni extends JniHandler {
         case JkHandler.HANDLE_SEND_PACKET:
             return send( msg, ep );
         }
-        // Default is FORWARD
+        // Default is FORWARD - called from C 
         try {
             // first, we need to get an endpoint. It should be
             // per/thread - and probably stored by the C side.
