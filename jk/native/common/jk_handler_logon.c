@@ -68,6 +68,7 @@
 #include "jk_msg_buff.h"
 #include "jk_ajp_common.h"
 #include "jk_ajp14.h" 
+#include "jk_md5.h"
 #include "jk_logger.h"
 #include "jk_service.h"
 
