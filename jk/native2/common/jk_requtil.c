@@ -293,7 +293,6 @@ int  jk2_requtil_getHeaderId(jk_env_t *env, const char *header_name,
 
         return JK_ERR;
     }
-    /* Never reached */
     return JK_OK;
 }
 
@@ -566,7 +565,7 @@ int jk2_serialize_request13(jk_env_t *env, jk_msg_t *msg,
 
         char *name=s->headers_in->nameAt(env, s->headers_in, i);
 
-        if (jk2_requtil_getHeaderId(env, name, &sc) != JK_OK) {
+        if (jk2_requtil_getHeaderId(env, name, &sc) == JK_OK) {
             /*  env->l->jkLog(env, env->l, JK_LOG_INFO, */
             /*                "serialize.request() Add headerId %s %d\n", name, sc); */
             if (msg->appendInt(env, msg, sc)) {
