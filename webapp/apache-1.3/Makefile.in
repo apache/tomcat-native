@@ -72,6 +72,7 @@ APXS_LDFLAGS_SHLIB = @APXS_LDFLAGS_SHLIB@
 APXS_SYSCONFDIR =    @APXS_SYSCONFDIR@
 APXS_LIBS_SHLIB =    @APXS_LIBS_SHLIB@
 APXS_PREFIX =        @APXS_PREFIX@
+APXS =               @APXS@ 
 
 MODULE = mod_webapp.so
 
@@ -93,6 +94,9 @@ mod_webapp.so: mod_webapp.lo @SRCDIR@/lib/libwebapp.la @APRDIR@/libapr.la
 		mod_webapp.lo @SRCDIR@/lib/libwebapp.la \
 		$(LIBTOOL_LIBS) $(EXTRA_LIBS) @APRDIR@/libapr.la \
 		-o mod_webapp.so
+
+install: mod_webapp.so
+	$(APXS) -i mod_webapp.so
 
 clean:
 	@for ENTRY in *.o *.lo $(MODULE) .libs ; \

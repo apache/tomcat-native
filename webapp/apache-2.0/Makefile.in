@@ -60,32 +60,15 @@
 
 include @SRCDIR@/Makedefs
 
-APXS_CC =            @APXS_CC@
-APXS_TARGET =        @APXS_TARGET@
-APXS_CFLAGS =        @APXS_CFLAGS@
-APXS_SBINDIR =       @APXS_SBINDIR@
-APXS_CFLAGS_SHLIB =  @APXS_CFLAGS_SHLIB@
-APXS_INCLUDEDIR =    @APXS_INCLUDEDIR@
-APXS_LD_SHLIB =      @APXS_LD_SHLIB@
-APXS_LIBEXECDIR =    @APXS_LIBEXECDIR@
-APXS_LDFLAGS_SHLIB = @APXS_LDFLAGS_SHLIB@
-APXS_SYSCONFDIR =    @APXS_SYSCONFDIR@
-APXS_LIBS_SHLIB =    @APXS_LIBS_SHLIB@
-APXS_PREFIX =        @APXS_PREFIX@
-
 APXS =               @APXS@
 
 MODULE = mod_webapp.la
 
 all: $(MODULE)
 
-mod_webapp.la: mod_webapp.c @SRCDIR@/lib/libwebapp.la @APRDIR@/libapr.la
+mod_webapp.la: mod_webapp.c
 	@$(ECHO) Compiling and Linking Apache 2.0 WebApp Module
-	$(APXS) -c -o $@ \
-		-Wc,"$(APXS_CFLAGS) -I$(APXS_INCLUDEDIR) -I../include" \
-		@SRCDIR@/lib/libwebapp.la \
-		$(LIBTOOL_LIBS) $(EXTRA_LIBS) @APRDIR@/libapr.la \
-		mod_webapp.c
+	$(APXS) -I../include -c ../lib/libwebapp.la mod_webapp.c
 
 install: mod_webapp.la
 	$(APXS) -i mod_webapp.la

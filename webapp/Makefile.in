@@ -62,6 +62,7 @@ include @SRCDIR@/Makedefs
 
 LOCALDIRS = @TGTDIRS@ @TARGET@
 APRDIR = @APRDIR@
+INSTALLDIR = @TARGET@
 
 CFGS = @CONFIGFILES@ \
 	@SRCDIR@/lib/pr_warp_defs.h \
@@ -70,6 +71,8 @@ CFGS = @CONFIGFILES@ \
 	config.status
 
 all: apr-all local-all
+
+install: local-install
 
 clean: apr-clean local-clean
 
@@ -128,6 +131,19 @@ local-clean:
 		$(ECHO) "Cleaning up $${DIR}..." ; \
 		cd $${DIR} ; \
 		$(MAKE) clean ; \
+		RET=$$? ; \
+		cd $(SRCDIR) ; \
+		if test "$${RET}" != "0" ; then \
+			exit $${RET} ; \
+		fi ; \
+	done
+
+local-install:
+	@for DIR in $(INSTALLDIR) ; do \
+		$(ECHO) "" ; \
+		$(ECHO) "Installing from $${DIR}..." ; \
+		cd $${DIR} ; \
+		$(MAKE) install ; \
 		RET=$$? ; \
 		cd $(SRCDIR) ; \
 		if test "$${RET}" != "0" ; then \
