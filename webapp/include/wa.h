@@ -68,7 +68,7 @@
 #include <string.h>
 
 /* APR Library includes */
-#include <apr_general.h>
+#include <apr_main.h>
 #include <apr_pools.h>
 #include <apr_strings.h>
 #include <apr_tables.h>

@@ -161,7 +161,7 @@ struct wa_request {
  * @param d The web-server specific data for this request.
  * @return An error message on faliure or <b>NULL</b>.
  */
-const char *wa_request_alloc(wa_request **r, void *d);
+const char *WA_AllocRequest(wa_request **r, void *d);
 
 /**
  * Clean up and free the memory used by a request structure.
@@ -169,14 +169,26 @@ const char *wa_request_alloc(wa_request **r, void *d);
  * @param r The request structure to destroy.
  * @return An error message on faliure or <b>NULL</b>.
  */
-const char *wa_request_free(wa_request *r);
+const char *WA_FreeRequest(wa_request *r);
 
 /**
  * Invoke a request in a web application.
- * <br>
+ *
  * @param r The WebApp Library request structure.
+ * @param a The application to which this request needs to be forwarded.
  * @return The HTTP result code of this operation.
  */
-int wa_request_invoke(wa_request *r, wa_application *a);
+int WA_InvokeRequest(wa_request *r, wa_application *a);
+
+/**
+ * Report the set up of a list of web applications to the client thru an
+ * HTTP request.
+ *
+ * @param r The WebApp Library request structure.
+ * @param a A <b>NULL</b> terminated list of applications for which a
+ *          description should be generated.
+ * @return The HTTP result code of this operation.
+ */
+int WA_InfoRequest(wa_request *r, wa_application **a);
 
 #endif /* ifndef _WA_REQUEST_H_ */

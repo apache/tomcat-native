@@ -60,8 +60,8 @@
  * @author  Pier Fumagalli <mailto:pier.fumagalli@eng.sun.com>
  * @version $Id$
  */
-#ifndef _WA_GENERAL_H_
-#define _WA_GENERAL_H_
+#ifndef _WA_MAIN_H_
+#define _WA_MAIN_H_
 
 /**
  * The WebApp Library connection structure.
@@ -104,7 +104,6 @@ struct wa_application {
 
 /**
  * Initialize the WebApp Library.
- * <br>
  * This function must be called <b>before</b> any other calls to any other
  * function to set up the APR and WebApp Library internals. If any other
  * function is called before this function has been invoked will result in
@@ -113,11 +112,10 @@ struct wa_application {
  * @param w The Web Server structure used for callbacks.
  * @return <b>NULL</b> on success or an error message on faliure.
  */
-const char *wa_init(wa_webserver *w);
+const char *WA_Init(wa_webserver *w);
 
 /**
  * Clean up the WebApp Library.
- * <br>
  * This function releases all memory and resouces used by the WebApp library
  * and must be called before the underlying web server process exits. Any call
  * to any other WebApp Library function after this function has been invoked
@@ -125,7 +123,7 @@ const char *wa_init(wa_webserver *w);
  *
  * @return <b>NULL</b> on success or an error message on faliure.
  */
-const char *wa_destroy(void);
+const char *WA_Destroy(void);
 
 /**
  * Allocate and set up a <code>wa_connection</code> member.
@@ -136,7 +134,7 @@ const char *wa_destroy(void);
  * @param a The connection argument from a configuration file.
  * @return <b>NULL</b> on success or an error message on faliure.
  */
-const char *wa_connect(wa_connection **c, const char *p, const char *a);
+const char *WA_Connect(wa_connection **c, const char *p, const char *a);
 
 /**
  * Allocate, set up and deploy a <code>wa_application</code> member.
@@ -150,12 +148,11 @@ const char *wa_connect(wa_connection **c, const char *p, const char *a);
  * @param p The root URL path of the web application to deploy.
  * @return <b>NULL</b> on success or an error message on faliure.
  */
-const char *wa_deploy(wa_application **a, wa_connection *c, const char *n,
+const char *WA_Deploy(wa_application **a, wa_connection *c, const char *n,
                       const char *p);
 
 /**
  * Attempt to match an URL against a web application.
- * <br>
  * This function will return <b>TRUE</b> only if the root URL path of the
  * application matches the beginning of the specified URL.
  *
@@ -164,6 +161,17 @@ const char *wa_deploy(wa_application **a, wa_connection *c, const char *n,
  * @return <b>TRUE</b> if the URL can be handled by the web application without
  *         raising a &quot;404 Not Found&quot; error, <b>FALSE</b> otherwise.
  */
-boolean wa_match(const char *u, wa_application *a);
+boolean WA_Match(const char *u, wa_application *a);
 
-#endif /* ifndef _WA_GENERAL_H_ */
+/**
+ * The <code>wa_webserver</code> structure used for all callbacks while
+ * processing an HTTP request.
+ */
+extern wa_webserver *WA_WebServer;
+
+/**
+ * The APR memory pool used by the WebApp Library.
+ */
+extern apr_pool_t *WA_Pool;
+
+#endif /* ifndef _WA_MAIN_H_ */
