@@ -90,6 +90,16 @@ and  provides access to all other objects</p>
                         <td>not set</td>
                         <td>Pass the URI escaped.</td>
                     </tr>
+                    <tr>
+                        <td>noRecoveryIfRequestSent</td>
+                        <td>set</td>
+                        <td>No recovery in LB mode if a Tomcat allready received the request.</td>
+                    </tr>
+                    <tr>
+                        <td>noRecoveryIfHeaderSent</td>
+                        <td>set</td>
+                        <td>No recovery in LB mode if a Tomcat allready start to send reply to client.</td>
+                    </tr>
                 </table>
             </p>
             <p>Only one of the forwardURI option could be used it replaces the default value.</p>
@@ -265,6 +275,10 @@ is discouraged. In most cases, you don't need to set any other config - just add
 [channel.socket:localhost:8009] and all other things will have good defaults. 
 </p>
 <p>
+NB: Starting with JK2 2.0.4, APR is mandatory and the channel.socket use APR (previously
+called channel.apr).
+</p>
+<p>
 Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcatId of the channel.
 </p>
                 <p>
@@ -295,61 +309,6 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                             <td>? </td>
                         </tr>
                         <tr>
-                            <td>lb_factor</td>
-                            <td>1</td>
-                            <td>
-    Load balancing factor to use. At this moment, it'll be set on the worker,
-    but in future it should be possible to use lb on a channel level.
-  </td>
-                        </tr>
-                        <tr>
-                            <td>group</td>
-                            <td>lb</td>
-                            <td>loadbalanced groups to which this channel and the associated worker will be added, multivalued. You need to set it only if you have an advanced setup with multiple clusters.</td>
-                        </tr>
-                        <tr>
-                            <td>tomcatId</td>
-                            <td>Automatically set to the localname ( host:port )</td>
-                            <td>Must match the JVM route on tomcat Engine, for load balancing</td>
-                        </tr>
-                    </table>
-                </p>
-            </subsection>
-            <subsection name="channel.apr">
-                <p>
-    A communication transport to a remote Engine using APR library
-    <b>Magic:</b> The local part of the name will be the Engine name,
-    to use when defining the uri mappings. For example
-    channel.apr.local_9009 will automatically define an engine named
-    local_9009, and if no other setting is set ajp13 will be used for
-    communication.
-    <b>Magic:</b> If no channel is defined in the config, a default channel
-    will be constructed with port=8009, engine=DEFAULT, worker=ajp13 -
-    named 'channel.apr.DEFAULT'
-</p>
-                <p>
-                    <table>
-                        <tr>
-                            <th>Property name</th>
-                            <th>Default</th>
-                            <th>Description</th>
-                        </tr>
-                        <tr>
-                            <td>port</td>
-                            <td>8009</td>
-                            <td>Port where Tomcat is listening</td>
-                        </tr>
-                        <tr>
-                            <td>host</td>
-                            <td>localhost</td>
-                            <td>Remote host</td>
-                        </tr>
-                        <tr>
-                            <td>keepalive</td>
-                            <td>0 (disabled)</td>
-                            <td>If set to 1 then it enables the use of keep-alive packets on TCP connection </td>
-                        </tr>
-                        <tr>
                             <td>timeout</td>
                             <td>0 (infinite)</td>
                             <td>Socket timeout for sending and receiving</td>
@@ -369,8 +328,13 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                         </tr>
                         <tr>
                             <td>group</td>
-                            <td>lb:0</td>
-                            <td>loadbalanced groups to which this channel and the associated worker will be added, multivalued</td>
+                            <td>lb</td>
+                            <td>loadbalanced groups to which this channel and the associated worker will be added, multivalued. You need to set it only if you have an advanced setup with multiple clusters.</td>
+                        </tr>
+                        <tr>
+                            <td>tomcatId</td>
+                            <td>Automatically set to the localname ( host:port )</td>
+                            <td>Must match the JVM route on tomcat Engine, for load balancing</td>
                         </tr>
                     </table>
                 </p>
@@ -468,6 +432,33 @@ Tomcat Engine must be set with jvmRoute="HOST:PORT", to match the default tomcat
                                 If the specified number is reached then the load balancer has the chance
                                 to try another worker. This is very useful in situations when having multiple
                                 servers and you wish to finer grade the lb_factor.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>connectTimeout</td>
+                            <td>0 (no timeout)</td>
+                            <td>With such timeout set, the web-server will send a CPING request just after physical connect to the remote Tomcat 
+                                and will wait for a CPONG reply for the connectTimeout milliseconds, a guarantee that the remote Tomcat is not hang.
+                                Side effect, this round trip add a little delay at connection time and require a recent AJP13 implementation, 
+                                with support for CPING/CPONG command.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>replyTimeout</td>
+                            <td>0 (no timeout)</td>
+                            <td>With such timeout set, the web-server will wait for Tomcat reply to a forwarded request for replyTimeout milliseconds.
+                                Another guarantee that the remote Tomcat is not hang.
+                                Warning, if you have 'normal' long running processes on Tomcat side, you shouldn't use this feature to avoid
+                                invalid errors reports or set the timeout accordingly.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>prepostTimeout</td>
+                            <td>0 (no timeout)</td>
+                            <td>With such timeout set, the web-server will send a CPING request just before forwarding the request to the remote Tomcat 
+                                and will wait for a CPONG reply for the prepostTimeout milliseconds, a guarantee that the remote Tomcat is not hang.
+                                Side effect, this round trip add a little delay in forwarding request and require a recent AJP13 implementation, 
+                                with support for CPING/CPONG command.
                             </td>
                         </tr>
                     </table>
