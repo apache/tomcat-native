@@ -496,13 +496,19 @@ static void ajp_reset_endpoint(ajp_endpoint_t *ae)
  * Close the endpoint (clean buf and close socket)
  */
 
-static void ajp_close_endpoint(ajp_endpoint_t *ae)
+void ajp_close_endpoint(ajp_endpoint_t *ae,
+                        jk_logger_t    *l)
 {
+	jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::ajp_close_endpoint\n");
+
     ajp_reset_endpoint(ae);
     jk_close_pool(&(ae->pool));
 
-    if (ae->sd > 0) 
+    if (ae->sd > 0) { 
         jk_close_socket(ae->sd);
+		jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::ajp_close_endpoint, closed sd = %d\n", ae->sd);
+		ae->sd = -1; /* just to avoid twice close */
+	}
 
     free(ae);
 }
@@ -527,7 +533,7 @@ static void ajp_reuse_connection(ajp_endpoint_t *ae,
                 if (aw->ep_cache[i]) {
                     ae->sd = aw->ep_cache[i]->sd;
                     aw->ep_cache[i]->sd = -1;
-                    ajp_close_endpoint(aw->ep_cache[i]);
+                    ajp_close_endpoint(aw->ep_cache[i], l);
                     aw->ep_cache[i] = NULL;
                     break;
                  }
@@ -538,8 +544,8 @@ static void ajp_reuse_connection(ajp_endpoint_t *ae,
 }
 
 
-static void ajp_connect_to_endpoint(ajp_endpoint_t *ae,
-                                    jk_logger_t    *l)
+int ajp_connect_to_endpoint(ajp_endpoint_t *ae,
+                            jk_logger_t    *l)
 {
     unsigned attempt;
 
@@ -548,24 +554,25 @@ static void ajp_connect_to_endpoint(ajp_endpoint_t *ae,
         if(ae->sd >= 0) {
             jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::ajp_connect_to_endpoint, connected sd = %d\n", ae->sd);
 
-			if (ae->proto == AJP14_PROTO) {
-				jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::ajp_connect_to_endpoint, send login\n");
-			}
+			/* Check if we must execute a logon after the physical connect */
+			if (ae->worker->logon != NULL)
+				return (ae->worker->logon(ae, l));
 
-			return;
+			return JK_TRUE;
         }
     }
 
     jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::ajp_connect_to_endpoint, failed errno = %d\n", errno);
+	return JK_FALSE;
 }
 
 /*
  * Send a message to endpoint, using corresponding PROTO HEADER
  */
 
-static int ajp_connection_tcp_send_message(ajp_endpoint_t *ae,
-                                           jk_msg_buf_t   *msg,
-                                           jk_logger_t    *l)
+int ajp_connection_tcp_send_message(ajp_endpoint_t *ae,
+                                    jk_msg_buf_t   *msg,
+                                    jk_logger_t    *l)
 {
 	if (ae->proto == AJP13_PROTO) {
     	jk_b_end(msg, AJP13_WS_HEADER);
@@ -591,9 +598,9 @@ static int ajp_connection_tcp_send_message(ajp_endpoint_t *ae,
  * Receive a message from endpoint, checking PROTO HEADER
  */
 
-static int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
-                                          jk_msg_buf_t   *msg,
-                                          jk_logger_t    *l)
+int ajp_connection_tcp_get_message(ajp_endpoint_t *ae,
+                                   jk_msg_buf_t   *msg,
+                                   jk_logger_t    *l)
 {
     unsigned char head[AJP_HEADER_LEN];
     int           rc;
@@ -1073,6 +1080,7 @@ int ajp_service(jk_endpoint_t   *e,
 
 int ajp_validate(jk_worker_t *pThis,
                  jk_map_t    *props,
+                 jk_worker_env_t *we,
                  jk_logger_t *l,
 			  	 int          proto)
 {
@@ -1118,6 +1126,7 @@ int ajp_validate(jk_worker_t *pThis,
 
 int ajp_init(jk_worker_t *pThis,
              jk_map_t    *props,
+             jk_worker_env_t *we,
              jk_logger_t *l,
 			 int          proto)
 {
@@ -1178,7 +1187,7 @@ int ajp_destroy(jk_worker_t **pThis,
             unsigned i;
             for(i = 0 ; i < aw->ep_cache_sz ; i++) {
                 if(aw->ep_cache[i]) {
-                    ajp_close_endpoint(aw->ep_cache[i]);
+                    ajp_close_endpoint(aw->ep_cache[i], l);
                 }
             }
             free(aw->ep_cache);
@@ -1229,7 +1238,7 @@ int ajp_done(jk_endpoint_t **e,
             }
         }
 
-        ajp_close_endpoint(p);
+        ajp_close_endpoint(p, l);
         *e = NULL;
 
         return JK_TRUE;
