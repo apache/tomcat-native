@@ -532,29 +532,13 @@ static int jk2_handler(request_rec *r)
 
     uriEnv=ap_get_module_config( r->request_config, &jk2_module );
 
-    /* We do DIR_MAGIC_TYPE here to make sure TC gets all requests, even
-     * if they are directory requests, in case there are no static files
-     *  visible to Apache and/or DirectoryIndex was not used */
-
     /* not for me, try next handler */
-    if((uriEnv==NULL || strcmp(r->handler,JK_HANDLER)) &&
-       strcmp(r->handler,DIR_MAGIC_TYPE))
+    if(uriEnv==NULL || strcmp(r->handler,JK_HANDLER))
       return DECLINED;
     
     /* If this is a proxy request, we'll notify an error */
     if(r->proxyreq) {
         return HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    /* This is needed for DIR_MAGIC_TYPE. Not sure if this is good, bad or just
-     * plain ugly, but we really NEED to have uriEnv, otherwise everything else
-     * will blow up */
-
-    if(uriEnv == NULL){
-        uriEnv = ap_get_module_config(r->server->module_config, &jk2_module);
-
-        if(uriEnv == NULL) /* We still have nothing, go out */
-          return DECLINED;
     }
 
     workerEnv = uriEnv->workerEnv;
@@ -678,6 +662,13 @@ static int jk2_translate(request_rec *r)
         ap_set_module_config( r->request_config, &jk2_module, uriEnv );        
         r->handler=JK_HANDLER;
         workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+
+        /* This could be a sub-request, possibly from mod_dir */
+        if(r->main){
+            ap_set_module_config( r->main->request_config, &jk2_module, uriEnv );
+            r->main->handler=JK_HANDLER;
+        }
+
         return OK;
     }
 
@@ -707,12 +698,19 @@ static int jk2_translate(request_rec *r)
     ap_set_module_config( r->request_config, &jk2_module, uriEnv );
     r->handler=JK_HANDLER;
 
+    /* This could be a sub-request, possibly from mod_dir */
+    if(r->main){
+        ap_set_module_config( r->main->request_config, &jk2_module, uriEnv );
+        r->main->handler=JK_HANDLER;
+    }
+
     if( uriEnv->mbean->debug > 0 )
         env->l->jkLog(env, env->l, JK_LOG_DEBUG, 
                       "mod_jk.translate(): uriMap %s %s %#lx\n",
                       r->uri, uriEnv->workerName, uriEnv->worker);
 
     workerEnv->globalEnv->releaseEnv( workerEnv->globalEnv, env );
+
     return OK;
 }
 
