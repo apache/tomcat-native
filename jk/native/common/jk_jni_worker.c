@@ -546,7 +546,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
         if(p->stdout_name) {
             stdout_name = (*env)->NewStringUTF(env, strdup_ascii(&p->p, p->stdout_name));
         }
-        if(p->stdout_name) {
+        if(p->stderr_name) {
             stderr_name = (*env)->NewStringUTF(env, strdup_ascii(&p->p, p->stderr_name));
         }
 
