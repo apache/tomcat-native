@@ -170,6 +170,14 @@ commons-pool.jar=${commons-pool.lib}/commons-pool.jar
 commons-pool.loc=http://jakarta.apache.org/builds/jakarta-commons/release/commons-pool/v1.0.1/commons-pool-1.0.1.tar.gz
 
 
+# ----- Jakarta regexp, version 1.2 or later -----
+regexp.home=${base.path}/regexp-1.3
+regexp.lib=${regexp.home}
+regexp.jar=${regexp.lib}/commons-beanutils.jar
+regexp.loc=http://www.apache.org/dist/jakarta/regexp/binaries/jakarta-regexp-1.3.tar.gz
+
+
+
 # ----- JavaService, version 1.2.0 or later -----
 javaservice.home=${base.path}/javaservice
 javaservice.loc=http://www.alexandriasc.com/software/JavaService/JavaService-bin-1.2.0.zip
