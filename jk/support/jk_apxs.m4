@@ -101,11 +101,17 @@ AC_DEFUN(
 			  APR_UTIL_INCDIR="-I`${APXS$1} -q APU_INCLUDEDIR`"
               APACHE2_LIBDIR="`${APXS$1} -q LIBDIR`"
               LIBTOOL=`${APXS$1} -q LIBTOOL`
-              if ${TEST} -f ${APACHE2_LIBDIR}/libapr-1.so -o -f ${APACHE2_LIBDIR}/libapr-1.dylib; then
+              if ${TEST} -f ${APACHE2_LIBDIR}/libapr-1.so \
+                      -o -f ${APACHE2_LIBDIR}/libapr-1.sl \
+                      -o -f ${APACHE2_LIBDIR}/libapr-1.dylib; then
                 APR_LIBS="-L${APACHE2_LIBDIR} -lapr-1"
-              elif ${TEST} -f ${APACHE2_LIBDIR}/libapr-0.so -o -f ${APACHE2_LIBDIR}/libapr-0.dylib; then
+              elif ${TEST} -f ${APACHE2_LIBDIR}/libapr-0.so \
+                        -o -f ${APACHE2_LIBDIR}/libapr-0.sl \
+                        -o -f ${APACHE2_LIBDIR}/libapr-0.dylib; then
                 APR_LIBS="-L${APACHE2_LIBDIR} -lapr-0"
-              elif ${TEST} -f ${APACHE2_LIBDIR}/libapr.so -o -f ${APACHE2_LIBDIR}/libapr.dylib; then
+              elif ${TEST} -f ${APACHE2_LIBDIR}/libapr.so \
+                        -o -f ${APACHE2_LIBDIR}/libapr.sl \
+                        -o -f ${APACHE2_LIBDIR}/libapr.dylib; then
                 APR_LIBS="-L${APACHE2_LIBDIR} -lapr"
               else
                 AC_MSG_ERROR(can't locate libapr)
