@@ -1007,6 +1007,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                             ajp_operation_t *op)
 {
 	int err = 0;
+	int postlen;
 	
     /* Up to now, we can recover */
     op->recoverable = JK_TRUE;
@@ -1074,18 +1075,23 @@ static int ajp_send_request(jk_endpoint_t *e,
            ae->left_bytes_to_send, jk_b_get_len(op->reply) - AJP_HEADER_LEN);
 
     /*
-     * POST recovery job is done here.
-     * It's not very fine to have posted data in reply but that's the only easy
-     * way to do that for now. Sharing the reply is really a bad solution but
-     * it will works for POST DATA less than 8k.
+     * POST recovery job is done here and will work when data to 
+     * POST are less than 8k, since it's the maximum size of op-post buffer.
      * We send here the first part of data which was sent previously to the
      * remote Tomcat
      */
-    if (jk_b_get_len(op->post) > AJP_HEADER_LEN) {
+     
+    /* Did we have something to resend (ie the op-post has been feeded previously */
+    
+    postlen = jk_b_get_len(op->post);    
+    if (postlen > AJP_HEADER_LEN) {
         if(!ajp_connection_tcp_send_message(ae, op->post, l)) {
-            jk_log(l, JK_LOG_ERROR, "Error resending request body\n");
+            jk_log(l, JK_LOG_ERROR, "Error resending request body (%d)\n", postlen);
             return JK_FALSE;
         }
+        else
+        	jk_log(l, JK_LOG_DEBUG, "Resent the request body (%d)\n", postlen);
+        	
     }
     else {
         /* We never sent any POST data and we check if we have to send at
@@ -1096,7 +1102,7 @@ static int ajp_send_request(jk_endpoint_t *e,
 	/* || s->is_chunked - this can't be done here. The original protocol
            sends the first chunk of post data ( based on Content-Length ),
            and that's what the java side expects.
-	   Sending this data for chunked would break other ajp13 serers.
+	   Sending this data for chunked would break other ajp13 servers.
 
 	   Note that chunking will continue to work - using the normal read.
 	*/
@@ -1185,6 +1191,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 jk_log(l, JK_LOG_INFO,
                        "ERROR reading POST data from client. "
                        "Connection aborted or network problems\n");
+                       
                 return JK_CLIENT_ERROR;       
             }
         break;
@@ -1439,7 +1446,7 @@ int JK_METHOD ajp_service(jk_endpoint_t   *e,
                p->worker->name, errno);
 
     } else {
-        jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, NULL parameters\n");
+        jk_log(l, JK_LOG_ERROR, "ajp: end of service with error\n");
     }
 
     return JK_FALSE;
