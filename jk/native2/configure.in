@@ -234,4 +234,5 @@ AC_OUTPUT([
 	server/apache2/Makefile
 	server/apache2/Makefile.apxs
 	../build.properties:../build.properties.autoconf
+        scripts/build/unix/dummy
 	])
