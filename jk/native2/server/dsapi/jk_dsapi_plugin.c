@@ -834,6 +834,7 @@ static unsigned int parsedRequest(FilterContext *context, FilterParsedRequest *r
     int rc;
     FilterRequest fr;
     int result = kFilterNotHandled;
+    char *h = NULL;
 
     /* TODO: presumably this return code should be checked */
     rc = context->GetRequest(context, &fr, &errID);
@@ -844,6 +845,7 @@ static unsigned int parsedRequest(FilterContext *context, FilterParsedRequest *r
         jk_uriEnv_t *uriEnv = NULL;
         int errID;
         char buf[256];  /* enough for the server's name */
+        char *colon;
         char *serverName;
         size_t serverNameSz;
         int serverPort;
@@ -853,19 +855,27 @@ static unsigned int parsedRequest(FilterContext *context, FilterParsedRequest *r
 
         /* env->l->jkLog(env, env->l, JK_LOG_DEBUG, "parsedRequest() - %s\n", uri); */
 
-        if (!context->GetServerVariable(context, "SERVER_PORT", buf, sizeof(buf), &errID)) {
-            return rejectWithError(context, "Failed to retrieve SERVER_PORT");
+        /* We used to call the context->GetServerVariable() API here but doing so
+         * seems to clobber some of the server's CGI variables in the case where
+         * we don't handle the request.
+         *
+         * Note also that we're using a static buffer for the host header. Presumably
+         * hostnames longer than 255 characters are either rare or illegal and there's
+         * no buffer overrun risk because Domino errors if the supplied buffer is too
+         * small.
+         */
+        if (!reqData->GetHeader(context, "host", buf, sizeof(buf), &errID)) {
+            return rejectWithError(context, "Failed to retrieve host");
         }
 
-        serverPort = atoi(buf);
-
-        if (!context->GetServerVariable(context, "SERVER_NAME", buf, sizeof(buf), &errID)) {
-            return rejectWithError(context, "Failed to retrieve SERVER_NAME");
+        serverName = buf;
+        /* Parse out the port number */
+        if (colon = strchr(serverName, ':'), NULL != colon) {
+            *colon++ = '\0';
+            serverPort = atoi(colon);
+        } else {
+            serverPort = 80;
         }
-
-        serverName = buf;   /* note serverName just aliases buf
-                             * and will be destroyed if buf is reused
-                             */
 
         serverNameSz = strlen(serverName) + 1;
 
