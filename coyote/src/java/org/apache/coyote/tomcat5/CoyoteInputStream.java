@@ -133,6 +133,10 @@ public class CoyoteInputStream extends ServletInputStream {
 
     }
 
+    public int available() throws IOException {
+        if( pos < end ) return end-pos;
+        return 0;
+    }
 
     public int read(byte[] b) throws IOException {
 
