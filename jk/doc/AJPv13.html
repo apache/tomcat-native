@@ -41,7 +41,7 @@ relate to communication between the web server and the servlet container):
   <LI> Increasing performance (speed, specifically).<P>
 
   <LI> Adding support for SSL, so that <CODE>isSecure()</CODE> and
-       <CODE>geScheme()</CODE> will function correctly within the servlet
+       <CODE>getScheme()</CODE> will function correctly within the servlet
        container.  The client certificates and cipher suite will be
        available to servlets as request attributes.<P>
 
@@ -135,9 +135,10 @@ strings.
   <DT><B>String</B></DT>
   <DD>A variable-sized string (length bounded by 2^16). Encoded with the
   length packed into two bytes first, followed by the string (including the
-  terminating '\0').  Note that the encoded length does <B>not</B> include
-  the trailing '\0' -- it is like <CODE>strlen</CODE>.  This is a touch
-  confusing on the Java side, which is littered with odd autoincrement
+  terminating '\0'). A String with size 0xFFFF is a Null String and there
+  is no trailing '\0'.  Note that the encoded length does <B>not</B>
+  include the trailing '\0' -- it is like <CODE>strlen</CODE>.  This is a
+  touch confusing on the Java side, which is littered with odd autoincrement
   statements to skip over these terminators.  I believe the reason this was
   done was to allow the C code to be extra efficient when reading strings
   which the servlet container is sending back -- with the terminating \0
