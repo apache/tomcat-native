@@ -109,6 +109,7 @@ import org.apache.coyote.Request;
 import org.apache.catalina.Connector;
 import org.apache.catalina.Context;
 import org.apache.catalina.Globals;
+import org.apache.catalina.Host;
 import org.apache.catalina.HttpRequest;
 import org.apache.catalina.Logger;
 import org.apache.catalina.Manager;
@@ -123,6 +124,7 @@ import org.apache.catalina.util.RequestUtil;
 import org.apache.catalina.util.StringManager;
 import org.apache.catalina.util.StringParser;
 
+import org.apache.tomcat.util.http.mapper.MappingData;
 import org.apache.tomcat.util.net.SSLSupport;
 
 /**
@@ -418,6 +420,8 @@ public class CoyoteRequest
         parameterMap.setLocked(false);
         parameterMap.clear();
 
+        mappingData.recycle();
+
         if ((Constants.SECURITY) && (facade != null)) {
             facade.clear();
             facade = null;
@@ -467,8 +471,9 @@ public class CoyoteRequest
         this.connector = connector;
     }
 
+
     /**
-     * The Context within which this Request is being processed.
+     * Associated context.
      */
     protected Context context = null;
 
@@ -478,6 +483,7 @@ public class CoyoteRequest
     public Context getContext() {
         return (this.context);
     }
+
 
     /**
      * Set the Context within which this Request is being processed.  This
@@ -515,6 +521,26 @@ public class CoyoteRequest
 
 
     /**
+     * Return the Host within which this Request is being processed.
+     */
+    public Host getHost() {
+        return ((Host) mappingData.host);
+    }
+
+
+    /**
+     * Set the Host within which this Request is being processed.  This
+     * must be called as soon as the appropriate Host is identified, and
+     * before the Request is passed to a context.
+     *
+     * @param host The newly associated Host
+     */
+    public void setHost(Host host) {
+        mappingData.host = host;
+    }
+
+
+    /**
      * Descriptive information about this Request implementation.
      */
     protected static final String info =
@@ -527,6 +553,19 @@ public class CoyoteRequest
      */
     public String getInfo() {
         return (info);
+    }
+
+
+    /**
+     * Mapping data.
+     */
+    protected MappingData mappingData = new MappingData();
+
+    /**
+     * Return mapping data.
+     */
+    public MappingData getMappingData() {
+        return (mappingData);
     }
 
 
@@ -631,7 +670,7 @@ public class CoyoteRequest
 
 
     /**
-     * The Wrapper within which this Request is being processed.
+     * Associated wrapper.
      */
     protected Wrapper wrapper = null;
 
@@ -641,6 +680,7 @@ public class CoyoteRequest
     public Wrapper getWrapper() {
         return (this.wrapper);
     }
+
 
     /**
      * Set the Wrapper within which this Request is being processed.  This

@@ -77,8 +77,10 @@ import org.apache.coyote.Adapter;
 import org.apache.coyote.Request;
 import org.apache.coyote.Response;
 
+import org.apache.catalina.Context;
 import org.apache.catalina.Globals;
 import org.apache.catalina.Logger;
+import org.apache.catalina.Wrapper;
 import org.apache.catalina.util.StringManager;
 
 
@@ -214,7 +216,7 @@ final class CoyoteAdapter
      */
     protected void postParseRequest(Request req, CoyoteRequest request,
                                     Response res, CoyoteResponse response)
-        throws IOException {
+        throws Exception {
         // XXX the processor needs to set a correct scheme and port prior to this point, 
         // in ajp13 protocols dont make sense to get the port from the connector..
         request.setSecure(req.scheme().equals("https"));
@@ -249,7 +251,7 @@ final class CoyoteAdapter
 
         // Parse cookies
         parseCookies(req, request);
-	
+
         // Set the SSL properties
 	if( request.isSecure() ) {
 	    res.action(ActionCode.ACTION_REQ_SSL_ATTRIBUTE,
@@ -265,6 +267,12 @@ final class CoyoteAdapter
         if (principal != null) {
             request.setUserPrincipal(new CoyotePrincipal(principal));
         }
+
+        // Request mapping
+        connector.getMapper().map(req.serverName(), req.decodedURI(), 
+                                  request.getMappingData());
+        request.setContext((Context) request.getMappingData().context);
+        request.setWrapper((Wrapper) request.getMappingData().wrapper);
 
     }
 

@@ -60,9 +60,17 @@
 
 package org.apache.coyote.tomcat5;
 
-
 import java.util.Vector;
 
+import javax.management.ObjectName;
+import javax.management.MBeanServer;
+import javax.management.MBeanRegistration;
+
+import org.apache.commons.modeler.Registry;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.apache.tomcat.util.http.mapper.Mapper;
 import org.apache.tomcat.util.IntrospectionUtils;
 
 import org.apache.coyote.Adapter;
@@ -81,12 +89,6 @@ import org.apache.catalina.net.DefaultServerSocketFactory;
 import org.apache.catalina.net.ServerSocketFactory;
 import org.apache.catalina.util.LifecycleSupport;
 import org.apache.catalina.util.StringManager;
-import org.apache.commons.modeler.Registry;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import javax.management.ObjectName;
-import javax.management.MBeanServer;
-import javax.management.MBeanRegistration;
 
 
 /**
@@ -319,6 +321,12 @@ public final class CoyoteConnector
      * Coyote adapter.
      */
     private Adapter adapter = null;
+
+
+     /**
+      * Mapper.
+      */
+     private Mapper mapper = new Mapper();
 
 
     // ------------------------------------------------------------- Properties
@@ -580,6 +588,16 @@ public final class CoyoteConnector
         return (info);
 
     }
+
+
+     /**
+      * Return the mapper.
+      */
+     public Mapper getMapper() {
+
+         return (mapper);
+
+     }
 
 
     /**
