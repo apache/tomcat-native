@@ -78,6 +78,7 @@ jk_env_t* JK_METHOD jk2_env_getEnv( char *id, jk_pool_t *pool ) {
       jk_env_globalEnv=(jk_env_t *)pool->calloc( NULL, pool, sizeof( jk_env_t ));
       jk_env_globalEnv->globalPool = pool;
       jk2_env_initEnv( (jk_env_t *)jk_env_globalEnv, id );
+
       fprintf( stderr, "env: top level env %p\n", jk_env_globalEnv);
   }
   return jk_env_globalEnv;
@@ -114,8 +115,15 @@ static jk_env_t * JK_METHOD jk2_env_get( jk_env_t *parentEnv )
         env->l=parentEnv->l;
         env->globalPool=parentEnv->globalPool;
         env->envCache=parentEnv->envCache;
-
-        fprintf( stderr, "env:Create child env %p %p\n", parentEnv, env);
+        env->debug=parentEnv->debug;
+        
+        if( env->debug > 0 ) {
+            if( env->l == NULL ) 
+                fprintf( stderr, "env:Create child env %p %p\n", parentEnv, env);
+            else 
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "env:Create child env %p %p\n", parentEnv, env);
+        }
     }
     return env;
 }
@@ -186,6 +194,10 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
         return NULL;
     }
 
+    if( strcmp( "disabled", type ) == 0 ) {
+        return NULL;
+    }
+
     if( localName!=NULL && strncmp( localName, type, strlen( type )) == 0 ) {
         /* Common error, make it 'localName' */
         if( strcmp( type, localName ) == 0 ) {
@@ -195,11 +207,13 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
         }
     }
 
-    if( env->l != NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "env.createBean2(): Create [%s] %s\n", type, localName);
-    } else {
+    if( env->debug > 0 ) {
+        if( env->l != NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "env.createBean2(): Create [%s] %s\n", type, localName);
+        } else {
             fprintf(stderr, "env.createBean2(): Create [%s] %s\n", type, localName);
+        }
     }
     
     fac=(jk_env_objectFactory_t)env->_registry->get( env, env->_registry, type);
@@ -251,7 +265,13 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
         return NULL;
     }
 
-    fprintf(stderr,"env.createBean2(): register %s %p\n", result->name, result->object);
+    if( env->debug > 0 ) {
+        if( env->l == NULL ) 
+            fprintf(stderr,"env.createBean2(): register %s %p\n", result->name, result->object);
+        else 
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "env.createBean2(): register %s %p\n", result->name, result->object);
+    }
 
     jk_env_globalEnv->_objects->put( env, jk_env_globalEnv->_objects, result->name, result, NULL );
 
@@ -272,15 +292,23 @@ static void JK_METHOD jk2_env_alias(jk_env_t *env, const char *name, const char 
 
     if( jkb==NULL ) {
         if( env->l==NULL ) {
-            fprintf(stderr,"env.alias(): Not found %s\n", name);
+            if( env->debug > 0 )
+                fprintf(stderr,"env.alias(): Not found %s\n", name);
         } else {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                           "env.alias(): Not found %s\n", name);
         }
         return ;
     }
+
+    if( env->debug > 0 ) {
+        if( env->l == NULL ) 
+            fprintf(stderr,"env.alias(): alias %s %s\n", name, alias);
+        else 
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "env.alias(): alias %s %s\n", name, alias);
+    }
     
-    fprintf(stderr,"env.alias(): alias %s %s\n", name, alias);
     jk_env_globalEnv->_objects->put( env, jk_env_globalEnv->_objects, alias, jkb, NULL );
 }
 
@@ -291,11 +319,23 @@ static void * JK_METHOD jk2_env_getByName(jk_env_t *env, const char *name)
     jk_bean_t *result=env->getBean( env, name );
         
     if( result==NULL ) {
-        fprintf(stderr,"env.alias(): Can't find %p %s\n", env, name);
+        if( env->debug > 0 ) {
+            if( env->l == NULL ) 
+                fprintf(stderr,"env.getByName(): Can't find %p %s\n", env, name);
+            else 
+                env->l->jkLog(env, env->l, JK_LOG_INFO,
+                              "env.getByName(): Can't find %p %s\n", env, name);
+        }
         return NULL;
     }
     
-    fprintf(stderr,"env.alias(): Get by name %s %p\n", name, result->object);
+    if( env->debug > 0 ) {
+        if( env->l == NULL ) 
+            fprintf(stderr,"env.getByName(): Get by name %s %p\n", name, result->object);
+        else 
+            env->l->jkLog(env, env->l, JK_LOG_INFO,
+                          "env.getByName(): Get by name %s %p\n", name, result->object);
+    }
     return result->object;
 }    
 
@@ -408,7 +448,7 @@ static void jk2_env_initEnv( jk_env_t *env, char *id ) {
     env->getEnv= jk2_env_get; 
     env->recycleEnv= jk2_env_recycleEnv; 
     env->releaseEnv= jk2_env_put; 
-
+    env->debug = 0;
     env->jkClearException=jk_env_jkClearException;
     env->jkException=jk_env_jkException;
 
