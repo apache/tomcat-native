@@ -1563,7 +1563,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
             else {
                 jk_log(l, JK_LOG_INFO,
                        "sending request to tomcat failed in send loop. "
-                       "err=%d\n", i);
+                       "retry=%d\n", i);
             }
 
         }
