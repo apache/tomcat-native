@@ -218,7 +218,10 @@ struct jk_env {
      */
     void (JK_METHOD *registerFactory)( jk_env_t *env, const char *type,
                                        jk_env_objectFactory_t factory);
-    
+
+    /** If APR is used, return a global pool
+     */
+    void *(JK_METHOD *getAprPool)(jk_env_t *env );
     
     /* private */
     struct jk_map *_registry;
@@ -231,7 +234,7 @@ struct jk_env {
 
 void JK_METHOD jk2_registry_init(jk_env_t *env);
 
-
+    
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

@@ -55,10 +55,12 @@
  *                                                                           *
  * ========================================================================= */
  
+#include "jk_global.h"
 #include "jk_env.h"
 #include "jk_objCache.h"
 
 jk_env_t *jk_env_globalEnv;
+void *jkGlobalAprPool;
 
 /* Private methods 
 */
@@ -69,6 +71,29 @@ static void jk2_env_initEnv( jk_env_t *env, char *id );
 */
 
 /* -------------------- Env management -------------------- */
+
+static void JK_METHOD *jk2_env_getAprPool( jk_env_t *env ) {
+#ifdef HAS_APR
+    /* We don't want to have to recreate the scoreboard after
+     * restarts, so we'll create a global pool and never clean it.
+     */
+    if( jkGlobalAprPool==NULL ) {
+        int rc;
+        
+        /* Make sure apr is initialized */
+        apr_initialize(); 
+        rc = apr_pool_create(( apr_pool_t **)&jkGlobalAprPool, NULL);
+        if (rc != APR_SUCCESS || jkGlobalAprPool==NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
+                          "Unable to create global apr pool\n");
+            return NULL;
+        }
+    }
+    return jkGlobalAprPool;
+#else
+    return NULL;
+#endif
+}
 
 /** Public method, creates/get the global env
  */
@@ -109,7 +134,8 @@ static jk_env_t * JK_METHOD jk2_env_get( jk_env_t *parentEnv )
         env->releaseEnv= parentEnv->releaseEnv; 
         env->jkClearException=parentEnv->jkClearException;
         env->jkException=parentEnv->jkException;
-        
+        env->getAprPool=parentEnv->getAprPool;
+    
         env->_registry=parentEnv->_registry;
         env->_objects=parentEnv->_objects;
         env->l=parentEnv->l;
@@ -393,7 +419,7 @@ static void JK_METHOD jk2_env_registerFactory(jk_env_t *env,
                       "env.registerFactory(): NullPointerException\n");
         return;
     }
-    env->_registry->put( env, env->_registry, type, fact, NULL );
+    env->_registry->put( env, env->_registry, (char *)type, (void *)fact, NULL );
 }
 
 /* -------------------- Exceptions -------------------- */
@@ -457,6 +483,7 @@ static void jk2_env_initEnv( jk_env_t *env, char *id ) {
     env->debug = 0;
     env->jkClearException=jk_env_jkClearException;
     env->jkException=jk_env_jkException;
+    env->getAprPool=jk2_env_getAprPool;
 
     env->id=0;
     

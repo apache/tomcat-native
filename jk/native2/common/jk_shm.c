@@ -81,7 +81,6 @@
 #include "apr_file_io.h"
 #include "apr_file_info.h"
 #include "apr_general.h"
-static apr_pool_t *globalShmPool;
 
 #elif defined(HAVE_MMAP) && !defined(WIN32)
 
@@ -117,20 +116,13 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     apr_file_t *file;
     apr_finfo_t finfo;
     apr_mmap_t *aprMmap;
+    apr_pool_t *globalShmPool;
 
-    /* We don't want to have to recreate the scoreboard after
-     * restarts, so we'll create a global pool and never clean it.
-     */
-    if( globalShmPool==NULL ) {
-        /* Make sure apr is initialized */
-        apr_initialize(); 
-        rc = apr_pool_create(&globalShmPool, NULL);
-        if (rc != APR_SUCCESS || globalShmPool==NULL ) {
-            env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                          "Unable to create global pool for jk_shm\n");
-            return rc;
-        }
-    }
+    globalShmPool= (apr_pool_t *)env->getAprPool( env );
+
+    if( globalShmPool==NULL )
+        return JK_FALSE;
+
 
     /* First make sure the file exists and is big enough
      */
@@ -331,6 +323,11 @@ static int JK_METHOD jk2_shm_init(struct jk_env *env, jk_shm_t *shm) {
 
     if( shm->size == 0  ) {
         shm->size = shm->slotSize * shm->slotMaxCount;
+    }
+
+    if( shm->mbean->debug > 0 ) {
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "shm.init(): file=%s size=%d\n",
+                      shm->fname, shm->size);
     }
 
     if( shm->size <= 0 ) {
