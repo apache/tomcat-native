@@ -46,6 +46,8 @@ There are probably more reasons for having multiple workers but I guess that thi
 Tomcat workers are defined in a properties file dubbed <b>workers.properties</b> and this tutorial 
 explains how to work with it.
 </p>
+<p>The generic workers.properties directive is in the form:</p>
+<p><strong>worker.&lt;worker name&gt;.&lt;directive&gt;=&lt;value&gt;</strong></p>
 </section>
  
 <section name="Directives">
@@ -61,11 +63,11 @@ The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z
 
 <subsection name="Mandatory directives">
 <p>Mandatory directives are the one that each worker <b>must</b> contain. Without them the worker will
-be unavailable or will missbehave.
+be unavailable or will misbehave.
 </p>
 <directives>
-<directive name="type" required="true">
-Type of the worker (can be one of ajp13, jni or lb). The type of the worker
+<directive name="type" default="ajp13" required="true">
+Type of the worker (can be one of ajp13, ajp14, jni or lb). The type of the worker
 defines the directives that can be applied to the worker.
 </directive>
 </directives>
@@ -74,13 +76,51 @@ defines the directives that can be applied to the worker.
 <subsection name="AJP13 worker directives">
 <p>AJP13 worker directives are the preferred worker type that JK uses for communication
 between web server and Tomcat. This type of worker uses sockets as communication
-channel.
+channel. For detailed description of the AJP13 protocol stack browse to
+<a href="../common/ajpv13a.html">AJPv13 protocol specification</a>
 </p>
 <directives>
-<directive name="host" required="true">
+
+<directive name="host" default="localhost" required="true">
 Host name or IP address of the backend Tomcat instance. The remote Tomcat must
-support the ajp13 protocol.
+support the ajp13 protocol stack. The host name can have a <b>port</b> number
+embedded separated by the colon (':') character. 
 </directive>
+
+<directive name="port" default="8009" required="false">
+Port number of the remote Tomcat instance listening for defined protocol requests.
+</directive>
+
+<directive name="socket_timeout" default="infinite" required="false">
+Socket timeout in seconds used for communication channel between JK and remote host.
+If remote host does not respond inside that timeout the JK will generate an error,
+and retry again. 
+</directive>
+
+<directive name="socket_keepalive" required="false">
+This directive should be used when you have a firewall between your webserver
+and the Tomcat engine, who tend to drop inactive connections. This flag will told Operating System
+to send <code>KEEP_ALIVE</code> message on inactive connections (interval depend on global OS settings,
+generally 120ms), and thus prevent the firewall to cut the connection.
+To enable keepalive set this property value to the number greater then <b>0</b>.
+</directive>
+
+<directive name="recycle_timeout" required="false">
+The number of seconds that told webserver to cut an ajp13 connection after some time of 
+inactivity. When choosing an endpoint for a request and the assigned socket is open, it will be
+closed if it was not used for the configured time.
+It's a good way to ensure that there won't too old threads living on Tomcat side, 
+with the extra cost you need to reopen the socket next time a request be forwarded.
+This property is very similar to <b>cache_timeout</b> but works also in non-cache mode. 
+</directive>
+
+<directive name="retries" default="3" required="false">
+The number of retries that the worker will try in case of error returned from remote
+Tomcat. If the number of retries set is greater then three (the default value), on
+each retry after default an extra wait of 100ms will be inserted.
+</directive>
+
+
 </directives>
 </subsection>
 
