@@ -171,7 +171,7 @@ static jk_uriEnv_t *jk2_uriMap_prefixMap(jk_env_t *env, jk_uriMap_t *uriMap,
         if (uriLen < uwr->prefix_len)
             continue;
         if (strncmp(uri, uwr->prefix, uwr->prefix_len) == 0) {
-            if (uwr->prefix_len >best_match) {
+            if (uwr->prefix_len > best_match) {
                 best_match=uwr->prefix_len;
                 match=uwr;
             }
@@ -571,7 +571,7 @@ static jk_uriEnv_t *jk2_uriMap_mapUri(jk_env_t *env, jk_uriMap_t *uriMap,
     /* Then prefix match */
     match = jk2_uriMap_prefixMap(env, uriMap, ctxEnv->prefixMatch, uri, uriLen);
     if (match != NULL) {
-        char c = uri[match->prefix_len];
+        char c = uri[match->prefix_len - 1];
         /* XXX Filter prefix matches to allow only exact 
                matches with an optional path_info or query string at end.
                Fixes Bugzilla#12141, needs review..

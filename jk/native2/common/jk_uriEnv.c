@@ -125,7 +125,6 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     char *uri = NULL;
     char *colon;
     char host[1024];
-    char path[1024];
 
     strcpy(host, name);
     colon = strchr(host, ':');
@@ -147,7 +146,6 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
         uriEnv->virtual = uriEnv->pool->pstrdup(env, uriEnv->pool, host);
         return JK_OK;
     }
-    strcpy(path, uri);
     if (colon) {
         *uri = '\0';
         uriEnv->port = atoi(colon);
@@ -159,8 +157,9 @@ static int jk2_uriEnv_parseName( jk_env_t *env, jk_uriEnv_t *uriEnv,
     }
     else
         uriEnv->virtual = "*";
-   uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, path);
-    
+    *uri = '/';
+    uriEnv->uri = uriEnv->pool->pstrdup(env, uriEnv->pool, uri);
+
     return JK_OK;
 }
 #endif /* HAS_APR */
@@ -398,7 +397,9 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
         } else {
             /* context based /context/prefix/ASTERISK  */
             asterisk[1]      = '\0';
+#if 0
             asterisk[0]      = '\0'; /* Remove the extra '/' */
+#endif
             uriEnv->suffix      = NULL;
             uriEnv->prefix      = uri;
             uriEnv->prefix_len  =strlen( uriEnv->prefix );
