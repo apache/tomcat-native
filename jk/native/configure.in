@@ -68,6 +68,185 @@ AC_ARG_WITH(apxs,
 	AC_MSG_RESULT(no apxs given)
 ])
 
+dnl it is copied from the configure of JServ ;=)
+dnl and adapted. 
+
+dnl Find the JDK
+dnl Results go in JAVA_HOME
+dnl Also sets JAVA_PLATFORM to 1 for 1.1 and to 2 for 1.2
+
+AC_MSG_CHECKING([for JDK location (please wait)])
+
+dnl The order is: --with-java-home first, environment second, guessed value third.
+    
+dnl This is a safe default. Could screw up on the security features, but
+dnl oh well, this is what --with-java2 is for.
+    
+if ${TEST} -n "${JAVA_HOME}" ; then
+	JAVA_HOME_ENV="${JAVA_HOME}"
+else
+	JAVA_HOME_ENV=""
+fi
+JAVA_HOME=""
+JAVA_PLATFORM="1"
+
+AC_ARG_WITH(java-home,
+[  --with-java-home=DIR     Where is your JDK root directory.],
+[
+    
+    # This stuff works if the command line parameter --with-java-home was
+    # specified, so it takes priority rightfully.
+    
+    JAVA_HOME=${withval}
+	
+    if ${TEST} ! -d "${JAVA_HOME}" ; then
+        AC_MSG_ERROR(Not a directory: ${JAVA_HOME})
+    fi
+	
+    AC_MSG_RESULT(${JAVA_HOME})
+	
+],
+[
+    # This works if the parameter was NOT specified, so it's a good time
+    # to see what the enviroment says.
+        
+    # Since Sun uses JAVA_HOME a lot, we check it first and ignore the
+    # JAVA_HOME, otherwise just use whatever JAVA_HOME was specified.
+        
+    if ${TEST} -n "${JAVA_HOME_ENV}" ; then
+            
+        JAVA_HOME=${JAVA_HOME_ENV}
+        AC_MSG_RESULT(${JAVA_HOME_ENV} from environment)
+    fi
+])
+
+if ${TEST} -z "${JAVA_HOME}" ; then
+    
+    # Oh well, nobody set neither JAVA_HOME nor JAVA_HOME, have to guess
+        
+    # The following code is based on the code submitted by Henner Zeller
+    # for ${srcdir}/src/scripts/package/rpm/ApacheJServ.spec
+        
+    # Two variables will be set as a result:
+    #
+    # JAVA_HOME
+    # JAVA_PLATFORM
+    AC_MSG_CHECKING([Try to guess JDK location])
+        
+        
+    for JAVA_PREFIX in \
+	    /usr/local \
+	    /usr/local/lib \
+    	    /usr \
+    	    /usr/lib \
+            /opt  \
+    	    / 
+    do
+        for JAVA_PLATFORM in 3 2 1 ;
+        do
+            
+            for subversion in .9 .8 .7 .6 .5 .4 .3 .2 .1 "" ;
+                do
+                    for VARIANT in IBMJava2- java java- jdk jdk-;
+                    do
+                        GUESS="${JAVA_PREFIX}/${VARIANT}1.${JAVA_PLATFORM}${subversion}"
+dnl                        AC_MSG_CHECKING([${GUESS}])
+                        
+                        if ${TEST} -d "${GUESS}/bin" \
+                        && ${TEST} -d "${GUESS}/include" ; then
+                        
+                            JAVA_HOME="${GUESS}"
+                            AC_MSG_RESULT([${GUESS}])
+                            break
+                        fi
+
+                    done
+
+                    if ${TEST} -n "${JAVA_HOME}" ; then
+                        break;
+                    fi
+
+                done
+
+                if ${TEST} -n "${JAVA_HOME}" ; then
+                    break;
+                fi
+
+            done
+
+            if ${TEST} -n "${JAVA_HOME}" ; then
+                break;
+            fi
+
+        done
+
+        if ${TEST} -n "${JAVA_HOME}" ; then
+
+            dnl Just to have the messages looking uniformly
+
+            AC_MSG_CHECKING(Java platform)
+            AC_MSG_RESULT([guess ${JAVA_PLATFORM}])
+        fi                                                                      
+
+        
+    else
+    
+        AC_MSG_CHECKING(Java platform)
+
+        AC_ARG_WITH(java-platform,
+        [  --with-java-platform=VAL Force the Java platorm
+                          (value is 1 for 1.1.x or 2 for 1.2.x or greater)],
+        [
+            dnl This requires a bit of tweaking to be handled properly, but
+            dnl the default is good enough
+            
+            JAVA_PLATFORM="2"
+        ])
+
+        AC_MSG_RESULT(forced Java ${JAVA_PLATFORM})
+
+    fi
+
+if ${TEST} -z "${JAVA_HOME}" ; then
+
+    AC_MSG_ERROR([JDK home not found, please specify one with --with-java-home option (run ./configure --help for more options)])
+fi
+dnl end of JServ ;=)
+AC_SUBST(JAVA_HOME)
+
+dnl guess OS = OS_TYPE for jni_md.h
+OS=""
+AC_ARG_WITH(os-type,
+[  --with-os-type[=SUBDIR]     Where is your JDK os-type subdirectory.],
+[
+    OS=${withval}
+	
+    if ${TEST} ! -d "${JAVA_HOME}/${OS}" ; then
+        AC_MSG_ERROR(Not a directory: ${JAVA_HOME}/${OS})
+    fi
+],
+[
+    AC_MSG_CHECKING(os_type directory)
+    if ${TEST} -f ${JAVA_HOME}/include/jni_md.h; then
+    	OS=""
+    else
+        for f in ${JAVA_HOME}/include/*/jni_md.h; do
+            if ${TEST} -f $f; then
+                OS=`dirname ${f}`
+                OS=`basename ${OS}`
+                echo " ${OS}"
+            fi
+        done
+        if ${TEST} -z "${OS}"; then
+            AC_MSG_RESULT(Cannot find jni_md.h in ${JAVA_HOME}/${OS})
+            AC_MSG_ERROR(You should retry --with-os-type=SUBDIR)
+        fi
+    fi
+])
+AC_SUBST(OS)
+
+
+dnl Check that  a WEBSERVER has been given
 if ${TEST} -z "$WEBSERVER" ; then
 	AC_MSG_ERROR(Cannot find the WebServer)
 fi
