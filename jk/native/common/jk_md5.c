@@ -502,7 +502,7 @@ char * JK_METHOD jk_md5(const unsigned char *org, const unsigned char *org2, cha
 	if (org2 != NULL)
 		ap_MD5Update(&ctx, org2, strlen(org2));
 
-    ap_MD5Final(dst, &ctx);
+    ap_MD5Final(buf, &ctx);
 	return (jk_hextocstr(buf, dst, JK_MD5_DIGESTSIZE));
 }
 
