@@ -645,9 +645,16 @@ static const char *jk_set_worker_file(cmd_parms *cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
 
-    conf->worker_file = worker_file;
+    if ( worker_file[0] != '/' ) {
+        /* we need an absolut path */
+        conf->worker_file = ap_server_root_relative(cmd->pool,worker_file);
+    } else
+        conf->worker_file = ap_pstrdup(cmd->pool,worker_file);
+ 
+    if (conf->worker_file == NULL)
+        return "JkWorkersFile file_name invalid";
 
-    if (stat(worker_file, &statbuf) == -1)
+    if (stat(conf->worker_file, &statbuf) == -1)
         return "Can't find the workers file specified";
 
     return NULL;
