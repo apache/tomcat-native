@@ -31,8 +31,13 @@ import org.apache.tomcat.util.IntrospectionUtils;
  * @author Costin Manolache
  */
 public class Shm14 extends Shm {
+    
+    
     // Not ready yet.
-
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( Shm14.class );
+    
     MappedByteBuffer bb;
 
     public void init() {
@@ -60,7 +65,8 @@ public class Shm14 extends Shm {
     public  int invoke(Msg msg, MsgContext ep )
         throws IOException
     {
-        System.err.println("ChannelShm14.invoke: "  + ep );
+        if (log.isDebugEnabled())
+            log.debug("ChannelShm14.invoke: "  + ep );
 
         // 
         

@@ -91,6 +91,10 @@ import org.apache.catalina.Server;
 	@version $Revision$
  */
 public class BaseJkConfig  implements LifecycleListener {
+
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( BaseJkConfig.class );
+    
     protected int debug=0;
     protected File configHome = null;
     protected File workersConfig = null;
@@ -132,7 +136,7 @@ public class BaseJkConfig  implements LifecycleListener {
 	try {
 	    mod_jk = getWriter();
 	} catch(IOException iex) {
-	    log("Unable to open config file");
+	    log.warn("Unable to open config file", iex);
 	    return;
 	}
 	Lifecycle who = evt.getLifecycle();
@@ -478,8 +482,5 @@ public class BaseJkConfig  implements LifecycleListener {
 	    return true;
 
 	return false;
-    }
-    protected void log(String msg) {
-	System.err.println(msg);
     }
 }

@@ -57,6 +57,10 @@ import java.util.Enumeration;
  */
 public final class SimpleHashtable implements Enumeration
 {
+    
+    private static org.apache.commons.logging.Log log=
+        org.apache.commons.logging.LogFactory.getLog( SimpleHashtable.class );
+    
     // entries ...
     private Entry		table[];
 
@@ -313,6 +317,7 @@ public final class SimpleHashtable implements Enumeration
 
     private static final int dL=0;
     private void d(String s ) {
-	System.err.println( "SimpleHashtable: " + s );
+	if (log.isDebugEnabled())
+            log.debug( "SimpleHashtable: " + s );
     }
 }

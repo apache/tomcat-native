@@ -86,8 +86,5 @@ public class WorkerDummy extends JkHandler
     }
     
     private static final int dL=0;
-    private static void d(String s ) {
-        System.err.println( "WorkerDummy: " + s );
-    }
 }
 

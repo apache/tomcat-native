@@ -88,7 +88,7 @@ public class JkServlet
     
     private static final int dL=10;
     private static void d(String s ) {
-        System.err.println( "JkServlet: " + s );
+        log( "JkServlet: " + s );
     }
 
 

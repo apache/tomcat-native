@@ -346,8 +346,7 @@ public final class IntrospectionUtils {
             }
 
         } catch (IllegalArgumentException ex2) {
-            System.err.println("IAE " + o + " " + name + " " + value);
-            ex2.printStackTrace();
+            log.warn("IAE " + o + " " + name + " " + value, ex2);
         } catch (SecurityException ex1) {
             if (dbg > 0)
                 d("SecurityException for " + o.getClass() + " " + name + "="
@@ -399,8 +398,7 @@ public final class IntrospectionUtils {
             }
 
         } catch (IllegalArgumentException ex2) {
-            System.err.println("IAE " + o + " " + name);
-            ex2.printStackTrace();
+            log.warn("IAE " + o + " " + name, ex2);
         } catch (SecurityException ex1) {
             if (dbg > 0)
                 d("SecurityException for " + o.getClass() + " " + name + ")");
