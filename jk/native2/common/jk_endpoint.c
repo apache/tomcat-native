@@ -73,48 +73,46 @@
 #include "jk_objCache.h"
 #include "jk_registry.h"
 
-static char *myAttInfo[]={ "channel", "active", "reqCnt", "errCnt", NULL };
 
-/** Will return endpoint specific runtime properties
- *
- *    uri          The uri that is beeing processed, NULL if the endpoing is inactive
- *    channelName  The channel that is using this endpoint
- *    workerName   The name of the worker using this endpoint
- *    requests     Number of requests beeing serviced by this
- *    avg_time, max_time
- *    
- */
-static void * JK_METHOD jk2_endpoint_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name ) {
+static int JK_METHOD jk2_endpoint_init(jk_env_t *env, jk_bean_t *bean ) {
     jk_endpoint_t *ep=(jk_endpoint_t *)bean->object;
-    
-    if( strcmp( name, "channel" )==0 ) {
-        return ep->worker->channel->mbean->name;
-    } else if (strcmp( name, "active" )==0 ) {
-        if( ep->currentRequest != NULL )
-            return ep->currentRequest->req_uri;
-    } else if (strcmp( name, "reqCnt" )==0 ) {
-        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
-        sprintf( buf, "%d", ep->stats->reqCnt );
-        return buf;
-    } else if (strcmp( name, "errCnt" )==0 ) {
-        char *buf=env->tmpPool->calloc( env, env->tmpPool, 20 );
-        sprintf( buf, "%d", ep->stats->errCnt );
-        return buf;
+    jk_stat_t *stats;
+
+    /* alloc it inside the shm if possible */
+    if( ep->workerEnv->epStat != NULL && ep->workerEnv->childId >= 0 ) {
+        jk_stat_t *statArray=(jk_stat_t *)ep->workerEnv->epStat->data;
+        stats= & statArray[ ep->id ];
+        ep->workerEnv->epStat->structSize=sizeof( jk_stat_t );
+        ep->workerEnv->epStat->structCnt=ep->id + 1;
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "SHM stats %d %p %p %s %s childId=%d\n", ep->id,
+                      ep->workerEnv->epStat->data, stats,
+                      ep->mbean->localName, ep->mbean->name, ep->workerEnv->childId);
+    } else {
+        stats = (jk_stat_t *)ep->mbean->pool->calloc( env, ep->mbean->pool, sizeof( jk_stat_t ) );
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "Local stats %d %p %d\n", ep->id, ep->workerEnv->epStat, ep->workerEnv->childId );
     }
     
-    return NULL;
+    ep->stats=stats;
+
+    ep->stats->reqCnt=0;
+    ep->stats->errCnt=0;
+#ifdef HAVE_APR
+    ep->stats->maxTime=0;
+    ep->stats->totalTime=0;
+#endif
+
 }
 
 int JK_METHOD
 jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
-                      jk_bean_t *result,
+                          jk_bean_t *result,
                       const char *type, const char *name)
 {
     jk_endpoint_t *e = (jk_endpoint_t *)pool->alloc(env, pool,
                                                     sizeof(jk_endpoint_t));
     jk_workerEnv_t *workerEnv;
-    jk_stat_t *stats;
-    jk_pool_t *endpointPool = pool->create( env, pool, HUGE_POOL_SIZE );
     int epId;
 
     if (e==NULL) {
@@ -123,46 +121,29 @@ jk2_endpoint_factory( jk_env_t *env, jk_pool_t *pool,
         return JK_ERR;
     }
     
-    e->pool = endpointPool;
-
     /* Init message storage areas. Protocol specific.
      */
-    e->request = jk2_msg_ajp_create( env, e->pool, 0);
-    e->reply = jk2_msg_ajp_create( env, e->pool, 0);
-    e->post = jk2_msg_ajp_create( env, e->pool, 0);
-    result->getAttributeInfo=myAttInfo;
-    result->getAttribute= jk2_endpoint_getAttribute;
-    e->reuse = JK_FALSE;
+    e->request = jk2_msg_ajp_create( env, pool, 0);
+    e->reply = jk2_msg_ajp_create( env, pool, 0);
+    e->post = jk2_msg_ajp_create( env, pool, 0);
 
-    e->cPool=endpointPool->create(env, endpointPool, HUGE_POOL_SIZE );
+    e->readBuf=pool->alloc( env, pool, 8096 );
+    e->bufPos=0;
+    
+    result->init=jk2_endpoint_init;
+    
+    e->sd=-1;
+    e->recoverable=JK_TRUE;
+    e->cPool=pool->create(env, pool, HUGE_POOL_SIZE );
 
     e->channelData = NULL;
     e->currentRequest = NULL;
-    //    w->init= jk2_worker_ajp14_init;
-    //    w->destroy=jk2_worker_ajp14_destroy;
     epId=atoi( result->localName );
     
-    result->getAttribute= jk2_endpoint_getAttribute;
     result->object = e;
     e->mbean=result;
 
-    workerEnv=env->getByName( env, "workerEnv" );
-    
-    /* XXX alloc it inside the shm */
-    if( workerEnv->epStat != NULL && workerEnv->childId >= 0 ) {
-        stats= (jk_stat_t *) (workerEnv->epStat->data + sizeof( jk_stat_t ) * epId);
-        workerEnv->epStat->structSize=sizeof( jk_stat_t );
-        workerEnv->epStat->structCnt=epId + 1;
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "SHM stats %d %p %p %s %s childId=%d\n", epId, workerEnv->epStat->data, stats,
-                      result->localName, result->name, workerEnv->childId);
-    } else {
-        stats = (jk_stat_t *)pool->calloc( env, pool, sizeof( jk_stat_t ) );
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
-                      "Local stats %d %p %d\n", epId, workerEnv->epStat, workerEnv->childId );
-    }
-    
-    e->stats=stats;
+    e->workerEnv=env->getByName( env, "workerEnv" );
     
     return JK_OK;
 }
