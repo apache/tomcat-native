@@ -58,82 +58,73 @@ import org.apache.tools.ant.types.*;
 import org.apache.tools.ant.util.*;
 import org.apache.tools.ant.taskdefs.*;
 import org.apache.tools.ant.*;
+
 import org.apache.jk.ant.*;
 
 import java.io.*;
 import java.util.*;
 
 /**
- *  Compile using Gcj. This is ( even more ) experimental.
+ * Link java using gcj.
  * 
  * @author Costin Manolache
  */
-public class GcjCompiler extends CompilerAdapter {
-    static GlobPatternMapper co_mapperS=new GlobPatternMapper();
+public class GcjLinker extends SoTask implements LinkerAdapter {
+    SoTask so;
+    protected static GlobPatternMapper lo_mapper=new GlobPatternMapper();
     static {
-	co_mapperS.setFrom("*.java");
-	co_mapperS.setTo("*.o");
+	lo_mapper.setFrom("*.java");
+	lo_mapper.setTo("*.o");
     }
-    
-    public GcjCompiler() {
-	super();
+    public GcjLinker() {
+	so=this;
+    };
+
+    public void setSoTask(SoTask so ) {
+	this.so=so;
+	so.duplicateTo( this );
     }
 
-    public GlobPatternMapper getOMapper() {
-	return co_mapperS;
+    public void execute() throws BuildException {
+	findSourceFiles();
+	link(this.srcList);
     }
 
-    /** Compile using libtool.
+    /** Link using libtool.
      */
-    public void compileSingleFile(Source sourceObj) throws BuildException {
-	File f=sourceObj.getFile();
-	String source=f.toString();
+    public boolean link(Vector srcList) throws BuildException {
 	Commandline cmd = new Commandline();
 
 	cmd.setExecutable( "gcj" );
 
-	cmd.createArgument().setValue("-c" );
-	
-	if( optG ) {
-	    cmd.createArgument().setValue("-g" );
-	    //  cmd.createArgument().setValue("-Wall");
-	}
-	addOptimize( cmd );
-	addExtraFlags( cmd );
-	cmd.createArgument().setValue("-fPIC" );
-	addIncludes( cmd );
-
+	cmd.createArgument().setValue( "--shared" );
 	cmd.createArgument().setValue( "-o" );
-	File ff=new File( buildDir, sourceObj.getTargetFile(co_mapperS));
-	cmd.createArgument().setValue( ff.toString() );
-	try {
-	    String targetDir=sourceObj.getPackage();
-	    File f1=new File( buildDir, targetDir );
-	    f1.mkdirs();
-	} catch( Exception ex ) {
-	    ex.printStackTrace();
+	cmd.createArgument().setValue( soFile + ".so" );
+
+	project.log( "Linking " + buildDir + "/" + soFile + ".so");
+
+	for( int i=0; i<srcList.size(); i++ ) {
+	    Source source=(Source)srcList.elementAt(i);
+	    File srcF=new File(buildDir, source.getTargetFile(co_mapper));
+	    cmd.createArgument().setValue( srcF.toString() );
 	}
 	
-	cmd.createArgument().setValue( source );
-	project.log( "Compiling " + source);
-
-	if( debug > 0 )
-	    project.log( "Command: " + cmd ); 
 	int result=execute( cmd );
 	if( result!=0 ) {
-	    displayError( result, source, cmd );
+	    log("Link failed " + result );
+	    log("Command:" + cmd.toString());
+	    log("Output:" );
+	    if( outputstream!=null ) 
+		log( outputstream.toString());
+	    log("StdErr:" );
+	    if( errorstream!=null ) 
+		log( errorstream.toString());
+	    
+	    throw new BuildException("Link failed " + soFile);
 	}
 	closeStreamHandler();
+
+	return true;
     }
-
-    protected void addIncludes(Commandline cmd) {
-	String [] includeList = ( includes==null ) ?
-	    new String[] {} : includes.getIncludePatterns(project); 
-	for( int i=0; i<includeList.length; i++ ) {
-	    cmd.createArgument().setValue("-I" + includeList[i] );
-	}
-    }
-
-
 }
 
