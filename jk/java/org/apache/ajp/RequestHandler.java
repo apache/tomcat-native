@@ -123,7 +123,7 @@ public class RequestHandler extends AjpHandler
     public static final byte SC_A_SSL_CERT      = 7;
     public static final byte SC_A_SSL_CIPHER    = 8;
     public static final byte SC_A_SSL_SESSION   = 9;
-    public static final byte SC_A_SSL_KEY_SIZE  = 11; // AJP14 new header?
+    public static final byte SC_A_SSL_KEY_SIZE  = 11; // ajp14 originally, now in ajp13 with jk 1.2/2.0
     public static final byte SC_A_SECRET        = 12;
 
     // Used for attributes which are not in the list above
@@ -397,9 +397,10 @@ public class RequestHandler extends AjpHandler
                 break;
 
 	    case SC_A_SSL_KEY_SIZE: // Ajp13 !
+                isSSL = true;
 		req.setAttribute("javax.servlet.request.key_size",
 				 Integer.toString(msg.getInt()));
-		return 200;
+		break;
 	    default:
                 // Ignore. Assume a single-string value - we shouldn't
                 // allow anything else.
