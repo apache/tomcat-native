@@ -178,6 +178,10 @@ public final class Request {
     protected Cookies cookies = new Cookies(headers);
     protected Parameters parameters = new Parameters();
 
+    protected MessageBytes remoteUser=new MessageBytes();
+    protected MessageBytes workerId=new MessageBytes();
+    protected MessageBytes authType=new MessageBytes();
+    protected Hashtable attributes=new Hashtable();
 
     // ------------------------------------------------------------- Properties
 
@@ -200,7 +204,6 @@ public final class Request {
     public UDecoder getURLDecoder() {
         return urlDecoder;
     }
-
 
     // -------------------- Request data --------------------
 
@@ -358,6 +361,33 @@ public final class Request {
     }
 
 
+    // -------------------- Other attributes --------------------
+    // We can use notes for most - need to discuss what is of general interest
+    
+    public void setAttribute( String name, Object o ) {
+        attributes.put( name, o );
+    }
+
+    public Hashtable getAttributes() {
+        return attributes;
+    }
+
+    public Object getAttribute(String name ) {
+        return attributes.get(name);
+    }
+    
+    public MessageBytes getRemoteUser() {
+        return remoteUser;
+    }
+
+    public MessageBytes getAuthType() {
+        return authType;
+    }
+
+    public MessageBytes getWorkerId() {
+        return workerId;
+    }
+
     // -------------------- Input Buffer --------------------
 
 
@@ -437,6 +467,10 @@ public final class Request {
         remoteAddrMB.setString("127.0.0.1");
         remoteHostMB.setString("localhost");
 
+        remoteUser.recycle();
+        authType.recycle();
+        workerId.recycle();
+        attributes.clear();
     }
 
 
