@@ -201,14 +201,7 @@ public class ThreadPool  {
     }
 
     public void setMaxThreads(int maxThreads) {
-        if (maxThreads < MAX_THREADS_MIN) {
-            log.warn(sm.getString("threadpool.max_threads_too_low",
-                                  new Integer(maxThreads),
-                                  new Integer(MAX_THREADS_MIN)));
-            this.maxThreads = MAX_THREADS_MIN;
-        } else {
-            this.maxThreads = maxThreads;
-        }
+        this.maxThreads = maxThreads;
     }
 
     public int getMaxThreads() {
@@ -477,6 +470,11 @@ public class ThreadPool  {
     protected void adjustLimits() {
         if(maxThreads <= 0) {
             maxThreads = MAX_THREADS;
+        } else if (maxThreads < MAX_THREADS_MIN) {
+            log.warn(sm.getString("threadpool.max_threads_too_low",
+                                  new Integer(maxThreads),
+                                  new Integer(MAX_THREADS_MIN)));
+            maxThreads = MAX_THREADS_MIN;
         }
 
         if(maxSpareThreads >= maxThreads) {
