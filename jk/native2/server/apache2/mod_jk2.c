@@ -78,6 +78,7 @@
 #include "http_protocol.h"
 #include "http_main.h"
 #include "http_log.h"
+#include "scoreboard.h"
 
 #include "util_script.h"
 
@@ -324,7 +325,7 @@ static void *jk2_create_config(apr_pool_t *p, server_rec *s)
         fprintf( stderr, "Create config for virtual host\n");
     } else {
         /* Default host */
-        fprintf( stderr, "Create config for main host\n");        
+        /*  fprintf( stderr, "Create config for main host\n");         */
     }
 
     jkb = workerEnv->globalEnv->createBean2( workerEnv->globalEnv,
@@ -369,11 +370,6 @@ static void *jk2_merge_config(apr_pool_t *p,
 static char * jk2_init(jk_env_t *env, apr_pool_t *pconf,
                        jk_workerEnv_t *workerEnv, server_rec *s )
 {
-    apr_proc_t proc;
-    
-    proc.pid=getpid();
-    workerEnv->childId=find_child_by_pid( & proc );
-
     workerEnv->init(env, workerEnv );
     workerEnv->server_name   = (char *)ap_get_server_version();
     ap_add_version_component(pconf, JK_EXPOSED_VERSION);
@@ -450,6 +446,7 @@ static int jk2_post_config(apr_pool_t *pconf,
 
     workerEnv->parentInit( env, workerEnv);
 
+
 /*     if(!workerEnv->was_initialized) { */
 /*         workerEnv->was_initialized = JK_OK;         */
         
@@ -492,13 +489,11 @@ static void jk2_child_init(apr_pool_t *pconf,
  */
 static int jk2_handler(request_rec *r)
 {   
-    const char       *worker_name;
     jk_logger_t      *l=NULL;
     int              rc;
     jk_worker_t *worker=NULL;
     jk_endpoint_t *end = NULL;
     jk_uriEnv_t *uriEnv;
-    jk_uriEnv_t *dirEnv;
     jk_env_t *env;
     jk_workerEnv_t *workerEnv;
 

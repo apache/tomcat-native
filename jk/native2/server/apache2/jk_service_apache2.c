@@ -354,7 +354,36 @@ static int JK_METHOD jk2_init_ws_service(jk_env_t *env, jk_ws_service_t *s,
     /* Common initialization */
     /* XXX Probably not needed, we're duplicating */
     jk2_requtil_initRequest(env, s);
+
+    /* Ugly hack to get the childId - the index used in the scoreboard,
+       which we'll use in the jk scoreboard
+    */
+    if( workerEnv->childId == -1 ) 
+    {
+        apr_proc_t proc;
     
+        proc.pid=workerEnv->childProcessId;
+
+        /* detect if scoreboard exists, the method will SIGFLT
+           since it doesn't check internally
+        */
+        if( r->connection->sbh==NULL ) {
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "service.init() No scoreboard %d\n", proc.pid);
+            workerEnv->childId=-2;
+        }
+        workerEnv->childId=find_child_by_pid( & proc );
+        /* Avoid looking again */
+        if( workerEnv->childId == -1 ) {
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "service.init() Can't find child in scoreboard %d\n", proc.pid);
+            workerEnv->childId=-2;
+        } else {
+            env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                          "service.init() Found child in scoreboard %d %d\n", proc.pid, workerEnv->childId);
+        }
+    }
+
     s->ws_private = r;
     s->response_started = JK_FALSE;
     s->read_body_started = JK_FALSE;
