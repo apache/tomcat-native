@@ -65,6 +65,7 @@
 #define JK_MAP_H
 
 #include "jk_pool.h"
+#include "jk_env.h"
 #include "jk_logger.h"
 
 #ifdef __cplusplus
@@ -74,94 +75,119 @@ extern "C" {
 struct jk_logger;
 struct jk_pool;
 struct jk_map;
+struct jk_env;
 typedef struct jk_map jk_map_t;
 
-int map_alloc(jk_map_t **m, struct jk_pool *pool);
-
-int map_free(jk_map_t **m);
-
-int map_open(jk_map_t *m);
-
-int map_close(jk_map_t *m);
-
-void *map_get(jk_map_t *m,
-              const char *name,
-              const void *def);
-
-int map_get_int(jk_map_t *m,
-                const char *name,
-                int def);
-
-double map_get_double(jk_map_t *m,
-                      const char *name,
-                      double def);
-
-char *map_get_string(jk_map_t *m,
-                     const char *name,
-                     const char *def);
-
-/** Extract a String[] property. It'll split the value on
- *  ' ', tab, ',', '*'.
- *  @param pool Pool on which the result will be allocated. Defaults to the map's
- *              pool
- */ 
-char **map_get_string_list(jk_map_t *m,
-                           struct jk_pool *pool,
-                           const char *name,
-                           unsigned *list_len,
-                           const char *def);
-
-int map_put(jk_map_t *m,
-            const char *name,
-            const void *value,
-            void **old);
-
-int map_read_properties(jk_map_t *m,
-                        const char *f);
-
-int map_size(jk_map_t *m);
-
-char *map_name_at(jk_map_t *m,
-                  int idex);
-
-void *map_value_at(jk_map_t *m,
-                   int idex);
-  
-/**
- *  Replace $(property) in value.
- * 
+/** Map interface. This include only the basic operations, and
+ *   supports both name and index access.
  */
-char *map_replace_properties(const char *value, jk_map_t *m);
+struct jk_map {
+
+    void *(*get)(struct jk_env *env, struct jk_map *_this,
+                 const char *name);
+    
+    int (*put)(struct jk_env *env, struct jk_map *_this,
+               const char *name, void *value,
+               void **oldValue);
+
+    /*  int (*add)(struct jk_env *env, struct jk_map *_this, */
+    /*           const char *name, void *value ); */
+
+    /* Similar with apr_table, elts can be accessed by id
+     */
+    
+    int (*size)(struct jk_env *env, struct jk_map *_this);
+    
+    char *(*nameAt)(struct jk_env *env, struct jk_map *m,
+                    int pos);
+
+    void *(*valueAt)(struct jk_env *env, struct jk_map *m,
+                     int pos);
+
+    /* Admin operations */
+    void (*init)(struct jk_env *env, struct jk_map *m,
+                 int initialSize, void *wrappedNativeObj);
+
+    
+    /* Empty the map, remove all values ( but it can keep
+       allocated storage for [] )
+    */
+    void (*clear)(struct jk_env *env, struct jk_map *m);
+
+    struct jk_pool *pool;
+    void *_private;
+};
+
+int jk_map_default_create(struct jk_env *env, jk_map_t **m, 
+                          struct jk_pool *pool); 
+
+/* int map_open(jk_env *env, jk_map_t *m); */
+
+
+
+/* Additional functions that operate on maps. They are implemented
+ *  in jk_map.c, togheter with the 'default' jk map, but should operate
+ *  on any map.
+ */
+
+char *jk_map_getString(struct jk_env *env, jk_map_t *m,
+                       const char *name, char *def);
 
 /** Get a string property, using the worker's style
     for properties.
     Example worker.ajp13.host=localhost.
 */
-char *map_getStrProp(jk_map_t *m,
-                     const char *objType,
-                     const char *objName,
-                     const char *pname,
-                     char *def);
+char *jk_map_getStrProp(struct jk_env *env, jk_map_t *m,
+                        const char *objType, const char *objName,
+                        const char *pname, char *def);
+    
+int jk_map_getIntProp(struct jk_env *env, jk_map_t *m,
+                      const char *objType, const char *objName,
+                      const char *pname,
+                      int def);
 
-int map_getIntProp(jk_map_t *m,
-                   const char *objType,
-                   const char *objName,
-                   const char *pname,
-                   const int def);
+/** Add all the values from src into dst. Use dst's pool
+ */
+int jk_map_append(struct jk_env *env, jk_map_t * dst,
+                  jk_map_t * src );
 
-double map_getDoubleProp(jk_map_t *m,
-                         const char *objType,
-                         const char *objName,
-                         const char *pname,
-                         const double def);
+/* ========== Manipulating values   ========== */
 
-char **map_getListProp(jk_map_t *m,
-                       const char *objType,
-                       const char *objName,
-                       const char *pname, 
-                       unsigned *size);
 
-int map_copy(jk_pool_t *pool, jk_map_t * src, jk_map_t * dst);
+/** Extract a String[] property. It'll split the value on
+ *  ' ', tab, ',', '*'.
+ * 
+ *  @param pool Pool on which the result will be allocated. Defaults
+ *  to the map's pool XXX Use the env's tmp pool.
+ */ 
+char **jk_map_split(struct jk_env *env,  jk_map_t *m,
+                    struct jk_pool *pool, /* XXX will be removed */
+                    const char *listStr, unsigned *list_len );
+
+int jk_map_str2int(struct jk_env *env, char *value);
+
+/* Just atof...
+  double jk_map_getDouble(jk_env *env, jk_map_t *m, */
+/*                         const char *name, double def); */
+
+
+
+/* ========== Reading and parsing properties ========== */
+
+/** Read the properties from the file, doing $(prop) substitution
+ */
+int jk_map_readFileProperties(struct jk_env *env, jk_map_t *m,
+                              const char *f);
+
+/**
+ *  Replace $(property) in value.
+ * 
+ */
+char *jk_map_replaceProperties(struct jk_env *env, jk_map_t *m,
+                               struct jk_pool *resultPool, 
+                               const char *value);
+
+
 
 /* XXX Very strange hack to deal with special properties
  */
