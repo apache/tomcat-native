@@ -888,6 +888,8 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
 
             if (worker) {
                 jk_endpoint_t *e = NULL;
+                /* Update retries for this worker */
+                s.retries = worker->retries;                
                 if (worker->get_endpoint(worker, &e, logger)) {
                     int recover = JK_FALSE;
                     if (e->service(e, &s, logger, &recover)) {

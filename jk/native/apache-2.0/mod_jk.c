@@ -1732,7 +1732,9 @@ static int jk_handler(request_rec * r)
         }
 
         if (worker) {
+#ifndef NO_GETTIMEOFDAY
             struct timeval tv_begin, tv_end;
+#endif
             int rc = JK_FALSE;
             apache_private_data_t private_data;
             jk_ws_service_t s;
@@ -1744,7 +1746,8 @@ static int jk_handler(request_rec * r)
             private_data.r = r;
 
             jk_init_ws_service(&s);
-
+            /* Update retries for this worker */
+            s.retries = worker->retries;
             s.ws_private = &private_data;
             s.pool = &private_data.p;
 #ifndef NO_GETTIMEOFDAY

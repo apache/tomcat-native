@@ -72,6 +72,8 @@ int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def);
 
 char *jk_get_worker_secret_key(jk_map_t *m, const char *wname);
 
+int jk_get_worker_retries(jk_map_t *m, const char *wname, int def);
+
 void jk_set_log_format(const char *logformat);
 
 int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_wokers);

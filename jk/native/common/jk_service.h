@@ -34,6 +34,8 @@
 #include "jk_uri_worker_map.h"
 #include "jk_msg_buff.h"
 
+#define JK_RETRIES 3
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -210,6 +212,9 @@ struct jk_ws_service
     jk_msg_buf_t *reco_buf;
     int reco_status;
 
+    /* Number of retries. Defaults to JK_RETRIES
+     */
+    int retries;
     /*
      * Send the response headers to the browser.
      */
@@ -340,6 +345,11 @@ struct jk_endpoint
 struct jk_worker
 {
 
+    /*
+     * Public property to enable the number of retry attempts
+     * on this worker.
+     */
+    int retries;
     /* 
      * A 'this' pointer which is used by the subclasses of this class to
      * point to data/functions which are specific to a given protocol 

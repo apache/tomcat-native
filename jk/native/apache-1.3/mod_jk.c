@@ -1554,6 +1554,8 @@ static int jk_handler(request_rec * r)
 
             jk_init_ws_service(&s);
 
+            /* Update retries for this worker */
+            s.retries = worker->retries;
             s.ws_private = &private_data;
             s.pool = &private_data.p;
 #ifndef NO_GETTIMEOFDAY

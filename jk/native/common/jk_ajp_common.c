@@ -35,6 +35,24 @@
 #include "novsock2.h"
 #endif
 
+/* Sleep for 100ms */
+static void jk_sleep_def()
+{
+#ifdef OS2
+    DosSleep(100);
+#elif defined(BEOS)
+    snooze(100 * 1000);
+#elif defined(NETWARE)
+    delay(100);
+#elif defined(WIN32)
+    Sleep(100);
+#else
+    struct timeval tv;
+    tv.tv_usec = 100 * 1000;
+    tv.tv_sec = 0;
+    select(0, NULL, NULL, NULL, &tv);
+#endif
+} 
 
 const char *response_trans_headers[] = {
     "Content-Type",
@@ -1442,8 +1460,6 @@ static int ajp_get_reply(jk_endpoint_t *e,
     return JK_FALSE;
 }
 
-#define JK_RETRIES 3
-
 /*
  * service is now splitted in ajp_send_request and ajp_get_reply
  * much more easier to do errors recovery
@@ -1497,7 +1513,7 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
          * JK_RETRIES could be replaced by the number of workers in
          * a load-balancing configuration 
          */
-        for (i = 0; i < JK_RETRIES; i++) {
+        for (i = 0; i < s->retries; i++) {
             /*
              * We're using reqmsg which hold initial request
              * if Tomcat is stopped or restarted, we will pass reqmsg
@@ -1546,6 +1562,10 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
                     jk_log(l, JK_LOG_INFO,
                            "Receiving from tomcat failed, "
                            "recoverable operation attempt=%d\n", i);
+                    /* Check for custom retries */
+                    if (i >= JK_RETRIES) {
+                        jk_sleep_def();
+                    }
                 }
             }
 
@@ -1562,8 +1582,8 @@ int JK_METHOD ajp_service(jk_endpoint_t *e,
             }
             else {
                 jk_log(l, JK_LOG_INFO,
-                       "sending request to tomcat failed in send loop. "
-                       "retry=%d\n", i);
+                       "Sending request to tomcat failed,  "
+                       "recoverable operation attempt=%d\n", i);
             }
 
         }
@@ -1728,6 +1748,20 @@ int ajp_init(jk_worker_t *pThis,
                "setting recovery opts to %d\n",
                p->recovery_opts);
 
+        pThis->retries =
+            jk_get_worker_retries(props, p->name,
+                                  JK_RETRIES);
+        if (pThis->retries < 1) {
+            jk_log(l, JK_LOG_INFO,
+                   "number of retries must be grater then 1. Setting to default=%d\n",
+                   JK_RETRIES);
+            pThis->retries = JK_RETRIES;
+        }
+        else {
+            jk_log(l, JK_LOG_DEBUG,
+                   "setting number of retries to %d\n",
+                    pThis->retries);
+        }
         /* 
          *  Need to initialize secret here since we could return from inside
          *  of the following loop
