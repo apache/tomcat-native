@@ -43,13 +43,10 @@
   <property name="component.version"       value="1.0-dev"/>
 
   <!-- The base directory for compilation targets -->
-  <property name="build.home"              value="target"/>
+  <property name="build.home"              value="build"/>
 
   <!-- The base directory for component configuration files -->
   <property name="conf.home"               value="src/conf"/>
-
-  <!-- The base directory for distribution targets -->
-  <property name="dist.home"               value="dist"/>
 
   <!-- The base directory for component sources -->
   <property name="source.home"             value="src/java"/>
@@ -113,6 +110,7 @@
     <mkdir dir="${build.home}/conf"/>
     <mkdir dir="${build.home}/docs"/>
     <mkdir dir="${build.home}/docs/api"/>
+    <mkdir dir="${build.home}/lib"/>
     <mkdir dir="${build.home}/tests"/>
   </target>
 
@@ -126,7 +124,7 @@
   </target>
 
 
-  <target name="compile" depends="static"
+  <target name="compile" depends="static,javadoc"
    description="Compile shareable components">
     <javac  srcdir="${source.home}"
            destdir="${build.home}/classes"
@@ -138,6 +136,9 @@
     <copy    todir="${build.home}/classes" filtering="on">
       <fileset dir="${source.home}" excludes="**/*.java"/>
     </copy>
+    <jar    jarfile="${build.home}/lib/tomcat-${component.name}.jar"
+            basedir="${build.home}/classes"
+           manifest="${build.home}/conf/MANIFEST.MF"/>
   </target>
 
 
@@ -159,7 +160,6 @@
   <target name="clean"
    description="Clean build and distribution directories">
     <delete    dir="${build.home}"/>
-    <delete    dir="${dist.home}"/>
   </target>
 
 
@@ -167,13 +167,10 @@
    description="Clean and compile all components"/>
 
 
-  <target name="javadoc" depends="compile"
+  <target name="javadoc"
    description="Create component Javadoc documentation">
-    <mkdir      dir="${dist.home}"/>
-    <mkdir      dir="${dist.home}/docs"/>
-    <mkdir      dir="${dist.home}/docs/api"/>
     <javadoc sourcepath="${source.home}"
-                destdir="${dist.home}/docs/api"
+                destdir="${build.home}/docs/api"
            packagenames="org.apache.coyote.*"
                  author="true"
                 private="true"
@@ -183,22 +180,6 @@
                  bottom="Copyright (c) 2001 - Apache Software Foundation">
       <classpath refid="compile.classpath"/>
     </javadoc>
-  </target>
-
-
-  <target name="dist" depends="compile,javadoc"
-   description="Create binary distribution">
-    <!-- TODO: top level files like LICENSE and README -->
-    <mkdir      dir="${dist.home}"/>
-    <copy      file="../LICENSE"
-              todir="${dist.home}"/>
-    <jar    jarfile="${dist.home}/tomcat-${component.name}.jar"
-            basedir="${build.home}/classes"
-           manifest="${build.home}/conf/MANIFEST.MF"/>
-    <mkdir      dir="${dist.home}/src"/>
-    <copy     todir="${dist.home}/src" filtering="on">
-      <fileset  dir="${source.home}"/>
-    </copy>
   </target>
 
 
