@@ -19,7 +19,7 @@ to learn how to setup the working entities between your WebServer and Tomcat Eng
 
 <p>
 Recent versions of the Lotus Domino web server have had the ability to host Java servlets, 
-but at the time of writing the Domino servlet container uses JDK 1.2.2 and it is not (apparently) 
+but at the time of writing the Domino servlet container uses JDK 1.2.3 and it is not (apparently) 
 possible to replace this with JDK 1.3. 
 </p>
 

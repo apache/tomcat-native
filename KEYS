@@ -234,3 +234,26 @@ AAAACgkQA7t+K/6kwEMaEQCdHPgrLNh7G5p0i9W47rAfFoqqcGMAnRmayWLtqL3n
 6TsHA6lbHce/xhZX
 =IWRP
 -----END PGP PUBLIC KEY BLOCK-----
+
+pub  1024D/142B509B 2001-06-15 Glenn L. Nielsen
+     (Sign jakarta.apache.org distributions) <glenn@apache.org>
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1.0.6 (SunOS)
+Comment: For info see http://www.gnupg.org
+
+mQGiBDspb/8RBACIbKPrFGOmb//UfnUz0rGa1rRe8J8feycmbBmKFWZmiPhvnVuV
+3GCWGcxDD0pDkM1GX+CXUnzra6gou+JEPvDW2U1Te+Us4fCROying5GM9WnLzFdf
+a7KcbPUH8mwGXkJkbbyhbskIM5yHLKQSi+Pz3cHRVwjs1ZhkcmyI8dyEpwCgk6C+
+DpeiekUI0RCuDBGFvEpCoekD/jBOrIoeSxW5bqQ0cb4xSwo/il8wQNB3NcqoakOS
+ED1n841mxRFnYWtaSovpsS0uuALg4ryAywfJLtqie9Ks1CF6vHkZT0/TGaAaRQzs
+RTc0qeLYYmbKpzf91JnMtKlD1vLEBtb0Ljd6Kn1cZToKMSCilfsr3EdXzMd/9vk7
+mEAPA/9gP23rUTo/1cGURQAEn72ohM/KKgvQL1SnAIeqDu1QuiRRLmJw3kx67DQ1
+KbftH2RRo2AQUYJgZDb3BG+5R3joNNSfhjW+NXjds82252tKKq1W+5z0084xU+GJ
+7O68TZE3elEwp5FfynIc0eyAwqHwlDC1vKThJeOQiDiwc4cmMbRLR2xlbm4gTC4g
+TmllbHNlbiAoU2lnbiBqYWthcnRhLmFwYWNoZS5vcmcgZGlzdHJpYnV0aW9ucykg
+PGdsZW5uQGFwYWNoZS5vcmc+iFcEExECABcFAjspb/8FCwcKAwQDFQMCAxYCAQIX
+gAAKCRD6PI0mFCtQm1T3AJ47Psui/BfovFKySI3m+vJnLa8EewCcCZqn04plmpiu
+lmtXWDav9mO1Cfc=
+=Gfxf
+-----END PGP PUBLIC KEY BLOCK-----
