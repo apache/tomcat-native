@@ -60,7 +60,7 @@
 
 include @TGT_DIR@/Makedefs
 
-all: dist
+all: build
 
 distclean: extra-clean
 	rm -f $(MODULE)/Makefile
@@ -70,21 +70,18 @@ distclean: extra-clean
 	rm -f DETAILS.txt
 	rm -fr $(DST_DIR)
 
-extra-build: $(OBJ_DIR) @EXTRA_BUILD@ build
+build: $(OBJ_DIR) @EXTRA_BUILD@ lib-build $(MODULE)-build
 
 extra-clean: @EXTRA_CLEAN@ clean
-
-build: $(OBJ_DIR) lib-build $(MODULE)-build
 
 clean: lib-clean $(MODULE)-clean
 	rm -rf $(OBJ_DIR)
 
-dist: $(DST_DIR) extra-build
-	cp $(SRC_DIR)/LICENSE.txt $(DST_DIR)
-	cp $(SRC_DIR)/README.txt $(DST_DIR)
-	cp $(SRC_DIR)/INSTALL.txt $(DST_DIR)
-	cp $(TGT_DIR)/DETAILS.txt $(DST_DIR)
-	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(TGT_DIR)/$(MODULE)" SUBT="dist" subdir
+dist: $(DST_DIR) build
+	$(INSTALL) $(SRC_DIR)/LICENSE.txt $(DST_DIR)
+	$(INSTALL) $(SRC_DIR)/INSTALL.txt $(DST_DIR)
+	$(INSTALL) $(TGT_DIR)/DETAILS.txt $(DST_DIR)
+	$(INSTALL) $(TGT_DIR)/$(MODULE)/$(MODFILE) $(DST_DIR)
 
 tarball: dist
 	cd $(TGT_DIR)

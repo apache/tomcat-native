@@ -64,29 +64,23 @@ include @TGT_DIR@/Makedefs
 
 SOURCE = mod_webapp.c
 OBJECT = mod_webapp.o
-TARGET = libwebapp.so
 
-.PHONY: build clean dist
+.PHONY: build clean
 
-build: $(TARGET)
+build: $(MODFILE)
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(MODFILE)
 	rm -f $(OBJECT)
 	@if test -h $(SOURCE) ; then \
 	  echo rm -f $(SOURCE) ; \
 	  rm -f $(SOURCE) ; \
 	fi
 
-dist:
-	$(INSTALL) \
-	  $(LOCAL_TGT_DIR)/libwebapp.so \
-	  $(DST_DIR)/mod_webapp.so
-
 $(SOURCE): $(LOCAL_SRC_DIR)/$(SOURCE)
 	ln -s $< $@
 	  
-$(TARGET): $(SOURCE)
+$(MODFILE): $(SOURCE)
 	$(APXS) -c -o $@ \
 	  $(INCLUDES) $(LOCAL_INCLUDES) \
 	  -Wc,"$(CPPFLAGS) $(CFLAGS)" \
@@ -97,7 +91,6 @@ $(TARGET): $(SOURCE)
 # +++ EXPERIMENTAL +++ LIBTOOL COMPILE, APXS LINK +++
 # SOURCE = mod_webapp.c
 # OBJECT = mod_webapp.lo
-# TARGET = libwebapp.so
 # 
 # $(OBJECT): $(LOCAL_SRC_DIR)/$(SOURCE)
 # 	$(LIBTOOL) --mode=compile \
@@ -106,5 +99,5 @@ $(TARGET): $(SOURCE)
 # 	    $(CPPFLAGS) $(EXTRA_CPPFLAGS) \
 # 	    $(CFLAGS) $(EXTRA_CFLAGS)
 # 
-# $(TARGET): $(OBJECT)
+# $(MODFILE): $(OBJECT)
 # 	$(APXS) -c -o $@ -L$(OBJ_DIR) -lapr $< $(OBJ_DIR)/*.o

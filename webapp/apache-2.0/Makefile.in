@@ -64,40 +64,32 @@ include @TGT_DIR@/Makedefs
 
 SOURCE = mod_webapp.c
 OBJECT = mod_webapp.lo
-TARGET = libwebapp.la
-INSDIR = .inst
 LIBDIR = .libs
+LIBFIL = libwebapp
+LIBEXT = .la
 
-.PHONY: build clean dist
+.PHONY: build clean
 
-build: $(TARGET)
+build: $(LIBFIL)$(LIBEXT)
+	$(INSTALL) \
+	  $(LOCAL_TGT_DIR)/$(LIBDIR)/$(LIBFIL).so \
+	  $(LOCAL_TGT_DIR)/$(MODFILE)
 
 clean:
-	rm -f $(TARGET)
 	rm -f $(OBJECT)
+	rm -f mod_webapp.o
+	rm -f mod_webapp.slo
 	@if test -h $(SOURCE) ; then \
 	  echo rm -f $(SOURCE) ; \
 	  rm -f $(SOURCE) ; \
 	fi
-	rm -f *.o *.slo
-	rm -rf $(INSDIR) $(LIBDIR)
-
-dist: build $(INSDIR)
-	$(LIBTOOL) --mode=install \
-	  $(INSTALL) \
-	    $(LOCAL_TGT_DIR)/$(TARGET) \
-	    $(LOCAL_TGT_DIR)/$(INSDIR)
-	$(INSTALL) \
-	  $(LOCAL_TGT_DIR)/$(INSDIR)/libwebapp.so \
-	  $(DST_DIR)/mod_webapp.so
-
-$(INSDIR):
-	mkdir $(INSDIR)
+	rm -f $(LIBFIL).*
+	rm -rf $(LIBDIR)
 
 $(SOURCE): $(LOCAL_SRC_DIR)/$(SOURCE)
 	ln -s "$<" "$@"
 
-$(TARGET): $(SOURCE)
+$(LIBFIL)$(LIBEXT): $(SOURCE)
 	$(APXS) -c -o $@ \
 	  $(INCLUDES) \
 	  $(OBJ_DIR)/*.lo $<
