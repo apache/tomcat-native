@@ -68,6 +68,8 @@ import javax.management.NotificationListener;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.modeler.Registry;
 
 import org.apache.tomcat.util.http.mapper.Mapper;
@@ -78,6 +80,8 @@ import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.ServerFactory;
 import org.apache.catalina.Wrapper;
+import org.apache.catalina.util.StringManager;
+
 
 /**
  * Mapper listener.
@@ -86,6 +90,9 @@ import org.apache.catalina.Wrapper;
  */
 public class MapperListener
     implements NotificationListener {
+
+
+    private static Log log = LogFactory.getLog(MapperListener.class);
 
 
     // ----------------------------------------------------- Instance Variables
@@ -101,6 +108,13 @@ public class MapperListener
      * MBean server.
      */
     protected MBeanServer mBeanServer = null;
+
+
+    /**
+     * The string manager for this package.
+     */
+    private StringManager sm =
+        StringManager.getManager(Constants.Package);
 
 
     // ----------------------------------------------------------- Constructors
@@ -273,6 +287,9 @@ public class MapperListener
             contextName = "";
         }
 
+        log.info(sm.getString
+                 ("mapperListener.registerContext", contextName));
+
         Object context = 
             mBeanServer.getAttribute(objectName, "mappingObject");
         javax.naming.Context resources = (javax.naming.Context)
@@ -311,6 +328,9 @@ public class MapperListener
             contextName = "";
         }
 
+        log.info(sm.getString
+                 ("mapperListener.unregisterContext", contextName));
+
         mapper.removeContext(hostName, contextName);
 
     }
@@ -341,6 +361,9 @@ public class MapperListener
         if (contextName.equals("/")) {
             contextName = "";
         }
+
+        log.info(sm.getString
+                 ("mapperListener.registerWrapper", wrapperName, contextName));
 
         String[] mappings = (String[])
             mBeanServer.invoke(objectName, "findMappings", null, null);

@@ -1158,17 +1158,20 @@ public final class CoyoteConnector
 
         // We can't register earlier - the JMX registration of this happens
         // in Server.start callback
-        if( this.oname != null ) {
+        if ( this.oname != null ) {
             // We are registred - register the adapter as well.
             try {
-                Registry.getRegistry().registerComponent(protocolHandler,
-                        this.domain, "protocolHandler",
-                        "type=protocolHandler,className=" + protocolHandlerClassName);
-            } catch( Exception ex ) {
-                ex.printStackTrace();
+                Registry.getRegistry().registerComponent
+                    (protocolHandler, this.domain, "protocolHandler",
+                     "type=protocolHandler,className=" 
+                     + protocolHandlerClassName);
+            } catch (Exception ex) {
+                log.error(sm.getString
+                          ("coyoteConnector.protocolRegistrationFailed"), ex);
             }
         } else {
-            log.info( "Coyote can't register jmx for protocol");
+            log.info(sm.getString
+                     ("coyoteConnector.cannotRegisterProtocol"));
         }
 
         try {
