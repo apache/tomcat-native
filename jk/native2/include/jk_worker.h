@@ -179,12 +179,15 @@ struct jk_worker {
      */
     struct jk_exception *lastError;
 
-    /** If num_of_workers > 0 this is an load balancing worker
+    /** For load balancing workers
      */
-    jk_worker_t **lb_workers;
     struct jk_map *lbWorkerMap;
-    int num_of_workers;
     
+    /* Cache for fast access. Do we need it ? XXX Move to a private structure */
+    jk_worker_t **lb_workers;
+    int lb_workers_size;
+    int num_of_workers;
+
     /*
      * Do whatever initialization needs to be done to start this worker up.
      * Configuration options are passed in via the props parameter.  
