@@ -478,11 +478,11 @@ public final class ByteChunk implements Cloneable, Serializable {
              // Method is commented out, in:
               return B2CConverter.decodeString( enc );
               */
-        } catch (java.io.IOException e) {
-            // FIXME 
+        } catch (java.io.UnsupportedEncodingException e) {
+            // Use the platform encoding in that case; the usage of a bad
+            // encoding will have been logged elsewhere already
+            strValue = new String(buff, start, end-start);
         }
-        //System.out.println("BC toString: " + strValue);
-        //Thread.dumpStack();
         return strValue;
     }
 
