@@ -68,7 +68,7 @@
 #include "jk_logger.h"
 #include "jk_service.h"
 #include "jk_handler.h"
-#include "jk_webapp.h"
+#include "jk_uriEnv.h"
 #include "jk_workerEnv.h"
 #include "jk_registry.h"
 
@@ -128,8 +128,8 @@ static int jk2_handler_contextList(jk_env_t *env, jk_msg_t *msg,
     char *uri;
     int                 cmd;
     int                 i,j;
-    jk_webapp_t         *ci;
-    jk_webapp_t         *webapp;  
+    jk_uriEnv_t         *ci;
+    jk_uriEnv_t         *webapp;  
     char                *buf;
     jk_workerEnv_t *we=ae->worker->workerEnv;
     
@@ -158,7 +158,7 @@ static int jk2_handler_contextList(jk_env_t *env, jk_msg_t *msg,
                       "contextList - Context: %s:%s \n",
                       vname, cname);
 
-        webapp = we->createWebapp( env, we, vname, cname, NULL );
+        webapp = we->uriMap->createUriEnv( env, we->uriMap, vname, cname );
         if( webapp==NULL ) {
             env->l->jkLog(env, env->l, JK_LOG_ERROR,
                      "discoveryHandler: can't create webapp\n");
@@ -208,7 +208,7 @@ static int jk2_handler_contextState(jk_env_t *env, jk_msg_t *msg,
 {
     char                *vname;
     char                *cname;
-    jk_webapp_t   *ci = NULL;
+    jk_uriEnv_t   *ci = NULL;
 
     /* get virtual name */
     vname  = (char *)msg->getString(env, msg);
