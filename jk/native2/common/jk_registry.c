@@ -89,30 +89,49 @@ int JK_METHOD jk_worker_ajp14_factory( jk_env_t *env, jk_pool_t *pool,
                                        const char *type, const char *name);
 
                                    
-int JK_METHOD jk_worker_lb_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_worker_lb_factory(jk_env_t *env, jk_pool_t *pool,
+                                   void **result,
                                    const char *type, const char *name);
 
 
-int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
+                                    void **result,
                                     const char *type, const char *name);
 
-int JK_METHOD jk_worker_ajp12_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_worker_ajp12_factory(jk_env_t *env, jk_pool_t *pool,
+                                      void **result,
                                       const char *type, const char *name);
 
 /* Factories for 'new' types. We use the new factory interface,
  *  workers will be updated later 
  */
-int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_channel_socket_factory(jk_env_t *env, jk_pool_t *pool,
+                                        void **result,
 					const char *type, const char *name);
 
-int JK_METHOD jk_workerEnv_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_workerEnv_factory(jk_env_t *env, jk_pool_t *pool,
+                                   void **result,
                                    const char *type, const char *name);
 
 int JK_METHOD jk_uriMap_factory(jk_env_t *env, jk_pool_t *pool, void **result,
                                 const char *type, const char *name);
 
-int JK_METHOD jk_logger_file_factory(jk_env_t *env, jk_pool_t *pool, void **result,
+int JK_METHOD jk_logger_file_factory(jk_env_t *env, jk_pool_t *pool,
+                                     void **result,
                                      const char *type, const char *name);
+
+
+int JK_METHOD jk_handler_logon_factory( jk_env_t *env, jk_pool_t *pool,
+                                        void **result,
+                                        const char *type, const char *name);
+
+int JK_METHOD jk_handler_discovery_factory( jk_env_t *env, jk_pool_t *pool,
+                                            void **result,
+                                            const char *type, const char *name);
+
+int JK_METHOD jk_handler_response_factory( jk_env_t *env, jk_pool_t *pool,
+                                           void **result,
+                                           const char *type, const char *name);
 
 
 /**
@@ -142,6 +161,10 @@ void JK_METHOD jk_registry_init(jk_env_t *env) {
   env->registerFactory( env, "worker", "ajp14", jk_worker_ajp14_factory );
   env->registerFactory( env, "worker", "lb",    jk_worker_lb_factory );
   env->registerFactory( env, "channel", "socket", jk_channel_socket_factory );
+  env->registerFactory( env, "handler", "response", jk_handler_response_factory );
+  env->registerFactory( env, "handler", "logon",   jk_handler_logon_factory );
+  env->registerFactory( env, "handler", "discovery",
+                        jk_handler_discovery_factory );
 
   /* Optional objects */
 
