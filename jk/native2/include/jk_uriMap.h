@@ -109,7 +109,12 @@ struct jk_uriMap {
      * level.
      */
     struct jk_map *vhosts;
-    
+
+    /* Virtual host map cache. Once processed the mapped host
+     * will be cached for performance reasons.
+     */
+    struct jk_map *vhcache;
+
     /* ---------- Methods ---------- */
 
     /** Initialize the map. This should be called after all workers
