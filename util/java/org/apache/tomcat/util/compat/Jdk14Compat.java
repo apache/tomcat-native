@@ -104,4 +104,16 @@ public class Jdk14Compat extends JdkCompat {
     public  String [] split(String path, String pat) {
         return path.split(pat);
     }
+
+
+    /**
+     * Chains the <tt>wrapped</tt> throwable to the <tt>wrapper</tt> throwable.
+     *
+     * @param wrapper The wrapper throwable 
+     * @param wrapped The throwable to be wrapped
+     */
+    public void chainException(Throwable wrapper, Throwable wrapped) {
+        wrapper.initCause(wrapped);
+    }
+
  }
