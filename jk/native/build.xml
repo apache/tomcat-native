@@ -167,4 +167,45 @@
     </delete>
   </target>
 
+  <target name="iis" depends="init">
+      <so sofile="isapi_redirector" 
+            buildDir="iis"
+            optimize="${so.optimize}"
+            debug="${so.debug}"
+            profile="${so.profile}">
+        
+        <src dir=".">
+        	<include name="iis/jk_isapi_plugin.c" />
+            <include name="common/*.c" />
+            <exclude name="jk_nwmain.c" 
+        	 unless="netware" />
+        </src>
+        <includes>
+        	<include name="${java.home}/../include" />
+        	<include name="${java.home}/../include/win32" />
+        	<include name="${native.dir}/common" />
+        	<include name="${build.compiler.base}/include" />
+        </includes>
+        <depends>
+            <fileset dir="${native.dir}/common" includes="*.h" />
+        </depends>
+        
+        <!-- Platform-specific tags -->
+        <def name="WIN32" />
+        <def name="NDEBUG" />
+        <def name="_WINDOWS"  />
+        <def name="_MBCS" />
+        <def name="_USRDLL" />
+        <def name="ISAPI_EXPORTS" />
+        <import fileName="advapi32.lib" />
+        <import fileName="wsock32.lib" />
+        <export symbol="HttpFilterProc"/>
+        <export symbol="GetFilterVersion"/>
+        <export symbol="GetExtensionVersion"/>
+        <export symbol="HttpExtensionProc"/>
+        <export symbol="TerminateFilter"/>
+        <export symbol="TerminateExtension"/>
+     </so>
+  </target>
+
 </project>
