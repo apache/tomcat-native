@@ -155,6 +155,10 @@ public final class Response {
      */
     protected Exception errorException = null;
 
+    /**
+     * Has the charset been explicitly set.
+     */
+    protected boolean charsetSet = false;
 
     /**
      * Request error URI.
@@ -321,6 +325,7 @@ public final class Response {
         contentLanguage = null;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
         contentLength = -1;
+        charsetSet = false;
 
         status = 200;
         message = null;
@@ -470,7 +475,8 @@ public final class Response {
         if (charset == null)
             return;
 
-	characterEncoding = charset;
+        characterEncoding = charset;
+        charsetSet=true;
     }
 
     public String getCharacterEncoding() {
@@ -543,6 +549,7 @@ public final class Response {
 
         // The charset value may be quoted, but must not contain any quotes.
         if (charsetValue != null && charsetValue.length() > 0) {
+            charsetSet=true;
             charsetValue = charsetValue.replace('"', ' ');
             this.characterEncoding = charsetValue.trim();
         }
@@ -554,8 +561,7 @@ public final class Response {
 
         if (ret != null 
             && characterEncoding != null
-            && !(Constants.DEFAULT_CHARACTER_ENCODING.equals
-                 (characterEncoding))) {
+            && charsetSet) {
             ret = ret + ";charset=" + characterEncoding;
         }
 
@@ -589,6 +595,7 @@ public final class Response {
         contentLanguage = null;
         locale = DEFAULT_LOCALE;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
+        charsetSet = false;
         contentLength = -1;
         status = 200;
         message = null;
