@@ -134,6 +134,7 @@ typedef struct {
     /*
      * Worker stuff
      */
+    jk_map_t *worker_properties;
     char     *worker_file;
     jk_map_t *uri_to_context;
 
@@ -306,7 +307,9 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
  * pointer.
  */
 /* Works with 4096, fails with 8192 */
+#ifndef CHUNK_SIZE
 #define CHUNK_SIZE 4096
+#endif
 
 static int JK_METHOD ws_write(jk_ws_service_t *s,
                               const void *b,
@@ -674,6 +677,7 @@ static const char *jk_mount_context(cmd_parms *cmd,
     return NULL;
 }
 
+
 /*
  * JkAutoMount directive handling
  *
@@ -724,6 +728,56 @@ static const char *jk_set_worker_file(cmd_parms *cmd,
 
     return NULL;
 }
+
+/*
+ * JkWorker name value
+ */
+static const char *jk_worker_property(cmd_parms *cmd,
+                                      void *dummy,
+                                      const char *name,
+                                      const char *value)
+{
+    server_rec *s = cmd->server;
+    struct stat statbuf;
+    char *oldv;
+    int rc;
+
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+    
+    jk_map_t *m=conf->worker_properties;
+    
+    value = map_replace_properties(value, m );
+
+    oldv = map_get_string(m, name, NULL);
+
+    if(oldv) {
+        char *tmpv = apr_palloc(cmd->pool,
+                                strlen(value) + strlen(oldv) + 3);
+        if(tmpv) {
+            char sep = '*';
+            if(jk_is_path_poperty(name)) {
+                sep = PATH_SEPERATOR;
+            } else if(jk_is_cmd_line_poperty(name)) {
+                sep = ' ';
+            }
+            
+            sprintf(tmpv, "%s%c%s", 
+                    oldv, sep, value);
+        }                                
+        value = tmpv;
+    } else {
+        value = ap_pstrdup(cmd->pool, value);
+    }
+    
+    if(value) {
+        void *old = NULL;
+        map_put(m, name, value, &old);
+        printf("Setting %s %s\n", name, value);
+    } 
+    return NULL;
+}
+
 
 /*
  * JkLogFile Directive Handling
@@ -999,6 +1053,15 @@ static const command_rec jk_cmds[] =
         "the name of a worker file for the Jakarta servlet containers"),
 
     /*
+     * JkWorker allows you to specify worker properties in server.xml.
+     * They are added before any property in JkWorkersFile ( if any ), 
+     * as a more convenient way to configure
+     */
+    AP_INIT_TAKE2(
+        "JkWorker", jk_worker_property, NULL, RSRC_CONF,
+        "worker property"),
+
+    /*
      * JkAutoMount specifies that the list of handled URLs must be
      * asked to the servlet engine (autoconf feature)
      */
@@ -1214,7 +1277,8 @@ static int jk_handler(request_rec *r)
 
 #ifdef REUSE_WORKER
         apr_pool_t *rpool=r->pool;
-        apr_pool_t *tpool=rpool->parent->parent;
+        apr_pool_t *parent_pool= apr_pool_get_parent( rpool );
+        apr_pool_t *tpool= apr_pool_get_parent( parent_pool );
         
         ap_get_userdata( &end, "jk_thread_endpoint", tpool );
                 if(end==NULL ) {
@@ -1271,6 +1335,8 @@ static void *create_jk_config(apr_pool_t *p, server_rec *s)
     jk_server_conf_t *c =
         (jk_server_conf_t *) apr_pcalloc(p, sizeof(jk_server_conf_t));
 
+    c->worker_properties = NULL;
+    map_alloc(& c->worker_properties);
     c->worker_file     = NULL;
     c->log_file        = NULL;
     c->log_level       = -1;
@@ -1420,7 +1486,8 @@ static void jk_child_init(apr_pool_t *pconf,
     stuff )
 */
 static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) {
-    jk_map_t *init_map = NULL;
+    /*     jk_map_t *init_map = NULL; */
+    jk_map_t *init_map = conf->worker_properties;
 
    if(conf->log_file && conf->log_level >= 0) {
         if(!jk_open_file_logger(&(conf->log), 
@@ -1436,27 +1503,28 @@ static void init_jk( apr_pool_t *pconf, jk_server_conf_t *conf, server_rec *s ) 
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, pconf, "Memory error");
     }
 
-    if(map_alloc(&init_map)) {
-        if(map_read_properties(init_map, conf->worker_file)) {
-            /* workers.properties can be used to set all jk
-               properties in a consistent way, independent of server */
-            /* Read and set log file, log level */
-            
-            /* May be allready done in init ??? */
-            /* we add the URI->WORKER MAP since workers using AJP14
-               will feed it */
-            worker_env.uri_to_worker = conf->uw_map;
-            worker_env.virtual       = "*";     /* for now */
-            worker_env.server_name   = (char *)ap_get_server_version();
-            if(wc_open(init_map, &worker_env, conf->log)) {
-                ap_add_version_component(pconf, JK_EXPOSED_VERSION);
-                return;
-            }            
-        }
+    /*     if(map_alloc(&init_map)) { */
+    if(map_read_properties(init_map, conf->worker_file)) {
+        /* workers.properties can be used to set all jk
+           properties in a consistent way, independent of server */
+        /* Read and set log file, log level */
+        
+        /* May be allready done in init ??? */
+        /* we add the URI->WORKER MAP since workers using AJP14
+           will feed it */
+        worker_env.uri_to_worker = conf->uw_map;
+        worker_env.virtual       = "*";     /* for now */
+        worker_env.server_name   = (char *)ap_get_server_version();
+        if(wc_open(init_map, &worker_env, conf->log)) {
+            ap_add_version_component(pconf, JK_EXPOSED_VERSION);
+            return;
+        }            
     }
+/*     } */
 
-    jk_error_exit(APLOG_MARK, APLOG_EMERG, s, 
-                  pconf, "Error while opening the workers");
+/*     jk_error_exit(APLOG_MARK, APLOG_EMERG, s,  */
+/*                   pconf, "Error while opening the workers"); */
+    return;
 }
 
 static void jk_post_config(apr_pool_t *pconf, 
