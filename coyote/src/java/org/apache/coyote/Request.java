@@ -518,7 +518,7 @@ public final class Request {
 	//remoteHostMB.recycle();
 
 	// XXX Do we need such defaults ?
-        schemeMB.setString("http");
+        schemeMB.recycle();
 	methodMB.setString("GET");
         uriMB.setString("/");
         queryMB.setString("");
