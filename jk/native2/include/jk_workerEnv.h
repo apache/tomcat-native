@@ -229,6 +229,18 @@ struct jk_workerEnv {
                                       const char *name, 
                                       struct jk_map *init_data);
 
+    /** Call the handler associated with the message type.
+     */
+    int (*dispatch)(struct jk_env *env, struct jk_workerEnv *_this,
+                    struct jk_endpoint *e, struct jk_ws_service *r );
+
+    /** Utility method for stream-based workers. It'll read
+     *  messages, dispatch, send the response if any until
+     *  done. This assumes one native server thread talking
+     *  with a different client thread ( on the java side ).
+     *  It does not work for jni or doors or other transports
+     *  where a single thread is used for the whole processing.
+     */
     int (*processCallbacks)(struct jk_env *env,
                             struct jk_workerEnv *_this,
                             struct jk_endpoint *e,
