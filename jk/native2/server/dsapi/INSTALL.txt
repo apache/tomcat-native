@@ -93,6 +93,33 @@ be able to visit a URL that is handled by Tomcat. Something like
 may be available, depending on how Tomcat is configured. If that all
 works you're done ;-)
 
+Mailing Lists
+-------------
+
+There are two mailing lists dedicated to the Domino Tomcat redirector:
+
+domino-tomcat-l:
+ http://nomen.tagish.co.uk/mailman/listinfo/domino-tomcat-l
+
+domino-tomcat-l is a general discussion list for issues with the
+redirector and also wider Tomcat/Domino integration issues such as
+calling the Domino Java API from a Tomcat servlet. I expect it to be
+fairly low volume so please subscribe if you're actively using the
+redirector. If you have an issue with the redirector please post it to
+the list where it will be seen not only by me but by other users who may
+be able to help with any problems.
+
+domino-tomcat-announce-l:
+ http://nomen.tagish.co.uk/mailman/listinfo/domino-tomcat-announce-l:
+
+domino-tomcat-announce-l is for announcements about the Domino Tomcat
+redirector. Mainly this list will be used for new releases but serious
+bugs will also be posted to it. This list will be very low volume; only
+I can post to it. I wouldn't expect more than a few posts per month. For
+this reason if you'd like to keep track of new redirector versions
+please subscribe to this list. Once this mail is sent d-t-a-l will be
+the main place to find out about new versions.
+
 Please let me know if you have any problems.
 
 Andy Armstrong, <andy@tagish.com>
