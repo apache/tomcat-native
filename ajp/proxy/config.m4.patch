@@ -4,12 +4,12 @@ RCS file: /home/cvs/apache/httpd-2.0/modules/proxy/config.m4,v
 retrieving revision 1.17
 diff -u -r1.17 config.m4
 --- config.m4	25 Apr 2002 03:16:44 -0000	1.17
-+++ config.m4	28 Jul 2004 07:55:36 -0000
++++ config.m4	29 Jul 2004 15:05:15 -0000
 @@ -16,6 +16,7 @@
  proxy_connect_objs="proxy_connect.lo"
  proxy_ftp_objs="proxy_ftp.lo"
  proxy_http_objs="proxy_http.lo"
-+proxy_ajp_objs="proxy_ajp.lo"
++proxy_ajp_objs="proxy_ajp.lo ajp_header.lo ajp_link.lo ajp_msg.lo"
  
  case "$host" in
    *os2*)
