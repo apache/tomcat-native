@@ -519,7 +519,7 @@ int jk2_service_iis_init(jk_env_t *env, jk_ws_service_t *s)
     if(s==NULL ) {
         return JK_ERR;
     }
-    
+    jk2_requtil_initRequest(env, s);
     s->head   = jk2_service_iis_head;
     s->read   = jk2_service_iis_read;
     s->write  = jk2_service_iis_write;

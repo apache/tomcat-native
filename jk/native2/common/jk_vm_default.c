@@ -101,7 +101,7 @@
 #warning JAVA 1.1 IS NO LONGER SUPPORTED 
 #warning -------------------------------------------------------
 
-int jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
                    jk_bean_t *result,
                    char *type, char *name)
 {
@@ -429,7 +429,7 @@ static int jk2_vm_initVM(jk_env_t *env, jk_vm_t *jkvm)
 
     if(jvm_version != JNI_VERSION_1_2 ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR, 
-                      "vm.detect() found: %X expecting 1.2\n", vm_args.version);
+                      "vm.detect() found: %X expecting 1.2\n", jvm_version);
         return JK_ERR;
     }
 
@@ -499,7 +499,7 @@ jk2_jk_vm_setProperty(jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP 
 }
 
 
-int jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
+int JK_METHOD jk2_vm_factory(jk_env_t *env, jk_pool_t *pool,
                    jk_bean_t *result,
                    char *type, char *name)
 {

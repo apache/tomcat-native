@@ -478,14 +478,16 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK  lpEcb)
         /* Initialize the ws_service structure */
         s->init( env, s, worker, lpEcb );
         
-        rc = worker->service(env, worker, s);
+        if (JK_OK == worker->service(env, worker, s)){
+            rc=HSE_STATUS_SUCCESS;
+        }
         
         s->afterRequest(env, s);
         
         rPool->reset(env, rPool);
         
         rc1=worker->rPoolCache->put( env, worker->rPoolCache, rPool );
-        rc=HSE_STATUS_SUCCESS;
+        
         lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
         env->l->jkLog(env, env->l,  JK_LOG_DEBUG, 
                "HttpExtensionProc service() returned OK\n");

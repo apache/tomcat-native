@@ -476,7 +476,7 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
 
 /** Called by java. Will take the rest of the message and dispatch again to the real target.
  */
-static int jk2_channel_jni_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_msg_t *msg)
+static int JK_METHOD jk2_channel_jni_dispatch(jk_env_t *env, void *target, jk_endpoint_t *ep, jk_msg_t *msg)
 {
     jk_bean_t *jniChB=(jk_bean_t *)target;
     jk_channel_t *jniCh=(jk_channel_t *)jniChB->object;

@@ -375,13 +375,13 @@ static int jk2_workerEnv_dispatch(jk_env_t *env, jk_workerEnv_t *wEnv,
     
     if( handler==NULL ) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
-                      "workerEnv.dispath() Invalid code: %d\n", code);
+                      "workerEnv.dispatch() Invalid code: %d\n", code);
         e->reply->dump(env, e->reply, "Message: ");
         return JK_ERR;
     }
         
     env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "workerEnv.dispath() Calling %d %s\n", handler->messageId,
+                  "workerEnv.dispatch() Calling %d %s\n", handler->messageId,
                   handler->name);
     
     /* Call the message handler */
@@ -435,7 +435,7 @@ static int jk2_workerEnv_processCallbacks(jk_env_t *env, jk_workerEnv_t *wEnv,
             return JK_ERR;
         }
 
-        /* e->reply->dump(env, e->reply, "Received ");  */
+        ep->reply->dump(env, ep->reply, "Received ");  
         code = (int)msg->getByte(env, msg);
         rc=jk2_workerEnv_dispatch( env, wEnv, req, ep, code, msg );
 

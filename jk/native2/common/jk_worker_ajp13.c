@@ -283,7 +283,7 @@ jk2_worker_ajp14_sendAndReconnect(jk_env_t *env, jk_worker_t *worker,
         err=e->worker->channel->send( env, e->worker->channel, e,
                                       e->request );
 
-	if (err==JK_OK ) {
+	    if (err==JK_OK ) {
             /* We sent the request, have valid endpoint */
             break;
         }
@@ -660,10 +660,10 @@ jk2_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *ajp14)
     
     env->l->jkLog(env, env->l, JK_LOG_INFO,
                   "ajp14.destroy()\n");
-
+    
     if( ajp14->endpointCache != NULL ) {
         jk_endpoint_t *e;
-
+        i=ajp14->endpointCache->count;
         while( ajp14->endpointCache->count > 0 ) {
             
             e= ajp14->endpointCache->get( env, ajp14->endpointCache );
@@ -672,6 +672,7 @@ jk2_worker_ajp14_destroy(jk_env_t *env, jk_worker_t *ajp14)
                 // we finished all endpoints in the cache
                 break;
             }
+            
             
             jk2_close_endpoint(env, e);
         }
