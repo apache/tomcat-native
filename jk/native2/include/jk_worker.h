@@ -141,7 +141,8 @@ extern "C"
         char *secret;
 
         struct jk_mutex *cs;
-        /* -------------------- Information used for load balancing ajp workers -------------------- */
+
+        /* ------------ Information used for load balancing ajp workers ------------ */
 
     /** The id of the tomcat instance we connect to. We may have multiple
         workers connecting to a single tomcat. If no route is defined,
@@ -200,7 +201,7 @@ extern "C"
          */
         int level;
 
-        /* -------------------- Information specific to the lb worker -------------------- */
+        /* ----------------- Information specific to the lb worker ----------------- */
 
     /** Load balanced workers. Maps name->worker, used at config time.
      *  When the worker is initialized or refreshed it'll set the runtime
@@ -232,6 +233,20 @@ extern "C"
 
         int workerCnt[JK_LB_LEVELS];
         jk_worker_t *workerTables[JK_LB_LEVELS][JK_LB_MAX_WORKERS];
+
+        /* ---------------- Information specific to the status worker --------------- */
+
+        /* Path to the Status Page Style Sheet.
+         */
+        char *stylePath;
+
+        /* Access Mode to the Status Page Style Sheet.
+         *  Mode 0 - Style Sheet Off - default.
+         *  Mode 1 - Int Style Sheet - default values.
+         *  Mode 2 - Ext Style Sheet - ext file, documentRoot relative.
+         *  Mode 3 - Int Style Sheet - ext file, f/system or serverRoot relative.
+         */
+        int   styleMode;
 
         /* -------------------- Methods supported by all workers -------------------- */
 

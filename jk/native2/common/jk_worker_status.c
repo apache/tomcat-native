@@ -961,7 +961,136 @@ static int JK_METHOD jk2_worker_status_invoke(jk_env_t *env,
     return JK_OK;
 }
 
+/*
+ * Properties available to Set.
+ */
+static char *jk2_worker_status_setAttributeInfo[] = {
+      "stylePath", "styleMode", "debug", "disabled", NULL
+};
 
+/*
+ * Set status worker properties.
+ */
+static int JK_METHOD jk2_worker_status_setAttribute(jk_env_t *env, jk_bean_t *mbean, char *name, void *valueP)
+{
+    jk_worker_t *w = (jk_worker_t *)mbean->object;
+    char *value = (char *)valueP;
+
+    if (strcmp(name, "stylePath") == 0) {
+
+        if(value != NULL) {
+
+            w->stylePath = value;
+        }
+        else {
+
+            w->stylePath = NULL;
+        }
+    }
+    else if (strcmp(name, "styleMode") == 0) {
+
+        w->styleMode = atoi(value);
+    }
+    else if (strcmp(name, "debug") == 0) {
+
+        mbean->debug = atoi(value);
+    }
+    else if (strcmp(name, "disabled") == 0) {
+
+        mbean->disabled = atoi(value);
+    }
+    else {
+
+        return JK_ERR;
+    }
+    return JK_OK;
+}
+
+/*
+ * Properties available to Get.
+ */
+static char *jk2_worker_status_getAttributeInfo[] = {
+      "stylePath", "styleMode", "debug", "disabled", NULL
+};
+
+/*
+ * Get status worker properties.
+ */
+static void *JK_METHOD jk2_worker_status_getAttribute(jk_env_t *env, jk_bean_t *bean, char *name)
+{
+    jk_worker_t *w = (jk_worker_t *)bean->object;
+
+    if (strcmp(name, "stylePath") == 0) {
+
+        if (w->stylePath != NULL) {
+
+            return w->stylePath;
+        }
+        else {
+
+            return ("");
+        }
+    }
+    else if (strcmp(name, "styleMode") == 0) {
+
+        return jk2_env_itoa(env, w->styleMode);
+    }
+    else if (strcmp(name, "debug") == 0) {
+
+        return jk2_env_itoa(env, bean->debug);
+    }
+    else if (strcmp(name, "disabled") == 0) {
+
+        return jk2_env_itoa(env, bean->disabled);
+    }
+    return NULL;
+}
+
+/*
+ * Send a (stylesheet) file to the user.
+ */
+static int jk2_worker_status_sendFile(jk_env_t *env, jk_ws_service_t *s, char *file)
+{
+#define LENGTH_OF_LINE    (1020)
+
+    FILE *fp;
+    char buff[LENGTH_OF_LINE + 1];
+    int  cbuf = 0;
+
+    if( file == NULL ) {
+
+        return JK_ERR;
+    }
+
+#ifdef AS400
+    fp = fopen(file, "r, o_ccsid=0");
+#else
+    fp = fopen(file, "r");
+#endif
+
+    if( fp == NULL ) {
+
+        env->l->jkLog(env, env->l, JK_LOG_ERROR, "status_worker.sendFile() Error openning file: %s\n", file);
+
+        return JK_ERR;
+    }
+
+    while ((cbuf = fread(buff, 1, LENGTH_OF_LINE, fp))) {
+
+        buff[cbuf] = '\0';
+
+        s->jkprintf(env, s, "%s", buff);
+    }
+
+    fclose(fp);
+
+    return JK_OK;
+}
+
+/*
+ *  Main entry point for all Status Worker output.
+ *  Optional commands are passed in as a HTML query string.
+ */
 static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
                                                jk_worker_t *w,
                                                jk_ws_service_t *s)
@@ -973,34 +1102,62 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_DEBUG, "status.service() %s %s\n",
                       JK_CHECK_NULL(uri), JK_CHECK_NULL(s->query_string));
 
+    /** Settle the query string. */
+
+    if (s->query_string == NULL) {
+
+        s->query_string = "";
+    }
+
     /* Generate the header */
+
     s->status = 200;
     s->msg = "OK";
-    if (s->query_string != NULL && strncmp(s->query_string, "qry=", 4) == 0) {
-        s->headers_out->put(env, s->headers_out,
-                            "Content-Type", "text/plain", NULL);
+
+    s->headers_out->put(env, s->headers_out, "Cache-Control", "no-cache", NULL);
+    s->headers_out->put(env, s->headers_out, "Pragma", "no-cache", NULL);
+
+    /* Decide if output is text or HTML. */
+
+    if (strncmp(s->query_string, "dmp=", 4) == 0 ||
+        strncmp(s->query_string, "lst=", 4) == 0 ||
+        strncmp(s->query_string, "qry=", 4) == 0) {
+
+        /* Text */
+        s->headers_out->put(env, s->headers_out, "Content-Type", "text/plain", NULL);
+        s->head(env, s);
     }
     else {
-        s->headers_out->put(env, s->headers_out,
-                            "Content-Type", "text/html", NULL);
+
+        /* HTML */
+        s->headers_out->put(env, s->headers_out, "Content-Type", "text/html", NULL);
+        s->head(env, s);
+
+        /** A stylesheet if defined. **/
+
+        /** Mode 0 - Style Sheet Off - default. **/
+        /** Mode 1 - Int Style Sheet - default values. **/
+        /** Mode 2 - Ext Style Sheet - ext file, documentRoot relative. **/
+        /** Mode 3 - Int Style Sheet - ext file, f/system or serverRoot relative. **/
+
+        if (w->styleMode == 1) {
+
+            s->jkprintf(env, s, "<style>%s</style>\n", DEFAULT_CSS);
+        }
+        else if (w->stylePath != NULL) {
+
+            if (w->styleMode == 2) {
+
+                s->jkprintf(env, s, "<LINK REL=stylesheet TYPE='text/css' HREF='%s'>\n", w->stylePath);
+            }
+            else if (w->styleMode == 3) {
+
+                jk2_worker_status_sendFile(env, s, w->stylePath);
+            }
+        }
     }
 
-    s->headers_out->put(env, s->headers_out, "Pragma", "no-cache", NULL);
-    s->headers_out->put(env, s->headers_out,
-                        "Cache-Control", "no-cache", NULL);
-
-    s->head(env, s);
-
-    if (!(s->query_string != NULL &&
-          strncmp(s->query_string, "qry=", 4) == 0)) {
-        s->jkprintf(env, s, "<style>%s</style>\n", DEFAULT_CSS);
-    }
-
-    /** Process the query string.
-     */
-    if (s->query_string == NULL) {
-        s->query_string = "all";
-    }
+    /** Check for Scoreboard Reset. **/
 
     if (strcmp(s->query_string, "scoreboard.reset") == 0) {
         jk2_worker_status_resetScoreboard(env, s, s->workerEnv);
@@ -1119,7 +1276,8 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     return JK_OK;
 }
 
-
+/* The Factory is called during server start-up to create the status-worker object(s).
+ */
 int JK_METHOD jk2_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
                                         jk_bean_t *result,
                                         const char *type, const char *name)
@@ -1134,7 +1292,16 @@ int JK_METHOD jk2_worker_status_factory(jk_env_t *env, jk_pool_t *pool,
         return JK_ERR;
     }
 
-    _this->service = jk2_worker_status_service;
+    _this->service   = jk2_worker_status_service;
+
+    _this->stylePath = NULL;
+    _this->styleMode = 0;
+
+    result->multiValueInfo   = NULL;
+    result->setAttributeInfo = jk2_worker_status_setAttributeInfo;
+    result->setAttribute     = jk2_worker_status_setAttribute;
+    result->getAttributeInfo = jk2_worker_status_getAttributeInfo;
+    result->getAttribute     = jk2_worker_status_getAttribute;
 
     result->object = _this;
     _this->mbean = result;
