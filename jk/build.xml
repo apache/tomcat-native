@@ -97,7 +97,7 @@
     </target>
 
     <target name="build-main" 
-            depends="prepare,report,jkutil,jkjava,jkant,install-t40" />
+            depends="prepare,report,jkutil,jkjava,jkant" />
 
     <!-- ==================== Building ==================== -->
 
