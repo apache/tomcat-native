@@ -213,7 +213,7 @@ extern "C" {
 #define vsnprintf _vsnprintf
 #endif
 
-#ifdef NETWARE
+#if defined(NETWARE) || defined(AS400)
 #define USE_SPRINTF
 #define USE_VSPRINTF
 #endif
