@@ -21,6 +21,38 @@
 
   </mbean>
 
+  <mbean name="JkWorkerEnv"
+         description="Worker env for jk"
+         domain="Catalina"
+         group="Jk"
+         type="org.apache.jk.core.WorkerEnv">
+
+    <attribute name="localId"
+               description="If automatic port allocation is enabled, ChannelSocket will allocate ports sequentially. This is the sequence number"
+               type="java.lang.Integer"/>
+
+    <attribute name="jkHome"
+               description="Base directory for jk"
+               type="java.lang.String"/>
+
+    <attribute name="handlersObjectName"
+               description="List of all jk handlers"
+               type="[Ljavax.management.ObjectName;"/>
+
+    <operation name="addHandler"
+               description="add a jk component"
+               returnType="void">
+      <parameter name="name"
+                 description="local name"
+                 type="java.lang.String"/>
+      <parameter name="handler"
+                 description="handler"
+                 type="org.apache.jk.core.JkHandler"/>
+    </operation>
+
+  </mbean>
+
+  <!-- Native connectors -->
   <mbean name="JkAjp13"
          description="native Ajp13 connector"
          domain="Catalina"
