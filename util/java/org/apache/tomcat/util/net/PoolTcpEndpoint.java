@@ -64,15 +64,20 @@
 
 package org.apache.tomcat.util.net;
 
-import org.apache.tomcat.util.res.*;
-import org.apache.tomcat.util.collections.SimplePool;
-import org.apache.tomcat.util.threads.*;
-//import org.apache.tomcat.util.log.*;
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.io.*;
-import java.net.*;
+import org.apache.tomcat.util.collections.SimplePool;
+import org.apache.tomcat.util.res.StringManager;
+import org.apache.tomcat.util.threads.ThreadPool;
+import org.apache.tomcat.util.threads.ThreadPoolRunnable;
 
 /* Similar with MPM module in Apache2.0. Handles all the details related with
    "tcp server" functionality - thread management, accept policy, etc.
