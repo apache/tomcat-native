@@ -867,23 +867,44 @@ static int init_jk(char *serverName)
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
     }
-    		/* Logging the initialization type: registry or properties file in virtual dir
-		*/
-	if (using_ini_file) {
-			 jk_log(logger, JK_LOG_DEBUG, "Using ini file %s.\n", ini_file_name);
-	} else {
-			 jk_log(logger, JK_LOG_DEBUG, "Using registry.\n");
-	}
-	jk_log(logger, JK_LOG_DEBUG, "Using log file %s.\n", log_file);
-	jk_log(logger, JK_LOG_DEBUG, "Using log level %d.\n", log_level);
-	jk_log(logger, JK_LOG_DEBUG, "Using extension uri %s.\n", extension_uri);
-	jk_log(logger, JK_LOG_DEBUG, "Using worker file %s.\n", worker_file);
-	jk_log(logger, JK_LOG_DEBUG, "Using worker mount file %s.\n", worker_mount_file);
+    /* Logging the initialization type: registry or properties file in virtual dir
+    */
+    if (using_ini_file) {
+        jk_log(logger, JK_LOG_DEBUG, "Using ini file %s.\n", ini_file_name);
+    } else {
+        jk_log(logger, JK_LOG_DEBUG, "Using registry.\n");
+    }
+    jk_log(logger, JK_LOG_DEBUG, "Using log file %s.\n", log_file);
+    jk_log(logger, JK_LOG_DEBUG, "Using log level %d.\n", log_level);
+    jk_log(logger, JK_LOG_DEBUG, "Using extension uri %s.\n", extension_uri);
+    jk_log(logger, JK_LOG_DEBUG, "Using worker file %s.\n", worker_file);
+    jk_log(logger, JK_LOG_DEBUG, "Using worker mount file %s.\n", worker_mount_file);
 
     if (map_alloc(&map)) {
         if (map_read_properties(map, worker_mount_file)) {
-            if (uri_worker_map_alloc(&uw_map, map, logger)) {
-                rc = JK_TRUE;
+            /* remove non-mapping entries (assume they were string substitutions) */
+            jk_map_t *map2;
+            if (map_alloc(&map2)) {
+                int sz,i;
+                void* old;
+
+                sz = map_size(map);
+                for(i = 0; i < sz ; i++) {
+                    char *name = map_name_at(map, i);
+                    if ('/' == *name) {
+                        map_put(map2, name, map_value_at(map, i), &old);
+                    } else {
+                        jk_log(logger, JK_LOG_DEBUG,
+                               "Ignoring worker mount file entry %s=%s.\n",
+                               name, map_value_at(map, i));
+                    }
+                }
+
+                if (uri_worker_map_alloc(&uw_map, map2, logger)) {
+                    rc = JK_TRUE;
+                }
+
+                map_free(&map2);
             }
         }
         map_free(&map);
@@ -893,10 +914,10 @@ static int init_jk(char *serverName)
         rc = JK_FALSE;
         if (map_alloc(&map)) {
             if (map_read_properties(map, worker_file)) {
-				/* we add the URI->WORKER MAP since workers using AJP14 will feed it */
+                /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
 
-				worker_env.uri_to_worker = uw_map;
-				worker_env.server_name = serverName;
+                worker_env.uri_to_worker = uw_map;
+                worker_env.server_name = serverName;
 
                 if (wc_open(map, &worker_env, logger)) {
                     rc = JK_TRUE;
@@ -906,7 +927,7 @@ static int init_jk(char *serverName)
         }
     }
 
-	return rc;
+    return rc;
 }
 
 static int initialize_extension(void)
