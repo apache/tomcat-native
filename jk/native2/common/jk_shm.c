@@ -80,6 +80,7 @@
 #include "apr_mmap.h"
 #include "apr_file_io.h"
 #include "apr_file_info.h"
+#include "apr_general.h"
 static apr_pool_t *globalShmPool;
 
 #elif defined(HAVE_MMAP) && !defined(WIN32)
@@ -100,7 +101,7 @@ static apr_pool_t *globalShmPool;
 
 #ifdef APR_HAS_MMAP    
 
-static int jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
+static int JK_METHOD jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
 {
     apr_mmap_t *aprShm=(apr_mmap_t *)shm->privateData;
 
@@ -115,7 +116,6 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
     int rc;
     apr_file_t *file;
     apr_finfo_t finfo;
-    apr_size_t size;
     apr_mmap_t *aprMmap;
 
     /* We don't want to have to recreate the scoreboard after
@@ -156,7 +156,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
 
     if( finfo.size < shm->size ) {
         char bytes[1024];
-        int toWrite=shm->size-finfo.size;
+        apr_size_t toWrite=shm->size-finfo.size;
         apr_off_t off=0;
         
         memset( bytes, 0, 1024 );        
@@ -208,7 +208,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
 
 #elif defined(HAVE_MMAP) && !defined(WIN32)
 
-static int jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
+static int JK_METHOD jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
 {
     caddr_t shmf=(caddr_t)shm->privateData;
 
@@ -293,7 +293,7 @@ static int jk2_shm_create(jk_env_t *env, jk_shm_t *shm)
 
 #else
 
-static int jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
+static int JK_METHOD jk2_shm_destroy(jk_env_t *env, jk_shm_t *shm)
 {
     return JK_OK;
 }

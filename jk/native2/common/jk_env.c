@@ -164,9 +164,10 @@ static jk_bean_t *jk2_env_createBean( jk_env_t *env, jk_pool_t *pool, char *objN
         /* Funny pointer arithmetic. I hope I got it right */
         type=env->tmpPool->calloc( env, env->tmpPool, localName - objName + 2 );
         strncpy( type, objName, localName - objName );
+        localName++;
     }
     
-    return env->createBean2( env, pool, type, objName );
+    return env->createBean2( env, pool, type, localName );
 }
 
 /** Create a component using type and local part ( pre-cooked ).
@@ -199,14 +200,14 @@ static jk_bean_t *jk2_env_createBean2( jk_env_t *env, jk_pool_t *pool,
         return NULL;
     }
 
-    if( localName!=NULL && strncmp( localName, type, strlen( type )) == 0 ) {
+    /* if( localName!=NULL && strncmp( localName, type, strlen( type )) == 0 ) { */
         /* Common error, make it 'localName' */
-        if( strcmp( type, localName ) == 0 ) {
-            localName="";
-        } else {
-            localName= localName + strlen(type) + 1;
-        }
-    }
+    /*         if( strcmp( type, localName ) == 0 ) { */
+    /*             localName=""; */
+    /*         } else { */
+    /*             localName= localName + strlen(type) + 1; */
+    /*         } */
+    /*     } */
 
     if( env->debug > 0 ) {
         if( env->l != NULL ) {

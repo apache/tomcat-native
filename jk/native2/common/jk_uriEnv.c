@@ -219,7 +219,7 @@ static int jk2_uriEnv_init(jk_env_t *env, jk_uriEnv_t *uriEnv)
     if( uriEnv->workerName != NULL && uriEnv->worker==NULL ) {
         uriEnv->worker= env->getByName( env, wname );
         if( uriEnv->worker==NULL ) {
-            uriEnv->worker= env->getByName2( env, "worker.lb", wname );
+            uriEnv->worker= env->getByName2( env, "lb", wname );
             if( uriEnv->worker==NULL ) {
                 env->l->jkLog(env, env->l, JK_LOG_ERROR,
                               "uriEnv.init() map to invalid worker %s %s\n",

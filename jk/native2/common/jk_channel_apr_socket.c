@@ -62,10 +62,6 @@
  * @author: Costin Manolache
  * @author: Jean-Frederic Clere <jfrederic.clere@fujitsu-siemens.com>
  */
-#include "apr_network_io.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-
 
 #include "jk_global.h"
 #include "jk_map.h"
@@ -76,6 +72,11 @@
 #include <string.h>
 #include "jk_registry.h"
 
+
+#ifdef HAS_APR
+#include "apr_network_io.h"
+#include "apr_errno.h"
+#include "apr_general.h"
 
 
 #define DEFAULT_HOST "127.0.0.1"
@@ -444,3 +445,19 @@ int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
 
     return JK_OK;
 }
+#else /* HAS_APR */
+
+int JK_METHOD jk2_channel_apr_socket_factory(jk_env_t *env,
+                                             jk_pool_t *pool, 
+                                             jk_bean_t *result,
+                                             const char *type, const char *name)
+{
+
+    result->disabled=1;
+    result->object= NULL;
+
+    return JK_OK;
+}
+
+
+#endif

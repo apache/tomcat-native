@@ -61,6 +61,8 @@
  * @author Costin Manolache
  */
 
+#ifdef HAS_APR
+
 #include "apr_pools.h"
 #include "apr_strings.h"
 #include "apr_network_io.h"
@@ -210,3 +212,4 @@ int  jk2_pool_apr_factory(jk_env_t *env, jk_pool_t *pool,
 }
 
 
+#endif

@@ -172,7 +172,6 @@ static void jk2_worker_status_displayEndpointInfo(jk_env_t *env, jk_ws_service_t
         char *name=env->_objects->nameAt( env, env->_objects, i );
         jk_bean_t *mbean=env->_objects->valueAt( env, env->_objects, i );
         jk_endpoint_t *ep;
-        int j;
 
         if( mbean==NULL ) 
             continue;
@@ -203,7 +202,6 @@ static void jk2_worker_status_displayScoreboardInfo(jk_env_t *env, jk_ws_service
     int needHeader=JK_TRUE;
     
     if( wenv->shm==NULL || wenv->shm->head==NULL) {
-        jk2_worker_status_displayEndpointInfo( env, s, wenv );
         return;
     }
 
@@ -379,7 +377,6 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
                                                jk_ws_service_t *s)
 {
     char *uri=s->req_uri;
-    jk_map_t *queryMap;
     int didUpdate;
 
     if( w->mbean->debug > 0 ) 
@@ -415,7 +412,7 @@ static int JK_METHOD jk2_worker_status_service(jk_env_t *env,
     /* Body */
     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "ajp13" );
     jk2_worker_status_displayScoreboardInfo(env, s, s->workerEnv );
-/*     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "endpoint" ); */
+    jk2_worker_status_displayEndpointInfo( env, s, s->workerEnv );
     jk2_worker_status_displayRuntimeType(env, s, s->workerEnv, "uri" );
     jk2_worker_status_displayConfigProperties(env, s, s->workerEnv );
     jk2_worker_status_displayActiveProperties(env, s, s->workerEnv );

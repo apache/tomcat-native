@@ -355,10 +355,10 @@ static int jk2_workerEnv_init(jk_env_t *env, jk_workerEnv_t *wEnv)
     /* Set default worker. It'll be used for all uris that have no worker
      */
     if( wEnv->defaultWorker == NULL ) {
-        jk_worker_t *w=wEnv->worker_map->get( env, wEnv->worker_map, "worker.lb:lb" );
+        jk_worker_t *w=wEnv->worker_map->get( env, wEnv->worker_map, "lb:lb" );
         
         if( w==NULL ) {
-            jk_bean_t *jkb=env->createBean2(env, wEnv->pool, "worker.lb", "lb" );
+            jk_bean_t *jkb=env->createBean2(env, wEnv->pool, "lb", "lb" );
             w=jkb->object;
             if( wEnv->mbean->debug > 0 )
                 env->l->jkLog(env, env->l, JK_LOG_ERROR, "workerEnv.init() create default worker %s\n",  jkb->name );

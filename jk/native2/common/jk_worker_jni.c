@@ -63,6 +63,11 @@
  * @author:  Gal Shachor <shachor@il.ibm.com>
  * @author: Costin Manolache
  */
+#include "jk_workerEnv.h"
+#include "jk_env.h"
+#include "jk_bean.h"
+
+#ifdef HAVE_JNI
 
 #include "jk_vm.h"
 #include "jk_registry.h"
@@ -348,4 +353,15 @@ int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
     
     return JK_OK;
 }
+#else
 
+int JK_METHOD jk2_worker_jni_factory(jk_env_t *env, jk_pool_t *pool,
+                                     jk_bean_t *result,
+                                     const char *type, const char *name)
+{
+    result->disabled=1;
+    
+    return JK_OK;
+}
+     
+#endif
