@@ -61,6 +61,8 @@
  * @author Costin Manolache
  */
 
+#ifdef HAVE_JNI
+
 #include <jni.h>
 #include "apr.h"
 #include "apr_pools.h"
@@ -581,3 +583,4 @@ jint jk_jni_aprImpl_registerNatives(JNIEnv *jniEnv, jclass bridgeClass)
 }
 
 
+#endif /* HAVE_JNI */
