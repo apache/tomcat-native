@@ -81,6 +81,7 @@ class CoyoteProcessor implements Adapter {
     private ContextManager cm;
     private boolean secure=false;
     private int serverPort=-1;
+    private String localHost = null;
     private SSLImplementation sslImplementation=null;
     private SSLSupport sslSupport=null;
 
@@ -96,6 +97,7 @@ class CoyoteProcessor implements Adapter {
 	sslImplementation=null;
 	sslSupport=null;
 	serverPort=-1;
+	localHost=null;
     }
 
     public void setSSLImplementation(SSLImplementation ssl) {
@@ -106,6 +108,8 @@ class CoyoteProcessor implements Adapter {
     }
     public void setSocket(Socket socket) {
 	serverPort = socket.getLocalPort();
+	InetAddress localAddress = socket.getLocalAddress();
+	localHost = localAddress.getHostName();
 	if( secure ) {
 	    // Load up the SSLSupport class
 	    if(sslImplementation != null)
@@ -117,6 +121,7 @@ class CoyoteProcessor implements Adapter {
 	    throws Exception{
 	reqA.setCoyoteRequest(request);
 	reqA.setServerPort(serverPort);
+	request.setLocalHost(localHost);
 	resA.setCoyoteResponse(response);
 	if( secure ) {
 	    reqA.scheme().setString( "https" );
@@ -127,6 +132,5 @@ class CoyoteProcessor implements Adapter {
 	}
 	    
 	cm.service( reqA, resA );
-
     }
 }
