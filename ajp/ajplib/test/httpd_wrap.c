@@ -85,7 +85,7 @@ static void log_error_core(const char *file, int line, int level,
             fprintf(stream, "(OS %d)", status - APR_OS_START_SYSERR);
         }
         else {
-            fprintf(stream, "os 0x%08x)", status - APR_OS_START_SYSERR);
+            fprintf(stream, "(os 0x%08x)", status - APR_OS_START_SYSERR);
         }
         apr_strerror(status, errstr, MAX_STRING_LEN);
         fprintf(stream, " %s ", errstr);
@@ -132,3 +132,46 @@ AP_DECLARE(void) ap_log_rerror(const char *file, int line, int level,
     log_error_core(file, line, level, status, fmt, args);
     va_end(args);
 }
+
+
+AP_DECLARE(conn_rec *) ap_run_create_connection(apr_pool_t *ptrans,
+                                  server_rec *server,
+                                  apr_socket_t *csd, long id, void *sbh,
+                                  apr_bucket_alloc_t *alloc)
+{
+    apr_status_t rv;
+    conn_rec *c = (conn_rec *) apr_pcalloc(ptrans, sizeof(conn_rec));
+
+    c->sbh = sbh;
+
+    /* Got a connection structure, so initialize what fields we can
+     * (the rest are zeroed out by pcalloc).
+     */
+    c->notes = apr_table_make(ptrans, 5);
+
+    c->pool = ptrans;
+    if ((rv = apr_socket_addr_get(&c->local_addr, APR_LOCAL, csd))
+        != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_INFO, rv, server,
+                     "apr_socket_addr_get(APR_LOCAL)");
+        apr_socket_close(csd);
+        return NULL;
+    }
+
+    apr_sockaddr_ip_get(&c->local_ip, c->local_addr);
+    if ((rv = apr_socket_addr_get(&c->remote_addr, APR_REMOTE, csd))
+        != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_INFO, rv, server,
+                     "apr_socket_addr_get(APR_REMOTE)");
+        apr_socket_close(csd);
+        return NULL;
+    }
+
+    apr_sockaddr_ip_get(&c->remote_ip, c->remote_addr);
+    c->base_server = server;
+
+    c->id = id;
+    c->bucket_alloc = alloc;
+
+    return c;
+} 

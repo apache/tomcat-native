@@ -63,6 +63,35 @@ struct request_rec {
 struct conn_rec {
     /** Pool associated with this connection */
     apr_pool_t *pool;
+    /** Physical vhost this conn came in on */
+    server_rec *base_server;
+    /* Information about the connection itself */
+    /** local address */
+    apr_sockaddr_t *local_addr;
+    /** remote address */
+    apr_sockaddr_t *remote_addr;
+    /** Client's IP address */
+    char *remote_ip;
+    /** Client's DNS name, if known.  NULL if DNS hasn't been checked,
+     *  "" if it has and no address was found.  N.B. Only access this though
+     * get_remote_host() */
+    char *remote_host; 
+    /** How many times have we used it? */
+    int keepalives;
+    /** server IP address */
+    char *local_ip;
+    /** used for ap_get_server_name when UseCanonicalName is set to DNS
+     *  (ignores setting of HostnameLookups) */
+    char *local_host;
+     /** ID of this connection; unique at any point in time */
+    long id;
+    /** send note from one module to another, must remain valid for all
+     *  requests on this conn */
+    apr_table_t *notes; 
+    /** handle to scoreboard information for this connection */
+    void *sbh; 
+    /** The bucket allocator to use for all bucket/brigade creations */
+    struct apr_bucket_alloc_t *bucket_alloc;
 };
 
 /** A structure to store information for each virtual server */
@@ -186,8 +215,25 @@ AP_DECLARE(void) ap_log_rerror(const char *file, int line, int level,
                                apr_status_t status, const request_rec *r, 
                                const char *fmt, ...)
                 __attribute__((format(printf,6,7)));
-
-
+/**
+ * create_connection is a RUN_FIRST hook which allows modules to create 
+ * connections. In general, you should not install filters with the 
+ * create_connection hook. If you require vhost configuration information 
+ * to make filter installation decisions, you must use the pre_connection
+ * or install_network_transport hook. This hook should close the connection
+ * if it encounters a fatal error condition.
+ *
+ * @param p The pool from which to allocate the connection record
+ * @param csd The socket that has been accepted
+ * @param conn_id A unique identifier for this connection.  The ID only
+ *                needs to be unique at that time, not forever.
+ * @param sbh A handle to scoreboard information for this connection.
+ * @return An allocated connection record or NULL.
+ */ 
+AP_DECLARE(conn_rec *) ap_run_create_connection(apr_pool_t *ptrans,
+                                  server_rec *server,
+                                  apr_socket_t *csd, long id, void *sbh,
+                                  apr_bucket_alloc_t *alloc);
 
 
 
