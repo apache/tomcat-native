@@ -72,20 +72,51 @@ import java.util.Enumeration;
  * @author Costin Manolache
  */
 public class TcHandlerCtx {
-    // XXX Make it configurable ( at startup, since runtime change will require sync )
-    private Object notes[]=new Object[32];
 
+
+    private int type = 0;
+
+    /**
+     * Get the type of the handler context.
+     */
+    public final int getType() {
+        return type;
+    }
+
+    /**
+     * Set the type of the handler context.
+     */
+    public final void setType( int type ) {
+        this.type = type;
+    }
+
+
+    // XXX Make it configurable ( at startup, since runtime change will require sync )
+    private Object notes[] = new Object[32];
+
+    /**
+     * Get a note associated with this hanlder context.
+     */
     public final Object getNote( int id ) {
         return notes[id];
     }
 
+    /**
+     * Associate a note with this hanlder context.
+     */
     public final void setNote( int id, Object o ) {
         notes[id]=o;
     }
 
+
+    /**
+     * Recycle the hanlder context.
+     */
     public void recycle() {
+        type = 0;
         for( int i=0; i<notes.length; i++ ) {
             notes[i]=null;
         }
     }
+
 }
