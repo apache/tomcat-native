@@ -67,7 +67,6 @@ dnl New vars: TEST TRUE ECHO GREP CAT SED RM SYSTEM
 dnl Upd vars: N/A
 dnl --------------------------------------------------------------------------
 sinclude(./support/aplocal.m4)
-sinclude(./support/apjava.m4)
 AC_INIT([Makefile.in])
 AC_CONFIG_AUX_DIR([support])
 LOCAL_INIT()
