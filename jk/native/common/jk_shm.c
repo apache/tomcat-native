@@ -35,7 +35,6 @@ struct jk_shm_header
     size_t pos;
     unsigned int childs;
     unsigned int workers;
-    unsigned int urimaps;
     time_t modified;
     char   buf[1];
 };
@@ -418,19 +417,4 @@ jk_shm_worker_t *jk_shm_alloc_worker(jk_pool_t *p)
             w->id = -1;
     }
     return w;
-}
-
-jk_shm_urimap_t *jk_shm_alloc_urimap(jk_pool_t *p)
-{
-    jk_shm_urimap_t *u = (jk_shm_urimap_t *)jk_shm_alloc(p, sizeof(jk_shm_urimap_t));
-    if (u) {
-        memset(u, 0, sizeof(jk_shm_urimap_t));
-        if (jk_shmem.hdr) {
-            jk_shmem.hdr->urimaps++;
-            u->id = jk_shmem.hdr->urimaps;
-        }
-        else
-            u->id = -1;
-    }
-    return u;
 }

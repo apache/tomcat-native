@@ -54,14 +54,14 @@ struct uri_worker_record
     /* Name of worker mapped */
     const char *worker_name;
 
-    /* Shared memory uri->worker mappings */
-    jk_shm_urimap_t *s;
-
     /* Suffix of uri */
     const char *suffix;
 
     /* Base context */
     const char *context;
+
+    /* Match type */
+    unsigned int match_type;
 
     /* char length of the context */
     size_t context_len;

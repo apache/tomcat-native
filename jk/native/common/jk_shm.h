@@ -88,15 +88,6 @@ struct jk_shm_worker
 };
 typedef struct jk_shm_worker jk_shm_worker_t;
 
-/** jk shm uri worker map record structure */
-struct jk_shm_urimap
-{
-    int          id;
-    int          worker_id;
-    unsigned int match_type;
-};
-typedef struct jk_shm_urimap jk_shm_urimap_t;
-
 const char *jk_shm_name();
 
 /* Open the shared memory creating file if needed
@@ -121,11 +112,6 @@ void *jk_shm_alloc(jk_pool_t *p, size_t size);
  * If there is no shm present the pool will be used instead
  */
 jk_shm_worker_t *jk_shm_alloc_worker(jk_pool_t *p);
-
-/* allocate shm uri worker map record
- * If there is no shm present the pool will be used instead
- */
-jk_shm_urimap_t *jk_shm_alloc_urimap(jk_pool_t *p);
 
 /* Return workers.properties last modified time
  */

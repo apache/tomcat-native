@@ -324,16 +324,13 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
     unsigned int i;
 
     jk_puts(s, "<br />Uri Mappings:\n");
-    jk_puts(s, "<table><tr><th>Disabled</th><th>Match Type</th><th>Uri</th></tr>\n");
+    jk_puts(s, "<table><tr><th>Match Type</th><th>Uri</th></tr>\n");
     for (i = 0; i < uwmap->size; i++) {
         uri_worker_record_t *uwr = uwmap->maps[i];
         if (strcmp(uwr->worker_name, worker))
             continue;
-        jk_printf(s, "<tr><td><input name=\"mi%d\" type=checkbox", i);
-        if (uwr->s->match_type & MATCH_TYPE_DISABLED)
-            jk_puts(s, " checked");
-        jk_putv(s, "></td><td>",
-                status_val_match(uwr->s->match_type),
+        jk_putv(s, "<tr><td>",
+                status_val_match(uwr->match_type),
                 "</td><td>", NULL);
         jk_puts(s, uwr->uri);
         jk_puts(s, "</td></tr>\n");
@@ -541,7 +538,6 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
                           const char *dworker, jk_logger_t *l)
 {
     int i;
-    unsigned int j;
     char buf[1024];
     const char *b;
     lb_worker_t *lb;
@@ -557,17 +553,6 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
             lb->s->recover_wait_time = i;
         lb->s->sticky_session = status_bool("ls", s->query_string);
         lb->s->sticky_session_force = status_bool("lf", s->query_string);
-        for (j = 0; j < s->uw_map->size; j++) {
-            uri_worker_record_t *uwr = s->uw_map->maps[j];
-            if (strcmp(uwr->worker_name, dworker))
-                continue;
-            sprintf(buf, "mi%d", j);
-            if (status_bool(buf, s->query_string))
-                uwr->s->match_type |= MATCH_TYPE_DISABLED;
-            else
-                uwr->s->match_type &= ~MATCH_TYPE_DISABLED;
-
-        }
     }
     else  {
         int n = status_int("lb", s->query_string, -1);

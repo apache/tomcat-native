@@ -95,7 +95,7 @@ static int check_security_fraud(jk_uri_worker_map_t *uw_map, const char *uri)
     unsigned i;
 
     for (i = 0; i < uw_map->size; i++) {
-        if (uw_map->maps[i]->s->match_type == MATCH_TYPE_SUFFIX) {
+        if (uw_map->maps[i]->match_type == MATCH_TYPE_SUFFIX) {
             char *suffix_start;
             for (suffix_start = strstr(uri, uw_map->maps[i]->suffix);
                  suffix_start;
@@ -382,7 +382,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-
+    uwr->match_type = match_type;
     uw_map->maps[uw_map->size] = uwr;
     uw_map->size++;
     if (match_type & MATCH_TYPE_NO_MATCH) {    
@@ -390,14 +390,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         uw_map->nosize++;
     }
     worker_qsort(uw_map);
-    uwr->s = jk_shm_alloc_urimap(&uw_map->p);
-    if (!uwr->s) {
-        jk_log(l, JK_LOG_ERROR,
-               "can't alloc shared memory map entry");
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
-    uwr->s->match_type = match_type;
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
@@ -514,13 +506,13 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
         uri_worker_record_t *uwr = uw_map->maps[i];
 
         /* Check only nomatch mappings */
-        if (!(uwr->s->match_type & MATCH_TYPE_NO_MATCH) ||
-            (uwr->s->match_type & MATCH_TYPE_DISABLED))
+        if (!(uwr->match_type & MATCH_TYPE_NO_MATCH) ||
+            (uwr->match_type & MATCH_TYPE_DISABLED))
             continue;        
         /* Check only mathing workers */
         if (strcmp(uwr->worker_name, worker))
             continue;
-        if (uwr->s->match_type & MATCH_TYPE_WILDCHAR_PATH) {
+        if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {
             /* Map is already sorted by context_len */
             if (wildchar_match(uri, uwr->context,
 #ifdef WIN32
@@ -537,7 +529,7 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
              }
         }
         else if (JK_STRNCMP(uwr->context, uri, uwr->context_len) == 0) {
-            if (uwr->s->match_type & MATCH_TYPE_EXACT) {
+            if (uwr->match_type & MATCH_TYPE_EXACT) {
                 if (strlen(uri) == uwr->context_len) {
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
@@ -547,7 +539,7 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
                     return JK_TRUE;
                 }
             }
-            else if (uwr->s->match_type & MATCH_TYPE_CONTEXT) {
+            else if (uwr->match_type & MATCH_TYPE_CONTEXT) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
                            "Found a context no match %s -> %s",
@@ -555,7 +547,7 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
-            else if (uwr->s->match_type & MATCH_TYPE_GENERAL_SUFFIX) {
+            else if (uwr->match_type & MATCH_TYPE_GENERAL_SUFFIX) {
                 int suffix_start = last_index_of(uri, uwr->suffix[0]);
                 if (suffix_start >= 0
                     && 0 == JK_STRCMP(uri + suffix_start, uwr->suffix)) {
@@ -567,7 +559,7 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
                         return JK_TRUE;
                 }
             }
-            else if (uwr->s->match_type & MATCH_TYPE_CONTEXT_PATH) {
+            else if (uwr->match_type & MATCH_TYPE_CONTEXT_PATH) {
                 char *suffix_path = NULL;
                 if (strlen(uri) > 1
                     && (suffix_path = strchr(uri + 1, '/')) != NULL) {
@@ -592,7 +584,7 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
                 if (uri[suffix_start] == '.') {
                     const char *suffix = uri + suffix_start + 1;
                     if (JK_STRCMP(suffix, uwr->suffix) == 0) {
-                        if (uwr->s->match_type & MATCH_TYPE_NO_MATCH) {
+                        if (uwr->match_type & MATCH_TYPE_NO_MATCH) {
                             if (JK_IS_DEBUG_LEVEL(l))
                                 jk_log(l, JK_LOG_DEBUG,
                                        "Found a no suffix match for %s -> %s",
@@ -657,8 +649,8 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         uri_worker_record_t *uwr = uw_map->maps[i];
 
         /* Check for match types */
-        if ((uwr->s->match_type & MATCH_TYPE_DISABLED) ||
-            (uwr->s->match_type & MATCH_TYPE_NO_MATCH) ||
+        if ((uwr->match_type & MATCH_TYPE_DISABLED) ||
+            (uwr->match_type & MATCH_TYPE_NO_MATCH) ||
             (uwr->context_len < longest_match)) {
             /* can not be a best match anyway */
             continue;
@@ -666,7 +658,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG, "Attempting to map context URI '%s'", uwr->uri);
 
-        if (uwr->s->match_type & MATCH_TYPE_WILDCHAR_PATH) {
+        if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {
             const char *wname;
             /* Map is already sorted by context_len */
             if (wildchar_match(uri, uwr->context,
@@ -687,7 +679,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
              }
         }
         else if (JK_STRNCMP(uwr->context, uri, uwr->context_len) == 0) {
-            if (uwr->s->match_type & MATCH_TYPE_EXACT) {
+            if (uwr->match_type & MATCH_TYPE_EXACT) {
                 if (strlen(uri) == uwr->context_len) {
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
@@ -698,7 +690,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     goto cleanup;
                 }
             }
-            else if (uwr->s->match_type & MATCH_TYPE_CONTEXT) {
+            else if (uwr->match_type & MATCH_TYPE_CONTEXT) {
                 if (uwr->context_len > longest_match) {
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
@@ -708,7 +700,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     best_match = i;
                 }
             }
-            else if (uwr->s->match_type & MATCH_TYPE_GENERAL_SUFFIX) {
+            else if (uwr->match_type & MATCH_TYPE_GENERAL_SUFFIX) {
                 int suffix_start = last_index_of(uri, uwr->suffix[0]);
                 if (suffix_start >= 0
                     && 0 == strcmp(uri + suffix_start, uwr->suffix)) {
@@ -722,7 +714,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     }
                 }
             }
-            else if (uwr->s->match_type & MATCH_TYPE_CONTEXT_PATH) {
+            else if (uwr->match_type & MATCH_TYPE_CONTEXT_PATH) {
                 char *suffix_path = NULL;
                 if (strlen(uri) > 1
                     && (suffix_path = strchr(uri + 1, '/')) != NULL) {
