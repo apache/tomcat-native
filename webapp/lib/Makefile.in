@@ -80,7 +80,7 @@ PROVS = pr_info.lo \
 	pr_warp_network.lo \
 	pr_warp_config.lo
 
-LIB =	libwebapp.la
+LIB =	$(TGTDIR)/lib/libwebapp.a
 
 WARPH = pr_warp_defs.h
 
@@ -89,7 +89,15 @@ build: $(LIB)
 clean:
 	$(RM) -f $(OBJS) $(PROVS) $(LIB) $(WARPH)
 
-$(LIB): $(SRCS) $(WARPH) $(OBJS) $(PROVS)
+$(LIB): libwebapp.la
+	$(LIBTOOL) --silent --mode=install \
+	$(SRCDIR)/support/install.sh -c \
+	libwebapp.la \
+	$(TGTDIR)/lib
+	$(LIBTOOL) --silent --mode=finish \
+	$(TGTDIR)/lib
+
+libwebapp.la: $(SRCS) $(WARPH) $(OBJS) $(PROVS)
 	@$(MECHO) "Creating library \"$@\""
 	$(LIBTOOL) $(CC) -rpath $(TGTDIR)/lib -static -o $@ $(OBJS) $(PROVS)
 

@@ -69,7 +69,7 @@ build: $(MODULE)
 
 mod_webapp.la: mod_webapp.c
 	@$(ECHO) Compiling and Linking Apache 2.0 WebApp Module
-	$(APXS) -I../include -c ../lib/libwebapp.la mod_webapp.c
+	$(APXS) -I../include -c -L ../lib -lwebapp mod_webapp.c
 
 install: mod_webapp.la
 	$(APXS) -i mod_webapp.la
