@@ -524,11 +524,14 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
 {
     if (is_inited) {
         is_inited = JK_FALSE;
-
-/* XXX Here goes a graceful shutdown of jk2, Free resources and pools
-*/
+        if (workerEnv) {
+            jk_env_t *env = workerEnv->globalEnv;
+            workerEnv->close(env, workerEnv);
+        }
+        apr_pool_destroy(jk_globalPool);
+        workerEnv=NULL;
+        is_mapread = JK_FALSE;
     }
-    
     return TRUE;
 }
 
