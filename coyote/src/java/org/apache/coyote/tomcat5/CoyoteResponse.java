@@ -79,6 +79,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.Vector;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -814,12 +815,14 @@ public class CoyoteResponse
     public String[] getHeaderValues(String name) {
 
         MimeHeaders headers = coyoteResponse.getMimeHeaders();
-        int n = headers.size();
-        String[] result = new String[n];
-        for (int i = 0; i < n; i++) {
-            result[i] = headers.getValue(i).toString();
+	Vector result = new Vector();
+        for (int i = 0; i < headers.size(); i++) {
+	    if (name.equals( headers.getName(i).toString() ))
+		result.addElement( headers.getValue(i).toString() );
         }
-        return result;
+        String[] resultArray = new String[result.size()];
+        result.copyInto(resultArray);
+        return resultArray;
 
     }
 
