@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.Provider;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
@@ -66,7 +67,12 @@ public class JSSE13SocketFactory extends JSSESocketFactory
      */
      void init() throws IOException {
         try {
-            Security.addProvider (new sun.security.provider.Sun());
+            try {
+                Class ssps = Class.forName("sun.security.provider.Sun");
+                Security.addProvider ((Provider)ssps.newInstance());
+            }catch(Exception cnfe) {
+                //Ignore, since this is a non-Sun JVM
+            }
             Security.addProvider (new com.sun.net.ssl.internal.ssl.Provider());
 
             String clientAuthStr = (String)attributes.get("clientauth");
