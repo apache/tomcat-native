@@ -132,7 +132,7 @@ capi-clean:
 apr-build: $(LIB_DIR)
 	@$(MAKE) SUBF="$(MAKEFLAGS)" SUBD="$(APR_DIR)" SUBT="all" subdir
 	$(LIBTOOL) --mode=install \
-	  cp $(APR_DIR)/libapr.la $(LIB_DIR)/libapr.la
+	  cp $(APR_DIR)/$(APR_LIBNAME) $(LIB_DIR)/$(APR_LIBNAME)
 	$(LIBTOOL) --mode=finish $(LIB_DIR)
 
 apr-clean:

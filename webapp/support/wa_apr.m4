@@ -100,18 +100,18 @@ dnl WA_APR_GET
 dnl   Retrieve a value from the configured APR source tree
 dnl   $1 => Environment variable name for the returned value
 dnl   $2 => APR sources directory as returned by WA_APR
-dnl   $3 => APR variable name (found in $2/APRVARS)
+dnl   $3 => APR variable name (found in $2/apr-config)
 dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [WA_APR_GET],
   [
     AC_MSG_CHECKING([for apr $3 variable])
-    if test ! -f "$2/APRVARS" ; then
-      WA_ERROR([cannot find APRVARS file in $2])
+    if test ! -f "$2/apr-config" ; then
+      WA_ERROR([cannot find apr-config file in $2])
     fi
-    wa_apr_get_tempval=`cat $2/APRVARS | grep "^$3=" 2> /dev/null`
+    wa_apr_get_tempval=`cat $2/apr-config | grep "^$3=" 2> /dev/null`
     if test -z "${wa_apr_get_tempval}" ; then
-      WA_ERROR([value for $3 not specified in $2/APRVARS])
+      WA_ERROR([value for $3 not specified in $2/apr-config])
     fi
     wa_apr_get_tempval=`echo ${wa_apr_get_tempval} | sed 's/^$3="//g'`
     wa_apr_get_tempval=`echo ${wa_apr_get_tempval} | sed 's/"$//g'`
@@ -119,3 +119,51 @@ AC_DEFUN(
     AC_MSG_RESULT([${wa_apr_get_tempval}])
     unset wa_apr_get_tempval
   ])
+
+dnl --------------------------------------------------------------------------
+dnl WA_APR_LIB
+dnl   Retrieve the name of the library for -l$(APR_LIB)
+dnl   $1 => Environment variable name for the returned value
+dnl   $2 => APR sources directory as returned by WA_APR
+dnl --------------------------------------------------------------------------
+AC_DEFUN(
+  [WA_APR_LIB],
+  [
+    AC_MSG_CHECKING([for apr APR_LIB])
+    if test ! -f "$2/apr-config" ; then
+      WA_ERROR([cannot find apr-config file in $2])
+    fi
+    wa_apr_get_tempval=`$2/apr-config --apr-la-file 2> /dev/null`
+    if test -z "${wa_apr_get_tempval}" ; then
+      WA_ERROR([$2/apr-config --apr-la-file failed])
+    fi
+    wa_apr_get_tempval=`basename ${wa_apr_get_tempval} |  sed 's/lib//g'`
+    wa_apr_get_tempval=`echo ${wa_apr_get_tempval} | sed 's/\.la//g'`
+    WA_APPEND([$1],[${wa_apr_get_tempval}])
+    AC_MSG_RESULT([${wa_apr_get_tempval}])
+    unset wa_apr_get_tempval
+  ])
+
+dnl --------------------------------------------------------------------------
+dnl WA_APR_LIBNAME
+dnl   Retrieve the complete name of the library.
+dnl   $1 => Environment variable name for the returned value
+dnl   $2 => APR sources directory as returned by WA_APR
+dnl --------------------------------------------------------------------------
+AC_DEFUN(
+  [WA_APR_LIBNAME],
+  [
+    AC_MSG_CHECKING([for apr APR_LIBNAME])
+    if test ! -f "$2/apr-config" ; then
+      WA_ERROR([cannot find apr-config file in $2])
+    fi
+    wa_apr_get_tempval=`$2/apr-config --apr-la-file 2> /dev/null`
+    if test -z "${wa_apr_get_tempval}" ; then
+      WA_ERROR([$2/apr-config --apr-la-file failed])
+    fi
+    wa_apr_get_tempval=`basename ${wa_apr_get_tempval}`
+    WA_APPEND([$1],[${wa_apr_get_tempval}])
+    AC_MSG_RESULT([${wa_apr_get_tempval}])
+    unset wa_apr_get_tempval
+  ])
+

@@ -85,7 +85,7 @@ $(MODFILE): $(SOURCE)
 	  $(INCLUDES) $(LOCAL_INCLUDES) \
 	  -Wc,"$(CPPFLAGS) $(CFLAGS)" \
 	  -Wl,"$(LDFLAGS) $(LIBS)" \
-	  -L$(LIB_DIR) -lapr \
+	  -L$(LIB_DIR) -l$(APR_LIB) \
 	  $(OBJ_DIR)/*.o $<
 
 # +++ EXPERIMENTAL +++ LIBTOOL COMPILE, APXS LINK +++
@@ -100,4 +100,4 @@ $(MODFILE): $(SOURCE)
 # 	    $(CFLAGS) $(EXTRA_CFLAGS)
 # 
 # $(MODFILE): $(OBJECT)
-# 	$(APXS) -c -o $@ -L$(OBJ_DIR) -lapr $< $(OBJ_DIR)/*.o
+# 	$(APXS) -c -o $@ -L$(OBJ_DIR) -l$(APR_LIB) $< $(OBJ_DIR)/*.o

@@ -93,6 +93,8 @@ dnl --------------------------------------------------------------------------
 dnl Directories locations are defined here
 dnl --------------------------------------------------------------------------
 WA_VARIABLE([APR_DIR])
+WA_VARIABLE([APR_LIB])
+WA_VARIABLE([APR_LIBNAME])
 WA_VARIABLE([SRC_DIR])
 WA_VARIABLE([TGT_DIR])
 WA_VARIABLE([TC4_DIR])
@@ -179,12 +181,15 @@ if test "${APXS_VERSION}" = "1.3" ; then
     WA_APR_GET([CPP],[${APR_DIR}],[CPP])
     WA_APR_GET([SHELL],[${APR_DIR}],[SHELL])
 
-    WA_APR_GET([CFLAGS],[${APR_DIR}],[EXTRA_CFLAGS])
-    WA_APR_GET([CPPFLAGS],[${APR_DIR}],[EXTRA_CPPFLAGS])
-    WA_APR_GET([LDFLAGS],[${APR_DIR}],[EXTRA_LDFLAGS])
+    WA_APR_GET([CFLAGS],[${APR_DIR}],[CFLAGS])
+    WA_APR_GET([CPPFLAGS],[${APR_DIR}],[CPPFLAGS])
+    WA_APR_GET([LDFLAGS],[${APR_DIR}],[LDFLAGS])
 
-    WA_APR_GET([LDFLAGS],[${APR_DIR}],[EXTRA_LIBS])
+    WA_APR_GET([LDFLAGS],[${APR_DIR}],[LIBS])
     WA_APR_GET([CPPFLAGS],[${APR_DIR}],[EXTRA_INCLUDES])
+
+    WA_APR_LIB([APR_LIB],[${APR_DIR}])
+    WA_APR_LIBNAME([APR_LIBNAME],[${APR_DIR}])
 
     AC_MSG_CHECKING([for apr headers])
     WA_APPEND([INCLUDES],[-I${APR_DIR}/include])
