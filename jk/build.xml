@@ -97,7 +97,7 @@
     </target>
 
     <target name="build-main" 
-            depends="prepare,report,jkutil,jkjava,jkant" />
+            depends="prepare,report,jkutil,jkjava,jkant,install-t40" />
 
     <!-- ==================== Building ==================== -->
 
@@ -114,6 +114,7 @@
             <exclude name="org/apache/jk/server/tomcat33/**" unless="tomcat33.detect"/>
             <exclude name="org/apache/jk/server/tomcat40/**" unless="tomcat40.detect"/>
             <exclude name="org/apache/jk/**" unless="tomcat33.detect"/>
+	    <exclude name="org/apache/catalina/**" unless="tomcat40.detect"/>
 	    <classpath refid="build-main.classpath"/>
 	</javac>
 
@@ -186,7 +187,6 @@
               file="${jk.build}/WEB-INF/lib/tomcat-util.jar"/>
         <copy todir="${tomcat40.home}/server/lib" 
               file="${jk.build}/WEB-INF/lib/ajp.jar"/>
-        <echo message="Don't forget to add the connector to ${tomcat40.home}/conf/server.xml" />
     </target>
 
     <target name="install-t41" if="tomcat41.detect" > 
