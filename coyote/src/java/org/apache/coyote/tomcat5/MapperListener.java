@@ -189,7 +189,16 @@ public class MapperListener
                 }
             } else if (notification.getType().equals
                        (MBeanServerNotification.UNREGISTRATION_NOTIFICATION)) {
-                
+                String j2eeType = objectName.getKeyProperty("j2eeType");
+                if (j2eeType != null) {
+                    if (j2eeType.equals("WebModule")) {
+                        try {
+                            unregisterContext(objectName);
+                        } catch (Throwable t) {
+                            t.printStackTrace();
+                        }
+                    }
+                }
             }
         }
 
@@ -283,7 +292,26 @@ public class MapperListener
     private void unregisterContext(ObjectName objectName)
         throws Exception {
 
-        // FIXME: Also takes care of host registration
+        String name = objectName.getKeyProperty("name");
+
+        String hostName = null;
+        String contextName = null;
+        if (name.startsWith("//")) {
+            name = name.substring(2);
+        }
+        int slash = name.indexOf("/");
+        if (slash != -1) {
+            hostName = name.substring(0, slash);
+            contextName = name.substring(slash);
+        } else {
+            return;
+        }
+        // Special case for the root context
+        if (contextName.equals("/")) {
+            contextName = "";
+        }
+
+        mapper.removeContext(hostName, contextName);
 
     }
 
