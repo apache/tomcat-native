@@ -111,7 +111,10 @@
     </target>
 
     <target name="build-main" 
-            depends="prepare,report,jkjava,jkant" />
+            depends="prepare,report,jkutil,jkjava,jkant" />
+
+    <target name="build-jk" 
+            depends="prepare,report,jkjava" />
 
     <!-- ==================== Building ==================== -->
     
