@@ -72,6 +72,7 @@
 #include "jk_webapp.h"
 #include "jk_handler.h"
 #include "jk_service.h"
+#include "jk_vm.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -196,6 +197,12 @@ struct jk_workerEnv {
      */
     struct jk_handler **handlerTable;
     int lastMessageId;
+
+    /* The vm - we support a single instance per process
+     * ( i.e can't have both jdk1.1 and jdk1.2 at the same time,
+     *  or 2 instances of the same vm. )
+     */
+    struct jk_vm *vm;
     
     /** Private data, associated with the 'real' server
      *  server_rec * in apache
