@@ -18,11 +18,13 @@
 
     <!-- default locations, overrident by properties -->
     <property name="tomcat33.home" 
-     location="../../jakarta-tomcat/build/tomcat/lib/common/tomcat_core.jar" />
+              location="../../jakarta-tomcat/build/tomcat/lib/common/tomcat_core.jar" />
     <property name="tomcat40.home" 
 	      location="../../jakarta-tomcat-4.0/build" />
     <property name="tomcat41.home" 
 	      location="../../jakarta-tomcat-4.1/build" />
+    <property name="coyote.home" 
+	      location="../coyote/build" />
     <property name="commons-logging.jar" location="../lib/commons-logging.jar" />
 
     <!-- ==================== Detection and reports ==================== -->
@@ -91,8 +93,9 @@
             <pathelement location="${catalina.home}/server/lib/catalina.jar"/>
             <pathelement location="${catalina.home}/common/lib/servlet.jar"/>
             <pathelement location="${tomcat33.home}/lib/common/tomcat_core.jar"/>
-            <pathelement location="${commons-logging.jar}"/>
             <pathelement location="${tomcat33.home}/lib/common/core_util.jar"/>
+            <pathelement location="${jk.build}/WEB-INF/lib/tomcat-util.jar" />
+            <pathelement location="${commons-logging.jar}"/>
             <pathelement 
                  location="${tomcat33.home}/lib/container/tomcat_modules.jar"/>
             <!-- this is needed - otherwise tomcat33 connector will not compile.
@@ -101,6 +104,7 @@
                  3.3 classes. -->
             <pathelement 
                  location="${tomcat33.home}/lib/container/tomcat_util.jar"/>
+            <pathelement location="${coyote.home}/lib/tomcat-coyote.jar"/>
         </path>
 
     </target>
@@ -109,18 +113,19 @@
             depends="prepare,report,jkutil,jkjava,jkant" />
 
     <!-- ==================== Building ==================== -->
-
+    
     <target name="jkjava" 
             description="Build java side of the connector" >
+        <echo message="Logging: ${commons-logging.jar}" />
         <javac srcdir="java"
-	       destdir="${jk.build}/WEB-INF/classes"
-	       deprecation="off"
-	       debug="${debug}"
-	       optimize="${optimize}"
-	       verbose="off" >
-	    <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat40.detect"/>
-            <exclude name="org/apache/ajp/tomcat33/**" 
-                     unless="tomcat33.detect"/>
+               destdir="${jk.build}/WEB-INF/classes"
+               deprecation="off"
+               debug="${debug}"
+               optimize="${optimize}"
+               verbose="off" >
+      <exclude name="org/apache/ajp/tomcat4/**" unless="tomcat40.detect"/>
+      <exclude name="org/apache/ajp/tomcat33/**" 
+               unless="tomcat33.detect"/>
             <exclude name="org/apache/jk/server/tomcat33/**" 
                      unless="tomcat33.detect"/>
             <exclude name="org/apache/jk/server/tomcat40/**" 
@@ -168,24 +173,14 @@
     
     <target name="jkutil" 
             description="Build utils" >
-	<javac srcdir="../util/java" 
-	       destdir="${jk.build}/WEB-INF/classes" 
-	       debug="${debug}"
-	       optimize="${optimize}"
-	       verbose="off" >
-	</javac>
+        <ant dir="../util"  />
+        <ant dir="../coyote" />
+    
+        <copy  tofile="${jk.build}/WEB-INF/lib/tomcat-coyote.jar"
+              file="../coyote/build/lib/tomcat-coyote.jar" />
+        <copy  tofile="${jk.build}/WEB-INF/lib/tomcat-util.jar"
+              file="../util/build/lib/tomcat-util.jar" />
 
-	<!-- Copy static resource files -->
-	<copy todir="${jk.build}/WEB-INF/classes">
-	    <fileset dir="../util/java">
-	    	<include name="**/*.properties"/>
-	    </fileset>
-        </copy>
-
-	<jar jarfile="${jk.build}/WEB-INF/lib/tomcat-util.jar"
-	     basedir="${jk.build}/WEB-INF/classes" >
-            <include name="org/apache/tomcat/util/**" />
-        </jar>
     </target>
 
     <!-- It's better to call it directly with individual tags -->
@@ -199,7 +194,7 @@
     <target name="install" 
             depends="prepare,build-main,install-t33,install-t40,install-t41,install-a20,install-a13" />
 
-    <target name="install-t33" if="tomcat33.detect" > 
+    <target name="install-t33" if="tomcat33.detect" description="Install in 3.3"> 
         <mkdir dir="${tomcat33.home}/modules/jk" />
         <copy todir="${tomcat33.home}/modules/jk" >
             <fileset dir="${jk.build}" >
@@ -210,7 +205,7 @@
         </copy>
     </target>
 
-    <target name="install-t40" if="tomcat40.detect" > 
+    <target name="install-t40" if="tomcat40.detect" description="Install in 4.0"> 
         <copy todir="${tomcat40.home}/server/lib" 
               file="${jk.build}/WEB-INF/lib/tomcat-util.jar"/>
         <copy todir="${tomcat40.home}/server/lib" 
