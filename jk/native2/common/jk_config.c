@@ -624,6 +624,7 @@ static int jk2_config_readFile(jk_env_t *env,
                                int *didReload, int firstTime)
 {
     int rc;
+    int csOk;
     struct stat statbuf;
     time_t mtime;
     jk_map_t *cfgData;
@@ -631,8 +632,11 @@ static int jk2_config_readFile(jk_env_t *env,
     if( didReload!=NULL )
         *didReload=JK_FALSE;
 
-    if( cfg->file==NULL )
+    if( cfg->file==NULL ) {
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
+                      "config.update(): No config file" );
         return JK_ERR;
+    }
 
     rc=stat(cfg->file, &statbuf);
     if (rc == -1) {
@@ -641,12 +645,12 @@ static int jk2_config_readFile(jk_env_t *env,
         return JK_ERR;
     }
     
-    if( statbuf.st_mtime < cfg->mtime )
+    if( !firstTime && statbuf.st_mtime < cfg->mtime )
         return JK_OK;
      
-    JK_ENTER_CS(&cfg->cs, rc);
+    JK_ENTER_CS(&cfg->cs, csOk);
     
-    if(rc !=JK_TRUE) {
+    if(csOk !=JK_TRUE) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "cfg.update() Can't enter critical section\n");
         return JK_ERR;
@@ -658,12 +662,12 @@ static int jk2_config_readFile(jk_env_t *env,
     if (rc == -1) {
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "config.update(): Can't find config file %s", cfg->file );
-        JK_LEAVE_CS(&cfg->cs, rc);
+        JK_LEAVE_CS(&cfg->cs, csOk);
         return JK_ERR;
     }
     
-    if( statbuf.st_mtime <= cfg->mtime ) {
-        JK_LEAVE_CS(&cfg->cs, rc);
+    if( ! firstTime && statbuf.st_mtime <= cfg->mtime ) {
+        JK_LEAVE_CS(&cfg->cs, csOk);
         return JK_OK;
     }
 
@@ -683,7 +687,7 @@ static int jk2_config_readFile(jk_env_t *env,
         env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "config.setConfig(): Error reading properties %s\n",
                       cfg->file );
-        JK_LEAVE_CS(&cfg->cs, rc);
+        JK_LEAVE_CS(&cfg->cs, csOk);
         return JK_ERR;
     }
     
@@ -691,9 +695,10 @@ static int jk2_config_readFile(jk_env_t *env,
 
     if( didReload!=NULL )
         *didReload=JK_TRUE;
+    
     cfg->mtime= statbuf.st_mtime;
 
-    JK_LEAVE_CS(&cfg->cs, rc);
+    JK_LEAVE_CS(&cfg->cs, csOk);
     return rc;
 }
 
@@ -707,7 +712,7 @@ static int JK_METHOD jk2_config_update(jk_env_t *env,
 /** Set a property for this config object
  */
 static int JK_METHOD jk2_config_setAttribute( struct jk_env *env, struct jk_bean *mbean,
-                                    char *name, void *valueP)
+                                              char *name, void *valueP)
 {
     jk_config_t *cfg=mbean->object;
     char *value=valueP;

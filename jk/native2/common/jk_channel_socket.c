@@ -308,9 +308,10 @@ static int JK_METHOD jk2_channel_socket_open(jk_env_t *env,
         int set = 1;
         setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,(char *)&set,sizeof(set));
     }   
-        
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channelSocket.connect(), sock = %d\n", sock);
+
+    if( ch->mbean->debug > 0 ) 
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channelSocket.connect(), sock = %d\n", sock);
 
     {
         jk_channel_socket_data_t *sd=endpoint->channelData;
