@@ -84,33 +84,72 @@ import org.apache.catalina.util.CookieTools;
 import org.apache.catalina.util.RequestUtil;
 
 public class WarpResponse extends HttpResponseBase {
+    /** The local stream */
+    private Stream localstream;
+    /** The packet used for processing headers */
     private WarpPacket packet;
+    /** The connection to which we are associated */
     private WarpConnection connection;
     
+    /**
+     * Create a new instance of a <code>WarpResponse</code>.
+     */
     public WarpResponse() {
         super();
-        recycle();
+        // A WarpResponse is _always_ associated with a Stream
+        this.localstream=new Stream(this);
+        this.setStream(localstream);
     }
 
+    /**
+     * Recycle this <code>WarpResponse</code> instance.
+     */
     public void recycle() {
+        // Recycle our parent
         super.recycle();
-        this.setStream(new Stream(this));
+        // Recycle the stream
+        this.localstream.recycle();
+        // Tell the parent that a stream is already in use.
+        this.setStream(localstream);
     }
 
+    /**
+     * Set the <code>WarpPacket</code> instance used to process headers.
+     */
     public void setPacket(WarpPacket packet) {
         this.packet=packet;
     }
     
+    /**
+     * Return the <code>WarpPacket</code> instance used to process headers.
+     */
     public WarpPacket getPacket() {
         return(this.packet);
     }
-    
+
+    /**
+     * Associate this <code>WarpResponse</code> instance with a specific
+     * <code>WarpConnection</code> instance.
+     */
     public void setConnection(WarpConnection connection) {
         this.connection=connection;
     }
 
+    /**
+     * Return the <code>WarpConnection</code> associated this instance of
+     * <code>WarpResponse</code>.
+     */
     public WarpConnection getConnection() {
         return(this.connection);
+    }
+
+    /**
+     * Flush output and finish.
+     */
+    public void finishResponse()
+    throws IOException {
+        super.finishResponse();
+        this.localstream.finish();
     }
 
     /**
@@ -205,38 +244,79 @@ public class WarpResponse extends HttpResponseBase {
 
         committed = true;
     }
-    
-    private class Stream extends OutputStream {
-        private WarpConnection connection;
-        private WarpPacket packet;
-    
-        private Stream(WarpResponse response) {
+        
+    /** 
+     * The <code>OutputStream</code> that will handle all response body
+     * transmission.
+     */
+    protected class Stream extends OutputStream {
+        /** The response associated with this stream instance. */
+        private WarpResponse response=null;
+        /** The packet used by this stream instance. */
+        private WarpPacket packet=null;
+        /** Wether <code>close()</code> was called or not. */
+        private boolean closed=false;
+
+        /**
+         * Construct a new instance of a <code>WarpResponse.Stream</code>
+         * associated with a parent <code>WarpResponse</code>.
+         */
+        protected Stream(WarpResponse response) {
             super();
-            this.connection=response.getConnection();
+            this.response=response;
             this.packet=new WarpPacket();
-            packet.setType(Constants.TYPE_RES_BODY);
         }
         
+        /**
+         * Write one byte of data to the <code>WarpPacket</code> nested
+         * within this <code>WarpResponse.Stream</code>. All data is buffered
+         * until the <code>flush()</code> or <code>close()</code> method is
+         * not called.
+         */
         public void write(int b) 
         throws IOException {
+            if (closed) throw new IOException("Stream closed");
             packet.buffer[packet.size++]=(byte)b;
         }
 
+        /**
+         * Flush the current packet to the WARP client.
+         */
         public void flush()
         throws IOException {
-            this.connection.send(packet);
-            packet.reset();
+            if (closed) throw new IOException("Stream closed");
             packet.setType(Constants.TYPE_RES_BODY);
+            response.getConnection().send(packet);
+            packet.reset();
         }
-        
+
+        /**
+         * Flush this <code>WarpResponse.Stream</code> and close it.
+         */
         public void close()
         throws IOException {
+            if (closed) throw new IOException("Stream closed");
             flush();
-            packet.reset();
             packet.setType(Constants.TYPE_RES_DONE);
-            this.connection.send(packet);
+            response.getConnection().send(packet);
             packet.reset();
-            packet.setType(Constants.TYPE_RES_BODY);
+        }
+        
+        /**
+         * Flush this <code>WarpResponse.Stream</code> and close it.
+         */
+        public void finish()
+        throws IOException {
+            if (closed) return;
+            else this.close();
+        }
+
+        /**
+         * Recycle this <code>WarpResponse.Stream</code> instance.
+         */
+        public void recycle() {
+            this.packet.reset();
+            this.closed=false;
         }
     }
 }
