@@ -370,6 +370,8 @@ public final class Mapper {
                                    MappingData mappingData)
         throws Exception {
 
+        uri.setLimit(-1);
+
         Context[] contexts = null;
         Context context = null;
 
