@@ -22,7 +22,6 @@ JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_thre
 endif
 
 NOTES_INCL=-I ${NOTESAPI}/include
-NOTES_OBJS=${NOTESAPI}/lib/linux/notes0.o
 NOTES_CFLAGS=-DUNIX -DLINUX
 
 JK_DIR := ../..
@@ -99,13 +98,13 @@ ${BUILD_DIR}/%.lo: ${JK_DIR}/server/dsapi/%.c
 #all: prepare ${BUILD_DIR}/libtomcat2.so ${BUILD_DIR}/libjkjni.so
 all: prepare ${BUILD_DIR}/libtomcat2.so
 
-${BUILD_DIR}/libtomcat2.la: ${COMMON_LO_FILES} ${DSAPI_LO_FILES} ${NOTES_OBJS}
+${BUILD_DIR}/libtomcat2.la: ${COMMON_LO_FILES} ${DSAPI_LO_FILES}
 	${MOD_LINK} -o $@ $^ ${JK_LDFLAGS}
 
 ${BUILD_DIR}/libtomcat2.so: ${BUILD_DIR}/libtomcat2.la
 	$(MOD_INSTALL) $^ `pwd`/${BUILD_DIR}
 
-#${BUILD_DIR}/libjkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES} ${NOTES_OBJS}
+#${BUILD_DIR}/libjkjni.la: ${JNI_LO_FILES} ${COMMON_LO_FILES}
 #	$(MOD_LINK) -o $@ $(JK_LDFLAGS) $^
 
 #${BUILD_DIR}/libjkjni.so: ${BUILD_DIR}/libjkjni.la
