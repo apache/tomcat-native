@@ -63,6 +63,8 @@ import javax.naming.directory.DirContext;
 
 import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Mapper, which implements the servlet API mapping rules (which are derived
@@ -194,6 +196,14 @@ public final class Mapper {
         }
     }
 
+    public String[] getHosts() {
+        String hostN[]=new String[ hosts.length];
+        for( int i=0; i<hosts.length; i++ ) {
+            hostN[i]=hosts[i].name;
+        }
+        return hostN;
+    }
+
 
     /**
      * Add a new Context to an existing Host.
@@ -210,8 +220,13 @@ public final class Mapper {
 
         Host[] hosts = this.hosts;
         int pos = find(hosts, hostName);
-        if (pos < 0) {
-            return;
+        if( pos <0 ) {
+            addHost(hostName, "");
+            hosts = this.hosts;
+            pos = find(hosts, hostName);
+        }
+        if( pos <0 ) {
+            System.out.println("No host found " + hostName); // XXX log
         }
         Host host = hosts[pos];
         if (host.name.equals(hostName)) {
@@ -256,6 +271,24 @@ public final class Mapper {
         }
     }
 
+    /** Return all contexts, in //HOST/PATH form
+     *
+     * @return
+     */
+    public String[] getContextNames() {
+        List list=new ArrayList();
+        for( int i=0; i<hosts.length; i++ ) {
+            for( int j=0; j<hosts[i].contexts.length; j++ ) {
+                String cname=hosts[i].contexts[j].name;
+                list.add("//" + hosts[i].name +
+                        (cname.startsWith("/") ? cname : "/"));
+            }
+        }
+        String res[]=new String[list.size()];
+        return (String[])list.toArray(res);
+    }
+
+
 
     /**
      * Add a new Wrapper to an existing Context.
@@ -276,7 +309,8 @@ public final class Mapper {
         if (host.name.equals(hostName)) {
             Context[] contexts = host.contexts;
             int pos2 = find(contexts, contextPath);
-            if (pos2 < 0) {
+            if( pos2<0 ) {
+                logger.error("Can't find context " + contextPath );
                 return;
             }
             Context context = contexts[pos2];
@@ -381,6 +415,44 @@ public final class Mapper {
             }
         }
     }
+
+    public String getWrappersString( String host, String context ) {
+        String names[]=getWrapperNames(host, context);
+        StringBuffer sb=new StringBuffer();
+        for( int i=0; i<names.length; i++ ) {
+            sb.append(names[i]).append(":");
+        }
+        return sb.toString();
+    }
+        
+    public String[] getWrapperNames( String host, String context ) {
+        List list=new ArrayList();
+        if( host==null ) host="";
+        if( context==null ) context="";
+        for( int i=0; i<hosts.length; i++ ) {
+            if( ! host.equals( hosts[i].name ))
+                continue;
+            for( int j=0; j<hosts[i].contexts.length; j++ ) {
+                if( ! context.equals( hosts[i].contexts[j].name))
+                    continue;
+                // found the context
+                Context ctx=hosts[i].contexts[j];
+                list.add( ctx.defaultWrapper.path);
+                for( int k=0; k<ctx.exactWrappers.length; k++ ) {
+                    list.add( ctx.exactWrappers[k].path);
+                }
+                for( int k=0; k<ctx.wildcardWrappers.length; k++ ) {
+                    list.add( ctx.wildcardWrappers[k].path + "*");
+                }
+                for( int k=0; k<ctx.extensionWrappers.length; k++ ) {
+                    list.add( "*." + ctx.extensionWrappers[k].path);
+                }
+            }
+        }
+        String res[]=new String[list.size()];
+        return (String[])list.toArray(res);
+    }
+
 
 
     /**
@@ -780,6 +852,10 @@ public final class Mapper {
 
         // Special cases: -1 and 0
         if (b == -1) {
+            return -1;
+        }
+        if( name==null || map.length ==0 ) {
+            System.out.println("XXX Mapper: unexpected null " + name + " " + map);
             return -1;
         }
         if (name.compareTo(map[0].name) < 0) {
