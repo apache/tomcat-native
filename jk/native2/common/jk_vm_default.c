@@ -294,7 +294,8 @@ static void *jk2_vm_attach(jk_env_t *env, jk_vm_t *jkvm)
                       "vm.attach() error %d\n", err);
         return NULL;
     }
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "vm.attach() ok\n");
+    if( jkvm->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "vm.attach() ok\n");
     return rc;
 }
 

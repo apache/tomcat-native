@@ -167,7 +167,7 @@ public class ChannelJni extends JniHandler {
         try {
             // first, we need to get an endpoint. It should be
             // per/thread - and probably stored by the C side.
-            if( log.isInfoEnabled() ) log.info("Received request " + xEnv);
+            if( log.isDebugEnabled() ) log.debug("Received request " + xEnv);
             
             // The endpoint will store the message pt.
             msg.processHeader();
@@ -175,7 +175,7 @@ public class ChannelJni extends JniHandler {
 
             int status= next.invoke(  msg, ep );
             
-            if( log.isInfoEnabled() ) log.info("after processCallbacks " + status);
+            if( log.isDebugEnabled() ) log.debug("after processCallbacks " + status);
             
             return status;
         } catch( Exception ex ) {

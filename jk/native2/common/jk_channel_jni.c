@@ -323,7 +323,8 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     jk_ch_jni_ep_private_t *epData=
         (jk_ch_jni_ep_private_t *)endpoint->channelData;;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() %p\n", epData ); 
+    if( _this->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() %p\n", epData ); 
 
     if( epData == NULL ) {
         jk2_channel_jni_open( env, _this, endpoint );
@@ -339,7 +340,8 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     len=msg->len;
     b=msg->buf;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() (1) %p\n", epData ); 
+    if( _this->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() (1) %p\n", epData ); 
 
     jniEnv=NULL; /* epData->jniEnv; */
     jbuf=epData->jarray;
@@ -359,8 +361,9 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
         }
     }
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_jni.send() getting byte array \n" );
+    if( _this->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel_jni.send() getting byte array \n" );
     
     /* Copy the data in the ( recycled ) jbuf, then call the
      *  write method. XXX We could try 'pining' if the vm supports
@@ -369,7 +372,7 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
     nbuf = (*jniEnv)->GetByteArrayElements(jniEnv, jbuf, &iscommit);
 
     if(nbuf==NULL ) {
-        env->l->jkLog(env, env->l, JK_LOG_INFO,
+        env->l->jkLog(env, env->l, JK_LOG_ERROR,
                       "channelJni.send() Can't get java bytes");
         return JK_ERR;
     }
@@ -383,17 +386,19 @@ static int JK_METHOD jk2_channel_jni_send(jk_env_t *env, jk_channel_t *_this,
 
     (*jniEnv)->ReleaseByteArrayElements(jniEnv, jbuf, nbuf, 0);
     
-    env->l->jkLog(env, env->l, JK_LOG_INFO,
-                  "channel_jni.send() before send %p\n",
-                  (void *)(long)epData->jniJavaContext); 
+    if( _this->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,
+                      "channel_jni.send() before send %p\n",
+                      (void *)(long)epData->jniJavaContext); 
     
     sent=(*jniEnv)->CallStaticIntMethod( jniEnv,
                                          jniCh->jniBridge, 
                                          jniCh->writeMethod,
                                          (jlong)(long)(void *)env,
                                          epData->jniJavaContext );
-    env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() result %d\n",
-                  sent); 
+    if( _this->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,"channel_jni.send() result %d\n",
+                      sent); 
     return JK_OK;
 }
 
@@ -451,7 +456,8 @@ int JK_METHOD jk2_channel_jni_beforeRequest(struct jk_env *env,
     jint rc;
     jk_workerEnv_t *we=worker->workerEnv;
 
-    env->l->jkLog(env, env->l, JK_LOG_INFO, "service() attaching to vm\n");
+    if( worker->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO, "service() attaching to vm\n");
 
 
     jniEnv=(JNIEnv *)endpoint->endpoint_private;
@@ -491,8 +497,9 @@ int JK_METHOD jk2_channel_jni_afterRequest(struct jk_env *env,
     }
     /* we->vm->detach( env, we->vm );  */
     
-    env->l->jkLog(env, env->l, JK_LOG_INFO, 
-                  "channelJni.afterRequest() ok\n");
+    if( worker->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO, 
+                      "channelJni.afterRequest() ok\n");
     return JK_OK;
 }
 
@@ -504,7 +511,8 @@ static int JK_METHOD jk2_channel_jni_dispatch(jk_env_t *env, void *target, jk_en
     jk_channel_t *jniCh=(jk_channel_t *)jniChB->object;
     int code;
     
-    env->l->jkLog(env, env->l, JK_LOG_INFO,"channelJni.java2cInvoke() ok\n");
+    if( jniCh->mbean->debug > 0 )
+        env->l->jkLog(env, env->l, JK_LOG_INFO,"channelJni.java2cInvoke() ok\n");
 
     code = (int)msg->getByte(env, msg);
     return ep->worker->workerEnv->dispatch( env, ep->worker->workerEnv,
