@@ -109,6 +109,20 @@
             </li>            
             </ol>        
         </p>
+        <p>Install using provided script <b>install4iis.js</b><br/>
+        This script creates the virtual directory and installs ISAPI filter for Default webserver<br/>
+        <i>C:\Program Files\Apache Software Foundation\Tomcat 5.0</i>
+        <screen>
+        <note>Open the command prompt and cd to bin folder</note>
+        <type>cd C:\Program Files\Apache Software Foundation\Tomcat 5.0\bin</type>
+        <note>Copy the isapi_redirector2.dll and install4iis.js to that folder</note>
+        <type>cscript install4iis.js</type>
+        </screen>
+        </p>
+        <p>        
+        You may modify the default installation using various command line options.
+        To see what the options are type <b>csrcipt install4iis.js -h</b>        
+        </p>
         <p>
         That's all, you should now start Tomcat and ask IIS to serve you the /examples context. 
         Try <a href="http://localhost/examples/jsp/index.html">http://localhost/examples/jsp/index.html</a> for example and 
