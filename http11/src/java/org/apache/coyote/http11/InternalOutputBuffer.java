@@ -429,7 +429,6 @@ public class InternalOutputBuffer implements OutputBuffer {
         if (message == null) {
             write(HttpMessages.getMessage(status));
         } else {
-            message = message.replace('\n', ' ').replace('\r', ' ');
             write(message);
         }
 
@@ -492,7 +491,7 @@ public class InternalOutputBuffer implements OutputBuffer {
      */
     public void endHeaders() {
 
-        write(Constants.CRLF);
+        write(Constants.CRLF_BYTES);
 
     }
 
@@ -629,6 +628,14 @@ public class InternalOutputBuffer implements OutputBuffer {
                 // High order byte must be zero
                 //log("Header character is not iso8859_1, " +
                 //"not supported yet: " + c, Log.ERROR ) ;
+            }
+            if (c != 9) {
+                if ((c >= 0) && (c <= 31)) {
+                    c = ' ';
+                }
+                if (c == 127) {
+                    c = ' ';
+                }
             }
             buf[pos++] = (byte) c;
         }
