@@ -489,14 +489,16 @@ public final class CharChunk implements Cloneable, Serializable {
     // -------------------- Conversion and getters --------------------
 
     public String toString() {
+        if (null == buff) {
+            return null;
+        } else if (end-start == 0) {
+            return "";
+        }
         return StringCache.toString(this);
     }
     
     public String toStringInternal() {
-	if( buff==null ) return null;
-    //System.out.println("CC toString: " + new String( buff, start, end-start));
-    //Thread.dumpStack();
-	return new String( buff, start, end-start);
+        return new String(buff, start, end-start);
     }
 
     public int getInt()
