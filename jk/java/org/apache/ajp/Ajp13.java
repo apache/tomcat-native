@@ -57,7 +57,7 @@
  *
  */
 
-package org.apache.ajp.tomcat4;
+package org.apache.ajp;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -66,13 +66,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Enumeration;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.Cookie;
-
-import org.apache.catalina.Globals;
-import org.apache.catalina.util.RequestUtil;
-
-import org.apache.ajp.Ajp13Packet;
 
 /**
  * Represents a single, persistent connection between the web server and
@@ -93,10 +86,7 @@ import org.apache.ajp.Ajp13Packet;
  * @author Keith Wannamaker [Keith@Wannamaker.org]
  * @author Kevin Seguin [seguin@motive.com]
  */
-public class Ajp13
-{
-    private static final String match =
-	";" + Globals.SESSION_PARAMETER_NAME + "=";
+public class Ajp13 {
 
     public static final int MAX_PACKET_SIZE=8192;
     public static final int H_SIZE=4;  // Size of basic packet header
@@ -216,24 +206,24 @@ public class Ajp13
     int blen;  // Length of current chunk of body data in buffer
     int pos;   // Current read position within that buffer
 
-    private Ajp13Connector connector;
-    private int id;
-    private String name;
-    private int debug;
-    private Ajp13Logger logger = new Ajp13Logger();
+    private int debug = 10;
 
-    public Ajp13(Ajp13Connector connector, int id) {
-        super();
-        this.connector = connector;
-        this.id = id;
-        this.name = "Ajp13[" + id + "]";
-        this.debug = connector.getDebug();
-        this.logger.setConnector(connector);
-        this.logger.setName(name);
+    /**
+     * XXX place holder...
+     */
+    Logger logger = new Logger();
+    class Logger {
+        void log(String msg) {
+            System.out.println("[Ajp13] " + msg);
+        }
+        
+        void log(String msg, Throwable t) {
+            System.out.println("[Ajp13] " + msg);
+            t.printStackTrace(System.out);
+        }
     }
 
-    public void recycle() 
-    {
+    public void recycle() {
         if (debug > 0) {
             logger.log("recycle()");
         }
@@ -259,7 +249,7 @@ public class Ajp13
 
     /**
      * Read a new packet from the web server and decode it.  If it's a
-     * forwarded request, store its properties in the passed-in Request
+     * forwarded request, store its properties in the passed-in AjpRequest
      * object.
      *
      * @param req An empty (newly-recycled) request object.
@@ -268,8 +258,7 @@ public class Ajp13
      * if there were errors in the reading of the request, and -2 if the
      * server is asking the container to shut itself down.  
      */
-    public int receiveNextRequest(Ajp13Request req) throws IOException 
-    {
+    public int receiveNextRequest(AjpRequest req) throws IOException {
         if (debug > 0) {
             logger.log("receiveNextRequest()");
         }
@@ -304,7 +293,7 @@ public class Ajp13
      *
      * @return 200 in case of a successful decoduing, 500 in case of error.  
      */
-    private int decodeRequest(Ajp13Request req, Ajp13Packet msg)
+    private int decodeRequest(AjpRequest req, Ajp13Packet msg)
         throws IOException {
         
         if (debug > 0) {
@@ -318,72 +307,21 @@ public class Ajp13
 
         // Translate the HTTP method code to a String.
         byte methodCode = msg.getByte();
-        req.setMethod(methodTransArray[(int)methodCode - 1]);
-        if (debug > 5) {
-            logger.log("method = " + req.getMethod());
-        }
+        req.method.setString(methodTransArray[(int)methodCode - 1]);
 
-        req.setProtocol(msg.getString());
-        if (debug > 5) {
-            logger.log("protocol = " + req.getProtocol());
-        }
-        
-        // get uri and Parse any requested session ID out of the request URI
-        String uri = msg.getString();
-	int semicolon = uri.indexOf(match);
-	if (semicolon >= 0) {
-	    String rest = uri.substring(semicolon + match.length());
-	    int semicolon2 = rest.indexOf(";");
-	    if (semicolon2 >= 0) {
-		req.setRequestedSessionId(rest.substring(0, semicolon2));
-		rest = rest.substring(semicolon2);
-	    } else {
-		req.setRequestedSessionId(rest);
-		rest = "";
-	    }
-	    req.setRequestedSessionURL(true);
-	    uri = uri.substring(0, semicolon) + rest;
-	    if (debug >= 1)
-	        logger.log(" Requested URL session id is " +
-                           ((HttpServletRequest) req.getRequest())
-                           .getRequestedSessionId());
-	} else {
-	    req.setRequestedSessionId(null);
-	    req.setRequestedSessionURL(false);
-	}
-
-        req.setRequestURI(uri);
-        if (debug > 5) {
-            logger.log("requestURI = " + req.getRequestURI());
-        }
-
-        req.setRemoteAddr(msg.getString());
-        if (debug > 5) {
-            logger.log("remoteAddr = " + req.getRemoteAddr());
-        }
-        
-        req.setRemoteHost(msg.getString());
-        if (debug > 5) {
-            logger.log("remoteHost = " + req.getRemoteHost());
-        }
-        
-        req.setServerName(msg.getString());
-        if (debug > 5) {
-            logger.log("serverName = " + req.getServerName());
-        }
-        
-        req.setServerPort(msg.getInt());
-        if (debug > 5) {
-            logger.log("port = " + req.getServerPort());
-        }
-
+        msg.getMessageBytes(req.protocol);
+        msg.getMessageBytes(req.requestURI);
+        msg.getMessageBytes(req.remoteAddr);
+        msg.getMessageBytes(req.remoteHost);
+        msg.getMessageBytes(req.serverName);
+        req.serverPort = msg.getInt();
 	isSSL = msg.getBool();
 
 	// Decode headers
 	int hCount = msg.getInt();
         for(int i = 0 ; i < hCount ; i++) {
-            String hName = null;
-            String hValue = null;
+            MessageBytes hName = new MessageBytes();
+            MessageBytes hValue = new MessageBytes();
 
 	    // Header names are encoded as either an integer code starting
 	    // with 0xA0, or as a normal string (in which case the first
@@ -394,68 +332,36 @@ public class Ajp13
             isc &= 0xFF00;
             if(0xA000 == isc) {
                 msg.getInt(); // To advance the read position
-                hName = headerTransArray[hId - 1];
+                hName.setString(headerTransArray[hId - 1]);
             } else {
-                hName = msg.getString();
+                msg.getMessageBytes(hName);
                 hId = -1;
-            }
-
-            hValue = msg.getString();
-            if (debug > 5) {
-                logger.log("header:  " + hName + " = " + hValue);
             }
 
             switch (hId) {
             case SC_REQ_CONTENT_TYPE:
-                {
-                    req.setContentType(hValue);
-                    if (debug > 0) {
-                        logger.log("setting content type to " + hValue);
-                        logger.log(req.getContentType());
-                    }
+                    msg.getMessageBytes(req.contentType);
                     break;
-                }
+
             case SC_REQ_CONTENT_LENGTH:
-                {
-                    if (hValue != null) {
-                        try {
-                            contentLength = Integer.parseInt(hValue);
-                        } catch (Exception e) {
-                            logger.log("parse content-length", e);
-                        }
+                    try {
+                        contentLength = Integer.parseInt(msg.getString());
+                    } catch (Exception e) {
+                        logger.log("parse content-length", e);
                     }
                     break;
-                }
+
             case SC_REQ_COOKIE:
             case SC_REQ_COOKIE2:
-                {
-                    Cookie cookies[] = RequestUtil.parseCookieHeader(hValue);
-                    for (int j = 0; j < cookies.length; j++) {
-                        Cookie cookie = cookies[j];
-                        if (cookie.getName().equals(Globals.SESSION_COOKIE_NAME)) {
-                            // Override anything requested in the URL
-                            if (!req.isRequestedSessionIdFromCookie()) {
-                                // Accept only the first session id cookie
-                                req.setRequestedSessionId(cookie.getValue());
-                                req.setRequestedSessionCookie(true);
-                                req.setRequestedSessionURL(false);
-                                if (debug > 0) {
-                                    logger.log(" Requested cookie session id is " +
-                                               ((HttpServletRequest) req.getRequest())
-                                               .getRequestedSessionId());
-                                }
-                            }
-                        }
-                        if (debug > 0) {
-                            logger.log(" Adding cookie " + cookie.getName() + "=" +
-                                       cookie.getValue());
-                        }
-                        req.addCookie(cookie);                    
-                    }
-                }
-            }
+                    msg.getMessageBytes(hValue);
+                    req.addCookies(hValue);
+                    break;
 
-            req.addHeader(hName, hValue);
+            default:
+                    msg.getMessageBytes(hValue);
+                    req.addHeader(hName.getString(), hValue);
+                    break;
+            }
         }
 
 	byte attributeCode;
@@ -463,78 +369,48 @@ public class Ajp13
             attributeCode != SC_A_ARE_DONE ;
             attributeCode = msg.getByte()) {
             switch(attributeCode) {
-	    case SC_A_CONTEXT      :
+            case SC_A_CONTEXT      :
                 break;
 		
-	    case SC_A_SERVLET_PATH :
+            case SC_A_SERVLET_PATH :
                 break;
-		
-	    case SC_A_REMOTE_USER  :
-                Ajp13Principal p = new Ajp13Principal(msg.getString());
-                req.setUserPrincipal(p);
-                if (debug > 5) {
-                    logger.log("remoteUser = " + req.getRemoteUser());
-                }
+                
+            case SC_A_REMOTE_USER  :
+                msg.getMessageBytes(req.remoteUser);
                 break;
-		
-	    case SC_A_AUTH_TYPE    :
-		req.setAuthType( msg.getString());
-                if (debug > 5) {
-                    logger.log("authType = " + req.getAuthType());
-                }
+                
+            case SC_A_AUTH_TYPE    :
+                msg.getMessageBytes(req.authType);
                 break;
 		
 	    case SC_A_QUERY_STRING :
-                req.setQueryString(msg.getString());
-                if (debug > 5) {
-                    logger.log("queryString = " + req.getQueryString());
-                }
+                msg.getMessageBytes(req.queryString);
                 break;
 		
 	    case SC_A_JVM_ROUTE    :
-                // FIXME
-		//req.setJvmRoute(msg.getString());
+                msg.getMessageBytes(req.jvmRoute);
                 break;
 		
 	    case SC_A_SSL_CERT     :
 		isSSL = true;
 		req.setAttribute("javax.servlet.request.X509Certificate",
 				 msg.getString());
-                if (debug > 5) {
-                    logger.log("setting javax.servlet.request.X509Certificate");
-                }
                 break;
 		
 	    case SC_A_SSL_CIPHER   :
 		isSSL = true;
 		req.setAttribute("javax.servlet.request.cipher_suite",
 				 msg.getString());
-                if (debug > 5) {
-                    logger.log("javax.servlet.request.cipher_suite = " +
-                               req.getAttribute("javax.servlet.request.cipher_suite"));
-                }
                 break;
 		
 	    case SC_A_SSL_SESSION  :
 		isSSL = true;
 		req.setAttribute("javax.servlet.request.ssl_session",
                                  msg.getString());
-                if (debug > 5) {
-                    logger.log("javax.servlet.request.ssl_session = " +
-                               req.getAttribute("javax.servlet.request.ssl_session"));
-                }
                 break;
 		
 	    case SC_A_REQ_ATTRIBUTE :
-                {
-                    String aname = msg.getString();
-                    String avalue = msg.getString();
-                    req.setAttribute(aname, avalue);
-
-                    if (debug > 5) {
-                        logger.log("setting attr:  " + aname + " = " + avalue);
-                    }
-                }
+                req.setAttribute(msg.getString(), msg.getString());
                 break;
 
 	    default:
@@ -542,16 +418,11 @@ public class Ajp13
             }
         }
 
-        req.setSecure(isSSL);
+        req.secure = isSSL;
         if(isSSL) {
-            req.setScheme("https");
+            req.scheme = req.SCHEME_HTTPS;
         } else {
-            req.setScheme("http");
-        }
-
-        if (debug > 5) {
-            logger.log("secure = " + req.isSecure());
-            logger.log("scheme = " + req.getScheme());
+            req.scheme = req.SCHEME_HTTP;
         }
 
 	// Check to see if there should be a body packet coming along
@@ -561,7 +432,7 @@ public class Ajp13
                 logger.log("contentLength = " + contentLength +
                            ", reading data ...");
             }
-	    req.setContentLength( contentLength );
+	    req.contentLength = contentLength;
 	    /* Read present data */
 	    int err = receive(inBuf);
             if(err < 0) {
@@ -573,6 +444,10 @@ public class Ajp13
 	    inBuf.getBytes(bodyBuff);
     	}
     
+        if (debug > 5) {
+            logger.log(req.toString());
+        }
+
         return 200; // Success
     }
 
@@ -594,7 +469,7 @@ public class Ajp13
     /**
      * Return the next byte of request body data (to a servlet).
      *
-     * @see Ajp13Request#doRead
+     * @see Request#doRead
      */
     public int doRead() throws IOException 
     {
@@ -620,7 +495,7 @@ public class Ajp13
      * @return The number of bytes actually copied into the buffer, or -1
      * if the end of the stream has been reached.
      *
-     * @see Ajp13Request#doRead
+     * @see Request#doRead
      */
     public int doRead(byte[] b, int off, int len) throws IOException 
     {
@@ -701,13 +576,10 @@ public class Ajp13
     // ==================== Servlet Output Support =================
     
     /**
-     * Send the HTTP headers back to the web server and on to the browser.
-     *
-     * @param status The HTTP status code to send.
-     * @param headers The set of all headers.
      */
-    public void sendHeaders(Ajp13Response resp)
-        throws IOException {
+    public void beginSendHeaders(int status,
+                                 String statusMessage,
+                                 int numHeaders) throws IOException {
 
         if (debug > 0) {
             logger.log("sendHeaders()");
@@ -719,55 +591,32 @@ public class Ajp13
         outBuf.appendByte(JK_AJP13_SEND_HEADERS);
 
         if (debug > 0) {
-            logger.log("status is:  " + resp.getStatus() +
-                       "(" + resp.getStatusMessage() + ")");
+            logger.log("status is:  " + status +
+                       "(" + statusMessage + ")");
         }
 
         // set status code and message
-        outBuf.appendInt(resp.getStatus());
-        outBuf.appendString(resp.getStatusMessage());
-
-        // can have multiple headers of the same name...
-        // need to loop through headers once to get total
-        // count, once to add header to outBuf
-        String[] hnames = resp.getHeaderNames();
-        Object[] hvalues = new Object[hnames.length];
-        int numHeaders = 0;
-
-        int i;
-        for (i = 0; i < hnames.length; ++i) {
-            String[] tmp = resp.getHeaderValues(hnames[i]);
-            numHeaders += tmp.length;
-            hvalues[i] = tmp;
-        }
-
-        if (debug > 0) {
-            logger.log("num headers = " + numHeaders);
-        }
+        outBuf.appendInt(status);
+        outBuf.appendString(statusMessage);
 
         // write the number of headers...
         outBuf.appendInt(numHeaders);
+    }
 
-        // now write headers/values
-        for (i = 0; i < hnames.length; ++i) {
-	    String name = hnames[i];
-            String[] values = (String[])hvalues[i];
-
-            for (int j = 0; j < values.length; ++j) {
-                logger.log("adding header " + name + " : " + values[j]);
-                int sc = headerNameToSc(name);
-                if(-1 != sc) {
-                    outBuf.appendInt(sc);
-                } else {
-                    outBuf.appendString(name);
-                }
-                outBuf.appendString(values[j]);
-            }
+    public void sendHeader(String name, String value) throws IOException {
+        int sc = headerNameToSc(name);
+        if(-1 != sc) {
+            outBuf.appendInt(sc);
+        } else {
+            outBuf.appendString(name);
         }
+        outBuf.appendString(value);
+    }
 
+    public void endSendHeaders() throws IOException {
         outBuf.end();
         send(outBuf);
-    } 
+    }
 
     /**
      * Translate an HTTP response header name to an integer code if
@@ -960,41 +809,5 @@ public class Ajp13
 	if(null !=in) {
 	    in.close();
 	}
-    }
-
-}
-
-class Ajp13Principal implements java.security.Principal {
-    String user;
-    Ajp13Principal(String user) {
-        this.user = user;
-    }
-    public boolean equals(Object o) {
-        if (o == null) {
-            return false;
-        } else if (!(o instanceof Ajp13Principal)) {
-            return false;
-        } else if (o == this) {
-            return true;
-        } else if (this.user == null && ((Ajp13Principal)o).user == null) {
-            return true;
-        } else if (user != null) {
-            return user.equals( ((Ajp13Principal)o).user);
-        } else {
-            return false;
-        }
-    }
-    
-    public String getName() {
-        return user;
-    }
-    
-    public int hashCode() {
-        if (user == null) return 0;
-        else return user.hashCode();
-    }
-    
-    public String toString() {
-        return getName();
     }
 }

@@ -63,6 +63,8 @@ import java.io.*;
 
 import javax.servlet.ServletInputStream;
 
+import org.apache.ajp.Ajp13;
+
 public class Ajp13InputStream extends ServletInputStream {
 
     private Ajp13 ajp13;

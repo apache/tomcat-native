@@ -56,32 +56,90 @@
  * [Additional notices, if required by prior licensing conditions]
  *
  */
-package org.apache.ajp.tomcat4;
+package org.apache.ajp;
 
-import java.io.*;
+import java.io.UnsupportedEncodingException;
 
-import org.apache.ajp.Ajp13;
+/**
+ * a cheap rip-off of MessageBytes from tomcat 3
+ */
+public class MessageBytes {
 
-public class Ajp13OutputStream extends OutputStream {
+    private static final String DEFAULT_ENCODING = "ISO-8859-1";
+    private int off;
+    private int len;
+    private byte[] bytes;
+    private String str;
+    private boolean gotStr;
+    private String enc;
 
-    private Ajp13 ajp13;
-    
-    Ajp13OutputStream(Ajp13 ajp13) {
-        this.ajp13 = ajp13;
+    /**
+     * creates and uninitialized MessageBytes object
+     */
+    public MessageBytes() {
+        recycle();
     }
 
-    public void write(int b) throws IOException {
-        byte[] bb = new byte[]{(byte)b};
-        ajp13.doWrite(bb, 0, 1);
+    /**
+     * recycles this object.
+     */
+    public void recycle() {
+        off = 0;
+        len = 0;
+        bytes = null;
+        str = null;
+        gotStr = false;
+        enc = DEFAULT_ENCODING;
     }
 
-    public void write(byte[] b, int off, int len) throws IOException {
-        ajp13.doWrite(b, off, len);
+    public void setBytes(byte[] bytes, int off, int len) {
+        recycle();
+        this.bytes = bytes;
+        this.off = off;
+        this.len = len;
     }
 
-    public void close() throws IOException {
+    public byte[] getBytes() {
+        return bytes;
     }
 
-    public void flush() throws IOException {
+    public int getOffset() {
+        return off;
+    }
+
+    public int getLength() {
+        return len;
+    }
+
+    public void setEncoding(String enc) {
+        this.enc = enc;
+    }
+
+    public String getEncoding() {
+        return enc;
+    }
+
+    public void setString(String str) {
+        this.str = str;
+        gotStr = true;
+    }
+
+    public String getString() throws UnsupportedEncodingException {
+        if (!gotStr) {
+            if (bytes == null || len == 0) {
+                setString(null);
+            } else {
+                setString(new String(bytes, off, len, enc));
+            }
+        }
+        return str;
+    }
+
+    public String toString() {
+        try {
+            return getString();
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("root cause:  " + e.toString());
+        }
     }
 }

@@ -68,6 +68,9 @@ import java.io.UnsupportedEncodingException;
  * packets.  
  */
 public class Ajp13Packet {
+
+    public static final String DEFAULT_CHAR_ENCODING = "8859_1";
+
     byte buff[]; // Holds the bytes of the packet
     int pos;     // The current read or write position in the buffer
 
@@ -129,7 +132,7 @@ public class Ajp13Packet {
     /**
      * Prepare this packet for accumulating a message from the container to
      * the web server.  Set the write position to just after the header
-     * (but leave the length unwritten, because it is as yet unknown).  
+     * (but leave the length unwritten, because it is as yet unknown).
      */
     public void reset() {
         len = 4;
@@ -289,18 +292,16 @@ public class Ajp13Packet {
         return (getByte() == (byte) 1);
     }
 
-    public static final String DEFAULT_CHAR_ENCODING = "8859_1";
-
-//      public void getMessageBytes( MessageBytes mb ) {
-//          int length = getInt();
-//          if( (length == 0xFFFF) || (length == -1) ) {
-//              mb.setString( null );
-//              return;
-//          }
-//          mb.setBytes( buff, pos, length );
-//          pos += length;
-//          pos++; // Skip the terminating \0
-//      }
+    public void getMessageBytes(MessageBytes mb) {
+        int length = getInt();
+        if( (length == 0xFFFF) || (length == -1) ) {
+            mb.setString( null );
+            return;
+        }
+        mb.setBytes( buff, pos, length );
+        pos += length;
+        pos++; // Skip the terminating \0
+    }
 
 //      public MessageBytes addHeader( MimeHeaders headers ) {
 //          int length = getInt();

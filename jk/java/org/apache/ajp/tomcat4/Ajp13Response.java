@@ -70,12 +70,15 @@ import org.apache.catalina.connector.HttpResponseBase;
 import org.apache.catalina.Globals;
 import org.apache.catalina.util.CookieTools;
 
+import org.apache.ajp.Ajp13;
+
 public class Ajp13Response extends HttpResponseBase {
 
     private Ajp13 ajp13;
     private boolean finished = false;
     private boolean headersSent = false;
-    
+    private StringBuffer cookieValue = new StringBuffer();
+
     String getStatusMessage() {
         return getStatusMessage(getStatus());
     }
@@ -94,12 +97,14 @@ public class Ajp13Response extends HttpResponseBase {
         }
         headersSent = true;
 
+        int numHeaders = 0;
+
         if (getContentType() != null) {
-	    addHeader("Content-Type", getContentType());
+            numHeaders++;
 	}
         
 	if (getContentLength() >= 0) {
-	    addIntHeader("Content-Length", getContentLength());
+            numHeaders++;
 	}
 
 	// Add the session ID cookie if necessary
@@ -128,15 +133,53 @@ public class Ajp13Response extends HttpResponseBase {
 	    Iterator items = cookies.iterator();
 	    while (items.hasNext()) {
 		Cookie cookie = (Cookie) items.next();
+
+                cookieValue.delete(0, cookieValue.length());
+                CookieTools.getCookieHeaderValue(cookie, cookieValue);
+                
                 addHeader(CookieTools.getCookieHeaderName(cookie),
-                          CookieTools.getCookieHeaderValue(cookie));
+                          cookieValue.toString());
 	    }
 	}
 
+        // figure out how many headers...
+        // can have multiple headers of the same name...
+        // need to loop through headers once to get total
+        // count, once to add header to outBuf
+        String[] hnames = getHeaderNames();
+        Object[] hvalues = new Object[hnames.length];
+
+        int i;
+        for (i = 0; i < hnames.length; ++i) {
+            String[] tmp = getHeaderValues(hnames[i]);
+            numHeaders += tmp.length;
+            hvalues[i] = tmp;
+        }
+
+        ajp13.beginSendHeaders(getStatus(), getStatusMessage(getStatus()), numHeaders);
+
+        // send each header
+        if (getContentType() != null) {
+	    ajp13.sendHeader("Content-Type", getContentType());
+	}
+        
+	if (getContentLength() >= 0) {
+	    ajp13.sendHeader("Content-Length", String.valueOf(getContentLength()));
+	}
+
+        for (i = 0; i < hnames.length; ++i) {
+	    String name = hnames[i];
+            String[] values = (String[])hvalues[i];
+
+            for (int j = 0; j < values.length; ++j) {
+                ajp13.sendHeader(name, values[j]);
+            }
+        }
+
+        ajp13.endSendHeaders();
+
         // The response is now committed
         committed = true;
-
-        this.ajp13.sendHeaders(this);
     }
 
     public void finishResponse() throws IOException {

@@ -59,23 +59,192 @@
 package org.apache.ajp.tomcat4;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+import java.util.List;
+import java.util.Iterator;
+
 import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.Cookie;
 
 import org.apache.catalina.connector.HttpRequestBase;
+import org.apache.catalina.Globals;
+import org.apache.catalina.util.RequestUtil;
+
+import org.apache.ajp.AjpRequest;
+import org.apache.ajp.MessageBytes;
 
 public class Ajp13Request extends HttpRequestBase {
 
-    private Ajp13 ajp13;
+    private static final String match =
+	";" + Globals.SESSION_PARAMETER_NAME + "=";
 
-    void setAjp13(Ajp13 ajp13) {
-        this.ajp13 = ajp13;
+    private static int id = 1;
+
+    private Ajp13Logger logger = new Ajp13Logger();
+    private int debug;
+
+    public Ajp13Request(Ajp13Connector connector) {
+        super();
+        this.debug = connector.getDebug();
+        this.logger.setConnector(connector);
+        this.logger.setName("Ajp13Request[" + (id++) + "]");
     }
 
-    Ajp13 getAjp13() {
-        return this.ajp13;
+    public void recycle() {
+        super.recycle();        
+    }
+
+    void setAjpRequest(AjpRequest ajp) throws UnsupportedEncodingException {
+        // XXX make this guy wrap AjpRequest so
+        // we're more efficient (that's the whole point of
+        // all of the MessageBytes in AjpRequest)
+
+        setMethod(ajp.getMethod().getString());
+        setProtocol(ajp.getProtocol().getString());
+        setRequestURI(ajp.getRequestURI().getString());
+        setRemoteAddr(ajp.getRemoteAddr().getString());
+        setRemoteHost(ajp.getRemoteHost().getString());
+        setServerName(ajp.getServerName().getString());
+        setServerPort(ajp.getServerPort());
+
+        String remoteUser = ajp.getRemoteUser().getString();
+        if (remoteUser != null) {
+            setUserPrincipal(new Ajp13Principal(remoteUser));
+        }
+
+        setAuthType(ajp.getAuthType().getString());
+        setQueryString(ajp.getQueryString().getString());
+        setScheme(ajp.getScheme());
+        setSecure(ajp.getSecure());
+        setContentLength(ajp.getContentLength());
+
+        String contentType = ajp.getContentType().getString();
+        if (contentType != null) {
+            setContentType(contentType);
+        }
+
+        Iterator itr = ajp.getHeaderNames();
+        while (itr.hasNext()) {
+            String name = (String)itr.next();            
+            Iterator itr2 = ajp.getHeaders(name);
+            while (itr2.hasNext()) {
+                MessageBytes value = (MessageBytes)itr2.next();
+                addHeader(name, value.getString());
+            }
+        }
+
+        itr = ajp.getAttributeNames();
+        while (itr.hasNext()) {
+            String name = (String)itr.next();
+            setAttribute(name, ajp.getAttribute(name));
+        }
+
+        itr = ajp.getCookies();
+        while (itr.hasNext()) {
+            MessageBytes cookies = (MessageBytes)itr.next();
+            addCookies(cookies.getString());
+        }
+    }
+
+//      public Object getAttribute(String name) {
+//          return ajp.getAttribute(name);
+//      }
+
+//      public Enumeration getAttributeNames() {
+//          return new Enumerator(ajp.getAttributeNames());
+//      }
+
+    public void setRequestURI(String uri) {
+	int semicolon = uri.indexOf(match);
+	if (semicolon >= 0) {
+	    String rest = uri.substring(semicolon + match.length());
+	    int semicolon2 = rest.indexOf(";");
+	    if (semicolon2 >= 0) {
+		setRequestedSessionId(rest.substring(0, semicolon2));
+		rest = rest.substring(semicolon2);
+	    } else {
+		setRequestedSessionId(rest);
+		rest = "";
+	    }
+	    setRequestedSessionURL(true);
+	    uri = uri.substring(0, semicolon) + rest;
+	    if (debug >= 1)
+	        logger.log(" Requested URL session id is " +
+                           ((HttpServletRequest) getRequest())
+                           .getRequestedSessionId());
+	} else {
+	    setRequestedSessionId(null);
+	    setRequestedSessionURL(false);
+	}
+
+        super.setRequestURI(uri);
+    }
+
+    private void addCookies(String cookiesHeader) {
+        Cookie cookies[] = RequestUtil.parseCookieHeader(cookiesHeader);
+        for (int j = 0; j < cookies.length; j++) {
+            Cookie cookie = cookies[j];
+            if (cookie.getName().equals(Globals.SESSION_COOKIE_NAME)) {
+                // Override anything requested in the URL
+                if (!isRequestedSessionIdFromCookie()) {
+                                // Accept only the first session id cookie
+                    setRequestedSessionId(cookie.getValue());
+                    setRequestedSessionCookie(true);
+                    setRequestedSessionURL(false);
+                    if (debug > 0) {
+                        logger.log(" Requested cookie session id is " +
+                                   ((HttpServletRequest) getRequest())
+                                   .getRequestedSessionId());
+                    }
+                }
+            }
+            if (debug > 0) {
+                logger.log(" Adding cookie " + cookie.getName() + "=" +
+                           cookie.getValue());
+            }
+            addCookie(cookie);                    
+        }        
     }
 
     public ServletInputStream createInputStream() throws IOException {
         return (ServletInputStream)getStream();
+    }
+}
+
+class Ajp13Principal implements java.security.Principal {
+    String user;
+    
+    Ajp13Principal(String user) {
+        this.user = user;
+    }
+    public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        } else if (!(o instanceof Ajp13Principal)) {
+            return false;
+        } else if (o == this) {
+            return true;
+        } else if (this.user == null && ((Ajp13Principal)o).user == null) {
+            return true;
+        } else if (user != null) {
+            return user.equals( ((Ajp13Principal)o).user);
+        } else {
+            return false;
+        }
+    }
+    
+    public String getName() {
+        return user;
+    }
+    
+    public int hashCode() {
+        if (user == null) return 0;
+        else return user.hashCode();
+    }
+    
+    public String toString() {
+        return getName();
     }
 }

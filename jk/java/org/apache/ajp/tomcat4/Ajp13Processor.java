@@ -97,6 +97,8 @@ import org.apache.catalina.util.LifecycleSupport;
 import org.apache.catalina.util.StringManager;
 import org.apache.catalina.util.StringParser;
 
+import org.apache.ajp.Ajp13;
+import org.apache.ajp.AjpRequest;
 
 /**
  * @author Kevin Seguin
@@ -138,7 +140,7 @@ final class Ajp13Processor
     // ----------------------------------------------------- Instance Variables
 
     private Ajp13Logger logger = new Ajp13Logger();
-
+    private AjpRequest ajpRequest = new AjpRequest();
 
     /**
      * Is there a new socket available?
@@ -317,10 +319,9 @@ final class Ajp13Processor
      */
     private void process(Socket socket) {
 
-        Ajp13 ajp13 = new Ajp13(connector, id);
+        Ajp13 ajp13 = new Ajp13();
         Ajp13InputStream input = new Ajp13InputStream(ajp13);
         Ajp13OutputStream output = new Ajp13OutputStream(ajp13);
-        request.setAjp13(ajp13);
         response.setAjp13(ajp13);
 
         try {
@@ -334,7 +335,7 @@ final class Ajp13Processor
             
             int status = 0;
             try {
-                status = ajp13.receiveNextRequest(request);
+                status = ajp13.receiveNextRequest(ajpRequest);                
             } catch (IOException e) {
                 logger.log("process: ajp13.receiveNextRequest", e);
             }
@@ -355,6 +356,7 @@ final class Ajp13Processor
 
             try {
                 // set up request
+                request.setAjpRequest(ajpRequest);
                 request.setResponse(response);
                 request.setStream(input);
                 
@@ -375,6 +377,7 @@ final class Ajp13Processor
             }
 
             // Recycling the request and the response objects
+            ajpRequest.recycle();
             request.recycle();
             response.recycle();
 

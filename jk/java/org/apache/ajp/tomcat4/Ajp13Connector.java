@@ -620,7 +620,7 @@ public final class Ajp13Connector
      */
     public Request createRequest() {
 
-	Ajp13Request request = new Ajp13Request();
+	Ajp13Request request = new Ajp13Request(this);
 	request.setConnector(this);
 	return (request);
 
