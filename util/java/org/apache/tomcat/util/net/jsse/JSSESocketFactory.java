@@ -270,22 +270,22 @@ public abstract class JSSESocketFactory
         InputStream istream = null;
         try {
             ks = KeyStore.getInstance(type);
-            File keyStoreFile = new File(path);
-            if (!keyStoreFile.isAbsolute()) {
-                keyStoreFile = new File(System.getProperty("catalina.base"),
-                                        path);
+            if(! "PKCS11".equalsIgnoreCase(type) ) {
+                File keyStoreFile = new File(path);
+                if (!keyStoreFile.isAbsolute()) {
+                    keyStoreFile = new File(System.getProperty("catalina.base"),
+                                            path);
+                }
+                istream = new FileInputStream(keyStoreFile);
             }
-            istream = new FileInputStream(keyStoreFile);
 
             ks.load(istream, pass.toCharArray());
-            istream.close();
-            istream = null;
         } catch (FileNotFoundException fnfe) {
             throw fnfe;
         } catch (IOException ioe) {
             throw ioe;      
         } catch(Exception ex) {
-            ex.printStackTrace();
+            log.error("Exception trying to load keystore " +path,ex);
             throw new IOException("Exception trying to load keystore " +
                                   path + ": " + ex.getMessage() );
         } finally {
