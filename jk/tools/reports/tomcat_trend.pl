@@ -192,7 +192,7 @@ foreach $key ( sort {$a <=> $b} keys %modjklog ) {
          # Stop processing if logtime is today
          last if( $logtime >= $curdate );
 
-         if( $line =~ /\d\)\]: / ) {
+         if( $line =~ /\d\)\]{0,1}: / ) {
             # Handle a mod_jk error
             if( $line =~ /(jk_tcp_socket_recvfull failed|ERROR: Receiving from tomcat failed)/ ) {
                $Global{tomcat_full}++;
