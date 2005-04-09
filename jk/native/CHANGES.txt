@@ -1,9 +1,16 @@
 JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:           -*-text-*-
 Last modified at [$Date$]
 
+Changes in JK 1.2.11
+    * BUG 34358: Fix the load balance worker load balance method. It was not being
+      set from the worker.properties file
+    * BUG 34357: Fix a segfault in Apache 2 when using JKAutoAlias.
+    * Update tomcat_trend.pl for new error log string formatting.
+
 Changes in JK 1.2.10
     * Do not mark the worker in error state if headers are larger then AJP13
       limit.
+
 Changes in JK 1.2.9
     * lbfactor is now relationship between members, so worker.a.lbfactor=1 and worker.b.lbfactor=1
       will give 50-50% load.

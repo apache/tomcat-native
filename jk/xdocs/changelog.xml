@@ -28,6 +28,13 @@
       <update>
         Add --enable-prefork to the documentation (pero)
       </update>
+      <fix>
+      <bug>34358</bug>: Fix the load balance worker load balance method.
+      It was not being set from the worker.properties file
+      </fix>
+      <fix>
+      <bug>34357</bug>: Fix a segfault in Apache 2 when using JKAutoAlias.
+      </fix>
     </changelog>
   </subsection>
 </section>
