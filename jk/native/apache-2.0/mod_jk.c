@@ -2482,7 +2482,8 @@ static int jk_translate(request_rec * r)
             /* Special case to make sure that apache can serve a directory
                listing if there are no matches for the DirectoryIndex and
                Tomcat webapps are mapped into apache using JkAutoAlias. */
-            if (r->main != NULL && (conf->alias_dir != NULL) &&
+            if (r->main != NULL && r->main->handler != NULL &&
+                (conf->alias_dir != NULL) &&
                 !strcmp(r->main->handler, DIR_MAGIC_TYPE)) {
 
                 /* Append the request uri to the JkAutoAlias directory and
