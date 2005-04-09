@@ -821,6 +821,8 @@ static int JK_METHOD init(jk_worker_t *pThis,
     if (p->s->recover_wait_time < WAIT_BEFORE_RECOVER)
         p->s->recover_wait_time = WAIT_BEFORE_RECOVER;
 
+    p->lbmethod = jk_get_lb_method(props, p->s->name);
+
     JK_INIT_CS(&(p->cs), i);
     if (i == JK_FALSE) {
         jk_log(log, JK_LOG_ERROR,
