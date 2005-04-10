@@ -32,6 +32,8 @@ import org.apache.tomcat.util.net.ServerSocketFactory;
         
 public class JSSEImplementation extends SSLImplementation
 {
+    static final String JSSE15Factory =
+	"org.apache.tomcat.util.net.jsse.JSSE15Factory";
     static final String JSSE14Factory = 
         "org.apache.tomcat.util.net.jsse.JSSE14Factory";
     static final String JSSE13Factory = 
@@ -41,24 +43,32 @@ public class JSSEImplementation extends SSLImplementation
     static org.apache.commons.logging.Log logger = 
         org.apache.commons.logging.LogFactory.getLog(JSSEImplementation.class);
 
-    private JSSEFactory factory;
+    private JSSEFactory factory = null;
 
     public JSSEImplementation() throws ClassNotFoundException {
         // Check to see if JSSE is floating around somewhere
         Class.forName(SSLSocketClass);
-	if( JdkCompat.isJava14() ) {
-	    try {
-		Class factcl = Class.forName(JSSE14Factory);
-		factory = (JSSEFactory)factcl.newInstance();
-	    } catch(Exception ex) {
-		factory = new JSSE13Factory();
-		if(logger.isDebugEnabled()) {
-		    logger.debug("Error getting factory: " + JSSE14Factory, ex);
-		}
-	    }
-	} else {
-	    factory = new JSSE13Factory();
-	}
+        if( JdkCompat.isJava15() ) {
+            try {
+                Class factcl = Class.forName(JSSE15Factory);
+                factory = (JSSEFactory)factcl.newInstance();
+            } catch(Exception ex) {
+                if(logger.isDebugEnabled())
+                    logger.debug("Error getting factory: " + JSSE15Factory, ex);
+            }
+        }
+        if(factory == null && JdkCompat.isJava14() ) {
+            try {
+                Class factcl = Class.forName(JSSE14Factory);
+                factory = (JSSEFactory)factcl.newInstance();
+            } catch(Exception ex) {
+                if(logger.isDebugEnabled()) {
+                    logger.debug("Error getting factory: " + JSSE14Factory, ex);
+                }
+            }
+        } if(factory == null) {
+            factory = new JSSE13Factory();
+        }
     }
 
 
