@@ -43,6 +43,7 @@
         <available property="commons-logging.present" file="${commons-logging.jar}"/>
         <available property="modeler.present" file="${commons-modeler.jar}"/>
 	<available property="jdk1.4.present" classname="java.lang.CharSequence" />
+        <available property="jdk1.5.present" classname="javax.net.ssl.CertPathTrustManagerParameters" />
     </target>
 
     <target name="build-prepare" depends="detect">
@@ -61,6 +62,7 @@
         <echo message="-- jmx = ${jmx.present} ${jmx.jar}"/>
         <echo message="-- modeler = ${modeler.present} ${commons-modeler.jar}"/>
         <echo message="-- JDK14 = ${jdk1.4.present}"/>
+        <echo message="-- JDK15 = ${jdk1.5.present}" />
 
         <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
@@ -77,6 +79,7 @@
             <exclude name="**/util/threads/ThreadPoolMX*" unless="modeler.present"/>
             <exclude name="**/util/compat/Jdk14Compat.java" unless="jdk1.4.present" />
             <exclude name="**/util/net/jsse/JSSE14*" unless="jdk1.4.present" />
+            <exclude name="**/util/net/jsse/JSSE15*" unless="jdk1.5.present" />
             <exclude name="**/util/net/jsse/JSSEKeyManager.java" unless="jdk1.4.present" />
         </javac>
 
