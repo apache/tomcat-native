@@ -557,6 +557,8 @@ public class HandlerRequest extends JkHandler
                 msg.getBytes( tmpMB );
                 String v=tmpMB.toString();
                 req.setAttribute(n, v );
+                if(log.isTraceEnabled())
+                    log.trace("jk Attribute set " + n + "=" + v);
             }
 
 
@@ -627,7 +629,8 @@ public class HandlerRequest extends JkHandler
             case SC_A_SECRET  :
                 msg.getBytes(tmpMB);
                 String secret=tmpMB.toString();
-                log.info("Secret: " + secret );
+                if(log.isInfoEnabled())
+                    log.info("Secret: " + secret );
                 // endpoint note
                 ep.setNote( secretNote, secret );
                 break;
