@@ -129,7 +129,7 @@ static int vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
 }
 #endif
 
-int jk_printf(jk_ws_service_t *s, const char *fmt, ...)
+static int jk_printf(jk_ws_service_t *s, const char *fmt, ...)
 {
     int rc = 0;
     va_list args;
@@ -166,7 +166,7 @@ int jk_printf(jk_ws_service_t *s, const char *fmt, ...)
 }
 
 /* Actually APR's apr_strfsize */
-char *status_strfsize(size_t size, char *buf)
+static char *status_strfsize(size_t size, char *buf)
 {
     const char ord[] = "KMGTPE";
     const char *o = ord;

@@ -36,7 +36,7 @@
 #endif
 
 /* Sleep for 100ms */
-static void jk_sleep_def()
+static void jk_sleep_def(void)
 {
 #ifdef OS2
     DosSleep(100);
@@ -747,7 +747,7 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
 /*
  * Wait input event on ajp_endpoint for timeout ms
  */
-int ajp_is_input_event(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
+static int ajp_is_input_event(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
 {
     fd_set rset;
     fd_set eset;
@@ -777,7 +777,7 @@ int ajp_is_input_event(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
 /*
  * Handle the CPING/CPONG initial query
  */
-int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
+static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
 {
     int cmd;
     jk_msg_buf_t *msg;
@@ -1595,9 +1595,9 @@ static int ajp_get_reply(jk_endpoint_t *e,
  * We serve here the request, using AJP13/AJP14 (e->proto)
  *
  */
-int JK_METHOD ajp_service(jk_endpoint_t *e,
-                          jk_ws_service_t *s,
-                          jk_logger_t *l, int *is_error)
+static int JK_METHOD ajp_service(jk_endpoint_t *e,
+                                 jk_ws_service_t *s,
+                                 jk_logger_t *l, int *is_error)
 {
     int i, err;
     ajp_operation_t oper;
