@@ -360,18 +360,6 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
     return rc;
 }
 
-/* returns the index of the last occurrence of the 'ch' character
-   if ch=='\0' returns the length of the string str  */
-static int last_index_of(const char *str, char ch)
-{
-    const char *str_minus_one = str - 1;
-    const char *s = str + strlen(str);
-    while (s != str_minus_one && ch != *s) {
-        --s;
-    }
-    return (s - str);
-}
-
 static int is_nomap_match(jk_uri_worker_map_t *uw_map,
                           const char *uri, const char* worker,
                           jk_logger_t *l)
@@ -539,15 +527,15 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
             if (strchr(u, '|')) {
                 char *s, *r = strdup(u);
                 s = strchr(r, '|');
-                *s = '\0';
+                *(s++) = '\0';
                 /* Add first mapping */
                 if (!uri_worker_map_add(uw_map, r, w, l)) {
                     jk_log(l, JK_LOG_ERROR,
                     "invalid mapping rule %s->%s", r, w);
                 }
                 s++;
-                while (*s)
-                   *(s - 1) = *s++;
+                for (; *s; s++)
+                   *(s - 1) = *s;
                 *(s - 1) = '\0';
                 /* add second mapping */
                 if (!uri_worker_map_add(uw_map, r, w, l)) {
