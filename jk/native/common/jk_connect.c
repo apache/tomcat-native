@@ -558,7 +558,7 @@ int jk_is_socket_connected(int sd, int timeout)
      * If we change this to non blocking read, then we
      * will use the timeout parameter.
      */
-     timeout;
+     timeout = 0;
      
     FD_ZERO(&fd);
     FD_SET(sd, &fd);
