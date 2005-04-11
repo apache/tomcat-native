@@ -88,7 +88,7 @@ struct jk_shm_worker
 };
 typedef struct jk_shm_worker jk_shm_worker_t;
 
-const char *jk_shm_name();
+const char *jk_shm_name(void);
 
 /* Open the shared memory creating file if needed
  */
@@ -96,7 +96,7 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l);
 
 /* Close the shared memory
  */
-void jk_shm_close();
+void jk_shm_close(void);
 
 /* Attach the shared memory in child process.
  * File has to be opened in parent.
@@ -115,7 +115,7 @@ jk_shm_worker_t *jk_shm_alloc_worker(jk_pool_t *p);
 
 /* Return workers.properties last modified time
  */
-time_t jk_shm_get_workers_time();
+time_t jk_shm_get_workers_time(void);
 
 /* Set workers.properties last modified time
  */
@@ -124,21 +124,21 @@ void jk_shm_set_workers_time(time_t t);
 /* Check if the shared memory has been modified
  * by some other process.
  */
-int jk_shm_is_modified();
+int jk_shm_is_modified(void);
 
 /* Synchronize access and modification time.
  * This function should be called when the shared memory
  * is modified and after we update the config acording
  * to the current shared memory data.
  */
-void jk_shm_sync_access_time();
+void jk_shm_sync_access_time(void);
 
 
 /* Lock shared memory for thread safe access */
-int jk_shm_lock();
+int jk_shm_lock(void);
 
 /* Unlock shared memory for thread safe access */
-int jk_shm_unlock();
+int jk_shm_unlock(void);
 
 
 #ifdef __cplusplus
