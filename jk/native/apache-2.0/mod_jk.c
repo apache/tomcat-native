@@ -1716,16 +1716,6 @@ static const command_rec jk_cmds[] = {
 /* The JK module handlers                                                    */
 /* ========================================================================= */
 
-/** Util - cleanup endpoint.
- */
-static apr_status_t jk_cleanup_endpoint(void *data)
-{
-    jk_endpoint_t *end = (jk_endpoint_t *)data;
-    /*     printf("XXX jk_cleanup1 %ld\n", data); */
-    end->done(&end, NULL);
-    return 0;
-}
-
 /** Util - cleanup shmem.
  */
 static apr_status_t jk_cleanup_shmem(void *data)
