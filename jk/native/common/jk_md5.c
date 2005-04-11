@@ -243,7 +243,7 @@ static void jk_MD5Update(JK_MD5_CTX * context, const unsigned char *input,
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
    the message digest and zeroizing the context.
  */
-void JK_METHOD jk_MD5Final(unsigned char digest[16], JK_MD5_CTX * context)
+static void JK_METHOD jk_MD5Final(unsigned char digest[16], JK_MD5_CTX * context)
 {
     unsigned char bits[8];
     size_t idx, padLen;
