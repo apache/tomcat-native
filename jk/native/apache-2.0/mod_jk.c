@@ -1474,7 +1474,8 @@ static const char *jk_set_key_size_indicator(cmd_parms * cmd,
  *  ForwardDirectories       => Forward all directory requests with no index files to Tomcat
  */
 
-const char *jk_set_options(cmd_parms * cmd, void *dummy, const char *line)
+static const char *jk_set_options(cmd_parms * cmd, void *dummy,
+                                  const char *line)
 {
     int opt = 0;
     int mask = 0;
@@ -1717,7 +1718,7 @@ static const command_rec jk_cmds[] = {
 
 /** Util - cleanup endpoint.
  */
-apr_status_t jk_cleanup_endpoint(void *data)
+static apr_status_t jk_cleanup_endpoint(void *data)
 {
     jk_endpoint_t *end = (jk_endpoint_t *)data;
     /*     printf("XXX jk_cleanup1 %ld\n", data); */
@@ -1727,7 +1728,7 @@ apr_status_t jk_cleanup_endpoint(void *data)
 
 /** Util - cleanup shmem.
  */
-apr_status_t jk_cleanup_shmem(void *data)
+static apr_status_t jk_cleanup_shmem(void *data)
 {
     jk_logger_t *l = data;
     jk_shm_close();
