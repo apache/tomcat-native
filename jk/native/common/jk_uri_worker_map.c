@@ -240,7 +240,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    uwr->suffix = NULL;
 
     uri = jk_pool_strdup(&uw_map->p, puri);
     if (!uri || !worker) {
@@ -533,7 +532,6 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
                     jk_log(l, JK_LOG_ERROR,
                     "invalid mapping rule %s->%s", r, w);
                 }
-                s++;
                 for (; *s; s++)
                    *(s - 1) = *s;
                 *(s - 1) = '\0';
