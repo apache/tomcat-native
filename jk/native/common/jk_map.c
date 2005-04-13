@@ -379,6 +379,9 @@ int jk_map_read_property(jk_map_t *m, const char *str)
                         else if (jk_is_cmd_line_poperty(prp)) {
                             sep = ' ';
                         }
+                        else if (!stricmp(prp, "worker.list")) {
+                            sep = ',';
+                        }
 
                         sprintf(tmpv, "%s%c%s", oldv, sep, v);
                     }
