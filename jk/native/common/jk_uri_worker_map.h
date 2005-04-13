@@ -59,9 +59,6 @@ struct uri_worker_record
     /* Name of worker mapped */
     const char *worker_name;
 
-    /* Suffix of uri */
-    const char *suffix;
-
     /* Base context */
     const char *context;
 

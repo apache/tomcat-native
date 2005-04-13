@@ -343,7 +343,7 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
 
     jk_puts(s, "<br/>Uri Mappings:\n");
     jk_puts(s, "<table>\n<tr><th>Match Type</th><th>Uri</th>"
-               "<th>Context</th><th>Suffix</th></tr>\n");
+               "<th>Context</th></tr>\n");
     for (i = 0; i < uwmap->size; i++) {
         uri_worker_record_t *uwr = uwmap->maps[i];
         if (strcmp(uwr->worker_name, worker)) {
@@ -354,10 +354,6 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
                 "</td><td>", NULL);
         jk_puts(s, uwr->uri);
         jk_putv(s, "</td><td>", uwr->context, NULL);
-        if (uwr->suffix)
-            jk_putv(s, "</td><td>", uwr->suffix, NULL);
-        else
-            jk_putv(s, "</td><td>", "&nbsp;", NULL);
 
         jk_puts(s, "</td></tr>\n");
     }
@@ -375,16 +371,10 @@ static void dump_maps(jk_ws_service_t *s, status_worker_t *sw,
         if (strcmp(uwr->worker_name, worker)) {
             continue;
         }
-        jk_printf(s, "    <jk:map type=\"%s\" uri=\"%s\" context=\"%s\"",
+        jk_printf(s, "    <jk:map type=\"%s\" uri=\"%s\" context=\"%s\" />\n",
               status_val_match(uwr->match_type),
               uwr->uri,
-              uwr->context) ;
-        
-        if (uwr->suffix)
-            jk_putv(s, " suffix=\"",
-                    uwr->suffix,
-                    "\"", NULL);
-        jk_puts(s, " />\n");
+              uwr->context) ;        
     }
 }
 
