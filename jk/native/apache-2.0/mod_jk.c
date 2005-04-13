@@ -1785,9 +1785,8 @@ static int jk_handler(request_rec * r)
             worker_name = worker_env.worker_list[0];
             if (JK_IS_DEBUG_LEVEL(xconf->log))
                 jk_log(xconf->log, JK_LOG_DEBUG,
-                       "Manual configuration for %s %s %d",
-                       r->uri, worker_env.worker_list[0],
-                       worker_env.num_of_workers);
+                       "Single worker (%s) configuration for %s",
+                       worker_name, r->uri);
         }
         else {
             worker_name = map_uri_to_worker(xconf->uw_map, r->uri, xconf->log);
@@ -1795,8 +1794,8 @@ static int jk_handler(request_rec * r)
                 worker_name = worker_env.worker_list[0];
                 if (JK_IS_DEBUG_LEVEL(xconf->log))
                     jk_log(xconf->log, JK_LOG_DEBUG,
-                           "Manual configuration for %s %d",
-                           r->uri, worker_env.worker_list[0]);
+                           "Using first worker (%s) from %d workers for %s",
+                           worker_name, worker_env.num_of_workers, r->uri);
             }
         }
     }
