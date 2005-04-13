@@ -165,7 +165,7 @@ static void retry_worker(worker_record_t *w,
                          int recover_wait_time,
                          jk_logger_t *l)
 {
-    int elapsed = (int)(time(0) - w->s->error_time);
+    int elapsed = (int)difftime(time(NULL), w->s->error_time);
     JK_TRACE_ENTER(l);
 
     if (elapsed <= recover_wait_time) {
