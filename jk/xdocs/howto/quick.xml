@@ -122,7 +122,7 @@
   # Load mod_jk module
   # Update this path to match your modules location
   LoadModule    jk_module  libexec/mod_jk.so
-  # Declare the module for &lt;IfModule directive&gt;
+  # Declare the module for &lt;IfModule directive&gt; (remove this line on Apache 2.x)
   AddModule     mod_jk.c
   # Where to find workers.properties
   # Update this path to match your conf directory location (put workers.properties next to httpd.conf)

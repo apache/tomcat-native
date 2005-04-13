@@ -294,7 +294,7 @@ Here is a simple configuration:
 <source>
     # Load mod_jk module
     LoadModule    jk_module  libexec/mod_jk.so
-    # Declare the module for &lt;IfModule directive&gt;
+    # Declare the module for &lt;IfModule directive&gt; (remove this line on Apache 2.0.x)
     AddModule     mod_jk.c
     # Where to find workers.properties
     JkWorkersFile /etc/httpd/conf/workers.properties
