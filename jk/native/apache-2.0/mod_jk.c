@@ -68,7 +68,7 @@
 
 #include "apr_strings.h"
 
-#if APR_USE_SYSVSEM_SERIALIZE
+#if APR_USE_SYSVSEM_SERIALIZE || APR_USE_FLOCK_SERIALIZE
 #include "unixd.h"      /* for unixd_set_global_mutex_perms */
 #endif
 /*
@@ -2401,7 +2401,7 @@ static int jk_post_config(apr_pool_t * pconf,
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
-#if APR_USE_SYSVSEM_SERIALIZE
+#if APR_USE_SYSVSEM_SERIALIZE || APR_USE_FLOCK_SERIALIZE
     rv = unixd_set_global_mutex_perms(jk_log_lock);
     if (rv != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
