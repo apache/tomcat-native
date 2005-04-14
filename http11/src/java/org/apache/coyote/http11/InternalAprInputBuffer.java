@@ -400,7 +400,7 @@ public class InternalAprInputBuffer implements InputBuffer {
                     // Set socket in non blocking mode and try to read
                     int attempts = 0;
                     try {
-                        while (attempts < 1 && !fill()) {
+                        while (attempts < 3 && !fill()) {
                             Thread.sleep(2);
                             attempts++;
                         }
@@ -430,7 +430,7 @@ public class InternalAprInputBuffer implements InputBuffer {
             // Set socket in non blocking mode and try to read
             int attempts = 0;
             try {
-                while (attempts < 1 && !fill()) {
+                while (attempts < 3 && !fill()) {
                     Thread.sleep(2);
                     attempts++;
                 }
