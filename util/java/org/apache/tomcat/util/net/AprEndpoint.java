@@ -261,6 +261,14 @@ public class AprEndpoint {
 
     
     /**
+     * Number of keepalive sockets.
+     */
+    protected int keepAliveCount = 0;
+    public int getKeepAliveCount() { return keepAliveCount; }
+    public void setKeepAliveCount(int keepAliveCount) { this.keepAliveCount = keepAliveCount; }
+    
+    
+    /**
      * Dummy maxSpareThreads property.
      */
     public int getMaxSpareThreads() { return 0; }
@@ -378,8 +386,22 @@ public class AprEndpoint {
         if (!running) {
             running = true;
             paused = false;
-            // Start acceptor and poller threads
-            threadStart();
+
+            // Start acceptor thread
+            acceptorThread = new Thread(new Acceptor(), getName() + "-Acceptor");
+            acceptorThread.setPriority(getThreadPriority());
+            acceptorThread.setDaemon(true);
+            acceptorThread.start();
+
+            // Start poller thread
+            poller = new Poller(pollerSize);
+            pollerThread = new Thread(poller, getName() + "-Poller");
+            pollerThread.setPriority(getThreadPriority());
+            pollerThread.setDaemon(true);
+            pollerThread.start();
+            
+            // Start sendfile thread
+            // FIXME: Implement sendfile support
         }
     }
 
@@ -401,7 +423,9 @@ public class AprEndpoint {
         if (running) {
             running = false;
             unlockAccept();
-            threadStop();
+            acceptorThread = null;
+            pollerThread = null;
+            sendfileThread = null;
         }
     }
 
@@ -410,7 +434,7 @@ public class AprEndpoint {
             stop();
         }
         // Close server socket
-        closeServerSocket();
+        Socket.close(serverSock);
         // Close all APR memory pools and resources
         Pool.destroy(rootPool);
         initialized = false ;
@@ -429,26 +453,6 @@ public class AprEndpoint {
 
 
     /**
-     * Close the server socket.
-     */
-    protected void closeServerSocket() {
-        if (!paused)
-            unlockAccept();
-        // FIXME: Close server socket
-        Socket.close(serverSock);
-        /*
-        try {
-            if( serverSocket!=null)
-                serverSocket.close();
-        } catch(Exception e) {
-            log.error(sm.getString("endpoint.err.close"), e);
-        }
-        serverSocket = null;
-        */
-    }
-
-    
-    /**
      * Unlock the server socket accept using a bugus connection.
      */
     protected void unlockAccept() {
@@ -459,8 +463,8 @@ public class AprEndpoint {
                 s = new java.net.Socket("127.0.0.1", port);
             } else {
                 s = new java.net.Socket(address, port);
-                    // setting soLinger to a small value will help shutdown the
-                    // connection quicker
+                // setting soLinger to a small value will help shutdown the
+                // connection quicker
                 s.setSoLinger(true, 0);
             }
         } catch(Exception e) {
@@ -590,32 +594,6 @@ public class AprEndpoint {
     }
 
 
-    /**
-     * Start the background processing thread.
-     */
-    protected void threadStart() {
-        acceptorThread = new Thread(new Acceptor(), getName());
-        acceptorThread.setPriority(getThreadPriority());
-        acceptorThread.setDaemon(true);
-        acceptorThread.start();
-
-        poller = new Poller(pollerSize);
-        pollerThread = new Thread(poller, getName() + "-poller");
-        pollerThread.setPriority(getThreadPriority());
-        pollerThread.setDaemon(true);
-        pollerThread.start();
-    }
-
-
-    /**
-     * Stop the background processing thread.
-     */
-    protected void threadStop() {
-        acceptorThread = null;
-        pollerThread = null;
-    }
-
-
     // --------------------------------------------------- Acceptor Inner Class
 
 
@@ -698,7 +676,6 @@ public class AprEndpoint {
         
         protected long serverPollset = 0;
         protected long pool = 0;
-        protected int nsocks = 0;
         protected long[] desc;
 
         public Poller(int size) {
@@ -707,6 +684,7 @@ public class AprEndpoint {
                 serverPollset = Poll.create(size, pool, 0, soTimeout * 1000);
                 desc = new long[size];
             } catch( Exception ex ) {
+                // FIXME: more appropriate logging
                 ex.printStackTrace();
             }
         }
@@ -714,19 +692,14 @@ public class AprEndpoint {
         public synchronized void add(long socket, long pool) {
             int rv = Poll.add(serverPollset, socket, pool, Poll.APR_POLLIN);
             if (rv == Status.APR_SUCCESS) {
-                //System.out.println("Added socket " + socket + " to pollset");
-                nsocks++;
+                keepAliveCount++;
             }
         }
         
         public synchronized void remove(long socket) {
             int rv = Poll.remove(serverPollset, socket);
             if (rv == Status.APR_SUCCESS) {
-                nsocks--;
-                //System.out.println("Removed socket " + socket + " from pollset");
-            } else {
-                // FIXME: log this properly
-                //System.out.println("Failed removing worker " + socket + " from pollset");
+                keepAliveCount--;
             }
         }
         
@@ -748,9 +721,9 @@ public class AprEndpoint {
                     }
                 }
 
-                while (nsocks < 1) {
+                while (keepAliveCount < 1) {
                     try {
-                        Thread.sleep(1);
+                        Thread.sleep(10);
                     } catch (InterruptedException e) {
                         // Ignore
                     }

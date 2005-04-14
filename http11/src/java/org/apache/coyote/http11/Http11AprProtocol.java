@@ -113,6 +113,7 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
     /** Start the protocol
      */
     public void init() throws Exception {
+        ep.setName(getName());
         ep.setHandler(cHandler);
         try {
             checkSocketFactory();
