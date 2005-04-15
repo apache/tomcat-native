@@ -23,7 +23,7 @@
     <property name="tomcat-util.lib" value="${tomcat-util.build}/lib" />
     <property name="tomcat-util.jar" value="${tomcat-util.lib}/tomcat-util.jar" />
     <property name="tomcat-loader.jar" value="${tomcat-util.lib}/tomcat-loader.jar" />
-
+    <property name="tomcat-jni.jar" value="../jni/dist/tomcat-native-1.0.0.jar" />
 
     <path id="compile.classpath">
         <pathelement location="${jmx.jar}" />
@@ -34,6 +34,7 @@
         <pathelement location="${puretls.jar}" />
         <pathelement location="${commons-logging.jar}" />
         <pathelement location="${commons-modeler.jar}" />
+        <pathelement location="${tomcat-jni.jar}" />
     </path>
 
     <target name="detect">
