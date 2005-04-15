@@ -53,7 +53,7 @@ public class AprEndpoint {
     protected static Log log = LogFactory.getLog(AprEndpoint.class);
 
     protected static StringManager sm = 
-        StringManager.getManager("org.apache.tomcat.util.apr.res");
+        StringManager.getManager("org.apache.tomcat.util.net.res");
 
 
     // ----------------------------------------------------------------- Fields
