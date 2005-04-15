@@ -31,6 +31,7 @@
 
   <!-- The locations of necessary jar files -->
   <property name="tomcat-util.jar"  value="${util.home}/build/lib/tomcat-util.jar"/>
+  <property name="tomcat-jni.jar" value="../jni/dist/tomcat-native-1.0.0.jar" />
   <property name="tomcat-coyote.jar" value="${coyote.home}/build/lib/tomcat-coyote.jar"/>
   <property name="tomcat33-coyote.jar" 
           value="${coyote.home}/build/lib/tomcat33-coyote.jar"/>
@@ -85,6 +86,7 @@
     <pathelement location="${commons-modeler.jar}"/>
     <pathelement location="${regexp.jar}"/>
     <pathelement location="${jmx.jar}"/>
+    <pathelement location="${tomcat-jni.jar}" />
   </path>
 
 
