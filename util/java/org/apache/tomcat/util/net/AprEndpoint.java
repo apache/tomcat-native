@@ -773,21 +773,12 @@ public class AprEndpoint {
                                 // Get the socket pool
                                 pools[n] = Poll.data(desc[n]);
                                 // Get retuned events for this socket
-                                //events[n] = Poll.events(desc[n]);
+                                events[n] = Poll.events(desc[n]);
                                 // Remove each socket from the poll right away
                                 remove(sockets[n]);
                             }
                         }
                         for (int n = 0; n < rv; n++) {
-                            // Check the health of the socket 
-                            int res = Socket.recvt(sockets[n], null, 0, 0, 0);
-                            //System.out.println("Events: " + sockets[n] + " code: " + events[n] + " res: " + res);
-                            if (res < 0) {
-                                // Close socket and clear pool
-                                Pool.destroy(pools[n]);
-                                continue;
-                            }
-                            /*
                             // Problem events
                             if (((events[n] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
                                     || ((events[n] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
@@ -795,15 +786,7 @@ public class AprEndpoint {
                                 Pool.destroy(pools[n]);
                                 continue;
                             }
-                            // Anything non normal
-                            if (!((events[n] & Poll.APR_POLLIN) == Poll.APR_POLLIN)) {
-                                // Close socket and clear pool
-                                Pool.destroy(pools[n]);
-                                continue;
-                            }
-                            */
                             // Hand this socket off to a worker
-                            //System.out.println("Process: " + sockets[n]);
                             getWorkerThread().assign(sockets[n], pools[n]);
                         }
                     }

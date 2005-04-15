@@ -398,7 +398,11 @@ public class InternalAprInputBuffer implements InputBuffer {
                 if (nRead > 0) {
                     lastValid = pos + nRead;
                 } else {
-                    return false;
+                    if (Status.APR_STATUS_IS_ETIMEDOUT(-nRead)) {
+                        return false;
+                    } else {
+                        throw new IOException(sm.getString("iib.failedread"));
+                    }
                 }
             }
 
@@ -418,7 +422,11 @@ public class InternalAprInputBuffer implements InputBuffer {
             if (nRead > 0) {
                 lastValid = pos + nRead;
             } else {
-                return false;
+                if (Status.APR_STATUS_IS_ETIMEDOUT(-nRead)) {
+                    return false;
+                } else {
+                    throw new IOException(sm.getString("iib.failedread"));
+                }
             }
         }
 
