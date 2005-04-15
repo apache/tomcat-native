@@ -598,6 +598,29 @@ public class AprEndpoint {
 
     }
 
+    
+    /**
+     * Return a new worker thread, and block while to worker is available.
+     */
+    protected Worker getWorkerThread() {
+        // Allocate a new worker thread
+        Worker workerThread = createWorkerThread();
+        while (workerThread == null) {
+            try {
+                // Wait a little for load to go down: as a result, 
+                // no accept will be made until the concurrency is
+                // lower than the specified maxThreads, and current
+                // connections will wait for a little bit instead of
+                // failing right away.
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // Ignore
+            }
+            workerThread = createWorkerThread();
+        }
+        return workerThread;
+    }
+    
 
     /**
      * Recycle the specified Processor so that it can be used again.
@@ -640,20 +663,7 @@ public class AprEndpoint {
                 }
 
                 // Allocate a new worker thread
-                Worker workerThread = createWorkerThread();
-                if (workerThread == null) {
-                    try {
-                        // Wait a little for load to go down: as a result, 
-                        // no accept will be made until the concurrency is
-                        // lower than the specified maxThreads, and current
-                        // connections will wait for a little bit instead of
-                        // failing right away.
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        // Ignore
-                    }
-                    continue;
-                }
+                Worker workerThread = getWorkerThread();
                 
                 // Accept the next incoming connection from the server socket
                 long socket = 0;
@@ -763,13 +773,21 @@ public class AprEndpoint {
                                 // Get the socket pool
                                 pools[n] = Poll.data(desc[n]);
                                 // Get retuned events for this socket
-                                events[n] = Poll.events(desc[n]);
+                                //events[n] = Poll.events(desc[n]);
                                 // Remove each socket from the poll right away
                                 remove(sockets[n]);
                             }
                         }
                         for (int n = 0; n < rv; n++) {
-                            //System.out.println("Events: " + sockets[n] + " code: " + events[n] + " OK: " + Poll.APR_POLLIN);
+                            // Check the health of the socket 
+                            int res = Socket.recvt(sockets[n], null, 0, 0, 0);
+                            //System.out.println("Events: " + sockets[n] + " code: " + events[n] + " res: " + res);
+                            if (res < 0) {
+                                // Close socket and clear pool
+                                Pool.destroy(pools[n]);
+                                continue;
+                            }
+                            /*
                             // Problem events
                             if (((events[n] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
                                     || ((events[n] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
@@ -783,24 +801,10 @@ public class AprEndpoint {
                                 Pool.destroy(pools[n]);
                                 continue;
                             }
-                            // Allocate a new worker thread
-                            Worker workerThread = createWorkerThread();
-                            while (workerThread == null) {
-                                try {
-                                    // Wait a little for load to go down: as a result, 
-                                    // no accept will be made until the concurrency is
-                                    // lower than the specified maxThreads, and current
-                                    // connections will wait for a little bit instead of
-                                    // failing right away.
-                                    Thread.sleep(100);
-                                } catch (InterruptedException e) {
-                                    // Ignore
-                                }
-                                workerThread = createWorkerThread();
-                            }
-                            // Hand this socket off to an appropriate processor
+                            */
+                            // Hand this socket off to a worker
                             //System.out.println("Process: " + sockets[n]);
-                            workerThread.assign(sockets[n], pools[n]);
+                            getWorkerThread().assign(sockets[n], pools[n]);
                         }
                     }
                 } catch (Throwable t) {
