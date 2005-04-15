@@ -745,30 +745,6 @@ public class Http11AprProcessor implements ActionHook {
         int keepAliveLeft = maxKeepAliveRequests;
         long soTimeout = endpoint.getSoTimeout();
 
-        // FIXME: Should not be needed 
-        /*
-        long oldSoTimeout = soTimeout;
-        int threadRatio = (endpoint.getCurrentThreadsBusy() * 100)
-                / endpoint.getMaxThreads();
-        if ((threadRatio > 33) && (threadRatio <= 66)) {
-            soTimeout = soTimeout / 2;
-        } else if ((threadRatio > 66) && (threadRatio <= 90)) {
-            soTimeout = soTimeout / 3;
-            keepAliveLeft = 1;
-        } else if (threadRatio > 90) {
-            soTimeout = soTimeout / 20;
-            keepAliveLeft = 1;
-        }
-        
-        if (soTimeout != oldSoTimeout) {
-            try {
-                Socket.timeoutSet(socket, soTimeout);
-            } catch (Throwable t) {
-                log.debug("Error setting timeout", t);
-                error = true;
-            }
-        }*/
-
         boolean keptAlive = false;
         boolean openSocket = false;
 

@@ -387,26 +387,16 @@ public class InternalAprInputBuffer implements InputBuffer {
         // Skipping blank lines
         //
 
-        if (keptAlive && pos >= lastValid) {
-            Socket.timeoutSet(socket, 0);
-        }
-
         byte chr = 0;
         do {
 
             // Read new bytes if needed
             if (pos >= lastValid) {
                 if (keptAlive) {
-                    // Set socket in non blocking mode and try to read
-                    int attempts = 0;
-                    try {
-                        while (attempts < 3 && !fill()) {
-                            Thread.sleep(2);
-                            attempts++;
-                        }
-                    } catch (InterruptedException e) {
-                        // FIXME: do something
-                        e.printStackTrace();
+                    // Do a simple read with a short timeout
+                    int nRead = Socket.recvt(socket, buf, pos, buf.length - lastValid, 50000);
+                    if (nRead > 0) {
+                        lastValid = pos + nRead;
                     }
                     if (pos >= lastValid) {
                         return false;
@@ -427,26 +417,16 @@ public class InternalAprInputBuffer implements InputBuffer {
         start = pos;
 
         if (keptAlive && pos >= lastValid) {
-            // Set socket in non blocking mode and try to read
-            int attempts = 0;
-            try {
-                while (attempts < 3 && !fill()) {
-                    Thread.sleep(2);
-                    attempts++;
-                }
-            } catch (InterruptedException e) {
-                // FIXME: do something
-                e.printStackTrace();
+            // Do a simple read with a short timeout
+            int nRead = Socket.recvt(socket, buf, pos, buf.length - lastValid, 50000);
+            if (nRead > 0) {
+                lastValid = pos + nRead;
             }
             if (pos >= lastValid) {
                 return false;
             }
         }
 
-        if (keptAlive) {
-            Socket.timeoutSet(socket, timeout);
-        }
-        
         //
         // Reading the method name
         // Method name is always US-ASCII
