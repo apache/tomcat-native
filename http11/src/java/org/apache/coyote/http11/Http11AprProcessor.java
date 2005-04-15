@@ -39,6 +39,7 @@ import org.apache.coyote.http11.filters.IdentityOutputFilter;
 import org.apache.coyote.http11.filters.VoidInputFilter;
 import org.apache.coyote.http11.filters.VoidOutputFilter;
 import org.apache.coyote.http11.filters.BufferedInputFilter;
+import org.apache.tomcat.jni.Address;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.util.buf.Ascii;
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -75,7 +76,7 @@ public class Http11AprProcessor implements ActionHook {
         
         request = new Request();
         inputBuffer = new InternalAprInputBuffer(request, headerBufferSize, 
-                endpoint.getSoTimeout());
+                endpoint.getFirstReadPollerTimeout());
         request.setInputBuffer(inputBuffer);
 
         response = new Response();
@@ -755,7 +756,7 @@ public class Http11AprProcessor implements ActionHook {
                 if( !disableUploadTimeout && keptAlive && soTimeout > 0 ) {
                     Socket.timeoutSet(socket, soTimeout);
                 }
-                if (!inputBuffer.parseRequestLine(keptAlive)) {
+                if (!inputBuffer.parseRequestLine()) {
                     // This means that no data is available right now
                     // (long keepalive), so that the processor should be recycled
                     // and the method should return true

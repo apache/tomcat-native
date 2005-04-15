@@ -23,6 +23,7 @@ import java.util.Vector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tomcat.jni.Address;
+import org.apache.tomcat.jni.Error;
 import org.apache.tomcat.jni.Library;
 import org.apache.tomcat.jni.Poll;
 import org.apache.tomcat.jni.Pool;
@@ -242,6 +243,23 @@ public class AprEndpoint {
     public void setSoTimeout(int soTimeout) { this.soTimeout = soTimeout; }
 
 
+    /**
+     * Timeout on first request read before going to the poller, in ms.
+     */
+    protected int firstReadPollerTimeout = 100;
+    public int getFirstReadPollerTimeout() { return firstReadPollerTimeout; }
+    public void setFirstReadPollerTimeout(int firstReadPollerTimeout) { this.firstReadPollerTimeout = firstReadPollerTimeout; }
+
+
+    /**
+     * Poll interval, in microseconds. The smaller the value, the more CPU the poller
+     * will use, but the more responsive to activity it will be.
+     */
+    protected int pollTime = 100000;
+    public int getPollTime() { return pollTime; }
+    public void setPollTime(int pollTime) { this.pollTime = pollTime; }
+
+
     /** 
      * The default is true - the created threads will be
      *  in daemon mode. If set to false, the control thread
@@ -356,7 +374,7 @@ public class AprEndpoint {
             // Create the APR address that will be bound
             String addressStr = null;
             if (address == null) {
-                addressStr = "0.0.0.0";
+                addressStr = null;
             } else {
                 addressStr = "" + address;
             }
@@ -677,16 +695,18 @@ public class AprEndpoint {
         protected long serverPollset = 0;
         protected long pool = 0;
         protected long[] desc;
+        protected long[] sockets;
 
         public Poller(int size) {
+            pool = Pool.create(serverSockPool);
             try {
-                pool = Pool.create(serverSockPool);
                 serverPollset = Poll.create(size, pool, 0, soTimeout * 1000);
-                desc = new long[size];
-            } catch( Exception ex ) {
+            } catch (Error e) {
                 // FIXME: more appropriate logging
-                ex.printStackTrace();
+                e.printStackTrace();
             }
+            desc = new long[size];
+            sockets = new long[size];
         }
         
         public synchronized void add(long socket, long pool) {
@@ -696,7 +716,7 @@ public class AprEndpoint {
             }
         }
         
-        public synchronized void remove(long socket) {
+        public void remove(long socket) {
             int rv = Poll.remove(serverPollset, socket);
             if (rv == Status.APR_SUCCESS) {
                 keepAliveCount--;
@@ -730,50 +750,56 @@ public class AprEndpoint {
                 }
 
                 try {
-                    // Pool for one second
-                    // FIXME: Polling time could be configurable
-                    int rv = Poll.poll(serverPollset, 100000, desc);
-                    for (int n = 0; n < rv; n++) {
-                        long socket = Poll.socket(desc[n]);
-                        int pool = (int) Poll.data(desc[n]);
-                        remove(socket);
-                        
-                        int events = Poll.events(desc[n]);
-                        
-                        if (((events & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
-                                || ((events & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
-                            // Close socket and clear pool
-                            Pool.destroy(pool);
-                            continue;
-                        }
-
-                        if (!((events & Poll.APR_POLLIN) == Poll.APR_POLLIN)) {
-                            // Close socket and clear pool
-                            Pool.destroy(pool);
-                            continue;
-                        }
-                        
-                        // Allocate a new worker thread
-                        Worker workerThread = createWorkerThread();
-                        while (workerThread == null) {
-                            try {
-                                // Wait a little for load to go down: as a result, 
-                                // no accept will be made until the concurrency is
-                                // lower than the specified maxThreads, and current
-                                // connections will wait for a little bit instead of
-                                // failing right away.
-                                Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                                // Ignore
+                    // Pool for the specified interval
+                    int rv = Poll.poll(serverPollset, pollTime, desc);
+                    if (rv > 0) {
+                        synchronized (this) {
+                            for (int n = 0; n < rv; n++) {
+                                // Remove each socket from the poll right away
+                                sockets[n] = Poll.socket(desc[n]);
+                                remove(sockets[n]);
                             }
-                            workerThread = createWorkerThread();
                         }
-                        
-                        // Hand this socket off to an appropriate processor
-                        workerThread.assign(socket, pool);
-
+                        for (int n = 0; n < rv; n++) {
+                            // Get the socket pool
+                            int pool = (int) Poll.data(desc[n]);
+                            // Get retuned events for this socket
+                            int events = Poll.events(desc[n]);
+                            //System.out.println("Events: " + sockets[n] + " code: " + events + " OK: " + Poll.APR_POLLIN);
+                            // Problem events
+                            if (((events & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
+                                    || ((events & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
+                                // Close socket and clear pool
+                                Pool.destroy(pool);
+                                continue;
+                            }
+                            // Anything non normal
+                            if (!((events & Poll.APR_POLLIN) == Poll.APR_POLLIN)) {
+                                // Close socket and clear pool
+                                Pool.destroy(pool);
+                                continue;
+                            }
+                            // Allocate a new worker thread
+                            Worker workerThread = createWorkerThread();
+                            while (workerThread == null) {
+                                try {
+                                    // Wait a little for load to go down: as a result, 
+                                    // no accept will be made until the concurrency is
+                                    // lower than the specified maxThreads, and current
+                                    // connections will wait for a little bit instead of
+                                    // failing right away.
+                                    Thread.sleep(100);
+                                } catch (InterruptedException e) {
+                                    // Ignore
+                                }
+                                workerThread = createWorkerThread();
+                            }
+                            // Hand this socket off to an appropriate processor
+                            //System.out.println("Process: " + sockets[n]);
+                            workerThread.assign(sockets[n], pool);
+                        }
                     }
-                } catch(Throwable t) {
+                } catch (Throwable t) {
                     // FIXME: Proper logging
                     t.printStackTrace();
                 }

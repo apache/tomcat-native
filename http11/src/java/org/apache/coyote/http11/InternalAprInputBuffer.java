@@ -48,7 +48,8 @@ public class InternalAprInputBuffer implements InputBuffer {
     /**
      * Alternate constructor.
      */
-    public InternalAprInputBuffer(Request request, int headerBufferSize, long timeout) {
+    public InternalAprInputBuffer(Request request, int headerBufferSize, 
+                                  long readTimeout) {
 
         this.request = request;
         headers = request.getMimeHeaders();
@@ -70,7 +71,7 @@ public class InternalAprInputBuffer implements InputBuffer {
         parsingHeader = true;
         swallowInput = true;
         
-        this.timeout = timeout;
+        this.readTimeout = readTimeout * 1000;
 
     }
 
@@ -192,9 +193,10 @@ public class InternalAprInputBuffer implements InputBuffer {
 
 
     /**
-     * The socket timeout.
+     * The socket timeout used when reading the first block of the request
+     * header.
      */
-    protected long timeout;
+    protected long readTimeout;
     
     
     // ------------------------------------------------------------- Properties
@@ -220,8 +222,6 @@ public class InternalAprInputBuffer implements InputBuffer {
      * Add an input filter to the filter library.
      */
     public void addFilter(InputFilter filter) {
-
-        // FIXME: Check for null ?
 
         InputFilter[] newFilterLibrary = 
             new InputFilter[filterLibrary.length + 1];
@@ -378,7 +378,7 @@ public class InternalAprInputBuffer implements InputBuffer {
      * @return true if data is properly fed; false if no data is available 
      * immediately and thread should be freed
      */
-    public boolean parseRequestLine(boolean keptAlive)
+    public boolean parseRequestLine()
         throws IOException {
 
         int start = 0;
@@ -392,18 +392,13 @@ public class InternalAprInputBuffer implements InputBuffer {
 
             // Read new bytes if needed
             if (pos >= lastValid) {
-                if (keptAlive) {
-                    // Do a simple read with a short timeout
-                    int nRead = Socket.recvt(socket, buf, pos, buf.length - lastValid, 50000);
-                    if (nRead > 0) {
-                        lastValid = pos + nRead;
-                    }
-                    if (pos >= lastValid) {
-                        return false;
-                    }
+                // Do a simple read with a short timeout
+                int nRead = Socket.recvt
+                    (socket, buf, pos, buf.length - lastValid, readTimeout);
+                if (nRead > 0) {
+                    lastValid = pos + nRead;
                 } else {
-                    if (!fill())
-                        throw new EOFException(sm.getString("iib.eof.error"));
+                    return false;
                 }
             }
 
@@ -416,13 +411,13 @@ public class InternalAprInputBuffer implements InputBuffer {
         // Mark the current buffer position
         start = pos;
 
-        if (keptAlive && pos >= lastValid) {
+        if (pos >= lastValid) {
             // Do a simple read with a short timeout
-            int nRead = Socket.recvt(socket, buf, pos, buf.length - lastValid, 50000);
+            int nRead = Socket.recvt
+                (socket, buf, pos, buf.length - lastValid, readTimeout);
             if (nRead > 0) {
                 lastValid = pos + nRead;
-            }
-            if (pos >= lastValid) {
+            } else {
                 return false;
             }
         }
