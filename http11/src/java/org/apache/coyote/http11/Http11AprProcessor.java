@@ -76,7 +76,7 @@ public class Http11AprProcessor implements ActionHook {
         
         request = new Request();
         inputBuffer = new InternalAprInputBuffer(request, headerBufferSize, 
-                endpoint.getFirstReadPollerTimeout());
+                endpoint.getFirstReadTimeout());
         request.setInputBuffer(inputBuffer);
 
         response = new Response();

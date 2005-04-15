@@ -246,9 +246,9 @@ public class AprEndpoint {
     /**
      * Timeout on first request read before going to the poller, in ms.
      */
-    protected int firstReadPollerTimeout = 100;
-    public int getFirstReadPollerTimeout() { return firstReadPollerTimeout; }
-    public void setFirstReadPollerTimeout(int firstReadPollerTimeout) { this.firstReadPollerTimeout = firstReadPollerTimeout; }
+    protected int firstReadTimeout = 100;
+    public int getFirstReadTimeout() { return firstReadTimeout; }
+    public void setFirstReadTimeout(int firstReadTimeout) { this.firstReadTimeout = firstReadTimeout; }
 
 
     /**
@@ -696,6 +696,8 @@ public class AprEndpoint {
         protected long pool = 0;
         protected long[] desc;
         protected long[] sockets;
+        protected long[] events;
+        protected long[] pools;
 
         public Poller(int size) {
             pool = Pool.create(serverSockPool);
@@ -707,6 +709,8 @@ public class AprEndpoint {
             }
             desc = new long[size];
             sockets = new long[size];
+            events = new long[size];
+            pools = new long[size];
         }
         
         public synchronized void add(long socket, long pool) {
@@ -755,28 +759,28 @@ public class AprEndpoint {
                     if (rv > 0) {
                         synchronized (this) {
                             for (int n = 0; n < rv; n++) {
-                                // Remove each socket from the poll right away
                                 sockets[n] = Poll.socket(desc[n]);
+                                // Get the socket pool
+                                pools[n] = Poll.data(desc[n]);
+                                // Get retuned events for this socket
+                                events[n] = Poll.events(desc[n]);
+                                // Remove each socket from the poll right away
                                 remove(sockets[n]);
                             }
                         }
                         for (int n = 0; n < rv; n++) {
-                            // Get the socket pool
-                            int pool = (int) Poll.data(desc[n]);
-                            // Get retuned events for this socket
-                            int events = Poll.events(desc[n]);
-                            //System.out.println("Events: " + sockets[n] + " code: " + events + " OK: " + Poll.APR_POLLIN);
+                            //System.out.println("Events: " + sockets[n] + " code: " + events[n] + " OK: " + Poll.APR_POLLIN);
                             // Problem events
-                            if (((events & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
-                                    || ((events & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
+                            if (((events[n] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
+                                    || ((events[n] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
                                 // Close socket and clear pool
-                                Pool.destroy(pool);
+                                Pool.destroy(pools[n]);
                                 continue;
                             }
                             // Anything non normal
-                            if (!((events & Poll.APR_POLLIN) == Poll.APR_POLLIN)) {
+                            if (!((events[n] & Poll.APR_POLLIN) == Poll.APR_POLLIN)) {
                                 // Close socket and clear pool
-                                Pool.destroy(pool);
+                                Pool.destroy(pools[n]);
                                 continue;
                             }
                             // Allocate a new worker thread
@@ -796,7 +800,7 @@ public class AprEndpoint {
                             }
                             // Hand this socket off to an appropriate processor
                             //System.out.println("Process: " + sockets[n]);
-                            workerThread.assign(sockets[n], pool);
+                            workerThread.assign(sockets[n], pools[n]);
                         }
                     }
                 } catch (Throwable t) {
