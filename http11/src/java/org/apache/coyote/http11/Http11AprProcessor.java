@@ -1001,8 +1001,7 @@ public class Http11AprProcessor implements ActionHook {
                     long sa = Address.get(Socket.APR_REMOTE, socket);
                     remoteAddr = Address.getip(sa);
                 } catch (Exception e) {
-                    // Ignore
-                    e.printStackTrace();
+                    log.warn("Exception getting socket information " ,e);
                 }
             }
             request.remoteAddr().setString(remoteAddr);
@@ -1015,8 +1014,7 @@ public class Http11AprProcessor implements ActionHook {
                     long sa = Address.get(Socket.APR_LOCAL, socket);
                     localName = Address.getnameinfo(sa, 0);
                 } catch (Exception e) {
-                    // Ignore
-                    e.printStackTrace();
+                    log.warn("Exception getting socket information " ,e);
                 }
             }
             request.localName().setString(localName);
@@ -1029,8 +1027,7 @@ public class Http11AprProcessor implements ActionHook {
                     long sa = Address.get(Socket.APR_REMOTE, socket);
                     remoteHost = Address.getnameinfo(sa, 0);
                 } catch (Exception e) {
-                    // Ignore
-                    e.printStackTrace();
+                    log.warn("Exception getting socket information " ,e);
                 }
             }
             request.remoteHost().setString(remoteHost);
@@ -1047,8 +1044,7 @@ public class Http11AprProcessor implements ActionHook {
                         localPort = addr.port;
                     }
                 } catch (Exception e) {
-                    // Ignore
-                    e.printStackTrace();
+                    log.warn("Exception getting socket information " ,e);
                 }
             }
 
@@ -1063,8 +1059,7 @@ public class Http11AprProcessor implements ActionHook {
                     Sockaddr addr = Address.getInfo(sa);
                     remotePort = addr.port;
                 } catch (Exception e) {
-                    // Ignore
-                    e.printStackTrace();
+                    log.warn("Exception getting socket information " ,e);
                 }
             }
             request.setRemotePort(remotePort);
@@ -1081,8 +1076,7 @@ public class Http11AprProcessor implements ActionHook {
                         localPort = addr.port;
                     }
                 } catch (Exception e) {
-                    // Ignore
-                    e.printStackTrace();
+                    log.warn("Exception getting socket information " ,e);
                 }
             }
             request.setLocalPort(localPort);
@@ -1105,7 +1099,7 @@ public class Http11AprProcessor implements ActionHook {
                             (SSLSupport.CERTIFICATE_KEY, sslO);
                     }
                 } catch (Exception e) {
-                    log.warn("Exception getting SSL Cert",e);
+                    log.warn("Exception getting SSL Cert", e);
                 }
             }
         }
