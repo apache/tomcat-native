@@ -100,12 +100,14 @@ typedef void *JK_CRIT_SEC;
 
 #define JK_ENTER_LOCK(x, rc)        \
     do {                            \
-      rc = flock((x), LOCK_EX) == -1 ? JK_FALSE : JK_TRUE; \
+      while ((rc = flock((x), LOCK_EX) < 0) && (errno == EINTR)); \
+      rc = rc == 0 ? JK_TRUE : JK_FALSE; \
     } while (0)
 
 #define JK_LEAVE_LOCK(x, rc)        \
     do {                            \
-      rc = flock((x), LOCK_UN) == -1 ? JK_FALSE : JK_TRUE; \
+      while ((rc = flock((x), LOCK_UN) < 0) && (errno == EINTR)); \
+      rc = rc == 0 ? JK_TRUE : JK_FALSE; \
     } while (0)
 
 #else
@@ -117,7 +119,9 @@ typedef void *JK_CRIT_SEC;
       _fl.l_whence = SEEK_SET;      \
       _fl.l_start  = 0;             \
       _fl.l_len    = 1L;            \
-      rc = fcntl((x), F_SETLKW, &_fl) == -1 ? JK_FALSE : JK_TRUE; \
+      _fl.l_pid    = 0;             \
+      while ((rc = fcntl((x), F_SETLKW, &_fl) < 0) && (errno == EINTR)); \
+      rc = rc == 0 ? JK_TRUE : JK_FALSE; \
     } while (0)
 
 #define JK_LEAVE_LOCK(x, rc)        \
@@ -127,7 +131,9 @@ typedef void *JK_CRIT_SEC;
       _fl.l_whence = SEEK_SET;      \
       _fl.l_start  = 0;             \
       _fl.l_len    = 1L;            \
-      rc = fcntl((x), F_SETLK, &_fl) == -1 ? JK_FALSE : JK_TRUE; \
+      _fl.l_pid    = 0;             \
+      while ((rc = fcntl((x), F_SETLKW, &_fl) < 0) && (errno == EINTR)); \
+      rc = rc == 0 ? JK_TRUE : JK_FALSE; \
     } while (0)
 #endif /* HAVE_FLOCK */
 
