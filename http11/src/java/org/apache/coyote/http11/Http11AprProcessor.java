@@ -40,6 +40,7 @@ import org.apache.coyote.http11.filters.VoidInputFilter;
 import org.apache.coyote.http11.filters.VoidOutputFilter;
 import org.apache.coyote.http11.filters.BufferedInputFilter;
 import org.apache.tomcat.jni.Address;
+import org.apache.tomcat.jni.Sockaddr;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.util.buf.Ascii;
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -735,7 +736,8 @@ public class Http11AprProcessor implements ActionHook {
         remotePort = -1;
         localPort = -1;
 
-        // Setting up the I/O
+        // Setting up the socket
+        this.socket = socket;
         inputBuffer.setSocket(socket);
         outputBuffer.setSocket(socket);
 
@@ -993,72 +995,97 @@ public class Http11AprProcessor implements ActionHook {
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE) {
 
-            // FIXME: Implement getting host address
-            /*
-            if ((remoteAddr == null) && (socket != null)) {
-                InetAddress inetAddr = socket.getInetAddress();
-                if (inetAddr != null) {
-                    remoteAddr = inetAddr.getHostAddress();
+            // Get remote host address
+            if (remoteAddr == null) {
+                try {
+                    long sa = Address.get(Socket.APR_REMOTE, socket);
+                    remoteAddr = Address.getip(sa);
+                } catch (Exception e) {
+                    // Ignore
+                    e.printStackTrace();
                 }
             }
             request.remoteAddr().setString(remoteAddr);
-            */
 
         } else if (actionCode == ActionCode.ACTION_REQ_LOCAL_NAME_ATTRIBUTE) {
 
-            // FIXME: Implement getting local address
-            /*
-            if ((localName == null) && (socket != null)) {
-                InetAddress inetAddr = socket.getLocalAddress();
-                if (inetAddr != null) {
-                    localName = inetAddr.getHostName();
+            // Get local host name
+            if (localName == null) {
+                try {
+                    long sa = Address.get(Socket.APR_LOCAL, socket);
+                    localName = Address.getnameinfo(sa, 0);
+                } catch (Exception e) {
+                    // Ignore
+                    e.printStackTrace();
                 }
             }
             request.localName().setString(localName);
-            */
 
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
 
-            // FIXME: Implement
-            /*
-            if ((remoteHost == null) && (socket != null)) {
-                InetAddress inetAddr = socket.getInetAddress();
-                if (inetAddr != null) {
-                    remoteHost = inetAddr.getHostName();
+            // Get remote host name
+            if (remoteHost == null) {
+                try {
+                    long sa = Address.get(Socket.APR_REMOTE, socket);
+                    remoteHost = Address.getnameinfo(sa, 0);
+                } catch (Exception e) {
+                    // Ignore
+                    e.printStackTrace();
                 }
             }
             request.remoteHost().setString(remoteHost);
-            */
 
         } else if (actionCode == ActionCode.ACTION_REQ_LOCAL_ADDR_ATTRIBUTE) {
 
-            // FIXME: Implement
-            /*
-            if (localAddr == null)
-               localAddr = socket.getLocalAddress().getHostAddress();
+            // Get local host address
+            if (localAddr == null) {
+                try {
+                    long sa = Address.get(Socket.APR_LOCAL, socket);
+                    Sockaddr addr = new Sockaddr();
+                    if (Address.fill(addr, sa)) {
+                        localAddr = addr.hostname;
+                        localPort = addr.port;
+                    }
+                } catch (Exception e) {
+                    // Ignore
+                    e.printStackTrace();
+                }
+            }
 
             request.localAddr().setString(localAddr);
-            */
 
         } else if (actionCode == ActionCode.ACTION_REQ_REMOTEPORT_ATTRIBUTE) {
 
-            // FIXME: Implement
-            /*
-            if ((remotePort == -1 ) && (socket !=null)) {
-                remotePort = socket.getPort();
+            // Get remote port
+            if (remotePort == -1) {
+                try {
+                    long sa = Address.get(Socket.APR_REMOTE, socket);
+                    Sockaddr addr = Address.getInfo(sa);
+                    remotePort = addr.port;
+                } catch (Exception e) {
+                    // Ignore
+                    e.printStackTrace();
+                }
             }
             request.setRemotePort(remotePort);
-            */
 
         } else if (actionCode == ActionCode.ACTION_REQ_LOCALPORT_ATTRIBUTE) {
 
-            // FIXME: Implement
-            /*
-            if ((localPort == -1 ) && (socket !=null)) {
-                localPort = socket.getLocalPort();
+            // Get local port
+            if (localPort == -1) {
+                try {
+                    long sa = Address.get(Socket.APR_LOCAL, socket);
+                    Sockaddr addr = new Sockaddr();
+                    if (Address.fill(addr, sa)) {
+                        localAddr = addr.hostname;
+                        localPort = addr.port;
+                    }
+                } catch (Exception e) {
+                    // Ignore
+                    e.printStackTrace();
+                }
             }
             request.setLocalPort(localPort);
-            */
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
             if( sslSupport != null) {
