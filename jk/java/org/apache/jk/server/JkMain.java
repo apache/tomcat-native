@@ -84,6 +84,7 @@ public class JkMain implements MBeanRegistration
     {
         JkMain.jkMain=this;
         modules.put("channelSocket", "org.apache.jk.common.ChannelSocket");
+        modules.put("channelNioSocket", "org.apache.jk.common.ChannelNioSocket");
         modules.put("channelUnix", "org.apache.jk.common.ChannelUn");
         modules.put("channelJni", "org.apache.jk.common.ChannelJni");
         modules.put("apr", "org.apache.jk.apr.AprImpl");

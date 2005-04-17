@@ -16,11 +16,16 @@
 
 package org.apache.jk.common;
 
+import java.util.Set;
+import java.util.Iterator;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.Selector;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.ClosedSelectorException;
 import java.net.URLEncoder;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -70,17 +75,18 @@ import org.apache.tomcat.util.threads.ThreadPoolRunnable;
 /** Accept ( and send ) TCP messages.
  *
  * @author Costin Manolache
- * @jmx:mbean name="jk:service=ChannelSocket"
+ * @author Bill Barker
+ * @jmx:mbean name="jk:service=ChannelNioSocket"
  *            description="Accept socket connections"
  * @jmx:notification name="org.apache.coyote.INVOKE
  * @jmx:notification-handler name="org.apache.jk.JK_SEND_PACKET
  * @jmx:notification-handler name="org.apache.jk.JK_RECEIVE_PACKET
  * @jmx:notification-handler name="org.apache.jk.JK_FLUSH
  */
-public class ChannelSocket extends JkHandler
+public class ChannelNioSocket extends JkHandler
     implements NotificationBroadcaster, JkChannel {
     private static org.apache.commons.logging.Log log=
-        org.apache.commons.logging.LogFactory.getLog( ChannelSocket.class );
+        org.apache.commons.logging.LogFactory.getLog( ChannelNioSocket.class );
 
     int startPort=8009;
     int maxPort=8019; // 0 for backward compat.
@@ -90,6 +96,7 @@ public class ChannelSocket extends JkHandler
     boolean tcpNoDelay=true; // nodelay to true by default
     int linger=100;
     int socketTimeout;
+    private Selector selector = null;
 
     long requestCount=0;
     
@@ -107,7 +114,7 @@ public class ChannelSocket extends JkHandler
     /**
      * @jmx:managed-constructor description="default constructor"
      */
-    public ChannelSocket() {
+    public ChannelNioSocket() {
         // This should be integrated with the  domain setup
     }
     
@@ -168,14 +175,14 @@ public class ChannelSocket extends JkHandler
      * <p>By default this value is 1000ms.
      */
     public void setServerTimeout(int timeout) {
-	this.serverTimeout = timeout;
+        this.serverTimeout = timeout;
     }
     public int getServerTimeout() {
         return serverTimeout;
     }
 
     public void setTcpNoDelay( boolean b ) {
-	tcpNoDelay=b;
+        tcpNoDelay=b;
     }
 
     public boolean getTcpNoDelay() {
@@ -183,7 +190,7 @@ public class ChannelSocket extends JkHandler
     }
     
     public void setSoLinger( int i ) {
-	linger=i;
+        linger=i;
     }
 
     public int getSoLinger() {
@@ -191,11 +198,11 @@ public class ChannelSocket extends JkHandler
     }
     
     public void setSoTimeout( int i ) {
-	socketTimeout=i;
+        socketTimeout=i;
     }
 
     public int getSoTimeout() {
-	return socketTimeout;
+        return socketTimeout;
     }
 
     public void setMaxPort( int i ) {
@@ -232,27 +239,27 @@ public class ChannelSocket extends JkHandler
         tp.setMaxThreads(i);
     }
     
-	public void setMinSpareThreads( int i ) {
+        public void setMinSpareThreads( int i ) {
         if( log.isDebugEnabled()) log.debug("Setting minSpareThreads " + i);
             tp.setMinSpareThreads(i);
-	}
+        }
 
-	public void setMaxSpareThreads( int i ) {
+        public void setMaxSpareThreads( int i ) {
         if( log.isDebugEnabled()) log.debug("Setting maxSpareThreads " + i);
             tp.setMaxSpareThreads(i);
-	}
+        }
 
     public int getMaxThreads() {
         return tp.getMaxThreads();   
     }
     
-	public int getMinSpareThreads() {
+    public int getMinSpareThreads() {
         return tp.getMinSpareThreads();   
-	}
+    }
 
-	public int getMaxSpareThreads() {
+    public int getMaxSpareThreads() {
         return tp.getMaxSpareThreads();   
-	}
+    }
 
     public void setBacklog(int i) {
     }
@@ -264,7 +271,7 @@ public class ChannelSocket extends JkHandler
     final int isNote=2;
     final int osNote=3;
     final int notifNote=4;
-    boolean paused = false;
+    boolean paused = true;
 
     public void pause() throws Exception {
         synchronized(this) {
@@ -273,7 +280,7 @@ public class ChannelSocket extends JkHandler
         }
     }
 
-    public void resume() throws Exception {
+    public void resume()  {
         synchronized(this) {
             paused = false;
             notify();
@@ -336,7 +343,7 @@ public class ChannelSocket extends JkHandler
         if (startPort == 0) {
             port = 0;
             if(log.isInfoEnabled())
-                log.info("JK: ajp13 disabling channelSocket");
+                log.info("JK: ajp13 disabling channelNioSocket");
             running = true;
             return;
         }
@@ -365,9 +372,10 @@ public class ChannelSocket extends JkHandler
         if(log.isInfoEnabled())
             log.info("JK: ajp13 listening on " + getAddress() + ":" + port );
 
+        selector = Selector.open();
         // If this is not the base port and we are the 'main' channleSocket and
         // SHM didn't already set the localId - we'll set the instance id
-        if( "channelSocket".equals( name ) &&
+        if( "channelNioSocket".equals( name ) &&
             port != startPort &&
             (wEnv.getLocalId()==0) ) {
             wEnv.setLocalId(  port - startPort );
@@ -407,7 +415,7 @@ public class ChannelSocket extends JkHandler
         }
 
         tp.start();
-        SocketAcceptor acceptAjp=new SocketAcceptor(  this );
+        SocketAcceptor acceptAjp=new SocketAcceptor(   );
         tp.runIt( acceptAjp);
 
     }
@@ -420,6 +428,9 @@ public class ChannelSocket extends JkHandler
     public void start() throws IOException{
         if( sSocket==null )
             init();
+        Poller pollAjp = new Poller();
+        tp.runIt(pollAjp);
+        resume();
     }
 
     public void stop() throws IOException {
@@ -467,7 +478,7 @@ public class ChannelSocket extends JkHandler
         // connection quicker
         s.setSoLinger(true, 0);
 
-	s.close();
+        s.close();
     }
 
     public void destroy() throws IOException {
@@ -478,11 +489,12 @@ public class ChannelSocket extends JkHandler
                 return;
             tp.shutdown();
 
-	    if(!paused) {
-		unLockSocket();
-	    }
+            if(!paused) {
+                unLockSocket();
+            }
 
             sSocket.close(); // XXX?
+            selector.close();
             
             if( tpOName != null )  {
                 Registry.getRegistry(null, null).unregisterComponent(tpOName);
@@ -532,10 +544,10 @@ public class ChannelSocket extends JkHandler
         byte buf[]=msg.getBuffer();
         int hlen=msg.getHeaderLength();
         
-	// XXX If the length in the packet header doesn't agree with the
-	// actual number of bytes read, it should probably return an error
-	// value.  Also, callers of this method never use the length
-	// returned -- should probably return true/false instead.
+        // XXX If the length in the packet header doesn't agree with the
+        // actual number of bytes read, it should probably return an error
+        // value.  Also, callers of this method never use the length
+        // returned -- should probably return true/false instead.
 
         int rd = this.read(ep, buf, 0, hlen );
         
@@ -552,9 +564,9 @@ public class ChannelSocket extends JkHandler
         */
         int blen=msg.getLen();
         
-	// XXX check if enough space - it's assert()-ed !!!
+        // XXX check if enough space - it's assert()-ed !!!
         
- 	int total_read = 0;
+        int total_read = 0;
         
         total_read = this.read(ep, buf, hlen, blen);
         
@@ -569,7 +581,7 @@ public class ChannelSocket extends JkHandler
             return -2;
         }
         
-	return total_read;
+        return total_read;
     }
     
     /**
@@ -636,7 +648,7 @@ public class ChannelSocket extends JkHandler
         if( log.isDebugEnabled() )
             log.debug("Accepting ajp connections on " + port);
         while( running ) {
-	    try{
+            try{
                 MsgContext ep=new MsgContext();
                 ep.setSource(this);
                 ep.setWorkerEnv( wEnv );
@@ -647,77 +659,15 @@ public class ChannelSocket extends JkHandler
                 // Since this is a long-running connection, we don't care
                 // about the small GC
                 SocketConnection ajpConn=
-                    new SocketConnection(this, ep);
+                    new SocketConnection( ep);
                 tp.runIt( ajpConn );
-	    }catch(Exception ex) {
+            }catch(Exception ex) {
                 if (running)
                     log.warn("Exception executing accept" ,ex);
-	    }
+            }
         }
     }
 
-    /** Process a single ajp connection.
-     */
-    void processConnection(MsgContext ep) {
-        try {
-            MsgAjp recv=new MsgAjp();
-            while( running ) {
-                if(paused) { // Drop the connection on pause
-                    break;
-                }
-                int status= this.receive( recv, ep );
-                if( status <= 0 ) {
-                    if( status==-3)
-                        log.debug( "server has been restarted or reset this connection" );
-                    else 
-                        log.warn("Closing ajp connection " + status );
-                    break;
-                }
-                ep.setLong( MsgContext.TIMER_RECEIVED, System.currentTimeMillis());
-                
-                ep.setType( 0 );
-                // Will call next
-                status= this.invoke( recv, ep );
-                if( status!= JkHandler.OK ) {
-                    log.warn("processCallbacks status " + status );
-                    break;
-                }
-            }
-        } catch( Exception ex ) {
-            String msg = ex.getMessage();
-            if( msg != null && msg.indexOf( "Connection reset" ) >= 0)
-                log.debug( "Server has been restarted or reset this connection");
-            else if (msg != null && msg.indexOf( "Read timed out" ) >=0 )
-                log.info( "connection timeout reached");            
-            else
-                log.error( "Error, processing connection", ex);
-        } finally {
-	    	/*
-	    	 * Whatever happened to this connection (remote closed it, timeout, read error)
-	    	 * the socket SHOULD be closed, or we may be in situation where the webserver
-	    	 * will continue to think the socket is still open and will forward request
-	    	 * to tomcat without receiving ever a reply
-	    	 */
-            try {
-                this.close( ep );
-            }
-            catch( Exception e) {
-                log.error( "Error, closing connection", e);
-            }
-            try{
-                Request req = (Request)ep.getRequest();
-                if( req != null ) {
-                    ObjectName roname = (ObjectName)ep.getNote(JMXRequestNote);
-                    if( roname != null ) {
-                        Registry.getRegistry(null, null).unregisterComponent(roname);
-                    }
-                    req.getRequestProcessor().setGlobalProcessor(null);
-                }
-            } catch( Exception ee) {
-                log.error( "Error, releasing connection",ee);
-            }
-        }
-    }
 
     // XXX This should become handleNotification
     public int invoke( Msg msg, MsgContext ep ) throws IOException {
@@ -740,7 +690,7 @@ public class ChannelSocket extends JkHandler
         if( nSupport!=null ) {
             Notification notif=(Notification)ep.getNote(notifNote);
             if( notif==null ) {
-                notif=new Notification("channelSocket.message", ep, requestCount );
+                notif=new Notification("channelNioSocket.message", ep, requestCount );
                 ep.setNote( notifNote, notif);
             }
             nSupport.sendNotification(notif);
@@ -766,7 +716,7 @@ public class ChannelSocket extends JkHandler
             encodedAddr = getAddress();
             if (encodedAddr.startsWith("/"))
                 encodedAddr = encodedAddr.substring(1);
-	    encodedAddr = URLEncoder.encode(encodedAddr) + "-";
+            encodedAddr = URLEncoder.encode(encodedAddr) + "-";
         }
         return ("jk-" + encodedAddr + port);
     }
@@ -782,27 +732,27 @@ public class ChannelSocket extends JkHandler
      */
     public static boolean isSameAddress(InetAddress server, InetAddress client)
     {
-	// Compare the byte array versions of the two addresses
-	byte serverAddr[] = server.getAddress();
-	byte clientAddr[] = client.getAddress();
-	if (serverAddr.length != clientAddr.length)
-	    return (false);
-	boolean match = true;
-	for (int i = 0; i < serverAddr.length; i++) {
-	    if (serverAddr[i] != clientAddr[i]) {
-		match = false;
-		break;
-	    }
-	}
-	if (match)
-	    return (true);
+        // Compare the byte array versions of the two addresses
+        byte serverAddr[] = server.getAddress();
+        byte clientAddr[] = client.getAddress();
+        if (serverAddr.length != clientAddr.length)
+            return (false);
+        boolean match = true;
+        for (int i = 0; i < serverAddr.length; i++) {
+            if (serverAddr[i] != clientAddr[i]) {
+                match = false;
+                break;
+            }
+        }
+        if (match)
+            return (true);
 
-	// Compare the reversed form of the two addresses
-	for (int i = 0; i < serverAddr.length; i++) {
-	    if (serverAddr[i] != clientAddr[(serverAddr.length-1)-i])
-		return (false);
-	}
-	return (true);
+        // Compare the reversed form of the two addresses
+        for (int i = 0; i < serverAddr.length; i++) {
+            if (serverAddr[i] != clientAddr[(serverAddr.length-1)-i])
+                return (false);
+        }
+        return (true);
     }
 
     public void sendNewMessageNotification(Notification notification) {
@@ -837,40 +787,155 @@ public class ChannelSocket extends JkHandler
     public MBeanNotificationInfo[] getNotificationInfo() {
         return notifInfo;
     }
-}
 
-class SocketAcceptor implements ThreadPoolRunnable {
-    ChannelSocket wajp;
+    protected class SocketAcceptor implements ThreadPoolRunnable {
+
     
-    SocketAcceptor(ChannelSocket wajp ) {
-        this.wajp=wajp;
+        SocketAcceptor( ) {
+        }
+
+        public Object[] getInitData() {
+            return null;
+        }
+
+        public void runIt(Object thD[]) {
+            acceptConnections();
+        }
     }
 
-    public Object[] getInitData() {
-        return null;
-    }
+    protected class SocketConnection implements ThreadPoolRunnable {
+        MsgContext ep;
+        MsgAjp recv = new MsgAjp();
+        boolean inProgress = false;
 
-    public void runIt(Object thD[]) {
-        wajp.acceptConnections();
-    }
-}
-
-class SocketConnection implements ThreadPoolRunnable {
-    ChannelSocket wajp;
-    MsgContext ep;
-
-    SocketConnection(ChannelSocket wajp, MsgContext ep) {
-        this.wajp=wajp;
-        this.ep=ep;
-    }
+        SocketConnection(MsgContext ep) {
+            this.ep=ep;
+        }
 
 
-    public Object[] getInitData() {
-        return null;
-    }
+        public Object[] getInitData() {
+            return null;
+        }
     
-    public void runIt(Object perTh[]) {
-        wajp.processConnection(ep);
-        ep = null;
+        public void runIt(Object perTh[]) {
+            inProgress = true;
+            if(processConnection(ep)) {
+                register(ep);
+            } else {
+                unregister(ep);
+            }
+            inProgress = false;
+        }
+
+        public boolean isRunning() {
+            return inProgress;
+        }
+
+        /** Process a single ajp connection.
+         */
+        boolean processConnection(MsgContext ep) {
+            try {
+                if( !running || paused ) {
+                    return false;
+                }
+                int status= receive( recv, ep );
+                if( status <= 0 ) {
+                    if( status==-3)
+                        log.debug( "server has been restarted or reset this connection" );
+                    else 
+                        log.warn("Closing ajp connection " + status );
+                    return false;
+                }
+                ep.setLong( MsgContext.TIMER_RECEIVED, System.currentTimeMillis());
+                
+                ep.setType( 0 );
+                // Will call next
+                status= invoke( recv, ep );
+                if( status != JkHandler.OK ) {
+                    log.warn("processCallbacks status " + status );
+                    return false;
+                }
+            } catch( Exception ex ) {
+                String msg = ex.getMessage();
+                if( msg != null && msg.indexOf( "Connection reset" ) >= 0)
+                    log.debug( "Server has been restarted or reset this connection");
+                else if (msg != null && msg.indexOf( "Read timed out" ) >=0 )
+                    log.info( "connection timeout reached");            
+                else
+                    log.error( "Error, processing connection", ex);
+                return false;
+            } 
+            return true;
+        }
+
+        void unregister(MsgContext ep) {
+            try{
+                close(ep);
+            } catch(Exception e) {
+                log.error("Error closing connection", e);
+            }
+            try{
+                Request req = (Request)ep.getRequest();
+                if( req != null ) {
+                    ObjectName roname = (ObjectName)ep.getNote(JMXRequestNote);
+                    if( roname != null ) {
+                        Registry.getRegistry(null, null).unregisterComponent(roname);
+                    }
+                    req.getRequestProcessor().setGlobalProcessor(null);
+                }
+            } catch( Exception ee) {
+                log.error( "Error, releasing connection",ee);
+            }
+        }
+
+        void register(MsgContext ep) {
+            Socket s = (Socket)ep.getNote(socketNote);
+            try {
+                s.getChannel().register(selector, SelectionKey.OP_READ, this);
+            } catch(IOException iex) {
+                log.error("Unable to register connection",iex);
+                unregister(ep);
+            }
+        }
+
     }
+
+    protected class Poller implements ThreadPoolRunnable {
+
+        Poller() {
+        }
+
+        public Object[] getInitData() {
+            return null;
+        }
+    
+        public void runIt(Object perTh[]) {
+            while(running) {
+                try {
+                    int ns = selector.select();
+                    if(log.isTraceEnabled())
+                        log.trace("Selecting "+ns+" channels");
+                    if(ns > 0) {
+                        Set sels = selector.selectedKeys();
+                        Iterator it = sels.iterator();
+                        while(it.hasNext()) {
+                            SelectionKey sk = (SelectionKey)it.next();
+                            SocketConnection sc = (SocketConnection)sk.attachment();
+                            if(sk.isValid()) {
+                                sk.cancel(); // somebody else's problem now
+                                tp.runIt(sc);
+                            }
+                        }
+                    }
+                } catch(ClosedSelectorException cse) {
+                    log.debug("Selector is closed");
+                    return;
+                } catch(IOException iex) {
+                    log.warn("IO Error in select",iex);
+                }
+            }
+        }
+    }
+
 }
+
