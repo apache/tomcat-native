@@ -640,7 +640,7 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
             return  thData;
         }
 
-        public boolean process(long socket) {
+        public boolean process(long socket, long pool) {
             Http11AprProcessor processor=null;
             try {
                 // FIXME: It is also possible to use the TWA data, so keep init() [] for
@@ -672,7 +672,7 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
                 processor.setSocket( socket );
                 */
 
-                return processor.process(socket);
+                return processor.process(socket, pool);
 
             } catch(java.net.SocketException e) {
                 // SocketExceptions are normal

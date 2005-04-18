@@ -716,12 +716,9 @@ public class Http11AprProcessor implements ActionHook {
      * Process pipelined HTTP requests using the specified input and output
      * streams.
      *
-     * @param input stream from which the HTTP requests will be read
-     * @param output stream which will be used to output the HTTP
-     * responses
      * @throws IOException error during an I/O operation
      */
-    public boolean process(long socket)
+    public boolean process(long socket, long pool)
         throws IOException {
         ThreadWithAttributes thrA=
                 (ThreadWithAttributes)Thread.currentThread();
@@ -764,6 +761,8 @@ public class Http11AprProcessor implements ActionHook {
                     // and the method should return true
                     rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
                     openSocket = true;
+                    // Add the socket to the poller
+                    endpoint.getPoller().add(socket, pool);
                     break;
                 }
                 request.setStartTime(System.currentTimeMillis());

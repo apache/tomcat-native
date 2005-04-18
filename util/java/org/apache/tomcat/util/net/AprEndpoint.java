@@ -17,6 +17,7 @@
 package org.apache.tomcat.util.net;
 
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.Stack;
 import java.util.Vector;
 
@@ -24,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tomcat.jni.Address;
 import org.apache.tomcat.jni.Error;
+import org.apache.tomcat.jni.File;
 import org.apache.tomcat.jni.Library;
 import org.apache.tomcat.jni.Poll;
 import org.apache.tomcat.jni.Pool;
@@ -73,12 +75,6 @@ public class AprEndpoint {
 
 
     /**
-     * The socket poller.
-     */
-    protected Poller poller = null;
-
-
-    /**
      * The socket poller thread.
      */
     protected Thread pollerThread = null;
@@ -87,7 +83,6 @@ public class AprEndpoint {
     /**
      * The sendfile thread.
      */
-    // FIXME: Add senfile support
     protected Thread sendfileThread = null;
 
 
@@ -180,9 +175,17 @@ public class AprEndpoint {
     /**
      * Size of the socket poller.
      */
-    protected int pollerSize = 512;
+    protected int pollerSize = 768;
     public void setPollerSize(int pollerSize) { this.pollerSize = pollerSize; }
     public int getPollerSize() { return pollerSize; }
+
+
+    /**
+     * Size of the sendfile (= concurrent files which can be served).
+     */
+    protected int sendfileSize = 256;
+    public void setSendfileSize(int sendfileSize) { this.sendfileSize = sendfileSize; }
+    public int getSendfileSize() { return sendfileSize; }
 
 
     /**
@@ -283,9 +286,29 @@ public class AprEndpoint {
      */
     protected int keepAliveCount = 0;
     public int getKeepAliveCount() { return keepAliveCount; }
-    public void setKeepAliveCount(int keepAliveCount) { this.keepAliveCount = keepAliveCount; }
+    
+    
+    /**
+     * Number of sendfile sockets.
+     */
+    protected int sendfileCount = 0;
+    public int getSendfileCount() { return sendfileCount; }
+    
+    
+    /**
+     * The socket poller.
+     */
+    protected Poller poller = null;
+    public Poller getPoller() { return poller; }
 
 
+    /**
+     * The static file sender.
+     */
+    protected Sendfile sendfile = null;
+    public Sendfile getSendfile() { return sendfile; }
+    
+    
     /**
      * Dummy maxSpareThreads property.
      */
@@ -412,14 +435,20 @@ public class AprEndpoint {
             acceptorThread.start();
 
             // Start poller thread
-            poller = new Poller(pollerSize);
+            poller = new Poller();
+            poller.init();
             pollerThread = new Thread(poller, getName() + "-Poller");
             pollerThread.setPriority(getThreadPriority());
             pollerThread.setDaemon(true);
             pollerThread.start();
 
             // Start sendfile thread
-            // FIXME: Implement sendfile support
+            sendfile = new Sendfile();
+            sendfile.init();
+            sendfileThread = new Thread(sendfile, getName() + "-Sendfile");
+            sendfileThread.setPriority(getThreadPriority());
+            sendfileThread.setDaemon(true);
+            sendfileThread.start();
         }
     }
 
@@ -441,6 +470,8 @@ public class AprEndpoint {
         if (running) {
             running = false;
             unlockAccept();
+            poller.destroy();
+            sendfile.destroy();
             acceptorThread = null;
             pollerThread = null;
             sendfileThread = null;
@@ -519,14 +550,14 @@ public class AprEndpoint {
     }
 
 
-    protected boolean processSocket(long s) {
+    protected boolean processSocket(long socket, long pool) {
         // Process the connection
         int step = 1;
         boolean result = true;
         try {
 
             // 1: Set socket options: timeout, linger, etc
-            setSocketOptions(s);
+            setSocketOptions(socket);
 
             // 2: SSL handshake
             step = 2;
@@ -539,7 +570,7 @@ public class AprEndpoint {
 
             // 3: Process the connection
             step = 3;
-            result = getHandler().process(s);
+            result = getHandler().process(socket, pool);
 
         } catch (Throwable t) {
             if (step == 2) {
@@ -549,11 +580,8 @@ public class AprEndpoint {
             } else {
                 log.error(sm.getString("endpoint.err.unexpected"), t);
             }
-            // Try to close the socket
-            try {
-                Socket.close(s);
-            } catch (Exception e) {
-            }
+            // Tell to close the socket
+            result = false;
         }
         return result;
     }
@@ -700,30 +728,35 @@ public class AprEndpoint {
 
     /**
      * Poller class.
-     *
-     * FIXME: Windows support using 64 sized pollers
      */
-    protected class Poller implements Runnable {
+    public class Poller implements Runnable {
 
         protected long serverPollset = 0;
         protected long pool = 0;
         protected long[] desc;
 
-        public Poller(int size) {
+        protected synchronized void init() {
             pool = Pool.create(serverSockPool);
             try {
-                serverPollset = Poll.create(size, pool, 0, soTimeout * 1000);
+                serverPollset = Poll.create(pollerSize, pool, 0, soTimeout * 1000);
             } catch (Error e) {
                 // FIXME: more appropriate logging
                 e.printStackTrace();
             }
-            desc = new long[size * 4];
+            desc = new long[pollerSize * 4];
         }
 
-        public synchronized void add(long socket, long pool) {
+        protected void destroy() {
+            Pool.destroy(pool);
+        }
+        
+        public void add(long socket, long pool) {
             int rv = Poll.add(serverPollset, socket, pool, Poll.APR_POLLIN);
             if (rv == Status.APR_SUCCESS) {
                 keepAliveCount++;
+            } else {
+                // Can't do anything: close the socket right away
+                Pool.destroy(pool);
             }
         }
 
@@ -777,9 +810,14 @@ public class AprEndpoint {
                             // Hand this socket off to a worker
                             getWorkerThread().assign(desc[n*4+1], desc[n*4+2]);
                         }
-                    }
-                    else if (rv < 0) {
-                        // TODO: Poll is probably unusable. So it should bail out.
+                    } else if (rv < 0) {
+                        // FIXME: Log with WARN at least
+                        // Handle poll critical failure
+                        Pool.clear(serverSockPool);
+                        synchronized (this) {
+                            destroy();
+                            init();
+                        }
                     }
                 } catch (Throwable t) {
                     // FIXME: Proper logging
@@ -880,10 +918,7 @@ public class AprEndpoint {
                     continue;
 
                 // Process the request from this socket
-                if (processSocket(socket)) {
-                    // If the socket is still open, add it to the poller
-                    poller.add(socket, pool);
-                } else {
+                if (!processSocket(socket, pool)) {
                     // Close socket and pool
                     Pool.destroy(pool);
                     pool = 0;
@@ -916,6 +951,191 @@ public class AprEndpoint {
     }
 
 
+    // ----------------------------------------------- SendfileData Inner Class
+
+
+    /**
+     * SendfileData class.
+     */
+    public class SendfileData {
+        // File
+        public String fileName;
+        public long fd;
+        public long fdpool;
+        // Range information
+        public long start;
+        public long end;
+        // Socket pool
+        public long pool;
+        // Position
+        public long pos;
+    }
+    
+    
+    // --------------------------------------------------- Sendfile Inner Class
+
+
+    /**
+     * Sendfile class.
+     */
+    public class Sendfile implements Runnable {
+        
+        protected long sendfilePollset = 0;
+        protected long pool = 0;
+        protected long[] desc;
+        protected HashMap sendfileData;
+        protected SendfileData[] state;
+
+        protected void init() {
+            pool = Pool.create(serverSockPool);
+            try {
+                sendfilePollset = Poll.create(sendfileSize, pool, 0, soTimeout * 1000);
+            } catch (Error e) {
+                // FIXME: more appropriate logging
+                e.printStackTrace();
+            }
+            desc = new long[sendfileSize * 4];
+            sendfileData = new HashMap(sendfileSize);
+            state = new SendfileData[sendfileSize];
+        }
+        
+        protected void destroy() {
+            sendfileData.clear();
+            Pool.destroy(pool);
+        }
+        
+        public void add(long socket, SendfileData data) {
+            // Initialize fd from data given
+            try {
+                data.fdpool = Pool.create(data.pool);
+                data.fd = File.open
+                    (data.fileName, File.APR_FOPEN_READ 
+                     | File.APR_FOPEN_SENDFILE_ENABLED | File.APR_FOPEN_BINARY,
+                     0, data.fdpool);
+                data.pos = data.start;
+            } catch (Error e) {
+                // FIXME: more appropriate logging
+                e.printStackTrace();
+                return;
+            }
+            synchronized (this) {
+                sendfileData.put(new Long(socket), data);
+                int rv = Poll.add(sendfilePollset, socket, 0, Poll.APR_POLLOUT);
+                if (rv == Status.APR_SUCCESS) {
+                    sendfileCount++;
+                } else {
+                    // FIXME: Log with a WARN at least, as the request will 
+                    // fail from the user perspective
+                    // Can't do anything: close the socket right away
+                    Pool.destroy(data.pool);
+                }
+            }
+        }
+        
+        public void remove(long socket) {
+            synchronized (this) {
+                int rv = Poll.remove(sendfilePollset, socket);
+                if (rv == Status.APR_SUCCESS) {
+                    sendfileCount--;
+                }
+                sendfileData.remove(new Long(socket));
+            }
+        }
+        
+        /**
+         * The background thread that listens for incoming TCP/IP connections and
+         * hands them off to an appropriate processor.
+         */
+        public void run() {
+
+            // Loop until we receive a shutdown command
+            while (running) {
+
+                // Loop if endpoint is paused
+                while (paused) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        // Ignore
+                    }
+                }
+
+                while (sendfileCount < 1) {
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        // Ignore
+                    }
+                }
+
+                try {
+                    // Pool for the specified interval
+                    int rv = Poll.poll(sendfilePollset, pollTime, desc);
+                    if (rv > 0) {
+                        for (int n = 0; n < rv; n++) {
+                            // Problem events
+                            if (((desc[n*4] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
+                                    || ((desc[n*4] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
+                                // Close socket and clear pool
+                                remove(desc[n*4+1]);
+                                // Destroy file descriptor pool, which should close the file
+                                Pool.destroy(state[n].fdpool);
+                                // Close the socket, as the reponse would be incomplete
+                                Pool.destroy(state[n].pool);
+                                continue;
+                            }
+                            // Get the sendfile state
+                            state[n] = 
+                                (SendfileData) sendfileData.get(new Long(desc[n*4+1]));
+                            // Write some data using sendfile
+                            int nw = Socket.sendfilet(desc[n*4+1], state[n].fd, 
+                                                      null, null, state[n].pos, 
+                                                      (int) (state[n].end - state[n].pos), 0, 0);
+                            if (nw < 0) {
+                                // Close socket and clear pool
+                                remove(desc[n*4+1]);
+                                // Destroy file descriptor pool, which should close the file
+                                Pool.destroy(state[n].fdpool);
+                                // Close the socket, as the reponse would be incomplete
+                                Pool.destroy(state[n].pool);
+                                continue;
+                            }
+                            state[n].pos = state[n].pos + nw;
+                            if (state[n].pos >= state[n].end) {
+                                remove(desc[n*4+1]);
+                                // Destroy file descriptor pool, which should close the file
+                                Pool.destroy(state[n].fdpool);
+                                // If all done hand this socket off to a worker for 
+                                // processing of further requests
+                                getWorkerThread().assign(desc[n*4+1], state[n].pool);
+                            }
+                        }
+                    } else if (rv < 0) {
+                        // Handle poll critical failure
+                        // FIXME: Log with WARN at least
+                        Pool.clear(serverSockPool);
+                        synchronized (this) {
+                            destroy();
+                            init();
+                        }
+                    }
+                } catch (Throwable t) {
+                    // FIXME: Proper logging
+                    t.printStackTrace();
+                }
+                
+            }
+
+            // Notify the threadStop() method that we have shut ourselves down
+            synchronized (threadSync) {
+                threadSync.notifyAll();
+            }
+
+        }
+
+    }
+
+    
     // -------------------------------------- ConnectionHandler Inner Interface
 
 
@@ -925,7 +1145,7 @@ public class AprEndpoint {
      * thread local fields.
      */
     public interface Handler {
-        public boolean process(long socket);
+        public boolean process(long socket, long pool);
     }
 
 
