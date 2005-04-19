@@ -742,7 +742,9 @@ public class AprEndpoint {
             } catch (Error e) {
                 if (Status.APR_STATUS_IS_EINVAL(e.getError())) {
                     try {
-                        /* Use WIN32 maximum poll size */
+                        // Use WIN32 maximum poll size
+                        // FIXME: Add WARN level logging about this, as scalability will
+                        // be limited
                         pollerSize = 62;
                         serverPollset = Poll.create(pollerSize, pool, 0, soTimeout * 1000);
                     } catch (Error err) {
@@ -1018,8 +1020,21 @@ public class AprEndpoint {
             try {
                 sendfilePollset = Poll.create(sendfileSize, pool, 0, soTimeout * 1000);
             } catch (Error e) {
-                // FIXME: more appropriate logging
-                e.printStackTrace();
+                if (Status.APR_STATUS_IS_EINVAL(e.getError())) {
+                    try {
+                        // Use WIN32 maximum poll size
+                        // FIXME: Add WARN level logging about this, as scalability will
+                        // be limited
+                        sendfileSize = 62;
+                        sendfilePollset = Poll.create(sendfileSize, pool, 0, soTimeout * 1000);
+                    } catch (Error err) {
+                        // FIXME: more appropriate logging
+                        err.printStackTrace();
+                    }
+                } else {
+                    // FIXME: more appropriate logging
+                    e.printStackTrace();
+                }
             }
             desc = new long[sendfileSize * 4];
             sendfileData = new HashMap(sendfileSize);
