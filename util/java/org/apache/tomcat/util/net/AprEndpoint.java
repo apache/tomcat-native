@@ -286,15 +286,15 @@ public class AprEndpoint {
      */
     protected int keepAliveCount = 0;
     public int getKeepAliveCount() { return keepAliveCount; }
-    
-    
+
+
     /**
      * Number of sendfile sockets.
      */
     protected int sendfileCount = 0;
     public int getSendfileCount() { return sendfileCount; }
-    
-    
+
+
     /**
      * The socket poller.
      */
@@ -307,8 +307,8 @@ public class AprEndpoint {
      */
     protected Sendfile sendfile = null;
     public Sendfile getSendfile() { return sendfile; }
-    
-    
+
+
     /**
      * Dummy maxSpareThreads property.
      */
@@ -740,30 +740,46 @@ public class AprEndpoint {
             try {
                 serverPollset = Poll.create(pollerSize, pool, 0, soTimeout * 1000);
             } catch (Error e) {
-                // FIXME: more appropriate logging
-                e.printStackTrace();
+                if (Status.APR_STATUS_IS_EINVAL(e.getError())) {
+                    try {
+                        /* Use WIN32 maximum poll size */
+                        pollerSize = 62;
+                        serverPollset = Poll.create(pollerSize, pool, 0, soTimeout * 1000);
+                    } catch (Error err) {
+                        // FIXME: more appropriate logging
+                        err.printStackTrace();
+                    }
+                } else {
+                    // FIXME: more appropriate logging
+                    e.printStackTrace();
+                }
             }
             desc = new long[pollerSize * 4];
+            keepAliveCount = 0;
         }
 
         protected void destroy() {
             Pool.destroy(pool);
         }
-        
+
         public void add(long socket, long pool) {
-            int rv = Poll.add(serverPollset, socket, pool, Poll.APR_POLLIN);
-            if (rv == Status.APR_SUCCESS) {
-                keepAliveCount++;
-            } else {
-                // Can't do anything: close the socket right away
-                Pool.destroy(pool);
+            synchronized (this) {
+                int rv = Poll.add(serverPollset, socket, pool, Poll.APR_POLLIN);
+                if (rv == Status.APR_SUCCESS) {
+                    keepAliveCount++;
+                } else {
+                    // Can't do anything: close the socket right away
+                    Pool.destroy(pool);
+                }
             }
         }
 
         public void remove(long socket) {
-            int rv = Poll.remove(serverPollset, socket);
-            if (rv == Status.APR_SUCCESS) {
-                keepAliveCount--;
+            synchronized (this) {
+                int rv = Poll.remove(serverPollset, socket);
+                if (rv == Status.APR_SUCCESS) {
+                    keepAliveCount--;
+                }
             }
         }
 
@@ -775,7 +791,7 @@ public class AprEndpoint {
 
             // Loop until we receive a shutdown command
             while (running) {
-
+                long maintainTime = 0;
                 // Loop if endpoint is paused
                 while (paused) {
                     try {
@@ -795,11 +811,9 @@ public class AprEndpoint {
 
                 try {
                     // Pool for the specified interval
-                    int rv = Poll.poll(serverPollset, pollTime, desc);
+                    int rv = Poll.poll(serverPollset, pollTime, desc, true);
                     if (rv > 0) {
                         for (int n = 0; n < rv; n++) {
-                            // Remove the socket from the pollset
-                            remove(desc[n*4+1]);
                             // Check for failed sockets
                             if (((desc[n*4] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
                                     || ((desc[n*4] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
@@ -810,6 +824,7 @@ public class AprEndpoint {
                             // Hand this socket off to a worker
                             getWorkerThread().assign(desc[n*4+1], desc[n*4+2]);
                         }
+                        maintainTime += pollTime;
                     } else if (rv < 0) {
                         // FIXME: Log with WARN at least
                         // Handle poll critical failure
@@ -817,6 +832,18 @@ public class AprEndpoint {
                         synchronized (this) {
                             destroy();
                             init();
+                        }
+                    }
+                    if (rv == 0 || maintainTime > 1000000L) {
+                        synchronized (this) {
+                            rv = Poll.maintain(serverPollset, desc, true);
+                            maintainTime = 0;
+                        }
+                        if (rv > 0) {
+                            for (int n = 0; n < rv; n++) {
+                                // Close socket and clear pool
+                                Pool.destroy(desc[n*4+2]);
+                            }
                         }
                     }
                 } catch (Throwable t) {
@@ -970,8 +997,8 @@ public class AprEndpoint {
         // Position
         public long pos;
     }
-    
-    
+
+
     // --------------------------------------------------- Sendfile Inner Class
 
 
@@ -979,7 +1006,7 @@ public class AprEndpoint {
      * Sendfile class.
      */
     public class Sendfile implements Runnable {
-        
+
         protected long sendfilePollset = 0;
         protected long pool = 0;
         protected long[] desc;
@@ -998,18 +1025,18 @@ public class AprEndpoint {
             sendfileData = new HashMap(sendfileSize);
             state = new SendfileData[sendfileSize];
         }
-        
+
         protected void destroy() {
             sendfileData.clear();
             Pool.destroy(pool);
         }
-        
+
         public void add(long socket, SendfileData data) {
             // Initialize fd from data given
             try {
                 data.fdpool = Pool.create(data.pool);
                 data.fd = File.open
-                    (data.fileName, File.APR_FOPEN_READ 
+                    (data.fileName, File.APR_FOPEN_READ
                      | File.APR_FOPEN_SENDFILE_ENABLED | File.APR_FOPEN_BINARY,
                      0, data.fdpool);
                 data.pos = data.start;
@@ -1024,14 +1051,14 @@ public class AprEndpoint {
                 if (rv == Status.APR_SUCCESS) {
                     sendfileCount++;
                 } else {
-                    // FIXME: Log with a WARN at least, as the request will 
+                    // FIXME: Log with a WARN at least, as the request will
                     // fail from the user perspective
                     // Can't do anything: close the socket right away
                     Pool.destroy(data.pool);
                 }
             }
         }
-        
+
         public void remove(long socket) {
             synchronized (this) {
                 int rv = Poll.remove(sendfilePollset, socket);
@@ -1041,7 +1068,7 @@ public class AprEndpoint {
                 sendfileData.remove(new Long(socket));
             }
         }
-        
+
         /**
          * The background thread that listens for incoming TCP/IP connections and
          * hands them off to an appropriate processor.
@@ -1070,7 +1097,7 @@ public class AprEndpoint {
 
                 try {
                     // Pool for the specified interval
-                    int rv = Poll.poll(sendfilePollset, pollTime, desc);
+                    int rv = Poll.poll(sendfilePollset, pollTime, desc, false);
                     if (rv > 0) {
                         for (int n = 0; n < rv; n++) {
                             // Problem events
@@ -1085,11 +1112,11 @@ public class AprEndpoint {
                                 continue;
                             }
                             // Get the sendfile state
-                            state[n] = 
+                            state[n] =
                                 (SendfileData) sendfileData.get(new Long(desc[n*4+1]));
                             // Write some data using sendfile
-                            int nw = Socket.sendfilet(desc[n*4+1], state[n].fd, 
-                                                      null, null, state[n].pos, 
+                            int nw = Socket.sendfilet(desc[n*4+1], state[n].fd,
+                                                      null, null, state[n].pos,
                                                       (int) (state[n].end - state[n].pos), 0, 0);
                             if (nw < 0) {
                                 // Close socket and clear pool
@@ -1105,7 +1132,7 @@ public class AprEndpoint {
                                 remove(desc[n*4+1]);
                                 // Destroy file descriptor pool, which should close the file
                                 Pool.destroy(state[n].fdpool);
-                                // If all done hand this socket off to a worker for 
+                                // If all done hand this socket off to a worker for
                                 // processing of further requests
                                 getWorkerThread().assign(desc[n*4+1], state[n].pool);
                             }
@@ -1123,7 +1150,7 @@ public class AprEndpoint {
                     // FIXME: Proper logging
                     t.printStackTrace();
                 }
-                
+
             }
 
             // Notify the threadStop() method that we have shut ourselves down
@@ -1135,7 +1162,7 @@ public class AprEndpoint {
 
     }
 
-    
+
     // -------------------------------------- ConnectionHandler Inner Interface
 
 
