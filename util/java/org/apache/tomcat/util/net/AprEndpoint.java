@@ -815,6 +815,7 @@ public class AprEndpoint {
                     // Pool for the specified interval
                     int rv = Poll.poll(serverPollset, pollTime, desc, true);
                     if (rv > 0) {
+                        keepAliveCount -= rv;
                         for (int n = 0; n < rv; n++) {
                             // Check for failed sockets
                             if (((desc[n*4] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
@@ -842,6 +843,7 @@ public class AprEndpoint {
                             maintainTime = 0;
                         }
                         if (rv > 0) {
+                            keepAliveCount -= rv;
                             for (int n = 0; n < rv; n++) {
                                 // Close socket and clear pool
                                 Pool.destroy(desc[n*4+2]);
