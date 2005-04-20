@@ -988,7 +988,7 @@ public class AprEndpoint {
     /**
      * SendfileData class.
      */
-    public class SendfileData {
+    public static class SendfileData {
         // File
         public String fileName;
         public long fd;
@@ -1015,7 +1015,6 @@ public class AprEndpoint {
         protected long pool = 0;
         protected long[] desc;
         protected HashMap sendfileData;
-        protected SendfileData[] state;
 
         protected void init() {
             pool = Pool.create(serverSockPool);
@@ -1040,7 +1039,6 @@ public class AprEndpoint {
             }
             desc = new long[sendfileSize * 4];
             sendfileData = new HashMap(sendfileSize);
-            state = new SendfileData[sendfileSize];
         }
 
         protected void destroy() {
@@ -1117,41 +1115,41 @@ public class AprEndpoint {
                     int rv = Poll.poll(sendfilePollset, pollTime, desc, false);
                     if (rv > 0) {
                         for (int n = 0; n < rv; n++) {
+                            // Get the sendfile state
+                            SendfileData state =
+                                (SendfileData) sendfileData.get(new Long(desc[n*4+1]));
                             // Problem events
                             if (((desc[n*4] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
                                     || ((desc[n*4] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
                                 // Close socket and clear pool
                                 remove(desc[n*4+1]);
                                 // Destroy file descriptor pool, which should close the file
-                                Pool.destroy(state[n].fdpool);
+                                Pool.destroy(state.fdpool);
                                 // Close the socket, as the reponse would be incomplete
-                                Pool.destroy(state[n].pool);
+                                Pool.destroy(state.pool);
                                 continue;
                             }
-                            // Get the sendfile state
-                            state[n] =
-                                (SendfileData) sendfileData.get(new Long(desc[n*4+1]));
                             // Write some data using sendfile
-                            int nw = Socket.sendfilet(desc[n*4+1], state[n].fd,
-                                                      null, null, state[n].pos,
-                                                      (int) (state[n].end - state[n].pos), 0, 0);
+                            int nw = Socket.sendfilet(desc[n*4+1], state.fd,
+                                                      null, null, state.pos,
+                                                      (int) (state.end - state.pos), 0, 0);
                             if (nw < 0) {
                                 // Close socket and clear pool
                                 remove(desc[n*4+1]);
                                 // Destroy file descriptor pool, which should close the file
-                                Pool.destroy(state[n].fdpool);
+                                Pool.destroy(state.fdpool);
                                 // Close the socket, as the reponse would be incomplete
-                                Pool.destroy(state[n].pool);
+                                Pool.destroy(state.pool);
                                 continue;
                             }
-                            state[n].pos = state[n].pos + nw;
-                            if (state[n].pos >= state[n].end) {
+                            state.pos = state.pos + nw;
+                            if (state.pos >= state.end) {
                                 remove(desc[n*4+1]);
                                 // Destroy file descriptor pool, which should close the file
-                                Pool.destroy(state[n].fdpool);
+                                Pool.destroy(state.fdpool);
                                 // If all done hand this socket off to a worker for
                                 // processing of further requests
-                                getWorkerThread().assign(desc[n*4+1], state[n].pool);
+                                getWorkerThread().assign(desc[n*4+1], state.pool);
                             }
                         }
                     } else if (rv < 0) {
