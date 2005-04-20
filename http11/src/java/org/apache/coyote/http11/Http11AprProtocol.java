@@ -280,6 +280,14 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
         setAttribute("port", "" + port);
     }
 
+    public boolean getUseSendfile() {
+        return ep.getUseSendfile();
+    }
+
+    public void setUseSendfile(boolean useSendfile) {
+        ep.setUseSendfile(useSendfile);
+    }
+
     public InetAddress getAddress() {
         return ep.getAddress();
     }
