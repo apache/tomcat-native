@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import org.apache.tomcat.jni.Error;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.CharChunk;

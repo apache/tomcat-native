@@ -282,6 +282,14 @@ public class AprEndpoint {
 
 
     /**
+     * Use endfile for sending static files.
+     */
+    protected boolean useSendfile = false;
+    public void setUseSendfile(boolean useSendfile) { this.useSendfile = useSendfile; }
+    public boolean getUseSendfile() { return useSendfile; }
+
+
+    /**
      * Number of keepalive sockets.
      */
     protected int keepAliveCount = 0;
@@ -546,7 +554,7 @@ public class AprEndpoint {
         if (tcpNoDelay)
             Socket.optSet(socket, Socket.APR_TCP_NODELAY, (tcpNoDelay ? 1 : 0));
         if (soTimeout > 0)
-            Socket.timeoutSet(socket, soTimeout);
+            Socket.timeoutSet(socket, soTimeout * 1000);
     }
 
 

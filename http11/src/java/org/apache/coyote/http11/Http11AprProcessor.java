@@ -158,6 +158,12 @@ public class Http11AprProcessor implements ActionHook {
 
 
     /**
+     * Sendfile data.
+     */
+    protected AprEndpoint.SendfileData sendfileData = null;
+
+
+    /**
      * Content delimitator for the request (if false, the connection will
      * be closed at the end of the request).
      */
@@ -753,7 +759,7 @@ public class Http11AprProcessor implements ActionHook {
             // Parsing the request header
             try {
                 if( !disableUploadTimeout && keptAlive && soTimeout > 0 ) {
-                    Socket.timeoutSet(socket, soTimeout);
+                    Socket.timeoutSet(socket, soTimeout * 1000);
                 }
                 if (!inputBuffer.parseRequestLine()) {
                     // This means that no data is available right now
@@ -769,7 +775,7 @@ public class Http11AprProcessor implements ActionHook {
                 thrA.setParam(endpoint, request.requestURI());
                 keptAlive = true;
                 if (!disableUploadTimeout) {
-                    Socket.timeoutSet(socket, timeout);
+                    Socket.timeoutSet(socket, timeout * 1000);
                 }
                 inputBuffer.parseHeaders();
             } catch (IOException e) {
@@ -864,6 +870,13 @@ public class Http11AprProcessor implements ActionHook {
             inputBuffer.nextRequest();
             outputBuffer.nextRequest();
 
+            // Do sendfile as needed: add socket to sendfile and end
+            if (sendfileData != null) {
+                keepAlive = false;
+                sendfileData.pool = pool;
+                endpoint.getSendfile().add(socket, sendfileData);
+            }
+            
         }
 
         rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
@@ -1141,6 +1154,7 @@ public class Http11AprProcessor implements ActionHook {
         http09 = false;
         contentDelimitation = false;
         expectation = false;
+        sendfileData = null;
         if (sslSupport != null) {
             request.scheme().setString("https");
         }
@@ -1307,6 +1321,11 @@ public class Http11AprProcessor implements ActionHook {
         if (!contentDelimitation)
             keepAlive = false;
 
+        // Advertise sendfile support through a request attribute
+        if (endpoint.getUseSendfile()) {
+            request.setAttribute("sendfile.support", Boolean.TRUE);
+        }
+        
     }
 
 
@@ -1483,6 +1502,19 @@ public class Http11AprProcessor implements ActionHook {
             contentDelimitation = true;
         }
 
+        // Sendfile support
+        String fileName = (String) request.getAttribute("sendfile.filename");
+        if (fileName != null) {
+            // No entity body sent here
+            outputBuffer.addActiveFilter
+                (outputFilters[Constants.VOID_FILTER]);
+            contentDelimitation = true;
+            sendfileData = new AprEndpoint.SendfileData();
+            sendfileData.fileName = fileName;
+            sendfileData.start = ((Long) request.getAttribute("sendfile.start")).longValue();
+            sendfileData.end = ((Long) request.getAttribute("sendfile.end")).longValue();
+        }
+        
         // Check for compression
         boolean useCompression = false;
         if (entityBody && (compressionLevel > 0)) {
