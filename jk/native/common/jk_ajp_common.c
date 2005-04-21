@@ -1605,12 +1605,12 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
 
     JK_TRACE_ENTER(l);
 
+    if (is_error)
+        *is_error = JK_HTTP_SERVER_ERROR;
+
     if (e && e->endpoint_private && s && is_error) {
         ajp_endpoint_t *p = e->endpoint_private;
         op->request = jk_b_new(&(p->pool));
-        /* Presume there will be no errors */
-        *is_error = JK_HTTP_OK;
-
         jk_b_set_buffer_size(op->request, DEF_BUFFER_SZ);
         jk_b_reset(op->request);
 
@@ -1674,6 +1674,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
 
                 err = ajp_get_reply(e, s, l, p, op);
                 if (err == JK_TRUE) {
+                    *is_error = JK_HTTP_OK;
                     /* Done with the request */
                     JK_TRACE_EXIT(l);
                     return JK_TRUE;
@@ -1686,7 +1687,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                      * operation is no more recoverable
                      */
                     if (!op->recoverable) {
-                        *is_error = JK_HTTP_SERVER_ERROR;
+                        *is_error = JK_HTTP_BAD_GATEWAY;
                         jk_log(l, JK_LOG_ERROR,
                                "receiving reply from tomcat failed "
                                "without recovery in send loop %d", i);
@@ -1728,7 +1729,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             /* Get another connection from the pool and try again */
             ajp_next_connection(p, l);
         }
-
+        *is_error = JK_HTTP_SERVER_BUSY;
         /* Log the error only once per failed request. */
         jk_log(l, JK_LOG_ERROR,
                "Error connecting to tomcat. Tomcat is probably not started "

@@ -668,7 +668,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 jk_log(l, JK_LOG_ERROR,
                        "All tomcat instances failed, no more workers left");
                 JK_TRACE_EXIT(l);
-                *is_error = JK_HTTP_SERVER_ERROR;
+                *is_error = JK_HTTP_SERVER_BUSY;
                 return JK_FALSE;
             }
             --num_of_workers;
@@ -677,7 +677,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         jk_log(l, JK_LOG_INFO,
                "All tomcat instances are busy or in error state");
         JK_TRACE_EXIT(l);
-        /* Set error to Server busy */
+        /* Set error to Timeout */
         *is_error = JK_HTTP_SERVER_BUSY;
         return JK_FALSE;
     }
