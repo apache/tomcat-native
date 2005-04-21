@@ -621,7 +621,7 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
         if (d->header_names && d->header_values) {
             unsigned i;
             for (i = 0; i < d->num_headers; i++) {
-                unsigned short name = jk_b_pget_int(msg, jk_b_get_pos(msg));
+                unsigned short name = jk_b_pget_int(msg, msg->pos);
 
                 if ((name & 0XFF00) == 0XA000) {
                     jk_b_get_int(msg);
@@ -910,9 +910,9 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
         return JK_FATAL_ERROR;
     }
 
-    if ((rc = jk_tcp_socket_sendfull(ae->sd, jk_b_get_buff(msg),
-                                     jk_b_get_len(msg))) > 0) {
-        ae->endpoint.wr += jk_b_get_len(msg);
+    if ((rc = jk_tcp_socket_sendfull(ae->sd, msg->buf,
+                                     msg->len)) > 0) {
+        ae->endpoint.wr += msg->len;
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
@@ -997,19 +997,19 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     msglen = ((head[2] & 0xff) << 8);
     msglen += (head[3] & 0xFF);
 
-    if (msglen > jk_b_get_size(msg)) {
+    if (msglen > msg->maxlen) {
         jk_log(l, JK_LOG_ERROR,
                "wrong message size %d %d from %s",
-               msglen, jk_b_get_size(msg),
+               msglen, msg->maxlen,
                jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
-    jk_b_set_len(msg, msglen);
-    jk_b_set_pos(msg, 0);
+    msg->len = msglen;
+    msg->pos = 0;
 
-    rc = jk_tcp_socket_recvfull(ae->sd, jk_b_get_buff(msg), msglen);
+    rc = jk_tcp_socket_recvfull(ae->sd, msg->buf, msglen);
     if (rc < 0) {
         jk_log(l, JK_LOG_ERROR,
                "ERROR: can't receive the response message from tomcat, "
@@ -1089,7 +1089,7 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t * ae,
                                   jk_ws_service_t *r,
                                   jk_msg_buf_t *msg, int len, jk_logger_t *l)
 {
-    unsigned char *read_buf = jk_b_get_buff(msg);
+    unsigned char *read_buf = msg->buf;
 
     JK_TRACE_ENTER(l);
     jk_b_reset(msg);
@@ -1125,7 +1125,7 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t * ae,
         }
     }
 
-    jk_b_set_len(msg, jk_b_get_len(msg) + len);
+    msg->len += len;
 
     JK_TRACE_EXIT(l);
     return len;
@@ -1241,7 +1241,7 @@ static int ajp_send_request(jk_endpoint_t *e,
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "request body to send %d - request body to resend %d",
-               ae->left_bytes_to_send, jk_b_get_len(op->reply) - AJP_HEADER_LEN);
+               ae->left_bytes_to_send, op->reply->len - AJP_HEADER_LEN);
 
     /*
      * POST recovery job is done here and will work when data to 
@@ -1252,7 +1252,7 @@ static int ajp_send_request(jk_endpoint_t *e,
 
     /* Did we have something to resend (ie the op-post has been feeded previously */
 
-    postlen = jk_b_get_len(op->post);
+    postlen = op->post->len;
     if (postlen > AJP_HEADER_LEN) {
         if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
             jk_log(l, JK_LOG_ERROR, "Error resending request body (%d)",
@@ -1268,7 +1268,7 @@ static int ajp_send_request(jk_endpoint_t *e,
     }
     else if (s->reco_status == RECO_FILLED) {
         /* Recovery in LB MODE */
-        postlen = jk_b_get_len(s->reco_buf);
+        postlen = s->reco_buf->len;
 
         if (postlen > AJP_HEADER_LEN) {
             if (ajp_connection_tcp_send_message(ae, s->reco_buf, l) != JK_TRUE) {
@@ -1361,7 +1361,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
     case JK_AJP13_SEND_BODY_CHUNK:
         {
             unsigned len = (unsigned)jk_b_get_int(msg);
-            if (!r->write(r, jk_b_get_buff(msg) + jk_b_get_pos(msg), len)) {
+            if (!r->write(r, msg->buf + msg->pos, len)) {
                 jk_log(l, JK_LOG_INFO,
                        "Connection aborted or network problems");
                 JK_TRACE_EXIT(l);

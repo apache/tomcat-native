@@ -337,7 +337,7 @@ int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t *msg,
     /*
      * UNHANDLED MESSAGE SIZE
      */
-    if (jk_b_append_int(msg, (unsigned short)jk_b_get_len(unk))) {
+    if (jk_b_append_int(msg, (unsigned short)unk->len)) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -345,7 +345,7 @@ int ajp14_marshal_unknown_packet_into_msgb(jk_msg_buf_t *msg,
      * UNHANDLED MESSAGE (Question : Did we have to send all the message or only part of)
      *                                       (           ie: only 1k max                                                                )
      */
-    if (jk_b_append_bytes(msg, jk_b_get_buff(unk), jk_b_get_len(unk))) {
+    if (jk_b_append_bytes(msg, unk->buf, unk->len)) {
         jk_log(l, JK_LOG_ERROR,
                "failed appending the UNHANDLED MESSAGE");
         JK_TRACE_EXIT(l);

@@ -48,6 +48,15 @@ RPC details:
  */
 
 typedef struct jk_msg_buf_t jk_msg_buf_t;
+struct jk_msg_buf_t
+{
+    jk_pool_t *pool;
+    unsigned char *buf;
+    int pos;
+    int len;
+    int maxlen;
+};
+
 
 /* -------------------- Setup routines -------------------- */
 
@@ -73,32 +82,6 @@ void jk_b_end(jk_msg_buf_t *msg, int protoh);
  * Recycle the buffer - z for a new invocation 
  */
 void jk_b_reset(jk_msg_buf_t *msg);
-
-/*
- * Return the buffer body 
- */
-unsigned char *jk_b_get_buff(jk_msg_buf_t *msg);
-
-/* 
- * Return the current reading position
- */
-unsigned int jk_b_get_pos(jk_msg_buf_t *msg);
-
-/*
- * Buffer size 
- */
-int jk_b_get_size(jk_msg_buf_t *msg);
-
-void jk_b_set_len(jk_msg_buf_t *msg, int len);
-
-void jk_b_set_pos(jk_msg_buf_t *msg, int pos);
-
-/*
- * Get the  message length for incomming buffers
- *   or the current length for outgoing
- */
-unsigned int jk_b_get_len(jk_msg_buf_t *msg);
-
 
 /* -------------------- Real encoding -------------------- */
 

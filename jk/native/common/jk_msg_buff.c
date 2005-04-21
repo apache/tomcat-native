@@ -29,16 +29,6 @@
 #include "jk_msg_buff.h"
 #include "jk_logger.h"
 
-struct jk_msg_buf_t
-{
-    jk_pool_t *pool;
-
-    unsigned char *buf;
-    int pos;
-    int len;
-    int maxlen;
-};
-
 static char *jk_HEX = "0123456789ABCDEFX";
 
 /*
@@ -144,36 +134,6 @@ int jk_b_set_buffer_size(jk_msg_buf_t *msg, int buffSize)
 
     jk_b_set_buffer(msg, data, buffSize);
     return 0;
-}
-
-unsigned char *jk_b_get_buff(jk_msg_buf_t *msg)
-{
-    return msg->buf;
-}
-
-unsigned int jk_b_get_pos(jk_msg_buf_t *msg)
-{
-    return msg->pos;
-}
-
-void jk_b_set_pos(jk_msg_buf_t *msg, int pos)
-{
-    msg->pos = pos;
-}
-
-unsigned int jk_b_get_len(jk_msg_buf_t *msg)
-{
-    return msg->len;
-}
-
-void jk_b_set_len(jk_msg_buf_t *msg, int len)
-{
-    msg->len = len;
-}
-
-int jk_b_get_size(jk_msg_buf_t *msg)
-{
-    return msg->maxlen;
 }
 
 #ifdef AS400
