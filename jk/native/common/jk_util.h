@@ -126,6 +126,8 @@ int jk_is_path_poperty(const char *prp_name);
 
 int jk_is_cmd_line_poperty(const char *prp_name);
 
+int jk_is_unique_property(const char *prp_name);
+
 int jk_get_worker_stdout(jk_map_t *m, const char *wname, const char **stdout_name);
 
 int jk_get_worker_stderr(jk_map_t *m, const char *wname, const char **stderr_name);

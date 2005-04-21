@@ -32,7 +32,7 @@
 #include "jk_shm.h"
 
 #define CAPACITY_INC_SIZE (50)
-#define LENGTH_OF_LINE    (1024)
+#define LENGTH_OF_LINE    (8192)
 
 #ifdef AS400
 #define CASE_MASK 0xbfbfbfbf
@@ -233,7 +233,7 @@ double jk_map_get_double(jk_map_t *m, const char *name, double def)
     sprintf(buf, "%f", def);
     rc = jk_map_get_string(m, name, buf);
 
-    return atof(rc); 
+    return atof(rc);
 }
 
 int jk_map_get_bool(jk_map_t *m, const char *name, int def)
@@ -242,7 +242,7 @@ int jk_map_get_bool(jk_map_t *m, const char *name, int def)
     size_t len;
     const char *rc;
     int rv = 0;
-    
+
     sprintf(buf, "%d", def);
     rc = jk_map_get_string(m, name, buf);
 
@@ -280,7 +280,7 @@ char **jk_map_get_string_list(jk_map_t *m,
         }
 
         /*
-         * GS, in addition to VG's patch, we now need to 
+         * GS, in addition to VG's patch, we now need to
          * strtok also by a "*"
          */
 #if defined(AS400) || defined(_REENTRANT)
@@ -355,7 +355,7 @@ int jk_map_read_property(jk_map_t *m, const char *str)
 
     if (strlen(str) > LENGTH_OF_LINE)
         return JK_FALSE;
-    
+
     strcpy(prp, str);
     if (trim(prp)) {
         char *v = strchr(prp, '=');
@@ -367,22 +367,17 @@ int jk_map_read_property(jk_map_t *m, const char *str)
             if (strlen(v) && strlen(prp)) {
                 const char *oldv = jk_map_get_string(m, prp, NULL);
                 v = jk_map_replace_properties(v, m);
-                if (oldv) {
+                if (oldv && jk_is_unique_property(prp) == JK_FALSE) {
                     char *tmpv = jk_pool_alloc(&m->p,
-                        strlen(v) +
-                        strlen(oldv) + 3);
+                                       strlen(v) + strlen(oldv) + 3);
                     if (tmpv) {
                         char sep = '*';
-                        if (jk_is_path_poperty(prp)) {
+                        if (jk_is_path_poperty(prp))
                             sep = PATH_SEPERATOR;
-                        }
-                        else if (jk_is_cmd_line_poperty(prp)) {
+                        else if (jk_is_cmd_line_poperty(prp))
                             sep = ' ';
-                        }
-                        else if (!stricmp(prp, "worker.list")) {
+                        else if (!stricmp(prp, "worker.list"))
                             sep = ',';
-                        }
-
                         sprintf(tmpv, "%s%c%s", oldv, sep, v);
                     }
                     v = tmpv;
@@ -485,7 +480,7 @@ static void trim_prp_comment(char *prp)
 static size_t trim(char *s)
 {
     size_t i;
-    
+
     /* check for empty strings */
     if (!(i = strlen(s)))
         return 0;
@@ -540,7 +535,7 @@ static int map_realloc(jk_map_t *m)
 
 /**
  *  Replace $(property) in value.
- * 
+ *
  */
 char *jk_map_replace_properties(const char *value, jk_map_t *m)
 {
