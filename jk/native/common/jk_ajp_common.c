@@ -847,7 +847,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
             if (ae->worker->cache_timeout > 0 || ae->worker->recycle_timeout > 0)
                 ae->last_access = time(NULL);
             if (ae->worker->socket_timeout > 0) {
-                if (!jk_is_socket_connected(ae->sd, ae->worker->socket_timeout)) {
+                if (!jk_is_socket_connected(ae->sd)) {
                     jk_log(l, JK_LOG_INFO,
                            "Socket is not connected any more (errno=%d)", errno);
                     jk_close_socket(ae->sd);
@@ -1160,7 +1160,7 @@ static int ajp_send_request(jk_endpoint_t *e,
     while ((ae->sd > 0)) {
         err = 0;
         if (ae->worker->socket_timeout) {
-            if (!jk_is_socket_connected(ae->sd, ae->worker->socket_timeout)) {
+            if (!jk_is_socket_connected(ae->sd)) {
                 jk_log(l, JK_LOG_INFO,
                        "Socket is not connected any more (errno=%d)", errno);
                 jk_close_socket(ae->sd);

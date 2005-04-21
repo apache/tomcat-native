@@ -548,18 +548,12 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
     return buf;
 }
 
-int jk_is_socket_connected(int sd, int timeout)
+int jk_is_socket_connected(int sd)
 {
     fd_set fd;
     struct timeval tv;
     int rc;
     
-    /* socket_timeout is unused in select implemention
-     * If we change this to non blocking read, then we
-     * will use the timeout parameter.
-     */
-     timeout = 0;
-     
     FD_ZERO(&fd);
     FD_SET(sd, &fd);
 

@@ -51,7 +51,7 @@ int jk_tcp_socket_recvfull(int sd, unsigned char *b, int len);
 
 char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf);
 
-int jk_is_socket_connected(int sd, int timeout);
+int jk_is_socket_connected(int sd);
 
 #ifdef __cplusplus
 }
