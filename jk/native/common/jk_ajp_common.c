@@ -729,19 +729,20 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
     JK_ENTER_CS(&aw->cs, rc);
     if (rc) {
         unsigned int i;
-        /* Close existing endpoint socket */
+        /* Mark existing endpoint socket as closed */
         ae->sd = -1;
         for (i = 0; i < aw->ep_cache_sz; i++) {
             /* Find cache slot with usable socket */
-            if (aw->ep_cache[i] && aw->ep_cache[i]->sd > 0) {
+            if (aw->ep_cache[i] && aw->ep_cache[i]->sd != -1) {
                 ae->sd = aw->ep_cache[i]->sd;
-                 aw->ep_cache[i]->sd = -1;
+                aw->ep_cache[i]->sd = -1;
                 break;
             }
         }
         JK_LEAVE_CS(&aw->cs, rc);
+        /* Close previous socket */
+        jk_close_socket(sock);
     }
-    jk_close_socket(sock);
 }
 
 /*
