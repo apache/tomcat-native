@@ -1148,7 +1148,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                             ajp_endpoint_t * ae, ajp_operation_t * op)
 {
     int err = 0;
-    int postlen, rc = 0;
+    int postlen;
 
     JK_TRACE_ENTER(l);
     /* Up to now, we can recover */
@@ -1158,6 +1158,7 @@ static int ajp_send_request(jk_endpoint_t *e,
      * First try to reuse open connections...
      */
     while ((ae->sd > 0)) {
+        int rc = 0;
         err = 0;
         if (ae->worker->socket_timeout) {
             if (!jk_is_socket_connected(ae->sd)) {
