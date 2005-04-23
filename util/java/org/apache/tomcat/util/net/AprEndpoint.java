@@ -1064,14 +1064,13 @@ public class AprEndpoint {
                 // Set the socket to nonblocking mode
                 Socket.optSet(socket, Socket.APR_SO_NONBLOCK, 1);
                 while (true) {
-                    int nw = Socket.sendfile(socket, data.fd, null, null,
-                                             data.pos, (int)data.end, 0);
+                    long nw = Socket.sendfile(socket, data.fd, null, null,
+                                             data.pos, data.end, 0);
                     if (nw < 0) {
-                        if (!Status.APR_STATUS_IS_EAGAIN(-nw)) {
+                        if (!Status.APR_STATUS_IS_EAGAIN((int) -nw)) {
                             Poll.destroy(data.pool);
                             return false;
-                        }
-                        else {
+                        } else {
                             // Break the loop and add the socket to poller.
                             break;    
                         }
@@ -1165,9 +1164,9 @@ public class AprEndpoint {
                                 continue;
                             }
                             // Write some data using sendfile
-                            int nw = Socket.sendfile(desc[n*4+1], state.fd,
+                            long nw = Socket.sendfile(desc[n*4+1], state.fd,
                                                      null, null, state.pos,
-                                                     (int) (state.end - state.pos), 0);
+                                                     state.end - state.pos, 0);
                             if (nw < 0) {
                                 // Close socket and clear pool
                                 remove(desc[n*4+1]);
