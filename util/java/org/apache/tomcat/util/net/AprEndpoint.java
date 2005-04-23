@@ -839,7 +839,6 @@ public class AprEndpoint {
                     } else if (rv < 0) {
                         // FIXME: Log with WARN at least
                         // Handle poll critical failure
-                        Pool.clear(serverSockPool);
                         synchronized (this) {
                             destroy();
                             init();
@@ -1023,7 +1022,6 @@ public class AprEndpoint {
         protected long pool = 0;
         protected long[] desc;
         protected HashMap sendfileData;
-
         protected void init() {
             pool = Pool.create(serverSockPool);
             try {
@@ -1063,12 +1061,36 @@ public class AprEndpoint {
                      | File.APR_FOPEN_SENDFILE_ENABLED | File.APR_FOPEN_BINARY,
                      0, data.fdpool);
                 data.pos = data.start;
+                // Set the socket to nonblocking mode
+                Socket.optSet(socket, Socket.APR_SO_NONBLOCK, 1);
+                int nw = Socket.sendfile(socket, data.fd, null, null,
+                                         data.pos, (int)data.end, 0);
+                if (nw < 0) {
+                    if (!Status.APR_STATUS_IS_EAGAIN(-nw)) {
+                        Poll.destroy(data.pool);
+                        return;
+                    }
+                }
+                else {
+                    data.pos = data.pos + nw;
+                    if (data.pos >= data.end) {
+                        // Entire file has been send
+                        Poll.destroy(data.pool);
+                        return;
+                    }
+                    else {
+                        //FIXME: Ether EAGAIN of full data should be returned
+                        Poll.destroy(data.pool);
+                        return;
+                    }
+                }
             } catch (Error e) {
                 // FIXME: more appropriate logging
                 e.printStackTrace();
                 return;
             }
             synchronized (this) {
+                // Add socket to the poller
                 sendfileData.put(new Long(socket), data);
                 int rv = Poll.add(sendfilePollset, socket, 0, Poll.APR_POLLOUT);
                 if (rv == Status.APR_SUCCESS) {
@@ -1088,6 +1110,8 @@ public class AprEndpoint {
                 if (rv == Status.APR_SUCCESS) {
                     sendfileCount--;
                 }
+                // Set the socket to blocking mode again
+                Socket.optSet(socket, Socket.APR_SO_NONBLOCK, 0);
                 sendfileData.remove(new Long(socket));
             }
         }
@@ -1138,18 +1162,18 @@ public class AprEndpoint {
                                 continue;
                             }
                             // Write some data using sendfile
-                            int nw = Socket.sendfilet(desc[n*4+1], state.fd,
-                                                      null, null, state.pos,
-                                                      (int) (state.end - state.pos), 0, 0);
+                            int nw = Socket.sendfile(desc[n*4+1], state.fd,
+                                                     null, null, state.pos,
+                                                     (int) (state.end - state.pos), 0);
                             if (nw < 0) {
                                 // Close socket and clear pool
                                 remove(desc[n*4+1]);
-                                // Destroy file descriptor pool, which should close the file
-                                Pool.destroy(state.fdpool);
                                 // Close the socket, as the reponse would be incomplete
+                                // This will close the file too.
                                 Pool.destroy(state.pool);
                                 continue;
                             }
+
                             state.pos = state.pos + nw;
                             if (state.pos >= state.end) {
                                 remove(desc[n*4+1]);
@@ -1163,7 +1187,6 @@ public class AprEndpoint {
                     } else if (rv < 0) {
                         // Handle poll critical failure
                         // FIXME: Log with WARN at least
-                        Pool.clear(serverSockPool);
                         synchronized (this) {
                             destroy();
                             init();
@@ -1173,7 +1196,6 @@ public class AprEndpoint {
                     // FIXME: Proper logging
                     t.printStackTrace();
                 }
-
             }
 
             // Notify the threadStop() method that we have shut ourselves down
