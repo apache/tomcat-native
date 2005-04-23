@@ -1063,25 +1063,26 @@ public class AprEndpoint {
                 data.pos = data.start;
                 // Set the socket to nonblocking mode
                 Socket.optSet(socket, Socket.APR_SO_NONBLOCK, 1);
-                int nw = Socket.sendfile(socket, data.fd, null, null,
-                                         data.pos, (int)data.end, 0);
-                if (nw < 0) {
-                    if (!Status.APR_STATUS_IS_EAGAIN(-nw)) {
-                        Poll.destroy(data.pool);
-                        return;
-                    }
-                }
-                else {
-                    data.pos = data.pos + nw;
-                    if (data.pos >= data.end) {
-                        // Entire file has been send
-                        Poll.destroy(data.pool);
-                        return;
+                while (true) {
+                    int nw = Socket.sendfile(socket, data.fd, null, null,
+                                             data.pos, (int)data.end, 0);
+                    if (nw < 0) {
+                        if (!Status.APR_STATUS_IS_EAGAIN(-nw)) {
+                            Poll.destroy(data.pool);
+                            return;
+                        }
+                        else {
+                            // Break the loop and add the socket to poller.
+                            break;    
+                        }
                     }
                     else {
-                        //FIXME: Ether EAGAIN of full data should be returned
-                        Poll.destroy(data.pool);
-                        return;
+                        data.pos = data.pos + nw;
+                        if (data.pos >= data.end) {
+                            // Entire file has been send
+                            Poll.destroy(data.pool);
+                            return;
+                        }
                     }
                 }
             } catch (Error e) {
