@@ -152,6 +152,11 @@ struct isapi_private_data_t
     LPEXTENSION_CONTROL_BLOCK lpEcb;
 };
 
+typedef struct isapi_log_data_t isapi_log_data_t;
+struct isapi_log_data_t {
+    char uri[INTERNET_MAX_URL_LENGTH];
+    char query[INTERNET_MAX_URL_LENGTH];
+};
 
 static int JK_METHOD start_response(jk_ws_service_t *s,
                                     int status,
@@ -649,6 +654,7 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
                     SF_NOTIFY_SECURE_PORT |
                     SF_NOTIFY_NONSECURE_PORT |
                     SF_NOTIFY_PREPROC_HEADERS |
+                    SF_NOTIFY_LOG |
                     SF_NOTIFY_AUTH_COMPLETE;
 
     strcpy(pVer->lpszFilterDesc, VERSION_STRING);
@@ -901,12 +907,34 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     }
                     SetHeader(pfc, "Translate:", NULL);
                 }
+                if (!pfc->pFilterContext) {
+                    isapi_log_data_t *ld = (isapi_log_data_t *)pfc->AllocMem(pfc, sizeof(isapi_log_data_t), 0);
+                    if (!ld) {
+                        jk_log(logger, JK_LOG_ERROR,
+                               "error while allocating memory");
+                        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                        return SF_STATUS_REQ_ERROR;
+                    }
+                    memset(ld, 0, sizeof(isapi_log_data_t));
+                    strcpy(ld->uri, forwardURI);
+                    if (query && strlen(query) > 0)
+                        strcpy(ld->query, query);
+                    pfc->pFilterContext = ld;
+                }
             }
             else {
                 if (JK_IS_DEBUG_LEVEL(logger))
                     jk_log(logger, JK_LOG_DEBUG,
                            "[%s] is not a servlet url", uri);
             }
+        }
+    }
+    else if (is_inited && (dwNotificationType == SF_NOTIFY_LOG)) {
+        if (pfc->pFilterContext) {
+            isapi_log_data_t *ld = (isapi_log_data_t *)pfc->pFilterContext;
+            HTTP_FILTER_LOG  *pl = (HTTP_FILTER_LOG *)pvNotification;
+            pl->pszTarget = ld->uri;
+            pl->pszParameters = ld->query;
         }
     }
     return SF_STATUS_REQ_NEXT_NOTIFICATION;
