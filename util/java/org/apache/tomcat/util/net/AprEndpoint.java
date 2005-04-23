@@ -1052,7 +1052,7 @@ public class AprEndpoint {
             Pool.destroy(pool);
         }
 
-        public void add(long socket, SendfileData data) {
+        public boolean add(long socket, SendfileData data) {
             // Initialize fd from data given
             try {
                 data.fdpool = Pool.create(data.pool);
@@ -1069,26 +1069,27 @@ public class AprEndpoint {
                     if (nw < 0) {
                         if (!Status.APR_STATUS_IS_EAGAIN(-nw)) {
                             Poll.destroy(data.pool);
-                            return;
+                            return false;
                         }
                         else {
                             // Break the loop and add the socket to poller.
                             break;    
                         }
-                    }
-                    else {
+                    } else {
                         data.pos = data.pos + nw;
                         if (data.pos >= data.end) {
                             // Entire file has been send
-                            Poll.destroy(data.pool);
-                            return;
+                            Poll.destroy(data.fdpool);
+                            // Set back socket to blocking mode
+                            Socket.optSet(socket, Socket.APR_SO_NONBLOCK, 0);
+                            return true;
                         }
                     }
                 }
             } catch (Error e) {
                 // FIXME: more appropriate logging
                 e.printStackTrace();
-                return;
+                return false;
             }
             synchronized (this) {
                 // Add socket to the poller
@@ -1103,6 +1104,7 @@ public class AprEndpoint {
                     Pool.destroy(data.pool);
                 }
             }
+            return false;
         }
 
         public void remove(long socket) {

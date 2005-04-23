@@ -872,9 +872,10 @@ public class Http11AprProcessor implements ActionHook {
 
             // Do sendfile as needed: add socket to sendfile and end
             if (sendfileData != null) {
-                keepAlive = false;
                 sendfileData.pool = pool;
-                endpoint.getSendfile().add(socket, sendfileData);
+                if (!endpoint.getSendfile().add(socket, sendfileData)) {
+                    keepAlive = false;
+                }
             }
             
         }
