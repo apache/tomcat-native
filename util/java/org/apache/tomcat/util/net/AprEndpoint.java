@@ -284,7 +284,7 @@ public class AprEndpoint {
     /**
      * Use endfile for sending static files.
      */
-    protected boolean useSendfile = false;
+    protected boolean useSendfile = true;
     public void setUseSendfile(boolean useSendfile) { this.useSendfile = useSendfile; }
     public boolean getUseSendfile() { return useSendfile; }
 
