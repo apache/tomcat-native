@@ -25,16 +25,37 @@
   <br />
   <subsection name="Native">
     <changelog>
-      <update>
-        Add --enable-prefork to the documentation (pero)
+      <update>Add unique directives checking. The directives if
+      unique are now overwritten instead concatenated. (mturk)
+      </update>
+      <update>Allow multiple worker.list directives. (mturk)
       </update>
       <fix>
-      <bug>34358</bug>: Fix the load balance worker load balance method.
-      It was not being set from the worker.properties file
+      <bug>34577</bug>: For IIS log original request instead loging
+      the request for ISAPI extension. (mturk)
       </fix>
       <fix>
-      <bug>34357</bug>: Fix a segfault in Apache 2 when using JKAutoAlias.
+      <bug>34558</bug>: Make sure the returned status codes are the same
+      for ajp and lb workers. (mturk)
       </fix>
+      <fix>
+      <bug>34423</bug>: Use APR_USE_FLOCK_SERIALIZE for setting log lock
+      on platforms like FreeBSD. Patch provided by Allan Saddi. (mturk)
+      </fix>
+      <fix>
+      <bug>33843</bug>: Fix obtaining LDFLAGS that were used for building
+      Apache HTTPD. Patch provided by Beat Kneubuehl. (mturk)
+      </fix>
+      <fix>
+      <bug>34358</bug>: Enable load balancer method configuration. (glenn)
+      </fix>
+      <fix>
+      <bug>34357</bug>: In some situations Apache 2 mod_jk could segfault
+      when the JkAutoAlias directive is used. (glenn)
+      </fix>
+      <update>
+        Add --enable-prefork to the documentation (pero)
+      </update>      
     </changelog>
   </subsection>
 </section>
@@ -63,7 +84,7 @@
       <bug>32696</bug>: Return 404 instead 403 when WEB-INF is requested
       to comply with Servlet spec. (mturk)
       </fix>
-      <update>Added ANT task for managing jkstatus. (pero)    
+      <update>Added ANT task for managing jkstatus. (pero)
       </update>
       <update>
       If socket_timeout is set, check if socket is alive before
@@ -138,10 +159,10 @@
       threads per child process. (mturk).
       </update>
       <fix>
-      Fix Apache content-length header parsing using case insensitive compare. (billbarker) 
+      Fix Apache content-length header parsing using case insensitive compare. (billbarker)
       </fix>
       <fix>
-      Fix parsing AJP headers using case insensitive compare. (mturk) 
+      Fix parsing AJP headers using case insensitive compare. (mturk)
       </fix>
       <fix>
       Use infinite socket timeout if socket_timeout is set to zero or less then zero. (mturk)
@@ -192,7 +213,7 @@
       </update>
       <update>
       Added wildchar match uri mappings. One can now use JkMount to
-      map /app/*/servlet/* or /app?/*/*.jsp. (mturk)      
+      map /app/*/servlet/* or /app?/*/*.jsp. (mturk)
       </update>
       <update>
       Rewrite the logging by adding Trace options. (mturk)
@@ -226,7 +247,7 @@
 <p>JK2 has been put in maintainer mode and no further development will take place.
 The reason for shutting down JK2 development was the lack of developers interest.
 Other reason was lack of users interest in adopting JK2, caused by configuration
-complexity when compared to JK. 
+complexity when compared to JK.
 </p>
 </section>
 
