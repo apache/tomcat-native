@@ -279,6 +279,7 @@ Instead it is responsible for the load balancer management.
 <directives>
 <directive name="css" default="" required="false">
 Specifies the url for cascading stylesheet to use.
+</directive>
 </directives>
 </subsection>
 
