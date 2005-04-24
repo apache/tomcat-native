@@ -161,6 +161,18 @@ static void close_workers(lb_worker_t * p, int num_of_workers, jk_logger_t *l)
     }
 }
 
+static int JK_METHOD maintain_workers(jk_worker_t *p, jk_logger_t *l)
+{
+    unsigned int i = 0;
+    lb_worker_t *lb = (lb_worker_t *)p->worker_private;
+    for (i = 0; i < lb->num_of_workers; i++) {
+        if (lb->lb_workers[i].w->maintain) {
+            lb->lb_workers[i].w->maintain(lb->lb_workers[i].w, l);
+        }
+    }
+    return JK_TRUE;
+}
+
 static void retry_worker(worker_record_t *w,
                          int recover_wait_time,
                          jk_logger_t *l)
@@ -609,7 +621,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rec->s->errors++;
                     rec->s->in_error_state = JK_TRUE;
                     rec->s->in_recovering = JK_FALSE;
-                    rec->s->error_time = time(0);
+                    rec->s->error_time = time(NULL);
 
                     if (is_service_error > JK_HTTP_OK) {
                         /*
@@ -911,6 +923,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->worker.init = init;
         private_data->worker.get_endpoint = get_endpoint;
         private_data->worker.destroy = destroy;
+        private_data->worker.maintain = maintain_workers;
         private_data->worker.retries = JK_RETRIES;
         private_data->s->recover_wait_time = WAIT_BEFORE_RECOVER;
         *w = &private_data->worker;

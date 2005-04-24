@@ -86,7 +86,7 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
         JK_TRACE_EXIT(l);
         return 0;
     }
-    
+
     aw = (ajp_worker_t *) calloc(1, sizeof(ajp_worker_t));
     if (!aw) {
         jk_log(l, JK_LOG_ERROR,
@@ -108,6 +108,7 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
     aw->worker.init = init;
     aw->worker.get_endpoint = get_endpoint;
     aw->worker.destroy = destroy;
+    aw->worker.maintain = ajp_maintain;
     aw->worker.retries = JK_RETRIES;
 
     aw->logon = NULL;           /* No Logon on AJP13 */

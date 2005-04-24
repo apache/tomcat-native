@@ -133,10 +133,10 @@ static int handle_discovery(ajp_endpoint_t * ae,
     return JK_TRUE;
 }
 
-/* 
- * AJP14 Logon Phase 
+/*
+ * AJP14 Logon Phase
  *
- * INIT + REPLY / NEGO + REPLY 
+ * INIT + REPLY / NEGO + REPLY
  */
 
 static int handle_logon(ajp_endpoint_t * ae,
@@ -423,6 +423,7 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
     aw->worker.init = init;
     aw->worker.get_endpoint = get_endpoint;
     aw->worker.destroy = destroy;
+    aw->worker.maintain = ajp_maintain;
     aw->worker.retries = JK_RETRIES;
 
     aw->logon = logon;          /* LogOn Handler for AJP14 */

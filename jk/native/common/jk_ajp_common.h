@@ -35,7 +35,7 @@ extern "C"
 
 /*
  * Conditional request attributes
- * 
+ *
  */
 #define SC_A_CONTEXT            (unsigned char)1
 #define SC_A_SERVLET_PATH       (unsigned char)2
@@ -56,12 +56,12 @@ extern "C"
  * The list of methods was taken from Section 5.1.1 of RFC 2616,
  * RFC 2518, the ACL IETF draft, and the DeltaV IESG Proposed Standard.
  *          Method        = "OPTIONS"
- *                        | "GET"    
- *                        | "HEAD"   
- *                        | "POST"   
- *                        | "PUT"    
- *                        | "DELETE" 
- *                        | "TRACE"  
+ *                        | "GET"
+ *                        | "HEAD"
+ *                        | "POST"
+ *                        | "PUT"
+ *                        | "DELETE"
+ *                        | "TRACE"
  *                        | "PROPFIND"
  *                        | "PROPPATCH"
  *                        | "MKCOL"
@@ -82,7 +82,7 @@ extern "C"
  *                        | "MERGE"
  *                        | "BASELINE-CONTROL"
  *                        | "MKACTIVITY"
- * 
+ *
  */
 #define SC_M_OPTIONS            (unsigned char)1
 #define SC_M_GET                (unsigned char)2
@@ -116,7 +116,7 @@ extern "C"
 /*
  * Frequent request headers, these headers are coded as numbers
  * instead of strings.
- * 
+ *
  * Accept
  * Accept-Charset
  * Accept-Encoding
@@ -131,7 +131,7 @@ extern "C"
  * Pragma
  * Referer
  * User-Agent
- * 
+ *
  */
 
 #define SC_ACCEPT               (unsigned short)0xA001
@@ -152,7 +152,7 @@ extern "C"
 /*
  * Frequent response headers, these headers are coded as numbers
  * instead of strings.
- * 
+ *
  * Content-Type
  * Content-Language
  * Content-Length
@@ -163,7 +163,7 @@ extern "C"
  * Servlet-Engine
  * Status
  * WWW-Authenticate
- * 
+ *
  */
 
 #define SC_RESP_CONTENT_TYPE        (unsigned short)0xA001
@@ -232,11 +232,11 @@ struct ajp_worker
     const char *name;
     const char *host;
     int port;
-    /* 
+    /*
      * Open connections cache...
      *
      * 1. Critical section object to protect the cache.
-     * 2. Cache size. 
+     * 2. Cache size.
      * 3. An array of "open" endpoints.
      */
     JK_CRIT_SEC cs;
@@ -259,7 +259,7 @@ struct ajp_worker
      * AJP14 will set here its login handler
      */
     int (*logon) (ajp_endpoint_t * ae, jk_logger_t *l);
-    
+
     /* Reclycle inactive connections */
     int recycle_timeout;
     /*
@@ -354,6 +354,8 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
 
 int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
                                    jk_msg_buf_t *msg, jk_logger_t *l);
+
+int JK_METHOD ajp_maintain(jk_worker_t *pThis, jk_logger_t *l);
 
 #ifdef __cplusplus
 }

@@ -16,7 +16,7 @@
 
 /***************************************************************************
  * Description: ajpv1.2 worker, used to call local or remote jserv hosts   *
- *              This worker is deprecated                                  * 
+ *              This worker is deprecated                                  *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  * Based on:    jserv_ajpv12.c from Jserv                                  *
  * Version:     $Revision$                                          *
@@ -254,6 +254,7 @@ int JK_METHOD ajp12_worker_factory(jk_worker_t **w,
                 private_data->worker.init = init;
                 private_data->worker.get_endpoint = get_endpoint;
                 private_data->worker.destroy = destroy;
+                private_data->worker.maintain = NULL;
                 private_data->worker.retries = JK_RETRIES;
 
                 *w = &private_data->worker;

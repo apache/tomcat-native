@@ -37,13 +37,22 @@ static int build_worker_map(jk_map_t *init_data,
 
 /* Global worker list */
 static jk_map_t *worker_map;
+static JK_CRIT_SEC worker_lock;
 
 int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
 {
-
+    int rc;
     JK_TRACE_ENTER(l);
 
     if (!jk_map_alloc(&worker_map)) {
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    JK_INIT_CS(&worker_lock, rc);
+    if (rc == JK_FALSE) {
+        jk_log(l, JK_LOG_ERROR,
+                "creating thread lock errno=%d",
+                errno);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -72,7 +81,9 @@ int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
 
 void wc_close(jk_logger_t *l)
 {
+    int rc;
     JK_TRACE_ENTER(l);
+    JK_DELETE_CS(&worker_lock, rc);
     close_workers(l);
     JK_TRACE_EXIT(l);
 }
@@ -96,7 +107,6 @@ jk_worker_t *wc_get_worker_for_name(const char *name, jk_logger_t *l)
     JK_TRACE_EXIT(l);
     return rc;
 }
-
 
 int wc_create_worker(const char *name,
                      jk_map_t *init_data,
@@ -260,4 +270,40 @@ static worker_factory get_factory_for(const char *type)
     }
 
     return NULL;
+}
+
+void wc_maintain(jk_logger_t *l)
+{
+    static time_t last_maintain = 0;
+    int sz = jk_map_size(worker_map);
+
+    JK_TRACE_ENTER(l);
+
+    /* TODO: make maintatin time configurable
+     * For now use 10 seconds.
+     */
+    if (sz > 0) {
+        int i;
+        time_t now;
+        JK_ENTER_CS(&worker_lock, i);
+        now = time(NULL);
+        if (difftime(now, last_maintain) >= 10) {
+            last_maintain = now;
+            JK_LEAVE_CS(&worker_lock, i);
+            for (i = 0; i < sz; i++) {
+                jk_worker_t *w = jk_map_value_at(worker_map, i);
+                if (w && w->maintain) {
+                    if (JK_IS_DEBUG_LEVEL(l))
+                        jk_log(l, JK_LOG_DEBUG,
+                               "Maintaining worker %s",
+                               jk_map_name_at(worker_map, i));
+                    w->maintain(w, l);
+                }
+            }
+        }
+        else {
+            JK_LEAVE_CS(&worker_lock, i);
+        }
+    }
+    JK_TRACE_EXIT(l);
 }

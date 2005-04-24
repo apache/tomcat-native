@@ -16,7 +16,7 @@
 
 /***************************************************************************
  * Description: Workers controller header file                             *
- * Author:      Gal Shachor <shachor@il.ibm.com>                           * 
+ * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
@@ -44,6 +44,7 @@ int wc_create_worker(const char *name,
                      jk_worker_t **rc,
                      jk_worker_env_t *we, jk_logger_t *l);
 
+void wc_maintain(jk_logger_t *l);
 
 #ifdef __cplusplus
 }
