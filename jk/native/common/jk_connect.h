@@ -45,6 +45,8 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
 
 int jk_close_socket(int s);
 
+int jk_shutdown_socket(int s);
+
 int jk_tcp_socket_sendfull(int sd, const unsigned char *b, int len);
 
 int jk_tcp_socket_recvfull(int sd, unsigned char *b, int len);

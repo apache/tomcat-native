@@ -460,6 +460,60 @@ int jk_close_socket(int s)
     return -1;
 }
 
+#ifndef MAX_SECS_TO_LINGER
+#define MAX_SECS_TO_LINGER 30
+#endif
+#define SECONDS_TO_LINGER  2
+
+int jk_shutdown_socket(int s)
+{
+    unsigned char dummy[512];
+    int nbytes;
+    int ttl = 0;
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+    int tmout = SECONDS_TO_LINGER * 1000;
+    if (s == INVALID_SOCKET)
+#else
+    struct timeval tv;
+    if (s < 0)
+#endif
+        return -1;
+
+    /* Shut down the socket for write, which will send a FIN
+     * to the peer.
+     */
+    if (shutdown(s, SD_SEND)) {
+        return jk_close_socket(s);
+    }
+#if defined(WIN32)
+    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
+               (const char *) &tmout, sizeof(int));
+    setsockopt(s, SOL_SOCKET, SO_SNDTIMEO,
+               (const char *) &tmout, sizeof(int));
+#elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO) && defined(SO_SNDTIMEO) && defined(USE_SO_SNDTIMEO)
+    tv.tv_sec  = SECONDS_TO_LINGER;
+    tv.tv_usec = 0;
+    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
+               (const void *) &tv, sizeof(tv));
+    setsockopt(s, SOL_SOCKET, SO_SNDTIMEO,
+               (const void *) &tv, sizeof(tv));
+#endif
+    /* Read all data from the peer until we reach "end-of-file" (FIN
+     * from peer) or we've exceeded our overall timeout. If the client does
+     * not send us bytes within 2 seconds (a value pulled from Apache 1.3
+     * which seems to work well), close the connection.
+     */
+    while (1) {
+        nbytes = jk_tcp_socket_recvfull(s, dummy, sizeof(dummy));
+        if (nbytes <= 0)
+            break;
+        ttl += SECONDS_TO_LINGER;
+        if (ttl > MAX_SECS_TO_LINGER)
+            break;
+    }
+    return jk_close_socket(s);
+}
+
 /** send a long message
  * @param sd  opened socket.
  * @param b   buffer containing the data.
@@ -553,7 +607,7 @@ int jk_is_socket_connected(int sd)
     fd_set fd;
     struct timeval tv;
     int rc;
-    
+
     FD_ZERO(&fd);
     FD_SET(sd, &fd);
 
