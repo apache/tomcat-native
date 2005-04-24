@@ -836,6 +836,13 @@ public class AprEndpoint {
                             getWorkerThread().assign(desc[n*4+1], desc[n*4+2]);
                         }
                         maintainTime += pollTime;
+                    } else if (rv < -1) {
+                        // FIXME: Log with WARN at least
+                        // Handle poll critical failure
+                        synchronized (this) {
+                            destroy();
+                            init();
+                        }
                     }
                     if (rv == 0 || maintainTime > 1000000L) {
                         synchronized (this) {
@@ -1178,6 +1185,13 @@ public class AprEndpoint {
                                 // processing of further requests
                                 getWorkerThread().assign(desc[n*4+1], state.pool);
                             }
+                        }
+                    } else if (rv < -1) {
+                        // Handle poll critical failure
+                        // FIXME: Log with WARN at least
+                        synchronized (this) {
+                            destroy();
+                            init();
                         }
                     }
                 } catch (Throwable t) {
