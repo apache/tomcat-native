@@ -80,7 +80,7 @@ be unavailable or will misbehave.
 </p>
 <directives>
 <directive name="type" default="ajp13" required="true">
-Type of the worker (can be one of ajp13, ajp14, jni or lb). The type of the worker
+Type of the worker (can be one of ajp13, ajp14, jni, lb or status). The type of the worker
 defines the directives that can be applied to the worker.
 <p>AJP13 worker is the preferred worker type that JK uses for communication
 between web server and Tomcat. This type of worker uses sockets as communication
@@ -268,6 +268,18 @@ This feature has been added in <b>jk 1.2.9</b>.
 </directive>
 </directives>
 
+</subsection>
+
+<subsection name="Status Worker directives">
+<br />
+<p>
+The status worker does not communicate with Tomcat.
+Instead it is responsible for the load balancer management. 
+</p>
+<directives>
+<directive name="css" default="" required="false">
+Specifies the url for cascading stylesheet to use.
+</directives>
 </subsection>
 
 <subsection name="Advanced worker directives">
