@@ -104,6 +104,7 @@ Currently the following worker types that exists are (JK 1.2.5):
   <tr><td>ajp13</td><td>This worker knows how to forward requests to out-of-process Tomcat workers using the ajpv13 protocol.</td></tr>
   <tr><td>jni</td><td>This worker knows how to forward requests to in-process Tomcat workers using JNI.</td></tr>
   <tr><td>lb</td><td>This is a load-balancing worker; it knows how to provide round-robin based sticky load balancing with a certain level of fault-tolerance.</td></tr>
+  <tr><td>status</td><td>This is a status worker for managing load balancers.</td></tr>
 </table>
 
 <p>
@@ -168,10 +169,10 @@ We'll see more on this in the lb worker section.
 </p>
 
 <source>
-  # worker "worker1" will talk to Tomcat listening on machine www.x.com at port 8007 using 2.5 lb factor
+  # worker "worker1" will talk to Tomcat listening on machine www.x.com at port 8007 using 2 lb factor
   worker.worker1.host=www.x.com
   worker.worker1.port=8007
-  worker.worker1.lbfactor=2.5
+  worker.worker1.lbfactor=2
 </source>
 
 <p>
@@ -289,22 +290,19 @@ a loadbalancer in front of the nodes.
 <source>
   # The advanced router LB worker
   worker.list=router
-  # Define a 'local_worker' worker using ajp13
+  # Define a worker using ajp13
   worker.worker1.port=8009
   worker.worker1.host=node1.domain.org
   worker.worker1.type=ajp13
   worker.worker1.lbfactor=1
-  worker.worker1.local_worker=1
-  # Define another 'local_worker' worker using ajp13
+  # Define another worker using ajp13
   worker.worker2.port=8009
   worker.worker2.host=node2.domain.org
   worker.worker2.type=ajp13
   worker.worker2.lbfactor=1
-  worker.worker2.local_worker=0
   # Define the LB worker
   worker.router.type=lb
-  worker.router.balanced_workers=worker1,worker2
-  worker.router.local_worker_only=1
+  worker.router.balance_workers=worker1,worker2
 </source>
 
 <p>
@@ -315,6 +313,35 @@ to the local worker.
 
 </subsection>
 
+<subsection name="Status Worker properties">
+<p>
+The status worker does not communicate with Tomcat.
+Instead it is responsible for the load balancer management. 
+</p>
+<source>
+  # Add the status worker to the worker list
+  worker.list=jkstatus
+  # Define a 'jkstatus' worker using status
+  worker.jkstatus.type=status
+</source>
+<p>Next thing is to mount the requests to the jkstatus worker. For Apache
+web servers use the:</p>
+<source>
+  # Add the jkstatus mount point
+  JkMount /jkmanager/* jkstatus 
+</source>
+<p>To obtain a higher level of security use the:</p>
+<source>
+  # Enable the JK manager access from localhost only
+ &lt;Location /jkmanager/&gt;
+    JkMount jkstatus
+    Order deny,allow
+    Deny from all
+    Allow from 127.0.0.1
+ &lt;/Location&gt;
+</source>
+
+</subsection>
 
 <subsection name="Property file macros">
 <p>
@@ -376,16 +403,16 @@ A lb worker that load balance the ajp12 and ajp13 workers
   worker.worker1.type=ajp12
   worker.worker1.host=locahost
   worker.worker1.port=8007
-  worker.worker1.lbfactor=5
+  worker.worker1.lbfactor=1
   # Set properties for worker2 (ajp13)
   worker.worker2.type=ajp13
   worker.worker2.host=locahost
   worker.worker2.port=8009
-  worker.worker2.lbfactor=50
+  worker.worker2.lbfactor=1
   worker.worker2.cachesize=10
   worker.worker2.cache_timeout=600
   worker.worker2.socket_keepalive=1
-  worker.worker2.socket_timeout=300
+  worker.worker2.socket_timeout=60
   # Set properties for worker3 (jni)
   worker.worker3.type=jni
   # Set worker3 bridge type, here Tomcat 3.3
