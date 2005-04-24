@@ -25,6 +25,13 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>Added worker maintain function that will maintain all
+      the workers instead just the current one. This enables to recycle
+      the connections on all workers. (mturk)
+      </update>
+      <update>Use shutdown when recycling connections instead hard
+      breaking the socket. (mturk)
+      </update>
       <update>Add unique directives checking. The directives if
       unique are now overwritten instead concatenated. (mturk)
       </update>
