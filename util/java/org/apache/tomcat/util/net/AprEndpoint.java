@@ -19,7 +19,6 @@ package org.apache.tomcat.util.net;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Stack;
-import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -91,12 +90,6 @@ public class AprEndpoint {
      */
     // FIXME: Stack is synced, which makes it a non optimal choice
     protected Stack workers = new Stack();
-
-
-    /**
-     * All processors which have been created.
-     */
-    protected Vector created = new Vector();
 
 
     /**
@@ -395,33 +388,29 @@ public class AprEndpoint {
         if (initialized)
             return;
 
-        try {
-            // Initialize APR
-            Library.initialize(null);
-            // Create the root APR memory pool
-            rootPool = Pool.create(0);
-            // Create the pool for the server socket
-            serverSockPool = Pool.create(rootPool);
-            // Create the APR address that will be bound
-            String addressStr = null;
-            if (address == null) {
-                addressStr = null;
-            } else {
-                addressStr = "" + address;
-            }
-            long inetAddress = Address.info(addressStr, Socket.APR_INET,
-                                       port, 0, rootPool);
-            // Create the APR server socket
-            serverSock = Socket.create(Socket.APR_INET, Socket.SOCK_STREAM,
-                                       Socket.APR_PROTO_TCP, rootPool);
-            // Bind the server socket
-            Socket.bind(serverSock, inetAddress);
-            // Start listening on the server socket
-            Socket.listen(serverSock, backlog);
-        } catch (Exception e) {
-            // FIXME: proper logging
-            throw e;
+        // Initialize APR
+        Library.initialize(null);
+        // Create the root APR memory pool
+        rootPool = Pool.create(0);
+        // Create the pool for the server socket
+        serverSockPool = Pool.create(rootPool);
+        // Create the APR address that will be bound
+        String addressStr = null;
+        if (address == null) {
+            addressStr = null;
+        } else {
+            addressStr = "" + address;
         }
+        long inetAddress = Address.info(addressStr, Socket.APR_INET,
+                port, 0, rootPool);
+        // Create the APR server socket
+        serverSock = Socket.create(Socket.APR_INET, Socket.SOCK_STREAM,
+                Socket.APR_PROTO_TCP, rootPool);
+        // Bind the server socket
+        Socket.bind(serverSock, inetAddress);
+        // Start listening on the server socket
+        Socket.listen(serverSock, backlog);
+
         initialized = true;
 
     }
@@ -632,7 +621,6 @@ public class AprEndpoint {
 
         Worker workerThread = new Worker();
         workerThread.start();
-        created.addElement(workerThread);
         return (workerThread);
 
     }
@@ -751,17 +739,14 @@ public class AprEndpoint {
                 if (Status.APR_STATUS_IS_EINVAL(e.getError())) {
                     try {
                         // Use WIN32 maximum poll size
-                        // FIXME: Add WARN level logging about this, as scalability will
-                        // be limited
                         pollerSize = 62;
                         serverPollset = Poll.create(pollerSize, pool, 0, soTimeout * 1000);
+                        log.warn(sm.getString("endpoint.poll.limitedpollsize"));
                     } catch (Error err) {
-                        // FIXME: more appropriate logging
-                        err.printStackTrace();
+                        log.error(sm.getString("endpoint.poll.initfail"), e);
                     }
                 } else {
-                    // FIXME: more appropriate logging
-                    e.printStackTrace();
+                    log.error(sm.getString("endpoint.poll.initfail"), e);
                 }
             }
             desc = new long[pollerSize * 4];
@@ -837,7 +822,7 @@ public class AprEndpoint {
                         }
                         maintainTime += pollTime;
                     } else if (rv < -1) {
-                        // FIXME: Log with WARN at least
+                        log.error(sm.getString("endpoint.poll.fail"));
                         // Handle poll critical failure
                         synchronized (this) {
                             destroy();
@@ -858,8 +843,7 @@ public class AprEndpoint {
                         }
                     }
                 } catch (Throwable t) {
-                    // FIXME: Proper logging
-                    t.printStackTrace();
+                    log.error(sm.getString("endpoint.poll.error"), t);
                 }
 
             }
@@ -1030,17 +1014,14 @@ public class AprEndpoint {
                 if (Status.APR_STATUS_IS_EINVAL(e.getError())) {
                     try {
                         // Use WIN32 maximum poll size
-                        // FIXME: Add WARN level logging about this, as scalability will
-                        // be limited
                         sendfileSize = 62;
                         sendfilePollset = Poll.create(sendfileSize, pool, 0, soTimeout * 1000);
+                        log.warn(sm.getString("endpoint.poll.limitedpollsize"));
                     } catch (Error err) {
-                        // FIXME: more appropriate logging
-                        err.printStackTrace();
+                        log.error(sm.getString("endpoint.poll.initfail"), e);
                     }
                 } else {
-                    // FIXME: more appropriate logging
-                    e.printStackTrace();
+                    log.error(sm.getString("endpoint.poll.initfail"), e);
                 }
             }
             desc = new long[sendfileSize * 4];
@@ -1086,8 +1067,7 @@ public class AprEndpoint {
                     }
                 }
             } catch (Error e) {
-                // FIXME: more appropriate logging
-                e.printStackTrace();
+                log.error(sm.getString("endpoint.sendfile.error"), e);
                 return false;
             }
             synchronized (this) {
@@ -1097,8 +1077,7 @@ public class AprEndpoint {
                 if (rv == Status.APR_SUCCESS) {
                     sendfileCount++;
                 } else {
-                    // FIXME: Log with a WARN at least, as the request will
-                    // fail from the user perspective
+                    log.warn(sm.getString("endpoint.sendfile.addfail", "" + rv));
                     // Can't do anything: close the socket right away
                     Pool.destroy(data.pool);
                 }
@@ -1187,16 +1166,15 @@ public class AprEndpoint {
                             }
                         }
                     } else if (rv < -1) {
+                        log.error(sm.getString("endpoint.poll.fail"));
                         // Handle poll critical failure
-                        // FIXME: Log with WARN at least
                         synchronized (this) {
                             destroy();
                             init();
                         }
                     }
                 } catch (Throwable t) {
-                    // FIXME: Proper logging
-                    t.printStackTrace();
+                    log.error(sm.getString("endpoint.poll.error"), t);
                 }
             }
 
