@@ -146,6 +146,10 @@ worker.&lt;worker name&gt;.&lt;property&gt;=&lt;property value&gt;
 Each worker has a set of properties that you can set as specified in the following subsections:
 
 <subsection name="ajp12 Worker properties">
+<p><warn>
+The <b>ajp12</b> has been <b>deprecated</b> with Tomcat 3.3.x and you should use instead 
+<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.x and 5.
+</warn></p> 
 <p>
 The ajp12 typed workers forward requests to out-of-process Tomcat workers 
 using the ajpv12 protocol over TCP/IP sockets.
@@ -256,18 +260,18 @@ other workers managed by the lb worker.
 The overall result is that workers managed by the same lb worker are load-balanced (based on their lbfactor and current user session) and also fall-backed so a single Tomcat process death will not "kill" the entire site.
 The following table specifies properties that the lb worker can accept:
 <ul>
-<li><b>balanced_workers</b> is a comma separated list of workers that the load balancer need to manage. 
+<li><b>balance_workers</b> is a comma separated list of workers that the load balancer need to manage. 
 These workers should not appear in the worker.list property.</li>
 <li><b>sticky_session</b> specifies whether requests with SESSION ID's should be routed back to the same
-Tomcat worker. If sticky_session is an int and is not 0 it is set to JK_TRUE and sessions are sticky, otherwise
-sticky_session is set to false. Set sticky_session to JK_FALSE when Tomcat is using a Session Manager which
-can persist session data across multiple instances of Tomcat. By default sticky_session is set to JK_TRUE.</li>
+Tomcat worker. If sticky_session is an flag and if it is set to True and sessions are sticky, otherwise
+sticky_session is set to false. Set sticky_session to False when Tomcat is using a Session Manager which
+can persist session data across multiple instances of Tomcat. By default sticky_session is set to True.</li>
 </ul>
 </p>
 
 <source>
    The worker balance1 while use "real" workers worker1 and worker2
-  worker.balance1.balanced_workers=worker1, worker2
+  worker.balance1.balance_workers=worker1, worker2
 </source>
 
 </subsection>
@@ -275,7 +279,7 @@ can persist session data across multiple instances of Tomcat. By default sticky_
 <subsection name="Advanced lb Worker properties">
 <p>
 With JK 1.2.x, new load-balancing and fault-tolerant support has been added via
-2 new properties, <b>local_worker_only</b> and <b>local_worker</b>.
+2 new properties, <b>redirect</b> and <b>disabled</b>.
 </p>
 
 <p>
@@ -290,24 +294,32 @@ a loadbalancer in front of the nodes.
 <source>
   # The advanced router LB worker
   worker.list=router
+
   # Define a worker using ajp13
   worker.worker1.port=8009
   worker.worker1.host=node1.domain.org
   worker.worker1.type=ajp13
   worker.worker1.lbfactor=1
+  # Define prefered failover node for worker1
+  worker.worker1.redirect=worker2
+
   # Define another worker using ajp13
   worker.worker2.port=8009
   worker.worker2.host=node2.domain.org
   worker.worker2.type=ajp13
   worker.worker2.lbfactor=1
+  # Disable worker2 for all requests except failover
+  worker.worker2.disabled=True
+  
   # Define the LB worker
   worker.router.type=lb
   worker.router.balance_workers=worker1,worker2
 </source>
 
 <p>
-The <b>local_worker</b> flag on worker1 and worker2 tells the <b>lb_worker</b> which connections are going 
-to the local worker. 
+The <b>redirect</b> flag on worker1 tells the <b>lb_worker</b> to redirect the requests
+to worker2 only if worker1 is in error state. In other cases worker2 will not receive
+any requests, thus acting like a hot standby.
 </p>
 
 
@@ -429,7 +441,7 @@ A lb worker that load balance the ajp12 and ajp13 workers
   worker.worker3.stderr=$(workers.apache_log)$(ps)inprocess.stderr
   worker.worker3.sysprops=tomcat.home=$(workers.tomcat_home)
   # Set properties for worker4 (lb) which use worker1 and worker2
-  worker.worker4.balanced_workers=worker1,worker2
+  worker.worker4.balance_workers=worker1,worker2
 </source>
 
 </section>

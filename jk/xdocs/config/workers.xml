@@ -14,6 +14,7 @@
 <body>
 
 <section name="Introduction">
+<br/>
 <p>
 A <b>Tomcat worker</b> is a Tomcat instance that is waiting to execute servlets or any other content
 on behalf of some web server. For example, we can have a web server such as
@@ -49,6 +50,7 @@ explains how to work with it.
 </section>
  
 <section name="Directives">
+<br/>
 <p>Each workers.properties directive consists of three words separated by dot. The first word is always
 <b>worker</b>. The second word is the worker name that can be any name. The worker name reflects the
 name of the <b>jvmRoute</b> defined in Tomcat's server.xml configuration file.
@@ -60,6 +62,7 @@ The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z
 </p>
 
 <subsection name="Defining workers">
+<br/>
 <p>The generic workers.properties directive is in the form:</p>
 <p><strong>worker.&lt;worker name&gt;.&lt;directive&gt;=&lt;value&gt;</strong></p>
 <p>Defining workers to the Tomcat web server plugin can be done using a properties file
@@ -75,6 +78,7 @@ worker.list property, these are also the workers to whom you can map requests.
 </subsection>
 
 <subsection name="Mandatory directives">
+<br/>
 <p>Mandatory directives are the one that each worker <b>must</b> contain. Without them the worker will
 be unavailable or will misbehave.
 </p>
