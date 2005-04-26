@@ -67,6 +67,7 @@
 #define MOUNT_OF_WORKER             ("mount")
 #define METHOD_OF_WORKER            ("method")
 #define IS_WORKER_DISABLED          ("disabled")
+#define IS_WORKER_STOPPED           ("stopped")
 #define WORKER_RECOVER_TIME         ("recover_time")
 
 
@@ -689,6 +690,20 @@ int jk_get_is_worker_disabled(jk_map_t *m, const char *wname)
     return rc;
 }
 
+int jk_get_is_worker_stopped(jk_map_t *m, const char *wname)
+{
+    int rc = JK_TRUE;
+    char buf[1024];
+    if (m && wname) {
+        int value;
+        sprintf(buf, PREFIX_OF_WORKER ".%s.%s", wname, IS_WORKER_STOPPED);
+        value = jk_map_get_bool(m, buf, 0);
+        if (!value)
+            rc = JK_FALSE;
+    }
+    return rc;
+}
+
 void jk_set_log_format(const char *logformat)
 {
     jk_log_fmt = (logformat) ? logformat : JK_TIME_FORMAT;
@@ -1004,6 +1019,7 @@ static const char *unique_properties[] = {
     MOUNT_OF_WORKER,
     METHOD_OF_WORKER,
     IS_WORKER_DISABLED,
+    IS_WORKER_STOPPED,
     WORKER_RECOVER_TIME,
     SECRET_KEY_OF_WORKER,
     RETRIES_OF_WORKER,

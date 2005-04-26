@@ -218,9 +218,11 @@ static const char *status_val_bool(int v)
         return "True";
 }
 
-static const char *status_val_status(int d, int e, int r, int b)
+static const char *status_val_status(int s, int d, int e, int r, int b)
 {
-    if (d)
+    if (s)
+        return "Stopped";
+    else if (d)
         return "Disabled";
     else if (r)
         return "Recovering";
@@ -234,7 +236,9 @@ static const char *status_val_status(int d, int e, int r, int b)
 
 static const char *status_val_match(unsigned int match)
 {
-    if (match & MATCH_TYPE_DISABLED)
+    if (match & MATCH_TYPE_STOPPED)
+        return "Stopped";
+    else if (match & MATCH_TYPE_DISABLED)
         return "Disabled";
     else if (match & MATCH_TYPE_NO_MATCH)
         return "Unmount";
@@ -459,7 +463,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                         "</td>", NULL);
                 /* TODO: descriptive status */
                 jk_putv(s, "<td>",
-                        status_val_status(wr->s->is_disabled,
+                        status_val_status(wr->s->is_stopped,
+                                          wr->s->is_disabled,
                                           wr->s->in_error_state,
                                           wr->s->in_recovering,
                                           wr->s->is_busy),
@@ -510,6 +515,10 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_puts(s, "\"/></td></tr>\n");
                 jk_puts(s, "<tr><td>Disabled:</td><td><input name=\"wd\" type=\"checkbox\"");
                 if (wr->s->is_disabled)
+                    jk_puts(s, "  checked=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
+                jk_puts(s, "<tr><td>Stopped:</td><td><input name=\"ws\" type=\"checkbox\"");
+                if (wr->s->is_stopped)
                     jk_puts(s, "  checked=\"checked\"");
                 jk_puts(s, "/></td></tr>\n");
                 jk_puts(s, "</td></tr>\n</table>\n");
@@ -631,7 +640,8 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
                 a->host,
                 a->port,
                 jk_dump_hinfo(&a->worker_inet_addr, buf),
-                status_val_status(wr->s->is_disabled,
+                status_val_status(wr->s->is_stopped,
+                                  wr->s->is_disabled,
                                   wr->s->in_error_state,
                                   wr->s->in_recovering,
                                   wr->s->is_busy) );
@@ -716,6 +726,7 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
         else
             memset(wr->s->domain, 0, JK_SHM_STR_SIZ);
         wr->s->is_disabled = status_bool("wd", s->query_string);
+        wr->s->is_stopped = status_bool("ws", s->query_string);
         i = status_int("wf", s->query_string, wr->s->lb_factor);
         if (i > 0)
             wr->s->lb_factor = i;

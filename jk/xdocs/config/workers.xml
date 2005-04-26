@@ -368,6 +368,16 @@ This feature has been added in <b>jk 1.2.9</b>.
 </p>
 </directive>
 
+<directive name="stopped" default="False" required="false">
+If set to <b>True</b> or <b>1</b> the worker will be stopped if member
+of load balancer. The flag is needed for stop complete traffic of a sticky session
+worker. It is only usefull, when you have a cluster that replicated the sessions.
+This flag can be changed at runtime using status worker.
+<p>
+This feature has been added in <b>jk 1.2.11</b>.
+</p>
+</directive>
+
 </directives>
 </subsection>
 

@@ -64,6 +64,7 @@ struct jk_shm_worker
     char    redirect[JK_SHM_STR_SIZ+1];
     /* current status of the worker */
     volatile int is_disabled;
+    volatile int is_stopped;
     volatile int is_busy;
     /* Current lb factor */
     volatile int lb_factor;

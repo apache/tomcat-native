@@ -50,6 +50,7 @@ extern "C"
 #define MATCH_TYPE_WILDCHAR_PATH    0x0040
 #define MATCH_TYPE_NO_MATCH         0x1000
 #define MATCH_TYPE_DISABLED         0x2000
+#define MATCH_TYPE_STOPPED          0x4000
 
 struct uri_worker_record
 {

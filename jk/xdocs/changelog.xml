@@ -25,6 +25,11 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Add a stopped flag to worker configuration. Set flag True and 
+      complete traffic to worker is stopped. 
+      Only usefull in a replicated session cluster.(pero)
+      </update>
       <update>Added worker maintain function that will maintain all
       the workers instead just the current one. This enables to recycle
       the connections on all workers. (mturk)

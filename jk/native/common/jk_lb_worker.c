@@ -40,8 +40,8 @@
 /*
  * Time to wait before retry...
  */
-#define JK_WORKER_IN_ERROR(w) ((w)->in_error_state && !(w)->is_disabled && !(w)->is_busy)
-#define JK_WORKER_USABLE(w)   (!(w)->in_error_state && !(w)->is_disabled && !(w)->is_busy)
+#define JK_WORKER_IN_ERROR(w) ((w)->in_error_state  && !(w)->is_disabled && !(w)->is_busy)
+#define JK_WORKER_USABLE(w)   (!(w)->in_error_state && !(w)->is_stopped && !(w)->is_disabled && !(w)->is_busy)
 
 struct lb_endpoint
 {
@@ -235,7 +235,7 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
             strcmp(p->lb_workers[i].s->domain, domain))
             continue;
         /* Take into calculation only the workers that are
-         * not in error state or not disabled.
+         * not in error state, stopped or not disabled.
          */
         if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
             if (p->lbmethod == JK_LB_BYREQUESTS) {
@@ -252,7 +252,7 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
                     curmin = mytraffic;
                 }
             }
-        }
+        }        
     }
 
     if (candidate) {
@@ -284,7 +284,7 @@ static worker_record_t *find_best_byrequests(lb_worker_t *p,
             retry_worker(&p->lb_workers[i], p->s->recover_wait_time, l);
         }
         /* Take into calculation only the workers that are
-         * not in error state or not disabled.
+         * not in error state, stopped or not disabled.
          */
         if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
             p->lb_workers[i].s->lb_value += p->lb_workers[i].s->lb_factor;
@@ -319,7 +319,7 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
             retry_worker(&p->lb_workers[i], p->s->recover_wait_time, l);
         }
         /* Take into calculation only the workers that are
-         * not in error state or not disabled.
+         * not in error state, stopped or not disabled.
          */
         if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
             mytraffic = (p->lb_workers[i].s->transferred/p->lb_workers[i].s->lb_factor) +
@@ -351,8 +351,8 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
         if (JK_WORKER_IN_ERROR(candidate->s)) {
             retry_worker(candidate, p->s->recover_wait_time, l);
         }
-        if (candidate->s->in_error_state) {
-            /* We have a worker that is error state.
+        if (candidate->s->in_error_state || candidate->s->is_stopped ) {
+            /* We have a worker that is error state or stopped.
              * If it has a redirection set use that redirection worker.
              * This enables to safely remove the member from the
              * balancer. Of course you will need a some kind of
@@ -780,6 +780,8 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 p->lb_workers[i].s->error_time = 0;
                 /* Worker can be initaly disabled as hot standby */
                 p->lb_workers[i].s->is_disabled = jk_get_is_worker_disabled(props, worker_names[i]);
+                /* Worker can be initaly deactive as cold standby */
+                p->lb_workers[i].s->is_stopped = jk_get_is_worker_stopped(props, worker_names[i]);
                 if (!wc_create_worker(p->lb_workers[i].s->name,
                                       props,
                                       &(p->lb_workers[i].w),
