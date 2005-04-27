@@ -465,7 +465,7 @@ int jk_close_socket(int s)
 #endif
 #define SECONDS_TO_LINGER  1
 #ifndef SD_SEND
-#define DS_SEND 0x01
+#define SD_SEND 0x01
 #endif
 
 int jk_shutdown_socket(int s)
