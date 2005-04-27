@@ -55,11 +55,12 @@ AC_CHECK_FUNC(snprintf, AC_DEFINE(HAVE_SNPRINTF,1,[Have snprintf()]))
 AC_CHECK_FUNC(vsnprintf, AC_DEFINE(HAVE_VSNPRINTF,1,[Have vsnprintf()]))
 dnl check for flock function.
 AC_CHECK_FUNC(flock, AC_DEFINE(HAVE_FLOCK,1,[Have flock()]))
+dnl check for -lsocket library
+AC_CHECK_LIB(socket, socket)
+AC_CHECK_LIB(setsockopt, socket)
 
 AC_DEFUN([JK_CHECK_SETSOCKOPT], [
 AC_MSG_CHECKING(whether to use $1 with setsockopt())
-saved_LIBS="$LIBS"
-LIBS="$saved_LIBS -lsocket"
 AC_TRY_RUN([
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -90,7 +91,6 @@ int main(void)
 , [ AC_MSG_RESULT([yes]) AC_DEFINE(USE_$1, 1, [Define to use $1 with setsockopt()]) ]
 , [ AC_MSG_RESULT([no]) ]
 )
-LIBS="$saved_LIBS"
 ])dnl
 
 dnl check for SO_RCVTIMEO and SO_SNDTIMEO
