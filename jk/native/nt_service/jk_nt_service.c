@@ -908,8 +908,8 @@ static void stop_tomcat(char *name,
                     jk_b_end(msg, AJP13_PROTO);
     
                     if(0 > jk_tcp_socket_sendfull(sd, 
-                                                  jk_b_get_buff(msg),
-                                                  jk_b_get_len(msg))) {
+                                                  msg->buf,
+                                                  msg->len)) {
                         rc = JK_FALSE;
                     }
                 }                                                    
@@ -955,7 +955,7 @@ static int exec_cmd(const char *name, HANDLE *hTomcat, char *cmdLine)
             jk_map_t *init_map;
             
             if(jk_map_alloc(&init_map)) {
-                if(jk_map_read_properties(init_map, prp_file)) {
+                if(jk_map_read_properties(init_map, prp_file, NULL)) {
                     jk_tomcat_startup_data_t data;
                     jk_pool_t p;
                     jk_pool_atom_t buf[HUGE_POOL_SIZE];
