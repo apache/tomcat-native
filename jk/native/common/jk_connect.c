@@ -461,9 +461,12 @@ int jk_close_socket(int s)
 }
 
 #ifndef MAX_SECS_TO_LINGER
-#define MAX_SECS_TO_LINGER 30
+#define MAX_SECS_TO_LINGER 16
 #endif
-#define SECONDS_TO_LINGER  2
+#define SECONDS_TO_LINGER  1
+#ifndef SD_SEND
+#define DS_SEND 0x01
+#endif
 
 int jk_shutdown_socket(int s)
 {
@@ -500,8 +503,7 @@ int jk_shutdown_socket(int s)
 #endif
     /* Read all data from the peer until we reach "end-of-file" (FIN
      * from peer) or we've exceeded our overall timeout. If the client does
-     * not send us bytes within 2 seconds (a value pulled from Apache 1.3
-     * which seems to work well), close the connection.
+     * not send us bytes within12 second, close the connection.
      */
     while (1) {
         nbytes = jk_tcp_socket_recvfull(s, dummy, sizeof(dummy));
