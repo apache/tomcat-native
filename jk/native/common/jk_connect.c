@@ -464,10 +464,14 @@ int jk_close_socket(int s)
 #define MAX_SECS_TO_LINGER 16
 #endif
 #define SECONDS_TO_LINGER  1
-#ifndef SD_SEND
-#define SD_SEND 0x01
-#endif
 
+#ifndef SHUT_WR
+#ifdef SD_SEND
+#define SHUT_WR SD_SEND
+#else
+#define SHUT_WR 0x01
+#endif
+#endif
 int jk_shutdown_socket(int s)
 {
     unsigned char dummy[512];
@@ -485,7 +489,7 @@ int jk_shutdown_socket(int s)
     /* Shut down the socket for write, which will send a FIN
      * to the peer.
      */
-    if (shutdown(s, SD_SEND)) {
+    if (shutdown(s, SHUT_WR)) {
         return jk_close_socket(s);
     }
 #if defined(WIN32)
