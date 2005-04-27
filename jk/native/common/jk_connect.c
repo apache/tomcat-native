@@ -491,14 +491,10 @@ int jk_shutdown_socket(int s)
 #if defined(WIN32)
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
                (const char *) &tmout, sizeof(int));
-    setsockopt(s, SOL_SOCKET, SO_SNDTIMEO,
-               (const char *) &tmout, sizeof(int));
-#elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO) && defined(SO_SNDTIMEO) && defined(USE_SO_SNDTIMEO)
+#elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO)
     tv.tv_sec  = SECONDS_TO_LINGER;
     tv.tv_usec = 0;
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
-               (const void *) &tv, sizeof(tv));
-    setsockopt(s, SOL_SOCKET, SO_SNDTIMEO,
                (const void *) &tv, sizeof(tv));
 #endif
     /* Read all data from the peer until we reach "end-of-file" (FIN
