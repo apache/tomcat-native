@@ -89,6 +89,7 @@
 #define HUGE_BUFFER_SIZE (8*1024)
 #define LOG_LINE_SIZE    (1024)
 
+
 /*
  * define the log format, we're using by default the one from error.log
  *
@@ -99,6 +100,11 @@
 #define JK_TIME_FORMAT "[%a %b %d %H:%M:%S %Y] "
 #endif
 
+/* Visual C++ Toolkit 2003 support */
+#if defined (_MSC_VER) && (_MSC_VER == 1310)
+    extern long _ftol(double); /* defined by VC6 C libs */
+    extern long _ftol2(double dblSource) { return _ftol(dblSource); }
+#endif
 
 static const char *jk_level_werbs[] = {
     "[" JK_LOG_TRACE_VERB "] ",
