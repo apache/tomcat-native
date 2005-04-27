@@ -532,7 +532,8 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t *msg,
     if (method == SC_M_JK_STORED) {
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG, "unknown method %s", s->method);
-        if (jk_b_append_string(msg, s->method)) {
+        if (jk_b_append_byte(msg, SC_A_STORED_METHOD) ||
+            jk_b_append_string(msg, s->method)) {
             jk_log(l, JK_LOG_ERROR,
                    "failed appending the request method");
             JK_TRACE_EXIT(l);
