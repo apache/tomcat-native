@@ -100,6 +100,10 @@ static int sc_for_req_method(const char *method, size_t len)
     case 3:
         switch (method[0])
         {
+        case 'A':
+            return (method[1] == 'C'
+                    && method[2] == 'L'
+                    ? SC_M_ACL : UNKNOWN_METHOD);
         case 'P':
             return (method[1] == 'U'
                     && method[2] == 'T'
