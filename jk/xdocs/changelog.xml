@@ -25,6 +25,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>Backport SC_M_JK_STORED from JK2 for passing arbitrary
+      methods instead failing the request. (mturk)
+      </fix>
       <fix>Added missing SEARCH and ACL http methods. (mturk)
       </fix>
       <update>

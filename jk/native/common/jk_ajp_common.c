@@ -386,13 +386,8 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t *msg,
     JK_TRACE_ENTER(l);
 
     if ((method = sc_for_req_method(s->method,
-                                    strlen(s->method))) == UNKNOWN_METHOD) {
-        jk_log(l, JK_LOG_ERROR,
-               "No such method %s",
-               s->method);
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
+                                    strlen(s->method))) == UNKNOWN_METHOD)
+        method = SC_M_JK_STORED;
 
     if (jk_b_append_byte(msg, JK_AJP13_FORWARD_REQUEST) ||
         jk_b_append_byte(msg, (unsigned char)method) ||
@@ -528,6 +523,18 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t *msg,
             jk_b_append_int(msg, (unsigned short)s->ssl_key_size)) {
             jk_log(l, JK_LOG_ERROR,
                    "failed appending the SSL key size");
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
+    }
+
+    /* If the method was unrecognized, encode it as an attribute */
+    if (method == SC_M_JK_STORED) {
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG, "unknown method %s", s->method);
+        if (jk_b_append_string(msg, s->method)) {
+            jk_log(l, JK_LOG_ERROR,
+                   "failed appending the request method");
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
