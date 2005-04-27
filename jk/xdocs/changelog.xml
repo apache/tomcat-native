@@ -25,6 +25,8 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>Added missing SEARCH and ACL http methods. (mturk)
+      </fix>
       <update>
       Add a stopped flag to worker configuration. Set flag True and 
       complete traffic to worker is stopped. 
