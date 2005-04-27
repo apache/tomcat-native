@@ -185,6 +185,9 @@ static int sc_for_req_method(const char *method, size_t len)
         case 'R':
             return (memcmp(method, "REPORT", 6) == 0
                     ? SC_M_REPORT : UNKNOWN_METHOD);
+        case 'S':
+            return (memcmp(method, "SEARCH", 6) == 0
+                    ? SC_M_SEARCH : UNKNOWN_METHOD);
         case 'D':
             return (memcmp(method, "DELETE", 6) == 0
                     ? SC_M_DELETE : UNKNOWN_METHOD);
