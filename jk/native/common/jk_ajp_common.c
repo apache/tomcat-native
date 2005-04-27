@@ -2150,7 +2150,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, jk_logger_t *l)
         }
         JK_ENTER_CS(&aw->cs, rc);
         if (rc) {
-            unsigned int i;
+            unsigned int i, n = 0;
             /* Handle worker cache and recycle timeouts */
             for (i = 0; i < aw->ep_cache_sz; i++) {
                 /* Skip the closed sockets */
@@ -2158,15 +2158,23 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, jk_logger_t *l)
                     int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
                     if (((aw->cache_timeout > 0) && (elapsed > aw->cache_timeout)) ||
                         ((aw->recycle_timeout > 0) && (elapsed > aw->recycle_timeout))) {
+                        time_t rt = 0;
+                        n++;
+                        if (JK_IS_DEBUG_LEVEL(l))
+                            rt = time(NULL);
                         aw->ep_cache[i]->reuse = JK_FALSE;
                         ajp_reset_endpoint(aw->ep_cache[i], l);
                         if (JK_IS_DEBUG_LEVEL(l))
                             jk_log(l, JK_LOG_DEBUG,
-                                    "cleaning cache slot=%d elapsed %u",
-                                    i, elapsed);
+                                    "cleaning cache slot=%d elapsed %u in %d",
+                                    i, elapsed, (int)(difftime(time(NULL), rt)));
                     }
                 }
             }
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                        "recycled %u sockets in %d seconds",
+                        n, (int)(difftime(time(NULL), now)));
             JK_LEAVE_CS(&aw->cs, rc);
             JK_TRACE_EXIT(l);
             return JK_TRUE;
