@@ -791,9 +791,9 @@ static void AddToMessageLog(char *lpszMsg)
 
     dwErr = GetLastError();
 
-    hEventSource = RegisterEventSource(NULL, "Jakrta - Tomcat");
+    hEventSource = RegisterEventSource(NULL, "Jakarta - Tomcat");
 
-    sprintf(szMsg, "%s error: %d", "Jakrta - Tomcat", dwErr);
+    sprintf(szMsg, "%s error: %d", "Jakarta - Tomcat", dwErr);
     lpszStrings[0] = szMsg;
     lpszStrings[1] = lpszMsg;
 
