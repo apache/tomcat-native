@@ -1324,7 +1324,7 @@ public class Http11AprProcessor implements ActionHook {
 
         // Advertise sendfile support through a request attribute
         if (endpoint.getUseSendfile()) {
-            request.setAttribute("sendfile.support", Boolean.TRUE);
+            request.setAttribute("org.apache.tomcat.sendfile.support", Boolean.TRUE);
         }
         
     }
@@ -1504,7 +1504,7 @@ public class Http11AprProcessor implements ActionHook {
         }
 
         // Sendfile support
-        String fileName = (String) request.getAttribute("sendfile.filename");
+        String fileName = (String) request.getAttribute("org.apache.tomcat.sendfile.filename");
         if (fileName != null) {
             // No entity body sent here
             outputBuffer.addActiveFilter
@@ -1512,8 +1512,10 @@ public class Http11AprProcessor implements ActionHook {
             contentDelimitation = true;
             sendfileData = new AprEndpoint.SendfileData();
             sendfileData.fileName = fileName;
-            sendfileData.start = ((Long) request.getAttribute("sendfile.start")).longValue();
-            sendfileData.end = ((Long) request.getAttribute("sendfile.end")).longValue();
+            sendfileData.start = 
+                ((Long) request.getAttribute("org.apache.tomcat.sendfile.start")).longValue();
+            sendfileData.end = 
+                ((Long) request.getAttribute("org.apache.tomcat.sendfile.end")).longValue();
         }
         
         // Check for compression
