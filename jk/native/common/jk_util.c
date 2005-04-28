@@ -1027,7 +1027,7 @@ static const char *unique_properties[] = {
     IS_WORKER_DISABLED,
     IS_WORKER_STOPPED,
     WORKER_RECOVER_TIME,
-    SECRET_KEY_OF_WORKER,
+    SECRET_OF_WORKER,
     RETRIES_OF_WORKER,
     NULL
 };
