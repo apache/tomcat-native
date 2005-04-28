@@ -25,7 +25,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.tomcat.jni.Address;
 import org.apache.tomcat.jni.Error;
 import org.apache.tomcat.jni.File;
-import org.apache.tomcat.jni.Library;
 import org.apache.tomcat.jni.Poll;
 import org.apache.tomcat.jni.Pool;
 import org.apache.tomcat.jni.Socket;
@@ -326,18 +325,6 @@ public class AprEndpoint {
 
 
     /**
-     * Return the APR memory pool for the server socket, to be used by handler
-     * which would need to allocate things like pollers, while having
-     * consistent resource handling.
-     *
-     * @return the id for the server socket pool
-     */
-    public long getServerSocketPool() {
-        return serverSockPool;
-    }
-
-
-    /**
      * Return the amount of threads that are managed by the pool.
      *
      * @return the amount of threads that are managed by the pool
@@ -388,8 +375,6 @@ public class AprEndpoint {
         if (initialized)
             return;
 
-        // Initialize APR
-        Library.initialize(null);
         // Create the root APR memory pool
         rootPool = Pool.create(0);
         // Create the pool for the server socket
