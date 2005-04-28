@@ -1,35 +1,53 @@
 #/bin/sh
 
-# You can change JKTAG and JKVER to desired CVS tag.
+# You can change JKTAG and JKEXT to desired CVS tag and version
 JKTAG="HEAD"
-JKEXT="1.2.9"
+JKEXT="current"
 JKVER="-${JKEXT}-src"
+JKCVST="jakarta-tomcat-connectors"
+JKDIST=${JKCVST}${JKVER}
+rm -rf ${JKDIST}
 export CVSROOT=:pserver:anoncvs@cvs.apache.org:/home/cvspublic
-cvs export -r ${JKTAG} -d jakarta-tomcat-connectors${JKVER} jakarta-tomcat-connectors
-# Remove all files that are not part of jk release
-rm -rf jakarta-tomcat-connectors${JKVER}/ajp
-rm -rf jakarta-tomcat-connectors${JKVER}/coyote
-rm -rf jakarta-tomcat-connectors${JKVER}/http11
-rm -rf jakarta-tomcat-connectors${JKVER}/jk/java
-rm -rf jakarta-tomcat-connectors${JKVER}/jk/jkant
-rm -rf jakarta-tomcat-connectors${JKVER}/jk/native2
-rm -rf jakarta-tomcat-connectors${JKVER}/jk/test
-rm -rf jakarta-tomcat-connectors${JKVER}/jni
-rm -rf jakarta-tomcat-connectors${JKVER}/juli
-rm -rf jakarta-tomcat-connectors${JKVER}/naming
-rm -rf jakarta-tomcat-connectors${JKVER}/procrun
-rm -rf jakarta-tomcat-connectors${JKVER}/util
-rm -rf jakarta-tomcat-connectors${JKVER}/webapp
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/KEYS
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/LICENSE
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/NOTICE
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/README.txt
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/common
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/README.txt
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/BUILD.txt
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/conf
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/native
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/support
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/tools
+cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/xdocs
+mv ${JKDIST}/${JKCVST}/* ${JKDIST}/
+# Remove extra directories and files
+rm -rf ${JKDIST}/${JKCVST}
+rm ${JKDIST}/jk/native/build.xml
+# We will build our own CHANGES from xdocs/changes.xml
+rm ${JKDIST}/jk/native/CHANGES.txt
+rm -rf ${JKDIST}/jk/conf/jk2.*
+rm -rf ${JKDIST}/jk/conf/workers2.*
+rm -rf ${JKDIST}/jk/conf/*.manifest
 
 # Build documentation.
-cd jakarta-tomcat-connectors${JKVER}/jk/xdocs
+cd ${JKDIST}/jk/xdocs
 ant
+# Export text docs
 cd ../native
+w3m -dump -T text/html ../build/docs/install/printer/apache1.html >BUILDING
+w3m -dump -T text/html ../build/docs/install/printer/apache2.html >>BUILDING
+w3m -dump -T text/html ../build/docs/install/printer/iis.html >>BUILDING
+w3m -dump -T text/html ../build/docs/printer/changelog.html >CHANGES
+w3m -dump -T text/html ../build/docs/news/printer/20050101.html >NEWS
+w3m -dump -T text/html ../build/docs/news/printer/20041100.html >>NEWS
+rm -rf ../build
+rm -rf ../xdocs/jk2
 ./buildconf.sh
 cd ../../../
-tar cvf jakarta-tomcat-connectors${JKVER}.tar jakarta-tomcat-connectors${JKVER}
-gzip jakarta-tomcat-connectors${JKVER}.tar
-zip -9 -r jakarta-tomcat-connectors${JKVER}.zip jakarta-tomcat-connectors${JKVER}
+tar cvf ${JKDIST}.tar ${JKDIST}
+gzip ${JKDIST}.tar
+zip -9 -r ${JKDIST}.zip ${JKDIST}
 # Create detatched signature
-gpg -ba jakarta-tomcat-connectors${JKVER}.tar.gz
-gpg -ba jakarta-tomcat-connectors${JKVER}.zip
+gpg -ba ${JKDIST}.tar.gz
+gpg -ba ${JKDIST}.zip
