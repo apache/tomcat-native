@@ -115,15 +115,15 @@ void *jk_pool_strdup(jk_pool_t *p, const char *s)
 }
 
 #if defined (DEBUG) || defined(_DEBUG)
-void jk_dump_pool(jk_pool_t *p, FILE * f)
+static void jk_dump_pool(jk_pool_t *p, FILE * f)
 {
-    fprintf(f, "Dumping for pool [%#lx]\n", p);
-    fprintf(f, "size             [%d]\n", p->size);
-    fprintf(f, "pos              [%d]\n", p->pos);
-    fprintf(f, "buf              [%#lx]\n", p->buf);
-    fprintf(f, "dyn_size         [%d]\n", p->dyn_size);
-    fprintf(f, "dyn_pos          [%d]\n", p->dyn_pos);
-    fprintf(f, "dynamic          [%#lx]\n", p->dynamic);
+    fprintf(f, "Dumping for pool [%p]\n",  p);
+    fprintf(f, "size             [%ld]\n", p->size);
+    fprintf(f, "pos              [%ld]\n", p->pos);
+    fprintf(f, "buf              [%p]\n",  p->buf);
+    fprintf(f, "dyn_size         [%ld]\n", p->dyn_size);
+    fprintf(f, "dyn_pos          [%ld]\n", p->dyn_pos);
+    fprintf(f, "dynamic          [%p]\n",  p->dynamic);
 
     fflush(f);
 }
