@@ -12,9 +12,7 @@ export CVSROOT=:pserver:anoncvs@cvs.apache.org:/home/cvspublic
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/KEYS
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/LICENSE
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/NOTICE
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/README.txt
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/common
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/README.txt
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/BUILD.txt
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/conf
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/native
