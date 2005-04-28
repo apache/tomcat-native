@@ -2329,6 +2329,16 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     /*     jk_map_t *init_map = NULL; */
     jk_map_t *init_map = conf->worker_properties;
 
+#if !defined(WIN32) && !defined(NETWARE)
+    if (!jk_shm_file) {
+        jk_shm_file = ap_server_root_relative(pconf, "logs/jk-runtime-status");
+        if (jk_shm_file)
+            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO,
+                         0, NULL,
+                         "No JkShmFile defined in httpd.conf. "
+                         "Using default %s", jk_shm_file);
+    }
+#endif
     if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
             jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s",
