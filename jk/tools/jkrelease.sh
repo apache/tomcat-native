@@ -7,6 +7,7 @@ JKVER="-${JKEXT}-src"
 JKCVST="jakarta-tomcat-connectors"
 JKDIST=${JKCVST}${JKVER}
 rm -rf ${JKDIST}
+rm -f ${JKDIST}.*
 export CVSROOT=:pserver:anoncvs@cvs.apache.org:/home/cvspublic
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/KEYS
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/LICENSE
@@ -22,25 +23,28 @@ cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/tools
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/xdocs
 mv ${JKDIST}/${JKCVST}/* ${JKDIST}/
 # Remove extra directories and files
+rm -f ${JKDIST}/jk/native/build.xml
+rm -f ${JKDIST}/jk/conf/jk2.*
+rm -f ${JKDIST}/jk/conf/workers2.*
+rm -f ${JKDIST}/jk/conf/*.manifest
+rm -f ${JKDIST}/jk/conf/*.xml
+rm -f ${JKDIST}/jk/native/CHANGES.txt
 rm -rf ${JKDIST}/${JKCVST}
-rm ${JKDIST}/jk/native/build.xml
-# We will build our own CHANGES from xdocs/changes.xml
-rm ${JKDIST}/jk/native/CHANGES.txt
-rm -rf ${JKDIST}/jk/conf/jk2.*
-rm -rf ${JKDIST}/jk/conf/workers2.*
-rm -rf ${JKDIST}/jk/conf/*.manifest
+rm -rf ${JKDIST}/jk/*/.cvsignore
+rm -rf ${JKDIST}/jk/*/*/.cvsignore
 
 # Build documentation.
 cd ${JKDIST}/jk/xdocs
 ant
 # Export text docs
 cd ../native
-w3m -dump -T text/html ../build/docs/install/printer/apache1.html >BUILDING
-w3m -dump -T text/html ../build/docs/install/printer/apache2.html >>BUILDING
-w3m -dump -T text/html ../build/docs/install/printer/iis.html >>BUILDING
-w3m -dump -T text/html ../build/docs/printer/changelog.html >CHANGES
-w3m -dump -T text/html ../build/docs/news/printer/20050101.html >NEWS
-w3m -dump -T text/html ../build/docs/news/printer/20041100.html >>NEWS
+W3MOPTS="-dump -cols 80 -t 4 -S -O iso-8859-1 -T text/html"
+w3m ${W3MOPTS} ../build/docs/install/printer/apache1.html >BUILDING
+w3m ${W3MOPTS} ../build/docs/install/printer/apache2.html >>BUILDING
+w3m ${W3MOPTS} ../build/docs/install/printer/iis.html >>BUILDING
+w3m ${W3MOPTS} ../build/docs/printer/changelog.html >CHANGES
+w3m ${W3MOPTS} ../build/docs/news/printer/20050101.html >NEWS
+w3m ${W3MOPTS} ../build/docs/news/printer/20041100.html >>NEWS
 rm -rf ../build
 rm -rf ../xdocs/jk2
 ./buildconf.sh
