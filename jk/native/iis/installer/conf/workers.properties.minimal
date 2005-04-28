@@ -21,7 +21,7 @@ worker.ajp13w.port=8009
 # 
 
 worker.wlb.type=lb
-worker.wlb.balance_workers=wlb
+worker.wlb.balance_workers=ajp13w
 
 #
 # Define status worker
