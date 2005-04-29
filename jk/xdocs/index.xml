@@ -35,7 +35,7 @@ of Jakarta Tomcat Connectors 1.2.11.
 <p>Downlad the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.11/jakarta-tomcat-connectors-1.2.11-src.tar.gz">JK 1.2.11 release sources</a>
  | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.11/jakarta-tomcat-connectors-1.2.11-src.tar.gz.asc">PGP signature</a>
 </p>
-<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/binaries/jk-1.2.11/">binaries</a> for selected platforms.
+<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
 </p>
 </li>
 <li><a href="news/20050101.html#20050330.1">30 March 2005 - <b>JK-1.2.10 released</b></a>
