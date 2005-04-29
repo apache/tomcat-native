@@ -31,8 +31,12 @@
       <fix>Added missing SEARCH and ACL http methods. (mturk)
       </fix>
       <update>
+      Add worker secret attribute to the documentation (pero)
+      </update>      
+      <update>
       Add a stopped flag to worker configuration. Set flag True and 
-      complete traffic to worker is stopped. 
+      complete traffic to worker is stopped.
+      Also update the Ant JkStatusUpdateTask at Tomcat 5.5.10 release.
       Only usefull in a replicated session cluster.(pero)
       </update>
       <update>Added worker maintain function that will maintain all

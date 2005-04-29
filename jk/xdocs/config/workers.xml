@@ -378,6 +378,12 @@ This feature has been added in <b>jk 1.2.11</b>.
 </p>
 </directive>
 
+<directive name="secret" default="" required="false">
+If set to AJP Connector secret keyword, only request with this keyword are successfull responding.
+Use <b>request.useSecret="true"</b> and <b>request.secret="secret key word"</b> at your tomcat ajp 
+Connector configuration.
+</directive>
+ 
 </directives>
 </subsection>
 
