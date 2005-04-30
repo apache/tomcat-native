@@ -2270,7 +2270,7 @@ static void jk_generic_cleanup(server_rec * s)
             (jk_server_conf_t *) ap_get_module_config(tmp->module_config,
                                                       &jk_module);
 
-        if (NULL != conf) {
+        if (conf) {
             wc_close(conf->log);
             uri_worker_map_free(&(conf->uw_map), conf->log);
             jk_map_free(&(conf->uri_to_context));
@@ -2278,6 +2278,7 @@ static void jk_generic_cleanup(server_rec * s)
             jk_map_free(&(conf->automount));
             if (conf->log)
                 jk_close_file_logger(&(conf->log));
+            conf->log = NULL;
         }
         tmp = tmp->next;
     }
