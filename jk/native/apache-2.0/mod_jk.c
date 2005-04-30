@@ -1996,12 +1996,13 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
             (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                       &jk_module);
 
-        if (conf) {
+        if (conf && conf->worker_properties) {
             /* On pool cleanup pass NULL for the jk_logger to
                prevent segmentation faults on Windows because
                we can't guarantee what order pools get cleaned
                up between APR implementations. */
-            wc_close(NULL);
+            if (conf->was_initialized)
+                wc_close(NULL);
             if (conf->worker_properties)
                 jk_map_free(&conf->worker_properties);
             if (conf->uri_to_context)
@@ -2010,6 +2011,8 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
                 jk_map_free(&conf->automount);
             if (conf->uw_map)
                 uri_worker_map_free(&conf->uw_map, NULL);
+            conf->was_initialized   = JK_FALSE;
+            conf->worker_properties = NULL;
         }
         s = s->next;
     }
