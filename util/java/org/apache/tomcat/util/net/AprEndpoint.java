@@ -686,8 +686,7 @@ public class AprEndpoint {
                     // Hand this socket off to an appropriate processor
                     workerThread.assign(socket, pool);
                 } catch (Exception e) {
-                    // FIXME: proper logging
-                    e.printStackTrace();
+                    log.error(sm.getString("endpoint.accept.fail"), e);
                 }
 
                 // The processor will recycle itself when it finishes
