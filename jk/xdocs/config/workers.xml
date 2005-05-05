@@ -270,6 +270,15 @@ the network traffic between JK and Tomcat to find the best worker.
 This feature has been added in <b>jk 1.2.9</b>.
 </p>
 </directive>
+
+<directive name="secret" default="" required="false">
+Set a default secret word for all defined workers. 
+See worker secret attribute description for more info.
+<p>
+This feature has been added in <b>jk 1.2.12</b>.
+</p>
+</directive>
+
 </directives>
 
 </subsection>
