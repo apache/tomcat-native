@@ -368,7 +368,7 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
                 uses_domain = 1;
                 candidate = find_best_bydomain(p, candidate->s->domain, l);
             }
-            if (candidate && candidate->s->in_error_state)
+            if (candidate && (candidate->s->in_error_state || candidate->s->is_stopped))
                 candidate = NULL;
         }
     }
