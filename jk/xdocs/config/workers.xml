@@ -151,15 +151,17 @@ each retry after default an extra wait of 100ms will be inserted.
 <directive name="cachesize" default="1" required="false">
 Cachesize defines the number of connections made to the AJP backend that
 are maintained as a connection pool.
-It does not limit the number of those connection. 
+It will limit the number of those connection that each web server child
+process can made.
 <p>
-Cachesize property is useful when you're using JK in multi threaded 
+Cachesize property is used only for multi threaded 
 web servers such as Apache 2.0 (worker), IIS and Netscape. The cachesize property
-should reflect the number of threads per child process. The JK 1.2.8 will discover
-the number of threads per child process on Apache 2 web server with worker-mpm.
-For other web servers to will have to set that value manually.
+should reflect the number of threads per child process. JK will discover
+the number of threads per child process on Apache 2 web server with worker-mpm and set
+its default value to match the ThreadsPerChild Apache directive. For IIS the default
+value is 10. For other web servers this value has to be set manually.
 </p>
-<warn>Do not use cachesize with values higher then 1 on <b>prefork mpm</b> or <b>apache 1.3.x</b>!</warn>
+<warn>Do not use cachesize with values higher then 1 on <b>Apache 2.x prefork</b> or <b>Apache 1.3.x</b>!</warn>
 </directive>
 
 <directive name="cache_timeout" default="0" required="false">
