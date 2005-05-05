@@ -442,7 +442,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
             retry_worker(&p->lb_workers[0], p->s->recover_wait_time, l);
         }
         /* Check if worker is marked for retry */
-        if (!p->lb_workers[0].s->in_error_state) {
+        if(!p->lb_workers[0].s->in_error_state && !p->lb_workers[0].s->is_stopped) {
             p->lb_workers[0].r = &(p->lb_workers[0].s->name[0]);
             JK_TRACE_EXIT(l);
             return &p->lb_workers[0];
