@@ -29,6 +29,8 @@
 #include "jk_worker.h"
 #include "jk_lb_worker.h"
 #include "jk_ajp13.h"
+#include "jk_ajp13_worker.h"
+#include "jk_ajp14_worker.h"
 #include "jk_mt.h"
 #include "jk_shm.h"
 
@@ -732,9 +734,11 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         lb_worker_t *p = pThis->worker_private;
         char **worker_names;
         unsigned int num_of_workers;
+        const char *secret;
 
         p->s->sticky_session = jk_get_is_sticky_session(props, p->s->name);
         p->s->sticky_session_force = jk_get_is_sticky_session_force(props, p->s->name);
+        secret = jk_get_worker_secret(props, p->s->name);
 
         if (jk_get_lb_worker_list(props,
                                   p->s->name,
@@ -787,6 +791,12 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                                       &(p->lb_workers[i].w),
                                       we, l) || !p->lb_workers[i].w) {
                     break;
+                }
+                if (secret && (p->lb_workers[i].w->type == JK_AJP13_WORKER_TYPE ||
+                    p->lb_workers[i].w->type == JK_AJP14_WORKER_TYPE)) {
+                    ajp_worker_t *aw = (ajp_worker_t *)p->lb_workers[i].w->worker_private; 
+                    if (!aw->secret)
+                        aw->secret = secret;
                 }
             }
 
