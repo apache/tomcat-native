@@ -46,7 +46,7 @@
 #define PORT_OF_WORKER              ("port")
 #define TYPE_OF_WORKER              ("type")
 #define CACHE_OF_WORKER_DEPRECATED  ("cachesize")
-#define CACHE_OF_WORKER             ("connections_per_child")
+#define CACHE_OF_WORKER             ("connection_pool_size")
 #define CACHE_TIMEOUT_OF_WORKER     ("cache_timeout")
 #define RECOVERY_OPTS_OF_WORKER     ("recovery_options")
 #define CONNECT_TIMEOUT_OF_WORKER   ("connect_timeout")
