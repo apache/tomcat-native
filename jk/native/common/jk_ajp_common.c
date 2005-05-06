@@ -960,11 +960,19 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN);
 
     if (rc < 0) {
-        jk_log(l, JK_LOG_ERROR,
-               "ERROR: can't receive the response message from tomcat, "
-               "network problems or tomcat is down (%s), err=%d",
-               jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), rc);
-        JK_TRACE_EXIT(l);
+        if (rc == JK_SOCKET_EOF) {
+            jk_log(l, JK_LOG_INFO,
+                   "Tomcat has forced a connection close for socket %d",
+                   ae->sd);
+            JK_TRACE_EXIT(l);
+        }
+        else {
+            jk_log(l, JK_LOG_ERROR,
+                   "Can't receive the response message from tomcat, "
+                   "network problems or tomcat is down (%s), err=%d",
+                   jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), rc);
+             JK_TRACE_EXIT(l);
+        }
         return JK_FALSE;
     }
     ae->endpoint.rd += rc;
