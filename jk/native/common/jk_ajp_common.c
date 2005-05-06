@@ -950,12 +950,6 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     char buf[32];
 
     JK_TRACE_ENTER(l);
-    if ((ae->proto != AJP13_PROTO) && (ae->proto != AJP14_PROTO)) {
-        jk_log(l, JK_LOG_ERROR,
-               "Can't handle unknown protocol %d", ae->proto);
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
 
     rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN);
 
