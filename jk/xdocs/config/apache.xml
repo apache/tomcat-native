@@ -310,6 +310,20 @@ file that Tomcat normally serves - for instance Velocity pages and JSP pages.
 </p>
 
 <p>
+JkOptions <b>ForwardLocalAddress</b>, you told mod_jk to send the local address,
+of the Apache web server instead remote client address. This can be used by
+Tomcat remote address valve for allowing connections only from registered Apache
+web servers.
+
+<source>  
+  JkOptions     +ForwardLocalAddress
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
 The directive <b>JkEnvVar</b> allow you to forward an environment vars from Apache server to Tomcat engine.
 
 <source>  

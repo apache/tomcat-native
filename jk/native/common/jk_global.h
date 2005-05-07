@@ -207,6 +207,8 @@ extern "C"
 #define JK_OPT_FWDKEYSIZE           0x0004
 
 #define JK_OPT_FWDDIRS              0x0008
+/* Forward local instead remote address */
+#define JK_OPT_FWDLOCAL             0x0010
 
 /* Check for EBCDIC systems */
 

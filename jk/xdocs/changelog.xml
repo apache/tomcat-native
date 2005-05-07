@@ -25,6 +25,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Added ForwardLocallAddres JkOptions flag for passing local instead remote
+      address. Useful for remote addr valve. (mturk)
+      </update>      
      <fix>Fix that worker not used, when stopped flag is true. (pero)
      </fix>
       <update>

@@ -99,7 +99,7 @@
 #define JK_DURATION         ("jakarta.worker.duration")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet")
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x)
-
+#define STRNULL_FOR_NULL(x) ((x) ? (x) : "(null)")
 /*
  * If you are not using SSL, comment out the following line. It will make
  * apache run faster.
@@ -474,21 +474,10 @@ static int init_ws_service(apache_private_data_t * private_data,
                                                 r->per_dir_config,
                                                 REMOTE_HOST, NULL);
     s->remote_host = NULL_FOR_EMPTY(s->remote_host);
-    s->remote_addr = NULL_FOR_EMPTY(r->connection->remote_ip);
-
-    /* Dump all connection param so we can trace what's going to
-     * the remote tomcat
-     */
-    if (JK_IS_DEBUG_LEVEL(conf->log))
-        jk_log(conf->log, JK_LOG_DEBUG,
-               "agsp=%u agsn=%s hostn=%s shostn=%s cbsport=%d sport=%d claport=%d",
-               ap_get_server_port(r),
-               ap_get_server_name(r) != NULL ? ap_get_server_name(r) : "",
-               r->hostname != NULL ? r->hostname : "",
-               r->server->server_hostname !=
-               NULL ? r->server->server_hostname : "",
-               r->connection->base_server->port, r->server->port,
-               r->connection->local_addr->port);
+    if (conf->options & JK_OPT_FWDLOCAL)
+        s->remote_addr = NULL_FOR_EMPTY(r->connection->local_ip);
+    else
+        s->remote_addr = NULL_FOR_EMPTY(r->connection->remote_ip);
 
     /* get server name */
     s->server_name = (char *)ap_get_server_name(r);
@@ -512,6 +501,24 @@ static int init_ws_service(apache_private_data_t * private_data,
 #else
     s->query_string = r->args;
 #endif
+
+    /* Dump all connection param so we can trace what's going to
+     * the remote tomcat
+     */
+    if (JK_IS_DEBUG_LEVEL(conf->log)) {
+        jk_log(conf->log, JK_LOG_DEBUG,
+               "Service protocol=%s method=%s host=%s addrr=%s name=%s port=%d auth=%s user=%s laddr=%s raddr=%s",
+               STRNULL_FOR_NULL(s->protocol),
+               STRNULL_FOR_NULL(s->method),
+               STRNULL_FOR_NULL(s->remote_host),
+               STRNULL_FOR_NULL(s->remote_addr),
+               STRNULL_FOR_NULL(s->server_name),
+               s->server_port,
+               STRNULL_FOR_NULL(s->auth_type),
+               STRNULL_FOR_NULL(s->remote_user),
+               STRNULL_FOR_NULL(r->connection->local_ip),
+               STRNULL_FOR_NULL(r->connection->remote_ip));
+    }
 
     /*
      * The 2.2 servlet spec errata says the uri from
@@ -1514,6 +1521,9 @@ static const char *jk_set_options(cmd_parms * cmd, void *dummy,
         }
         else if (!strcasecmp(w, "ForwardDirectories")) {
             opt = JK_OPT_FWDDIRS;
+        }
+        else if (!strcasecmp(w, "ForwardLocalAddress")) {
+            opt = JK_OPT_FWDLOCAL;
         }
         else
             return apr_pstrcat(cmd->pool, "JkOptions: Illegal option '", w,
