@@ -625,7 +625,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rec->s->in_recovering = JK_FALSE;
                     rec->s->error_time = time(NULL);
 
-                    if (is_service_error > JK_HTTP_OK) {
+                    if (is_service_error != JK_HTTP_SERVER_BUSY) {
                         /*
                         * Error is not recoverable - break with an error.
                         */
