@@ -17,6 +17,7 @@
 package org.apache.tomcat.util.net;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
 
@@ -715,6 +716,10 @@ public class AprEndpoint {
         protected long pool = 0;
         protected long[] desc;
 
+        protected long[] addS;
+        protected long[] addP;
+        protected int addCount = 0;
+
         protected synchronized void init() {
             pool = Pool.create(serverSockPool);
             try {
@@ -735,6 +740,8 @@ public class AprEndpoint {
             }
             desc = new long[pollerSize * 4];
             keepAliveCount = 0;
+            addS = new long[pollerSize];
+            addP = new long[pollerSize];
         }
 
         protected void destroy() {
@@ -742,23 +749,17 @@ public class AprEndpoint {
         }
 
         public void add(long socket, long pool) {
-            synchronized (this) {
-                int rv = Poll.add(serverPollset, socket, pool, Poll.APR_POLLIN);
-                if (rv == Status.APR_SUCCESS) {
-                    keepAliveCount++;
-                } else {
+            synchronized (addS) {
+                // Add socket to the list. Newly added sockets will wait 
+                // at most for pollTime before being polled
+                if (addCount >= addS.length) {
                     // Can't do anything: close the socket right away
                     Pool.destroy(pool);
+                    return;
                 }
-            }
-        }
-
-        public void remove(long socket) {
-            synchronized (this) {
-                int rv = Poll.remove(serverPollset, socket);
-                if (rv == Status.APR_SUCCESS) {
-                    keepAliveCount--;
-                }
+                addS[addCount] = socket;
+                addP[addCount] = pool;
+                addCount++;
             }
         }
 
@@ -780,7 +781,7 @@ public class AprEndpoint {
                     }
                 }
 
-                while (keepAliveCount < 1) {
+                while (keepAliveCount < 1 && addCount < 1) {
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
@@ -789,6 +790,22 @@ public class AprEndpoint {
                 }
 
                 try {
+                    // Add sockets which are waiting to the poller
+                    if (addCount > 0) {
+                        synchronized (addS) {
+                            for (int i = 0; i < addCount; i++) {
+                                int rv = Poll.add
+                                    (serverPollset, addS[i], addP[i], Poll.APR_POLLIN);
+                                if (rv == Status.APR_SUCCESS) {
+                                    keepAliveCount++;
+                                } else {
+                                    // Can't do anything: close the socket right away
+                                    Pool.destroy(pool);
+                                }
+                            }
+                            addCount = 0;
+                        }
+                    }
                     // Pool for the specified interval
                     int rv = Poll.poll(serverPollset, pollTime, desc, true);
                     if (rv > 0) {
@@ -971,7 +988,8 @@ public class AprEndpoint {
         // Range information
         public long start;
         public long end;
-        // Socket pool
+        // Socket and socket pool
+        public long socket;
         public long pool;
         // Position
         public long pos;
@@ -990,6 +1008,9 @@ public class AprEndpoint {
         protected long pool = 0;
         protected long[] desc;
         protected HashMap sendfileData;
+
+        protected ArrayList addS;
+
         protected void init() {
             pool = Pool.create(serverSockPool);
             try {
@@ -1010,6 +1031,7 @@ public class AprEndpoint {
             }
             desc = new long[sendfileSize * 4];
             sendfileData = new HashMap(sendfileSize);
+            addS = new ArrayList();
         }
 
         protected void destroy() {
@@ -1017,7 +1039,7 @@ public class AprEndpoint {
             Pool.destroy(pool);
         }
 
-        public boolean add(long socket, SendfileData data) {
+        public boolean add(SendfileData data) {
             // Initialize fd from data given
             try {
                 data.fdpool = Pool.create(data.pool);
@@ -1027,9 +1049,9 @@ public class AprEndpoint {
                      0, data.fdpool);
                 data.pos = data.start;
                 // Set the socket to nonblocking mode
-                Socket.optSet(socket, Socket.APR_SO_NONBLOCK, 1);
+                Socket.optSet(data.socket, Socket.APR_SO_NONBLOCK, 1);
                 while (true) {
-                    long nw = Socket.sendfile(socket, data.fd, null, null,
+                    long nw = Socket.sendfile(data.socket, data.fd, null, null,
                                              data.pos, data.end, 0);
                     if (nw < 0) {
                         if (!Status.APR_STATUS_IS_EAGAIN((int) -nw)) {
@@ -1045,7 +1067,7 @@ public class AprEndpoint {
                             // Entire file has been send
                             Poll.destroy(data.fdpool);
                             // Set back socket to blocking mode
-                            Socket.optSet(socket, Socket.APR_SO_NONBLOCK, 0);
+                            Socket.optSet(data.socket, Socket.APR_SO_NONBLOCK, 0);
                             return true;
                         }
                     }
@@ -1054,17 +1076,10 @@ public class AprEndpoint {
                 log.error(sm.getString("endpoint.sendfile.error"), e);
                 return false;
             }
-            synchronized (this) {
-                // Add socket to the poller
-                sendfileData.put(new Long(socket), data);
-                int rv = Poll.add(sendfilePollset, socket, 0, Poll.APR_POLLOUT);
-                if (rv == Status.APR_SUCCESS) {
-                    sendfileCount++;
-                } else {
-                    log.warn(sm.getString("endpoint.sendfile.addfail", "" + rv));
-                    // Can't do anything: close the socket right away
-                    Pool.destroy(data.pool);
-                }
+            // Add socket to the list. Newly added sockets will wait 
+            // at most for pollTime before being polled
+            synchronized (addS) {
+                addS.add(sendfileData);
             }
             return false;
         }
@@ -1099,7 +1114,7 @@ public class AprEndpoint {
                     }
                 }
 
-                while (sendfileCount < 1) {
+                while (sendfileCount < 1 && addS.size() < 1) {
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
@@ -1108,6 +1123,22 @@ public class AprEndpoint {
                 }
 
                 try {
+                    // Add socket to the poller
+                    if (addS.size() > 0) {
+                        for (int i = 0; i < addS.size(); i++) {
+                            SendfileData data = (SendfileData) addS.get(i);
+                            int rv = Poll.add(sendfilePollset, data.socket, 0, Poll.APR_POLLOUT);
+                            if (rv == Status.APR_SUCCESS) {
+                                sendfileData.put(new Long(data.socket), data);
+                                sendfileCount++;
+                            } else {
+                                log.warn(sm.getString("endpoint.sendfile.addfail", "" + rv));
+                                // Can't do anything: close the socket right away
+                                Pool.destroy(data.pool);
+                            }
+                        }
+                        addS.clear();
+                    }
                     // Pool for the specified interval
                     int rv = Poll.poll(sendfilePollset, pollTime, desc, false);
                     if (rv > 0) {
