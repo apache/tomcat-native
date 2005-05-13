@@ -2055,10 +2055,10 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
             for(i = w->ep_cache_sz - 1; i >= 0; i--) {
                 if (w->ep_cache[i] == NULL) {
                     w->ep_cache[i] = p;
-                    ajp_reset_endpoint(p, l);
                     break;
                 }
             }
+            ajp_reset_endpoint(p, l);
             *e = NULL;
             JK_LEAVE_CS(&w->cs, rc);
             if (sock >= 0)
@@ -2123,6 +2123,11 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                            slot);
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
+            }
+            else {
+                jk_log(l, JK_LOG_WARNING,
+                        "Unable to get the free endpoint for worker %s from %d slots",
+                        aw->name, aw->ep_cache_sz);                
             }
             JK_LEAVE_CS(&aw->cs, rc);
         }
