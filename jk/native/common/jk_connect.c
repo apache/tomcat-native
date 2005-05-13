@@ -45,6 +45,13 @@ static apr_pool_t *jk_apr_pool = NULL;
 #define JK_GET_SOCKET_ERRNO() ((void)0)
 #endif /* WIN32 */
 
+/* our compiler cant deal with char* <-> const char* ... */
+#if defined(NETWARE) && !defined(__NOVELL_LIBC__)
+typedef char* SET_TYPE;
+#else
+typedef const char* SET_TYPE;
+#endif
+
 static int soblock(int sd)
 {
 /* BeOS uses setsockopt at present for non blocking... */
@@ -263,7 +270,11 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
 
         /* XXX : WARNING : We should really use gethostbyname_r in multi-threaded env */
         /* Fortunatly when APR is available, ie under Apache 2.0, we use it */
+#if defined(NETWARE) && !defined(__NOVELL_LIBC__)
+        struct hostent *hoste = gethostbyname((char*)host);
+#else
         struct hostent *hoste = gethostbyname(host);
+#endif
         if (!hoste) {
             return JK_FALSE;
         }
@@ -305,7 +316,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
         return -1;
     }
     /* Disable Nagle algorithm */
-    if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&set,
+    if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (SET_TYPE)&set,
                    sizeof(set))) {
         jk_log(l, JK_LOG_ERROR,
                 "failed setting TCP_NODELAY with errno=%d", errno);
@@ -318,7 +329,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                "socket TCP_NODELAY set to On");
     if (keepalive) {
         set = 1;
-        if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (const char *)&set,
+        if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (SET_TYPE)&set,
                        sizeof(set))) {
             jk_log(l, JK_LOG_ERROR,
                    "failed setting SO_KEEPALIVE with errno=%d", errno);
@@ -334,7 +345,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
     if (sock_buf > 0) {
         set = sock_buf;
         /* Set socket send buffer size */
-        if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (const char *)&set,
+        if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (SET_TYPE)&set,
                         sizeof(set))) {
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
@@ -345,7 +356,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
         }
         set = sock_buf;
         /* Set socket receive buffer size */
-        if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (const char *)&set,
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (SET_TYPE)&set,
                                 sizeof(set))) {
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
@@ -400,7 +411,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
 #ifdef SO_LINGER
     /* Make hard closesocket by disabling lingering */
     li.l_linger = li.l_onoff = 0;
-    if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (const char *)&li,
+    if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (SET_TYPE)&li,
                    sizeof(li))) {
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
