@@ -1756,6 +1756,7 @@ static int jk_handler(request_rec * r)
                 jk_endpoint_t *end = NULL;
                 if (worker->get_endpoint(worker, &end, l)) {
                     rc = end->service(end, &s, l, &is_error);
+                    end->done(&end, l);
 
                     if (s.content_read < s.content_length ||
                         (s.is_chunked && !s.no_more_chunks)) {
@@ -1773,7 +1774,6 @@ static int jk_handler(request_rec * r)
                             }
                         }
                     }
-                    end->done(&end, l);
                 }
 #ifndef NO_GETTIMEOFDAY
                 if (conf->format != NULL) {
@@ -1797,6 +1797,7 @@ static int jk_handler(request_rec * r)
                 jk_log(l, JK_LOG_ERROR, "Could not init service"
                        " for worker=%s",
                        worker_name);
+                jk_close_pool(&private_data.p);
                 JK_TRACE_EXIT(l);
                 return is_error;
             }

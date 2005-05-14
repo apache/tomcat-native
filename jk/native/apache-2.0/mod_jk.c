@@ -1895,7 +1895,7 @@ static int jk_handler(request_rec * r)
                 if (worker->get_endpoint(worker, &end, xconf->log)) {
                     rc = end->service(end, &s, xconf->log,
                                       &is_error);
-
+                    end->done(&end, xconf->log);
                     if (s.content_read < s.content_length ||
                         (s.is_chunked && !s.no_more_chunks)) {
 
@@ -1913,7 +1913,6 @@ static int jk_handler(request_rec * r)
                             }
                         }
                     }
-                    end->done(&end, xconf->log);
                 }
                 else {            /* this means we couldn't get an endpoint */
                     jk_log(xconf->log, JK_LOG_ERROR, "Could not get endpoint"
@@ -1926,6 +1925,7 @@ static int jk_handler(request_rec * r)
                 jk_log(xconf->log, JK_LOG_ERROR, "Could not init service"
                        " for worker=%s",
                        worker_name);
+                jk_close_pool(&private_data.p);
                 JK_TRACE_EXIT(xconf->log);
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
