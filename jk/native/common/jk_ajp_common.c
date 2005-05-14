@@ -2060,6 +2060,9 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
             }
             ajp_reset_endpoint(p, l);
             *e = NULL;
+            /* set last_access only if needed */
+            if (w->cache_timeout > 0 || w->recycle_timeout > 0)
+                p->last_access = time(NULL); 
             JK_LEAVE_CS(&w->cs, rc);
             if (sock >= 0)
                 jk_shutdown_socket(sock);
