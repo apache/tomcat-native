@@ -17,6 +17,7 @@
 package org.apache.coyote.http11;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -38,7 +39,7 @@ import org.apache.coyote.Response;
  * @author <a href="mailto:remm@apache.org">Remy Maucherat</a>
  */
 public class InternalAprOutputBuffer 
-    implements OutputBuffer, ByteChunk.ByteOutputChannel {
+    implements OutputBuffer {
 
 
     // -------------------------------------------------------------- Constants
@@ -66,14 +67,13 @@ public class InternalAprOutputBuffer
         headerBuffer = new byte[headerBufferSize];
         buf = headerBuffer;
 
+        bbuf = ByteBuffer.allocateDirect((headerBufferSize / 1500 + 1) * 1500);
+
         outputStreamOutputBuffer = new SocketOutputBuffer();
 
         filterLibrary = new OutputFilter[0];
         activeFilters = new OutputFilter[0];
         lastActiveFilter = -1;
-
-        socketBuffer = new ByteChunk();
-        socketBuffer.setByteOutputChannel(this);
 
         committed = false;
         finished = false;
@@ -168,17 +168,11 @@ public class InternalAprOutputBuffer
 
 
     /**
-     * Socket buffer.
+     * Direct byte buffer used for writing.
      */
-    protected ByteChunk socketBuffer;
+    protected ByteBuffer bbuf = null;
 
-
-    /**
-     * Socket buffer (extra buffering to reduce number of packets sent).
-     */
-    protected boolean useSocketBuffer = false;
-
-
+    
     // ------------------------------------------------------------- Properties
 
 
@@ -202,14 +196,7 @@ public class InternalAprOutputBuffer
      * Set the socket buffer size.
      */
     public void setSocketBuffer(int socketBufferSize) {
-
-        if (socketBufferSize > 500) {
-            useSocketBuffer = true;
-            socketBuffer.allocate(socketBufferSize, socketBufferSize);
-        } else {
-            useSocketBuffer = false;
-        }
-
+        // FIXME: Remove
     }
 
 
@@ -295,9 +282,7 @@ public class InternalAprOutputBuffer
         }
 
         // Flush the current buffer
-        if (useSocketBuffer) {
-            socketBuffer.flushBuffer();
-        }
+        flushBuffer();
 
     }
 
@@ -326,7 +311,7 @@ public class InternalAprOutputBuffer
 
         // Recycle Request object
         response.recycle();
-        socketBuffer.recycle();
+        bbuf.clear();
 
         socket = 0;
         buf = headerBuffer;
@@ -348,7 +333,6 @@ public class InternalAprOutputBuffer
 
         // Recycle Request object
         response.recycle();
-        socketBuffer.recycle();
 
         // Determine the header buffer used for next request
         buf = headerBuffer;
@@ -390,9 +374,7 @@ public class InternalAprOutputBuffer
         if (lastActiveFilter != -1)
             activeFilters[lastActiveFilter].end();
 
-        if (useSocketBuffer) {
-            socketBuffer.flushBuffer();
-        }
+        flushBuffer();
 
         finished = true;
 
@@ -595,12 +577,7 @@ public class InternalAprOutputBuffer
 
         if (pos > 0) {
             // Sending the response header buffer
-            if (useSocketBuffer) {
-                socketBuffer.append(buf, 0, pos);
-            } else {
-                if (Socket.send(socket, buf, 0, pos) < 0)
-                    throw new IOException(sm.getString("iib.failedwrite"));
-            }
+            bbuf.put(buf, 0, pos);
         }
 
     }
@@ -738,11 +715,13 @@ public class InternalAprOutputBuffer
     /**
      * Callback to write data from the buffer.
      */
-    public void realWriteBytes(byte[] buf, int off, int len)
+    protected void flushBuffer()
         throws IOException {
-        if (len > 0) {
-            if (Socket.send(socket, buf, off, len) < 0)
+        if (bbuf.position() > 0) {
+            if (Socket.sendb(socket, bbuf, 0, bbuf.position()) < 0) {
                 throw new IOException(sm.getString("iib.failedwrite"));
+            }
+            bbuf.clear();
         }
     }
 
@@ -764,14 +743,15 @@ public class InternalAprOutputBuffer
         public int doWrite(ByteChunk chunk, Response res) 
             throws IOException {
 
-            if (useSocketBuffer) {
-                socketBuffer.append(chunk.getBuffer(), chunk.getStart(), 
-                                   chunk.getLength());
-            } else {
-                if (Socket.send(socket, chunk.getBuffer(), chunk.getStart(), 
-                                chunk.getLength()) < 0)
-                    throw new IOException(sm.getString("iib.failedwrite"));
+            if (bbuf.position() + chunk.getLength() > bbuf.capacity()) {
+                flushBuffer();
+                if (chunk.getLength() > bbuf.capacity()) {
+                    if (Socket.send(socket, chunk.getBuffer(), chunk.getStart(), 
+                            chunk.getLength()) < 0)
+                        throw new IOException(sm.getString("iib.failedwrite"));
+                }
             }
+            bbuf.put(chunk.getBuffer(), chunk.getStart(), chunk.getLength());
             return chunk.getLength();
 
         }
