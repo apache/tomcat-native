@@ -38,6 +38,24 @@
   </subsection>
 </section>
 
+<section name="Changes with JK 1.2.13">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <fix>
+      Fix for NetWare compiler to deal with different types between AP13
+      and AP2 SDKs. (fuankg)
+      </fix>
+      <update>
+      Emit much more legible user.dmp crash analysis output for WIN32. (wrowe)
+      </update>      
+     <fix>
+     <bug>34558</bug>: Fix first failover request. (mturk)
+     </fix>
+    </changelog>
+  </subsection>
+</section>
+
 <section name="Changes with JK 1.2.11">
   <br />
   <subsection name="Native">
