@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.tomcat.jni.Address;
 import org.apache.tomcat.jni.Error;
 import org.apache.tomcat.jni.File;
+import org.apache.tomcat.jni.Library;
 import org.apache.tomcat.jni.Poll;
 import org.apache.tomcat.jni.Pool;
 import org.apache.tomcat.jni.Socket;
@@ -396,6 +397,12 @@ public class AprEndpoint {
         Socket.bind(serverSock, inetAddress);
         // Start listening on the server socket
         Socket.listen(serverSock, backlog);
+        
+        // Sendfile usage on systems which don't support it cause major problems
+        if (useSendfile && !Library.APR_HAS_SENDFILE) {
+            log.warn(sm.getString("endpoint.sendfile.nosupport"));
+            useSendfile = false;
+        } 
 
         initialized = true;
 
