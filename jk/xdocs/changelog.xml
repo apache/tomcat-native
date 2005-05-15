@@ -21,6 +21,29 @@
   new documentation project for JK has been started.
   </p>
 </section>
+<section name="Changes with JK 1.2.13">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <update>
+      Added worker.maintain directive to allow customizing default 10
+      second timeout. On busy servers this value needs to be set on
+      higher value. (mturk)
+      </update>      
+      <fix>
+      Fix for NetWare compiler to deal with different types between AP13
+      and AP2 SDKs. (fuankg)
+      </fix>
+      <update>
+      Emit much more legible user.dmp crash analysis output for WIN32. (wrowe)
+      </update>      
+     <fix>
+     <bug>34558</bug>: Fix first failover request. (mturk)
+     </fix>
+    </changelog>
+  </subsection>
+</section>
+
 <section name="Changes with JK 1.2.12">
   <br />
   <subsection name="Native">
@@ -34,24 +57,6 @@
       <update>
       Add loadbalance default worker secret attribute to the documentation (pero)
       </update>      
-    </changelog>
-  </subsection>
-</section>
-
-<section name="Changes with JK 1.2.13">
-  <br />
-  <subsection name="Native">
-    <changelog>
-      <fix>
-      Fix for NetWare compiler to deal with different types between AP13
-      and AP2 SDKs. (fuankg)
-      </fix>
-      <update>
-      Emit much more legible user.dmp crash analysis output for WIN32. (wrowe)
-      </update>      
-     <fix>
-     <bug>34558</bug>: Fix first failover request. (mturk)
-     </fix>
     </changelog>
   </subsection>
 </section>

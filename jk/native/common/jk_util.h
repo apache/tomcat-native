@@ -147,6 +147,7 @@ void jk_set_worker_def_cache_size(int sz);
 
 int jk_get_worker_def_cache_size(int protocol);
 
+int jk_get_worker_maintain_time(jk_map_t *m);
 
 #define TC32_BRIDGE_TYPE    32
 #define TC33_BRIDGE_TYPE    33

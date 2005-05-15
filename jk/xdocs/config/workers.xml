@@ -74,6 +74,14 @@ A comma separated list of workers names that the JK will use. When starting up,
 the web server plugin will instantiate the workers whose name appears in the
 worker.list property, these are also the workers to whom you can map requests. 
 </directive>
+<directive name="worker.maintain" default="60" required="false">
+Worker connection pool maintain timeout in seconds. If set to the positive
+value JK will scan all connections for all workers specified in worker.list
+directive and check if connections needs to be recycled.
+<p>
+This feature has been added in <b>jk 1.2.13</b>.
+</p>
+</directive>
 </directives>
 </subsection>
 

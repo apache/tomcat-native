@@ -38,6 +38,7 @@ static int build_worker_map(jk_map_t *init_data,
 /* Global worker list */
 static jk_map_t *worker_map;
 static JK_CRIT_SEC worker_lock;
+static int worker_maintain_time = 0;
 
 int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
 {
@@ -64,6 +65,8 @@ int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
         we->worker_list = NULL;
         return JK_FALSE;
     }
+
+    worker_maintain_time = jk_get_worker_maintain_time(init_data);
 
     if (!build_worker_map(init_data, we->worker_list,
                           we->num_of_workers, we, l)) {
@@ -279,15 +282,12 @@ void wc_maintain(jk_logger_t *l)
 
     JK_TRACE_ENTER(l);
 
-    /* TODO: make maintatin time configurable
-     * For now use 10 seconds.
-     */
-    if (sz > 0) {
+    if (sz > 0 && worker_maintain_time > 0) {
         int i;
         time_t now;
         JK_ENTER_CS(&worker_lock, i);
         now = time(NULL);
-        if (difftime(now, last_maintain) >= 10) {
+        if (difftime(now, last_maintain) >= worker_maintain_time) {
             last_maintain = now;
             JK_LEAVE_CS(&worker_lock, i);
             for (i = 0; i < sz; i++) {

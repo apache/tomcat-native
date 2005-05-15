@@ -1868,7 +1868,6 @@ static int jk_handler(request_rec * r)
             private_data.read_body_started = JK_FALSE;
             private_data.r = r;
             
-            /* TODO: Make maintain call configurable */
             wc_maintain(xconf->log);
 
             jk_init_ws_service(&s);

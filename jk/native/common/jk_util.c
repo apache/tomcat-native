@@ -76,7 +76,9 @@
 #define RETRIES_OF_WORKER           ("retries")
 
 #define DEFAULT_WORKER              JK_AJP13_WORKER_NAME
-#define WORKER_LIST_PROPERTY_NAME   ("worker.list")
+#define WORKER_LIST_PROPERTY_NAME     ("worker.list")
+#define WORKER_MAINTAIN_PROPERTY_NAME ("worker.maintain")
+#define DEFAULT_MAINTAIN_TIME       (60)
 #define DEFAULT_LB_FACTOR           (1)
 #define LOG_FORMAT                  ("log_format")
 
@@ -820,6 +822,12 @@ int jk_get_worker_mount_list(jk_map_t *m,
     }
 
     return JK_FALSE;
+}
+
+int jk_get_worker_maintain_time(jk_map_t *m)
+{
+    return jk_map_get_int(m, WORKER_MAINTAIN_PROPERTY_NAME,
+                          DEFAULT_MAINTAIN_TIME);
 }
 
 int jk_get_worker_mx(jk_map_t *m, const char *wname, unsigned *mx)

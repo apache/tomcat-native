@@ -985,7 +985,6 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
         jk_pool_atom_t buf[SMALL_POOL_SIZE];
         char *worker_name;
 
-        /* TODO: Make maintain call configurable */
         wc_maintain(logger);
         jk_init_ws_service(&s);
         jk_open_pool(&private_data.p, buf, sizeof(buf));

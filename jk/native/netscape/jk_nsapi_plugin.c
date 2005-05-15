@@ -322,7 +322,6 @@ NSAPI_PUBLIC int jk_service(pblock * pb, Session * sn, Request * rq)
         s.ws_private = &private_data;
         s.pool = &private_data.p;
 
-        /* TODO: Make maintain call configurable */
         wc_maintain(logger);
         if (init_ws_service(&private_data, &s)) {
             jk_endpoint_t *e = NULL;
