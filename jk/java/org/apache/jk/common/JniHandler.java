@@ -59,7 +59,6 @@ public class JniHandler extends JkHandler {
 
 
     public static final int MSG_NOTE=0;
-    public static final int C2B_NOTE=1;
     public static final int MB_NOTE=2;
     private boolean paused = false;
 
@@ -178,7 +177,7 @@ public class JniHandler extends JkHandler {
             msgCtx.setMsg( MSG_NOTE, msg); // XXX Use noteId
 
             C2BConverter c2b=new C2BConverter(  "iso-8859-1" );
-            msgCtx.setNote( C2B_NOTE, c2b );
+            msgCtx.setConverter( c2b );
 
             MessageBytes tmpMB= MessageBytes.newInstance();
             msgCtx.setNote( MB_NOTE, tmpMB );

@@ -17,6 +17,21 @@
 package org.apache.jk.core;
 
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.net.InetAddress;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+
+import org.apache.coyote.ActionCode;
+import org.apache.coyote.ActionHook;
+import org.apache.coyote.Request;
+import org.apache.coyote.Response;
+
+import org.apache.tomcat.util.buf.C2BConverter;
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.net.SSLSupport;
+import org.apache.jk.common.JkInputStream;
 
 
 /**
@@ -27,12 +42,19 @@ import java.io.IOException;
  * @author Kevin Seguin
  * @author Costin Manolache
  */
-public class MsgContext {
+public class MsgContext implements ActionHook {
+    private static org.apache.commons.logging.Log log =
+        org.apache.commons.logging.LogFactory.getLog(MsgContext.class);
+    private static org.apache.commons.logging.Log logTime=
+        org.apache.commons.logging.LogFactory.getLog( "org.apache.jk.REQ_TIME" );
+
     private int type;
     private Object notes[]=new Object[32];
     private JkHandler next;
     private JkChannel source;
-    private Object req;
+    private JkInputStream jkIS = new JkInputStream(this);
+    private C2BConverter c2b;
+    private Request req;
     private WorkerEnv wEnv;
     private Msg msgs[]=new Msg[10];
     private int status=0;
@@ -50,6 +72,20 @@ public class MsgContext {
     public static final int TIMER_RECEIVED=0;
     public static final int TIMER_PRE_REQUEST=1;
     public static final int TIMER_POST_REQUEST=2;
+
+    // Status codes
+    public static final int JK_STATUS_NEW=0;
+    public static final int JK_STATUS_HEAD=1;
+    public static final int JK_STATUS_CLOSED=2;
+    public static final int JK_STATUS_ERROR=3;
+
+    public MsgContext() {
+        try {
+            c2b = new C2BConverter("iso-8859-1");
+        } catch(IOException iex) {
+            log.warn("Can't happen", iex);
+        }
+    }
     
     public final Object getNote( int id ) {
         return notes[id];
@@ -112,8 +148,12 @@ public class MsgContext {
 
     /** The high level request object associated with this context
      */
-    public final void setRequest( Object req ) {
+    public final void setRequest( Request req ) {
         this.req=req;
+        req.setInputBuffer(jkIS);
+        Response res = req.getResponse();
+        res.setOutputBuffer(jkIS);
+        res.setHook(this);
     }
 
     public final  Object getRequest() {
@@ -129,7 +169,23 @@ public class MsgContext {
     public final void setMsg(int i, Msg msg) {
         this.msgs[i]=msg;
     }
+
+    public final C2BConverter getConverter() {
+        return c2b;
+    }
+
+    public final void setConverter(C2BConverter c2b) {
+        this.c2b = c2b;
+    }
     
+    public final boolean isLogTimeEnabled() {
+        return logTime.isDebugEnabled();
+    }
+
+    public JkInputStream getInputStream() {
+        return jkIS;
+    }
+
     /** Each context contains a number of byte[] buffers used for communication.
      *  The C side will contain a char * equivalent - both buffers are long-lived
      *  and recycled.
@@ -185,5 +241,136 @@ public class MsgContext {
 
     public void setControl(Object control) {
         this.control = control;
+    }
+
+    // -------------------- Coyote Action implementation --------------------
+    
+    public void action(ActionCode actionCode, Object param) {
+        if( actionCode==ActionCode.ACTION_COMMIT ) {
+            if( log.isDebugEnabled() ) log.debug("COMMIT " );
+            Response res=(Response)param;
+
+            if(  res.isCommitted() ) {
+                if( log.isInfoEnabled() )
+                    log.info("Response already committed " );
+            } else {
+                try {
+                    jkIS.appendHead( res );
+                } catch(IOException iex) {
+                    log.warn("Unable to send headers",iex);
+                    setStatus(JK_STATUS_ERROR);
+                }
+            }
+        } else if( actionCode==ActionCode.ACTION_RESET ) {
+            if( log.isDebugEnabled() )
+                log.debug("RESET " );
+            
+        } else if( actionCode==ActionCode.ACTION_CLIENT_FLUSH ) {
+            if( log.isDebugEnabled() ) log.debug("CLIENT_FLUSH " );
+            try {
+                source.flush( null, this );
+            } catch(IOException iex) {
+                // This is logged elsewhere, so debug only here
+                log.debug("Error during flush",iex);
+                Response res = (Response)param;
+                res.setErrorException(iex);
+                setStatus(JK_STATUS_ERROR);
+            }
+            
+        } else if( actionCode==ActionCode.ACTION_CLOSE ) {
+            if( log.isDebugEnabled() ) log.debug("CLOSE " );
+            
+            Response res=(Response)param;
+            if( getStatus()== JK_STATUS_CLOSED ) {
+                // Double close - it may happen with forward 
+                if( log.isDebugEnabled() ) log.debug("Double CLOSE - forward ? " + res.getRequest().requestURI() );
+                return;
+            }
+                 
+            if( !res.isCommitted() )
+                this.action( ActionCode.ACTION_COMMIT, param );
+            try {            
+                jkIS.endMessage();
+            } catch(IOException iex) {
+                log.warn("Error sending end packet",iex);
+                setStatus(JK_STATUS_ERROR);
+            }
+            if(getStatus() != JK_STATUS_ERROR) {
+                setStatus(JK_STATUS_CLOSED );
+            }
+
+            if( logTime.isDebugEnabled() ) 
+                logTime(res.getRequest(), res);
+        } else if( actionCode==ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
+            Request req=(Request)param;
+
+            // Extract SSL certificate information (if requested)
+            MessageBytes certString = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
+            if( certString != null && !certString.isNull() ) {
+                ByteChunk certData = certString.getByteChunk();
+                ByteArrayInputStream bais = 
+                    new ByteArrayInputStream(certData.getBytes(),
+                                             certData.getStart(),
+                                             certData.getLength());
+ 
+                // Fill the first element.
+                X509Certificate jsseCerts[] = null;
+                try {
+                    CertificateFactory cf =
+                        CertificateFactory.getInstance("X.509");
+                    X509Certificate cert = (X509Certificate)
+                        cf.generateCertificate(bais);
+                    jsseCerts =  new X509Certificate[1];
+                    jsseCerts[0] = cert;
+                } catch(java.security.cert.CertificateException e) {
+                    log.error("Certificate convertion failed" , e );
+                    return;
+                }
+ 
+                req.setAttribute(SSLSupport.CERTIFICATE_KEY, 
+                                 jsseCerts);
+            }
+                
+        } else if( actionCode==ActionCode.ACTION_REQ_HOST_ATTRIBUTE ) {
+            Request req=(Request)param;
+
+            // If remoteHost not set by JK, get it's name from it's remoteAddr
+            if( req.remoteHost().isNull()) {
+                try {
+                    req.remoteHost().setString(InetAddress.getByName(
+                                               req.remoteAddr().toString()).
+                                               getHostName());
+                } catch(IOException iex) {
+                    if(log.isDebugEnabled())
+                        log.debug("Unable to resolve "+req.remoteAddr());
+                }
+            }
+        } else if( actionCode==ActionCode.ACTION_ACK ) {
+            if( log.isTraceEnabled() )
+                log.trace("ACK " );
+        }
+    }
+    
+
+    private void logTime(Request req, Response res ) {
+        // called after the request
+        //            org.apache.coyote.Request req=(org.apache.coyote.Request)param;
+        //            Response res=req.getResponse();
+        String uri=req.requestURI().toString();
+        if( uri.indexOf( ".gif" ) >0 ) return;
+        
+        setLong( MsgContext.TIMER_POST_REQUEST, System.currentTimeMillis());
+        long t1= getLong( MsgContext.TIMER_PRE_REQUEST ) -
+            getLong( MsgContext.TIMER_RECEIVED );
+        long t2= getLong( MsgContext.TIMER_POST_REQUEST ) -
+            getLong( MsgContext.TIMER_PRE_REQUEST );
+        
+        logTime.debug("Time pre=" + t1 + "/ service=" + t2 + " " +
+                      res.getContentLength() + " " + 
+                      uri );
+    }
+
+    public void recycle() {
+        jkIS.recycle();
     }
 }

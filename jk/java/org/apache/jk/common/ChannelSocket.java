@@ -637,7 +637,7 @@ public class ChannelSocket extends JkHandler
             log.debug("Accepting ajp connections on " + port);
         while( running ) {
 	    try{
-                MsgContext ep=new MsgContext();
+                MsgContext ep=createMsgContext();
                 ep.setSource(this);
                 ep.setWorkerEnv( wEnv );
                 this.accept(ep);

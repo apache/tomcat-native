@@ -1,5 +1,5 @@
 /*
- *  Copyright 1999-2004 The Apache Software Foundation
+ *  Copyright 1999-2005 The Apache Software Foundation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -65,122 +65,6 @@ public class HandlerRequest extends JkHandler
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( HandlerRequest.class );
 
-    // XXX Will move to a registry system.
-    
-    // Prefix codes for message types from server to container
-    public static final byte JK_AJP13_FORWARD_REQUEST   = 2;
-        public static final byte JK_AJP13_SHUTDOWN          = 7;
-        public static final byte JK_AJP13_PING_REQUEST      = 8;
-        public static final byte JK_AJP13_CPING_REQUEST     = 10;
-
-    // Prefix codes for message types from container to server
-    public static final byte JK_AJP13_SEND_BODY_CHUNK   = 3;
-    public static final byte JK_AJP13_SEND_HEADERS      = 4;
-    public static final byte JK_AJP13_END_RESPONSE      = 5;
-        public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
-        public static final byte JK_AJP13_CPONG_REPLY       = 9;
-    
-    // Integer codes for common response header strings
-    public static final int SC_RESP_CONTENT_TYPE        = 0xA001;
-    public static final int SC_RESP_CONTENT_LANGUAGE    = 0xA002;
-    public static final int SC_RESP_CONTENT_LENGTH      = 0xA003;
-    public static final int SC_RESP_DATE                = 0xA004;
-    public static final int SC_RESP_LAST_MODIFIED       = 0xA005;
-    public static final int SC_RESP_LOCATION            = 0xA006;
-    public static final int SC_RESP_SET_COOKIE          = 0xA007;
-    public static final int SC_RESP_SET_COOKIE2         = 0xA008;
-    public static final int SC_RESP_SERVLET_ENGINE      = 0xA009;
-    public static final int SC_RESP_STATUS              = 0xA00A;
-    public static final int SC_RESP_WWW_AUTHENTICATE    = 0xA00B;
-        
-    // Integer codes for common (optional) request attribute names
-    public static final byte SC_A_CONTEXT       = 1;  // XXX Unused
-    public static final byte SC_A_SERVLET_PATH  = 2;  // XXX Unused
-    public static final byte SC_A_REMOTE_USER   = 3;
-    public static final byte SC_A_AUTH_TYPE     = 4;
-    public static final byte SC_A_QUERY_STRING  = 5;
-    public static final byte SC_A_JVM_ROUTE     = 6;
-    public static final byte SC_A_SSL_CERT      = 7;
-    public static final byte SC_A_SSL_CIPHER    = 8;
-    public static final byte SC_A_SSL_SESSION   = 9;
-    public static final byte SC_A_SSL_KEYSIZE   = 11;
-    public static final byte SC_A_SECRET        = 12;
-    public static final byte SC_A_STORED_METHOD = 13;
-
-    // Used for attributes which are not in the list above
-    public static final byte SC_A_REQ_ATTRIBUTE = 10; 
-
-    // Terminates list of attributes
-    public static final byte SC_A_ARE_DONE      = (byte)0xFF;
-    
-    // Translates integer codes to names of HTTP methods
-    public static final String []methodTransArray = {
-        "OPTIONS",
-        "GET",
-        "HEAD",
-        "POST",
-        "PUT",
-        "DELETE",
-        "TRACE",
-        "PROPFIND",
-        "PROPPATCH",
-        "MKCOL",
-        "COPY",
-        "MOVE",
-        "LOCK",
-        "UNLOCK",
-        "ACL",
-        "REPORT",
-        "VERSION-CONTROL",
-        "CHECKIN",
-        "CHECKOUT",
-        "UNCHECKOUT",
-        "SEARCH",
-        "MKWORKSPACE",
-        "UPDATE",
-        "LABEL",
-        "MERGE",
-        "BASELINE-CONTROL",
-        "MKACTIVITY"
-    };
-    public static final int SC_M_JK_STORED = (byte) 0xFF;
-    
-    // id's for common request headers
-    public static final int SC_REQ_ACCEPT          = 1;
-    public static final int SC_REQ_ACCEPT_CHARSET  = 2;
-    public static final int SC_REQ_ACCEPT_ENCODING = 3;
-    public static final int SC_REQ_ACCEPT_LANGUAGE = 4;
-    public static final int SC_REQ_AUTHORIZATION   = 5;
-    public static final int SC_REQ_CONNECTION      = 6;
-    public static final int SC_REQ_CONTENT_TYPE    = 7;
-    public static final int SC_REQ_CONTENT_LENGTH  = 8;
-    public static final int SC_REQ_COOKIE          = 9;
-    public static final int SC_REQ_COOKIE2         = 10;
-    public static final int SC_REQ_HOST            = 11;
-    public static final int SC_REQ_PRAGMA          = 12;
-    public static final int SC_REQ_REFERER         = 13;
-    public static final int SC_REQ_USER_AGENT      = 14;
-    // AJP14 new header
-    public static final byte SC_A_SSL_KEY_SIZE  = 11; // XXX ??? 
-
-    // Translates integer codes to request header names    
-    public static final String []headerTransArray = {
-        "accept",
-        "accept-charset",
-        "accept-encoding",
-        "accept-language",
-        "authorization",
-        "connection",
-        "content-type",
-        "content-length",
-        "cookie",
-        "cookie2",
-        "host",
-        "pragma",
-        "referer",
-        "user-agent"
-    };
-
     /*
      * Note for Host parsing.
      */
@@ -191,42 +75,40 @@ public class HandlerRequest extends JkHandler
      */
     private static Object lock = new Object();
 
-    HandlerDispatch dispatch;
-    String ajpidDir="conf";
+    private HandlerDispatch dispatch;
+    private String ajpidDir="conf";
     
 
-    public HandlerRequest() 
-    {
+    public HandlerRequest() {
     }
 
     public void init() {
         dispatch=(HandlerDispatch)wEnv.getHandler( "dispatch" );
         if( dispatch != null ) {
             // register incoming message handlers
-            dispatch.registerMessageType( JK_AJP13_FORWARD_REQUEST,
+            dispatch.registerMessageType( AjpConstants.JK_AJP13_FORWARD_REQUEST,
                                           "JK_AJP13_FORWARD_REQUEST",
                                           this, null); // 2
             
-            dispatch.registerMessageType( JK_AJP13_SHUTDOWN,
+            dispatch.registerMessageType( AjpConstants.JK_AJP13_SHUTDOWN,
                                           "JK_AJP13_SHUTDOWN",
                                           this, null); // 7
             
-            dispatch.registerMessageType( JK_AJP13_CPING_REQUEST,
+            dispatch.registerMessageType( AjpConstants.JK_AJP13_CPING_REQUEST,
                                           "JK_AJP13_CPING_REQUEST",
                                            this, null); // 10
             dispatch.registerMessageType( HANDLE_THREAD_END,
                                          "HANDLE_THREAD_END",
                                          this, null);
             // register outgoing messages handler
-            dispatch.registerMessageType( JK_AJP13_SEND_BODY_CHUNK, // 3
+            dispatch.registerMessageType( AjpConstants.JK_AJP13_SEND_BODY_CHUNK, // 3
                                           "JK_AJP13_SEND_BODY_CHUNK",
                                           this,null );
         }
 
-        bodyNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "jkInputStream" );
         tmpBufNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "tmpBuf" );
         secretNote=wEnv.getNoteId( WorkerEnv.ENDPOINT_NOTE, "secret" );
-
+        
         if( next==null )
             next=wEnv.getHandler( "container" );
         if( log.isDebugEnabled() )
@@ -242,7 +124,9 @@ public class HandlerRequest extends JkHandler
     }
 
     public void setUseSecret( boolean b ) {
-        requiredSecret=Double.toString(Math.random());
+        if(b) {
+            requiredSecret=Double.toString(Math.random());
+        }
     }
 
     public void setDecodedUri( boolean b ) {
@@ -327,9 +211,8 @@ public class HandlerRequest extends JkHandler
     
     // -------------------- Incoming message --------------------
     String requiredSecret=null;
-    int bodyNote;
-    int tmpBufNote;
     int secretNote;
+    int tmpBufNote;
 
     boolean decoded=true;
     boolean tomcatAuthentication=true;
@@ -337,25 +220,24 @@ public class HandlerRequest extends JkHandler
     boolean shutdownEnabled=false;
     
     public int invoke(Msg msg, MsgContext ep ) 
-        throws IOException
-    {
+        throws IOException    {
         int type=msg.getByte();
         ThreadWithAttributes twa = null;
         if (Thread.currentThread() instanceof ThreadWithAttributes) {
             twa = (ThreadWithAttributes) Thread.currentThread();
         }
         Object control=ep.getControl();
-
         MessageBytes tmpMB=(MessageBytes)ep.getNote( tmpBufNote );
         if( tmpMB==null ) {
             tmpMB= MessageBytes.newInstance();
             ep.setNote( tmpBufNote, tmpMB);
         }
+
         if( log.isDebugEnabled() )
             log.debug( "Handling " + type );
         
         switch( type ) {
-        case JK_AJP13_FORWARD_REQUEST:
+        case AjpConstants.JK_AJP13_FORWARD_REQUEST:
             try {
                 if (twa != null) {
                     twa.setCurrentStage(control, "JkDecode");
@@ -390,7 +272,7 @@ public class HandlerRequest extends JkHandler
             if( log.isDebugEnabled() )
                 log.debug( "Invoke returned " + err );
             return err;
-        case JK_AJP13_SHUTDOWN:
+        case AjpConstants.JK_AJP13_SHUTDOWN:
             String epSecret=null;
             if( msg.getLen() > 3 ) {
                 // we have a secret
@@ -407,9 +289,9 @@ public class HandlerRequest extends JkHandler
 
             // XXX add isSameAddress check
             JkChannel ch=ep.getSource();
-	    if( !ch.isSameAddress(ep) ) {
-		log.error("Shutdown request not from 'same address' ");
-		return ERROR;
+            if( !ch.isSameAddress(ep) ) {
+                log.error("Shutdown request not from 'same address' ");
+                return ERROR;
             }
 
             if( !shutdownEnabled ) {
@@ -427,12 +309,11 @@ public class HandlerRequest extends JkHandler
             return OK;
 
             // We got a PING REQUEST, quickly respond with a PONG
-        case JK_AJP13_CPING_REQUEST:
+        case AjpConstants.JK_AJP13_CPING_REQUEST:
             msg.reset();
-            msg.appendByte(JK_AJP13_CPONG_REPLY);
-            ep.setType( JkHandler.HANDLE_SEND_PACKET );
+            msg.appendByte(AjpConstants.JK_AJP13_CPONG_REPLY);
             ep.getSource().send( msg, ep );
-	    return OK;
+            return OK;
 
         case HANDLE_THREAD_END:
             return OK;
@@ -464,32 +345,22 @@ public class HandlerRequest extends JkHandler
     }
 
     private int decodeRequest( Msg msg, MsgContext ep, MessageBytes tmpMB )
-        throws IOException
-    {
+        throws IOException    {
         // FORWARD_REQUEST handler
         Request req = checkRequest(ep);
 
-	RequestInfo rp = req.getRequestProcessor();
-	rp.setStage(Constants.STAGE_PARSE);
+        RequestInfo rp = req.getRequestProcessor();
+        rp.setStage(Constants.STAGE_PARSE);
         MessageBytes tmpMB2 = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
         if(tmpMB2 != null) {
             tmpMB2.recycle();
         }
         req.setStartTime(System.currentTimeMillis());
-        JkInputStream jkBody=(JkInputStream)ep.getNote( bodyNote );
-        if( jkBody==null ) {
-            jkBody=new JkInputStream();
-            jkBody.setMsgContext( ep );
-
-            ep.setNote( bodyNote, jkBody );
-        }
-
-        jkBody.recycle();
         
         // Translate the HTTP method code to a String.
         byte methodCode = msg.getByte();
-        if (methodCode != SC_M_JK_STORED) {
-            String mName=methodTransArray[(int)methodCode - 1];
+        if (methodCode != AjpConstants.SC_M_JK_STORED) {
+            String mName=AjpConstants.methodTransArray[(int)methodCode - 1];
             req.method().setString(mName);
         }
 
@@ -511,7 +382,7 @@ public class HandlerRequest extends JkHandler
 
         decodeAttributes( ep, msg, req, tmpMB );
 
-	rp.setStage(Constants.STAGE_PREPARE);
+        rp.setStage(Constants.STAGE_PREPARE);
         MessageBytes valueMB = req.getMimeHeaders().getValue("host");
         parseHost(valueMB, req);
         // set cookies on request now that we have all headers
@@ -521,8 +392,8 @@ public class HandlerRequest extends JkHandler
         // immediately after
         int cl=req.getContentLength();
         if(cl > 0) {
-            jkBody.setContentLength( cl );
-            jkBody.receive();
+            // This is hidious.  Look to remove it.
+            ep.getInputStream().receive();
         }
     
         if (log.isTraceEnabled()) {
@@ -538,19 +409,19 @@ public class HandlerRequest extends JkHandler
 
         while( moreAttr ) {
             byte attributeCode=msg.getByte();
-            if( attributeCode == SC_A_ARE_DONE )
+            if( attributeCode == AjpConstants.SC_A_ARE_DONE )
                 return 200;
 
             /* Special case ( XXX in future API make it separate type !)
              */
-            if( attributeCode == SC_A_SSL_KEY_SIZE ) {
+            if( attributeCode == AjpConstants.SC_A_SSL_KEY_SIZE ) {
                 // Bug 1326: it's an Integer.
                 req.setAttribute(SSLSupport.KEY_SIZE_KEY,
                                  new Integer( msg.getInt()));
                //Integer.toString(msg.getInt()));
             }
 
-            if( attributeCode == SC_A_REQ_ATTRIBUTE ) {
+            if( attributeCode == AjpConstants.SC_A_REQ_ATTRIBUTE ) {
                 // 2 strings ???...
                 msg.getBytes( tmpMB );
                 String n=tmpMB.toString();
@@ -564,17 +435,17 @@ public class HandlerRequest extends JkHandler
 
             // 1 string attributes
             switch(attributeCode) {
-            case SC_A_CONTEXT      :
+            case AjpConstants.SC_A_CONTEXT      :
                 msg.getBytes( tmpMB );
                 // nothing
                 break;
                 
-            case SC_A_SERVLET_PATH :
+            case AjpConstants.SC_A_SERVLET_PATH :
                 msg.getBytes( tmpMB );
                 // nothing 
                 break;
                 
-            case SC_A_REMOTE_USER  :
+            case AjpConstants.SC_A_REMOTE_USER  :
                 if( tomcatAuthentication ) {
                     // ignore server
                     msg.getBytes( tmpMB );
@@ -583,7 +454,7 @@ public class HandlerRequest extends JkHandler
                 }
                 break;
                 
-            case SC_A_AUTH_TYPE    :
+            case AjpConstants.SC_A_AUTH_TYPE    :
                 if( tomcatAuthentication ) {
                     // ignore server
                     msg.getBytes( tmpMB );
@@ -592,15 +463,15 @@ public class HandlerRequest extends JkHandler
                 }
                 break;
                 
-            case SC_A_QUERY_STRING :
+            case AjpConstants.SC_A_QUERY_STRING :
                 msg.getBytes(req.queryString());
                 break;
                 
-            case SC_A_JVM_ROUTE    :
+            case AjpConstants.SC_A_JVM_ROUTE    :
                 msg.getBytes(req.instanceId());
                 break;
                 
-            case SC_A_SSL_CERT     :
+            case AjpConstants.SC_A_SSL_CERT     :
                 req.scheme().setString( "https" );
                 // Transform the string into certificate.
                 MessageBytes tmpMB2 = (MessageBytes)req.getNote(WorkerEnv.SSL_CERT_NOTE);
@@ -612,21 +483,21 @@ public class HandlerRequest extends JkHandler
                 msg.getBytes(tmpMB2);
                 break;
                 
-            case SC_A_SSL_CIPHER   :
+            case AjpConstants.SC_A_SSL_CIPHER   :
                 req.scheme().setString( "https" );
                 msg.getBytes(tmpMB);
                 req.setAttribute(SSLSupport.CIPHER_SUITE_KEY,
                                  tmpMB.toString());
                 break;
                 
-            case SC_A_SSL_SESSION  :
+            case AjpConstants.SC_A_SSL_SESSION  :
                 req.scheme().setString( "https" );
                 msg.getBytes(tmpMB);
                 req.setAttribute(SSLSupport.SESSION_ID_KEY, 
                                   tmpMB.toString());
                 break;
                 
-            case SC_A_SECRET  :
+            case AjpConstants.SC_A_SECRET  :
                 msg.getBytes(tmpMB);
                 String secret=tmpMB.toString();
                 if(log.isInfoEnabled())
@@ -635,7 +506,7 @@ public class HandlerRequest extends JkHandler
                 ep.setNote( secretNote, secret );
                 break;
                 
-            case SC_A_STORED_METHOD:
+            case AjpConstants.SC_A_STORED_METHOD:
                 msg.getBytes(req.method()); 
                 break;
                 
@@ -665,7 +536,7 @@ public class HandlerRequest extends JkHandler
             isc &= 0xFF00;
             if(0xA000 == isc) {
                 msg.getInt(); // To advance the read position
-                hName = headerTransArray[hId - 1];
+                hName = AjpConstants.headerTransArray[hId - 1];
                 vMB=headers.addValue( hName );
             } else {
                 // reset hId -- if the header currently being read
@@ -683,11 +554,11 @@ public class HandlerRequest extends JkHandler
 
             msg.getBytes(vMB);
 
-            if (hId == SC_REQ_CONTENT_LENGTH ||
+            if (hId == AjpConstants.SC_REQ_CONTENT_LENGTH ||
                 (hId == -1 && tmpMB.equalsIgnoreCase("Content-Length"))) {
                 // just read the content-length header, so set it
                 req.setContentLength( vMB.getInt() );
-            } else if (hId == SC_REQ_CONTENT_TYPE ||
+            } else if (hId == AjpConstants.SC_REQ_CONTENT_TYPE ||
                 (hId == -1 && tmpMB.equalsIgnoreCase("Content-Type"))) {
                 // just read the content-type header, so set it
                 ByteChunk bchunk = vMB.getByteChunk();

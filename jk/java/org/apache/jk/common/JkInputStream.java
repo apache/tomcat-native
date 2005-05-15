@@ -17,273 +17,171 @@
 package org.apache.jk.common;
 
 import java.io.IOException;
-import java.io.InputStream;
-import org.apache.jk.core.JkHandler;
+
+import org.apache.coyote.OutputBuffer;
+import org.apache.coyote.InputBuffer;
+import org.apache.coyote.Request;
+import org.apache.coyote.Response;
+
 import org.apache.jk.core.Msg;
 import org.apache.jk.core.MsgContext;
-import org.apache.tomcat.util.buf.ByteChunk;
 
+import org.apache.tomcat.util.buf.ByteChunk;
+import org.apache.tomcat.util.buf.MessageBytes;
+import org.apache.tomcat.util.buf.C2BConverter;
+import org.apache.tomcat.util.http.HttpMessages;
+import org.apache.tomcat.util.http.MimeHeaders;
 
 /** Generic input stream impl on top of ajp
  */
-public class JkInputStream extends InputStream {
+public class JkInputStream implements InputBuffer, OutputBuffer {
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( JkInputStream.class );
 
-    public JkInputStream() {
-    }
-
-    public int available() throws IOException {
-        if( log.isDebugEnabled() )
-            log.debug( "available(): "  + blen + " " + pos );
-        return blen-pos;
-    }
-
-    public void close() throws IOException {
-        if( log.isDebugEnabled() )
-            log.debug( "cloae() " );
-        this.closed=true;
-    }
-
-    public void mark(int readLimit) {
-    }
-
-    public boolean markSupported() {
-        return false;
-    }
-
-    public void reset() throws IOException {
-        throw new IOException("reset() not supported");
-    }
-
-    public int read() throws IOException {
-        if( contentLength == -1 ) {
-            return doRead1();
-	}
-	if( available <= 0 ) {
-            if( log.isDebugEnabled() )
-                log.debug("doRead() nothing available" );
-            return -1;
-        }
-	available--;
-
-        return doRead1();
-    }
-    
-    public int read(byte[] b) throws IOException {
-        int rd=read( b, 0, b.length);
-        if( log.isDebugEnabled() )
-            log.debug("read(" + b + ")=" + rd + " / " + b.length);
-        return rd;
-    }
-    
-    public int read(byte[] b, int off, int len) throws IOException {
-      	int rd=-1;
-	if( contentLength == -1 ) {
-	    rd=doRead1(b,off,len);
-	    return rd;
-	}
-	if( available <= 0 ) {
-            if( log.isDebugEnabled() ) log.debug("doRead() nothing available" );
-	    return -1;
-        }
-        
-	rd=doRead1( b,off, len );
-	available -= rd;
-	if( log.isDebugEnabled() )
-            log.debug("Read: " + new String( b,off, len ));
-	return rd;
-    }
-
-    public long skip(long n) throws IOException {
-        if (n > Integer.MAX_VALUE) {
-            throw new IOException("can't skip than many:  " + n);
-        }
-        // XXX if n is big, split this in multiple reads
-        byte[] b = new byte[(int)n];
-        return read(b, 0, b.length);
-    }
-
-
-    // -------------------- Jk specific methods --------------------
-
-    Msg bodyMsg=new MsgAjp();
-    MsgContext mc;
-
-    // Total length of the body - maximum we can read
-    // If -1, we don't use any limit, and we don't count available
-    int contentLength;
-    // How much remains unread.
-    int available;
-
-    boolean closed=false;
-
-    // Ajp13 specific -  needs refactoring for the new model
-    public static final int MAX_PACKET_SIZE=8192;
-    public static final int H_SIZE=4;  // Size of basic packet header
-    public static final int  MAX_READ_SIZE = MAX_PACKET_SIZE - H_SIZE - 2;
-    public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
+    private Msg bodyMsg = new MsgAjp();
+    private Msg outputMsg = new MsgAjp();
+    private MsgContext mc;
 
     
     // Holds incoming chunks of request body data
-    // XXX We do a copy that could be avoided !
-    byte []bodyBuff = new byte[9000];
-    int blen;  // Length of current chunk of body data in buffer
-    int pos;   // Current read position within that buffer
+    private MessageBytes bodyBuff = MessageBytes.newInstance();
+    private MessageBytes tempMB = MessageBytes.newInstance();
+    private boolean end_of_stream=false; 
+    private boolean isEmpty = true;
+    private boolean isFirst = true;
 
-    boolean end_of_stream=false; // true if we've received an empty packet
-    
-    private int doRead1() throws IOException {
-        if(pos >= blen) {
-            if( ! refillReadBuffer()) {
-		return -1;
-	    }
+    static {
+        // Make certain HttpMessages is loaded for SecurityManager
+        try {
+            Class.forName("org.apache.tomcat.util.http.HttpMessages");
+        } catch(Exception ex) {
+            // ignore
         }
-        int i=bodyBuff[pos++] & 0xFF;
-        if( log.isDebugEnabled() ) log.debug("doRead1 " + (char)i );
-        return i;  // prevent sign extension of byte value
     }
 
-    public int doRead1(byte[] b, int off, int len) throws IOException 
-    {
-	if(pos >= blen) {
-	    if( ! refillReadBuffer()) {
-		return -1;
-	    }
-	}
-
-	if(pos + len <= blen) { // Fear the off by one error
-	    // Sanity check b.length > off + len?
-	    System.arraycopy(bodyBuff, pos, b, off, len);
-	    if( log.isDebugEnabled() )
-		log.debug("doRead1: " + pos + " " + len + " " + blen);
-            if( log.isTraceEnabled() )
-                log.trace("Data: \n" + new String( b, off, len ));
-	    pos += len;
-	    return len;
-	}
-
-	// Not enough data (blen < pos + len) or chunked encoded
-	int toCopy = len;
-	while(toCopy > 0) {
-	    int bytesRemaining = blen - pos;
-	    if(bytesRemaining < 0) 
-		bytesRemaining = 0;
-	    int c = bytesRemaining < toCopy ? bytesRemaining : toCopy;
-
-	    System.arraycopy(bodyBuff, pos, b, off, c);
-	    if( log.isDebugEnabled() )
-		log.debug("doRead2: " + pos + " " + len + " " +
-                          blen + " " + c);
-            if( log.isTraceEnabled() )
-                log.trace("Data: \n" + new String( b, off, (len<blen-1)?len:blen-1 ));
-
-	    toCopy    -= c;
-
-	    off       += c;
-	    pos       += c; // In case we exactly consume the buffer
-
-	    if(toCopy > 0) 
-		if( ! refillReadBuffer()) { // Resets blen and pos
-		    break;
-		}
-	}
-
-	return len - toCopy;
+    public JkInputStream(MsgContext context) {
+        mc = context;
     }
 
-    /** Must be called after the request is parsed, before
-     *  any input
-     */
-    public void setContentLength( int i ) {
-        contentLength=i;
-        available=i;
-    }
+    // -------------------- Jk specific methods --------------------
 
-    /** Must be called when the stream is created
-     */
-    public void setMsgContext( MsgContext mc ) {
-        this.mc=mc;
-    }
-
+    
     /** Must be called before or after each request
      */
     public void recycle() {
-        available=0;
-        blen = 0;
-        pos = 0;
-        closed=false;
         end_of_stream = false;
-        contentLength=-1;
+        isEmpty = true;
+        isFirst = true;
+        bodyBuff.recycle();
+        tempMB.recycle();
     }
 
-    /**
-     */
-    public int doRead(ByteChunk responseChunk ) throws IOException {
+
+    public void endMessage() throws IOException {
+        outputMsg.reset();
+        outputMsg.appendByte(AjpConstants.JK_AJP13_END_RESPONSE);
+        outputMsg.appendByte(1);
+        mc.getSource().send(outputMsg, mc);
+        mc.getSource().flush(outputMsg, mc);
+    }
+
+
+    // -------------------- OutputBuffer implementation --------------------
+
+        
+    public int doWrite(ByteChunk chunk, Response res) 
+        throws IOException    {
+        if (!res.isCommitted()) {
+            // Send the connector a request for commit. The connector should
+            // then validate the headers, send them (using sendHeader) and 
+            // set the filters accordingly.
+            res.sendHeaders();
+        }
+
+        int len=chunk.getLength();
+        byte buf[]=outputMsg.getBuffer();
+        // 4 - hardcoded, byte[] marshalling overhead 
+        int chunkSize=buf.length - outputMsg.getHeaderLength() - 4;
+        int off=0;
+        while( len > 0 ) {
+            int thisTime=len;
+            if( thisTime > chunkSize ) {
+                thisTime=chunkSize;
+            }
+            len-=thisTime;
+            
+            outputMsg.reset();
+            outputMsg.appendByte( AjpConstants.JK_AJP13_SEND_BODY_CHUNK);
+            if( log.isTraceEnabled() ) 
+                log.trace("doWrite " + off + " " + thisTime + " " + len );
+            outputMsg.appendBytes( chunk.getBytes(), chunk.getOffset() + off, thisTime );
+            off+=thisTime;
+            mc.getSource().send( outputMsg, mc );
+        }
+        return 0;
+    }
+
+    public int doRead(ByteChunk responseChunk, Request req) 
+        throws IOException {
+
         if( log.isDebugEnabled())
-            log.debug( "doRead " + pos + " " + blen + " " + available + " " + end_of_stream+
+            log.debug( "doRead "  + end_of_stream+
                        " " + responseChunk.getOffset()+ " " + responseChunk.getLength());
         if( end_of_stream ) {
             return -1;
         }
-        if( blen == pos ) {
+        if( isFirst ) {
+            // Handle special first-body-chunk
+            if( !receive() ) {
+                return 0;
+            }
+        } else if(isEmpty) {
             if ( !refillReadBuffer() ){
                 return -1;
             }
         }
-        responseChunk.setBytes( bodyBuff, pos, blen );
-        pos=blen;
-        return blen;
+        ByteChunk bc = bodyBuff.getByteChunk();
+        responseChunk.setBytes( bc.getBuffer(), bc.getStart(), bc.getLength() );
+        isEmpty = true;
+        return responseChunk.getLength();
     }
     
     /** Receive a chunk of data. Called to implement the
      *  'special' packet in ajp13 and to receive the data
      *  after we send a GET_BODY packet
      */
-    public boolean receive() throws IOException
-    {
-        mc.setType( JkHandler.HANDLE_RECEIVE_PACKET );
+    public boolean receive() throws IOException {
+        isFirst = false;
         bodyMsg.reset();
         int err = mc.getSource().receive(bodyMsg, mc);
         if( log.isDebugEnabled() )
             log.info( "Receiving: getting request body chunk " + err + " " + bodyMsg.getLen() );
         
         if(err < 0) {
-	    throw new IOException();
-	}
-
-        pos=0;
-        blen=0;
+            throw new IOException();
+        }
 
         // No data received.
-	if( bodyMsg.getLen() == 0 ) { // just the header
+        if( bodyMsg.getLen() == 0 ) { // just the header
             // Don't mark 'end of stream' for the first chunk.
             // end_of_stream = true;
-	    return false;
-	}
-    	blen = bodyMsg.peekInt();
+            return false;
+        }
+        int blen = bodyMsg.peekInt();
 
         if( blen == 0 ) {
             return false;
         }
 
-        if( blen > bodyBuff.length ) {
-            bodyMsg.dump("Body");
-        }
-        
         if( log.isTraceEnabled() ) {
             bodyMsg.dump("Body buffer");
         }
         
-    	int cpl=bodyMsg.getBytes(bodyBuff);
-
-        if( log.isDebugEnabled() )
-            log.debug( "Copy into body buffer2 " + bodyBuff + " " + cpl + " " + blen );
-
+        bodyMsg.getBytes(bodyBuff);
         if( log.isTraceEnabled() )
-            log.trace( "Data:\n" + new String( bodyBuff, 0, cpl ));
-
-	return (blen > 0);
+            log.trace( "Data:\n" + bodyBuff);
+        isEmpty = false;
+        return true;
     }
     
     /**
@@ -294,34 +192,83 @@ public class JkInputStream extends InputStream {
      */
     private boolean refillReadBuffer() throws IOException 
     {
-	// If the server returns an empty packet, assume that that end of
-	// the stream has been reached (yuck -- fix protocol??).
+        // If the server returns an empty packet, assume that that end of
+        // the stream has been reached (yuck -- fix protocol??).
         if (end_of_stream) {
-            if( log.isDebugEnabled() ) log.debug("refillReadBuffer: end of stream " );
+            if( log.isDebugEnabled() ) 
+                log.debug("refillReadBuffer: end of stream " );
             return false;
         }
 
-	// Why not use outBuf??
-	bodyMsg.reset();
-	bodyMsg.appendByte(JK_AJP13_GET_BODY_CHUNK);
-	bodyMsg.appendInt(MAX_READ_SIZE);
+        // Why not use outBuf??
+        bodyMsg.reset();
+        bodyMsg.appendByte(AjpConstants.JK_AJP13_GET_BODY_CHUNK);
+        bodyMsg.appendInt(AjpConstants.MAX_READ_SIZE);
         
-	if( log.isDebugEnabled() )
+        if( log.isDebugEnabled() )
             log.debug("refillReadBuffer " + Thread.currentThread());
 
-        mc.setType( JkHandler.HANDLE_SEND_PACKET );
-	mc.getSource().send(bodyMsg, mc);
+        mc.getSource().send(bodyMsg, mc);
 
         // In JNI mode, response will be in bodyMsg. In TCP mode, response need to be
         // read
 
-        //bodyMsg.dump("refillReadBuffer ");
-        
         boolean moreData=receive();
         if( !moreData ) {
             end_of_stream=true;
         }
         return moreData;
+    }
+
+    public void appendHead(Response res) throws IOException {
+        if( log.isDebugEnabled() )
+            log.debug("COMMIT sending headers " + res + " " + res.getMimeHeaders() );
+        
+        C2BConverter c2b=mc.getConverter();
+        
+        outputMsg.reset();
+        outputMsg.appendByte(AjpConstants.JK_AJP13_SEND_HEADERS);
+        outputMsg.appendInt( res.getStatus() );
+        
+        String message=res.getMessage();
+        if( message==null ){
+            message= HttpMessages.getMessage(res.getStatus());
+        } else {
+            message = message.replace('\n', ' ').replace('\r', ' ');
+        }
+        tempMB.setString( message );
+        c2b.convert( tempMB );
+        outputMsg.appendBytes(tempMB);
+
+        // XXX add headers
+        
+        MimeHeaders headers=res.getMimeHeaders();
+        String contentType = res.getContentType();
+        if( contentType != null ) {
+            headers.setValue("Content-Type").setString(contentType);
+        }
+        String contentLanguage = res.getContentLanguage();
+        if( contentLanguage != null ) {
+            headers.setValue("Content-Language").setString(contentLanguage);
+        }
+        int contentLength = res.getContentLength();
+        if( contentLength >= 0 ) {
+            headers.setValue("Content-Length").setInt(contentLength);
+        }
+        int numHeaders = headers.size();
+        outputMsg.appendInt(numHeaders);
+        for( int i=0; i<numHeaders; i++ ) {
+            MessageBytes hN=headers.getName(i);
+            // no header to sc conversion - there's little benefit
+            // on this direction
+            c2b.convert ( hN );
+            outputMsg.appendBytes( hN );
+                        
+            MessageBytes hV=headers.getValue(i);
+            c2b.convert( hV );
+            outputMsg.appendBytes( hV );
+        }
+        mc.getSource().send( outputMsg, mc );
     }
 
 }

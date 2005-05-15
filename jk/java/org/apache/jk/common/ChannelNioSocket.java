@@ -634,7 +634,7 @@ public class ChannelNioSocket extends JkHandler
     void acceptConnections() {
         if( running ) {
             try{
-                MsgContext ep=new MsgContext();
+                MsgContext ep=createMsgContext();
                 ep.setSource(this);
                 ep.setWorkerEnv( wEnv );
                 this.accept(ep);
@@ -1050,6 +1050,7 @@ public class ChannelNioSocket extends JkHandler
                     nr = -1;
                 } catch(IOException iex) {
                     log.warn("Exception processing read",iex);
+                    nr = -1; // Can't handle this yet
                 }
                 if(nr < 0) {
                     isClosed = true;
