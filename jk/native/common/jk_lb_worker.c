@@ -805,11 +805,10 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             }
 
             if (i != num_of_workers) {
-                close_workers(p, i, l);
                 jk_log(l, JK_LOG_ERROR,
                        "Failed creating worker %s",
                        p->lb_workers[i].s->name);
-
+                close_workers(p, i, l);
             }
             else {
                 if (JK_IS_DEBUG_LEVEL(l)) {
