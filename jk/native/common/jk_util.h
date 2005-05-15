@@ -98,6 +98,8 @@ int jk_get_is_sticky_session_force(jk_map_t *m, const char *wname);
 
 int jk_get_lb_method(jk_map_t *m, const char *wname);
 
+int jk_get_lb_lock(jk_map_t *m, const char *wname);
+
 int jk_get_lb_worker_list(jk_map_t *m,
                           const char *lb_wname,
                           char ***list, unsigned int *num_of_wokers);

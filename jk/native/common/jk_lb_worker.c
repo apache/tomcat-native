@@ -229,7 +229,8 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
     size_t curmin = 0;
 
     worker_record_t *candidate = NULL;
-
+    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+        jk_shm_lock();
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* Skip all workers that are not member of domain */
@@ -262,6 +263,8 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
             candidate->s->lb_value -= total_factor;
         candidate->r = &(candidate->s->domain[0]);
     }
+    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+        jk_shm_unlock();
 
     return candidate;
 }
@@ -274,6 +277,8 @@ static worker_record_t *find_best_byrequests(lb_worker_t *p,
     int total_factor = 0;
     worker_record_t *candidate = NULL;
 
+    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+        jk_shm_lock();
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* If the worker is in error state run
@@ -298,6 +303,9 @@ static worker_record_t *find_best_byrequests(lb_worker_t *p,
 
     if (candidate)
         candidate->s->lb_value -= total_factor;
+    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+        jk_shm_unlock();
+
     return candidate;
 }
 
@@ -309,6 +317,8 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
     size_t curmin = 0;
     worker_record_t *candidate = NULL;
 
+    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+        jk_shm_lock();
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* If the worker is in error state run
@@ -332,6 +342,8 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
             }
         }
     }
+    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+        jk_shm_unlock();
     return candidate;
 }
 
@@ -374,6 +386,9 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
     }
     if (candidate && !uses_domain &&
         p->lbmethod == JK_LB_BYREQUESTS) {
+        if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+            jk_shm_lock();
+
         for (i = 0; i < p->num_of_workers; i++) {
             if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
                 /* Skip all workers that are not member of candidate domain */
@@ -385,6 +400,8 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
             }
         }
         candidate->s->lb_value -= total_factor;
+        if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+            jk_shm_unlock();
     }
     return candidate;
 }
@@ -848,6 +865,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
         p->s->recover_wait_time = WAIT_BEFORE_RECOVER;
 
     p->lbmethod = jk_get_lb_method(props, p->s->name);
+    p->lblock   = jk_get_lb_lock(props, p->s->name);
 
     JK_INIT_CS(&(p->cs), i);
     if (i == JK_FALSE) {

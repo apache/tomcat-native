@@ -436,6 +436,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                     "<th>Type</th><th>Sticky session</th>"
                     "<th>Force Sticky session</th>"
                     "<th>Retries</th>"
+                    "<th>Method</th>"
+                    "<th>Lock</th>"
                     "</tr>\n<tr>");
             jk_putv(s, "<td>", status_worker_type(w->type), "</td>", NULL);
             jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session),
@@ -443,6 +445,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session_force),
                     "</td>", NULL);
             jk_printf(s, "<td>%d</td>", lb->s->retries);
+            jk_printf(s, "<td>%s</td>", lb->lbmethod == JK_LB_BYREQUESTS ? JK_LB_METHOD_REQUESTS : JK_LB_METHOD_TRAFFIC);
+            jk_printf(s, "<td>%s</td>", lb->lblock == JK_LB_LOCK_DEFAULT ? JK_LB_LM_DEFAULT : JK_LB_LM_PESSIMISTIC);
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
             jk_puts(s, "<table><tr>"
                     "<th>Name</th><th>Type</th><th>Host</th><th>Addr</th>"

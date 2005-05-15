@@ -39,8 +39,13 @@ extern "C"
 
 #define JK_LB_BYREQUESTS      (0)
 #define JK_LB_BYTRAFFIC       (1)
-#define JK_LB_METHOD_REQUESTS ("request")
-#define JK_LB_METHODTRAFFIC   ("traffic")
+#define JK_LB_METHOD_REQUESTS ("Request")
+#define JK_LB_METHOD_TRAFFIC  ("Traffic")
+#define JK_LB_LOCK_DEFAULT     (0)
+#define JK_LB_LOCK_PESSIMISTIC (1)
+#define JK_LB_LM_DEFAULT       ("Optimistic")
+#define JK_LB_LM_PESSIMISTIC   ("Pessimistic")
+
 #define WAIT_BEFORE_RECOVER   (60)
 
 struct worker_record
@@ -58,6 +63,7 @@ struct lb_worker
     worker_record_t *lb_workers;
     unsigned int num_of_workers;
     int          lbmethod;
+    int          lblock;
 
     jk_pool_t p;
     jk_pool_atom_t buf[TINY_POOL_SIZE];

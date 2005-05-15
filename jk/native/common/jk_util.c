@@ -66,6 +66,7 @@
 #define REDIRECT_OF_WORKER          ("redirect")
 #define MOUNT_OF_WORKER             ("mount")
 #define METHOD_OF_WORKER            ("method")
+#define LOCK_OF_WORKER              ("lock")
 #define IS_WORKER_DISABLED          ("disabled")
 #define IS_WORKER_STOPPED           ("stopped")
 #define WORKER_RECOVER_TIME         ("recover_time")
@@ -769,6 +770,26 @@ int jk_get_lb_method(jk_map_t *m, const char *wname)
         return JK_LB_BYTRAFFIC;
     else if  (*v == 'r' || *v == 'R' || *v == '0')
         return JK_LB_BYREQUESTS;
+    else
+        return JK_LB_BYREQUESTS;
+}
+
+int jk_get_lb_lock(jk_map_t *m, const char *wname)
+{
+    char buf[1024];
+    const char *v;
+    if (!m || !wname) {
+        return JK_LB_LOCK_DEFAULT;
+    }
+
+    MAKE_WORKER_PARAM(LOCK_OF_WORKER);
+    v = jk_map_get_string(m, buf, NULL);
+    if (!v)
+        return JK_LB_LOCK_DEFAULT;
+    else if  (*v == 'o' || *v == 'O' || *v == '1')
+        return JK_LB_LOCK_DEFAULT;
+    else if  (*v == 'p' || *v == 'P' || *v == '0')
+        return JK_LB_LOCK_PESSIMISTIC;
     else
         return JK_LB_BYREQUESTS;
 }
