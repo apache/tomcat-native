@@ -790,7 +790,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 p->lb_workers[i].s->is_disabled = jk_get_is_worker_disabled(props, worker_names[i]);
                 /* Worker can be initaly deactive as cold standby */
                 p->lb_workers[i].s->is_stopped = jk_get_is_worker_stopped(props, worker_names[i]);
-                if (!wc_create_worker(p->lb_workers[i].s->name,
+                if (!wc_create_worker(p->lb_workers[i].s->name, 0,
                                       props,
                                       &(p->lb_workers[i].w),
                                       we, l) || !p->lb_workers[i].w) {

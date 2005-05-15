@@ -111,7 +111,7 @@ jk_worker_t *wc_get_worker_for_name(const char *name, jk_logger_t *l)
     return rc;
 }
 
-int wc_create_worker(const char *name,
+int wc_create_worker(const char *name, int use_map,
                      jk_map_t *init_data,
                      jk_worker_t **rc, jk_worker_env_t *we, jk_logger_t *l)
 {
@@ -165,7 +165,8 @@ int wc_create_worker(const char *name,
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-        if (jk_get_worker_mount_list(init_data, name,
+        if (use_map &&
+            jk_get_worker_mount_list(init_data, name,
                                      &map_names,
                                      &num_of_maps) && num_of_maps) {
             for (i = 0; i < num_of_maps; i++) {
@@ -232,7 +233,7 @@ static int build_worker_map(jk_map_t *init_data,
             jk_log(l, JK_LOG_DEBUG,
                    "creating worker %s", worker_list[i]);
 
-        if (wc_create_worker(worker_list[i], init_data, &w, we, l)) {
+        if (wc_create_worker(worker_list[i], 1, init_data, &w, we, l)) {
             jk_worker_t *oldw = NULL;
             if (!jk_map_put(worker_map, worker_list[i], w, (void *)&oldw)) {
                 w->destroy(&w, l);
