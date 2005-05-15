@@ -131,8 +131,8 @@ int wc_create_worker(const char *name, int use_map,
         *rc = NULL;
 
         if (!fac) {
-            jk_log(l, JK_LOG_ERROR, "NULL factory for %s",
-                   type);
+            jk_log(l, JK_LOG_ERROR, "Unknown worker type %s for worker %s",
+                   type, name);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
