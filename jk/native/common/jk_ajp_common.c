@@ -860,18 +860,6 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
         /* set last_access only if needed */
         if (ae->worker->cache_timeout > 0 || ae->worker->recycle_timeout > 0)
             ae->last_access = time(NULL);
-        if (ae->worker->socket_timeout > 0) {
-            if (!jk_is_socket_connected(ae->sd)) {
-                jk_log(l, JK_LOG_INFO,
-                       "Socket %d to (%s) is not connected any more (errno=%d)",
-                       ae->sd, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
-                       errno);
-                jk_close_socket(ae->sd);
-                ae->sd = -1;
-                JK_TRACE_EXIT(l);
-                return JK_FALSE;
-            }
-        }
         /* Check if we must execute a logon after the physical connect */
         if (ae->worker->logon != NULL) {
             rc = ae->worker->logon(ae, l);
