@@ -780,7 +780,7 @@ static int ajp_is_input_event(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
 
     rc = select(ae->sd + 1, &rset, NULL, &eset, &tv);
 
-    if ((rc < 1) || (FD_ISSET(ae->sd, &eset))) {
+    if ((rc < 0) || (FD_ISSET(ae->sd, &eset))) {
         jk_log(l, JK_LOG_ERROR,
                "error during select [%d]", rc);
         return JK_FALSE;
@@ -806,7 +806,7 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
 
     /* Send CPing query */
     if (ajp_connection_tcp_send_message(ae, msg, l) != JK_TRUE) {
-        jk_log(l, JK_LOG_ERROR,
+        jk_log(l, JK_LOG_INFO,
                "can't send cping query");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
@@ -823,7 +823,7 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
     /* Read and check for Pong reply
      */
     if (ajp_connection_tcp_get_message(ae, msg, l) != JK_TRUE) {
-        jk_log(l, JK_LOG_ERROR,
+        jk_log(l, JK_LOG_INFO,
                "awaited reply cpong, not received");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
