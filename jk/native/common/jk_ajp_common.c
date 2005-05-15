@@ -1201,12 +1201,15 @@ static int ajp_send_request(jk_endpoint_t *e,
          * loop. */
         if (err ||
             ((rc = ajp_connection_tcp_send_message(ae, op->request, l)) != JK_TRUE)) {
-            jk_log(l, JK_LOG_INFO,
-                   "Error sending request. Will try another pooled connection");
-            if (rc != JK_FATAL_ERROR)
+            if (rc != JK_FATAL_ERROR) {
+                jk_log(l, JK_LOG_INFO,
+                       "Error sending request. Will try another pooled connection");
                 ajp_next_connection(ae, l);
+            }
             else {
                 op->recoverable = JK_FALSE;
+                jk_log(l, JK_LOG_INFO,
+                       "Error sending request. Unrecoverable operation");
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
@@ -1498,7 +1501,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
             /* we just can't recover, unset recover flag */
             if (headeratclient == JK_FALSE) {
                 jk_log(l, JK_LOG_ERROR,
-                       "Tomcat is down or network problems. "
+                       "Tomcat is down or refused connection. "
                        "No response has been sent to the client (yet)");
                 /*
                  * communication with tomcat has been interrupted BEFORE
