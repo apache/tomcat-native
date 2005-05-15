@@ -2074,10 +2074,14 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
-            jk_log(l, JK_LOG_INFO,
-                    "could not find empty cache slot from %d for worker %s"
-                    ". Rise worker cachesize",
+            /* XXX: This should never hapen because
+             * there is always free empty cache slot
+             */
+            jk_log(l, JK_LOG_ERROR,
+                    "could not find empty cache slot from %d for worker %s",
                     w->ep_cache_sz, w->name);
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
         }
 
         jk_log(l, JK_LOG_ERROR,
