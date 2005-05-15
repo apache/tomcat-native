@@ -585,8 +585,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                           "service worker=%s jvm_route=%s rc=%d",
-                           rec->s->name, s->jvm_route, rc);
+                           "service worker=%s jvm_route=%s",
+                           rec->s->name, s->jvm_route);
                 rec->s->elected++;
                 if (rc && end) {
                     /* Reset endpoint read and write sizes for
