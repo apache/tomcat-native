@@ -634,7 +634,7 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
         d->header_values = jk_pool_alloc(p, sizeof(char *) * d->num_headers);
 
         if (d->header_names && d->header_values) {
-            unsigned i;
+            unsigned int i;
             for (i = 0; i < d->num_headers; i++) {
                 unsigned short name = jk_b_pget_int(msg, msg->pos);
 
@@ -1043,10 +1043,10 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
  */
 
 static int ajp_read_fully_from_server(jk_ws_service_t *s, jk_logger_t *l,
-                                      unsigned char *buf, unsigned len)
+                                      unsigned char *buf, unsigned int len)
 {
-    unsigned rdlen = 0;
-    unsigned padded_len = len;
+    unsigned int rdlen = 0;
+    unsigned int padded_len = len;
 
     JK_TRACE_ENTER(l);
     if (s->is_chunked && s->no_more_chunks) {
@@ -1063,7 +1063,7 @@ static int ajp_read_fully_from_server(jk_ws_service_t *s, jk_logger_t *l,
     }
 
     while (rdlen < padded_len) {
-        unsigned this_time = 0;
+        unsigned int this_time = 0;
         if (!s->read(s, buf + rdlen, len - rdlen, &this_time)) {
             /* Remote Client read failed. */
             JK_TRACE_EXIT(l);
@@ -1370,7 +1370,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
 
     case JK_AJP13_SEND_BODY_CHUNK:
         {
-            unsigned len = (unsigned)jk_b_get_int(msg);
+            unsigned int len = (unsigned int)jk_b_get_int(msg);
             if (!r->write(r, msg->buf + msg->pos, len)) {
                 jk_log(l, JK_LOG_INFO,
                        "Connection aborted or network problems");
