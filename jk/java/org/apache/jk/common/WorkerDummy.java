@@ -59,7 +59,7 @@ public class WorkerDummy extends JkHandler
         }
 
         msg.reset();
-        msg.appendByte(HandlerRequest.JK_AJP13_SEND_HEADERS);
+        msg.appendByte(AjpConstants.JK_AJP13_SEND_HEADERS);
         msg.appendInt(200);
         msg.appendBytes(null);
 
@@ -70,7 +70,7 @@ public class WorkerDummy extends JkHandler
         //         msg.dump("out:" );
 
         msg.reset();
-        msg.appendByte( HandlerRequest.JK_AJP13_SEND_BODY_CHUNK);
+        msg.appendByte( AjpConstants.JK_AJP13_SEND_BODY_CHUNK);
         msg.appendInt( body.getLength() );
         msg.appendBytes( body );
 
@@ -78,7 +78,7 @@ public class WorkerDummy extends JkHandler
         ep.getSource().invoke(msg, ep);
 
         msg.reset();
-        msg.appendByte( HandlerRequest.JK_AJP13_END_RESPONSE );
+        msg.appendByte( AjpConstants.JK_AJP13_END_RESPONSE );
         msg.appendInt( 1 );
         
         ep.getSource().invoke(msg, ep );

@@ -160,7 +160,7 @@ public class Shm extends JniHandler {
         if( apr==null ) return;
         MsgContext mCtx=createMsgContext();
         Msg msg=(Msg)mCtx.getMsg(0);
-        C2BConverter c2b=(C2BConverter)mCtx.getNote(C2B_NOTE);
+        C2BConverter c2b=mCtx.getConverter();
         msg.reset();
 
         msg.appendByte( SHM_DUMP );
@@ -182,7 +182,7 @@ public class Shm extends JniHandler {
         MsgContext mCtx=createMsgContext();
         Msg msg=(Msg)mCtx.getMsg(0);
         msg.reset();
-        C2BConverter c2b=(C2BConverter)mCtx.getNote(C2B_NOTE);
+        C2BConverter c2b=mCtx.getConverter();
         
         msg.appendByte( SHM_WRITE_SLOT );
         appendString( msg, slotName, c2b );
@@ -225,7 +225,7 @@ public class Shm extends JniHandler {
         MsgContext mCtx=createMsgContext();
         Msg msg=(Msg)mCtx.getMsg(0);
         msg.reset();
-        C2BConverter c2b=(C2BConverter)mCtx.getNote(C2B_NOTE);
+        C2BConverter c2b=mCtx.getConverter();
         
         msg.appendByte( SHM_WRITE_SLOT );
         appendString( msg, slotName, c2b );
