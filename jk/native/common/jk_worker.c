@@ -25,6 +25,7 @@
 #include "jk_worker_list.h"
 #include "jk_worker.h"
 #include "jk_util.h"
+#include "jk_mt.h"
 
 static void close_workers(jk_logger_t *l);
 
@@ -37,7 +38,9 @@ static int build_worker_map(jk_map_t *init_data,
 
 /* Global worker list */
 static jk_map_t *worker_map;
+#if _MT_CODE
 static JK_CRIT_SEC worker_lock;
+#endif
 static int worker_maintain_time = 0;
 
 int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
