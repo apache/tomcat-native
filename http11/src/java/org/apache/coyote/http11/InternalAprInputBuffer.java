@@ -19,6 +19,7 @@ package org.apache.coyote.http11;
 
 import java.io.IOException;
 import java.io.EOFException;
+import java.nio.ByteBuffer;
 
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
@@ -58,6 +59,7 @@ public class InternalAprInputBuffer implements InputBuffer {
         headerBuffer2 = new byte[headerBufferSize];
         bodyBuffer = new byte[headerBufferSize];
         buf = headerBuffer1;
+        bbuf = ByteBuffer.allocateDirect(headerBufferSize);
 
         headerBuffer = new char[headerBufferSize];
         ascbuf = headerBuffer;
@@ -159,6 +161,12 @@ public class InternalAprInputBuffer implements InputBuffer {
      * US-ASCII header buffer.
      */
     protected char[] headerBuffer;
+
+
+    /**
+     * Direct byte buffer used to perform actual reading.
+     */
+    protected ByteBuffer bbuf;
 
 
     /**
@@ -393,9 +401,12 @@ public class InternalAprInputBuffer implements InputBuffer {
             // Read new bytes if needed
             if (pos >= lastValid) {
                 // Do a simple read with a short timeout
-                int nRead = Socket.recvt
-                    (socket, buf, pos, buf.length - lastValid, readTimeout);
+                bbuf.clear();
+                int nRead = Socket.recvbt
+                    (socket, bbuf, 0, buf.length - lastValid, readTimeout);
                 if (nRead > 0) {
+                    bbuf.limit(nRead);
+                    bbuf.get(buf, pos, nRead);
                     lastValid = pos + nRead;
                 } else {
                     if (Status.APR_STATUS_IS_ETIMEDOUT(-nRead)) {
@@ -417,9 +428,12 @@ public class InternalAprInputBuffer implements InputBuffer {
 
         if (pos >= lastValid) {
             // Do a simple read with a short timeout
-            int nRead = Socket.recvt
-                (socket, buf, pos, buf.length - lastValid, readTimeout);
+            bbuf.clear();
+            int nRead = Socket.recvbt
+                (socket, bbuf, 0, buf.length - lastValid, readTimeout);
             if (nRead > 0) {
+                bbuf.limit(nRead);
+                bbuf.get(buf, pos, nRead);
                 lastValid = pos + nRead;
             } else {
                 if (Status.APR_STATUS_IS_ETIMEDOUT(-nRead)) {
@@ -758,8 +772,12 @@ public class InternalAprInputBuffer implements InputBuffer {
                     (sm.getString("iib.requestheadertoolarge.error"));
             }
 
-            nRead = Socket.recv(socket, buf, pos, buf.length - lastValid);
+            bbuf.clear();
+            nRead = Socket.recvb
+                (socket, bbuf, 0, buf.length - lastValid);
             if (nRead > 0) {
+                bbuf.limit(nRead);
+                bbuf.get(buf, pos, nRead);
                 lastValid = pos + nRead;
             } else {
                 if (Status.APR_STATUS_IS_EAGAIN(-nRead)) {
@@ -774,8 +792,12 @@ public class InternalAprInputBuffer implements InputBuffer {
             buf = bodyBuffer;
             pos = 0;
             lastValid = 0;
-            nRead = Socket.recv(socket, buf, 0, buf.length);
+            bbuf.clear();
+            nRead = Socket.recvb
+                (socket, bbuf, 0, buf.length);
             if (nRead > 0) {
+                bbuf.limit(nRead);
+                bbuf.get(buf, 0, nRead);
                 lastValid = nRead;
             } else {
                 throw new IOException(sm.getString("iib.failedread"));
