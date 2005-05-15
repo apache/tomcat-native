@@ -56,6 +56,8 @@ struct jk_shm_worker
     int     id;
     /* Number of currently busy channels */
     volatile int busy;
+    /* Maximum number of busy channels */
+    volatile int max_busy;
     /* worker name */
     char    name[JK_SHM_STR_SIZ+1];
     /* worker domain */

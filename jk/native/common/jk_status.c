@@ -447,7 +447,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_puts(s, "<table><tr>"
                     "<th>Name</th><th>Type</th><th>Host</th><th>Addr</th>"
                     "<th>Stat</th><th>F</th><th>V</th><th>Acc</th><th>Err</th>"
-                    "<th>Wr</th><th>Rd</th><th>Busy</th><th>RR</th><th>Cd</th></tr>\n");
+                    "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th><th>RR</th><th>Cd</th></tr>\n");
             for (j = 0; j < lb->num_of_workers; j++) {
                 worker_record_t *wr = &(lb->lb_workers[j]);
                 ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
@@ -478,6 +478,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_putv(s, "<td>", status_strfsize(wr->s->readed, buf),
                         "</td>", NULL);
                 jk_printf(s, "<td>%u</td><td>", wr->s->busy);
+                jk_printf(s, "<td>%u</td><td>", wr->s->max_busy);
                 if (wr->s->redirect && *wr->s->redirect)
                     jk_puts(s, wr->s->redirect);
                 else
@@ -581,6 +582,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             "<tr><th>Err</th><td>Number of failed requests</td></tr>\n"
             "<tr><th>Wr</th><td>Number of bytes transferred</td></tr>\n"
             "<tr><th>Rd</th><td>Number of bytes read</td></tr>\n"
+            "<tr><th>Busy</th><td>Current number of busy connections</td></tr>\n"
+            "<tr><th>Max</th><td>Maximum number of busy connections</td></tr>\n"
             "<tr><th>RR</th><td>Route redirect</td></tr>\n"
             "<tr><th>Cd</th><td>Cluster domain</td></tr>\n"
             "</table>");

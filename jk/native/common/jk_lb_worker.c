@@ -578,7 +578,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     end->rd = end->wr = 0;
                     /* Increment the number of workers serving request */
                     p->worker->s->busy++;
+                    if (p->worker->s->busy > p->worker->s->max_busy)
+                        p->worker->s->max_busy = p->worker->s->busy;
                     rec->s->busy++;
+                    if (rec->s->busy > rec->s->max_busy)
+                        rec->s->max_busy = rec->s->busy;
                     service_stat = end->service(end, s, l, &is_service_error);
                     /* Update partial reads and writes if any */
                     rec->s->readed += end->rd;
