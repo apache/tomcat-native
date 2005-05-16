@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Added lock directive for load balancer that allows more acurate
+      load balancing in case of burst load. (mturk)
+      </update>      
+      <update>
       Added worker.maintain directive to allow customizing default 10
       second timeout. On busy servers this value needs to be set on
       higher value. (mturk)
