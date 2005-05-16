@@ -118,6 +118,13 @@ public final class ActionCode {
      **/
     public static final ActionCode ACTION_REQ_LOCAL_NAME_ATTRIBUTE = new ActionCode(19);
 
+
+    /**
+     * Callback for setting FORM auth body replay
+     */
+    public static final ActionCode ACTION_REQ_SET_BODY_REPLAY = new ActionCode(20);
+
+
     // ----------------------------------------------------------- Constructors
     int code;
 
