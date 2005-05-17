@@ -727,6 +727,10 @@ public class AprEndpoint {
         protected long[] addP;
         protected int addCount = 0;
 
+        /**
+         * Create the poller. With some versions of APR, the maximum poller size will
+         * be 62 (reocmpiling APR is necessary to remove this limitation).
+         */
         protected synchronized void init() {
             pool = Pool.create(serverSockPool);
             try {
@@ -751,10 +755,22 @@ public class AprEndpoint {
             addP = new long[pollerSize];
         }
 
+        /**
+         * Destroy the poller.
+         */
         protected void destroy() {
             Pool.destroy(pool);
         }
 
+        /**
+         * Add specified socket and associated pool to the poller. The socket will
+         * be added to a temporary array, and polled first after a maximum amount
+         * of time equal to pollTime (in most cases, latency will be much lower,
+         * however).
+         * 
+         * @param socket to add to the poller
+         * @param pool reprenting the memory used for the socket
+         */
         public void add(long socket, long pool) {
             synchronized (addS) {
                 // Add socket to the list. Newly added sockets will wait 
@@ -1018,6 +1034,10 @@ public class AprEndpoint {
 
         protected ArrayList addS;
 
+        /**
+         * Create the sendfile poller. With some versions of APR, the maximum poller size will
+         * be 62 (reocmpiling APR is necessary to remove this limitation).
+         */
         protected void init() {
             pool = Pool.create(serverSockPool);
             try {
@@ -1041,11 +1061,24 @@ public class AprEndpoint {
             addS = new ArrayList();
         }
 
+        /**
+         * Destroy the poller.
+         */
         protected void destroy() {
             sendfileData.clear();
             Pool.destroy(pool);
         }
 
+        /**
+         * Add the sendfile data to the sendfile poller. Note that in most cases,
+         * the initial non blocking calls to sendfile will return right away, and
+         * will be handled asynchronously inside the kernel. As a result, 
+         * the poller will never be used.
+         * 
+         * @param data containing the reference to the data which should be snet
+         * @return true if all the data has been sent right away, and false 
+         *              otherwise
+         */
         public boolean add(SendfileData data) {
             // Initialize fd from data given
             try {
@@ -1091,16 +1124,19 @@ public class AprEndpoint {
             return false;
         }
 
-        public void remove(long socket) {
-            synchronized (this) {
-                int rv = Poll.remove(sendfilePollset, socket);
-                if (rv == Status.APR_SUCCESS) {
-                    sendfileCount--;
-                }
-                // Set the socket to blocking mode again
-                Socket.optSet(socket, Socket.APR_SO_NONBLOCK, 0);
-                sendfileData.remove(new Long(socket));
+        /**
+         * Remove socket from the poller.
+         * 
+         * @param data the sendfile data which should be removed
+         */
+        protected void remove(SendfileData data) {
+            int rv = Poll.remove(sendfilePollset, data.socket);
+            if (rv == Status.APR_SUCCESS) {
+                sendfileCount--;
             }
+            // Set the socket to blocking mode again
+            Socket.optSet(data.socket, Socket.APR_SO_NONBLOCK, 0);
+            sendfileData.remove(data);
         }
 
         /**
@@ -1132,19 +1168,21 @@ public class AprEndpoint {
                 try {
                     // Add socket to the poller
                     if (addS.size() > 0) {
-                        for (int i = 0; i < addS.size(); i++) {
-                            SendfileData data = (SendfileData) addS.get(i);
-                            int rv = Poll.add(sendfilePollset, data.socket, 0, Poll.APR_POLLOUT);
-                            if (rv == Status.APR_SUCCESS) {
-                                sendfileData.put(new Long(data.socket), data);
-                                sendfileCount++;
-                            } else {
-                                log.warn(sm.getString("endpoint.sendfile.addfail", "" + rv));
-                                // Can't do anything: close the socket right away
-                                Pool.destroy(data.pool);
+                        synchronized (addS) {
+                            for (int i = 0; i < addS.size(); i++) {
+                                SendfileData data = (SendfileData) addS.get(i);
+                                int rv = Poll.add(sendfilePollset, data.socket, 0, Poll.APR_POLLOUT);
+                                if (rv == Status.APR_SUCCESS) {
+                                    sendfileData.put(new Long(data.socket), data);
+                                    sendfileCount++;
+                                } else {
+                                    log.warn(sm.getString("endpoint.sendfile.addfail", "" + rv));
+                                    // Can't do anything: close the socket right away
+                                    Pool.destroy(data.pool);
+                                }
                             }
+                            addS.clear();
                         }
-                        addS.clear();
                     }
                     // Pool for the specified interval
                     int rv = Poll.poll(sendfilePollset, pollTime, desc, false);
@@ -1157,7 +1195,7 @@ public class AprEndpoint {
                             if (((desc[n*4] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
                                     || ((desc[n*4] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
                                 // Close socket and clear pool
-                                remove(desc[n*4+1]);
+                                remove(state);
                                 // Destroy file descriptor pool, which should close the file
                                 Pool.destroy(state.fdpool);
                                 // Close the socket, as the reponse would be incomplete
@@ -1170,7 +1208,7 @@ public class AprEndpoint {
                                                      state.end - state.pos, 0);
                             if (nw < 0) {
                                 // Close socket and clear pool
-                                remove(desc[n*4+1]);
+                                remove(state);
                                 // Close the socket, as the reponse would be incomplete
                                 // This will close the file too.
                                 Pool.destroy(state.pool);
@@ -1179,7 +1217,7 @@ public class AprEndpoint {
 
                             state.pos = state.pos + nw;
                             if (state.pos >= state.end) {
-                                remove(desc[n*4+1]);
+                                remove(state);
                                 // Destroy file descriptor pool, which should close the file
                                 Pool.destroy(state.fdpool);
                                 // If all done hand this socket off to a worker for
