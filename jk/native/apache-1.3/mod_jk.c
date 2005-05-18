@@ -1879,7 +1879,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->format_string = NULL;
     c->format = NULL;
     c->mountcopy = JK_FALSE;
-    c->options = JK_OPT_FWDURIDEFAULT;
+    c->options = JK_OPT_FWDURIDEFAULT | JK_OPT_FLUSHPACKETS;
 
     /*
      * By default we will try to gather SSL info.
