@@ -426,7 +426,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     }
     if (*uri != '/') {
         jk_log(l, JK_LOG_WARNING,
-                "Uri %s is invalid. Uri must start with /");
+                "Uri %s is invalid. Uri must start with /", uri);
         JK_TRACE_EXIT(l);
         return NULL;
     }
