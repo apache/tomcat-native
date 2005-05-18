@@ -43,7 +43,10 @@ import org.apache.tomcat.util.threads.ThreadWithAttributes;
  * <li>Sendfile thread</li>
  * <li>Worker threads pool</li>
  * </ul>
- *
+ * 
+ * When switching to Java 5, there's an opportunity to use the virtual 
+ * machine's thread pool.
+ * 
  * @author Mladen Turk
  * @author Remy Maucherat
  */
@@ -372,7 +375,8 @@ public class AprEndpoint {
     /**
      * Initialize the endpoint.
      */
-    public void init() throws Exception {
+    public void init()
+        throws Exception {
 
         if (initialized)
             return;
@@ -409,7 +413,11 @@ public class AprEndpoint {
     }
 
 
-    public void start() throws Exception {
+    /**
+     * Start the APR endpoint, creating acceptor, poller and sendfile threads.
+     */
+    public void start()
+        throws Exception {
         // Initialize socket if not done before
         if (!initialized) {
             init();
@@ -443,6 +451,9 @@ public class AprEndpoint {
     }
 
 
+    /**
+     * Pause the endpoint, which will make it stop accepting new sockets.
+     */
     public void pause() {
         if (running && !paused) {
             paused = true;
@@ -450,12 +461,21 @@ public class AprEndpoint {
         }
     }
 
+
+    /**
+     * Resume the endpoint, which will make it start accepting new sockets 
+     * again.
+     */
     public void resume() {
         if (running) {
             paused = false;
         }
     }
 
+    
+    /**
+     * Stop the endpoint. This will cause all processing threads to stop.
+     */
     public void stop() {
         if (running) {
             running = false;
@@ -468,6 +488,10 @@ public class AprEndpoint {
         }
     }
 
+
+    /**
+     * Deallocate APR memory pools, and close server socket.
+     */
     public void destroy() throws Exception {
         if (running) {
             stop();
@@ -540,6 +564,9 @@ public class AprEndpoint {
     }
 
 
+    /**
+     * Process the specified connection.
+     */
     protected boolean processSocket(long socket, long pool) {
         // Process the connection
         int step = 1;
@@ -731,7 +758,7 @@ public class AprEndpoint {
          * Create the poller. With some versions of APR, the maximum poller size will
          * be 62 (reocmpiling APR is necessary to remove this limitation).
          */
-        protected synchronized void init() {
+        protected void init() {
             pool = Pool.create(serverSockPool);
             try {
                 serverPollset = Poll.create(pollerSize, pool, 0, soTimeout * 1000);
