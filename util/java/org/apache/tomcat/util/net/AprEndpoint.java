@@ -1132,7 +1132,7 @@ public class AprEndpoint {
                         data.pos = data.pos + nw;
                         if (data.pos >= data.end) {
                             // Entire file has been send
-                            Poll.destroy(data.fdpool);
+                            Pool.destroy(data.fdpool);
                             // Set back socket to blocking mode
                             Socket.optSet(data.socket, Socket.APR_SO_NONBLOCK, 0);
                             return true;
