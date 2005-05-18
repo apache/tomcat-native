@@ -1377,6 +1377,8 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 JK_TRACE_EXIT(l);
                 return JK_CLIENT_ERROR;
             }
+            if (r->flush && r->flush_packets)
+                r->flush(r);
         }
         break;
 
@@ -1410,18 +1412,19 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
         break;
 
     case JK_AJP13_END_RESPONSE:
-        {
-            ae->reuse = (int)jk_b_get_byte(msg);
-
-            if (!ae->reuse) {
-                /*
-                 * Strange protocol error.
-                 */
-                jk_log(l, JK_LOG_INFO, " Protocol error: Reuse is set to false");
-            }
-            /* Reuse in all cases */
-            ae->reuse = JK_TRUE;
+        ae->reuse = (int)jk_b_get_byte(msg);
+        if (!ae->reuse) {
+            /*
+                * Strange protocol error.
+                */
+            jk_log(l, JK_LOG_INFO, " Protocol error: Reuse is set to false");
         }
+        /* Flush after the last write */
+        if (r->flush && !r->flush_packets)
+            r->flush(r);
+
+        /* Reuse in all cases */
+        ae->reuse = JK_TRUE;
         JK_TRACE_EXIT(l);
         return JK_AJP13_END_RESPONSE;
         break;

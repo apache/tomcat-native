@@ -209,6 +209,7 @@ extern "C"
 #define JK_OPT_FWDDIRS              0x0008
 /* Forward local instead remote address */
 #define JK_OPT_FWDLOCAL             0x0010
+#define JK_OPT_FLUSHPACKETS         0x0020
 
 /* Check for EBCDIC systems */
 

@@ -349,6 +349,7 @@ static int init_ws_service(nsapi_private_data_t * private_data,
     s->start_response = start_response;
     s->read = ws_read;
     s->write = ws_write;
+    s->flush = NULL;
 
     /* Clear RECO status */
     s->reco_status = RECO_NONE;

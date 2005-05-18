@@ -324,6 +324,18 @@ web servers.
 </p>
 
 <p>
+JkOptions <b>FlushPackets</b>, you told mod_jk to make a flush after each AJP
+packet received from Tomcat.
+
+<source>  
+  JkOptions     +FlushPackets
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
 The directive <b>JkEnvVar</b> allow you to forward an environment vars from Apache server to Tomcat engine.
 
 <source>  

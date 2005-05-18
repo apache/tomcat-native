@@ -1356,6 +1356,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
     s->start_response = start_response;
     s->read = read;
     s->write = write;
+    s->flush = NULL;
 
     /* Clear RECO status */
     s->reco_status = RECO_NONE;

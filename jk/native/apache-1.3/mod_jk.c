@@ -300,6 +300,15 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
     return JK_FALSE;
 }
 
+static void JK_METHOD ws_flush(jk_ws_service_t *s)
+{
+    if (s && s->ws_private) {
+        apache_private_data_t *p = s->ws_private;
+        BUFF *bf = p->r->connection->client;
+        ap_bflush(bf);
+    }
+}
+
 /*
  * Write a chunk of response data back to the browser.  If the headers
  * haven't yet been sent over, send over default header values (Status =
@@ -317,7 +326,6 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned len)
         apache_private_data_t *p = s->ws_private;
 
         if (len) {
-            BUFF *bf = p->r->connection->client;
             char *buf = (char *)b;
             int w = (int)len;
             int r = 0;
@@ -329,6 +337,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned len)
             }
 
             if (p->r->header_only) {
+                BUFF *bf = p->r->connection->client;
                 ap_bflush(bf);
                 return JK_TRUE;
             }
@@ -351,11 +360,6 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned len)
                 }
 
             }
-
-            /*
-             * To allow server push.
-             */
-            ap_bflush(bf);
         }
 
         return JK_TRUE;
@@ -436,6 +440,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->start_response = ws_start_response;
     s->read = ws_read;
     s->write = ws_write;
+    s->flush = ws_flush;
 
     /* Clear RECO status */
     s->reco_status = RECO_NONE;
@@ -454,6 +459,10 @@ static int init_ws_service(apache_private_data_t * private_data,
     else
         s->remote_addr = NULL_FOR_EMPTY(r->connection->remote_ip);
 
+    if (conf->options & JK_OPT_FLUSHPACKETS)
+        s->flush_packets = 1;
+    else
+        s->flush_packets = 0;
     /* get server name */
     /* s->server_name  = (char *)(r->hostname ? r->hostname : r->server->server_hostname); */
     /* XXX : à la jk2 */
@@ -1502,6 +1511,9 @@ const char *jk_set_options(cmd_parms * cmd, void *dummy, const char *line)
         }
         else if (!strcasecmp(w, "ForwardLocalAddress")) {
             opt = JK_OPT_FWDLOCAL;
+        }
+        else if (!strcasecmp(w, "FlushPackets")) {
+            opt = JK_OPT_FLUSHPACKETS;
         }
         else
             return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '", w,

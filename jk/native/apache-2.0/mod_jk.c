@@ -317,6 +317,14 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
     return JK_FALSE;
 }
 
+static void JK_METHOD ws_flush(jk_ws_service_t *s)
+{
+    if (s && s->ws_private) {
+        apache_private_data_t *p = s->ws_private;
+        ap_rflush(p->r);
+    }
+}
+
 /*
  * Write a chunk of response data back to the browser.  If the headers
  * haven't yet been sent over, send over default header values (Status =
@@ -387,18 +395,6 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
                 }
 
             }
-
-            /*
-             * To allow server push. After writing full buffers
-             */
-#ifndef AS400
-            if (ap_rflush(p->r) != APR_SUCCESS) {
-                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0,
-                             NULL, "mod_jk: Error flushing");
-                return JK_FALSE;
-            }
-#endif
-
         }
 
         return JK_TRUE;
@@ -462,6 +458,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->start_response = ws_start_response;
     s->read = ws_read;
     s->write = ws_write;
+    s->flush = ws_flush;
 
     /* Clear RECO status */
     s->reco_status = RECO_NONE;
@@ -478,7 +475,10 @@ static int init_ws_service(apache_private_data_t * private_data,
         s->remote_addr = NULL_FOR_EMPTY(r->connection->local_ip);
     else
         s->remote_addr = NULL_FOR_EMPTY(r->connection->remote_ip);
-
+    if (conf->options & JK_OPT_FLUSHPACKETS)
+        s->flush_packets = 1;
+    else
+        s->flush_packets = 0;
     /* get server name */
     s->server_name = (char *)ap_get_server_name(r);
 

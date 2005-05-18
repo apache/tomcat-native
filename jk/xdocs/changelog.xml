@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Added JkOptions +FlushPackets used to optimize memory
+      usage when sending large data. (mturk)
+      </update>
+      <update>
       Added lock directive for load balancer that allows more acurate
       load balancing in case of burst load. (mturk)
       </update>      

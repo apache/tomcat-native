@@ -216,6 +216,11 @@ struct jk_ws_service
      */
     int retries;
 
+    /*
+     * If set call flush after each write
+     */
+    int flush_packets;
+
     /* Uri worker map. Added for virtual host support
      */
     jk_uri_worker_map_t *uw_map;
@@ -244,6 +249,11 @@ struct jk_ws_service
      */
     int (JK_METHOD * write) (jk_ws_service_t *s,
                              const void *buffer, unsigned len);
+
+    /*
+     * Flush a chunk of response data back to the browser.
+     */
+    void (JK_METHOD * flush) (jk_ws_service_t *s);
 };
 
 /*
