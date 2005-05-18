@@ -1525,6 +1525,9 @@ static const char *jk_set_options(cmd_parms * cmd, void *dummy,
         else if (!strcasecmp(w, "ForwardLocalAddress")) {
             opt = JK_OPT_FWDLOCAL;
         }
+        else if (!strcasecmp(w, "FlushPackets")) {
+            opt = JK_OPT_FLUSHPACKETS;
+        }
         else
             return apr_pstrcat(cmd->pool, "JkOptions: Illegal option '", w,
                                "'", NULL);
