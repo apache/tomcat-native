@@ -743,15 +743,20 @@ public class InternalAprOutputBuffer
         public int doWrite(ByteChunk chunk, Response res) 
             throws IOException {
 
-            if (bbuf.position() + chunk.getLength() > bbuf.capacity()) {
-                flushBuffer();
-                if (chunk.getLength() > bbuf.capacity()) {
-                    if (Socket.send(socket, chunk.getBuffer(), chunk.getStart(), 
-                            chunk.getLength()) < 0)
-                        throw new IOException(sm.getString("iib.failedwrite"));
+            // FIXME: It would likely be more efficient to do a number of writes
+            // through the direct BB; however, the case should happen very rarely.
+            // An algorithm similar to ByteChunk.append may also be better.
+            if (chunk.getLength() > bbuf.capacity()) {
+                if (Socket.send(socket, chunk.getBuffer(), chunk.getStart(), 
+                        chunk.getLength()) < 0) {
+                    throw new IOException(sm.getString("iib.failedwrite"));
                 }
+            } else {
+                if (bbuf.position() + chunk.getLength() > bbuf.capacity()) {
+                    flushBuffer();
+                }
+                bbuf.put(chunk.getBuffer(), chunk.getStart(), chunk.getLength());
             }
-            bbuf.put(chunk.getBuffer(), chunk.getStart(), chunk.getLength());
             return chunk.getLength();
 
         }
