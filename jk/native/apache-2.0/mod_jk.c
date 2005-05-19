@@ -319,10 +319,12 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 
 static void JK_METHOD ws_flush(jk_ws_service_t *s)
 {
+#ifndef AS400
     if (s && s->ws_private) {
         apache_private_data_t *p = s->ws_private;
         ap_rflush(p->r);
     }
+#endif
 }
 
 /*
@@ -341,7 +343,7 @@ static void JK_METHOD ws_flush(jk_ws_service_t *s)
 #define CHUNK_SIZE 4096
 #endif
 
-static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
+static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned int l)
 {
 #ifdef AS400
     int rc;
@@ -352,9 +354,9 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
 
         if (l) {
             /* BUFF *bf = p->r->connection->client; */
-            size_t r = 0;
-            long ll = l;
-            char *bb = (char *)b;
+            int r = 0;
+            int ll = l;
+            const char *bb = (const char *)b;
 
             if (!p->response_started) {
                 if (JK_IS_DEBUG_LEVEL(main_log))
@@ -371,7 +373,8 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
                 return JK_TRUE;
             }
 #ifdef AS400
-            rc = ap_change_response_body_xlate(p->r, 65535, 65535);     /* turn off response body translation */
+            /* turn off response body translation */
+            rc = ap_change_response_body_xlate(p->r, 65535, 65535);
             if (rc) {
                 ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0,
                              NULL,
@@ -381,19 +384,24 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
             }
 #endif
 
-            /* Debug - try to get around rwrite */
-            while (ll > 0) {
-                size_t toSend = (ll > CHUNK_SIZE) ? CHUNK_SIZE : ll;
-                r = ap_rwrite((const char *)bb, toSend, p->r);
-                jk_log(main_log, JK_LOG_DEBUG,
-                       "writing %ld (%ld) out of %ld", toSend, r, ll);
-                ll -= CHUNK_SIZE;
-                bb += CHUNK_SIZE;
+            while (ll > 0 && !p->r->connection->aborted) {
+#if 0
+                /* Apache 2 output filter does not write
+                 * directly to the wire.
+                 */
+                int toSend = (ll > CHUNK_SIZE) ? CHUNK_SIZE : ll;
+                r = ap_rwrite(bb, toSend, p->r);
+#else
+                r = ap_rwrite(bb, ll, p->r);
+#endif
+                if (JK_IS_DEBUG_LEVEL(main_log))
+                    jk_log(main_log, JK_LOG_DEBUG,
+                           "written %d out of %d", r, ll);
 
-                if (toSend != r) {
+                if (r < 0)
                     return JK_FALSE;
-                }
-
+                ll -= r;
+                bb += r;
             }
         }
 
@@ -1870,7 +1878,7 @@ static int jk_handler(request_rec * r)
             private_data.response_started = JK_FALSE;
             private_data.read_body_started = JK_FALSE;
             private_data.r = r;
-            
+
             wc_maintain(xconf->log);
 
             jk_init_ws_service(&s);
@@ -2406,7 +2414,7 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     worker_env.uri_to_worker = conf->uw_map;
     worker_env.virtual = "*";   /* for now */
     worker_env.server_name = (char *)ap_get_server_version();
-    if (wc_open(init_map, &worker_env, conf->log)) {        
+    if (wc_open(init_map, &worker_env, conf->log)) {
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);
     }
 }
@@ -2418,7 +2426,7 @@ static int jk_post_config(apr_pool_t * pconf,
     apr_status_t rv;
     jk_server_conf_t *conf;
     server_rec *srv = s;
-    
+
     /* create the jk log lockfiles in the parent */
     if ((rv = apr_global_mutex_create(&jk_log_lock, NULL,
                                       APR_LOCK_DEFAULT,
