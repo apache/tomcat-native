@@ -781,7 +781,7 @@ static int ajp_is_input_event(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
     rc = select(ae->sd + 1, &rset, NULL, &eset, &tv);
 
     if ((rc < 0) || (FD_ISSET(ae->sd, &eset))) {
-        jk_log(l, JK_LOG_ERROR,
+        jk_log(l, JK_LOG_WARNING,
                "error during select [%d]", rc);
         return JK_FALSE;
     }
@@ -815,7 +815,7 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
     /* wait for Pong reply for timeout milliseconds
      */
     if (ajp_is_input_event(ae, timeout, l) == JK_FALSE) {
-        jk_log(l, JK_LOG_ERROR, "timeout in reply pong");
+        jk_log(l, JK_LOG_INFO, "timeout in reply pong");
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -830,7 +830,7 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
     }
 
     if ((cmd = jk_b_get_byte(msg)) != AJP13_CPONG_REPLY) {
-        jk_log(l, JK_LOG_ERROR,
+        jk_log(l, JK_LOG_INFO,
                "awaited reply cpong, received %d instead",
                cmd);
         JK_TRACE_EXIT(l);
@@ -853,10 +853,12 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
                             ae->worker->socket_timeout,
                             ae->worker->socket_buf, l);
     if (ae->sd >= 0) {
-        jk_log(l, JK_LOG_DEBUG,
-               "Connected socket %d to (%s)",
-               ae->sd, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
-
+        if (JK_IS_DEBUG_LEVEL(l)) {
+            jk_log(l, JK_LOG_DEBUG,
+                   "Connected socket %d to (%s)",
+                   ae->sd,
+                   jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
+        }
         /* set last_access only if needed */
         if (ae->worker->cache_timeout > 0 || ae->worker->recycle_timeout > 0)
             ae->last_access = time(NULL);
