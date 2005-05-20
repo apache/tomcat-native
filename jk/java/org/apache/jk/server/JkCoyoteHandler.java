@@ -181,13 +181,12 @@ public class JkCoyoteHandler extends JkHandler implements ProtocolHandler {
     // -------------------- Jk handler implementation --------------------
     // Jk Handler mehod
     public int invoke( Msg msg, MsgContext ep ) 
-        throws IOException
-    {
+        throws IOException {
         if( ep.isLogTimeEnabled() ) 
             ep.setLong( MsgContext.TIMER_PRE_REQUEST, System.currentTimeMillis());
         
-        org.apache.coyote.Request req=(org.apache.coyote.Request)ep.getRequest();
-        org.apache.coyote.Response res=req.getResponse();
+        Request req=ep.getRequest();
+        Response res=req.getResponse();
 
         if( log.isDebugEnabled() )
             log.debug( "Invoke " + req + " " + res + " " + req.requestURI().toString());

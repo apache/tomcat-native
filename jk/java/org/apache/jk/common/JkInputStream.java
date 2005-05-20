@@ -49,6 +49,7 @@ public class JkInputStream implements InputBuffer, OutputBuffer {
     private boolean end_of_stream=false; 
     private boolean isEmpty = true;
     private boolean isFirst = true;
+    private boolean isReplay = false;
 
     static {
         // Make certain HttpMessages is loaded for SecurityManager
@@ -72,6 +73,7 @@ public class JkInputStream implements InputBuffer, OutputBuffer {
         end_of_stream = false;
         isEmpty = true;
         isFirst = true;
+        isReplay = false;
         bodyBuff.recycle();
         tempMB.recycle();
     }
@@ -194,6 +196,9 @@ public class JkInputStream implements InputBuffer, OutputBuffer {
     {
         // If the server returns an empty packet, assume that that end of
         // the stream has been reached (yuck -- fix protocol??).
+        if(isReplay) {
+            end_of_stream = true; // we've read everything there is
+        }
         if (end_of_stream) {
             if( log.isDebugEnabled() ) 
                 log.debug("refillReadBuffer: end of stream " );
@@ -270,5 +275,16 @@ public class JkInputStream implements InputBuffer, OutputBuffer {
         }
         mc.getSource().send( outputMsg, mc );
     }
+
+    /**
+     * Set the replay buffer for Form auth
+     */
+    public void setReplay(ByteChunk replay) {
+        isFirst = false;
+        isEmpty = false;
+        isReplay = true;
+        bodyBuff.setBytes(replay.getBytes(), replay.getStart(), replay.getLength());
+    }
+
 
 }

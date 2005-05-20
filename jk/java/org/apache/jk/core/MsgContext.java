@@ -156,7 +156,7 @@ public class MsgContext implements ActionHook {
         res.setHook(this);
     }
 
-    public final  Object getRequest() {
+    public final Request getRequest() {
         return req;
     }
 
@@ -348,6 +348,11 @@ public class MsgContext implements ActionHook {
         } else if( actionCode==ActionCode.ACTION_ACK ) {
             if( log.isTraceEnabled() )
                 log.trace("ACK " );
+        } else if ( actionCode == ActionCode.ACTION_REQ_SET_BODY_REPLAY ) {
+            if( log.isTraceEnabled() )
+                log.trace("Replay ");
+            ByteChunk bc = (ByteChunk)param;
+            jkIS.setReplay(bc);
         }
     }
     

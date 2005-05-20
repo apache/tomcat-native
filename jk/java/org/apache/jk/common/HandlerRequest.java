@@ -329,7 +329,7 @@ public class HandlerRequest extends JkHandler
     static int count = 0;
 
     private Request checkRequest(MsgContext ep) {
-        Request req=(Request)ep.getRequest();
+        Request req=ep.getRequest();
         if( req==null ) {
             req=new Request();
             Response res=new Response();
