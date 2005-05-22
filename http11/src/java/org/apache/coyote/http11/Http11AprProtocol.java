@@ -35,11 +35,9 @@ import org.apache.coyote.RequestGroupInfo;
 import org.apache.coyote.RequestInfo;
 import org.apache.tomcat.util.net.AprEndpoint;
 import org.apache.tomcat.util.net.SSLImplementation;
-import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 import org.apache.tomcat.util.net.AprEndpoint.Handler;
 import org.apache.tomcat.util.res.StringManager;
-import org.apache.tomcat.util.threads.ThreadWithAttributes;
 
 
 /**
@@ -220,7 +218,7 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
 
     private int maxKeepAliveRequests=100; // as in Apache HTTPD server
     private int timeout = 300000;   // 5 minutes as in Apache HTTPD server
-    private int maxPostSize = 2 * 1024 * 1024;
+    private int maxSavePostSize = 4 * 1024;
     private int maxHttpHeaderSize = 4 * 1024;
     private String reportedname;
     private int socketCloseDelay=-1;
@@ -361,13 +359,13 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
         setAttribute("compression", valueS);
     }
 
-    public int getMaxPostSize() {
-        return maxPostSize;
+    public int getMaxSavePostSize() {
+        return maxSavePostSize;
     }
 
-    public void setMaxPostSize(int valueI) {
-        maxPostSize = valueI;
-        setAttribute("maxPostSize", "" + valueI);
+    public void setMaxSavePostSize(int valueI) {
+        maxSavePostSize = valueI;
+        setAttribute("maxSavePostSize", "" + valueI);
     }
 
     public int getMaxHttpHeaderSize() {
@@ -626,7 +624,7 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
             processor.setCompressableMimeTypes( proto.compressableMimeTypes);
             processor.setRestrictedUserAgents( proto.restrictedUserAgents);
             processor.setSocketBuffer( proto.socketBuffer );
-            processor.setMaxPostSize( proto.maxPostSize );
+            processor.setMaxSavePostSize( proto.maxSavePostSize );
             processor.setServer( proto.server );
 
             thData[Http11AprProtocol.THREAD_DATA_PROCESSOR]=processor;

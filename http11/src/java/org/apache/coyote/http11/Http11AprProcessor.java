@@ -36,6 +36,7 @@ import org.apache.coyote.http11.filters.ChunkedOutputFilter;
 import org.apache.coyote.http11.filters.GzipOutputFilter;
 import org.apache.coyote.http11.filters.IdentityInputFilter;
 import org.apache.coyote.http11.filters.IdentityOutputFilter;
+import org.apache.coyote.http11.filters.SavedRequestInputFilter;
 import org.apache.coyote.http11.filters.VoidInputFilter;
 import org.apache.coyote.http11.filters.VoidOutputFilter;
 import org.apache.coyote.http11.filters.BufferedInputFilter;
@@ -268,9 +269,9 @@ public class Http11AprProcessor implements ActionHook {
 
 
     /**
-     * Max post size.
+     * Max save post size.
      */
-    protected int maxPostSize = 2 * 1024 * 1024;
+    protected int maxSavePostSize = 4 * 1024;
 
 
     /**
@@ -626,16 +627,16 @@ public class Http11AprProcessor implements ActionHook {
     /**
      * Set the maximum size of a POST which will be buffered in SSL mode.
      */
-    public void setMaxPostSize(int mps) {
-        maxPostSize = mps;
+    public void setMaxSavePostSize(int msps) {
+        maxSavePostSize = msps;
     }
 
 
     /**
      * Return the maximum size of a POST which will be buffered in SSL mode.
      */
-    public int getMaxPostSize() {
-        return maxPostSize;
+    public int getMaxSavePostSize() {
+        return maxSavePostSize;
     }
 
 
@@ -1103,7 +1104,7 @@ public class Http11AprProcessor implements ActionHook {
                  */
                 InputFilter[] inputFilters = inputBuffer.getFilters();
                 ((BufferedInputFilter) inputFilters[Constants.BUFFERED_FILTER])
-                    .setLimit(maxPostSize);
+                    .setLimit(maxSavePostSize);
                 inputBuffer.addActiveFilter
                     (inputFilters[Constants.BUFFERED_FILTER]);
                 try {
@@ -1115,6 +1116,15 @@ public class Http11AprProcessor implements ActionHook {
                 } catch (Exception e) {
                     log.warn("Exception getting SSL Cert", e);
                 }
+            } else if (actionCode == ActionCode.ACTION_REQ_SET_BODY_REPLAY) {
+                ByteChunk body = (ByteChunk) param;
+                
+                InputFilter savedBody = new SavedRequestInputFilter(body);
+                savedBody.setRequest(request);
+
+                InternalInputBuffer internalBuffer = (InternalInputBuffer)
+                    request.getInputBuffer();
+                internalBuffer.addActiveFilter(savedBody);
             }
         }
 
