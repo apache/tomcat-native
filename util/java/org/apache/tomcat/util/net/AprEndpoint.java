@@ -780,6 +780,7 @@ public class AprEndpoint {
             keepAliveCount = 0;
             addS = new long[pollerSize];
             addP = new long[pollerSize];
+            addCount = 0;
         }
 
         /**
@@ -872,12 +873,17 @@ public class AprEndpoint {
                             getWorkerThread().assign(desc[n*4+1], desc[n*4+2]);
                         }
                         maintainTime += pollTime;
-                    } else if (rv < -1) {
-                        log.error(sm.getString("endpoint.poll.fail"));
-                        // Handle poll critical failure
-                        synchronized (this) {
-                            destroy();
-                            init();
+                    } else if (rv < 0) {
+                        /* Any non timeup error is critical */
+                        if (Status.APR_STATUS_IS_TIMEUP(-rv))
+                            rv = 0;
+                        else {
+                            log.error(sm.getString("endpoint.poll.fail"));
+                            // Handle poll critical failure
+                            synchronized (this) {
+                                destroy();
+                                init();
+                            }
                         }
                     }
                     if (rv == 0 || maintainTime > 1000000L) {
@@ -1252,14 +1258,20 @@ public class AprEndpoint {
                                 getWorkerThread().assign(desc[n*4+1], state.pool);
                             }
                         }
-                    } else if (rv < -1) {
-                        log.error(sm.getString("endpoint.poll.fail"));
-                        // Handle poll critical failure
-                        synchronized (this) {
-                            destroy();
-                            init();
+                    } else if (rv < 0) {
+                        /* Any non timeup error is critical */
+                        if (Status.APR_STATUS_IS_TIMEUP(-rv))
+                            rv = 0;
+                        else {                        
+                            log.error(sm.getString("endpoint.poll.fail"));
+                            // Handle poll critical failure
+                            synchronized (this) {
+                                destroy();
+                                init();
+                            }
                         }
                     }
+                    /* TODO: See if we need to call the maintain for sendfile poller */
                 } catch (Throwable t) {
                     log.error(sm.getString("endpoint.poll.error"), t);
                 }
