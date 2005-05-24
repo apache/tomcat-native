@@ -99,7 +99,8 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14_W) +
 CRTCMOD MODULE(MOD_JK/JK_CONNECT) +
     SRCSTMF('/home/apache/jk/native/common/jk_connect.c') +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +  
-           'USE_APACHE_MD5' '_REENTRANT') +
+           'USE_APACHE_MD5' '_REENTRANT' 'USE_SO_RCVTIMEO' +
+           'USE_SO_SNDTIMEO' ) +
     TEXT('jk_connect.c') +
     OPTIMIZE(40) +
     SYSIFCOPT(*IFSIO) +
