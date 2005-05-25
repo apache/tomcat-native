@@ -751,6 +751,8 @@ public class Http11AprProcessor implements ActionHook {
 
         int keepAliveLeft = maxKeepAliveRequests;
         long soTimeout = endpoint.getSoTimeout();
+        
+        int limit = (endpoint.getMaxThreads() * 3) / 4;
 
         boolean keptAlive = false;
         boolean openSocket = false;
@@ -762,7 +764,7 @@ public class Http11AprProcessor implements ActionHook {
                 if( !disableUploadTimeout && keptAlive && soTimeout > 0 ) {
                     Socket.timeoutSet(socket, soTimeout * 1000);
                 }
-                if (!inputBuffer.parseRequestLine()) {
+                if (!inputBuffer.parseRequestLine(endpoint.getCurrentThreadsBusy() > limit)) {
                     // This means that no data is available right now
                     // (long keepalive), so that the processor should be recycled
                     // and the method should return true

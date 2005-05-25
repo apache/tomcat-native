@@ -386,7 +386,7 @@ public class InternalAprInputBuffer implements InputBuffer {
      * @return true if data is properly fed; false if no data is available 
      * immediately and thread should be freed
      */
-    public boolean parseRequestLine()
+    public boolean parseRequestLine(boolean useAvailableData)
         throws IOException {
 
         int start = 0;
@@ -400,6 +400,9 @@ public class InternalAprInputBuffer implements InputBuffer {
 
             // Read new bytes if needed
             if (pos >= lastValid) {
+                if (useAvailableData) {
+                    return false;
+                }
                 // Do a simple read with a short timeout
                 bbuf.clear();
                 int nRead = Socket.recvbt
@@ -427,6 +430,9 @@ public class InternalAprInputBuffer implements InputBuffer {
         start = pos;
 
         if (pos >= lastValid) {
+            if (useAvailableData) {
+                return false;
+            }
             // Do a simple read with a short timeout
             bbuf.clear();
             int nRead = Socket.recvbt
