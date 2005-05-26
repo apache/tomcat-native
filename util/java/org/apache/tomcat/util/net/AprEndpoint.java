@@ -255,7 +255,7 @@ public class AprEndpoint {
      * Poll interval, in microseconds. The smaller the value, the more CPU the poller
      * will use, but the more responsive to activity it will be.
      */
-    protected int pollTime = 100000;
+    protected int pollTime = 5000;
     public int getPollTime() { return pollTime; }
     public void setPollTime(int pollTime) { this.pollTime = pollTime; }
 
