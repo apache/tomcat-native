@@ -407,6 +407,10 @@ public class AprEndpoint {
             log.warn(sm.getString("endpoint.sendfile.nosupport"));
             useSendfile = false;
         }
+        
+        // Delay accepting of new connections until data is available
+        // TODO: Make that configurable       
+	    Socket.optSet(serverSock, Socket.APR_TCP_DEFER_ACCEPT, 1);
 
         initialized = true;
 
