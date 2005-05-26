@@ -766,27 +766,34 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
 static int ajp_is_input_event(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
 {
     fd_set rset;
-    fd_set eset;
     struct timeval tv;
     int rc;
 
     FD_ZERO(&rset);
-    FD_ZERO(&eset);
     FD_SET(ae->sd, &rset);
-    FD_SET(ae->sd, &eset);
-
     tv.tv_sec = timeout / 1000;
     tv.tv_usec = (timeout % 1000) * 1000;
 
-    rc = select(ae->sd + 1, &rset, NULL, &eset, &tv);
+    do {
+        rc = select(ae->sd + 1, &rset, NULL, NULL, &tv);
+    } while (rc < 0 && errno == EINTR);
 
-    if ((rc < 0) || (FD_ISSET(ae->sd, &eset))) {
-        jk_log(l, JK_LOG_WARNING,
-               "error during select [%d]", rc);
+    if (rc == 0) {
+        /* Timeout. Set the errno to timeout */
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+        errno = WSAETIMEDOUT - WSABASEERR;
+#else
+        errno = ETIMEDOUT;
+#endif
         return JK_FALSE;
     }
-
-    return ((FD_ISSET(ae->sd, &rset)) ? JK_TRUE : JK_FALSE);
+    else if (rc < 0) {
+        jk_log(l, JK_LOG_WARNING,
+               "error during select err=%d", errno);
+        return JK_FALSE;
+    }
+    else
+        return JK_TRUE;
 }
 
 
@@ -1880,7 +1887,7 @@ int ajp_init(jk_worker_t *pThis,
             jk_get_worker_socket_timeout(props, p->name, AJP_DEF_SOCKET_TIMEOUT);
 
         p->socket_buf =
-            jk_get_worker_socket_buffer(props, p->name, 512);
+            jk_get_worker_socket_buffer(props, p->name, 8192);
 
         p->keepalive =
             jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
