@@ -43,10 +43,10 @@ import org.apache.tomcat.util.threads.ThreadWithAttributes;
  * <li>Sendfile thread</li>
  * <li>Worker threads pool</li>
  * </ul>
- * 
- * When switching to Java 5, there's an opportunity to use the virtual 
+ *
+ * When switching to Java 5, there's an opportunity to use the virtual
  * machine's thread pool.
- * 
+ *
  * @author Mladen Turk
  * @author Remy Maucherat
  */
@@ -390,7 +390,7 @@ public class AprEndpoint {
         if (address == null) {
             addressStr = null;
         } else {
-            addressStr = "" + address;
+            addressStr = "" + address.getHostAddress();
         }
         long inetAddress = Address.info(addressStr, Socket.APR_INET,
                 port, 0, rootPool);
@@ -401,12 +401,12 @@ public class AprEndpoint {
         Socket.bind(serverSock, inetAddress);
         // Start listening on the server socket
         Socket.listen(serverSock, backlog);
-        
+
         // Sendfile usage on systems which don't support it cause major problems
         if (useSendfile && !Library.APR_HAS_SENDFILE) {
             log.warn(sm.getString("endpoint.sendfile.nosupport"));
             useSendfile = false;
-        } 
+        }
 
         initialized = true;
 
@@ -463,7 +463,7 @@ public class AprEndpoint {
 
 
     /**
-     * Resume the endpoint, which will make it start accepting new sockets 
+     * Resume the endpoint, which will make it start accepting new sockets
      * again.
      */
     public void resume() {
@@ -472,7 +472,7 @@ public class AprEndpoint {
         }
     }
 
-    
+
     /**
      * Stop the endpoint. This will cause all processing threads to stop.
      */
@@ -795,13 +795,13 @@ public class AprEndpoint {
          * be added to a temporary array, and polled first after a maximum amount
          * of time equal to pollTime (in most cases, latency will be much lower,
          * however).
-         * 
+         *
          * @param socket to add to the poller
          * @param pool reprenting the memory used for the socket
          */
         public void add(long socket, long pool) {
             synchronized (addS) {
-                // Add socket to the list. Newly added sockets will wait 
+                // Add socket to the list. Newly added sockets will wait
                 // at most for pollTime before being polled
                 if (addCount >= addS.length) {
                     // Can't do anything: close the socket right away
@@ -1108,11 +1108,11 @@ public class AprEndpoint {
         /**
          * Add the sendfile data to the sendfile poller. Note that in most cases,
          * the initial non blocking calls to sendfile will return right away, and
-         * will be handled asynchronously inside the kernel. As a result, 
+         * will be handled asynchronously inside the kernel. As a result,
          * the poller will never be used.
-         * 
+         *
          * @param data containing the reference to the data which should be snet
-         * @return true if all the data has been sent right away, and false 
+         * @return true if all the data has been sent right away, and false
          *              otherwise
          */
         public boolean add(SendfileData data) {
@@ -1135,7 +1135,7 @@ public class AprEndpoint {
                             return false;
                         } else {
                             // Break the loop and add the socket to poller.
-                            break;    
+                            break;
                         }
                     } else {
                         data.pos = data.pos + nw;
@@ -1152,7 +1152,7 @@ public class AprEndpoint {
                 log.error(sm.getString("endpoint.sendfile.error"), e);
                 return false;
             }
-            // Add socket to the list. Newly added sockets will wait 
+            // Add socket to the list. Newly added sockets will wait
             // at most for pollTime before being polled
             synchronized (addS) {
                 addS.add(sendfileData);
@@ -1163,7 +1163,7 @@ public class AprEndpoint {
 
         /**
          * Remove socket from the poller.
-         * 
+         *
          * @param data the sendfile data which should be removed
          */
         protected void remove(SendfileData data) {
@@ -1268,7 +1268,7 @@ public class AprEndpoint {
                         /* Any non timeup error is critical */
                         if (Status.APR_STATUS_IS_TIMEUP(-rv))
                             rv = 0;
-                        else {                        
+                        else {
                             log.error(sm.getString("endpoint.poll.fail"));
                             // Handle poll critical failure
                             synchronized (this) {
