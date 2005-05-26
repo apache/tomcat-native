@@ -390,7 +390,7 @@ public class AprEndpoint {
         if (address == null) {
             addressStr = null;
         } else {
-            addressStr = "" + address.getHostAddress();
+            addressStr = address.getHostAddress();
         }
         long inetAddress = Address.info(addressStr, Socket.APR_INET,
                 port, 0, rootPool);
