@@ -552,7 +552,7 @@ int jk_tcp_socket_sendfull(int sd, const unsigned char *b, int len)
 #else
             wr = write(sd, b + sent, len - sent);
 #endif
-        } while (wr == -1 && errno == EINTR);
+        } while (wr == -1 && (errno == EINTR || errno == EAGAIN));
 
         if (wr == -1)
             return (errno > 0) ? -errno : errno;
@@ -587,7 +587,7 @@ int jk_tcp_socket_recvfull(int sd, unsigned char *b, int len)
 #else
             rd = read(sd, (char *)b + rdlen, len - rdlen);
 #endif
-        } while (rd == -1 && errno == EINTR);
+        } while (rd == -1 && (errno == EINTR || errno == EAGAIN));
 
         if (rd == -1)
             return (errno > 0) ? -errno : errno;
@@ -615,6 +615,7 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
     return buf;
 }
 
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 int jk_is_socket_connected(int sd)
 {
     fd_set fd;
@@ -629,15 +630,41 @@ int jk_is_socket_connected(int sd)
     tv.tv_usec = 1;
 
     /* If we get a timeout, then we are still connected */
-    if ((rc = select(1, &fd, NULL, NULL, &tv)) == 0)
+    if ((rc = select(1, &fd, NULL, NULL, &tv)) == 0) {
+        errno = 0;
         return 1;
+    }
     else {
-#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
         if (rc == SOCKET_ERROR)
             errno = WSAGetLastError() - WSABASEERR;
         else
-            errno = 0;
-#endif
+            errno = EOF;
         return 0;
     }
 }
+#else
+int jk_is_socket_connected(int sd)
+{
+    char test_buffer[1];
+    int  rd;
+    int  saved_errno;
+
+    errno = 0;
+    /* Set socket to nonblocking */
+    if (sononblock(sd) != 0)
+        return 0;
+    do {
+        rd = read(sd, test_buffer, 1);
+    } while (rd == -1 && errno == EINTR);
+    saved_errno = errno;
+    soblock(sd);
+    if (rd == -1 && saved_errno == EWOULDBLOCK) {
+    errno = 0;
+        return 1;
+    }
+    else {
+        errno = saved_errno ? saved_errno : EOF;
+        return 0;
+    }
+}
+#endif
