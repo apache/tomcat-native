@@ -811,6 +811,7 @@ public class AprEndpoint {
                 addS[addCount] = socket;
                 addP[addCount] = pool;
                 addCount++;
+                addS.notify();
             }
         }
 
@@ -834,7 +835,9 @@ public class AprEndpoint {
 
                 while (keepAliveCount < 1 && addCount < 1) {
                     try {
-                        Thread.sleep(10);
+                        synchronized (addS) {
+                            addS.wait();
+                        }
                     } catch (InterruptedException e) {
                         // Ignore
                     }
@@ -1153,6 +1156,7 @@ public class AprEndpoint {
             // at most for pollTime before being polled
             synchronized (addS) {
                 addS.add(sendfileData);
+                addS.notify();
             }
             return false;
         }
@@ -1192,7 +1196,9 @@ public class AprEndpoint {
 
                 while (sendfileCount < 1 && addS.size() < 1) {
                     try {
-                        Thread.sleep(10);
+                        synchronized (addS) {
+                            addS.wait();
+                        }
                     } catch (InterruptedException e) {
                         // Ignore
                     }

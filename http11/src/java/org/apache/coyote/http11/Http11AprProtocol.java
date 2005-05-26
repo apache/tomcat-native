@@ -287,6 +287,15 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
         setAttribute("firstReadTimeout", "" + i);
     }
 
+    public int getPollTime() {
+        return ep.getPollTime();
+    }
+
+    public void setPollTime( int i ) {
+        ep.setPollTime(i);
+        setAttribute("pollTime", "" + i);
+    }
+
     public boolean getUseSendfile() {
         return ep.getUseSendfile();
     }
