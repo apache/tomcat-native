@@ -445,12 +445,14 @@ public class AprEndpoint {
             pollerThread.start();
 
             // Start sendfile thread
-            sendfile = new Sendfile();
-            sendfile.init();
-            sendfileThread = new Thread(sendfile, getName() + "-Sendfile");
-            sendfileThread.setPriority(getThreadPriority());
-            sendfileThread.setDaemon(true);
-            sendfileThread.start();
+            if (useSendfile) {
+                sendfile = new Sendfile();
+                sendfile.init();
+                sendfileThread = new Thread(sendfile, getName() + "-Sendfile");
+                sendfileThread.setPriority(getThreadPriority());
+                sendfileThread.setDaemon(true);
+                sendfileThread.start();
+            }
         }
     }
 
@@ -485,7 +487,9 @@ public class AprEndpoint {
             running = false;
             unlockAccept();
             poller.destroy();
-            sendfile.destroy();
+            if (useSendfile) {
+                sendfile.destroy();
+            }
             acceptorThread = null;
             pollerThread = null;
             sendfileThread = null;
