@@ -409,7 +409,8 @@ public class AprEndpoint {
         }
         
         // Delay accepting of new connections until data is available
-        // TODO: Make that configurable       
+        // Only Linux kernels 2.4 + have that implemented
+        // on other platforms this call is noop and will return APR_ENOTIMPL.
 	    Socket.optSet(serverSock, Socket.APR_TCP_DEFER_ACCEPT, 1);
 
         initialized = true;
