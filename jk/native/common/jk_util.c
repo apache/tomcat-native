@@ -786,12 +786,12 @@ int jk_get_lb_lock(jk_map_t *m, const char *wname)
     v = jk_map_get_string(m, buf, NULL);
     if (!v)
         return JK_LB_LOCK_DEFAULT;
-    else if  (*v == 'o' || *v == 'O' || *v == '1')
+    else if  (*v == 'o' || *v == 'O' || *v == '0')
         return JK_LB_LOCK_DEFAULT;
-    else if  (*v == 'p' || *v == 'P' || *v == '0')
+    else if  (*v == 'p' || *v == 'P' || *v == '1')
         return JK_LB_LOCK_PESSIMISTIC;
     else
-        return JK_LB_BYREQUESTS;
+        return JK_LB_LOCK_DEFAULT;
 }
 
 int jk_get_lb_worker_list(jk_map_t *m,
