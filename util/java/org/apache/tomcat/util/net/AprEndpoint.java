@@ -887,7 +887,7 @@ public class AprEndpoint {
                         maintainTime += pollTime;
                     } else if (rv < 0) {
                         /* Any non timeup error is critical */
-                        if (Status.APR_STATUS_IS_TIMEUP(-rv))
+                        if (-rv == Status.TIMEUP)
                             rv = 0;
                         else {
                             log.error(sm.getString("endpoint.poll.fail"));
@@ -1139,7 +1139,7 @@ public class AprEndpoint {
                     long nw = Socket.sendfile(data.socket, data.fd, null, null,
                                              data.pos, data.end, 0);
                     if (nw < 0) {
-                        if (!Status.APR_STATUS_IS_EAGAIN((int) -nw)) {
+                        if (!(-nw == Status.EAGAIN)) {
                             Poll.destroy(data.pool);
                             return false;
                         } else {
@@ -1275,7 +1275,7 @@ public class AprEndpoint {
                         }
                     } else if (rv < 0) {
                         /* Any non timeup error is critical */
-                        if (Status.APR_STATUS_IS_TIMEUP(-rv))
+                        if (-rv == Status.TIMEUP)
                             rv = 0;
                         else {
                             log.error(sm.getString("endpoint.poll.fail"));
