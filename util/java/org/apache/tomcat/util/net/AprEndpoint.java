@@ -863,7 +863,7 @@ public class AprEndpoint {
                                     keepAliveCount++;
                                 } else {
                                     // Can't do anything: close the socket right away
-                                    Pool.destroy(pool);
+                                    Pool.destroy(addP[i]);
                                 }
                             }
                             addCount = 0;
