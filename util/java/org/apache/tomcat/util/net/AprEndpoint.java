@@ -1217,7 +1217,7 @@ public class AprEndpoint {
                     // Add socket to the poller
                     if (addS.size() > 0) {
                         synchronized (addS) {
-                            for (int i = addS.size() - 1; i >= 0; i--) {
+                            for (int i = (addS.size() - 1); i >= 0; i--) {
                                 SendfileData data = (SendfileData) addS.get(i);
                                 int rv = Poll.add(sendfilePollset, data.socket, 0, Poll.APR_POLLOUT);
                                 if (rv == Status.APR_SUCCESS) {

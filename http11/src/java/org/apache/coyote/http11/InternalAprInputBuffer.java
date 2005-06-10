@@ -412,7 +412,7 @@ public class InternalAprInputBuffer implements InputBuffer {
                     bbuf.get(buf, pos, nRead);
                     lastValid = pos + nRead;
                 } else {
-                    if (Status.APR_STATUS_IS_ETIMEDOUT(-nRead)) {
+                    if ((-nRead) == Status.ETIMEDOUT || (-nRead) == Status.TIMEUP) {
                         return false;
                     } else {
                         throw new IOException(sm.getString("iib.failedread"));
@@ -442,7 +442,7 @@ public class InternalAprInputBuffer implements InputBuffer {
                 bbuf.get(buf, pos, nRead);
                 lastValid = pos + nRead;
             } else {
-                if (Status.APR_STATUS_IS_ETIMEDOUT(-nRead)) {
+                if ((-nRead) == Status.ETIMEDOUT || (-nRead) == Status.TIMEUP) {
                     return false;
                 } else {
                     throw new IOException(sm.getString("iib.failedread"));
@@ -786,7 +786,7 @@ public class InternalAprInputBuffer implements InputBuffer {
                 bbuf.get(buf, pos, nRead);
                 lastValid = pos + nRead;
             } else {
-                if (Status.APR_STATUS_IS_EAGAIN(-nRead)) {
+                if ((-nRead) == Status.EAGAIN) {
                     return false;
                 } else {
                     throw new IOException(sm.getString("iib.failedread"));
