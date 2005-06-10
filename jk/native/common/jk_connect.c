@@ -109,7 +109,7 @@ static int sononblock(int sd)
     return 0;
 }
 
-#if defined (WIN32)
+#if defined (WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 /* WIN32 implementation */
 static int nb_connect(int sock, struct sockaddr *addr, int timeout)
 {
@@ -372,7 +372,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
     }
 
     if (timeout > 0) {
-#if defined(WIN32)
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
         int tmout = timeout * 1000;
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
                    (const char *) &tmout, sizeof(int));
@@ -503,7 +503,7 @@ int jk_shutdown_socket(int s)
     if (shutdown(s, SHUT_WR)) {
         return jk_close_socket(s);
     }
-#if defined(WIN32)
+#if defined(WIN32)  || (defined(NETWARE) && defined(__NOVELL_LIBC__))
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
                (const char *) &tmout, sizeof(int));
 #elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO)
