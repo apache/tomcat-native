@@ -225,8 +225,8 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
 {
     unsigned int i;
     int total_factor = 0;
-    size_t mytraffic = 0;
-    size_t curmin = 0;
+    double mytraffic = 0;
+    double curmin = 0;
 
     worker_record_t *candidate = NULL;
     if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
@@ -313,8 +313,8 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
                                              jk_logger_t *l)
 {
     unsigned int i;
-    size_t mytraffic = 0;
-    size_t curmin = 0;
+    double mytraffic = 0;
+    double curmin = 0;
     worker_record_t *candidate = NULL;
 
     if (p->lblock == JK_LB_LOCK_PESSIMISTIC)

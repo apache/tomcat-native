@@ -81,9 +81,9 @@ struct jk_shm_worker
     /* Statistical data */
     volatile time_t  error_time;
     /* Number of bytes read from remote */
-    volatile size_t  readed;
+    volatile double  readed;
     /* Number of bytes transferred to remote */
-    volatile size_t  transferred;
+    volatile double  transferred;
     /* Number of times the worker was elected */
     volatile size_t  elected;
     /* Number of non 200 responses */

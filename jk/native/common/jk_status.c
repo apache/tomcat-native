@@ -166,11 +166,10 @@ static int jk_printf(jk_ws_service_t *s, const char *fmt, ...)
 }
 
 /* Actually APR's apr_strfsize */
-static char *status_strfsize(size_t size, char *buf)
+static char *status_strfsize(double size, char *buf)
 {
     const char ord[] = "KMGTPE";
     const char *o = ord;
-    int remain;
 
     if (size < 0) {
         return strcpy(buf, "  - ");
@@ -181,22 +180,12 @@ static char *status_strfsize(size_t size, char *buf)
         return buf;
     }
     do {
-        remain = (int)(size & 1023);
-        size >>= 10;
+        size /= 1024;
         if (size >= 973) {
             ++o;
             continue;
         }
-        if (size < 9 || (size == 9 && remain < 973)) {
-            if ((remain = ((remain * 5) + 256) / 512) >= 10)
-                ++size, remain = 0;
-            if (sprintf(buf, "%d.%d%c", (int) size, remain, *o) < 0)
-                return strcpy(buf, "****");
-            return buf;
-        }
-        if (remain >= 512)
-            ++size;
-        if (sprintf(buf, "%3d%c", (int) size, *o) < 0)
+        if (sprintf(buf, "%.2f%c", size, *o) < 0)
             return strcpy(buf, "****");
         return buf;
     } while (1);
