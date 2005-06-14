@@ -834,12 +834,13 @@ public class AprEndpoint {
          */
         public void run() {
 
+            long maintainTime = 0;
             // Loop until we receive a shutdown command
             while (running) {
-                long maintainTime = 0;
                 // Loop if endpoint is paused
                 while (paused) {
                     try {
+                        // TODO: We can easly do the maintenance here
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         // Ignore
@@ -847,6 +848,8 @@ public class AprEndpoint {
                 }
 
                 while (keepAliveCount < 1 && addCount < 1) {
+                    // Reset maintain time.
+                    maintainTime = 0;
                     try {
                         synchronized (addS) {
                             addS.wait();
@@ -873,6 +876,7 @@ public class AprEndpoint {
                             addCount = 0;
                         }
                     }
+                    maintainTime += pollTime;
                     // Pool for the specified interval
                     int rv = Poll.poll(serverPollset, pollTime, desc, true);
                     if (rv > 0) {
@@ -888,12 +892,9 @@ public class AprEndpoint {
                             // Hand this socket off to a worker
                             getWorkerThread().assign(desc[n*4+1], desc[n*4+2]);
                         }
-                        maintainTime += pollTime;
                     } else if (rv < 0) {
                         /* Any non timeup error is critical */
-                        if (-rv == Status.TIMEUP)
-                            rv = 0;
-                        else {
+                        if (-rv != Status.TIMEUP) {
                             log.error(sm.getString("endpoint.poll.fail"));
                             // Handle poll critical failure
                             synchronized (this) {
@@ -902,11 +903,9 @@ public class AprEndpoint {
                             }
                         }
                     }
-                    if (rv == 0 || maintainTime > 1000000L) {
-                        synchronized (addS) {
-                            rv = Poll.maintain(serverPollset, desc, true);
-                            maintainTime = 0;
-                        }
+                    if (maintainTime > 1000000L) {
+                        rv = Poll.maintain(serverPollset, desc, true);
+                        maintainTime = 0;
                         if (rv > 0) {
                             keepAliveCount -= rv;
                             for (int n = 0; n < rv; n++) {
