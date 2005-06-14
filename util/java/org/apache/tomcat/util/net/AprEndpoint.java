@@ -796,11 +796,20 @@ public class AprEndpoint {
          * Destroy the poller.
          */
         protected void destroy() {
-            /* Remove the sockets in the add queue */
+            // Close all sockets in the add queue
             for (int i = 0; i < addCount; i--) {
                 Pool.destroy(addP[i]);
             }
+            // Close all sockets still in the poller
+            int rv = Poll.pollset(serverPollset, desc);
+            if (rv > 0) {
+                for (int n = 0; n < rv; n++) {
+                    Pool.destroy(desc[n*4+2]);
+                }
+            }
             Pool.destroy(pool);
+            keepAliveCount = 0;
+            addCount = 0;
         }
 
         /**
@@ -895,7 +904,7 @@ public class AprEndpoint {
                     } else if (rv < 0) {
                         /* Any non timeup error is critical */
                         if (-rv != Status.TIMEUP) {
-                            log.error(sm.getString("endpoint.poll.fail"));
+                            log.error(sm.getString("endpoint.poll.fail", Error.strerror(-rv)));
                             // Handle poll critical failure
                             synchronized (this) {
                                 destroy();
@@ -1113,8 +1122,20 @@ public class AprEndpoint {
          * Destroy the poller.
          */
         protected void destroy() {
-            sendfileData.clear();
+            // Close any socket remaining in the add queue
+            for (int i = (addS.size() - 1); i >= 0; i--) {
+                SendfileData data = (SendfileData) addS.get(i);
+                Pool.destroy(data.pool);
+            }
+            // Close all sockets still in the poller
+            int rv = Poll.pollset(sendfilePollset, desc);
+            if (rv > 0) {
+                for (int n = 0; n < rv; n++) {
+                    Pool.destroy(desc[n*4+2]);
+                }
+            }
             Pool.destroy(pool);
+            sendfileData.clear();
         }
 
         /**
@@ -1281,7 +1302,7 @@ public class AprEndpoint {
                         if (-rv == Status.TIMEUP)
                             rv = 0;
                         else {
-                            log.error(sm.getString("endpoint.poll.fail"));
+                            log.error(sm.getString("endpoint.poll.fail", Error.strerror(-rv)));
                             // Handle poll critical failure
                             synchronized (this) {
                                 destroy();
