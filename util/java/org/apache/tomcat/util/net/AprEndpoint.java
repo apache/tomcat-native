@@ -796,6 +796,10 @@ public class AprEndpoint {
          * Destroy the poller.
          */
         protected void destroy() {
+            /* Remove the sockets in the add queue */
+            for (int i = 0; i < addCount; i--) {
+                Pool.destroy(addP[i]);
+            }
             Pool.destroy(pool);
         }
 
@@ -899,7 +903,7 @@ public class AprEndpoint {
                         }
                     }
                     if (rv == 0 || maintainTime > 1000000L) {
-                        synchronized (this) {
+                        synchronized (addS) {
                             rv = Poll.maintain(serverPollset, desc, true);
                             maintainTime = 0;
                         }
