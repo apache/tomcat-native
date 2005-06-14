@@ -172,9 +172,6 @@ static char *status_strfsize(jk_u64_t size, char *buf)
     const char *o = ord;
     unsigned int remain, siz;
 
-    if (size < 0) {
-        return strcpy(buf, "  - ");
-    }
     if (size < 973) {
         if (sprintf(buf, "%3d ", (int) size) < 0)
             return strcpy(buf, "****");
