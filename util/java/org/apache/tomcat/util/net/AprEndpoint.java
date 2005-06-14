@@ -1168,7 +1168,7 @@ public class AprEndpoint {
             // Add socket to the list. Newly added sockets will wait
             // at most for pollTime before being polled
             synchronized (addS) {
-                addS.add(sendfileData);
+                addS.add(data);
                 addS.notify();
             }
             return false;
