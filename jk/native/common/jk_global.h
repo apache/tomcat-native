@@ -254,8 +254,14 @@ extern "C"
 #define vsnprintf _vsnprintf
 #endif
 typedef unsigned __int64 jk_u64_t;
-#else
+#elif defined(HAVE_LONG_LONG64) || defined(AS400)
 typedef unsigned long long jk_u64_t;
+#elif defined(HAVE_LONGLONG64)
+typedef unsigned longlong jk_u64_t;
+#elif defined(HAVE_LONG64)
+typedef unsigned long jk_u64_t;
+#else
+typedef unsigned int jk_u64_t; /* HAVE_INT64 ! */
 #endif
 
 /* Use apr snprintf() and vsnprintf() when needed */

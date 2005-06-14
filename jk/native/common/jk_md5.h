@@ -61,8 +61,12 @@ extern "C"
     typedef DWORD JK_UINT4;
 #elif defined(NETWARE) && !defined(__NOVELL_LIBC__)
     typedef unsigned int JK_UINT4;
-#else
+#elif defined(SIZEOF_UINT32_T)
     typedef uint32_t JK_UINT4;
+#elif defined(SIZEOF_U_INT32_T)
+    typedef u_int32_t JK_UINT4;
+#else
+    typedef unsigned long JK_UINT4; /* ansi */
 #endif
 
 /* MD5 context. */
