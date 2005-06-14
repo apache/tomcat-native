@@ -253,6 +253,9 @@ extern "C"
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
 #endif
+typedef unsigned __int64 jk_u64_t;
+#else
+typedef unsigned long long jk_u64_t;
 #endif
 
 /* Use apr snprintf() and vsnprintf() when needed */
