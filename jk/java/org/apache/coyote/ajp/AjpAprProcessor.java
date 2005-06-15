@@ -88,7 +88,7 @@ public class AjpAprProcessor implements ActionHook {
 
         readBodyMessage.appendByte(Constants.JK_AJP13_GET_BODY_CHUNK);
         readBodyMessage.appendInt(Constants.MAX_READ_SIZE);
-        
+
     }
 
 
@@ -130,7 +130,7 @@ public class AjpAprProcessor implements ActionHook {
     /**
      * Char version of the message header.
      */
-    protected char[] headerChar = new char[8*1024]; // FIXME: Size should be configurable
+    //protected char[] headerChar = new char[8*1024];
 
 
     /**
@@ -375,14 +375,12 @@ public class AjpAprProcessor implements ActionHook {
                     // (long keepalive), so that the processor should be recycled
                     // and the method should return true
                     rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
-                    openSocket = true;
-                    // Add the socket to the poller
-                    endpoint.getPoller().add(socket, pool);
                     break;
                 }
-                // FIXME: Check message type, process right away and break if 
+                // Check message type, process right away and break if 
                 // not regular request processing
                 int type = headerMessage.getByte();
+                // FIXME: Any other types which should be checked ?
                 if (type == Constants.JK_AJP13_CPING_REQUEST) {
                     headerMessage.reset();
                     headerMessage.appendByte(Constants.JK_AJP13_CPONG_REPLY);
@@ -431,21 +429,6 @@ public class AjpAprProcessor implements ActionHook {
                 }
             }
 
-            // Finish the handling of the request
-            try {
-                thrA.setCurrentStage(endpoint, "endRequest");
-                rp.setStage(org.apache.coyote.Constants.STAGE_ENDINPUT);
-                endRequest();
-                // FXIME: Do one last flush
-            } catch (IOException e) {
-                error = true;
-            } catch (Throwable t) {
-                log.error("Error finishing request", t);
-                // 500 - Internal Server Error
-                response.setStatus(500);
-                error = true;
-            }
-
             // If there was an error, make sure the request is counted as
             // and error, and update the statistics counter
             if (error) {
@@ -459,9 +442,16 @@ public class AjpAprProcessor implements ActionHook {
             
         }
 
+        // Add the socket to the poller
+        if (!error) {
+            endpoint.getPoller().add(socket, pool);
+        } else {
+            openSocket = false;
+        }
+
         rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
         recycle();
-        
+
         return openSocket;
         
     }
@@ -1122,7 +1112,7 @@ public class AjpAprProcessor implements ActionHook {
         int headerLength = message.getHeaderLength();
 
         // Read the message header
-        // FIXME: do crazy tricks to avoid doing two reads !!!!
+        // FIXME: better buffering to avoid doing two reads !!!!
         if (first) {
             int nRead = Socket.recvt
                 (socket, buf, 0, headerLength, readTimeout);
@@ -1131,7 +1121,7 @@ public class AjpAprProcessor implements ActionHook {
             if (nRead == headerLength) {
                 message.processHeader();
             } else {
-                if (Status.APR_STATUS_IS_ETIMEDOUT(-nRead)) {
+                if ((-nRead) == Status.ETIMEDOUT || (-nRead) == Status.TIMEUP) {
                     return false;
                 } else {
                     throw new IOException(sm.getString("iib.failedread"));
@@ -1169,7 +1159,6 @@ public class AjpAprProcessor implements ActionHook {
      */
     protected void writeMessage(AjpMessage message) 
         throws IOException {
-        // FIXME: Write to a temporary direct buffer
         message.end();
         if (Socket.send(socket, message.getBuffer(), 0, message.getLen()) < 0)
             throw new IOException(sm.getString("iib.failedwrite"));
@@ -1182,6 +1171,7 @@ public class AjpAprProcessor implements ActionHook {
     public void recycle() {
 
         // Recycle Request object
+        first = true;
         request.recycle();
         response.recycle();
         headerMessage.reset();
