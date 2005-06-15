@@ -86,9 +86,6 @@ public class AjpAprProcessor implements ActionHook {
         // Cause loading of HexUtils
         int foo = HexUtils.DEC[0];
 
-        readBodyMessage.appendByte(Constants.JK_AJP13_GET_BODY_CHUNK);
-        readBodyMessage.appendInt(Constants.MAX_READ_SIZE);
-
     }
 
 
@@ -1031,14 +1028,10 @@ public class AjpAprProcessor implements ActionHook {
     public boolean receive() throws IOException {
         first = false;
         bodyMessage.reset();
-        boolean err = readMessage(bodyMessage, false);
+        readMessage(bodyMessage, false);
         if( log.isDebugEnabled() )
-            log.info( "Receiving: getting request body chunk " + err + " " + bodyMessage.getLen() );
+            log.info( "Receiving: getting request body chunk " + bodyMessage.getLen() );
         
-        if(err) {
-            throw new IOException();
-        }
-
         // No data received.
         if( bodyMessage.getLen() == 0 ) { // just the header
             // Don't mark 'end of stream' for the first chunk.
@@ -1083,6 +1076,9 @@ public class AjpAprProcessor implements ActionHook {
         }
 
         // Why not use outBuf??
+        readBodyMessage.reset();
+        readBodyMessage.appendByte(Constants.JK_AJP13_GET_BODY_CHUNK);
+        readBodyMessage.appendInt(Constants.MAX_READ_SIZE);
         writeMessage(readBodyMessage);
 
         // In JNI mode, response will be in bodyMsg. In TCP mode, response need to be
@@ -1172,6 +1168,8 @@ public class AjpAprProcessor implements ActionHook {
 
         // Recycle Request object
         first = true;
+        endOfStream = false;
+        empty = true;
         request.recycle();
         response.recycle();
         headerMessage.reset();
