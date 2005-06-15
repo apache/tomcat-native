@@ -4,8 +4,7 @@
 # Compile commands
 #VPATH=.:../common
 COMPILE      = $(CC) $(CFLAGS)
-LT_COMPILE   = $(LIBTOOL) --mode=compile $(COMPILE) -c $< 
-# && touch $@
+LT_COMPILE   = $(LIBTOOL) --mode=compile $(COMPILE) -c $< -o $@
 
 # Implicit rules for creating outputs from input files
 
