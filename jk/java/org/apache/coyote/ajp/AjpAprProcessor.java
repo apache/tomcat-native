@@ -16,9 +16,12 @@
 
 package org.apache.coyote.ajp;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.InetAddress;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.ActionHook;
@@ -281,6 +284,18 @@ public class AjpAprProcessor implements ActionHook {
     protected boolean first = true;
     
     
+    /**
+     * Replay read.
+     */
+    protected boolean replay = false;
+    
+    
+    /**
+     * Finished response.
+     */
+    protected boolean finished = false;
+    
+    
     // ------------------------------------------------------------- Properties
 
 
@@ -418,7 +433,6 @@ public class AjpAprProcessor implements ActionHook {
                 } catch (InterruptedIOException e) {
                     error = true;
                 } catch (Throwable t) {
-                    t.printStackTrace();
                     log.error("Error processing request", t);
                     // 500 - Internal Server Error
                     response.setStatus(500);
@@ -426,6 +440,15 @@ public class AjpAprProcessor implements ActionHook {
                 }
             }
 
+            // Finish the response if not done yet
+            if (!finished) {
+                try {
+                    endRequest();
+                } catch (Throwable t) {
+                    error = true;
+                }
+            }
+            
             // If there was an error, make sure the request is counted as
             // and error, and update the statistics counter
             if (error) {
@@ -536,7 +559,27 @@ public class AjpAprProcessor implements ActionHook {
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
 
-            // FIXME: SSL implementation
+            ByteChunk certData = certificates.getByteChunk();
+            ByteArrayInputStream bais = 
+                new ByteArrayInputStream(certData.getBytes(),
+                                         certData.getStart(),
+                                         certData.getLength());
+
+            // Fill the first element.
+            X509Certificate jsseCerts[] = null;
+            try {
+                CertificateFactory cf =
+                    CertificateFactory.getInstance("X.509");
+                X509Certificate cert = (X509Certificate)
+                    cf.generateCertificate(bais);
+                jsseCerts =  new X509Certificate[1];
+                jsseCerts[0] = cert;
+            } catch(java.security.cert.CertificateException e) {
+                log.error("Certificate convertion failed" , e );
+                return;
+            }
+            
+            request.setAttribute("javax.servlet.request.X509Certificate", jsseCerts);
             
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE) {
 
@@ -627,8 +670,21 @@ public class AjpAprProcessor implements ActionHook {
             request.setLocalPort(localPort);
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
-            // FIXME: SSL implementation
+            
+            // FIXME: Nothing needed here ?
+            
+        } else if (actionCode == ActionCode.ACTION_REQ_SET_BODY_REPLAY) {
+            
+            if( log.isTraceEnabled() )
+                log.trace("Replay ");
+            ByteChunk bc = (ByteChunk) param;
+            bodyBytes.setBytes(bc.getBytes(), bc.getStart(), bc.getLength());
+            first = false;
+            empty = false;
+            replay = true;
+            
         }
+
 
     }
 
@@ -680,7 +736,7 @@ public class AjpAprProcessor implements ActionHook {
         request.setLocalPort(headerMessage.getInt());
 
         boolean isSSL = headerMessage.getByte() != 0;
-        if( isSSL ) {
+        if (isSSL) {
             // XXX req.setSecure( true );
             request.scheme().setString("https");
         }
@@ -1014,6 +1070,10 @@ public class AjpAprProcessor implements ActionHook {
             }
         }
 
+        if (finished)
+            return;
+        
+        finished = true;
         outputMessage.reset();
         outputMessage.appendByte(Constants.JK_AJP13_END_RESPONSE);
         outputMessage.appendByte(1);
@@ -1065,10 +1125,10 @@ public class AjpAprProcessor implements ActionHook {
     {
         // If the server returns an empty packet, assume that that end of
         // the stream has been reached (yuck -- fix protocol??).
-        // FIXME: FORM support here ?
-        //if(replay) {
-        //    endOfStream = true; // we've read everything there is
-        //}
+        // FORM support
+        if (replay) {
+            endOfStream = true; // we've read everything there is
+        }
         if (endOfStream) {
             if( log.isDebugEnabled() ) 
                 log.debug("refillReadBuffer: end of stream " );
@@ -1170,8 +1230,11 @@ public class AjpAprProcessor implements ActionHook {
         first = true;
         endOfStream = false;
         empty = true;
+        replay = false;
+        finished = false;
         request.recycle();
         response.recycle();
+        certificates.recycle();
         headerMessage.reset();
 
     }
@@ -1208,7 +1271,7 @@ public class AjpAprProcessor implements ActionHook {
                 }
             }
             ByteChunk bc = bodyBytes.getByteChunk();
-            chunk.setBytes( bc.getBuffer(), bc.getStart(), bc.getLength() );
+            chunk.setBytes(bc.getBuffer(), bc.getStart(), bc.getLength());
             empty = true;
             return chunk.getLength();
 
