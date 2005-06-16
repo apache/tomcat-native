@@ -52,6 +52,7 @@ extern "C"
 #define MATCH_TYPE_DISABLED         0x2000
 #define MATCH_TYPE_STOPPED          0x4000
 
+#define JK_MAX_URI_LEN              4095
 struct uri_worker_record
 {
     /* Original uri for logging */
@@ -113,7 +114,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                        const char *puri, const char *pworker, jk_logger_t *l);
 
 const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
-                              char *uri, jk_logger_t *l);
+                              const char *uri, jk_logger_t *l);
 
 int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
                         jk_logger_t *l);

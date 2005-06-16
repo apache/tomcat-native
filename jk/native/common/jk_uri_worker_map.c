@@ -411,12 +411,13 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
 
 
 const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
-                              char *uri, jk_logger_t *l)
+                              const char *uri, jk_logger_t *l)
 {
     unsigned int i;
     char *url_rewrite;
-    char rewrite_char = ';';
     const char *rv = NULL;
+    const char *url = uri;
+    char  buf[JK_MAX_URI_LEN+1];
 
     JK_TRACE_ENTER(l);
     if (!uw_map || !uri) {
@@ -432,10 +433,16 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     }
     url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
     if (url_rewrite) {
-        rewrite_char = *url_rewrite;
-        *url_rewrite = '\0';
+        size_t len = url_rewrite - uri;
+        if (len > JK_MAX_URI_LEN)
+            len = JK_MAX_URI_LEN;
+        strncpy(buf, uri, len);
+        buf[len] = '\0';
+        url = &buf[0];
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG, "Removing Session path '%s' URI '%s'",
+                   url_rewrite, url);
     }
-
     if (uw_map->fname)
         uri_worker_map_update(uw_map, l);
     if (JK_IS_DEBUG_LEVEL(l))
@@ -456,7 +463,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {
             const char *wname;
             /* Map is already sorted by context_len */
-            if (wildchar_match(uri, uwr->context,
+            if (wildchar_match(url, uwr->context,
 #ifdef WIN32
                                1
 #else
@@ -473,8 +480,8 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     goto cleanup;
              }
         }
-        else if (JK_STRNCMP(uwr->context, uri, uwr->context_len) == 0) {
-            if (strlen(uri) == uwr->context_len) {
+        else if (JK_STRNCMP(uwr->context, url, uwr->context_len) == 0) {
+            if (strlen(url) == uwr->context_len) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
                            "Found an exact match %s -> %s",
@@ -489,10 +496,8 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     JK_TRACE_EXIT(l);
 
 cleanup:
-    if (url_rewrite)
-        *url_rewrite = rewrite_char;
     if (rv && uw_map->nosize) {
-        if (is_nomap_match(uw_map, uri, rv, l)) {
+        if (is_nomap_match(uw_map, url, rv, l)) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "Denying matching for worker %s by nomatch rule",
