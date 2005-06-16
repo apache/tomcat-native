@@ -1755,7 +1755,6 @@ static int jk_handler(request_rec * r)
 {
     const char *worker_name;
     jk_server_conf_t *xconf;
-    jk_server_conf_t *conf;
     int rc, dmt = 1;
 
     /* We do DIR_MAGIC_TYPE here to make sure TC gets all requests, even
@@ -1767,9 +1766,8 @@ static int jk_handler(request_rec * r)
         && (dmt = strcmp(r->handler, DIR_MAGIC_TYPE)))
         return DECLINED;
 
-    xconf =
-        (jk_server_conf_t *) ap_get_module_config(r->server->module_config,
-                                                  &jk_module);
+    xconf = (jk_server_conf_t *) ap_get_module_config(r->server->module_config,
+                                                      &jk_module);
     JK_TRACE_ENTER(xconf->log);
     if (apr_table_get(r->subprocess_env, "no-jk")) {
         jk_log(xconf->log, JK_LOG_DEBUG,
@@ -1819,15 +1817,14 @@ static int jk_handler(request_rec * r)
                            worker_name, worker_env.num_of_workers, r->uri);
             }
         }
+        if (worker_name)
+            apr_table_setn(r->notes, JK_WORKER_ID, worker_name);
     }
 
     if (JK_IS_DEBUG_LEVEL(xconf->log))
        jk_log(xconf->log, JK_LOG_DEBUG, "Into handler %s worker=%s"
               " r->proxyreq=%d",
               r->handler, worker_name, r->proxyreq);
-
-    conf = (jk_server_conf_t *) ap_get_module_config(r->server->module_config,
-                                                     &jk_module);
 
     /* If this is a proxy request, we'll notify an error */
     if (r->proxyreq) {
@@ -1836,20 +1833,6 @@ static int jk_handler(request_rec * r)
               worker_name);
         JK_TRACE_EXIT(xconf->log);
         return HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    if (conf && !worker_name) {
-        /* Direct mapping ( via setHandler ). Try overrides */
-        char *uri = apr_pstrdup(r->pool, r->uri);
-        worker_name = map_uri_to_worker(conf->uw_map, uri, conf->log);
-        if (!worker_name) {
-            /* Since we are here, an explicit (native) mapping has been used */
-            /* Use default worker */
-            worker_name = "ajp14";      /* XXX add a directive for default */
-        }
-        if (worker_name) {
-            apr_table_setn(r->notes, JK_WORKER_ID, worker_name);
-        }
     }
 
     if (worker_name) {
@@ -1887,12 +1870,12 @@ static int jk_handler(request_rec * r)
             s.ws_private = &private_data;
             s.pool = &private_data.p;
 #ifndef NO_GETTIMEOFDAY
-            if (conf->format != NULL) {
+            if (xconf->format != NULL) {
                 gettimeofday(&tv_begin, NULL);
             }
 #endif
 
-            if (init_ws_service(&private_data, &s, conf)) {
+            if (init_ws_service(&private_data, &s, xconf)) {
                 jk_endpoint_t *end = NULL;
 
                 /* Use per/thread pool ( or "context" ) to reuse the
@@ -1940,7 +1923,7 @@ static int jk_handler(request_rec * r)
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
 #ifndef NO_GETTIMEOFDAY
-            if (conf->format != NULL) {
+            if (xconf->format != NULL) {
                 char *duration = NULL;
                 long micro, seconds;
                 gettimeofday(&tv_end, NULL);
@@ -1952,7 +1935,7 @@ static int jk_handler(request_rec * r)
                 seconds = tv_end.tv_sec - tv_begin.tv_sec;
                 duration = apr_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
                 apr_table_setn(r->notes, JK_DURATION, duration);
-                request_log_transaction(r, conf);
+                request_log_transaction(r, xconf);
             }
 #endif
 
@@ -2485,7 +2468,6 @@ static int jk_translate(request_rec * r)
 
         if (conf) {
             const char *worker;
-            char *uri;
             if ((r->handler != NULL) && (!strcmp(r->handler, JK_HANDLER))) {
                 /* Somebody already set the handler, probably manual config
                  * or "native" configuration, no need for extra overhead
@@ -2541,8 +2523,7 @@ static int jk_translate(request_rec * r)
                 }
             }
 
-            uri = apr_pstrdup(r->pool, r->uri);
-            worker = map_uri_to_worker(conf->uw_map, uri, conf->log);
+            worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
 
             if (worker) {
                 r->handler = apr_pstrdup(r->pool, JK_HANDLER);
@@ -2666,7 +2647,6 @@ static int jk_map_to_storage(request_rec * r)
 
         if (conf) {
             const char *worker;
-            char *uri;
             if ((r->handler != NULL) && (!strcmp(r->handler, JK_HANDLER))) {
                 /* Somebody already set the handler, probably manual config
                  * or "native" configuration, no need for extra overhead
@@ -2686,8 +2666,7 @@ static int jk_map_to_storage(request_rec * r)
                 return DECLINED;
             }
 
-            uri = apr_pstrdup(r->pool, r->uri);
-            worker = map_uri_to_worker(conf->uw_map, uri, conf->log);
+            worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
 
             if (worker) {
                 r->handler = apr_pstrdup(r->pool, JK_HANDLER);
