@@ -576,7 +576,7 @@ public class AprEndpoint {
     /**
      * Process the specified connection.
      */
-    protected boolean processSocket(long socket, long pool) {
+    protected boolean processSocket(long socket) {
         // Process the connection
         int step = 1;
         boolean result = true;
@@ -596,7 +596,7 @@ public class AprEndpoint {
 
             // 3: Process the connection
             step = 3;
-            result = getHandler().process(socket, pool);
+            result = getHandler().process(socket);
 
         } catch (Throwable t) {
             if (step == 2) {
@@ -728,7 +728,7 @@ public class AprEndpoint {
                     pool = Pool.create(serverSockPool);
                     socket = Socket.accept(serverSock, pool);
                     // Hand this socket off to an appropriate processor
-                    workerThread.assign(socket, pool);
+                    workerThread.assign(socket);
                 } catch (Exception e) {
                     log.error(sm.getString("endpoint.accept.fail"), e);
                 }
@@ -760,7 +760,6 @@ public class AprEndpoint {
         protected long[] desc;
 
         protected long[] addS;
-        protected long[] addP;
         protected int addCount = 0;
 
         /**
@@ -785,10 +784,9 @@ public class AprEndpoint {
                     log.error(sm.getString("endpoint.poll.initfail"), e);
                 }
             }
-            desc = new long[pollerSize * 4];
+            desc = new long[pollerSize * 2];
             keepAliveCount = 0;
             addS = new long[pollerSize];
-            addP = new long[pollerSize];
             addCount = 0;
         }
 
@@ -798,13 +796,13 @@ public class AprEndpoint {
         protected void destroy() {
             // Close all sockets in the add queue
             for (int i = 0; i < addCount; i--) {
-                Pool.destroy(addP[i]);
+                Socket.destroy(addS[i]);
             }
             // Close all sockets still in the poller
             int rv = Poll.pollset(serverPollset, desc);
             if (rv > 0) {
                 for (int n = 0; n < rv; n++) {
-                    Pool.destroy(desc[n*4+2]);
+                    Socket.destroy(desc[n*2+1]);
                 }
             }
             Pool.destroy(pool);
@@ -821,17 +819,16 @@ public class AprEndpoint {
          * @param socket to add to the poller
          * @param pool reprenting the memory used for the socket
          */
-        public void add(long socket, long pool) {
+        public void add(long socket) {
             synchronized (addS) {
                 // Add socket to the list. Newly added sockets will wait
                 // at most for pollTime before being polled
                 if (addCount >= addS.length) {
                     // Can't do anything: close the socket right away
-                    Pool.destroy(pool);
+                    Socket.destroy(socket);
                     return;
                 }
                 addS[addCount] = socket;
-                addP[addCount] = pool;
                 addCount++;
                 addS.notify();
             }
@@ -874,12 +871,12 @@ public class AprEndpoint {
                         synchronized (addS) {
                             for (int i = (addCount - 1); i >= 0; i--) {
                                 int rv = Poll.add
-                                    (serverPollset, addS[i], addP[i], Poll.APR_POLLIN);
+                                    (serverPollset, addS[i], Poll.APR_POLLIN);
                                 if (rv == Status.APR_SUCCESS) {
                                     keepAliveCount++;
                                 } else {
                                     // Can't do anything: close the socket right away
-                                    Pool.destroy(addP[i]);
+                                    Socket.destroy(addS[i]);
                                 }
                             }
                             addCount = 0;
@@ -892,14 +889,14 @@ public class AprEndpoint {
                         keepAliveCount -= rv;
                         for (int n = 0; n < rv; n++) {
                             // Check for failed sockets
-                            if (((desc[n*4] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
-                                    || ((desc[n*4] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
+                            if (((desc[n*2] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
+                                    || ((desc[n*2] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
                                 // Close socket and clear pool
-                                Pool.destroy(desc[n*4+2]);
+                                Socket.destroy(desc[n*2+1]);
                                 continue;
                             }
                             // Hand this socket off to a worker
-                            getWorkerThread().assign(desc[n*4+1], desc[n*4+2]);
+                            getWorkerThread().assign(desc[n*2+1]);
                         }
                     } else if (rv < 0) {
                         /* Any non timeup error is critical */
@@ -919,7 +916,7 @@ public class AprEndpoint {
                             keepAliveCount -= rv;
                             for (int n = 0; n < rv; n++) {
                                 // Close socket and clear pool
-                                Pool.destroy(desc[n*4+2]);
+                                Socket.destroy(desc[n*2+1]);
                             }
                         }
                     }
@@ -951,7 +948,6 @@ public class AprEndpoint {
         protected Thread thread = null;
         protected boolean available = false;
         protected long socket = 0;
-        protected long pool = 0;
 
 
         /**
@@ -963,7 +959,7 @@ public class AprEndpoint {
          *
          * @param socket TCP socket to process
          */
-        protected synchronized void assign(long socket, long pool) {
+        protected synchronized void assign(long socket) {
 
             // Wait for the Processor to get the previous Socket
             while (available) {
@@ -975,7 +971,6 @@ public class AprEndpoint {
 
             // Store the newly available Socket and notify our thread
             this.socket = socket;
-            this.pool = pool;
             available = true;
             notifyAll();
 
@@ -1021,10 +1016,10 @@ public class AprEndpoint {
                     continue;
 
                 // Process the request from this socket
-                if (!processSocket(socket, pool)) {
+                if (!processSocket(socket)) {
                     // Close socket and pool
-                    Pool.destroy(pool);
-                    pool = 0;
+                    Socket.destroy(socket);
+                    socket = 0;
                 }
 
                 // Finish up this request
@@ -1125,13 +1120,13 @@ public class AprEndpoint {
             // Close any socket remaining in the add queue
             for (int i = (addS.size() - 1); i >= 0; i--) {
                 SendfileData data = (SendfileData) addS.get(i);
-                Pool.destroy(data.pool);
+                Socket.destroy(data.socket);
             }
             // Close all sockets still in the poller
             int rv = Poll.pollset(sendfilePollset, desc);
             if (rv > 0) {
                 for (int n = 0; n < rv; n++) {
-                    Pool.destroy(desc[n*4+2]);
+                    Socket.destroy(desc[n*2+1]);
                 }
             }
             Pool.destroy(pool);
@@ -1151,7 +1146,7 @@ public class AprEndpoint {
         public boolean add(SendfileData data) {
             // Initialize fd from data given
             try {
-                data.fdpool = Pool.create(data.pool);
+                data.fdpool = Socket.pool(data.socket);
                 data.fd = File.open
                     (data.fileName, File.APR_FOPEN_READ
                      | File.APR_FOPEN_SENDFILE_ENABLED | File.APR_FOPEN_BINARY,
@@ -1164,7 +1159,8 @@ public class AprEndpoint {
                                              data.pos, data.end, 0);
                     if (nw < 0) {
                         if (!(-nw == Status.EAGAIN)) {
-                            Poll.destroy(data.pool);
+                            Socket.destroy(data.socket);
+                            data.socket = 0;
                             return false;
                         } else {
                             // Break the loop and add the socket to poller.
@@ -1181,7 +1177,7 @@ public class AprEndpoint {
                         }
                     }
                 }
-            } catch (Error e) {
+            } catch (Exception e) {
                 log.error(sm.getString("endpoint.sendfile.error"), e);
                 return false;
             }
@@ -1243,7 +1239,7 @@ public class AprEndpoint {
                         synchronized (addS) {
                             for (int i = (addS.size() - 1); i >= 0; i--) {
                                 SendfileData data = (SendfileData) addS.get(i);
-                                int rv = Poll.add(sendfilePollset, data.socket, 0, Poll.APR_POLLOUT);
+                                int rv = Poll.add(sendfilePollset, data.socket, Poll.APR_POLLOUT);
                                 if (rv == Status.APR_SUCCESS) {
                                     sendfileData.put(new Long(data.socket), data);
                                     sendfileCount++;
@@ -1264,8 +1260,8 @@ public class AprEndpoint {
                             SendfileData state =
                                 (SendfileData) sendfileData.get(new Long(desc[n*4+1]));
                             // Problem events
-                            if (((desc[n*4] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
-                                    || ((desc[n*4] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
+                            if (((desc[n*2] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
+                                    || ((desc[n*2] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
                                 // Close socket and clear pool
                                 remove(state);
                                 // Destroy file descriptor pool, which should close the file
@@ -1275,7 +1271,7 @@ public class AprEndpoint {
                                 continue;
                             }
                             // Write some data using sendfile
-                            long nw = Socket.sendfile(desc[n*4+1], state.fd,
+                            long nw = Socket.sendfile(desc[n*2+1], state.fd,
                                                      null, null, state.pos,
                                                      state.end - state.pos, 0);
                             if (nw < 0) {
@@ -1294,7 +1290,7 @@ public class AprEndpoint {
                                 Pool.destroy(state.fdpool);
                                 // If all done hand this socket off to a worker for
                                 // processing of further requests
-                                getWorkerThread().assign(desc[n*4+1], state.pool);
+                                getWorkerThread().assign(desc[n*2+1]);
                             }
                         }
                     } else if (rv < 0) {
@@ -1335,7 +1331,7 @@ public class AprEndpoint {
      * thread local fields.
      */
     public interface Handler {
-        public boolean process(long socket, long pool);
+        public boolean process(long socket);
     }
 
 

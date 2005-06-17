@@ -352,7 +352,7 @@ public class AjpAprProcessor implements ActionHook {
      *
      * @throws IOException error during an I/O operation
      */
-    public boolean process(long socket, long pool)
+    public boolean process(long socket)
         throws IOException {
         ThreadWithAttributes thrA=
                 (ThreadWithAttributes)Thread.currentThread();
@@ -464,7 +464,7 @@ public class AjpAprProcessor implements ActionHook {
 
         // Add the socket to the poller
         if (!error) {
-            endpoint.getPoller().add(socket, pool);
+            endpoint.getPoller().add(socket);
         } else {
             openSocket = false;
         }

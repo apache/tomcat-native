@@ -729,7 +729,7 @@ public class Http11AprProcessor implements ActionHook {
      *
      * @throws IOException error during an I/O operation
      */
-    public boolean process(long socket, long pool)
+    public boolean process(long socket)
         throws IOException {
         ThreadWithAttributes thrA=
                 (ThreadWithAttributes)Thread.currentThread();
@@ -779,7 +779,7 @@ public class Http11AprProcessor implements ActionHook {
                     rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
                     openSocket = true;
                     // Add the socket to the poller
-                    endpoint.getPoller().add(socket, pool);
+                    endpoint.getPoller().add(socket);
                     break;
                 }
                 request.setStartTime(System.currentTimeMillis());
@@ -884,7 +884,7 @@ public class Http11AprProcessor implements ActionHook {
             // Do sendfile as needed: add socket to sendfile and end
             if (sendfileData != null) {
                 sendfileData.socket = socket;
-                sendfileData.pool = pool;
+                sendfileData.pool = 0;
                 if (!endpoint.getSendfile().add(sendfileData)) {
                     keepAlive = false;
                 }
