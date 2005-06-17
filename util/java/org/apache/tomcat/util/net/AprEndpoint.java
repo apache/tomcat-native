@@ -1065,7 +1065,6 @@ public class AprEndpoint {
         public long end;
         // Socket and socket pool
         public long socket;
-        public long pool;
         // Position
         public long pos;
     }
@@ -1246,7 +1245,7 @@ public class AprEndpoint {
                                 } else {
                                     log.warn(sm.getString("endpoint.sendfile.addfail", "" + rv));
                                     // Can't do anything: close the socket right away
-                                    Pool.destroy(data.pool);
+                                    Socket.destroy(data.socket);
                                 }
                             }
                             addS.clear();
@@ -1267,7 +1266,7 @@ public class AprEndpoint {
                                 // Destroy file descriptor pool, which should close the file
                                 Pool.destroy(state.fdpool);
                                 // Close the socket, as the reponse would be incomplete
-                                Pool.destroy(state.pool);
+                                Socket.destroy(state.socket);
                                 continue;
                             }
                             // Write some data using sendfile
@@ -1279,7 +1278,7 @@ public class AprEndpoint {
                                 remove(state);
                                 // Close the socket, as the reponse would be incomplete
                                 // This will close the file too.
-                                Pool.destroy(state.pool);
+                                Socket.destroy(state.socket);
                                 continue;
                             }
 
