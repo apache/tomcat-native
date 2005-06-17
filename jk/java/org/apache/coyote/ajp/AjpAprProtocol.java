@@ -526,9 +526,6 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
     }
 
     // --------------------  Connection handler --------------------
-    public static final int THREAD_DATA_PROCESSOR=1;
-    public static final int THREAD_DATA_OBJECT_NAME=2;
-
 
     static class AjpConnectionHandler implements Handler {
         AjpAprProtocol proto;
@@ -536,69 +533,39 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
         RequestGroupInfo global=new RequestGroupInfo();
         ThreadLocal localProcessor = new ThreadLocal();
 
-        AjpConnectionHandler( AjpAprProtocol proto ) {
-            this.proto=proto;
-        }
-
-        public Object[] init() {
-            Object thData[]=new Object[3];
-
-            AjpAprProcessor  processor =
-                new AjpAprProcessor(proto.maxHttpHeaderSize, proto.ep);
-            processor.setAdapter( proto.adapter );
-            processor.setMaxPostSize( proto.maxPostSize );
-            processor.setServer( proto.server );
-
-            thData[AjpAprProtocol.THREAD_DATA_PROCESSOR]=processor;
-
-            if( proto.getDomain() != null ) {
-                try {
-                    RequestInfo rp=processor.getRequest().getRequestProcessor();
-                    rp.setGlobalProcessor(global);
-                    ObjectName rpName=new ObjectName
-                        (proto.getDomain() + ":type=RequestProcessor,worker="
-                         + proto.getName() +",name=AjpRequest" + count++ );
-                    Registry.getRegistry(null, null).registerComponent( rp, rpName, null);
-                    thData[AjpAprProtocol.THREAD_DATA_OBJECT_NAME]=rpName;
-                } catch( Exception ex ) {
-                    log.warn("Error registering request");
-                }
-            }
-
-            return  thData;
+        AjpConnectionHandler(AjpAprProtocol proto) {
+            this.proto = proto;
         }
 
         public boolean process(long socket) {
-            AjpAprProcessor processor=null;
+            AjpAprProcessor processor = null;
             try {
-                // FIXME: It is also possible to use the TWA data, so keep init() [] for
-                // now to test which is more efficient
                 processor = (AjpAprProcessor) localProcessor.get();
                 if (processor == null) {
-                    processor = (AjpAprProcessor) (init()[AjpAprProtocol.THREAD_DATA_PROCESSOR]);
+                    processor = new AjpAprProcessor(proto.maxHttpHeaderSize, proto.ep);
+                    processor.setAdapter(proto.adapter);
+                    processor.setMaxPostSize(proto.maxPostSize);
+                    processor.setServer(proto.server);
                     localProcessor.set(processor);
+                    if (proto.getDomain() != null) {
+                        synchronized (this) {
+                            try {
+                                RequestInfo rp=processor.getRequest().getRequestProcessor();
+                                rp.setGlobalProcessor(global);
+                                ObjectName rpName=new ObjectName
+                                (proto.getDomain() + ":type=RequestProcessor,worker="
+                                        + proto.getName() +",name=AjpRequest" + count++ );
+                                Registry.getRegistry(null, null).registerComponent( rp, rpName, null);
+                            } catch( Exception ex ) {
+                                log.warn("Error registering request");
+                            }
+                        }
+                    }
                 }
 
                 if (processor instanceof ActionHook) {
                     ((ActionHook) processor).action(ActionCode.ACTION_START, null);
                 }
-                //socket = connection.getSocket();
-
-                //InputStream in = socket.getInputStream();
-                //OutputStream out = socket.getOutputStream();
-
-                // FIXME: SSL implementation
-                /*
-                if( proto.secure ) {
-                    SSLSupport sslSupport=null;
-                    if(proto.sslImplementation != null)
-                        sslSupport = proto.sslImplementation.getSSLSupport(socket);
-                    processor.setSSLSupport(sslSupport);
-                } else {
-                    processor.setSSLSupport( null );
-                }
-                processor.setSocket( socket );
-                */
 
                 return processor.process(socket);
 
@@ -623,9 +590,6 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
                 AjpAprProtocol.log.error
                     (sm.getString("ajpprotocol.proto.error"), e);
             } finally {
-                //       if(proto.adapter != null) proto.adapter.recycle();
-                //                processor.recycle();
-
                 if (processor instanceof ActionHook) {
                     ((ActionHook) processor).action(ActionCode.ACTION_STOP, null);
                 }

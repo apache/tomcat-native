@@ -613,9 +613,6 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
     }
 
     // --------------------  Connection handler --------------------
-    public static final int THREAD_DATA_PROCESSOR=1;
-    public static final int THREAD_DATA_OBJECT_NAME=2;
-
 
     static class Http11ConnectionHandler implements Handler {
         Http11AprProtocol proto;
@@ -627,61 +624,45 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
             this.proto=proto;
         }
 
-        public Object[] init() {
-            Object thData[]=new Object[3];
-
-            Http11AprProcessor  processor =
-                new Http11AprProcessor(proto.maxHttpHeaderSize, proto.ep);
-            processor.setAdapter( proto.adapter );
-            processor.setMaxKeepAliveRequests( proto.maxKeepAliveRequests );
-            processor.setTimeout( proto.timeout );
-            processor.setDisableUploadTimeout( proto.disableUploadTimeout );
-            processor.setCompression( proto.compression );
-            processor.setCompressionMinSize( proto.compressionMinSize);
-            processor.setNoCompressionUserAgents( proto.noCompressionUserAgents);
-            processor.setCompressableMimeTypes( proto.compressableMimeTypes);
-            processor.setRestrictedUserAgents( proto.restrictedUserAgents);
-            processor.setSocketBuffer( proto.socketBuffer );
-            processor.setMaxSavePostSize( proto.maxSavePostSize );
-            processor.setServer( proto.server );
-
-            thData[Http11AprProtocol.THREAD_DATA_PROCESSOR]=processor;
-
-            if( proto.getDomain() != null ) {
-                try {
-                    RequestInfo rp=processor.getRequest().getRequestProcessor();
-                    rp.setGlobalProcessor(global);
-                    ObjectName rpName=new ObjectName
-                        (proto.getDomain() + ":type=RequestProcessor,worker="
-                         + proto.getName() +",name=HttpRequest" + count++ );
-                    Registry.getRegistry(null, null).registerComponent( rp, rpName, null);
-                    thData[Http11AprProtocol.THREAD_DATA_OBJECT_NAME]=rpName;
-                } catch( Exception ex ) {
-                    log.warn("Error registering request");
-                }
-            }
-
-            return  thData;
-        }
-
         public boolean process(long socket) {
-            Http11AprProcessor processor=null;
+            Http11AprProcessor processor = null;
             try {
-                // FIXME: It is also possible to use the TWA data, so keep init() [] for
-                // now to test which is more efficient
                 processor = (Http11AprProcessor) localProcessor.get();
                 if (processor == null) {
-                    processor = (Http11AprProcessor) (init()[Http11AprProtocol.THREAD_DATA_PROCESSOR]);
+                    processor =
+                        new Http11AprProcessor(proto.maxHttpHeaderSize, proto.ep);
+                    processor.setAdapter(proto.adapter);
+                    processor.setMaxKeepAliveRequests(proto.maxKeepAliveRequests);
+                    processor.setTimeout(proto.timeout);
+                    processor.setDisableUploadTimeout(proto.disableUploadTimeout);
+                    processor.setCompression(proto.compression);
+                    processor.setCompressionMinSize(proto.compressionMinSize);
+                    processor.setNoCompressionUserAgents(proto.noCompressionUserAgents);
+                    processor.setCompressableMimeTypes(proto.compressableMimeTypes);
+                    processor.setRestrictedUserAgents(proto.restrictedUserAgents);
+                    processor.setSocketBuffer(proto.socketBuffer);
+                    processor.setMaxSavePostSize(proto.maxSavePostSize);
+                    processor.setServer(proto.server);
                     localProcessor.set(processor);
+                    if (proto.getDomain() != null) {
+                        synchronized (this) {
+                            try {
+                                RequestInfo rp = processor.getRequest().getRequestProcessor();
+                                rp.setGlobalProcessor(global);
+                                ObjectName rpName = new ObjectName
+                                (proto.getDomain() + ":type=RequestProcessor,worker="
+                                        + proto.getName() + ",name=HttpRequest" + count++);
+                                Registry.getRegistry(null, null).registerComponent(rp, rpName, null);
+                            } catch (Exception e) {
+                                log.warn("Error registering request");
+                            }
+                        }
+                    }
                 }
 
                 if (processor instanceof ActionHook) {
                     ((ActionHook) processor).action(ActionCode.ACTION_START, null);
                 }
-                //socket = connection.getSocket();
-
-                //InputStream in = socket.getInputStream();
-                //OutputStream out = socket.getOutputStream();
 
                 // FIXME: SSL implementation
                 /*
