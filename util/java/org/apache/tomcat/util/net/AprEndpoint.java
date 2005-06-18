@@ -722,11 +722,8 @@ public class AprEndpoint {
                 Worker workerThread = getWorkerThread();
 
                 // Accept the next incoming connection from the server socket
-                long socket = 0;
-                long pool = 0;
                 try {
-                    pool = Pool.create(serverSockPool);
-                    socket = Socket.accept(serverSock, pool);
+                    long socket = Socket.accept(serverSock);
                     // Hand this socket off to an appropriate processor
                     workerThread.assign(socket);
                 } catch (Exception e) {
@@ -916,7 +913,7 @@ public class AprEndpoint {
                             keepAliveCount -= rv;
                             for (int n = 0; n < rv; n++) {
                                 // Close socket and clear pool
-                                Socket.destroy(desc[n*2+1]);
+                                Socket.destroy(desc[n]);
                             }
                         }
                     }
