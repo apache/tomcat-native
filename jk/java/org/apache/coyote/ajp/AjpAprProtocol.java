@@ -308,13 +308,22 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
         socketBuffer = valueI;
     }
 
-    public String getCompression() {
-        return compression;
+    public int getFirstReadTimeout() {
+        return ep.getFirstReadTimeout();
     }
 
-    public void setCompression(String valueS) {
-        compression = valueS;
-        setAttribute("compression", valueS);
+    public void setFirstReadTimeout( int i ) {
+        ep.setFirstReadTimeout(i);
+        setAttribute("firstReadTimeout", "" + i);
+    }
+
+    public int getPollTime() {
+        return ep.getPollTime();
+    }
+
+    public void setPollTime( int i ) {
+        ep.setPollTime(i);
+        setAttribute("pollTime", "" + i);
     }
 
     public int getMaxPostSize() {
