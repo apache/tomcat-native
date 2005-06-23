@@ -758,7 +758,7 @@ public class Http11AprProcessor implements ActionHook {
         
         int limit = 0;
         if (endpoint.getFirstReadTimeout() > 0) {
-            limit = (endpoint.getMaxThreads() * 3) / 4;
+            limit = endpoint.getMaxThreads() / 2;
         }
 
         boolean keptAlive = false;
