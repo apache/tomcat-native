@@ -52,6 +52,12 @@ import org.apache.tomcat.util.threads.ThreadWithAttributes;
  * Processes HTTP requests.
  *
  * @author Remy Maucherat
+ * @author Henri Gomez
+ * @author Dan Milstein
+ * @author Keith Wannamaker
+ * @author Kevin Seguin
+ * @author Costin Manolache
+ * @author Bill Barker
  */
 public class AjpAprProcessor implements ActionHook {
 
@@ -412,6 +418,7 @@ public class AjpAprProcessor implements ActionHook {
         return request;
     }
 
+
     /**
      * Process pipelined HTTP requests using the specified input and output
      * streams.
@@ -465,7 +472,6 @@ public class AjpAprProcessor implements ActionHook {
                 // Check message type, process right away and break if 
                 // not regular request processing
                 int type = requestHeaderMessage.getByte();
-                // FIXME: Any other types which should be checked ?
                 if (type == Constants.JK_AJP13_CPING_REQUEST) {
                     if (Socket.sendb(socket, pongMessageBuffer, 0, 
                             pongMessageBuffer.position()) < 0) {
@@ -586,7 +592,7 @@ public class AjpAprProcessor implements ActionHook {
             if ((response.isCommitted()) || !expectation)
                 return;
 
-            // FIXME: No way to reply to an expectation in AJP ?
+            // No expectations in AJP
 
         } else if (actionCode == ActionCode.ACTION_CLIENT_FLUSH) {
 
@@ -751,14 +757,9 @@ public class AjpAprProcessor implements ActionHook {
             }
             request.setLocalPort(localPort);
 
-        } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
-            
-            // FIXME: Nothing needed here ?
-            
         } else if (actionCode == ActionCode.ACTION_REQ_SET_BODY_REPLAY) {
             
-            if( log.isTraceEnabled() )
-                log.trace("Replay ");
+            // Set the given bytes as the content
             ByteChunk bc = (ByteChunk) param;
             bodyBytes.setBytes(bc.getBytes(), bc.getStart(), bc.getLength());
             first = false;
@@ -819,7 +820,6 @@ public class AjpAprProcessor implements ActionHook {
 
         boolean isSSL = requestHeaderMessage.getByte() != 0;
         if (isSSL) {
-            // XXX req.setSecure( true );
             request.scheme().setString("https");
         }
 
@@ -880,13 +880,10 @@ public class AjpAprProcessor implements ActionHook {
             if (attributeCode == Constants.SC_A_ARE_DONE)
                 break;
 
-            /* Special case ( XXX in future API make it separate type !)
-             */
             if (attributeCode == Constants.SC_A_SSL_KEY_SIZE) {
                 // Bug 1326: it's an Integer.
                 request.setAttribute(SSLSupport.KEY_SIZE_KEY,
                                  new Integer(requestHeaderMessage.getInt()));
-               //Integer.toString(msg.getInt()));
             }
 
             if (attributeCode == Constants.SC_A_REQ_ATTRIBUTE ) {
@@ -944,21 +941,21 @@ public class AjpAprProcessor implements ActionHook {
                 requestHeaderMessage.getBytes(certificates);
                 break;
                 
-            case Constants.SC_A_SSL_CIPHER   :
-                request.scheme().setString( "https" );
+            case Constants.SC_A_SSL_CIPHER :
+                request.scheme().setString("https");
                 requestHeaderMessage.getBytes(tmpMB);
                 request.setAttribute(SSLSupport.CIPHER_SUITE_KEY,
                                  tmpMB.toString());
                 break;
                 
-            case Constants.SC_A_SSL_SESSION  :
-                request.scheme().setString( "https" );
+            case Constants.SC_A_SSL_SESSION :
+                request.scheme().setString("https");
                 requestHeaderMessage.getBytes(tmpMB);
                 request.setAttribute(SSLSupport.SESSION_ID_KEY, 
                                   tmpMB.toString());
                 break;
                 
-            case Constants.SC_A_SECRET  :
+            case Constants.SC_A_SECRET :
                 requestHeaderMessage.getBytes(tmpMB);
                 String secret = tmpMB.toString();
                 if(log.isInfoEnabled())
@@ -1097,8 +1094,9 @@ public class AjpAprProcessor implements ActionHook {
         
         responseHeaderMessage.reset();
         responseHeaderMessage.appendByte(Constants.JK_AJP13_SEND_HEADERS);
-        responseHeaderMessage.appendInt(response.getStatus());
         
+        // HTTP header contents
+        responseHeaderMessage.appendInt(response.getStatus());
         String message = response.getMessage();
         if (message == null){
             message= HttpMessages.getMessage(response.getStatus());
@@ -1108,8 +1106,7 @@ public class AjpAprProcessor implements ActionHook {
         tmpMB.setString(message);
         responseHeaderMessage.appendBytes(tmpMB);
 
-        // XXX add headers
-        
+        // Special headers
         MimeHeaders headers = response.getMimeHeaders();
         String contentType = response.getContentType();
         if (contentType != null) {
@@ -1123,6 +1120,8 @@ public class AjpAprProcessor implements ActionHook {
         if (contentLength >= 0) {
             headers.setValue("Content-Length").setInt(contentLength);
         }
+        
+        // Other headers
         int numHeaders = headers.size();
         responseHeaderMessage.appendInt(numHeaders);
         for (int i = 0; i < numHeaders; i++) {
@@ -1131,6 +1130,8 @@ public class AjpAprProcessor implements ActionHook {
             MessageBytes hV=headers.getValue(i);
             responseHeaderMessage.appendBytes(hV);
         }
+        
+        // Write to buffer
         responseHeaderMessage.end();
         outputBuffer.put(responseHeaderMessage.getBuffer(), 0, responseHeaderMessage.getLen());
 
@@ -1157,11 +1158,14 @@ public class AjpAprProcessor implements ActionHook {
             return;
         
         finished = true;
+        
+        // Add the end message
         if (outputBuffer.position() + endMessageArray.length > outputBuffer.capacity()) {
             flush();
         }
         outputBuffer.put(endMessageArray);
         flush();
+        
     }
     
     
@@ -1235,30 +1239,23 @@ public class AjpAprProcessor implements ActionHook {
      *  after we send a GET_BODY packet
      */
     public boolean receive() throws IOException {
+        
         first = false;
         bodyMessage.reset();
         readMessage(bodyMessage, false, false);
-        if( log.isDebugEnabled() )
-            log.info( "Receiving: getting request body chunk " + bodyMessage.getLen() );
         
         // No data received.
-        if( bodyMessage.getLen() == 0 ) { // just the header
+        if (bodyMessage.getLen() == 0) {
+            // just the header
             // Don't mark 'end of stream' for the first chunk.
-            // end_of_stream = true;
             return false;
         }
         int blen = bodyMessage.peekInt();
-        if( blen == 0 ) {
+        if (blen == 0) {
             return false;
         }
 
-        if( log.isTraceEnabled() ) {
-            bodyMessage.dump("Body buffer");
-        }
-        
         bodyMessage.getBytes(bodyBytes);
-        if( log.isTraceEnabled() )
-            log.trace( "Data:\n" + bodyBytes);
         empty = false;
         return true;
     }
@@ -1399,7 +1396,6 @@ public class AjpAprProcessor implements ActionHook {
             return chunk.getLength();
 
         }
-
 
     }
 

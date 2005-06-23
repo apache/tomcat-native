@@ -29,11 +29,9 @@ import org.apache.tomcat.util.buf.MessageBytes;
  * Can be used (somewhat confusingly) for both incoming and outgoing
  * packets.  
  *
- * See Ajp14/Ajp13Packet.java.
- *
- * @author Henri Gomez [hgomez@apache.org]
- * @author Dan Milstein [danmil@shore.net]
- * @author Keith Wannamaker [Keith@Wannamaker.org]
+ * @author Henri Gomez
+ * @author Dan Milstein
+ * @author Keith Wannamaker
  * @author Kevin Seguin
  * @author Costin Manolache
  */
@@ -53,8 +51,6 @@ public class AjpMessage {
      */
     private int len; 
 
-
-    
     
     /**
      * Prepare this packet for accumulating a message from the container to
