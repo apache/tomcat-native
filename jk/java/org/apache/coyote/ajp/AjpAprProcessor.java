@@ -1185,7 +1185,7 @@ public class AjpAprProcessor implements ActionHook {
             if (nRead > 0) {
                 inputBuffer.limit(inputBuffer.limit() + nRead);
             } else {
-                throw new IOException(sm.getString("iib.failedread"));
+                throw new IOException(sm.getString("ajpprotocol.failedread"));
             }
         }
         
@@ -1220,7 +1220,7 @@ public class AjpAprProcessor implements ActionHook {
                 if ((-nRead) == Status.ETIMEDOUT || (-nRead) == Status.TIMEUP) {
                     return false;
                 } else {
-                    throw new IOException(sm.getString("iib.failedread"));
+                    throw new IOException(sm.getString("ajpprotocol.failedread"));
                 }
             }
         }
@@ -1356,7 +1356,7 @@ public class AjpAprProcessor implements ActionHook {
         throws IOException {
         if (outputBuffer.position() > 0) {
             if (Socket.sendb(socket, outputBuffer, 0, outputBuffer.position()) < 0) {
-                throw new IOException(sm.getString("iib.failedwrite"));
+                throw new IOException(sm.getString("ajpprotocol.failedwrite"));
             }
             outputBuffer.clear();
         }
