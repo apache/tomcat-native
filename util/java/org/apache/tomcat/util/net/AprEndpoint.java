@@ -156,7 +156,7 @@ public class AprEndpoint {
     /**
      * Maximum amount of worker threads.
      */
-    protected int maxThreads = 20;
+    protected int maxThreads = 60;
     public void setMaxThreads(int maxThreads) { this.maxThreads = maxThreads; }
     public int getMaxThreads() { return maxThreads; }
 
@@ -663,12 +663,9 @@ public class AprEndpoint {
         Worker workerThread = createWorkerThread();
         while (workerThread == null) {
             try {
-                // Wait a little for load to go down: as a result,
-                // no accept will be made until the concurrency is
-                // lower than the specified maxThreads, and current
-                // connections will wait for a little bit instead of
-                // failing right away.
-                Thread.sleep(100);
+                synchronized (workers) {
+                    workers.wait();
+                }
             } catch (InterruptedException e) {
                 // Ignore
             }
@@ -687,6 +684,7 @@ public class AprEndpoint {
         synchronized (workers) {
             workers.push(workerThread);
             curThreadsBusy--;
+            workers.notify();
         }
     }
 
