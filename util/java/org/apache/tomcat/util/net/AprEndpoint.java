@@ -906,7 +906,7 @@ public class AprEndpoint {
                             }
                         }
                     }
-                    if (maintainTime > 1000000L) {
+                    if (soTimeout > 0 && maintainTime > 1000000L) {
                         rv = Poll.maintain(serverPollset, desc, true);
                         maintainTime = 0;
                         if (rv > 0) {
