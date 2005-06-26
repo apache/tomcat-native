@@ -370,6 +370,7 @@ public final class IntrospectionUtils {
 
     public static Object getProperty(Object o, String name) {
         String getter = "get" + capitalize(name);
+        String isGetter = "is" + capitalize(name);
 
         try {
             Method methods[] = findMethods(o.getClass());
@@ -379,6 +380,9 @@ public final class IntrospectionUtils {
             for (int i = 0; i < methods.length; i++) {
                 Class paramT[] = methods[i].getParameterTypes();
                 if (getter.equals(methods[i].getName()) && paramT.length == 0) {
+                    return methods[i].invoke(o, (Object[]) null);
+                }
+                if (isGetter.equals(methods[i].getName()) && paramT.length == 0) {
                     return methods[i].invoke(o, (Object[]) null);
                 }
 
