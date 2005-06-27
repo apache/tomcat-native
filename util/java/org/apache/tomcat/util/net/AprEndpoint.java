@@ -314,18 +314,6 @@ public class AprEndpoint {
     public Sendfile getSendfile() { return sendfile; }
 
 
-    /**
-     * Dummy maxSpareThreads property.
-     */
-    public int getMaxSpareThreads() { return 0; }
-
-
-    /**
-     * Dummy minSpareThreads property.
-     */
-    public int getMinSpareThreads() { return 0; }
-
-
     // --------------------------------------------------------- Public Methods
 
 

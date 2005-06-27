@@ -326,6 +326,15 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
         setAttribute("pollTime", "" + i);
     }
 
+    public void setPollerSize(int i) {
+        ep.setPollerSize(i); 
+        setAttribute("pollerSize", "" + i);
+    }
+    
+    public int getPollerSize() {
+        return ep.getPollerSize();
+    }
+    
     public int getMaxPostSize() {
         return maxPostSize;
     }
