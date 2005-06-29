@@ -8,7 +8,17 @@ JKCVST="jakarta-tomcat-connectors"
 JKDIST=${JKCVST}${JKVER}
 rm -rf ${JKDIST}
 rm -f ${JKDIST}.*
-export CVSROOT=:pserver:anoncvs@cvs.apache.org:/home/cvspublic
+#
+# To use a proxy you need  a recent version of cvs (I have tried with 1.12.9)
+if [ -z $http_proxy ]
+then
+  export CVSROOT=:pserver:anoncvs@cvs.apache.org:/home/cvspublic
+else
+  PRSTRING=`echo $http_proxy | tr '/' ' ' | tr ':' ' '`
+  HOST=`echo $PRSTRING | awk ' { print $2 } '`
+  PORT=`echo $PRSTRING | awk ' { print $3 } '`
+  export CVSROOT=":pserver;proxy=$HOST;proxyport=$PORT:anoncvs@cvs.apache.org:/home/cvspublic"
+fi
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/KEYS
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/LICENSE
 cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/NOTICE
