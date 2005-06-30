@@ -82,23 +82,17 @@ public class ChannelSocket extends JkHandler
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( ChannelSocket.class );
 
-    int startPort=8009;
-    int maxPort=8019; // 0 for backward compat.
-    int port=startPort;
-    InetAddress inet;
-    int serverTimeout;
-    boolean tcpNoDelay=true; // nodelay to true by default
-    int linger=100;
-    int socketTimeout;
+    private int startPort=8009;
+    private int maxPort=8019; // 0 for backward compat.
+    private int port=startPort;
+    private InetAddress inet;
+    private int serverTimeout;
+    private boolean tcpNoDelay=true; // nodelay to true by default
+    private int linger=100;
+    private int socketTimeout;
+    private int bufferSize = -1;
 
-    long requestCount=0;
-    
-    /* Turning this to true will reduce the latency with about 20%.
-       But it requires changes in tomcat to make sure client-requested
-       flush() is honored ( on my test, I got 367->433 RPS and
-       52->35ms average time with a simple servlet )
-    */
-    static final boolean BUFFER_WRITE=false;
+    private long requestCount=0;
     
     ThreadPool tp=ThreadPool.createThreadPool(true);
 
@@ -206,6 +200,14 @@ public class ChannelSocket extends JkHandler
         return maxPort;
     }
 
+    public void setBufferSize(int bs) {
+        bufferSize = bs;
+    }
+
+    public int getBufferSize() {
+        return bufferSize;
+    }
+
     /** At startup we'll look for the first free port in the range.
         The difference between this port and the beggining of the range
         is the 'id'.
@@ -232,27 +234,27 @@ public class ChannelSocket extends JkHandler
         tp.setMaxThreads(i);
     }
     
-	public void setMinSpareThreads( int i ) {
+    public void setMinSpareThreads( int i ) {
         if( log.isDebugEnabled()) log.debug("Setting minSpareThreads " + i);
-            tp.setMinSpareThreads(i);
-	}
-
-	public void setMaxSpareThreads( int i ) {
+        tp.setMinSpareThreads(i);
+    }
+    
+    public void setMaxSpareThreads( int i ) {
         if( log.isDebugEnabled()) log.debug("Setting maxSpareThreads " + i);
-            tp.setMaxSpareThreads(i);
-	}
+        tp.setMaxSpareThreads(i);
+    }
 
     public int getMaxThreads() {
         return tp.getMaxThreads();   
     }
     
-	public int getMinSpareThreads() {
+    public int getMinSpareThreads() {
         return tp.getMinSpareThreads();   
-	}
+    }
 
-	public int getMaxSpareThreads() {
+    public int getMaxSpareThreads() {
         return tp.getMaxSpareThreads();   
-	}
+    }
 
     public void setBacklog(int i) {
     }
@@ -307,8 +309,8 @@ public class ChannelSocket extends JkHandler
 
         InputStream is=new BufferedInputStream(s.getInputStream());
         OutputStream os;
-        if( BUFFER_WRITE )
-            os = new BufferedOutputStream( s.getOutputStream());
+        if( bufferSize > 0 )
+            os = new BufferedOutputStream( s.getOutputStream(), bufferSize);
         else
             os = s.getOutputStream();
         ep.setNote( isNote, is );
@@ -498,8 +500,7 @@ public class ChannelSocket extends JkHandler
     }
 
     public int send( Msg msg, MsgContext ep)
-        throws IOException
-    {
+        throws IOException    {
         msg.end(); // Write the packet header
         byte buf[]=msg.getBuffer();
         int len=msg.getLen();
@@ -513,9 +514,8 @@ public class ChannelSocket extends JkHandler
     }
 
     public int flush( Msg msg, MsgContext ep)
-        throws IOException
-    {
-        if( BUFFER_WRITE ) {
+        throws IOException    {
+        if( bufferSize > 0 ) {
             OutputStream os=(OutputStream)ep.getNote( osNote );
             os.flush();
         }
@@ -523,8 +523,7 @@ public class ChannelSocket extends JkHandler
     }
 
     public int receive( Msg msg, MsgContext ep )
-        throws IOException
-    {
+        throws IOException    {
         if (log.isDebugEnabled()) {
             log.debug("receive() ");
         }
@@ -592,8 +591,7 @@ public class ChannelSocket extends JkHandler
      *
      **/
     public int read( MsgContext ep, byte[] b, int offset, int len)
-        throws IOException
-    {
+        throws IOException    {
         InputStream is=(InputStream)ep.getNote( isNote );
         int pos = 0;
         int got;
@@ -837,40 +835,42 @@ public class ChannelSocket extends JkHandler
     public MBeanNotificationInfo[] getNotificationInfo() {
         return notifInfo;
     }
-}
 
-class SocketAcceptor implements ThreadPoolRunnable {
-    ChannelSocket wajp;
+    static class SocketAcceptor implements ThreadPoolRunnable {
+	ChannelSocket wajp;
     
-    SocketAcceptor(ChannelSocket wajp ) {
-        this.wajp=wajp;
+	SocketAcceptor(ChannelSocket wajp ) {
+	    this.wajp=wajp;
+	}
+	
+	public Object[] getInitData() {
+	    return null;
+	}
+	
+	public void runIt(Object thD[]) {
+	    wajp.acceptConnections();
+	}
     }
 
-    public Object[] getInitData() {
-        return null;
+    static class SocketConnection implements ThreadPoolRunnable {
+	ChannelSocket wajp;
+	MsgContext ep;
+
+	SocketConnection(ChannelSocket wajp, MsgContext ep) {
+	    this.wajp=wajp;
+	    this.ep=ep;
+	}
+
+
+	public Object[] getInitData() {
+	    return null;
+	}
+	
+	public void runIt(Object perTh[]) {
+	    wajp.processConnection(ep);
+	    ep = null;
+	}
     }
 
-    public void runIt(Object thD[]) {
-        wajp.acceptConnections();
-    }
 }
 
-class SocketConnection implements ThreadPoolRunnable {
-    ChannelSocket wajp;
-    MsgContext ep;
-
-    SocketConnection(ChannelSocket wajp, MsgContext ep) {
-        this.wajp=wajp;
-        this.ep=ep;
-    }
-
-
-    public Object[] getInitData() {
-        return null;
-    }
-    
-    public void runIt(Object perTh[]) {
-        wajp.processConnection(ep);
-        ep = null;
-    }
-}

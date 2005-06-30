@@ -214,6 +214,7 @@ public class JkInputStream implements InputBuffer, OutputBuffer {
             log.debug("refillReadBuffer " + Thread.currentThread());
 
         mc.getSource().send(bodyMsg, mc);
+        mc.getSource().flush(bodyMsg, mc); // Server needs to get it
 
         // In JNI mode, response will be in bodyMsg. In TCP mode, response need to be
         // read

@@ -313,6 +313,7 @@ public class HandlerRequest extends JkHandler
             msg.reset();
             msg.appendByte(AjpConstants.JK_AJP13_CPONG_REPLY);
             ep.getSource().send( msg, ep );
+            ep.getSource().flush( msg, ep ); // Server needs to get it
             return OK;
 
         case HANDLE_THREAD_END:

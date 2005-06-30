@@ -91,18 +91,19 @@ public class ChannelNioSocket extends JkHandler
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( ChannelNioSocket.class );
 
-    int startPort=8009;
-    int maxPort=8019; // 0 for backward compat.
-    int port=startPort;
-    InetAddress inet;
-    int serverTimeout = 0;
-    boolean tcpNoDelay=true; // nodelay to true by default
-    int linger=100;
-    int socketTimeout = 0;
-    boolean nioIsBroken = false;
+    private int startPort=8009;
+    private int maxPort=8019; // 0 for backward compat.
+    private int port=startPort;
+    private InetAddress inet;
+    private int serverTimeout = 0;
+    private boolean tcpNoDelay=true; // nodelay to true by default
+    private int linger=100;
+    private int socketTimeout = 0;
+    private boolean nioIsBroken = false;
     private Selector selector = null;
+    private int bufferSize = 8*1024;
 
-    long requestCount=0;
+    private long requestCount=0;
     
     /* Turning this to true will reduce the latency with about 20%.
        But it requires changes in tomcat to make sure client-requested
@@ -151,6 +152,17 @@ public class ChannelNioSocket extends JkHandler
     public void setAddress(InetAddress inet) {
         this.inet=inet;
     }
+
+    public void setBufferSize(int bs) {
+        if(bs > 8*1024) {
+            bufferSize = bs;
+        }
+    }
+
+    public int getBufferSize() {
+        return bufferSize;
+    }
+
 
     /**
      * @jmx:managed-attribute description="Bind on a specified address" access="READ_WRITE"
@@ -500,8 +512,7 @@ public class ChannelNioSocket extends JkHandler
     }
 
     public int send( Msg msg, MsgContext ep)
-        throws IOException
-    {
+        throws IOException    {
         msg.end(); // Write the packet header
         byte buf[]=msg.getBuffer();
         int len=msg.getLen();
@@ -511,19 +522,18 @@ public class ChannelNioSocket extends JkHandler
 
         OutputStream os=(OutputStream)ep.getNote( osNote );
         os.write( buf, 0, len );
-        os.flush();
         return len;
     }
 
     public int flush( Msg msg, MsgContext ep)
-        throws IOException
-    {
+        throws IOException    {
+        OutputStream os=(OutputStream)ep.getNote( osNote );
+        os.flush();
         return 0;
     }
 
     public int receive( Msg msg, MsgContext ep )
-        throws IOException
-    {
+        throws IOException    {
         if (log.isTraceEnabled()) {
             log.trace("receive() ");
         }
@@ -1109,8 +1119,7 @@ public class ChannelNioSocket extends JkHandler
     }
 
     protected class SocketOutputStream extends OutputStream {
-        final int BUFFER_SIZE = 8200;
-        ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
         SocketChannel channel;
 
         SocketOutputStream(SocketChannel channel) {
