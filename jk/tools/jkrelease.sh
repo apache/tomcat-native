@@ -49,8 +49,9 @@ ant
 # Check for links or w3m
 W3MOPTS="-dump -cols 80 -t 4 -S -O iso-8859-1 -T text/html"
 LNKOPTS="-dump"
+ELNKOPTS="--dump --no-numbering --no-home"
 failed=true
-for tool in `echo "w3m links"`
+for tool in `echo "w3m elinks links"`
 do
   echo "tool: ${tool}"
   found=false
@@ -72,6 +73,9 @@ do
         ;;
       links)
         TOOL="links $LNKOPTS"
+        ;;
+      elinks)
+        TOOL="elinks $ELNKOPTS"
         ;;
     esac
     rm -f BUILDING
