@@ -21,6 +21,16 @@
   new documentation project for JK has been started.
   </p>
 </section>
+<section name="Changes with JK 1.2.14">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <fix>
+      <bug>34397</bug>: Emergy was handled as Error. (jfclere)
+      </fix>
+    </changelog>
+  </subsection>
+</section>
 <section name="Changes with JK 1.2.13">
   <br />
   <subsection name="Native">
