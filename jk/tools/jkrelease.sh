@@ -45,15 +45,59 @@ rm -rf ${JKDIST}/jk/*/*/.cvsignore
 # Build documentation.
 cd ${JKDIST}/jk/xdocs
 ant
+
+# Check for links or w3m
+W3MOPTS="-dump -cols 80 -t 4 -S -O iso-8859-1 -T text/html"
+LNKOPTS="-dump"
+failed=true
+for tool in `echo "w3m links"`
+do
+  echo "tool: ${tool}"
+  found=false
+  for dir in `echo ${PATH} | sed 's!^:!.:!;s!:$!:.!;s!::!:.:!g;s!:! !g'`
+  do
+    if [ -x ${dir}/${tool} ]
+    then
+      found=true
+      break
+    fi
+  done
+
+  # Try to run it 
+  if ${found}
+  then
+    case ${tool} in
+      w3m)
+        TOOL="w3m $W3MOPTS"
+        ;;
+      links)
+        TOOL="links $LNKOPTS"
+        ;;
+    esac
+    rm -f BUILDING
+    (cd ../native; ${TOOL} ../build/docs/install/printer/apache1.html 2>/dev/null ) > BUILDING
+    ls -lt  BUILDING
+    if [ -f BUILDING -a -s BUILDING ]
+    then
+      failed=false
+      break
+    fi
+  fi
+done
+if ${failed}
+then
+  echo "Can't convert html to text (BUILDING)"
+  exit 1
+fi
+
 # Export text docs
 cd ../native
-W3MOPTS="-dump -cols 80 -t 4 -S -O iso-8859-1 -T text/html"
-w3m ${W3MOPTS} ../build/docs/install/printer/apache1.html >BUILDING
-w3m ${W3MOPTS} ../build/docs/install/printer/apache2.html >>BUILDING
-w3m ${W3MOPTS} ../build/docs/install/printer/iis.html >>BUILDING
-w3m ${W3MOPTS} ../build/docs/printer/changelog.html >CHANGES
-w3m ${W3MOPTS} ../build/docs/news/printer/20050101.html >NEWS
-w3m ${W3MOPTS} ../build/docs/news/printer/20041100.html >>NEWS
+${TOOL} ../build/docs/install/printer/apache1.html >BUILDING
+${TOOL} ../build/docs/install/printer/apache2.html >>BUILDING
+${TOOL} ../build/docs/install/printer/iis.html >>BUILDING
+${TOOL} ../build/docs/printer/changelog.html >CHANGES
+${TOOL} ../build/docs/news/printer/20050101.html >NEWS
+${TOOL} ../build/docs/news/printer/20041100.html >>NEWS
 rm -rf ../build
 rm -rf ../xdocs/jk2
 ./buildconf.sh
