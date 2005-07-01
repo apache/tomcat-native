@@ -219,7 +219,7 @@ int jk_parse_log_level(const char *level)
     }
 
     if (0 == strcasecmp(level, JK_LOG_EMERG_VERB)) {
-        return JK_LOG_ERROR_LEVEL;
+        return JK_LOG_EMERG_LEVEL;
     }
 
     return JK_LOG_INFO_LEVEL;
