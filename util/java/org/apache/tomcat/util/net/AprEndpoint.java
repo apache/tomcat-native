@@ -1283,17 +1283,16 @@ public class AprEndpoint {
                             if (state.pos >= state.end) {
                                 remove(state);
                                 if (state.keepAlive) {
-                                	// Destroy file descriptor pool, which should close the file
-                                	Pool.destroy(state.fdpool);
-                                	Socket.timeoutSet(state.socket, soTimeout * 1000);
-                                	// If all done hand this socket off to a worker for
-                                	// processing of further requests
-                                	getWorkerThread().assign(state.socket);
-                                }
-                                else {
-                                	// Close the socket since this is
-                                	// the end of not keep-alive request.
-                                	Socket.destroy(state.socket);	
+                                    // Destroy file descriptor pool, which should close the file
+                                    Pool.destroy(state.fdpool);
+                                    Socket.timeoutSet(state.socket, soTimeout * 1000);
+                                    // If all done hand this socket off to a worker for
+                                    // processing of further requests
+                                    getWorkerThread().assign(state.socket);
+                                } else {
+                                    // Close the socket since this is
+                                    // the end of not keep-alive request.
+                                    Socket.destroy(state.socket);	
                                 }
                             }
                         }
