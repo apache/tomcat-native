@@ -1102,7 +1102,7 @@ public class AprEndpoint {
                     log.error(sm.getString("endpoint.poll.initfail"), e);
                 }
             }
-            desc = new long[sendfileSize * 4];
+            desc = new long[sendfileSize * 2];
             sendfileData = new HashMap(sendfileSize);
             addS = new ArrayList();
         }
@@ -1153,8 +1153,9 @@ public class AprEndpoint {
                                              data.pos, data.end, 0);
                     if (nw < 0) {
                         if (!(-nw == Status.EAGAIN)) {
-                            Socket.destroy(data.socket);
-                            data.socket = 0;
+                        	/* The socket will be destroyed on the
+                        	 * return from the processSocket call
+                        	 */
                             return false;
                         } else {
                             // Break the loop and add the socket to poller.
@@ -1252,7 +1253,7 @@ public class AprEndpoint {
                         for (int n = 0; n < rv; n++) {
                             // Get the sendfile state
                             SendfileData state =
-                                (SendfileData) sendfileData.get(new Long(desc[n*4+1]));
+                                (SendfileData) sendfileData.get(new Long(desc[n*2+1]));
                             // Problem events
                             if (((desc[n*2] & Poll.APR_POLLHUP) == Poll.APR_POLLHUP)
                                     || ((desc[n*2] & Poll.APR_POLLERR) == Poll.APR_POLLERR)) {
@@ -1265,7 +1266,7 @@ public class AprEndpoint {
                                 continue;
                             }
                             // Write some data using sendfile
-                            long nw = Socket.sendfile(desc[n*2+1], state.fd,
+                            long nw = Socket.sendfile(state.socket, state.fd,
                                                      null, null, state.pos,
                                                      state.end - state.pos, 0);
                             if (nw < 0) {
