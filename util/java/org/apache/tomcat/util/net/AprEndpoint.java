@@ -1062,6 +1062,8 @@ public class AprEndpoint {
         public long socket;
         // Position
         public long pos;
+        // KeepAlive flag
+        public boolean keepAlive;
     }
 
 
@@ -1147,10 +1149,10 @@ public class AprEndpoint {
                      0, data.fdpool);
                 data.pos = data.start;
                 // Set the socket to nonblocking mode
-                Socket.optSet(data.socket, Socket.APR_SO_NONBLOCK, 1);
+                Socket.timeoutSet(data.socket, 0);
                 while (true) {
                     long nw = Socket.sendfile(data.socket, data.fd, null, null,
-                                             data.pos, data.end, 0);
+                                              data.pos, data.end, 0);
                     if (nw < 0) {
                         if (!(-nw == Status.EAGAIN)) {
                         	/* The socket will be destroyed on the
@@ -1167,7 +1169,7 @@ public class AprEndpoint {
                             // Entire file has been send
                             Pool.destroy(data.fdpool);
                             // Set back socket to blocking mode
-                            Socket.optSet(data.socket, Socket.APR_SO_NONBLOCK, 0);
+                            Socket.timeoutSet(data.socket, soTimeout * 1000);
                             return true;
                         }
                     }
@@ -1182,7 +1184,7 @@ public class AprEndpoint {
                 addS.add(data);
                 addS.notify();
             }
-            return false;
+            return true;
         }
 
         /**
@@ -1260,7 +1262,6 @@ public class AprEndpoint {
                                 // Close socket and clear pool
                                 remove(state);
                                 // Destroy file descriptor pool, which should close the file
-                                Pool.destroy(state.fdpool);
                                 // Close the socket, as the reponse would be incomplete
                                 Socket.destroy(state.socket);
                                 continue;
@@ -1281,11 +1282,19 @@ public class AprEndpoint {
                             state.pos = state.pos + nw;
                             if (state.pos >= state.end) {
                                 remove(state);
-                                // Destroy file descriptor pool, which should close the file
-                                Pool.destroy(state.fdpool);
-                                // If all done hand this socket off to a worker for
-                                // processing of further requests
-                                getWorkerThread().assign(desc[n*2+1]);
+                                if (state.keepAlive) {
+                                	// Destroy file descriptor pool, which should close the file
+                                	Pool.destroy(state.fdpool);
+                                	Socket.timeoutSet(state.socket, soTimeout * 1000);
+                                	// If all done hand this socket off to a worker for
+                                	// processing of further requests
+                                	getWorkerThread().assign(state.socket);
+                                }
+                                else {
+                                	// Close the socket since this is
+                                	// the end of not keep-alive request.
+                                	Socket.destroy(state.socket);	
+                                }
                             }
                         }
                     } else if (rv < 0) {
