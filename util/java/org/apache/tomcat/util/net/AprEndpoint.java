@@ -1155,9 +1155,8 @@ public class AprEndpoint {
                                               data.pos, data.end, 0);
                     if (nw < 0) {
                         if (!(-nw == Status.EAGAIN)) {
-                        	/* The socket will be destroyed on the
-                        	 * return from the processSocket call
-                        	 */
+                            Socket.destroy(data.socket);
+                            data.socket = 0;
                             return false;
                         } else {
                             // Break the loop and add the socket to poller.
@@ -1184,7 +1183,7 @@ public class AprEndpoint {
                 addS.add(data);
                 addS.notify();
             }
-            return true;
+            return false;
         }
 
         /**

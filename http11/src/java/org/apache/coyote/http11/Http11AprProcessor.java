@@ -886,12 +886,9 @@ public class Http11AprProcessor implements ActionHook {
                 sendfileData.socket = socket;
                 sendfileData.keepAlive = keepAlive;
                 if (!endpoint.getSendfile().add(sendfileData)) {
-                    keepAlive = false;
-                    openSocket = false;
-                } else {
                     openSocket = true;
+                    break;
                 }
-                break;
             }
             
         }
