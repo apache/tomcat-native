@@ -1165,7 +1165,7 @@ public class AprEndpoint {
                     } else {
                         data.pos = data.pos + nw;
                         if (data.pos >= data.end) {
-                            // Entire file has been send
+                            // Entire file has been sent
                             Pool.destroy(data.fdpool);
                             // Set back socket to blocking mode
                             Socket.timeoutSet(data.socket, soTimeout * 1000);
@@ -1196,8 +1196,6 @@ public class AprEndpoint {
             if (rv == Status.APR_SUCCESS) {
                 sendfileCount--;
             }
-            // Set the socket to blocking mode again
-            Socket.optSet(data.socket, Socket.APR_SO_NONBLOCK, 0);
             sendfileData.remove(data);
         }
 

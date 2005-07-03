@@ -776,7 +776,6 @@ public class Http11AprProcessor implements ActionHook {
                     // This means that no data is available right now
                     // (long keepalive), so that the processor should be recycled
                     // and the method should return true
-                    rp.setStage(org.apache.coyote.Constants.STAGE_ENDED);
                     openSocket = true;
                     // Add the socket to the poller
                     endpoint.getPoller().add(socket);
