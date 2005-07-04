@@ -39,7 +39,7 @@ Documentation is also available on the Apache Jakarta web site devoted to the
 Jakarta Tomcat Connectors Project</a>
 For additional help, the best resource is the Tomcat Users Discussion list.  
 You should start by searching
-<a href="http://mikal.org/interests/java/tomcat/index.html">
+<a href="http://mail-archives.apache.org/eyebrowse/SummarizeList?listName=tomcat-user@jakarta.apache.org">
 the mail list archive</a>
 before you post questions to the list.  
 If you are unable to locate the answer to your question in the archive, 
@@ -69,7 +69,7 @@ Jakarta Binary Download</a> page.
 <br />
 <p>
 <b>JK</b> is a project covering web-servers to Tomcat connectors,
-whereas <b>mod_jk</b> is the <a href="howto/apache.html">Apache module</a> developped in JK.
+whereas <b>mod_jk</b> is the <a href="howto/apache.html">Apache module</a> developed in JK.
 </p>
 
 <p>
@@ -128,7 +128,7 @@ You could also try searching the mailing list archives for "JK" or look at the s
 
 <subsection name="Which protocol should I use? Ajp12 or Ajp13?">
 <p>
-<a href="common/ajpv13.html">Ajp13</a> is a newer protocol, it's faster, and it works better with SSL. 
+<a href="common/ajpv13a.html">Ajp13</a> is a newer protocol, it's faster, and it works better with SSL. 
 You almost certainly want to use it now that <strong>ajp12 is deprecated</strong>.
 </p>
 <p> 
@@ -180,7 +180,7 @@ But with previous release of mod_jk, you may have to restart Apache as well.
 
 <subsection name="Why did exist two files mod_jk.so (-eapi ad -noeapi) in download dir for Linux ?">
 <p>
-Many versions of Apache use of modified API, known at Extended API, developped for use with the
+Many versions of Apache use of modified API, known at Extended API, developed for use with the
 <a href="http://www.modssl.org">mod_ssl module</a>.
 </p>
 
