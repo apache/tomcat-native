@@ -85,6 +85,9 @@ ant
 Create the new source distribution
 ----------------------------------
 
+(A tool named jkrelease.sh in jakarta-tomcat-connectors/jk/tools does the
+following steps).
+
 Create the directory
 jakarta-tomcat-connectors-jk-{MAJOR_REVISION}-{MINOR_REVISION}-{RELEASE}-src
 
