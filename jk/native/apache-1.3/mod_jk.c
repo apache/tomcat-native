@@ -2111,7 +2111,11 @@ static int jk_translate(request_rec * r)
 
         if (conf) {
             jk_logger_t *l = conf->log ? conf->log : main_log;
-            const char *worker = map_uri_to_worker(conf->uw_map, r->uri, l);
+            char *clean_uri = ap_pstrdup(r->pool, r->uri);
+            const char *worker;
+
+            ap_no2slash(clean_uri);
+            worker = map_uri_to_worker(conf->uw_map, clean_uri, l);
 
             /* Don't know the worker, ForwardDirectories is set, there is a
              * previous request for which the handler is JK_HANDLER (as set by
@@ -2119,8 +2123,8 @@ static int jk_translate(request_rec * r)
              * --> forward to Tomcat, via default worker */
             if (!worker && (conf->options & JK_OPT_FWDDIRS) &&
                 r->prev && r->prev->handler &&
-                !strcmp(r->prev->handler, JK_HANDLER) && r->uri &&
-                strlen(r->uri) && r->uri[strlen(r->uri) - 1] == '/') {
+                !strcmp(r->prev->handler, JK_HANDLER) && clean_uri &&
+                strlen(clean_uri) && clean_uri[strlen(clean_uri) - 1] == '/') {
                 
                 if (worker_env.num_of_workers) {
                     /* Nothing here to do but assign the first worker since we
@@ -2128,7 +2132,7 @@ static int jk_translate(request_rec * r)
                     worker = worker_env.worker_list[0];
 
                     jk_log(l, JK_LOG_DEBUG, "Manual configuration for %s %s",
-                           r->uri, worker_env.worker_list[0]);
+                           clean_uri, worker_env.worker_list[0]);
                 }
             }
 
@@ -2137,8 +2141,6 @@ static int jk_translate(request_rec * r)
                 ap_table_setn(r->notes, JK_WORKER_ID, worker);
             }
             else if (conf->alias_dir != NULL) {
-                char *clean_uri = ap_pstrdup(r->pool, r->uri);
-                ap_no2slash(clean_uri);
                 /* Automatically map uri to a context static file */
                 jk_log(l, JK_LOG_DEBUG,
                        "mod_jk::jk_translate, check alias_dir: %s",
