@@ -420,7 +420,7 @@ As you can see the <b>examples</b> context is served by <b>worker1</b> while the
 </p>
 
 <p>
-More informations on using and configuring workers in the <a href="jk/workershowto.html">Workers HowTO</a>
+More informations on using and configuring workers in the <a href="workers.html">Workers HowTO</a>
 </p>
 
 </subsection>

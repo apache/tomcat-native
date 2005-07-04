@@ -41,7 +41,7 @@ using the NSAPI redirector plugin.
 </p>
 
 <p>
-It is recommanded that you also read the <a href="jk/workershowto.html">Workers HowTo</a> document
+It is recommanded that you also read the <a href="workers.html">Workers HowTo</a> document
 to learn how to setup the working entities between your WebServer and Tomcat Engines.
 </p>
 
@@ -402,7 +402,7 @@ For example, if we want to submit the <b>/examples</b> context to the worker nam
 </source>
 
 <p>
-More informations on using and configuring workers in the <a href="jk/workershowto.html">Workers HowTO</a>
+More informations on using and configuring workers in the <a href="workers.html">Workers HowTO</a>
 </p>
 </subsection>
 

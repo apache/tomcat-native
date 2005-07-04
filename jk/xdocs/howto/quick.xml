@@ -49,7 +49,7 @@
 <section name="Minimum workers.properties">
 <p>
     Here is a minimum <b>workers.properties</b>, using just ajp13 to connect your Apache webserver
-    to the Tomcat engine, complete documentation is available in <a href="jk/workershowto.html">Workers HowTo</a>. 
+    to the Tomcat engine, complete documentation is available in <a href="workers.html">Workers HowTo</a>. 
 </p>
 <p>
 <source>
@@ -73,7 +73,7 @@
 <section name="Minimum Apache WebServer configuration">
 <p>
    Here is a minimun informations about Apache configuration, a 
-   complete documentation is available in <a href="jk/aphowto.html">Apache HowTo</a>.
+   complete documentation is available in <a href="apache.html">Apache HowTo</a>.
 </p>
 <p>
 	You should first have <b>mod_jk.so</b> (unix) or <b>mod_jk.dll</b> (Windows) installed
@@ -175,7 +175,7 @@ More informations to be added?
 
 <section name="Test your configuration">
 <p>
-	(Re)start the Web server and browse to the <a>http://localhost/examples/</a>
+	(Re)start the Web server and browse to the <a href="http://localhost/examples/">http://localhost/examples/</a>
 </p>
 
 </section>
