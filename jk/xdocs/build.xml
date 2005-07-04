@@ -144,26 +144,6 @@
       <param name="project-menu" expression="nomenu"/>
     </style>
  
-     <!-- Install -->
-    <style basedir="install"
-           destdir="${build.dir}/${dist.name}/install"
-         extension=".html"
-             style="style.xsl"
-          excludes="project.xml"
-          includes="*.xml">
-      <param name="relative-path" expression=".."/>
-    </style>
-    <mkdir     dir="${build.dir}/${dist.name}/install/printer"/>
-    <style basedir="install"
-           destdir="${build.dir}/${dist.name}/install/printer"
-         extension=".html"
-             style="style.xsl"
-          excludes="project.xml"
-          includes="*.xml">
-      <param name="relative-path" expression="../.."/>
-      <param name="project-menu" expression="nomenu"/>
-    </style>
-
   </target>
 
 
