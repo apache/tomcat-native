@@ -8,6 +8,6 @@ source distribution.
 
 For the impatient Apache admins:
 $> cd native
-$> ../configure --with-apxs=/usr/sbin/apxs (or where ever the apxs/apxs2 is)
+$> ./configure --with-apxs=/usr/sbin/apxs (or where ever the apxs/apxs2 is)
 $> make
 $> su -c 'make install'
