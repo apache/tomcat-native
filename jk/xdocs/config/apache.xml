@@ -88,7 +88,7 @@ Adds a name of environment variable that should be sent to servlet-engine
 Shared memory file name. Used only on unix platforms.
 </p></attribute>
 <attribute name="JkShmSize" required="false"><p>
-Size of the shared memory file name. Default is 1MB.
+Size of the shared memory file name. Default is 64 k.
 </p></attribute>
 
 </attributes>
@@ -377,7 +377,7 @@ sections of your httpd.conf file.
 <p><b>JkUnmount</b> directive acts as an opposite to JkMount and blocks access
 to a particular URL. The purpose is to be able to filter out the particular content
 types from mounted context. The following example mounts /servlet/*
-context, but all .jpg files that belongs to that context are not served.
+context, but all .gif files that belongs to that context are not served.
 </p>
 <source>
   # send all requests ending with /servlet to worker1
