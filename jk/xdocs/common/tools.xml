@@ -1,7 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<document>
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="tools.html">
+ 
+  &project;
 <copyright>
-   Copyright 1999-2004 The Apache Software Foundation
+   Copyright 1999-2005 The Apache Software Foundation
  
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -20,6 +25,7 @@
 <author>Glenn Nielsen</author>
 <date>$Date$</date>
 </properties>
+<body>
 <section name="Introduction">
 <p>Documentation for additional mod_jk related tools.</p>
 </section>
@@ -83,4 +89,6 @@ These perl scripts depend upon the following perl modules and libraries:
 </ul>
 </p>
 </section>
+
+</body>
 </document>
