@@ -33,7 +33,7 @@ documentation.  I'm going to try to make it easy for everyone to help out with
 the documentation of Tomcat, more specifically the documentation for the 
 connectors.  This is written from a windows user perspective as I believe they 
 will most benefit from it.  For people using Unix it should be easy for them to 
-apply these steps.  Just substitute Unix sytax where needed.
+apply these steps.  Just substitute Unix syntax where needed.
 </p>
 <p>
     The documentation is produced using xml with xsl style sheets.  This 
@@ -62,7 +62,7 @@ html.
 </p>
     <subsection name="STEP 1. Get Ant">
 <p>
-    Install <a href="http://jakarta.apache.org/ant">Ant</a>. The only advice I 
+    Install <a href="http://ant.apache.org/">Ant</a>. The only advice I 
 have is to choose a simple installation path.  Now set an environment variable 
 for ANT_HOME, and then add the location of the Ant/bin directory to your PATH 
 variable.  Consult your Operating system documentation for information on how 
@@ -72,15 +72,16 @@ line.
 <p>
     Ant is used to build the documentation, among other things, and it must be 
 able to see a file called <b>build.xml</b>.  This file is located in the 
-<b>CVS_HOME\jakarta-tomcat-connectors\jk</b> directory.  In the 
-<b>build.xml</b> file there is a target named docs that will be used to build 
+<b>CVS_HOME\jakarta-tomcat-connectors\jk\xdocs</b> directory.  In the 
+<b>build.xml</b> file there is a target named <b>all</b> that will be used to build 
 the docs.
 </p>
 </subsection>
 <subsection name="STEP 2.  Get the sources">
 <p>
-    Get the sources for <a href="http://cvs.apache.org/viewcvs/jakarta-tomcat-
-connectors/">jakarta-tomcat-connectors</a> from the CVS repository.  If you'll 
+    Get the sources for
+<a href="http://cvs.apache.org/viewcvs/jakarta-tomcat-connectors/">jakarta-tomcat-connectors</a>
+from the CVS repository.  If you'll 
 be editing from a windows platform you will need a windows cvs client.  There 
 are several available.  I like <a href="http://www.cygwin.com/">cygwin</a>.  
 During the install open the developer group and click on cvs.  Unix users 
@@ -90,7 +91,7 @@ should install the CVS client of their choice, if they don't already have one.
     You are ready to download the sources now.  Change directory to the 
 location where you want your repository to be, and run the following commands 
 to download the sources for the first time.  For simplicity we will call this 
-your <b>CVS_HOME.</b>  Mine is located in C:\build.
+your <b>CVS_HOME</b>.  Mine is located in C:\build.
 </p>
 <p>
     Login to the repository and then give the cvs password <b>anoncvs</b>.
@@ -118,7 +119,7 @@ jakarta-tomcat-connectors</read>
     You should now be watching all the downloads come in.  Now that you have 
 the sources on your machine the hard part if over.  From now on, to update your 
 sources all you have to do is cd into any directory in your repository and run 
-cvs update
+the <b>cvs update</b> command.
     <screen>
 <note>    To update your xdocs directory simply cd into the xdocs directory 
 and:</note>
@@ -130,12 +131,14 @@ and:</note>
 <subsection name="STEP 3.  Test your build environment">
 <p>
     Open a command prompt window and cd to the directory where you downloaded 
-the source.  Now cd into the jk directory so <b>Ant</b> can see the 
-<b>build.xml</b> file and,  from a command prompt, run the following:
+the source.  Now cd into the jk directory and then into the xdocs directory so
+that <b>Ant</b> can see the 
+<b>build.xml</b> file. Then from a command prompt, run the following:
 <screen>
 <read> </read>
 <read>C:\build\jakarta-tomcat-connectors>cd jk</read>
-<read>C:\build\jakarta-tomcat-connectors\jk>ant docs</read>
+<read>C:\build\jakarta-tomcat-connectors\jk>cd xdocs</read>
+<read>C:\build\jakarta-tomcat-connectors\jk\xdocs>ant all</read>
 <read> </read>
 </screen>
 </p>.
@@ -158,33 +161,34 @@ connectors\jk\build\docs</read>
 <read> </read>
 <read>BUILD SUCCESSFUL</read>
 <read>Total time: 10 seconds</read>
-<read>C:\build\jakarta-tomcat-connectors\jk</read>
+<read>C:\build\jakarta-tomcat-connectors\jk></read>
 </screen>
 </p>
 <p>
     All the xml files present in the xdocs directory structure were transformed 
-to html and copied to the <b>CVS_HOME\jk\docs</b> directory.  Open one of the 
+to html and copied to the <b>CVS_HOME\jakarta-tomcat-connectors\jk\build\docs</b>
+directory.  Open one of the 
 html files in your browser and see how it looks.
 </p>
 </subsection>
 <subsection name="STEP 4.   The editing process.">
 <p>
     I find it easier to use two windows while doing my updates.  One I call my 
-<b>build</b> window.  I keep this one in the <b>CVS_HOME\jk</b> directory and I 
-only run two commands in this window:
+<b>build</b> window.  I keep this one in the <b>CVS_HOME\jakarta-tomcat-connectors\jk\xdocs</b>
+directory and I only run two commands in this window:
 <screen>
 <read> </read>
 <note>   First I run</note>
 <read>ant clean</read>
 <note>   Then I run</note>
-<read>ant docs</read>
+<read>ant all</read>
 <read> </read>
 </screen>
 </p>
 <p>
     My second window I call my <b>edit</b> window and I keep that one in the 
-<b>CVS_HOME\jk\xdocs</b> directory where I'm doing my edits, diffs, and cvs 
-updates.
+<b>CVS_HOME\jakarta-tomcat-connectors\jk\xdocs</b> directory where I'm doing my
+edits, diffs and cvs updates.
 </p>
 <p>
     Before you start editing you should always update your local repository to 
@@ -198,13 +202,13 @@ prevent conflicts.
 </p>
 <p>
     Now that your repository is up to date you can begin editing.  Find 
-something in the documentation to edit.  When you find somethng remember the 
+something in the documentation to edit.  When you find something remember the 
 name of the file.  In your <b>edit</b> window find and edit the xml source file 
 with the same name.  After you are done return to the  <b>build</b> window, and 
-in the <b>CVS_HOME\jk</b> directory run:
+in the <b>CVS_HOME\jakarta-tomcat-connectors\jk\xdocs</b> directory run:
 <screen>
 <read> </read>
-<read>C:\build\jakarta-tomcat-connectors\jk> ant clean</read>
+<read>C:\build\jakarta-tomcat-connectors\jk\xdocs> ant clean</read>
 <read> </read>
 </screen>
 </p>
@@ -214,13 +218,14 @@ updated material.  Now to make fresh documents that incorporate your changes
 run:
 <screen>
 <read> </read>
-<read>C:\build\jakarta-tomcat-connectors\jk\>ant docs</read>
+<read>C:\build\jakarta-tomcat-connectors\jk\xdocs>ant all</read>
 <read> </read>
 </screen>
 </p>
 <p>
     Use your browser to view the edits you just made, they will be in the 
-<b>CVS_HOME\jk\build\docs</b> sub-tree.  If it looks good and is ready to go, 
+<b>CVS_HOME\jakarta-tomcat-connectors\jk\build\docs</b> sub-tree.  If it looks
+good and is ready to go, 
 all that is left to do is to create a patch and submit it.
 </p>
 </subsection>
@@ -264,7 +269,7 @@ reduce conflicts.
 <p>
     You will need to run <b>cvs diff</b> to generate patches for submission.  
 Again cd into the directory containing the file you are editing and run <b>cvs 
-diff -u name_of_the_file_you_edited  patch.txt</b> to generate a patch for 
+diff -u name_of_the_file_you_edited > patch.txt</b> to generate a patch for 
 submission.  The <b>-u</b> is the flag for a unified diff which is the prefered 
 type.
 </p>
@@ -292,7 +297,7 @@ you are creating new files for submission.
 </section>
 <section name="Guides and Resources">
 <p>
-    A little help to get you if you need it
+    A little help to get you started if you need it
 </p>
 <ul>
 <li>
@@ -307,7 +312,7 @@ Beginner's Guide</a>
 Writing Guide</a>
 </li>
 <li>
-<a href="http://jakarta.apache.org/ant">Ant</a>
+<a href="http://ant.apache.org/">Ant</a>
 </li>
 <li>
 <a href="http://www.cvshome.org/">CVS Home</a>
