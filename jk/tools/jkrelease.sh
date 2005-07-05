@@ -53,7 +53,6 @@ ELNKOPTS="--dump --no-numbering --no-home"
 failed=true
 for tool in `echo "w3m elinks links"`
 do
-  echo "tool: ${tool}"
   found=false
   for dir in `echo ${PATH} | sed 's!^:!.:!;s!:$!:.!;s!::!:.:!g;s!:! !g'`
   do
@@ -80,7 +79,6 @@ do
     esac
     rm -f BUILDING
     (cd ../native; ${TOOL} ../build/docs/install/printer/apache1.html 2>/dev/null ) > BUILDING
-    ls -lt  BUILDING
     if [ -f BUILDING -a -s BUILDING ]
     then
       failed=false
