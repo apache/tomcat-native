@@ -1,5 +1,7 @@
 JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:           -*-text-*-
 Last modified at [$Date$]
+PLEASE DON'T WRITE IN THIS FILE BUT IN ../xdocs/changelog.xml AND USE ../tools/jkrelease.sh
+TO BUILD THE TEXT VERSION.
 
 Changes in JK 1.2.11
     * BUG 34358: Fix the load balance worker load balance method. It was not being
