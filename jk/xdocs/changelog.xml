@@ -21,20 +21,19 @@
   new documentation project for JK was started.
   </p>
 </section>
-<section name="Changes with JK 1.2.14">
+<section name="Changes from the released JK 1.2.13">
   <br />
   <subsection name="Native">
     <changelog>
       <fix>
-      <bug>34397</bug>: Emergy was handled as Error. (jfclere)
+      <bug>34397</bug>: Emergency was handled as Error. (jfclere)
       </fix>
-    </changelog>
-  </subsection>
-</section>
-<section name="Changes with JK 1.2.13">
-  <br />
-  <subsection name="Native">
-    <changelog>
+      <fix>
+      <bug>34474</bug>: // in URL were not handled correctly with Apache-1.3. (jfclere)
+      </fix>
+      <fix>
+      Use 64 bits int for transferred/read bytes.
+      </fix>
       <update>
       Added JkOptions +FlushPackets used to optimize memory
       usage when sending large data. (mturk)
@@ -62,7 +61,7 @@
   </subsection>
 </section>
 
-<section name="Changes with JK 1.2.12">
+<section name="Changes from the released JK 1.2.12">
   <br />
   <subsection name="Native">
     <changelog>
@@ -79,7 +78,7 @@
   </subsection>
 </section>
 
-<section name="Changes with JK 1.2.11">
+<section name="Changes from the released JK 1.2.11">
   <br />
   <subsection name="Native">
     <changelog>
@@ -138,7 +137,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes with JK 1.2.10">
+<section name="Changes from the released JK 1.2.10">
   <br />
   <subsection name="Native">
     <changelog>
@@ -204,7 +203,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes with JK 1.2.8">
+<section name="Changes from the released JK 1.2.8">
   <br />
   <subsection name="Native">
     <changelog>
@@ -263,7 +262,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes from JK 1.2.6">
+<section name="Changes from the released JK 1.2.6">
   <br />
   <subsection name="Native">
     <changelog>
