@@ -7,7 +7,7 @@
   &project;
 
 <copyright>
-   Copyright 1999-2004 The Apache Software Foundation
+   Copyright 1999-2005 The Apache Software Foundation
  
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -51,11 +51,26 @@ The AJP proxy is a new module based on the standard Http proxy it uses AJP inste
 </p>
 </section>
 
+<section name="AJP proxy and proxy balancer">
+<p>
+It is possible to use the load balancer of the mod_proxy_balancer module.
+<source>
+&lt;Proxy balancer://myCluster&gt;
+   BalancerMember ajp://localhost:8009
+   BalancerMember ajp://example.org:8009
+&lt;/Proxy&gt;
+&lt;Location /examples/&gt;
+    ProxyPass balancer://myCluster/examples/
+&lt;/Location&gt;
+</source>
+</p>
+</section>
+
 <section name="Source and Configuration">
 <p>
 AJP proxy is integrated in httpd-2.1 and the developement and discussions take
 place <a href="http://httpd.apache.org/lists.html">there</a>.
-More documentation can be found there
+The documentation can be found there
 <a href="http://httpd.apache.org/docs-2.1/mod/mod_proxy_ajp.html">mod_proxy_ajp</a>
 and
 <a href="http://httpd.apache.org/docs-2.1/mod/mod_proxy_balancer.html">mod_proxy_balancer</a>.
