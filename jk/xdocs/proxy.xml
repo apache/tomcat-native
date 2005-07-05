@@ -1,5 +1,11 @@
 <?xml version="1.0"?>
-<document>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="proxy.html">
+ 
+  &project;
+
 <copyright>
    Copyright 1999-2004 The Apache Software Foundation
  
@@ -19,6 +25,8 @@
 <title>Using proxies with Tomcat</title>
 <date>$Date$</date>
 </properties>
+
+<body>
 
 <section name="Http proxy">
 <p>
@@ -53,5 +61,7 @@ and
 <a href="http://httpd.apache.org/docs-2.1/mod/mod_proxy_balancer.html">mod_proxy_balancer</a>.
 </p>
 </section>
+
+</body>
 
 </document>
