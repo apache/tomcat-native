@@ -304,6 +304,9 @@ you are creating new files for submission.
     <li>Connect to people.apache.org.</li>
     <li>umask 002</li>
     <li>Copy the changed files to /www/jakarta.apache.org/tomcat/connectors-doc/.</li>
+    <li>or use ant from a checkout jakarta-tomcat-connectors/jk/xdocs repository:<br />
+        ant -Dbuild.dir=/www/jakarta.apache.org/tomcat -Ddist.name=connectors-doc 
+    </li>
     <li>The changes need around 4 hours to be synced to jakarta.apache.org.</li>
     </ul>
 </p>
