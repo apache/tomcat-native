@@ -6,7 +6,7 @@
 
   &project;
 <copyright>
-   Copyright 1999-2004 The Apache Software Foundation
+   Copyright 1999-2005 The Apache Software Foundation
  
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -293,6 +293,19 @@ for  >>>> and merge the changes.
     Lines begining with a <b>?</b> indicate files that reside on your local 
 system which are not part of the repository.  You will normally see this when 
 you are creating new files for submission.
+</p>
+</section>
+
+<section name="Updating Web site">
+<p>
+    Only Committers are able to update the web site (http://jakarta.apache.org/tomcat/connectors-doc/).
+    To do it:
+    <ul>
+    <li>Connect to people.apache.org.</li>
+    <li>umask 002</li>
+    <li>Copy the changed files to /www/jakarta.apache.org/tomcat/connectors-doc/.</li>
+    <li>The changes need around 4 hours to be synced to jakarta.apache.org.</li>
+    </ul>
 </p>
 </section>
 <section name="Guides and Resources">
