@@ -53,6 +53,15 @@ AC_SUBST(LIBTOOL)
 AC_CHECK_SIZEOF(uint32_t)
 AC_CHECK_SIZEOF(u_int32_t)
 AC_CHECK_SIZEOF(unsigned long)
+if test "$ac_cv_sizeof_uint32_t" = "4"; then
+    AC_DEFINE(HAVE_UINT32_T, [], [Use uint32_t for JK_UINT4])
+elif test "$ac_cv_sizeof_u_int32_t" = "4"; then
+    AC_DEFINE(HAVE_U_INT32_T, [], [Use u_int32_t for JK_UINT4])
+elif test "$ac_cv_sizeof_unsigned_long" = "4"; then
+    AC_DEFINE(HAVE_LONG, [], [Use unsigned long for JK_UINT4])
+else
+    AC_ERROR([could not detect a 32-bit integer type])
+fi
 
 AC_CHECK_SIZEOF(unsigned int)
 AC_CHECK_SIZEOF(unsigned long long)
@@ -65,7 +74,7 @@ elif test "$ac_cv_sizeof_unsigned_long_long" = "8"; then
     AC_DEFINE(HAVE_LONG_LONG64, [], [Use long long for JK_UINT8])
 elif test "$ac_cv_sizeof_unsigned_longlong" = "8"; then
     AC_DEFINE(HAVE_LONGLONG64, [], [Use longlong for JK_UINT8])
-else 
+else
     AC_ERROR([could not detect a 64-bit integer type])
 fi
 
@@ -171,6 +180,7 @@ AC_ARG_WITH(apxs,
               	for INC in ${INCTEMP}; do
               	    APRINCLUDEDIR="${APRINCLUDEDIR} -I${INC}"
               	done              	
+                AC_MSG_RESULT([APRINCLUDEDIR is $APRINCLUDEDIR])
               	APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR ${APRINCLUDEDIR}"
               	APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
                 APACHE_CONFIG_VARS="`${APXS} -q exp_installbuilddir`/config_vars.mk"
