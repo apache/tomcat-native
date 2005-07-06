@@ -64,11 +64,11 @@ diff -c -w -r1.9 jk_version.h
 
 After updating revision numbers, commit your changes to CVS.
 
-Tag and branch jk in CVS
+Tag and branch jakarta-tomcat-connectors in CVS
 ------------------------
 
-Change directory (cd) to jakarta-tomcat-connectors/jk
-Use the pattern below for branching and tagging the jk directory.
+Change directory (cd) to jakarta-tomcat-connectors
+Use the pattern below for branching and tagging the jakarta-tomcat-connectors directory.
 
 cvs tag -b JK_{MAJOR_REVISION}_{MINOR_REVISION}_{RELEASE}
 
