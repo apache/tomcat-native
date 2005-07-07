@@ -993,31 +993,6 @@ public class Http11AprProcessor implements ActionHook {
 
             started = false;
 
-        } else if (actionCode == ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
-
-            try {
-                if (sslSupport != null) {
-                    Object sslO = sslSupport.getCipherSuite();
-                    if (sslO != null)
-                        request.setAttribute
-                            (SSLSupport.CIPHER_SUITE_KEY, sslO);
-                    sslO = sslSupport.getPeerCertificateChain(false);
-                    if (sslO != null)
-                        request.setAttribute
-                            (SSLSupport.CERTIFICATE_KEY, sslO);
-                    sslO = sslSupport.getKeySize();
-                    if (sslO != null)
-                        request.setAttribute
-                            (SSLSupport.KEY_SIZE_KEY, sslO);
-                    sslO = sslSupport.getSessionId();
-                    if (sslO != null)
-                        request.setAttribute
-                            (SSLSupport.SESSION_ID_KEY, sslO);
-                }
-            } catch (Exception e) {
-                log.warn("Exception getting SSL attributes " ,e);
-            }
-
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE) {
 
             // Get remote host address
@@ -1106,7 +1081,33 @@ public class Http11AprProcessor implements ActionHook {
             }
             request.setLocalPort(localPort);
 
+        } else if (actionCode == ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
+
+            try {
+                if (sslSupport != null) {
+                    Object sslO = sslSupport.getCipherSuite();
+                    if (sslO != null)
+                        request.setAttribute
+                            (SSLSupport.CIPHER_SUITE_KEY, sslO);
+                    sslO = sslSupport.getPeerCertificateChain(false);
+                    if (sslO != null)
+                        request.setAttribute
+                            (SSLSupport.CERTIFICATE_KEY, sslO);
+                    sslO = sslSupport.getKeySize();
+                    if (sslO != null)
+                        request.setAttribute
+                            (SSLSupport.KEY_SIZE_KEY, sslO);
+                    sslO = sslSupport.getSessionId();
+                    if (sslO != null)
+                        request.setAttribute
+                            (SSLSupport.SESSION_ID_KEY, sslO);
+                }
+            } catch (Exception e) {
+                log.warn("Exception getting SSL attributes " ,e);
+            }
+
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
+
             if( sslSupport != null) {
                 /*
                  * Consume and buffer the request body, so that it does not
@@ -1126,16 +1127,17 @@ public class Http11AprProcessor implements ActionHook {
                 } catch (Exception e) {
                     log.warn("Exception getting SSL Cert", e);
                 }
-            } else if (actionCode == ActionCode.ACTION_REQ_SET_BODY_REPLAY) {
-                ByteChunk body = (ByteChunk) param;
-                
-                InputFilter savedBody = new SavedRequestInputFilter(body);
-                savedBody.setRequest(request);
-
-                InternalInputBuffer internalBuffer = (InternalInputBuffer)
-                    request.getInputBuffer();
-                internalBuffer.addActiveFilter(savedBody);
             }
+
+        } else if (actionCode == ActionCode.ACTION_REQ_SET_BODY_REPLAY) {
+            ByteChunk body = (ByteChunk) param;
+            
+            InputFilter savedBody = new SavedRequestInputFilter(body);
+            savedBody.setRequest(request);
+            
+            InternalInputBuffer internalBuffer = (InternalInputBuffer)
+            request.getInputBuffer();
+            internalBuffer.addActiveFilter(savedBody);
         }
 
     }

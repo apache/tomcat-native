@@ -187,7 +187,6 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
     protected AprEndpoint ep=new AprEndpoint();
     protected boolean secure;
 
-    // socket factory attriubtes ( XXX replace with normal setters )
     protected Hashtable attributes = new Hashtable();
 
     private int maxKeepAliveRequests=100; // as in Apache HTTPD server
