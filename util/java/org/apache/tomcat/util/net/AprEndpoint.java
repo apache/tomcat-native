@@ -534,10 +534,10 @@ public class AprEndpoint {
             // Load Server key and certificate
             SSLContext.setCertificate(sslContext, SSLCertificateFile, SSLCertificateKeyFile, SSLPassword, SSL.SSL_AIDX_RSA);
             // Support Client Certificates
-            SSLContext.setVerify(sslContext, SSLVerifyClient, SSLVerifyDepth);
             if (SSLCACertificateFile != null) {
                 SSLContext.setCACertificate(sslContext, SSLCACertificateFile, null);
             }
+            SSLContext.setVerify(sslContext, SSLVerifyClient, SSLVerifyDepth);
             // For now, sendfile is not supported with SSL
             useSendfile = false;
         }
