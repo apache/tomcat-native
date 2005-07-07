@@ -418,9 +418,9 @@ public class AprEndpoint {
     /**
      * SSL verify client.
      */
-    protected boolean SSLVerifyClient = false;
-    public boolean getSSLVerifyClient() { return SSLVerifyClient; }
-    public void setSSLVerifyClient(boolean SSLVerifyClient) { this.SSLVerifyClient = SSLVerifyClient; }
+    protected int SSLVerifyClient = 0;
+    public int getSSLVerifyClient() { return SSLVerifyClient; }
+    public void setSSLVerifyClient(int SSLVerifyClient) { this.SSLVerifyClient = SSLVerifyClient; }
      
     
     /**
@@ -534,7 +534,7 @@ public class AprEndpoint {
             // Load Server key and certificate
             SSLContext.setCertificate(sslContext, SSLCertificateFile, SSLCertificateKeyFile, SSLPassword, SSL.SSL_AIDX_RSA);
             // Support Client Certificates
-            SSLContext.setVerify(sslContext, SSLVerifyClient ? 1 : 0, SSLVerifyDepth);
+            SSLContext.setVerify(sslContext, SSLVerifyClient, SSLVerifyDepth);
             if (SSLCACertificateFile != null) {
                 SSLContext.setCACertificate(sslContext, SSLCACertificateFile, null);
             }

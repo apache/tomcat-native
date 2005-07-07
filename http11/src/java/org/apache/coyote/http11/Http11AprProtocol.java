@@ -568,8 +568,8 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
     /**
      * SSL verify client.
      */
-    public boolean getSSLVerifyClient() { return ep.getSSLVerifyClient(); }
-    public void setSSLVerifyClient(boolean SSLVerifyClient) { ep.setSSLVerifyClient(SSLVerifyClient); }
+    public int getSSLVerifyClient() { return ep.getSSLVerifyClient(); }
+    public void setSSLVerifyClient(int SSLVerifyClient) { ep.setSSLVerifyClient(SSLVerifyClient); }
 
 
     /**
