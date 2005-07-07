@@ -18,7 +18,6 @@ package org.apache.coyote.http11;
 
 import java.net.InetAddress;
 import java.net.URLEncoder;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 
@@ -34,8 +33,6 @@ import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.RequestGroupInfo;
 import org.apache.coyote.RequestInfo;
 import org.apache.tomcat.util.net.AprEndpoint;
-import org.apache.tomcat.util.net.SSLImplementation;
-import org.apache.tomcat.util.net.ServerSocketFactory;
 import org.apache.tomcat.util.net.AprEndpoint.Handler;
 import org.apache.tomcat.util.res.StringManager;
 
@@ -113,24 +110,7 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
     public void init() throws Exception {
         ep.setName(getName());
         ep.setHandler(cHandler);
-        try {
-            checkSocketFactory();
-        } catch( Exception ex ) {
-            log.error(sm.getString("http11protocol.socketfactory.initerror"),
-                      ex);
-            throw ex;
-        }
 
-        if( socketFactory!=null ) {
-            Enumeration attE=attributes.keys();
-            while( attE.hasMoreElements() ) {
-                String key=(String)attE.nextElement();
-                Object v=attributes.get( key );
-                socketFactory.setAttribute( key, v );
-            }
-        }
-
-        // XXX get domain from registration
         try {
             ep.init();
         } catch (Exception ex) {
@@ -148,8 +128,6 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
     public void start() throws Exception {
         if( this.domain != null ) {
             try {
-                // XXX We should be able to configure it separately
-                // XXX It should be possible to use a single TP
                 tpOname=new ObjectName
                     (domain + ":" + "type=ThreadPool,name=" + getName());
                 Registry.getRegistry(null, null)
@@ -209,18 +187,13 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
     protected AprEndpoint ep=new AprEndpoint();
     protected boolean secure;
 
-    protected ServerSocketFactory socketFactory;
-    protected SSLImplementation sslImplementation;
     // socket factory attriubtes ( XXX replace with normal setters )
     protected Hashtable attributes = new Hashtable();
-    protected String socketFactoryName=null;
-    protected String sslImplementationName=null;
 
     private int maxKeepAliveRequests=100; // as in Apache HTTPD server
     private int timeout = 300000;   // 5 minutes as in Apache HTTPD server
     private int maxSavePostSize = 4 * 1024;
     private int maxHttpHeaderSize = 4 * 1024;
-    private String reportedname;
     private int socketCloseDelay=-1;
     private boolean disableUploadTimeout = true;
     private int socketBuffer = 9000;
@@ -342,25 +315,6 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
         return ("http-" + encodedAddr + ep.getPort());
     }
 
-    public String getSocketFactory() {
-        return socketFactoryName;
-    }
-
-    public void setSocketFactory( String valueS ) {
-        socketFactoryName = valueS;
-        setAttribute("socketFactory", valueS);
-    }
-
-    public String getSSLImplementation() {
-        return sslImplementationName;
-    }
-
-    public void setSSLImplementation( String valueS) {
-        sslImplementationName = valueS;
-        setSecure(true);
-        setAttribute("sslImplementation", valueS);
-    }
-
     public boolean getTcpNoDelay() {
         return ep.getTcpNoDelay();
     }
@@ -467,50 +421,6 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
         setAttribute("soTimeout", "" + i);
     }
 
-    /*
-    public int getServerSoTimeout() {
-        return ep.getServerSoTimeout();
-    }
-
-    public void setServerSoTimeout( int i ) {
-        ep.setServerSoTimeout(i);
-        setAttribute("serverSoTimeout", "" + i);
-    }
-    */
-
-    public String getKeystore() {
-        return getProperty("keystore");
-    }
-
-    public void setKeystore( String k ) {
-        setAttribute("keystore", k);
-    }
-
-    public String getKeypass() {
-        return getProperty("keypass");
-    }
-
-    public void setKeypass( String k ) {
-        attributes.put("keypass", k);
-        //setAttribute("keypass", k);
-    }
-
-    public String getKeytype() {
-        return getProperty("keystoreType");
-    }
-
-    public void setKeytype( String k ) {
-        setAttribute("keystoreType", k);
-    }
-
-    public String getClientauth() {
-        return getProperty("clientauth");
-    }
-
-    public void setClientauth( String k ) {
-        setAttribute("clientauth", k);
-    }
-
     public String getProtocol() {
         return getProperty("protocol");
     }
@@ -520,22 +430,6 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
         setAttribute("protocol", k);
     }
 
-    public String getProtocols() {
-        return getProperty("protocols");
-    }
-
-    public void setProtocols(String k) {
-        setAttribute("protocols", k);
-    }
-
-    public String getAlgorithm() {
-        return getProperty("algorithm");
-    }
-
-    public void setAlgorithm( String k ) {
-        setAttribute("algorithm", k);
-    }
-
     public boolean getSecure() {
         return secure;
     }
@@ -543,22 +437,6 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
     public void setSecure( boolean b ) {
         secure=b;
         setAttribute("secure", "" + b);
-    }
-
-    public String getCiphers() {
-        return getProperty("ciphers");
-    }
-
-    public void setCiphers(String ciphers) {
-        setAttribute("ciphers", ciphers);
-    }
-
-    public String getKeyAlias() {
-        return getProperty("keyAlias");
-    }
-
-    public void setKeyAlias(String keyAlias) {
-        setAttribute("keyAlias", keyAlias);
     }
 
     public int getMaxKeepAliveRequests() {
@@ -605,14 +483,6 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
         return server;
     }
 
-
-    private static ServerSocketFactory string2SocketFactory( String val)
-        throws ClassNotFoundException, IllegalAccessException,
-               InstantiationException {
-        Class chC=Class.forName( val );
-        return (ServerSocketFactory)chC.newInstance();
-    }
-
     public int getTimeout() {
         return timeout;
     }
@@ -622,13 +492,91 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
         setAttribute("timeout", "" + timeouts);
     }
 
-    public String getReportedname() {
-        return reportedname;
-    }
+    // --------------------  SSL related properties --------------------
 
-    public void setReportedname( String reportedName) {
-        reportedname = reportedName;
-    }
+    /**
+     * SSL engine.
+     */
+    public String getSSLEngine() { return ep.getSSLEngine(); }
+    public void setSSLEngine(String SSLEngine) { ep.setSSLEngine(SSLEngine); }
+
+
+    /**
+     * SSL password (if a cert is encrypted, and no password has been provided, a callback
+     * will ask for a password).
+     */
+    public String getSSLPassword() { return ep.getSSLPassword(); }
+    public void setSSLPassword(String SSLPassword) { ep.setSSLPassword(SSLPassword); }
+
+
+    /**
+     * SSL cipher suite.
+     */
+    public String getSSLCipherSuite() { return ep.getSSLCipherSuite(); }
+    public void setSSLCipherSuite(String SSLCipherSuite) { ep.setSSLCipherSuite(SSLCipherSuite); }
+
+
+    /**
+     * SSL certificate file.
+     */
+    public String getSSLCertificateFile() { return ep.getSSLCertificateFile(); }
+    public void setSSLCertificateFile(String SSLCertificateFile) { ep.setSSLCertificateFile(SSLCertificateFile); }
+
+
+    /**
+     * SSL certificate key file.
+     */
+    public String getSSLCertificateKeyFile() { return ep.getSSLCertificateKeyFile(); }
+    public void setSSLCertificateKeyFile(String SSLCertificateKeyFile) { ep.setSSLCertificateKeyFile(SSLCertificateKeyFile); }
+
+
+    /**
+     * SSL certificate chain file.
+     */
+    public String getSSLCertificateChainFile() { return ep.getSSLCertificateChainFile(); }
+    public void setSSLCertificateChainFile(String SSLCertificateChainFile) { ep.setSSLCertificateChainFile(SSLCertificateChainFile); }
+
+
+    /**
+     * SSL CA certificate path.
+     */
+    public String getSSLCACertificatePath() { return ep.getSSLCACertificatePath(); }
+    public void setSSLCACertificatePath(String SSLCACertificatePath) { ep.setSSLCACertificatePath(SSLCACertificatePath); }
+
+
+    /**
+     * SSL CA certificate file.
+     */
+    public String getSSLCACertificateFile() { return ep.getSSLCACertificateFile(); }
+    public void setSSLCACertificateFile(String SSLCACertificateFile) { ep.setSSLCACertificateFile(SSLCACertificateFile); }
+
+
+    /**
+     * SSL CA revocation path.
+     */
+    public String getSSLCARevocationPath() { return ep.getSSLCARevocationPath(); }
+    public void setSSLCARevocationPath(String SSLCARevocationPath) { ep.setSSLCARevocationPath(SSLCARevocationPath); }
+
+
+    /**
+     * SSL CA revocation file.
+     */
+    public String getSSLCARevocationFile() { return ep.getSSLCARevocationFile(); }
+    public void setSSLCARevocationFile(String SSLCARevocationFile) { ep.setSSLCARevocationFile(SSLCARevocationFile); }
+
+
+    /**
+     * SSL verify client.
+     */
+    public boolean getSSLVerifyClient() { return ep.getSSLVerifyClient(); }
+    public void setSSLVerifyClient(boolean SSLVerifyClient) { ep.setSSLVerifyClient(SSLVerifyClient); }
+
+
+    /**
+     * SSL verify depth.
+     */
+    public int getSSLVerifyDepth() { return ep.getSSLVerifyDepth(); }
+    public void setSSLVerifyDepth(int SSLVerifyDepth) { ep.setSSLVerifyDepth(SSLVerifyDepth); }
 
     // --------------------  Connection handler --------------------
 
@@ -733,36 +681,6 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
         = org.apache.commons.logging.LogFactory.getLog(Http11AprProtocol.class);
 
     // -------------------- Various implementation classes --------------------
-
-    /** Sanity check and socketFactory setup.
-     *  IMHO it is better to stop the show on a broken connector,
-     *  then leave Tomcat running and broken.
-     *  @exception TomcatException Unable to resolve classes
-     */
-    private void checkSocketFactory() throws Exception {
-        /*
-        if (secure) {
-            try {
-                // The SSL setup code has been moved into
-                // SSLImplementation since SocketFactory doesn't
-                // provide a wide enough interface
-                sslImplementation =
-                    SSLImplementation.getInstance(sslImplementationName);
-                socketFactory = sslImplementation.getServerSocketFactory();
-                ep.setServerSocketFactory(socketFactory);
-            } catch (ClassNotFoundException e){
-                throw e;
-            }
-        } else if (socketFactoryName != null) {
-            try {
-                socketFactory = string2SocketFactory(socketFactoryName);
-                ep.setServerSocketFactory(socketFactory);
-            } catch(Exception sfex) {
-                throw sfex;
-            }
-        }
-        */
-    }
 
     protected String domain;
     protected ObjectName oname;

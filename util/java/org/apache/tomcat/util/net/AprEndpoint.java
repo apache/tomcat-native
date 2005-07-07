@@ -31,9 +31,11 @@ import org.apache.tomcat.jni.Poll;
 import org.apache.tomcat.jni.Pool;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
+import org.apache.tomcat.jni.SSL;
+import org.apache.tomcat.jni.SSLContext;
+import org.apache.tomcat.jni.SSLSocket;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.util.threads.ThreadWithAttributes;
-
 
 /**
  * APR tailored thread pool, providing the following services:
@@ -149,6 +151,12 @@ public class AprEndpoint {
      */
     protected long serverSockPool = 0;
 
+    
+    /**
+     * SSL context.
+     */
+    protected long sslContext = 0;
+
 
     // ------------------------------------------------------------- Properties
 
@@ -205,7 +213,7 @@ public class AprEndpoint {
      * Handling of accepted sockets.
      */
     protected Handler handler = null;
-    public void setHandler(Handler handler ) { this.handler=handler; }
+    public void setHandler(Handler handler ) { this.handler = handler; }
     public Handler getHandler() { return handler; }
 
 
@@ -325,7 +333,104 @@ public class AprEndpoint {
      */
     public int getMinSpareThreads() { return 0; }
 
+    
+    /**
+     * SSL engine.
+     */
+    protected String SSLEngine = "off";
+    public String getSSLEngine() { return SSLEngine; }
+    public void setSSLEngine(String SSLEngine) { this.SSLEngine = SSLEngine; }
 
+    
+    /**
+     * SSL password (if a cert is encrypted, and no password has been provided, a callback
+     * will ask for a password).
+     */
+    protected String SSLPassword = null;
+    public String getSSLPassword() { return SSLPassword; }
+    public void setSSLPassword(String SSLPassword) { this.SSLPassword = SSLPassword; }
+
+
+    /**
+     * SSL cipher suite.
+     */
+    protected String SSLCipherSuite = "ALL";
+    public String getSSLCipherSuite() { return SSLCipherSuite; }
+    public void setSSLCipherSuite(String SSLCipherSuite) { this.SSLCipherSuite = SSLCipherSuite; }
+    
+    
+    /**
+     * SSL certificate file.
+     */
+    protected String SSLCertificateFile = null;
+    public String getSSLCertificateFile() { return SSLCertificateFile; }
+    public void setSSLCertificateFile(String SSLCertificateFile) { this.SSLCertificateFile = SSLCertificateFile; }
+    
+
+    /**
+     * SSL certificate key file.
+     */
+    protected String SSLCertificateKeyFile = null;
+    public String getSSLCertificateKeyFile() { return SSLCertificateKeyFile; }
+    public void setSSLCertificateKeyFile(String SSLCertificateKeyFile) { this.SSLCertificateKeyFile = SSLCertificateKeyFile; }
+
+    
+    /**
+     * SSL certificate chain file.
+     */
+    protected String SSLCertificateChainFile = null;
+    public String getSSLCertificateChainFile() { return SSLCertificateChainFile; }
+    public void setSSLCertificateChainFile(String SSLCertificateChainFile) { this.SSLCertificateChainFile = SSLCertificateChainFile; }
+    
+
+    /**
+     * SSL CA certificate path.
+     */
+    protected String SSLCACertificatePath = null;
+    public String getSSLCACertificatePath() { return SSLCACertificatePath; }
+    public void setSSLCACertificatePath(String SSLCACertificatePath) { this.SSLCACertificatePath = SSLCACertificatePath; }
+    
+    
+    /**
+     * SSL CA certificate file.
+     */
+    protected String SSLCACertificateFile = null;
+    public String getSSLCACertificateFile() { return SSLCACertificateFile; }
+    public void setSSLCACertificateFile(String SSLCACertificateFile) { this.SSLCACertificateFile = SSLCACertificateFile; }
+    
+    
+    /**
+     * SSL CA revocation path.
+     */
+    protected String SSLCARevocationPath = null;
+    public String getSSLCARevocationPath() { return SSLCARevocationPath; }
+    public void setSSLCARevocationPath(String SSLCARevocationPath) { this.SSLCARevocationPath = SSLCARevocationPath; }
+    
+
+    /**
+     * SSL CA revocation file.
+     */
+    protected String SSLCARevocationFile = null;
+    public String getSSLCARevocationFile() { return SSLCARevocationFile; }
+    public void setSSLCARevocationFile(String SSLCARevocationFile) { this.SSLCARevocationFile = SSLCARevocationFile; }
+    
+    
+    /**
+     * SSL verify client.
+     */
+    protected boolean SSLVerifyClient = false;
+    public boolean getSSLVerifyClient() { return SSLVerifyClient; }
+    public void setSSLVerifyClient(boolean SSLVerifyClient) { this.SSLVerifyClient = SSLVerifyClient; }
+     
+    
+    /**
+     * SSL verify depth.
+     */
+    protected int SSLVerifyDepth = 10;
+    public int getSSLVerifyDepth() { return SSLVerifyDepth; }
+    public void setSSLVerifyDepth(int SSLVerifyDepth) { this.SSLVerifyDepth = SSLVerifyDepth; }
+    
+    
     // --------------------------------------------------------- Public Methods
 
 
@@ -411,8 +516,32 @@ public class AprEndpoint {
         // Delay accepting of new connections until data is available
         // Only Linux kernels 2.4 + have that implemented
         // on other platforms this call is noop and will return APR_ENOTIMPL.
-	    Socket.optSet(serverSock, Socket.APR_TCP_DEFER_ACCEPT, 1);
-
+        Socket.optSet(serverSock, Socket.APR_TCP_DEFER_ACCEPT, 1);
+        
+        // Initialize SSL if needed
+        if (!"off".equalsIgnoreCase(SSLEngine)) {
+            // Initialize SSL
+            // FIXME: one per VM call ?
+            if ("on".equalsIgnoreCase(SSLEngine)) {
+                SSL.initialize(null);
+            } else {
+                SSL.initialize(SSLEngine);
+            }
+            // Create SSL Context
+            sslContext = SSLContext.make(rootPool, SSL.SSL_PROTOCOL_SSLV2 | SSL.SSL_PROTOCOL_SSLV3, SSL.SSL_MODE_SERVER);
+            // List the ciphers that the client is permitted to negotiate
+            SSLContext.setCipherSuite(sslContext, SSLCipherSuite);
+            // Load Server key and certificate
+            SSLContext.setCertificate(sslContext, SSLCertificateFile, SSLCertificateKeyFile, SSLPassword, SSL.SSL_AIDX_RSA);
+            // Support Client Certificates
+            SSLContext.setVerify(sslContext, SSLVerifyClient ? 1 : 0, SSLVerifyDepth);
+            if (SSLCACertificateFile != null) {
+                SSLContext.setCACertificate(sslContext, SSLCACertificateFile, null);
+            }
+            // For now, sendfile is not supported with SSL
+            useSendfile = false;
+        }
+        
         initialized = true;
 
     }
@@ -509,6 +638,7 @@ public class AprEndpoint {
         serverSockPool = 0;
         // Close server socket
         Socket.close(serverSock);
+        sslContext = 0;
         // Close all APR memory pools and resources
         Pool.destroy(rootPool);
         rootPool = 0;
@@ -559,44 +689,32 @@ public class AprEndpoint {
 
 
     /**
-     * Set options on a newly accepted socket.
-     *
-     * @param socket "pointer" to the accepted socket
-     */
-    protected void setSocketOptions(long socket) {
-        if (soLinger >= 0)
-            Socket.optSet(socket, Socket.APR_SO_LINGER, soLinger);
-        if (tcpNoDelay)
-            Socket.optSet(socket, Socket.APR_TCP_NODELAY, (tcpNoDelay ? 1 : 0));
-        if (soTimeout > 0)
-            Socket.timeoutSet(socket, soTimeout * 1000);
-    }
-
-
-    /**
      * Process the specified connection.
      */
-    protected boolean processSocket(long socket) {
+    protected boolean setSocketOptions(long socket) {
         // Process the connection
         int step = 1;
-        boolean result = true;
         try {
 
             // 1: Set socket options: timeout, linger, etc
-            setSocketOptions(socket);
+            if (soLinger >= 0)
+                Socket.optSet(socket, Socket.APR_SO_LINGER, soLinger);
+            if (tcpNoDelay)
+                Socket.optSet(socket, Socket.APR_TCP_NODELAY, (tcpNoDelay ? 1 : 0));
+            if (soTimeout > 0)
+                Socket.timeoutSet(socket, soTimeout * 1000);
 
             // 2: SSL handshake
             step = 2;
-            // FIXME: SSL implementation so that Bill is happy
-            /*
-            if (getServerSocketFactory() != null) {
-                getServerSocketFactory().handshake(s);
+            if (sslContext != 0) {
+                SSLSocket.attach(sslContext, socket);
+                if (SSLSocket.handshake(socket) != 0) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(sm.getString("endpoint.err.handshake") + ": " + SSL.getLastError());
+                    }
+                    return false;
+                }                                 
             }
-            */
-
-            // 3: Process the connection
-            step = 3;
-            result = getHandler().process(socket);
 
         } catch (Throwable t) {
             if (step == 2) {
@@ -607,9 +725,9 @@ public class AprEndpoint {
                 log.error(sm.getString("endpoint.err.unexpected"), t);
             }
             // Tell to close the socket
-            result = false;
+            return false;
         }
-        return result;
+        return true;
     }
 
 
@@ -723,7 +841,12 @@ public class AprEndpoint {
                 try {
                     long socket = Socket.accept(serverSock);
                     // Hand this socket off to an appropriate processor
-                    workerThread.assign(socket);
+                    if (setSocketOptions(socket)) {
+                        workerThread.assign(socket);
+                    } else {
+                        // Close socket and pool right away
+                        Socket.destroy(socket);
+                    }
                 } catch (Exception e) {
                     log.error(sm.getString("endpoint.accept.fail"), e);
                 }
@@ -1011,7 +1134,7 @@ public class AprEndpoint {
                     continue;
 
                 // Process the request from this socket
-                if (!processSocket(socket)) {
+                if (!handler.process(socket)) {
                     // Close socket and pool
                     Socket.destroy(socket);
                     socket = 0;
@@ -1289,7 +1412,7 @@ public class AprEndpoint {
                                 } else {
                                     // Close the socket since this is
                                     // the end of not keep-alive request.
-                                    Socket.destroy(state.socket);	
+                                    Socket.destroy(state.socket);   
                                 }
                             }
                         }
