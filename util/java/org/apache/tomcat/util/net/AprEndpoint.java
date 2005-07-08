@@ -343,6 +343,14 @@ public class AprEndpoint {
 
     
     /**
+     * SSL protocols.
+     */
+    protected String SSLProtocol = "all";
+    public String getSSLProtocol() { return SSLProtocol; }
+    public void setSSLProtocol(String SSLProtocol) { this.SSLProtocol = SSLProtocol; }
+
+    
+    /**
      * SSL password (if a cert is encrypted, and no password has been provided, a callback
      * will ask for a password).
      */
@@ -418,9 +426,9 @@ public class AprEndpoint {
     /**
      * SSL verify client.
      */
-    protected int SSLVerifyClient = 0;
-    public int getSSLVerifyClient() { return SSLVerifyClient; }
-    public void setSSLVerifyClient(int SSLVerifyClient) { this.SSLVerifyClient = SSLVerifyClient; }
+    protected String SSLVerifyClient = "none";
+    public String getSSLVerifyClient() { return SSLVerifyClient; }
+    public void setSSLVerifyClient(String SSLVerifyClient) { this.SSLVerifyClient = SSLVerifyClient; }
      
     
     /**
@@ -527,8 +535,17 @@ public class AprEndpoint {
             } else {
                 SSL.initialize(SSLEngine);
             }
+            // SSL protocol
+            int value = SSL.SSL_PROTOCOL_ALL;
+            if ("SSLv2".equalsIgnoreCase(SSLProtocol)) {
+                value = SSL.SSL_PROTOCOL_SSLV2;
+            } else if ("SSLv3".equalsIgnoreCase(SSLProtocol)) {
+                value = SSL.SSL_PROTOCOL_SSLV3;
+            } else if ("TLSv1".equalsIgnoreCase(SSLProtocol)) {
+                value = SSL.SSL_PROTOCOL_TLSV1;
+            }
             // Create SSL Context
-            sslContext = SSLContext.make(rootPool, SSL.SSL_PROTOCOL_SSLV2 | SSL.SSL_PROTOCOL_SSLV3, SSL.SSL_MODE_SERVER);
+            sslContext = SSLContext.make(rootPool, value, SSL.SSL_MODE_SERVER);
             // List the ciphers that the client is permitted to negotiate
             SSLContext.setCipherSuite(sslContext, SSLCipherSuite);
             // Load Server key and certificate
@@ -537,7 +554,16 @@ public class AprEndpoint {
             if (SSLCACertificateFile != null) {
                 SSLContext.setCACertificate(sslContext, SSLCACertificateFile, null);
             }
-            SSLContext.setVerify(sslContext, SSLVerifyClient, SSLVerifyDepth);
+            // Client certificate verification
+            value = SSL.SSL_CVERIFY_NONE;
+            if ("optional".equalsIgnoreCase(SSLVerifyClient)) {
+                value = SSL.SSL_CVERIFY_OPTIONAL;
+            } else if ("require".equalsIgnoreCase(SSLVerifyClient)) {
+                value = SSL.SSL_CVERIFY_REQUIRE;
+            } else if ("optionalNoCA".equalsIgnoreCase(SSLVerifyClient)) {
+                value = SSL.SSL_CVERIFY_OPTIONAL_NO_CA;
+            }
+            SSLContext.setVerify(sslContext, value, SSLVerifyDepth);
             // For now, sendfile is not supported with SSL
             useSendfile = false;
         }

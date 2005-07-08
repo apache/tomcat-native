@@ -501,6 +501,13 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
 
 
     /**
+     * SSL protocol.
+     */
+    public String getSSLProtocol() { return ep.getSSLProtocol(); }
+    public void setSSLProtocol(String SSLProtocol) { ep.setSSLProtocol(SSLProtocol); }
+
+
+    /**
      * SSL password (if a cert is encrypted, and no password has been provided, a callback
      * will ask for a password).
      */
@@ -567,8 +574,8 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
     /**
      * SSL verify client.
      */
-    public int getSSLVerifyClient() { return ep.getSSLVerifyClient(); }
-    public void setSSLVerifyClient(int SSLVerifyClient) { ep.setSSLVerifyClient(SSLVerifyClient); }
+    public String getSSLVerifyClient() { return ep.getSSLVerifyClient(); }
+    public void setSSLVerifyClient(String SSLVerifyClient) { ep.setSSLVerifyClient(SSLVerifyClient); }
 
 
     /**
