@@ -543,6 +543,8 @@ public class AprEndpoint {
                 value = SSL.SSL_PROTOCOL_SSLV3;
             } else if ("TLSv1".equalsIgnoreCase(SSLProtocol)) {
                 value = SSL.SSL_PROTOCOL_TLSV1;
+            } else if ("SSLv2+SSLv3".equalsIgnoreCase(SSLProtocol)) {
+                value = SSL.SSL_PROTOCOL_SSLV2 | SSL.SSL_PROTOCOL_SSLV3;
             }
             // Create SSL Context
             sslContext = SSLContext.make(rootPool, value, SSL.SSL_MODE_SERVER);
