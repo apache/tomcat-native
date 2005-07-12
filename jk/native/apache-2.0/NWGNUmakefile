@@ -297,7 +297,7 @@ vpath %.c $(JKCOMMON)
 
 $(OBJDIR)/version.inc: $(JKCOMMON)/jk_version.h $(OBJDIR)
 	@echo Creating $@
-	@awk -f ../../../common/build/get_ver.awk $< > $@
+	@awk -f ../../support/get_ver.awk $< > $@
 
 
 #

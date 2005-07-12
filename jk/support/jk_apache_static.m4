@@ -24,7 +24,7 @@ dnl --------------------------------------------------------------------------
 
 dnl Apache-2.0 needs the os subdirectory to include os.h
 dnl this include is copy from os/config.m4
-sinclude(../../common/build/os_apache.m4)
+sinclude(os_apache.m4)
 
 dnl --------------------------------------------------------------------------
 dnl JK_APACHE_STATIC

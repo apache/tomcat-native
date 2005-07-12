@@ -273,7 +273,7 @@ vpath %.c . $(JKCOMMON)
 
 $(OBJDIR)/version.inc: $(JKCOMMON)/jk_version.h $(SRC)/include/httpd.h $(OBJDIR)
 	@echo Creating $@
-	@awk -f ../../../common/build/get_ver.awk $<  $(SRC)/include/httpd.h > $@
+	@awk -f ../../support/get_ver.awk $<  $(SRC)/include/httpd.h > $@
 
 # Include the version info retrieved from jk_version.h
 -include $(OBJDIR)/version.inc

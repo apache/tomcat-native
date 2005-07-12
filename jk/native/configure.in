@@ -199,7 +199,7 @@ AC_SUBST(APACHE_CONFIG_VARS)
 
 dnl Apache-2.0 needs the os subdirectory to include os.h
 dnl this include is copy from os/config.m4
-sinclude(../../common/build/os_apache.m4)
+sinclude(../support/os_apache.m4)
 
 dnl it is copied from the configure of JServ ;=)
 dnl and adapted. 

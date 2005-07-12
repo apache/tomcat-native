@@ -333,7 +333,7 @@ vpath %.c $(JKCOMMON);$(JKJNI)
 
 $(OBJDIR)/version.inc: $(JKINCLUDE)/jk_global.h $(OBJDIR)
 	@echo Creating $@
-	@awk -f ../../../../common/build/get_ver.awk $< > $@
+	@awk -f ../../../support/get_ver.awk $< > $@
 
 #
 # Include the version info retrieved from jk_global.h

@@ -165,7 +165,7 @@ $(OBJDIR)/%.o: $(AP_HOME)/src/os/netware/%.c
 
 $(OBJDIR)/version.inc: $(JKCOMMON)/jk_version.h $(AP_HOME)/src/include/httpd.h $(OBJDIR)
 	@echo Creating $@
-	@awk -f ../../../common/build/get_ver.awk $< $(AP_HOME)/src/include/httpd.h > $@
+	@awk -f ../../support/get_ver.awk $< $(AP_HOME)/src/include/httpd.h > $@
 
 dist: all
 	-$(RM) $(OBJDIR)/*.o $(OBJDIR)/$(TARGET).map $(OBJDIR)/$(TARGET).ncv

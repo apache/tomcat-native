@@ -160,7 +160,7 @@ $(OBJDIR)/%.o: $(JKCOMMON)/%.c
 
 $(OBJDIR)/version.inc: $(JKCOMMON)/jk_version.h $(OBJDIR)
 	@echo Creating $@
-	@awk -f ../../../common/build/get_ver.awk $< > $@
+	@awk -f ../../support/get_ver.awk $< > $@
 
 dist: all
 	-$(RM) $(OBJDIR)/*.o $(OBJDIR)/$(TARGET).map $(OBJDIR)/$(TARGET).ncv
