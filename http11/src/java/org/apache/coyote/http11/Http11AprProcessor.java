@@ -16,6 +16,7 @@
 
 package org.apache.coyote.http11;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.InetAddress;
@@ -24,6 +25,8 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.ActionHook;
@@ -41,6 +44,8 @@ import org.apache.coyote.http11.filters.VoidInputFilter;
 import org.apache.coyote.http11.filters.VoidOutputFilter;
 import org.apache.coyote.http11.filters.BufferedInputFilter;
 import org.apache.tomcat.jni.Address;
+import org.apache.tomcat.jni.SSL;
+import org.apache.tomcat.jni.SSLSocket;
 import org.apache.tomcat.jni.Sockaddr;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.util.buf.Ascii;
@@ -50,7 +55,6 @@ import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.FastHttpDateFormat;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.net.AprEndpoint;
-import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.threads.ThreadWithAttributes;
 
 
@@ -90,6 +94,8 @@ public class Http11AprProcessor implements ActionHook {
         outputBuffer = new InternalAprOutputBuffer(response, headerBufferSize);
         response.setOutputBuffer(outputBuffer);
         request.setResponse(response);
+        
+        ssl = !"off".equalsIgnoreCase(endpoint.getSSLEngine());
 
         initializeFilters();
 
@@ -194,10 +200,10 @@ public class Http11AprProcessor implements ActionHook {
 
 
     /**
-     * SSL information.
+     * SSL enabled ?
      */
-    protected SSLSupport sslSupport;
-
+    protected boolean ssl = false;
+    
 
     /**
      * Socket associated with the current connection.
@@ -645,14 +651,6 @@ public class Http11AprProcessor implements ActionHook {
 
 
     /**
-     * Set the SSL information for this HTTP connection.
-     */
-    public void setSSLSupport(SSLSupport sslSupport) {
-        this.sslSupport = sslSupport;
-    }
-
-
-    /**
      * Set the flag to control upload time-outs.
      */
     public void setDisableUploadTimeout(boolean isDisabled) {
@@ -898,9 +896,6 @@ public class Http11AprProcessor implements ActionHook {
         inputBuffer.recycle();
         outputBuffer.recycle();
 
-        // Recycle ssl info
-        sslSupport = null;
-        
         return openSocket;
         
     }
@@ -1084,23 +1079,36 @@ public class Http11AprProcessor implements ActionHook {
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
 
             try {
-                if (sslSupport != null) {
-                    Object sslO = sslSupport.getCipherSuite();
+                if (ssl) {
+                    Object sslO = SSLSocket.getInfoS(socket, SSL.SSL_INFO_CIPHER);
                     if (sslO != null)
                         request.setAttribute
-                            (SSLSupport.CIPHER_SUITE_KEY, sslO);
-                    sslO = sslSupport.getPeerCertificateChain(false);
+                            ("javax.servlet.request.cipher_suite", sslO);
+                    int certLength = SSLSocket.getInfoI(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN);
+                    X509Certificate[] certs = new X509Certificate[certLength];
+                    for (int i = 0; i < certLength; i++) {
+                        byte[] data = SSLSocket.getInfoB(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN + i);
+                        CertificateFactory cf =
+                            CertificateFactory.getInstance("X.509");
+                        ByteArrayInputStream stream = new ByteArrayInputStream(data);
+                        certs[i] = (X509Certificate) cf.generateCertificate(stream);
+                    }
+                    if (certLength > 0) {
+                        sslO = certs;
+                    } else {
+                        sslO = null;
+                    }
                     if (sslO != null)
                         request.setAttribute
-                            (SSLSupport.CERTIFICATE_KEY, sslO);
-                    sslO = sslSupport.getKeySize();
+                            ("javax.servlet.request.X509Certificate", sslO);
+                    sslO = new Integer(SSLSocket.getInfoI(socket, SSL.SSL_INFO_CIPHER_USEKEYSIZE));
                     if (sslO != null)
                         request.setAttribute
-                            (SSLSupport.KEY_SIZE_KEY, sslO);
-                    sslO = sslSupport.getSessionId();
+                            ("javax.servlet.request.key_size", sslO);
+                    sslO = SSLSocket.getInfoS(socket, SSL.SSL_INFO_SESSION_ID);
                     if (sslO != null)
                         request.setAttribute
-                            (SSLSupport.SESSION_ID_KEY, sslO);
+                            ("javax.servlet.request.ssl_session", sslO);
                 }
             } catch (Exception e) {
                 log.warn("Exception getting SSL attributes " ,e);
@@ -1108,7 +1116,7 @@ public class Http11AprProcessor implements ActionHook {
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
 
-            if( sslSupport != null) {
+            if (ssl) {
                 /*
                  * Consume and buffer the request body, so that it does not
                  * interfere with the client's handshake messages
@@ -1119,11 +1127,24 @@ public class Http11AprProcessor implements ActionHook {
                 inputBuffer.addActiveFilter
                     (inputFilters[Constants.BUFFERED_FILTER]);
                 try {
-                    Object sslO = sslSupport.getPeerCertificateChain(true);
-                    if( sslO != null) {
-                        request.setAttribute
-                            (SSLSupport.CERTIFICATE_KEY, sslO);
+                    // FIXME: Verify this is the right thing to do
+                    SSLSocket.renegotiate(socket);
+                    int certLength = SSLSocket.getInfoI(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN);
+                    X509Certificate[] certs = new X509Certificate[certLength];
+                    for (int i = 0; i < certLength; i++) {
+                        byte[] data = SSLSocket.getInfoB(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN + i);
+                        CertificateFactory cf =
+                            CertificateFactory.getInstance("X.509");
+                        ByteArrayInputStream stream = new ByteArrayInputStream(data);
+                        certs[i] = (X509Certificate) cf.generateCertificate(stream);
                     }
+                    Object sslO = null;
+                    if (certLength > 0) {
+                        sslO = certs;
+                    }
+                    if (sslO != null)
+                        request.setAttribute
+                            ("javax.servlet.request.X509Certificate", sslO);
                 } catch (Exception e) {
                     log.warn("Exception getting SSL Cert", e);
                 }
@@ -1179,7 +1200,7 @@ public class Http11AprProcessor implements ActionHook {
         contentDelimitation = false;
         expectation = false;
         sendfileData = null;
-        if (sslSupport != null) {
+        if (ssl) {
             request.scheme().setString("https");
         }
         MessageBytes protocolMB = request.protocol();
@@ -1396,7 +1417,7 @@ public class Http11AprProcessor implements ActionHook {
         }
 
         if (colonPos < 0) {
-            if (sslSupport == null) {
+            if (ssl) {
                 // 80 - Default HTTTP port
                 request.setServerPort(80);
             } else {
