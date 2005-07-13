@@ -21,15 +21,28 @@
 </a>
 <hr size="1" noshade="noshade" />
 -->
+<a name="20050713.1"> 
+<h3>13 July - JK-1.2.14 released</h3>
+<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
+of Jakarta Tomcat Connectors 1.2.14. This is development release and contains
+few bug fixes found in 1.2.13 version.
+</p>
+<p>
+We expect it to be ratified as a Stable release soon.
+</p>
+<p>
+ Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+<p>If you find any bugs while using this release, please fill in the
+<a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
+Bug Report. When entering bug select <b>Native:JK</b> Component.
+</p>
+</a>
 <a name="20050516.1"> 
 <h3>7 May - JK-1.2.13 released</h3>
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.13. This is development release and contains
 few bug fixes found in 1.2.12 version.
-</p>
-<p>
-We expect it to be ratified as a Stable release and to be re-tagged to 1.2.14 version
-within next two weeks.
 </p>
 <p>
  Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
