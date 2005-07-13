@@ -1080,10 +1080,13 @@ public class Http11AprProcessor implements ActionHook {
 
             try {
                 if (ssl) {
+                    // Cipher suite
                     Object sslO = SSLSocket.getInfoS(socket, SSL.SSL_INFO_CIPHER);
-                    if (sslO != null)
+                    if (sslO != null) {
                         request.setAttribute
                             ("javax.servlet.request.cipher_suite", sslO);
+                    }
+                    // Client certificate chain if present
                     int certLength = SSLSocket.getInfoI(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN);
                     X509Certificate[] certs = null;
                     if (certLength > 0) {
@@ -1096,17 +1099,22 @@ public class Http11AprProcessor implements ActionHook {
                             certs[i] = (X509Certificate) cf.generateCertificate(stream);
                         }
                     }
-                    if (certs != null)
+                    if (certs != null) {
                         request.setAttribute
                             ("javax.servlet.request.X509Certificate", certs);
+                    }
+                    // User key size
                     sslO = new Integer(SSLSocket.getInfoI(socket, SSL.SSL_INFO_CIPHER_USEKEYSIZE));
-                    if (sslO != null)
+                    if (sslO != null) {
                         request.setAttribute
                             ("javax.servlet.request.key_size", sslO);
+                    }
+                    // SSL session ID
                     sslO = SSLSocket.getInfoS(socket, SSL.SSL_INFO_SESSION_ID);
-                    if (sslO != null)
+                    if (sslO != null) {
                         request.setAttribute
                             ("javax.servlet.request.ssl_session", sslO);
+                    }
                 }
             } catch (Exception e) {
                 log.warn("Exception getting SSL attributes " ,e);
@@ -1115,18 +1123,17 @@ public class Http11AprProcessor implements ActionHook {
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
 
             if (ssl) {
-                /*
-                 * Consume and buffer the request body, so that it does not
-                 * interfere with the client's handshake messages
-                 */
+                 // Consume and buffer the request body, so that it does not
+                 // interfere with the client's handshake messages
                 InputFilter[] inputFilters = inputBuffer.getFilters();
                 ((BufferedInputFilter) inputFilters[Constants.BUFFERED_FILTER])
                     .setLimit(maxSavePostSize);
                 inputBuffer.addActiveFilter
                     (inputFilters[Constants.BUFFERED_FILTER]);
                 try {
-                    // FIXME: Verify this is the right thing to do
+                    // Renegociate certificates
                     SSLSocket.renegotiate(socket);
+                    // Client certificate chain if present
                     int certLength = SSLSocket.getInfoI(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN);
                     X509Certificate[] certs = null;
                     if (certLength > 0) {
@@ -1139,9 +1146,10 @@ public class Http11AprProcessor implements ActionHook {
                             certs[i] = (X509Certificate) cf.generateCertificate(stream);
                         }
                     }
-                    if (certs != null)
+                    if (certs != null) {
                         request.setAttribute
                             ("javax.servlet.request.X509Certificate", certs);
+                    }
                 } catch (Exception e) {
                     log.warn("Exception getting SSL Cert", e);
                 }
