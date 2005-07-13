@@ -1085,22 +1085,20 @@ public class Http11AprProcessor implements ActionHook {
                         request.setAttribute
                             ("javax.servlet.request.cipher_suite", sslO);
                     int certLength = SSLSocket.getInfoI(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN);
-                    X509Certificate[] certs = new X509Certificate[certLength];
-                    for (int i = 0; i < certLength; i++) {
-                        byte[] data = SSLSocket.getInfoB(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN + i);
-                        CertificateFactory cf =
-                            CertificateFactory.getInstance("X.509");
-                        ByteArrayInputStream stream = new ByteArrayInputStream(data);
-                        certs[i] = (X509Certificate) cf.generateCertificate(stream);
-                    }
+                    X509Certificate[] certs = null;
                     if (certLength > 0) {
-                        sslO = certs;
-                    } else {
-                        sslO = null;
+                        certs = new X509Certificate[certLength];
+                        for (int i = 0; i < certLength; i++) {
+                            byte[] data = SSLSocket.getInfoB(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN + i);
+                            CertificateFactory cf =
+                                CertificateFactory.getInstance("X.509");
+                            ByteArrayInputStream stream = new ByteArrayInputStream(data);
+                            certs[i] = (X509Certificate) cf.generateCertificate(stream);
+                        }
                     }
-                    if (sslO != null)
+                    if (certs != null)
                         request.setAttribute
-                            ("javax.servlet.request.X509Certificate", sslO);
+                            ("javax.servlet.request.X509Certificate", certs);
                     sslO = new Integer(SSLSocket.getInfoI(socket, SSL.SSL_INFO_CIPHER_USEKEYSIZE));
                     if (sslO != null)
                         request.setAttribute
@@ -1130,21 +1128,20 @@ public class Http11AprProcessor implements ActionHook {
                     // FIXME: Verify this is the right thing to do
                     SSLSocket.renegotiate(socket);
                     int certLength = SSLSocket.getInfoI(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN);
-                    X509Certificate[] certs = new X509Certificate[certLength];
-                    for (int i = 0; i < certLength; i++) {
-                        byte[] data = SSLSocket.getInfoB(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN + i);
-                        CertificateFactory cf =
-                            CertificateFactory.getInstance("X.509");
-                        ByteArrayInputStream stream = new ByteArrayInputStream(data);
-                        certs[i] = (X509Certificate) cf.generateCertificate(stream);
-                    }
-                    Object sslO = null;
+                    X509Certificate[] certs = null;
                     if (certLength > 0) {
-                        sslO = certs;
+                        certs = new X509Certificate[certLength];
+                        for (int i = 0; i < certLength; i++) {
+                            byte[] data = SSLSocket.getInfoB(socket, SSL.SSL_INFO_CLIENT_CERT_CHAIN + i);
+                            CertificateFactory cf =
+                                CertificateFactory.getInstance("X.509");
+                            ByteArrayInputStream stream = new ByteArrayInputStream(data);
+                            certs[i] = (X509Certificate) cf.generateCertificate(stream);
+                        }
                     }
-                    if (sslO != null)
+                    if (certs != null)
                         request.setAttribute
-                            ("javax.servlet.request.X509Certificate", sslO);
+                            ("javax.servlet.request.X509Certificate", certs);
                 } catch (Exception e) {
                     log.warn("Exception getting SSL Cert", e);
                 }
