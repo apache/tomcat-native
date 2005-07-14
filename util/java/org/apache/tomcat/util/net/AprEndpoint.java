@@ -511,9 +511,13 @@ public class AprEndpoint {
         serverSock = Socket.create(Socket.APR_INET, Socket.SOCK_STREAM,
                 Socket.APR_PROTO_TCP, rootPool);
         // Bind the server socket
-        Socket.bind(serverSock, inetAddress);
+        int ret = Socket.bind(serverSock, inetAddress);
+        if (ret != 0)
+          throw(new Exception("bind failed: " + ret));
         // Start listening on the server socket
-        Socket.listen(serverSock, backlog);
+        ret = Socket.listen(serverSock, backlog);
+        if (ret != 0)
+          throw(new Exception("listen failed: " + ret));
 
         // Sendfile usage on systems which don't support it cause major problems
         if (useSendfile && !Library.APR_HAS_SENDFILE) {
