@@ -666,6 +666,7 @@ public class AprEndpoint {
         serverSockPool = 0;
         // Close server socket
         Socket.close(serverSock);
+        serverSock = 0;
         sslContext = 0;
         // Close all APR memory pools and resources
         Pool.destroy(rootPool);
