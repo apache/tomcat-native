@@ -16,6 +16,7 @@
 
 package org.apache.tomcat.util.net;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -512,12 +513,14 @@ public class AprEndpoint {
                 Socket.APR_PROTO_TCP, rootPool);
         // Bind the server socket
         int ret = Socket.bind(serverSock, inetAddress);
-        if (ret != 0)
-          throw(new Exception("bind failed: " + ret));
+        if (ret != 0) {
+            throw new Exception(sm.getString("endpoint.init.bind", "" + ret));
+        }
         // Start listening on the server socket
         ret = Socket.listen(serverSock, backlog);
-        if (ret != 0)
-          throw(new Exception("listen failed: " + ret));
+        if (ret != 0) {
+            throw new Exception(sm.getString("endpoint.init.listen", "" + ret));
+        }
 
         // Sendfile usage on systems which don't support it cause major problems
         if (useSendfile && !Library.APR_HAS_SENDFILE) {
