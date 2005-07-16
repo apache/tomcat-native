@@ -515,6 +515,8 @@ public class AprEndpoint {
         if (OS.IS_UNIX) {
             Socket.optSet(serverSock, Socket.APR_SO_REUSEADDR, 1);    
         }
+        // Deal with the firewalls that tend to drop the inactive sockets
+        Socket.optSet(serverSock, Socket.APR_SO_KEEPALIVE, 1);
         // Bind the server socket
         int ret = Socket.bind(serverSock, inetAddress);
         if (ret != 0) {
