@@ -24,6 +24,7 @@ import java.util.Stack;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.tomcat.jni.OS;
 import org.apache.tomcat.jni.Address;
 import org.apache.tomcat.jni.Error;
 import org.apache.tomcat.jni.File;
@@ -511,6 +512,9 @@ public class AprEndpoint {
         // Create the APR server socket
         serverSock = Socket.create(Socket.APR_INET, Socket.SOCK_STREAM,
                 Socket.APR_PROTO_TCP, rootPool);
+        if (OS.IS_UNIX) {
+            Socket.optSet(serverSock, Socket.APR_SO_REUSEADDR, 1);    
+        }
         // Bind the server socket
         int ret = Socket.bind(serverSock, inetAddress);
         if (ret != 0) {
@@ -520,6 +524,10 @@ public class AprEndpoint {
         ret = Socket.listen(serverSock, backlog);
         if (ret != 0) {
             throw new Exception(sm.getString("endpoint.init.listen", "" + ret));
+        }
+        if (OS.IS_WIN32 || OS.IS_WIN64) {
+            // On Windows set the reuseaddr flag after the bind/listen
+            Socket.optSet(serverSock, Socket.APR_SO_REUSEADDR, 1);    
         }
 
         // Sendfile usage on systems which don't support it cause major problems
