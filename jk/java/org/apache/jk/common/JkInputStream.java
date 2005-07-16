@@ -50,6 +50,7 @@ public class JkInputStream implements InputBuffer, OutputBuffer {
     private boolean isEmpty = true;
     private boolean isFirst = true;
     private boolean isReplay = false;
+    private boolean isReadRequired = false;
 
     static {
         // Make certain HttpMessages is loaded for SecurityManager
@@ -66,14 +67,39 @@ public class JkInputStream implements InputBuffer, OutputBuffer {
 
     // -------------------- Jk specific methods --------------------
 
+
+    /**
+     * Set the flag saying that the server is sending a body
+     */
+    public void setIsReadRequired(boolean irr) {
+        isReadRequired = irr;
+    }
+
+    /**
+     * Return the flag saying that the server is sending a body
+     */
+    public boolean isReadRequired() {
+        return isReadRequired;
+    }
+
     
     /** Must be called before or after each request
      */
     public void recycle() {
+        if(isReadRequired && isFirst) {
+            // The Servlet never read the request body, so we need to junk it
+            try {
+              receive();
+            } catch(IOException iex) {
+              log.debug("Error consuming request body",iex);
+            }
+        }
+
         end_of_stream = false;
         isEmpty = true;
         isFirst = true;
         isReplay = false;
+        isReadRequired = false;
         bodyBuff.recycle();
         tempMB.recycle();
     }

@@ -168,6 +168,20 @@ public class HandlerRequest extends JkHandler
         return registerRequests;
     }
 
+    /**
+     * Set the flag to delay the initial body read
+     */
+    public void setDelayInitialRead(boolean dir) {
+	delayInitialRead = dir;
+    }
+
+    /**
+     * Get the flag to tell if we delay the initial body read
+     */
+    public boolean getDelayInitialRead() {
+	return delayInitialRead;
+    }
+
     // -------------------- Ajp13.id --------------------
 
     private void generateAjp13Id() {
@@ -210,14 +224,15 @@ public class HandlerRequest extends JkHandler
     }
     
     // -------------------- Incoming message --------------------
-    String requiredSecret=null;
-    int secretNote;
-    int tmpBufNote;
+    private String requiredSecret=null;
+    private int secretNote;
+    private int tmpBufNote;
 
-    boolean decoded=true;
-    boolean tomcatAuthentication=true;
-    boolean registerRequests=true;
-    boolean shutdownEnabled=false;
+    private boolean decoded=true;
+    private boolean tomcatAuthentication=true;
+    private boolean registerRequests=true;
+    private boolean shutdownEnabled=false;
+    private boolean delayInitialRead = true;
     
     public int invoke(Msg msg, MsgContext ep ) 
         throws IOException    {
@@ -393,8 +408,11 @@ public class HandlerRequest extends JkHandler
         // immediately after
         int cl=req.getContentLength();
         if(cl > 0) {
-            // This is hidious.  Look to remove it.
-            ep.getInputStream().receive();
+            JkInputStream jkIS = ep.getInputStream();
+            jkIS.setIsReadRequired(true);
+            if(!delayInitialRead) {
+                jkIS.receive();
+            }
         }
     
         if (log.isTraceEnabled()) {
