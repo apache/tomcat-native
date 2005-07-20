@@ -607,7 +607,7 @@ public class ProxyDirContext implements DirContext {
     public Name composeName(Name name, Name prefix)
         throws NamingException {
         prefix = (Name) name.clone();
-	return prefix.addAll(name);
+        return prefix.addAll(name);
     }
 
 

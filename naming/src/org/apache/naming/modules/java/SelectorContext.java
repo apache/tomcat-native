@@ -500,8 +500,8 @@ public class SelectorContext extends BaseContext {
      */
     public Name composeName(Name name, Name prefix)
         throws NamingException {
-	prefix = (Name) name.clone();
-	return prefix.addAll(name);
+        prefix = (Name) name.clone();
+        return prefix.addAll(name);
     }
 
 
@@ -649,7 +649,7 @@ public class SelectorContext extends BaseContext {
     protected String parseName(String name) 
         throws NamingException {
         
-	if ((!initialContext) && (name.startsWith(prefix))) {
+        if ((!initialContext) && (name.startsWith(prefix))) {
             return (name.substring(prefixLength));
         } else {
             if (initialContext) {
@@ -673,7 +673,7 @@ public class SelectorContext extends BaseContext {
     protected Name parseName(Name name) 
         throws NamingException {
 
-	if ((!initialContext) && (!name.isEmpty()) 
+        if ((!initialContext) && (!name.isEmpty()) 
             && (name.get(0).equals(prefix))) {
             return (name.getSuffix(1));
         } else {
