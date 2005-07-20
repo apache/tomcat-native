@@ -16,7 +16,6 @@
 
 package org.apache.tomcat.util.net;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
