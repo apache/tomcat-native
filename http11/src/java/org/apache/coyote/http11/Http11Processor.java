@@ -1375,7 +1375,7 @@ public class Http11Processor implements Processor, ActionHook {
 
         if (colonPos < 0) {
             if (sslSupport == null) {
-                // 80 - Default HTTTP port
+                // 80 - Default HTTP port
                 request.setServerPort(80);
             } else {
                 // 443 - Default HTTPS port

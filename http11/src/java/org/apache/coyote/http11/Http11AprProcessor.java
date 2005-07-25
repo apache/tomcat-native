@@ -1422,8 +1422,8 @@ public class Http11AprProcessor implements ActionHook {
         }
 
         if (colonPos < 0) {
-            if (ssl) {
-                // 80 - Default HTTTP port
+            if (!ssl) {
+                // 80 - Default HTTP port
                 request.setServerPort(80);
             } else {
                 // 443 - Default HTTPS port
