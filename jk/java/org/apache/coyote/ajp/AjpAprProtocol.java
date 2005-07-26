@@ -33,7 +33,6 @@ import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.RequestGroupInfo;
 import org.apache.coyote.RequestInfo;
 import org.apache.tomcat.util.net.AprEndpoint;
-import org.apache.tomcat.util.net.ServerSocketFactory;
 import org.apache.tomcat.util.net.AprEndpoint.Handler;
 import org.apache.tomcat.util.res.StringManager;
 
@@ -195,25 +194,10 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
     protected Hashtable attributes = new Hashtable();
 
     private int timeout = 300000;   // 5 minutes as in Apache HTTPD server
-    private int maxPostSize = 2 * 1024 * 1024;
-    private int maxHttpHeaderSize = 4 * 1024;
-    private String reportedname;
-    private int socketCloseDelay=-1;
-    private boolean disableUploadTimeout = true;
-    private int socketBuffer = 9000;
+    protected boolean tomcatAuthentication = true;
+
     private Adapter adapter;
     private AjpConnectionHandler cHandler;
-
-    /**
-     * Compression value.
-     */
-    private String compression = "off";
-    private String noCompressionUserAgents = null;
-    private String restrictedUserAgents = null;
-    private String compressableMimeTypes = "text/html,text/xml,text/plain";
-    private int compressionMinSize    = 2048;
-
-    private String server;
 
     // -------------------- Pool setup --------------------
 
@@ -260,7 +244,7 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
     }
 
     public void setUseSendfile(boolean useSendfile) {
-        ep.setUseSendfile(useSendfile);
+        // No sendfile for AJP
     }
 
     public InetAddress getAddress() {
@@ -292,20 +276,12 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
         setAttribute("tcpNoDelay", "" + b);
     }
 
-    public boolean getDisableUploadTimeout() {
-        return disableUploadTimeout;
+    public boolean getTomcatAuthentication() {
+        return tomcatAuthentication;
     }
 
-    public void setDisableUploadTimeout(boolean isDisabled) {
-        disableUploadTimeout = isDisabled;
-    }
-
-    public int getSocketBuffer() {
-        return socketBuffer;
-    }
-
-    public void setSocketBuffer(int valueI) {
-        socketBuffer = valueI;
+    public void setTomcatAuthentication(boolean tomcatAuthentication) {
+        this.tomcatAuthentication = tomcatAuthentication;
     }
 
     public int getFirstReadTimeout() {
@@ -335,60 +311,6 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
         return ep.getPollerSize();
     }
     
-    public int getMaxPostSize() {
-        return maxPostSize;
-    }
-
-    public void setMaxPostSize(int valueI) {
-        maxPostSize = valueI;
-        setAttribute("maxPostSize", "" + valueI);
-    }
-
-    public int getMaxHttpHeaderSize() {
-        return maxHttpHeaderSize;
-    }
-
-    public void setMaxHttpHeaderSize(int valueI) {
-        maxHttpHeaderSize = valueI;
-        setAttribute("maxHttpHeaderSize", "" + valueI);
-    }
-
-    public String getRestrictedUserAgents() {
-        return restrictedUserAgents;
-    }
-
-    public void setRestrictedUserAgents(String valueS) {
-        restrictedUserAgents = valueS;
-        setAttribute("restrictedUserAgents", valueS);
-    }
-
-    public String getNoCompressionUserAgents() {
-        return noCompressionUserAgents;
-    }
-
-    public void setNoCompressionUserAgents(String valueS) {
-        noCompressionUserAgents = valueS;
-        setAttribute("noCompressionUserAgents", valueS);
-    }
-
-    public String getCompressableMimeType() {
-        return compressableMimeTypes;
-    }
-
-    public void setCompressableMimeType(String valueS) {
-        compressableMimeTypes = valueS;
-        setAttribute("compressableMimeTypes", valueS);
-    }
-
-    public int getCompressionMinSize() {
-        return compressionMinSize;
-    }
-
-    public void setCompressionMinSize(int valueI) {
-        compressionMinSize = valueI;
-        setAttribute("compressionMinSize", "" + valueI);
-    }
-
     public int getSoLinger() {
         return ep.getSoLinger();
     }
@@ -407,125 +329,6 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
         setAttribute("soTimeout", "" + i);
     }
 
-    /*
-    public int getServerSoTimeout() {
-        return ep.getServerSoTimeout();
-    }
-
-    public void setServerSoTimeout( int i ) {
-        ep.setServerSoTimeout(i);
-        setAttribute("serverSoTimeout", "" + i);
-    }
-    */
-
-    public String getKeystore() {
-        return getProperty("keystore");
-    }
-
-    public void setKeystore( String k ) {
-        setAttribute("keystore", k);
-    }
-
-    public String getKeypass() {
-        return getProperty("keypass");
-    }
-
-    public void setKeypass( String k ) {
-        attributes.put("keypass", k);
-        //setAttribute("keypass", k);
-    }
-
-    public String getKeytype() {
-        return getProperty("keystoreType");
-    }
-
-    public void setKeytype( String k ) {
-        setAttribute("keystoreType", k);
-    }
-
-    public String getClientauth() {
-        return getProperty("clientauth");
-    }
-
-    public void setClientauth( String k ) {
-        setAttribute("clientauth", k);
-    }
-
-    public String getProtocol() {
-        return getProperty("protocol");
-    }
-
-    public void setProtocol( String k ) {
-        setSecure(true);
-        setAttribute("protocol", k);
-    }
-
-    public String getProtocols() {
-        return getProperty("protocols");
-    }
-
-    public void setProtocols(String k) {
-        setAttribute("protocols", k);
-    }
-
-    public String getAlgorithm() {
-        return getProperty("algorithm");
-    }
-
-    public void setAlgorithm( String k ) {
-        setAttribute("algorithm", k);
-    }
-
-    public boolean getSecure() {
-        return secure;
-    }
-
-    public void setSecure( boolean b ) {
-        secure=b;
-        setAttribute("secure", "" + b);
-    }
-
-    public String getCiphers() {
-        return getProperty("ciphers");
-    }
-
-    public void setCiphers(String ciphers) {
-        setAttribute("ciphers", ciphers);
-    }
-
-    public String getKeyAlias() {
-        return getProperty("keyAlias");
-    }
-
-    public void setKeyAlias(String keyAlias) {
-        setAttribute("keyAlias", keyAlias);
-    }
-
-    public int getSocketCloseDelay() {
-        return socketCloseDelay;
-    }
-
-    public void setSocketCloseDelay( int d ) {
-        socketCloseDelay=d;
-        setAttribute("socketCloseDelay", "" + d);
-    }
-
-    public void setServer( String server ) {
-        this.server = server;
-    }
-
-    public String getServer() {
-        return server;
-    }
-
-
-    private static ServerSocketFactory string2SocketFactory( String val)
-        throws ClassNotFoundException, IllegalAccessException,
-               InstantiationException {
-        Class chC=Class.forName( val );
-        return (ServerSocketFactory)chC.newInstance();
-    }
-
     public int getTimeout() {
         return timeout;
     }
@@ -533,14 +336,6 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
     public void setTimeout( int timeouts ) {
         timeout = timeouts;
         setAttribute("timeout", "" + timeouts);
-    }
-
-    public String getReportedname() {
-        return reportedname;
-    }
-
-    public void setReportedname( String reportedName) {
-        reportedname = reportedName;
     }
 
     // --------------------  Connection handler --------------------
@@ -560,10 +355,9 @@ public class AjpAprProtocol implements ProtocolHandler, MBeanRegistration
             try {
                 processor = (AjpAprProcessor) localProcessor.get();
                 if (processor == null) {
-                    processor = new AjpAprProcessor(proto.maxHttpHeaderSize, proto.ep);
+                    processor = new AjpAprProcessor(proto.ep);
                     processor.setAdapter(proto.adapter);
-                    processor.setMaxPostSize(proto.maxPostSize);
-                    processor.setServer(proto.server);
+                    processor.setTomcatAuthentication(proto.tomcatAuthentication);
                     localProcessor.set(processor);
                     if (proto.getDomain() != null) {
                         synchronized (this) {

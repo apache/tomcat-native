@@ -79,7 +79,7 @@ public class AjpAprProcessor implements ActionHook {
     // ----------------------------------------------------------- Constructors
 
 
-    public AjpAprProcessor(int headerBufferSize, AprEndpoint endpoint) {
+    public AjpAprProcessor(AprEndpoint endpoint) {
 
         this.endpoint = endpoint;
         
@@ -180,12 +180,6 @@ public class AjpAprProcessor implements ActionHook {
 
 
     /**
-     * Use Tomcat authentication ?
-     */
-    protected boolean tomcatAuthentication = true;
-
-
-    /**
      * Socket associated with the current connection.
      */
     protected long socket;
@@ -228,12 +222,6 @@ public class AjpAprProcessor implements ActionHook {
 
 
     /**
-     * Max post size.
-     */
-    protected int maxPostSize = 2 * 1024 * 1024;
-
-
-    /**
      * Host name (used to avoid useless B2C conversion on the host name).
      */
     protected char[] hostNameC = new char[0];
@@ -243,12 +231,6 @@ public class AjpAprProcessor implements ActionHook {
      * Associated endpoint.
      */
     protected AprEndpoint endpoint;
-
-
-    /**
-     * Allow a customized the server header for the tin-foil hat folks.
-     */
-    protected String server = null;
 
 
     /**
@@ -371,43 +353,15 @@ public class AjpAprProcessor implements ActionHook {
     // ------------------------------------------------------------- Properties
 
 
-    // --------------------------------------------------------- Public Methods
-
-
     /**
-     * Set the maximum size of a POST which will be buffered in SSL mode.
+     * Use Tomcat authentication ?
      */
-    public void setMaxPostSize(int mps) {
-        maxPostSize = mps;
-    }
-
-
-    /**
-     * Return the maximum size of a POST which will be buffered in SSL mode.
-     */
-    public int getMaxPostSize() {
-        return maxPostSize;
-    }
-
-
-    /**
-     * Set the server header name.
-     */
-    public void setServer( String server ) {
-        if (server==null || server.equals("")) {
-            this.server = null;
-        } else {
-            this.server = server;
-        }
-    }
-
+    protected boolean tomcatAuthentication = true;
+    public boolean getTomcatAuthentication() { return tomcatAuthentication; }
+    public void setTomcatAuthentication(boolean tomcatAuthentication) { this.tomcatAuthentication = tomcatAuthentication; }
     
-    /**
-     * Get the server header name.
-     */
-    public String getServer() {
-        return server;
-    }
+    
+    // --------------------------------------------------------- Public Methods
 
 
     /** Get the request associated with this processor.
