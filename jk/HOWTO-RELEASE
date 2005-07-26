@@ -221,6 +221,25 @@ available at /www/archive.apache.org/dist/jakarta/tomcat-connector/jk .
 Copy old source distributions and binaries as needed, then remove the
 old source and binary distributions.
 
+Arrange the downloads_tomcat-connectors.cgi
+-------------------------------------------
+
+Check jakarta-site out:
+svn co https://svn.apache.org/repos/asf/jakarta/site site-jakarta
+
+
+Arrange the file: xdocs/downloads/downloads.xml
+
+Use ant to regenerate the corresponding html file:
+docs/site/downloads/downloads_tomcat-connectors.html
+
+Commit it after checking carefully the changes.
+
+Connect to people.apache.org and update the jakarta.apache.org site image,
+the site jakarta.apache.org should reflect the change after a while.
+cd /x2/www/jakarta.apache.org/site/downloads
+svn update downloads_tomcat-connectors.html
+
 Announcements
 -------------
 
