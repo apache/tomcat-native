@@ -1553,18 +1553,20 @@ public class Http11AprProcessor implements ActionHook {
         }
 
         // Sendfile support
-        String fileName = (String) request.getAttribute("org.apache.tomcat.sendfile.filename");
-        if (fileName != null) {
-            // No entity body sent here
-            outputBuffer.addActiveFilter
-                (outputFilters[Constants.VOID_FILTER]);
-            contentDelimitation = true;
-            sendfileData = new AprEndpoint.SendfileData();
-            sendfileData.fileName = fileName;
-            sendfileData.start = 
-                ((Long) request.getAttribute("org.apache.tomcat.sendfile.start")).longValue();
-            sendfileData.end = 
-                ((Long) request.getAttribute("org.apache.tomcat.sendfile.end")).longValue();
+        if (endpoint.getUseSendfile()) {
+            String fileName = (String) request.getAttribute("org.apache.tomcat.sendfile.filename");
+            if (fileName != null) {
+                // No entity body sent here
+                outputBuffer.addActiveFilter
+                    (outputFilters[Constants.VOID_FILTER]);
+                contentDelimitation = true;
+                sendfileData = new AprEndpoint.SendfileData();
+                sendfileData.fileName = fileName;
+                sendfileData.start = 
+                    ((Long) request.getAttribute("org.apache.tomcat.sendfile.start")).longValue();
+                sendfileData.end = 
+                    ((Long) request.getAttribute("org.apache.tomcat.sendfile.end")).longValue();
+            }
         }
         
         // Check for compression
