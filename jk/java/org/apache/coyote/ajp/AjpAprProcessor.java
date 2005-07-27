@@ -1394,15 +1394,14 @@ public class AjpAprProcessor implements ActionHook {
                 if (outputBuffer.position() + thisTime 
                         + bodyMessage.getHeaderLength() + 4 > outputBuffer.capacity()) {
                     flush();
-                } else {
-                    outputBuffer.put((byte) 0x41);
-                    outputBuffer.put((byte) 0x42);
-                    outputBuffer.putShort((short) (thisTime + 4));
-                    outputBuffer.put(AjpConstants.JK_AJP13_SEND_BODY_CHUNK);
-                    outputBuffer.putShort((short) chunk.getLength());
-                    outputBuffer.put(chunk.getBytes(), chunk.getOffset() + off, thisTime);
-                    outputBuffer.put((byte) 0x00);
                 }
+                outputBuffer.put((byte) 0x41);
+                outputBuffer.put((byte) 0x42);
+                outputBuffer.putShort((short) (thisTime + 4));
+                outputBuffer.put(AjpConstants.JK_AJP13_SEND_BODY_CHUNK);
+                outputBuffer.putShort((short) chunk.getLength());
+                outputBuffer.put(chunk.getBytes(), chunk.getOffset() + off, thisTime);
+                outputBuffer.put((byte) 0x00);
                 off += thisTime;
             }
             
