@@ -1,5 +1,5 @@
 /*
- *  Copyright 1999-2004 The Apache Software Foundation
+ *  Copyright 1999-2005 The Apache Software Foundation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@ public class StringCache {
     
     
     /**
-     * @param enabled The enabled to set.
+     * @param byteEnabled The enabled to set.
      */
     public void setByteEnabled(boolean byteEnabled) {
         StringCache.byteEnabled = byteEnabled;
@@ -147,7 +147,7 @@ public class StringCache {
     
     
     /**
-     * @param enabled The enabled to set.
+     * @param charEnabled The enabled to set.
      */
     public void setCharEnabled(boolean charEnabled) {
         StringCache.charEnabled = charEnabled;

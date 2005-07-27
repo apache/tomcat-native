@@ -1,5 +1,5 @@
 /*
- *  Copyright 1999-2004 The Apache Software Foundation
+ *  Copyright 2005 The Apache Software Foundation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -841,7 +841,7 @@ public class AprEndpoint {
     /**
      * Recycle the specified Processor so that it can be used again.
      *
-     * @param processor The processor to be recycled
+     * @param workerThread The processor to be recycled
      */
     protected void recycleWorkerThread(Worker workerThread) {
         synchronized (workers) {
@@ -980,7 +980,6 @@ public class AprEndpoint {
          * however).
          *
          * @param socket to add to the poller
-         * @param pool reprenting the memory used for the socket
          */
         public void add(long socket) {
             synchronized (addS) {

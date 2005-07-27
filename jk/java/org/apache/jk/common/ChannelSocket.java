@@ -1,5 +1,5 @@
 /*
- *  Copyright 1999-2004 The Apache Software Foundation
+ *  Copyright 1999-2005 The Apache Software Foundation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -48,38 +48,34 @@ import org.apache.coyote.RequestInfo;
 import org.apache.tomcat.util.threads.ThreadPool;
 import org.apache.tomcat.util.threads.ThreadPoolRunnable;
 
-
-/* XXX Make the 'message type' pluggable
- */
-
-/* A lot of the 'original' behavior is hardcoded - this uses Ajp13 wire protocol,
-   TCP, Ajp14 API etc.
-   As we add other protocols/transports/APIs this will change, the current goal
-   is to get the same level of functionality as in the original jk connector.
-*/
-
-/**
- *  Jk can use multiple protocols/transports.
- *  Various container adapters should load this object ( as a bean ),
- *  set configurations and use it. Note that the connector will handle
- *  all incoming protocols - it's not specific to ajp1x. The protocol
- *  is abstracted by MsgContext/Message/Channel.
- */
-
-
-/** Accept ( and send ) TCP messages.
+/** 
+ * Accept ( and send ) TCP messages.
  *
  * @author Costin Manolache
- * @jmx:mbean name="jk:service=ChannelSocket"
+ * @author Bill Barker
+ * jmx:mbean name="jk:service=ChannelNioSocket"
  *            description="Accept socket connections"
- * @jmx:notification name="org.apache.coyote.INVOKE
- * @jmx:notification-handler name="org.apache.jk.JK_SEND_PACKET
- * @jmx:notification-handler name="org.apache.jk.JK_RECEIVE_PACKET
- * @jmx:notification-handler name="org.apache.jk.JK_FLUSH
+ * jmx:notification name="org.apache.coyote.INVOKE
+ * jmx:notification-handler name="org.apache.jk.JK_SEND_PACKET
+ * jmx:notification-handler name="org.apache.jk.JK_RECEIVE_PACKET
+ * jmx:notification-handler name="org.apache.jk.JK_FLUSH
+ *
+ * Jk can use multiple protocols/transports.
+ * Various container adapters should load this object ( as a bean ),
+ * set configurations and use it. Note that the connector will handle
+ * all incoming protocols - it's not specific to ajp1x. The protocol
+ * is abstracted by MsgContext/Message/Channel.
+ *
+ * A lot of the 'original' behavior is hardcoded - this uses Ajp13 wire protocol,
+ * TCP, Ajp14 API etc.
+ * As we add other protocols/transports/APIs this will change, the current goal
+ * is to get the same level of functionality as in the original jk connector.
+ *
+ * XXX Make the 'message type' pluggable
  */
 public class ChannelSocket extends JkHandler
     implements NotificationBroadcaster, JkChannel {
-    private static org.apache.commons.logging.Log log=
+    private static org.apache.commons.logging.Log log =
         org.apache.commons.logging.LogFactory.getLog( ChannelSocket.class );
 
     private int startPort=8009;
@@ -99,7 +95,7 @@ public class ChannelSocket extends JkHandler
     /* ==================== Tcp socket options ==================== */
 
     /**
-     * @jmx:managed-constructor description="default constructor"
+     * jmx:managed-constructor description="default constructor"
      */
     public ChannelSocket() {
         // This should be integrated with the  domain setup
@@ -120,7 +116,7 @@ public class ChannelSocket extends JkHandler
      *  handler - that will be our 'sessionID' and the position in
      *  the scoreboard and the suffix for the unix domain socket.
      *
-     * @jmx:managed-attribute description="Port to listen" access="READ_WRITE"
+     * jmx:managed-attribute description="Port to listen" access="READ_WRITE"
      */
     public void setPort( int port ) {
         this.startPort=port;
@@ -137,7 +133,7 @@ public class ChannelSocket extends JkHandler
     }
 
     /**
-     * @jmx:managed-attribute description="Bind on a specified address" access="READ_WRITE"
+     * jmx:managed-attribute description="Bind on a specified address" access="READ_WRITE"
      */
     public void setAddress(String inet) {
         try {
@@ -331,7 +327,7 @@ public class ChannelSocket extends JkHandler
     }
 
     /**
-     * @jmx:managed-operation
+     * jmx:managed-operation
      */
     public void init() throws IOException {
         // Find a port.

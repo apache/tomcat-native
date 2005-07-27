@@ -1,5 +1,5 @@
 /*
- *  Copyright 1999-2004 The Apache Software Foundation
+ *  Copyright 1999-2005 The Apache Software Foundation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -45,8 +45,8 @@ import org.apache.tomcat.util.net.SSLSupport;
 
 /** Plugs Jk into Coyote. Must be named "type=JkHandler,name=container"
  *
- * @jmx:notification-handler name="org.apache.jk.SEND_PACKET
- * @jmx:notification-handler name="org.apache.coyote.ACTION_COMMIT
+ * jmx:notification-handler name="org.apache.jk.SEND_PACKET
+ * jmx:notification-handler name="org.apache.coyote.ACTION_COMMIT
  */
 public class JkCoyoteHandler extends JkHandler implements ProtocolHandler {
     protected static org.apache.commons.logging.Log log 
