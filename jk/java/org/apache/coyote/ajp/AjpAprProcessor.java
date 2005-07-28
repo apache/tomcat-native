@@ -32,7 +32,6 @@ import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.Request;
 import org.apache.coyote.RequestInfo;
 import org.apache.coyote.Response;
-import org.apache.jk.common.AjpConstants;
 import org.apache.tomcat.jni.Address;
 import org.apache.tomcat.jni.Sockaddr;
 import org.apache.tomcat.jni.Socket;
@@ -1398,7 +1397,7 @@ public class AjpAprProcessor implements ActionHook {
                 outputBuffer.put((byte) 0x41);
                 outputBuffer.put((byte) 0x42);
                 outputBuffer.putShort((short) (thisTime + 4));
-                outputBuffer.put(AjpConstants.JK_AJP13_SEND_BODY_CHUNK);
+                outputBuffer.put(Constants.JK_AJP13_SEND_BODY_CHUNK);
                 outputBuffer.putShort((short) chunk.getLength());
                 outputBuffer.put(chunk.getBytes(), chunk.getOffset() + off, thisTime);
                 outputBuffer.put((byte) 0x00);
