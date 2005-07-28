@@ -826,21 +826,13 @@ public class AjpAprProcessor implements ActionHook {
         }
 
         // Decode extra attributes
-        boolean moreAttr = true;
+        byte attributeCode;
+        while ((attributeCode = requestHeaderMessage.getByte()) 
+                != Constants.SC_A_ARE_DONE) {
 
-        while (moreAttr) {
-            byte attributeCode = requestHeaderMessage.getByte();
-            if (attributeCode == Constants.SC_A_ARE_DONE)
-                break;
-
-            if (attributeCode == Constants.SC_A_SSL_KEY_SIZE) {
-                // Bug 1326: it's an Integer.
-                request.setAttribute(SSLSupport.KEY_SIZE_KEY,
-                                 new Integer(requestHeaderMessage.getInt()));
-            }
-
-            if (attributeCode == Constants.SC_A_REQ_ATTRIBUTE ) {
-                // 2 strings ???...
+            switch (attributeCode) {
+            
+            case Constants.SC_A_REQ_ATTRIBUTE :
                 requestHeaderMessage.getBytes(tmpMB);
                 String n = tmpMB.toString();
                 requestHeaderMessage.getBytes(tmpMB);
@@ -848,10 +840,8 @@ public class AjpAprProcessor implements ActionHook {
                 request.setAttribute(n, v);
                 if (log.isTraceEnabled())
                     log.trace("jk Attribute set " + n + "=" + v);
-            }
-
-            // 1 string attributes
-            switch (attributeCode) {
+                break;
+            
             case Constants.SC_A_CONTEXT :
                 requestHeaderMessage.getBytes(tmpMB);
                 // nothing
@@ -890,7 +880,7 @@ public class AjpAprProcessor implements ActionHook {
                 
             case Constants.SC_A_SSL_CERT :
                 request.scheme().setString("https");
-                // SSL certificate extraction is costy, moved to JkCoyoteHandler
+                // SSL certificate extraction is lazy, moved to JkCoyoteHandler
                 requestHeaderMessage.getBytes(certificates);
                 break;
                 
@@ -908,21 +898,26 @@ public class AjpAprProcessor implements ActionHook {
                                   tmpMB.toString());
                 break;
                 
+            case Constants.SC_A_SSL_KEY_SIZE :
+                request.setAttribute(SSLSupport.KEY_SIZE_KEY,
+                        new Integer(requestHeaderMessage.getInt()));
+                break;
+
+            // FIXME: no usage for secret attribute here
+            /*
             case Constants.SC_A_SECRET :
                 requestHeaderMessage.getBytes(tmpMB);
-                String secret = tmpMB.toString();
-                if(log.isInfoEnabled())
-                    log.info("Secret: " + secret);
-                // FIXME: endpoint note - what's that ?
-                // endpoint.setNote(secretNote, secret);
                 break;
+            */
                 
             case Constants.SC_A_STORED_METHOD:
                 requestHeaderMessage.getBytes(request.method()); 
                 break;
                 
             default:
-                break; // ignore, we don't know about it - backward compat
+                // Ignore unknown attribute for backward compatibility
+                break;
+            
             }
             
         }
@@ -1390,8 +1385,8 @@ public class AjpAprProcessor implements ActionHook {
                     thisTime = chunkSize;
                 }
                 len -= thisTime;
-                if (outputBuffer.position() + thisTime 
-                        + bodyMessage.getHeaderLength() + 4 > outputBuffer.capacity()) {
+                if (outputBuffer.position() + thisTime + 4 + 4 > 
+                    outputBuffer.capacity()) {
                     flush();
                 }
                 outputBuffer.put((byte) 0x41);
