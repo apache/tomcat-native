@@ -42,7 +42,6 @@ import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.http.MimeHeaders;
 import org.apache.tomcat.util.net.AprEndpoint;
-import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.util.threads.ThreadWithAttributes;
 
@@ -66,7 +65,6 @@ public class AjpAprProcessor implements ActionHook {
      */
     protected static org.apache.commons.logging.Log log
         = org.apache.commons.logging.LogFactory.getLog(AjpAprProcessor.class);
-
 
     /**
      * The string manager for this package.
@@ -439,7 +437,7 @@ public class AjpAprProcessor implements ActionHook {
                 error = true;
                 break;
             } catch (Throwable t) {
-                log.debug("Error parsing HTTP request", t);
+                log.debug(sm.getString("ajpprocessor.header.error"), t);
                 // 400 - Bad Request
                 response.setStatus(400);
                 error = true;
@@ -452,7 +450,7 @@ public class AjpAprProcessor implements ActionHook {
                 prepareRequest();
                 thrA.setParam(endpoint, request.requestURI());
             } catch (Throwable t) {
-                log.debug("Error preparing request", t);
+                log.debug(sm.getString("ajpprocessor.request.prepare"), t);
                 // 400 - Internal Server Error
                 response.setStatus(400);
                 error = true;
@@ -467,7 +465,7 @@ public class AjpAprProcessor implements ActionHook {
                 } catch (InterruptedIOException e) {
                     error = true;
                 } catch (Throwable t) {
-                    log.error("Error processing request", t);
+                    log.error(sm.getString("ajpprocessor.request.process"), t);
                     // 500 - Internal Server Error
                     response.setStatus(500);
                     error = true;
@@ -616,11 +614,11 @@ public class AjpAprProcessor implements ActionHook {
                 jsseCerts =  new X509Certificate[1];
                 jsseCerts[0] = cert;
             } catch(java.security.cert.CertificateException e) {
-                log.error("Certificate convertion failed" , e );
+                log.error(sm.getString("ajpprocessor.certs.fail"), e);
                 return;
             }
             
-            request.setAttribute("javax.servlet.request.X509Certificate", jsseCerts);
+            request.setAttribute(AprEndpoint.CERTIFICATE_KEY, jsseCerts);
             
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE) {
 
@@ -630,7 +628,7 @@ public class AjpAprProcessor implements ActionHook {
                     long sa = Address.get(Socket.APR_REMOTE, socket);
                     remoteAddr = Address.getip(sa);
                 } catch (Exception e) {
-                    log.warn("Exception getting socket information " ,e);
+                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
                 }
             }
             request.remoteAddr().setString(remoteAddr);
@@ -643,7 +641,7 @@ public class AjpAprProcessor implements ActionHook {
                     long sa = Address.get(Socket.APR_LOCAL, socket);
                     localName = Address.getnameinfo(sa, 0);
                 } catch (Exception e) {
-                    log.warn("Exception getting socket information " ,e);
+                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
                 }
             }
             request.localName().setString(localName);
@@ -656,7 +654,7 @@ public class AjpAprProcessor implements ActionHook {
                     long sa = Address.get(Socket.APR_REMOTE, socket);
                     remoteHost = Address.getnameinfo(sa, 0);
                 } catch (Exception e) {
-                    log.warn("Exception getting socket information " ,e);
+                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
                 }
             }
             request.remoteHost().setString(remoteHost);
@@ -673,7 +671,7 @@ public class AjpAprProcessor implements ActionHook {
                         localPort = addr.port;
                     }
                 } catch (Exception e) {
-                    log.warn("Exception getting socket information " ,e);
+                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
                 }
             }
 
@@ -688,7 +686,7 @@ public class AjpAprProcessor implements ActionHook {
                     Sockaddr addr = Address.getInfo(sa);
                     remotePort = addr.port;
                 } catch (Exception e) {
-                    log.warn("Exception getting socket information " ,e);
+                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
                 }
             }
             request.setRemotePort(remotePort);
@@ -705,7 +703,7 @@ public class AjpAprProcessor implements ActionHook {
                         localPort = addr.port;
                     }
                 } catch (Exception e) {
-                    log.warn("Exception getting socket information " ,e);
+                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
                 }
             }
             request.setLocalPort(localPort);
@@ -794,7 +792,7 @@ public class AjpAprProcessor implements ActionHook {
             if(0xA000 == isc) {
                 requestHeaderMessage.getInt(); // To advance the read position
                 hName = Constants.headerTransArray[hId - 1];
-                vMB = headers.addValue( hName );
+                vMB = headers.addValue(hName);
             } else {
                 // reset hId -- if the header currently being read
                 // happens to be 7 or 8 bytes long, the code below
@@ -838,8 +836,6 @@ public class AjpAprProcessor implements ActionHook {
                 requestHeaderMessage.getBytes(tmpMB);
                 String v = tmpMB.toString();
                 request.setAttribute(n, v);
-                if (log.isTraceEnabled())
-                    log.trace("jk Attribute set " + n + "=" + v);
                 break;
             
             case Constants.SC_A_CONTEXT :
@@ -887,20 +883,20 @@ public class AjpAprProcessor implements ActionHook {
             case Constants.SC_A_SSL_CIPHER :
                 request.scheme().setString("https");
                 requestHeaderMessage.getBytes(tmpMB);
-                request.setAttribute(SSLSupport.CIPHER_SUITE_KEY,
-                                 tmpMB.toString());
+                request.setAttribute(AprEndpoint.CIPHER_SUITE_KEY,
+                                     tmpMB.toString());
                 break;
                 
             case Constants.SC_A_SSL_SESSION :
                 request.scheme().setString("https");
                 requestHeaderMessage.getBytes(tmpMB);
-                request.setAttribute(SSLSupport.SESSION_ID_KEY, 
-                                  tmpMB.toString());
+                request.setAttribute(AprEndpoint.SESSION_ID_KEY, 
+                                     tmpMB.toString());
                 break;
                 
             case Constants.SC_A_SSL_KEY_SIZE :
-                request.setAttribute(SSLSupport.KEY_SIZE_KEY,
-                        new Integer(requestHeaderMessage.getInt()));
+                request.setAttribute(AprEndpoint.KEY_SIZE_KEY,
+                                     new Integer(requestHeaderMessage.getInt()));
                 break;
 
             // FIXME: no usage for secret attribute here
@@ -1222,8 +1218,6 @@ public class AjpAprProcessor implements ActionHook {
             endOfStream = true; // we've read everything there is
         }
         if (endOfStream) {
-            if( log.isDebugEnabled() ) 
-                log.debug("refillReadBuffer: end of stream " );
             return false;
         }
 

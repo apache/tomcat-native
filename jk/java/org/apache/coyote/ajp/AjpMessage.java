@@ -36,13 +36,21 @@ import org.apache.tomcat.util.buf.MessageBytes;
  * @author Costin Manolache
  */
 public class AjpMessage {
+    
     private static org.apache.commons.logging.Log log=
         org.apache.commons.logging.LogFactory.getLog( AjpMessage.class );
 
-    // that's the original buffer size in ajp13 - otherwise we'll get interoperability problems.
-    private byte buf[]=new byte[8*1024]; 
-    // The current read or write position in the buffer
+    
+    /**
+     * Fixed size buffer.
+     */
+    private byte buf[] = new byte[8*1024];
+    
+    /**
+     * The current read or write position in the buffer.
+     */
     private int pos;
+    
     /**
      * This actually means different things depending on whether the
      * packet is read or write.  For read, it's the length of the
@@ -50,7 +58,6 @@ public class AjpMessage {
      * the packet as a whole (counting the header).  Oh, well.
      */
     private int len; 
-
     
     /**
      * Prepare this packet for accumulating a message from the container to
@@ -68,13 +75,13 @@ public class AjpMessage {
      * the header.  
      */
     public void end() {
-        len=pos;
-        int dLen=len-4;
+        len = pos;
+        int dLen = len - 4;
 
-        buf[0] = (byte)0x41;
-        buf[1] = (byte)0x42;
-        buf[2]=  (byte)((dLen>>>8 ) & 0xFF );
-        buf[3] = (byte)(dLen & 0xFF);
+        buf[0] = (byte) 0x41;
+        buf[1] = (byte) 0x42;
+        buf[2] = (byte) ((dLen>>>8) & 0xFF);
+        buf[3] = (byte) (dLen & 0xFF);
     }
 
     public byte[] getBuffer() {
@@ -92,19 +99,19 @@ public class AjpMessage {
      *
      * @param val The integer to write.
      */
-    public void appendInt( int val ) {
-        buf[pos++]   = (byte) ((val >>>  8) & 0xFF);
+    public void appendInt(int val) {
+        buf[pos++] = (byte) ((val >>> 8) & 0xFF);
         buf[pos++] = (byte) (val & 0xFF);
     }
 
-    public void appendByte( int val ) {
-        buf[pos++] = (byte)val;
+    public void appendByte(int val) {
+        buf[pos++] = (byte) val;
     }
 	
-    public void appendLongInt( int val ) {
-        buf[pos++]   = (byte) ((val >>>  24) & 0xFF);
-        buf[pos++] = (byte) ((val >>>  16) & 0xFF);
-        buf[pos++] = (byte) ((val >>>   8) & 0xFF);
+    public void appendLongInt(int val) {
+        buf[pos++] = (byte) ((val >>> 24) & 0xFF);
+        buf[pos++] = (byte) ((val >>> 16) & 0xFF);
+        buf[pos++] = (byte) ((val >>> 8) & 0xFF);
         buf[pos++] = (byte) (val & 0xFF);
     }
 
@@ -116,9 +123,10 @@ public class AjpMessage {
      * code, where it saves a round of copying.  A null string is
      * encoded as a string with length 0.  
      */
-    public void appendBytes(MessageBytes mb) throws IOException {
-        if(mb==null || mb.isNull() ) {
-            appendInt( 0);
+    public void appendBytes(MessageBytes mb)
+        throws IOException {
+        if (mb == null || mb.isNull()) {
+            appendInt(0);
             appendByte(0);
             return;
         }
@@ -134,32 +142,34 @@ public class AjpMessage {
         }
     }
 
-    public void appendByteChunk(ByteChunk bc) throws IOException {
-        if(bc==null) {
+    public void appendByteChunk(ByteChunk bc)
+        throws IOException {
+        if (bc == null) {
             log.error("appendByteChunk() null");
-            appendInt( 0);
+            appendInt(0);
             appendByte(0);
             return;
         }
 
         byte[] bytes = bc.getBytes();
-        int start=bc.getStart();
-        appendInt( bc.getLength() );
+        int start = bc.getStart();
+        appendInt(bc.getLength());
         cpBytes(bytes, start, bc.getLength());
         appendByte(0);
     }
 
-    public void appendCharChunk(CharChunk cc) throws IOException {
-        if(cc==null) {
+    public void appendCharChunk(CharChunk cc)
+        throws IOException {
+        if(cc == null) {
             log.error("appendByteChunk() null");
-            appendInt( 0);
+            appendInt(0);
             appendByte(0);
             return;
         }
 
         int start = cc.getStart();
         int end = cc.getEnd();
-        appendInt( cc.getLength() );
+        appendInt(cc.getLength());
         char[] cbuf = cc.getBuffer();
         for (int i = start; i < end; i++) {
             char c = cbuf[i];
@@ -177,10 +187,11 @@ public class AjpMessage {
         appendByte(0);
     }
 
-    public void appendString(String str) throws IOException {
-        if(str==null) {
+    public void appendString(String str)
+        throws IOException {
+        if(str == null) {
             log.error("appendByteChunk() null");
-            appendInt( 0);
+            appendInt(0);
             appendByte(0);
             return;
         }
@@ -215,26 +226,24 @@ public class AjpMessage {
      * @param off The offset into the array at which to start copying
      * @param numBytes The number of bytes to copy.  
      */
-    public void appendBytes( byte b[], int off, int numBytes ) {
-        appendInt( numBytes );
-        cpBytes( b, off, numBytes );
+    public void appendBytes(byte b[], int off, int numBytes) {
+        appendInt(numBytes);
+        cpBytes(b, off, numBytes);
         appendByte(0);
     }
     
-    private void cpBytes( byte b[], int off, int numBytes ) {
-        if( pos + numBytes >= buf.length ) {
+    private void cpBytes(byte b[], int off, int numBytes) {
+        if (pos + numBytes >= buf.length) {
             log.error("Buffer overflow: buffer.len=" + buf.length + " pos=" +
-                      pos + " data=" + numBytes );
+                      pos + " data=" + numBytes);
             dump("Overflow/coBytes");
-            log.error( "Overflow ", new Throwable());
+            log.error("Overflow ", new Throwable());
             return;
         }
-        System.arraycopy( b, off, buf, pos, numBytes);
+        System.arraycopy(b, off, buf, pos, numBytes);
         pos += numBytes;
         // buf[pos + numBytes] = 0; // Terminating \0
     }
-    
-
     
     // ============ Data Reading Methods ===================
 
@@ -248,14 +257,14 @@ public class AjpMessage {
         int b1 = buf[pos++] & 0xFF;  // No swap, Java order
         int b2 = buf[pos++] & 0xFF;
 
-        return  (b1<<8) + b2;
+        return (b1<<8) + b2;
     }
 
     public int peekInt() {
         int b1 = buf[pos] & 0xFF;  // No swap, Java order
         int b2 = buf[pos+1] & 0xFF;
 
-        return  (b1<<8) + b2;
+        return (b1<<8) + b2;
     }
 
     public byte getByte() {
@@ -270,11 +279,11 @@ public class AjpMessage {
 
     public void getBytes(MessageBytes mb) {
         int length = getInt();
-        if( (length == 0xFFFF) || (length == -1) ) {
+        if ((length == 0xFFFF) || (length == -1)) {
             mb.recycle();
             return;
         }
-        mb.setBytes( buf, pos, length );
+        mb.setBytes(buf, pos, length);
         pos += length;
         pos++; // Skip the terminating \0
     }
@@ -288,17 +297,17 @@ public class AjpMessage {
      */
     public int getBytes(byte dest[]) {
         int length = getInt();
-        if( length > buf.length ) {
+        if (length > buf.length) {
             // XXX Should be if(pos + length > buff.legth)?
-            log.error("getBytes() buffer overflow " + length + " " + buf.length );
+            log.error("getBytes() buffer overflow " + length + " " + buf.length);
         }
 	
-        if( (length == 0xFFFF) || (length == -1) ) {
+        if ((length == 0xFFFF) || (length == -1)) {
             log.info("Null string " + length);
             return 0;
         }
 
-        System.arraycopy( buf, pos,  dest, 0, length );
+        System.arraycopy(buf, pos,  dest, 0, length);
         pos += length;
         pos++; // Skip terminating \0  XXX I believe this is wrong but harmless
         return length;
@@ -328,59 +337,58 @@ public class AjpMessage {
     public int processHeader() {
         pos = 0;
         int mark = getInt();
-        len      = getInt();
+        len = getInt();
 	    
-        if( mark != 0x1234 && mark != 0x4142 ) {
+        if ((mark != 0x1234) && (mark != 0x4142)) {
             // XXX Logging
             log.error("BAD packet signature " + mark);
-            dump( "In: " );
+            dump("In: ");
             return -1;
         }
 
-        if( log.isDebugEnabled() ) 
-            log.debug( "Received " + len + " " + buf[0] );
+        if (log.isDebugEnabled()) 
+            log.debug("Received " + len + " " + buf[0]);
         return len;
     }
     
+    /* -------------------- Utilities -------------------- */
+
     public void dump(String msg) {
-        if( log.isDebugEnabled() ) 
-            log.debug( msg + ": " + buf + " " + pos +"/" + (len + 4));
-        int max=pos;
-        if( len + 4 > pos )
-            max=len+4;
-        if( max >1000 ) max=1000;
-        if( log.isDebugEnabled() ) 
-            for( int j=0; j < max; j+=16 ) 
-                log.debug( hexLine( buf, j, len ));
-	
+        if (log.isDebugEnabled()) 
+            log.debug(msg + ": " + buf + " " + pos +"/" + (len + 4));
+        int max = pos;
+        if (len + 4 > pos)
+            max = len+4;
+        if (max > 1000)
+            max = 1000;
+        if (log.isDebugEnabled()) 
+            for(int j = 0; j < max; j += 16) 
+                log.debug(hexLine(buf, j, len));
     }
 
-    /* -------------------- Utilities -------------------- */
-    // XXX Move to util package
-
-    public static String hexLine( byte buf[], int start, int len ) {
-        StringBuffer sb=new StringBuffer();
-        for( int i=start; i< start+16 ; i++ ) {
-            if( i < len + 4)
-                sb.append( hex( buf[i] ) + " ");
+    private static String hexLine(byte buf[], int start, int len) {
+        StringBuffer sb = new StringBuffer();
+        for (int i = start; i < start + 16 ; i++) {
+            if (i < len + 4)
+                sb.append(hex(buf[i]) + " ");
             else 
-                sb.append( "   " );
+                sb.append("   ");
         }
         sb.append(" | ");
-        for( int i=start; i < start+16 && i < len + 4; i++ ) {
-            if( ! Character.isISOControl( (char)buf[i] ))
-                sb.append( new Character((char)buf[i]) );
+        for (int i = start; i < start + 16 && i < len + 4; i++) {
+            if (!Character.isISOControl((char)buf[i]))
+                sb.append(new Character((char)buf[i]));
             else
-                sb.append( "." );
+                sb.append(".");
         }
         return sb.toString();
     }
 
-    private  static String hex( int x ) {
-        //	    if( x < 0) x=256 + x;
-        String h=Integer.toHexString( x );
-        if( h.length() == 1 ) h = "0" + h;
-        return h.substring( h.length() - 2 );
+    private static String hex(int x) {
+        String h = Integer.toHexString(x);
+        if (h.length() == 1) 
+            h = "0" + h;
+        return h.substring(h.length() - 2);
     }
 
 }
