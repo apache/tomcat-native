@@ -299,13 +299,23 @@ public class ClassLoaderLogManager extends LogManager {
             is = classLoader.getResourceAsStream("logging.properties");
         }
         if ((is == null) && (classLoader == ClassLoader.getSystemClassLoader())) {
-            String configFile = System.getProperty("java.util.logging.config.file",
-                    (new File(new File(System.getProperty("java.home"), "lib"), 
-                            "logging.properties").getAbsolutePath()));
-            try {
-                is = new FileInputStream(replace(configFile));
-            } catch (IOException e) {
-                // Ignore
+            String configFileStr = System.getProperty("java.util.logging.config.file");
+            if (configFileStr != null) {
+                try {
+                    is = new FileInputStream(replace(configFileStr));
+                } catch (IOException e) {
+                    // Ignore
+                }
+            }
+            // Try the default JVM configuration
+            if (is == null) {
+                File defaultFile = new File(new File(System.getProperty("java.home"), "lib"), 
+                    "logging.properties");
+                try {
+                    is = new FileInputStream(defaultFile);
+                } catch (IOException e) {
+                    // Critical problem, do something ...
+                }
             }
         }
         
