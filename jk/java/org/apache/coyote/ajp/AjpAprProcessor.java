@@ -139,12 +139,6 @@ public class AjpAprProcessor implements ActionHook {
 
 
     /**
-     * Char version of the message header.
-     */
-    //protected char[] headerChar = new char[8*1024];
-
-
-    /**
      * Body message.
      */
     protected AjpMessage bodyMessage = new AjpMessage();
@@ -169,51 +163,9 @@ public class AjpAprProcessor implements ActionHook {
 
 
     /**
-     * Is there an expectation ?
-     */
-    protected boolean expectation = false;
-
-
-    /**
      * Socket associated with the current connection.
      */
     protected long socket;
-
-
-    /**
-     * Remote Address associated with the current connection.
-     */
-    protected String remoteAddr = null;
-
-
-    /**
-     * Remote Host associated with the current connection.
-     */
-    protected String remoteHost = null;
-
-
-    /**
-     * Local Host associated with the current connection.
-     */
-    protected String localName = null;
-
-
-    /**
-     * Local port to which the socket is connected
-     */
-    protected int localPort = -1;
-
-
-    /**
-     * Remote port to which the socket is connected
-     */
-    protected int remotePort = -1;
-
-
-    /**
-     * The local Host address.
-     */
-    protected String localAddr = null;
 
 
     /**
@@ -382,13 +334,6 @@ public class AjpAprProcessor implements ActionHook {
         thrA.setCurrentStage(endpoint, "parsing http request");
         rp.setStage(org.apache.coyote.Constants.STAGE_PARSE);
 
-        // Set the remote address
-        remoteAddr = null;
-        remoteHost = null;
-        localAddr = null;
-        remotePort = -1;
-        localPort = -1;
-
         // Setting up the socket
         this.socket = socket;
 
@@ -531,18 +476,6 @@ public class AjpAprProcessor implements ActionHook {
                 error = true;
             }
 
-        } else if (actionCode == ActionCode.ACTION_ACK) {
-
-            // Acknowlege request
-
-            // Send a 100 status back if it makes sense (response not committed
-            // yet, and client specified an expectation for 100-continue)
-
-            if ((response.isCommitted()) || !expectation)
-                return;
-
-            // No expectations in AJP
-
         } else if (actionCode == ActionCode.ACTION_CLIENT_FLUSH) {
 
             if (!response.isCommitted()) {
@@ -575,16 +508,6 @@ public class AjpAprProcessor implements ActionHook {
                 // Set error flag
                 error = true;
             }
-
-        } else if (actionCode == ActionCode.ACTION_RESET) {
-
-            // Reset response
-
-            // Note: This must be called before the response is committed
-
-        } else if (actionCode == ActionCode.ACTION_CUSTOM) {
-
-            // Do nothing
 
         } else if (actionCode == ActionCode.ACTION_START) {
 
@@ -826,13 +749,6 @@ public class AjpAprProcessor implements ActionHook {
                                      new Integer(requestHeaderMessage.getInt()));
                 break;
 
-            // FIXME: no usage for secret attribute here
-            /*
-            case Constants.SC_A_SECRET :
-                requestHeaderMessage.getBytes(tmpMB);
-                break;
-            */
-                
             case Constants.SC_A_STORED_METHOD:
                 requestHeaderMessage.getBytes(request.method()); 
                 break;
