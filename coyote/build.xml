@@ -277,7 +277,7 @@
             manifest="${build.home}/conf/MANIFEST.MF">
       <fileset dir="${build.home}/classes" >
         <exclude name="**/tomcat3/*"/>
-        <!-- exclude name="**/tomcat4/*"/ -->
+        <exclude name="**/tomcat4/*"/>
         <exclude name="**/tomcat5/*"/>
         <include name="org/apache/coyote/**"/>
       </fileset>
