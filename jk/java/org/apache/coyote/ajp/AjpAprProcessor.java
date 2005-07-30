@@ -32,8 +32,6 @@ import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.Request;
 import org.apache.coyote.RequestInfo;
 import org.apache.coyote.Response;
-import org.apache.tomcat.jni.Address;
-import org.apache.tomcat.jni.Sockaddr;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -598,115 +596,44 @@ public class AjpAprProcessor implements ActionHook {
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
 
-            ByteChunk certData = certificates.getByteChunk();
-            ByteArrayInputStream bais = 
-                new ByteArrayInputStream(certData.getBytes(),
-                                         certData.getStart(),
-                                         certData.getLength());
-
-            // Fill the first element.
-            X509Certificate jsseCerts[] = null;
-            try {
-                CertificateFactory cf =
-                    CertificateFactory.getInstance("X.509");
-                X509Certificate cert = (X509Certificate)
+            if (!certificates.isNull()) {
+                ByteChunk certData = certificates.getByteChunk();
+                X509Certificate jsseCerts[] = null;
+                ByteArrayInputStream bais = 
+                    new ByteArrayInputStream(certData.getBytes(),
+                            certData.getStart(),
+                            certData.getLength());
+                // Fill the first element.
+                try {
+                    CertificateFactory cf =
+                        CertificateFactory.getInstance("X.509");
+                    X509Certificate cert = (X509Certificate)
                     cf.generateCertificate(bais);
-                jsseCerts =  new X509Certificate[1];
-                jsseCerts[0] = cert;
-            } catch(java.security.cert.CertificateException e) {
-                log.error(sm.getString("ajpprocessor.certs.fail"), e);
-                return;
-            }
-            
-            request.setAttribute(AprEndpoint.CERTIFICATE_KEY, jsseCerts);
-            
-        } else if (actionCode == ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE) {
-
-            // Get remote host address
-            if (remoteAddr == null) {
-                try {
-                    long sa = Address.get(Socket.APR_REMOTE, socket);
-                    remoteAddr = Address.getip(sa);
-                } catch (Exception e) {
-                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
+                    jsseCerts = new X509Certificate[1];
+                    jsseCerts[0] = cert;
+                    request.setAttribute(AprEndpoint.CERTIFICATE_KEY, jsseCerts);
+                } catch (java.security.cert.CertificateException e) {
+                    log.error(sm.getString("ajpprocessor.certs.fail"), e);
+                    return;
                 }
             }
-            request.remoteAddr().setString(remoteAddr);
-
-        } else if (actionCode == ActionCode.ACTION_REQ_LOCAL_NAME_ATTRIBUTE) {
-
-            // Get local host name
-            if (localName == null) {
-                try {
-                    long sa = Address.get(Socket.APR_LOCAL, socket);
-                    localName = Address.getnameinfo(sa, 0);
-                } catch (Exception e) {
-                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
-                }
-            }
-            request.localName().setString(localName);
-
+            
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
 
-            // Get remote host name
-            if (remoteHost == null) {
+            // Get remote host name using a DNS resolution
+            if (request.remoteHost().isNull()) {
                 try {
-                    long sa = Address.get(Socket.APR_REMOTE, socket);
-                    remoteHost = Address.getnameinfo(sa, 0);
-                } catch (Exception e) {
-                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
+                    request.remoteHost().setString(InetAddress.getByName
+                            (request.remoteAddr().toString()).getHostName());
+                } catch (IOException iex) {
+                    // Ignore
                 }
             }
-            request.remoteHost().setString(remoteHost);
 
         } else if (actionCode == ActionCode.ACTION_REQ_LOCAL_ADDR_ATTRIBUTE) {
 
-            // Get local host address
-            if (localAddr == null) {
-                try {
-                    long sa = Address.get(Socket.APR_LOCAL, socket);
-                    Sockaddr addr = new Sockaddr();
-                    if (Address.fill(addr, sa)) {
-                        localAddr = addr.hostname;
-                        localPort = addr.port;
-                    }
-                } catch (Exception e) {
-                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
-                }
-            }
-
-            request.localAddr().setString(localAddr);
-
-        } else if (actionCode == ActionCode.ACTION_REQ_REMOTEPORT_ATTRIBUTE) {
-
-            // Get remote port
-            if (remotePort == -1) {
-                try {
-                    long sa = Address.get(Socket.APR_REMOTE, socket);
-                    Sockaddr addr = Address.getInfo(sa);
-                    remotePort = addr.port;
-                } catch (Exception e) {
-                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
-                }
-            }
-            request.setRemotePort(remotePort);
-
-        } else if (actionCode == ActionCode.ACTION_REQ_LOCALPORT_ATTRIBUTE) {
-
-            // Get local port
-            if (localPort == -1) {
-                try {
-                    long sa = Address.get(Socket.APR_LOCAL, socket);
-                    Sockaddr addr = new Sockaddr();
-                    if (Address.fill(addr, sa)) {
-                        localAddr = addr.hostname;
-                        localPort = addr.port;
-                    }
-                } catch (Exception e) {
-                    log.warn(sm.getString("ajpprocessor.socket.info"), e);
-                }
-            }
-            request.setLocalPort(localPort);
+            // Copy from local name for now, which should simply be an address
+            request.localAddr().setString(request.localName().toString());
 
         } else if (actionCode == ActionCode.ACTION_REQ_SET_BODY_REPLAY) {
             
