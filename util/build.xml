@@ -65,7 +65,6 @@
         <echo message="-- skip.digester = ${skip.digester}" />
         <echo message="-- JDK14 = ${jdk1.4.present}"/>
         <echo message="-- JDK15 = ${jdk1.5.present}" />
-        <echo message="-- JDK15 = ${jdk1.5.present}" />
 
         <javac srcdir="java"
 	       destdir="${tomcat-util.build}/classes"
