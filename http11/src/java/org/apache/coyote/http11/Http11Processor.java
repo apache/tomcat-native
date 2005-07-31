@@ -35,7 +35,6 @@ import org.apache.coyote.Processor;
 import org.apache.coyote.Request;
 import org.apache.coyote.RequestInfo;
 import org.apache.coyote.Response;
-import org.apache.coyote.http11.Constants;
 import org.apache.coyote.http11.filters.ChunkedInputFilter;
 import org.apache.coyote.http11.filters.ChunkedOutputFilter;
 import org.apache.coyote.http11.filters.GzipOutputFilter;
