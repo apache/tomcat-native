@@ -103,20 +103,26 @@ public class AjpMessage {
     }
 
 
+    /**
+     * Return the underlying byte buffer.
+     */
     public byte[] getBuffer() {
         return buf;
     }
 
 
+    /**
+     * Return the current message length. For read, it's the length of the
+     * payload (excluding the header).  For write, it's the length of
+     * the packet as a whole (counting the header).
+     */
     public int getLen() {
         return len;
     }
     
 
     /**
-     * Add an int.
-     *
-     * @param val The integer to write.
+     * Add a short integer (2 bytes) to the message.
      */
     public void appendInt(int val) {
         buf[pos++] = (byte) ((val >>> 8) & 0xFF);
@@ -124,11 +130,17 @@ public class AjpMessage {
     }
 
 
+    /**
+     * Append a byte (1 byte) to the message.
+     */
     public void appendByte(int val) {
         buf[pos++] = (byte) val;
     }
 	
     
+    /**
+     * Append an int (4 bytes) to the message.
+     */
     public void appendLongInt(int val) {
         buf[pos++] = (byte) ((val >>> 24) & 0xFF);
         buf[pos++] = (byte) ((val >>> 16) & 0xFF);
@@ -138,21 +150,17 @@ public class AjpMessage {
 
     
     /**
-     * Write a String out at the current write position.  Strings are
-     * encoded with the length in two bytes first, then the string, and
-     * then a terminating \0 (which is <B>not</B> included in the
-     * encoded length).  The terminator is for the convenience of the C
-     * code, where it saves a round of copying.  A null string is
-     * encoded as a string with length 0.  
+     * Write a MessageBytes out at the current write position.
+     * A null MessageBytes is encoded as a string with length 0.  
      */
-    public void appendBytes(MessageBytes mb)
-        throws IOException {
-        if (mb == null || mb.isNull()) {
+    public void appendBytes(MessageBytes mb) {
+        if (mb == null) {
+            log.error(sm.getString("ajpmessage.null"), 
+                    new NullPointerException());
             appendInt(0);
             appendByte(0);
             return;
         }
-
         if (mb.getType() == MessageBytes.T_BYTES) {
             ByteChunk bc = mb.getByteChunk();
             appendByteChunk(bc);
@@ -165,8 +173,11 @@ public class AjpMessage {
     }
 
     
-    public void appendByteChunk(ByteChunk bc)
-        throws IOException {
+    /**
+     * Write a ByteChunk out at the current write position.
+     * A null ByteChunk is encoded as a string with length 0.  
+     */
+    public void appendByteChunk(ByteChunk bc) {
         if (bc == null) {
             log.error(sm.getString("ajpmessage.null"), 
                     new NullPointerException());
@@ -178,8 +189,11 @@ public class AjpMessage {
     }
 
     
-    public void appendCharChunk(CharChunk cc)
-        throws IOException {
+    /**
+     * Write a CharChunk out at the current write position.
+     * A null CharChunk is encoded as a string with length 0.  
+     */
+    public void appendCharChunk(CharChunk cc) {
         if (cc == null) {
             log.error(sm.getString("ajpmessage.null"), 
                     new NullPointerException());
@@ -187,10 +201,9 @@ public class AjpMessage {
             appendByte(0);
             return;
         }
-
         int start = cc.getStart();
         int end = cc.getEnd();
-        appendInt(cc.getLength());
+        appendInt(end - start);
         char[] cbuf = cc.getBuffer();
         for (int i = start; i < end; i++) {
             char c = cbuf[i];
@@ -209,8 +222,15 @@ public class AjpMessage {
     }
 
     
-    public void appendString(String str)
-        throws IOException {
+    /**
+     * Write a String out at the current write position.  Strings are
+     * encoded with the length in two bytes first, then the string, and
+     * then a terminating \0 (which is <B>not</B> included in the
+     * encoded length).  The terminator is for the convenience of the C
+     * code, where it saves a round of copying.  A null string is
+     * encoded as a string with length 0.  
+     */
+    public void appendString(String str) {
         if (str == null) {
             log.error(sm.getString("ajpmessage.null"), 
                     new NullPointerException());
@@ -218,8 +238,6 @@ public class AjpMessage {
             appendByte(0);
             return;
         }
-
-        // From the Tomcat 3.3 HTTP/1.0 connector
         int len = str.length();
         appendInt(len);
         for (int i = 0; i < len; i++) {
@@ -273,17 +291,15 @@ public class AjpMessage {
      * little-endian order within each byte.  
      */
     public int getInt() {
-        int b1 = buf[pos++] & 0xFF; // No swap, Java order
+        int b1 = buf[pos++] & 0xFF;
         int b2 = buf[pos++] & 0xFF;
-
         return (b1<<8) + b2;
     }
 
 
     public int peekInt() {
-        int b1 = buf[pos] & 0xFF; // No swap, Java order
+        int b1 = buf[pos] & 0xFF;
         int b2 = buf[pos+1] & 0xFF;
-
         return (b1<<8) + b2;
     }
 
@@ -364,7 +380,7 @@ public class AjpMessage {
         pos = 0;
         int mark = getInt();
         len = getInt();
-	    
+        // Verify message signature
         if ((mark != 0x1234) && (mark != 0x4142)) {
             log.error(sm.getString("ajpmessage.invalid", "" + mark));
             if (log.isDebugEnabled()) {
@@ -372,7 +388,6 @@ public class AjpMessage {
             }
             return -1;
         }
-
         if (log.isDebugEnabled())  {
             log.debug("Received " + len + " " + buf[0]);
         }
@@ -380,6 +395,9 @@ public class AjpMessage {
     }
     
 
+    /**
+     * Dump the contents of the message, prefixed with the given String.
+     */
     public void dump(String msg) {
         if (log.isDebugEnabled()) {
             log.debug(msg + ": " + buf + " " + pos +"/" + (len + 4));
