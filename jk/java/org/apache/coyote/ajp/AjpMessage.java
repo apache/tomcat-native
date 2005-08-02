@@ -16,8 +16,6 @@
 
 package org.apache.coyote.ajp;
 
-import java.io.IOException;
-
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.CharChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
