@@ -23,8 +23,6 @@ import java.net.InetAddress;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
@@ -108,6 +106,9 @@ public class Http11AprProcessor implements ActionHook {
 
         // Cause loading of HexUtils
         int foo = HexUtils.DEC[0];
+
+        // Cause loading of FastHttpDateFormat
+        FastHttpDateFormat.getCurrentDate();
 
     }
 
@@ -1632,19 +1633,7 @@ public class Http11AprProcessor implements ActionHook {
         }
 
         // Add date header
-        String date = null;
-        if (System.getSecurityManager() != null){
-            date = (String)AccessController.doPrivileged(
-                    new PrivilegedAction() {
-                        public Object run(){
-                            return FastHttpDateFormat.getCurrentDate();
-                        }
-                    }
-            );
-        } else {
-            date = FastHttpDateFormat.getCurrentDate();
-        }
-        headers.setValue("Date").setString(date);
+        headers.setValue("Date").setString(FastHttpDateFormat.getCurrentDate());
 
         // FIXME: Add transfer encoding header
 

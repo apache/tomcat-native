@@ -92,13 +92,16 @@ public class AjpAprProcessor implements ActionHook {
             readTimeout = 100 * 1000;
         }
 
-        // Cause loading of HexUtils
-        int foo = HexUtils.DEC[0];
-
         // Allocate input and output buffers
         inputBuffer = ByteBuffer.allocateDirect(16 * 1024);
         inputBuffer.limit(0);
         outputBuffer = ByteBuffer.allocateDirect(16 * 1024);
+
+        // Cause loading of HexUtils
+        int foo = HexUtils.DEC[0];
+
+        // Cause loading of HttpMessages
+        HttpMessages.getMessage(200);
 
     }
 
@@ -886,7 +889,7 @@ public class AjpAprProcessor implements ActionHook {
         responseHeaderMessage.appendInt(response.getStatus());
         String message = response.getMessage();
         if (message == null){
-            message= HttpMessages.getMessage(response.getStatus());
+            message = HttpMessages.getMessage(response.getStatus());
         } else {
             message = message.replace('\n', ' ').replace('\r', ' ');
         }

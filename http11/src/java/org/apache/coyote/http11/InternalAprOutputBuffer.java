@@ -18,8 +18,6 @@ package org.apache.coyote.http11;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -77,6 +75,9 @@ public class InternalAprOutputBuffer
 
         committed = false;
         finished = false;
+
+        // Cause loading of HttpMessages
+        HttpMessages.getMessage(200);
 
     }
 
@@ -428,42 +429,17 @@ public class InternalAprOutputBuffer
         // Write message
         String message = response.getMessage();
         if (message == null) {
-            write(getMessage(status));
+            write(HttpMessages.getMessage(status));
         } else {
             write(message);
         }
 
         // End the response status line
-        if (System.getSecurityManager() != null){
-           AccessController.doPrivileged(
-                new PrivilegedAction(){
-                    public Object run(){
-                        buf[pos++] = Constants.CR;
-                        buf[pos++] = Constants.LF;
-                        return null;
-                    }
-                }
-           );
-        } else {
-            buf[pos++] = Constants.CR;
-            buf[pos++] = Constants.LF;
-        }
+        buf[pos++] = Constants.CR;
+        buf[pos++] = Constants.LF;
 
     }
 
-    private String getMessage(final int message){
-        if (System.getSecurityManager() != null){
-           return (String)AccessController.doPrivileged(
-                new PrivilegedAction(){
-                    public Object run(){
-                        return HttpMessages.getMessage(message); 
-                    }
-                }
-           );
-        } else {
-            return HttpMessages.getMessage(message);
-        }
-    }
 
     /**
      * Send a header.
