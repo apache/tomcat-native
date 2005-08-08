@@ -76,7 +76,11 @@
 #define ADD_SSL_INFO
 
 module MODULE_VAR_EXPORT jk_module;
+#ifdef WIN32
+extern __declspec(dllimport) module dir_module;
+#else
 extern module dir_module;
+#endif
 
 /*
  * Configuration object for the mod_jk module.
