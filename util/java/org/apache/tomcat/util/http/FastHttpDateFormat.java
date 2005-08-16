@@ -139,7 +139,9 @@ public final class FastHttpDateFormat {
             }
         } else {
             synchronized (formatCache) {
-                newDate = format.format(dateValue);
+                synchronized (format) {
+                    newDate = format.format(dateValue);
+                }
                 updateCache(formatCache, longValue, newDate);
             }
         }
