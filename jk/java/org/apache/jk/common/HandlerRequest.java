@@ -519,8 +519,8 @@ public class HandlerRequest extends JkHandler
             case AjpConstants.SC_A_SECRET  :
                 msg.getBytes(tmpMB);
                 String secret=tmpMB.toString();
-                if(log.isInfoEnabled())
-                    log.info("Secret: " + secret );
+                if(log.isTraceEnabled())
+                    log.trace("Secret: " + secret );
                 // endpoint note
                 ep.setNote( secretNote, secret );
                 break;
