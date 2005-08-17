@@ -620,7 +620,7 @@ public class StringCache {
     // -------------------------------------------------- ByteEntry Inner Class
 
 
-    protected static class ByteEntry {
+    public static class ByteEntry {
 
         public byte[] name = null;
         public String enc = null;
@@ -645,7 +645,7 @@ public class StringCache {
     // -------------------------------------------------- CharEntry Inner Class
 
 
-    protected static class CharEntry {
+    public static class CharEntry {
 
         public char[] name = null;
         public String value = null;
