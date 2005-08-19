@@ -1583,9 +1583,8 @@ public class Http11AprProcessor implements ActionHook {
         
         // Check for compression
         boolean useCompression = false;
-        if (entityBody && (compressionLevel > 0)) {
+        if (entityBody && (compressionLevel > 0) && (sendfileData == null)) {
             useCompression = isCompressable();
-
             // Change content-length to -1 to force chunking
             if (useCompression) {
                 response.setContentLength(-1);
