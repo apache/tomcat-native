@@ -100,6 +100,12 @@ public class AjpAprProtocol
 
 
     /**
+     * Required secret.
+     */
+    protected String requiredSecret = null;
+
+
+    /**
      * Adapter which will process the requests recieved by this endpoint.
      */
     private Adapter adapter;
@@ -394,6 +400,11 @@ public class AjpAprProtocol
     }
 
     
+    public void setRequiredSecret(String requiredSecret) {
+        this.requiredSecret = requiredSecret;
+    }
+    
+    
     // --------------------------------------  AjpConnectionHandler Inner Class
 
 
@@ -415,6 +426,7 @@ public class AjpAprProtocol
                     processor = new AjpAprProcessor(proto.ep);
                     processor.setAdapter(proto.adapter);
                     processor.setTomcatAuthentication(proto.tomcatAuthentication);
+                    processor.setRequiredSecret(proto.requiredSecret);
                     localProcessor.set(processor);
                     if (proto.getDomain() != null) {
                         synchronized (this) {

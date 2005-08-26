@@ -32,6 +32,7 @@ import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.Request;
 import org.apache.coyote.RequestInfo;
 import org.apache.coyote.Response;
+import org.apache.jk.common.AjpConstants;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -309,6 +310,13 @@ public class AjpAprProcessor implements ActionHook {
     protected boolean tomcatAuthentication = true;
     public boolean getTomcatAuthentication() { return tomcatAuthentication; }
     public void setTomcatAuthentication(boolean tomcatAuthentication) { this.tomcatAuthentication = tomcatAuthentication; }
+    
+    
+    /**
+     * Required secret.
+     */
+    protected String requiredSecret = null;
+    public void setRequiredSecret(String requiredSecret) { this.requiredSecret = requiredSecret; }
     
     
     // --------------------------------------------------------- Public Methods
@@ -677,6 +685,7 @@ public class AjpAprProcessor implements ActionHook {
         }
 
         // Decode extra attributes
+        boolean secret = false;
         byte attributeCode;
         while ((attributeCode = requestHeaderMessage.getByte()) 
                 != Constants.SC_A_ARE_DONE) {
@@ -756,12 +765,29 @@ public class AjpAprProcessor implements ActionHook {
                 requestHeaderMessage.getBytes(request.method()); 
                 break;
                 
+            case AjpConstants.SC_A_SECRET:
+                requestHeaderMessage.getBytes(tmpMB);
+                if (requiredSecret != null) {
+                    secret = true;
+                    if (!tmpMB.equals(requiredSecret)) {
+                        response.setStatus(403);
+                        error = true;
+                    }
+                }
+                break;
+                
             default:
                 // Ignore unknown attribute for backward compatibility
                 break;
             
             }
             
+        }
+
+        // Check if secret was submitted if required
+        if ((requiredSecret != null) && !secret) {
+            response.setStatus(403);
+            error = true;
         }
 
         // Check for a full URI (including protocol://host:port/)
