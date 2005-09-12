@@ -40,7 +40,7 @@
 #include "jk_shm.h"
 
 #define VERSION_STRING "Jakarta/ISAPI/" JK_VERSTRING
-
+#define SHM_DEF_NAME   "JKISAPISHMEM"
 #define DEFAULT_WORKER_NAME ("ajp13")
 /*
  * We use special headers to pass values from the filter to the
@@ -1117,7 +1117,7 @@ static int init_jk(char *serverName)
      /* Simulate shared memory
       * For now use fixed size.
       */
-     jk_shm_open(NULL, JK_SHM_DEF_SIZE, logger);
+     jk_shm_open(SHM_DEF_NAME, JK_SHM_DEF_SIZE, logger);
 
      /* 10 is minimum supported on WINXP */
      jk_set_worker_def_cache_size(10);
