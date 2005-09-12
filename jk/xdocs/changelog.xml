@@ -31,6 +31,10 @@
       <fix>
       <bug>36525</bug>: Solaris core dump. (murk)
       </fix>
+      <fix>
+      <bug>35809</bug>: JkMountCopy don't work for Apache 2.0 Patch provided by
+       Christophe Dubach. (mturk)
+      </fix>
     </changelog>
   </subsection>
 </section>
