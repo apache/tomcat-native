@@ -2102,7 +2102,7 @@ static void copy_jk_map(apr_pool_t * p, server_rec * s, jk_map_t *src,
     int i;
     for (i = 0; i < sz; i++) {
         const char *name = jk_map_name_at(src, i);
-        if (jk_map_get(src, name, NULL) == NULL) {
+        if (jk_map_get(dst, name, NULL) == NULL) {
             if (!jk_map_put(dst, name,
                             apr_pstrdup(p, jk_map_get_string(src, name, NULL)),
                             NULL)) {
