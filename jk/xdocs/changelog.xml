@@ -35,6 +35,7 @@
       <bug>35809</bug>: JkMountCopy don't work for Apache 2.0 Patch provided by
        Christophe Dubach. (mturk)
       </fix>
+      <fix>
       <bug>35298</bug>: Multiple JK/ISAPI redirectors on a single IIS site are not supported
        Patch provided by Tim Whittington. (mturk)
       </fix>
