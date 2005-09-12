@@ -133,6 +133,7 @@ static int is_mapread = JK_FALSE;
 static int iis5 = -1;
 
 static jk_uri_worker_map_t *uw_map = NULL;
+static jk_map_t *wp_map = NULL; /* worker_properties */
 static jk_logger_t *logger = NULL;
 static char *SERVER_NAME = "SERVER_NAME";
 static char *SERVER_SOFTWARE = "SERVER_SOFTWARE";
@@ -1070,6 +1071,10 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
             uri_worker_map_free(&uw_map, logger);
             is_mapread = JK_FALSE;
         }
+        memset(&worker_env, 0, sizeof(worker_env));
+        if (wp_map) {
+            jk_map_free(&wp_map);
+        }
         wc_close(logger);
         if (logger) {
             jk_close_file_logger(&logger);
@@ -1125,7 +1130,6 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
 static int init_jk(char *serverName)
 {
     int rc = JK_FALSE;
-    jk_map_t *map;
 
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
@@ -1164,14 +1168,14 @@ static int init_jk(char *serverName)
     }
     if (rc) {
         rc = JK_FALSE;
-        if (jk_map_alloc(&map)) {
-            if (jk_map_read_properties(map, worker_file, NULL)) {
+        if (jk_map_alloc(&wp_map)) {
+            if (jk_map_read_properties(wp_map, worker_file, NULL)) {
                 /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
 
                 worker_env.uri_to_worker = uw_map;
                 worker_env.server_name = serverName;
 
-                if (wc_open(map, &worker_env, logger)) {
+                if (wc_open(wp_map, &worker_env, logger)) {
                     rc = JK_TRUE;
                 }
             }
@@ -1179,7 +1183,6 @@ static int init_jk(char *serverName)
                 jk_log(logger, JK_LOG_EMERG,
                        "Unable to read worker file %s.", worker_file);
             }
-            jk_map_free(&map);
         }
     }
 
