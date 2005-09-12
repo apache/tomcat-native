@@ -75,6 +75,50 @@ A string value with is the full path to uriworkermap.properties file
 
 </attributes>
 </section> 
- 
+<section name="Using a properties file for configuration">
+<p>
+The ISAPI redirector can read it's configuration from a properties file instead of the registry. 
+This has the advantage that you can use multiple ISAPI redirectors with independant configurations on the same server.
+The redirector will check for the properties file during initialisation, and use it in preference to the registry if present.
+</p>
+<p>
+Create a properties file in the same directory as the ISAPI redirector called <b>isapi_redirect.properties</b> i.e. with the same name as the ISAPI redirector DLL but with a <em>.properties</em> extension. A sample isapi_redirect.properties can be found under the conf directory.
+</p>
+<p>
+The property names and values in the properties file are the same as for the registry settings described above. For example:
+</p>
+<p>
+<source>
+# Configuration file for the Jakarta ISAPI Redirector
+
+# The path to the ISAPI Redirector Extension, relative to the website
+# This must be in a virtual directory with execute privileges
+extension_uri=/jakarta/isapi_redirect.dll
+
+# Full path to the log file for the ISAPI Redirector
+log_file=c:\jakarta-tomcat\logs\isapi_redirect.log
+
+# Log level (debug, info, warn, error or trace)
+log_level=info
+
+# Full path to the workers.properties file
+worker_file=c:\jakarta-tomcat\conf\workers.properties
+
+# Full path to the uriworkermap.properties file
+worker_mount_file=c:\jakarta-tomcat\conf\uriworkermap.properties
+</source>
+</p>
+<p>
+    Notes: 
+    <ul>
+        <li>
+            Back-slashes - '\' - are not escape characters.
+        </li>
+        <li>
+            Comment lines begin with '#'.
+        </li>
+    </ul>
+</p>
+</section>
 </body>
 </document>
