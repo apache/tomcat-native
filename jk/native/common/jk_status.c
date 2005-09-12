@@ -166,7 +166,7 @@ static int jk_printf(jk_ws_service_t *s, const char *fmt, ...)
 }
 
 /* Actually APR's apr_strfsize */
-static char *status_strfsize(jk_u64_t size, char *buf)
+static char *status_strfsize(size_t size, char *buf)
 {
     const char ord[] = "KMGTPE";
     const char *o = ord;
@@ -376,7 +376,7 @@ static void dump_maps(jk_ws_service_t *s, status_worker_t *sw,
         jk_printf(s, "    <jk:map type=\"%s\" uri=\"%s\" context=\"%s\" />\n",
               status_val_match(uwr->match_type),
               uwr->uri,
-              uwr->context) ;        
+              uwr->context) ;
     }
 }
 
@@ -582,8 +582,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             "<tr><th>V</th><td>Load Balancer Value</td></tr>\n"
             "<tr><th>Acc</th><td>Number of requests</td></tr>\n"
             "<tr><th>Err</th><td>Number of failed requests</td></tr>\n"
-            "<tr><th>Wr</th><td>Number of bytes transferred</td></tr>\n"
-            "<tr><th>Rd</th><td>Number of bytes read</td></tr>\n"
+            "<tr><th>Wr</th><td>Number of bytes transferred/min</td></tr>\n"
+            "<tr><th>Rd</th><td>Number of bytes read/min</td></tr>\n"
             "<tr><th>Busy</th><td>Current number of busy connections</td></tr>\n"
             "<tr><th>Max</th><td>Maximum number of busy connections</td></tr>\n"
             "<tr><th>RR</th><td>Route redirect</td></tr>\n"
@@ -626,10 +626,10 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
             /* Skip non lb workers */
             continue;
         }
-        jk_printf(s, "  <jk:balancer id=\"%d\" name=\"%s\" type=\"%s\" sticky=\"%s\" stickyforce=\"%s\" retries=\"%d\" recover=\"%d\" >\n", 
+        jk_printf(s, "  <jk:balancer id=\"%d\" name=\"%s\" type=\"%s\" sticky=\"%s\" stickyforce=\"%s\" retries=\"%d\" recover=\"%d\" >\n",
              i,
              lb->s->name,
-             status_worker_type(w->type), 
+             status_worker_type(w->type),
              status_val_bool(lb->s->sticky_session),
              status_val_bool(lb->s->sticky_session_force),
              lb->s->retries,
@@ -638,7 +638,7 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
             worker_record_t *wr = &(lb->lb_workers[j]);
             ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
             /* TODO: descriptive status */
-            jk_printf(s, "      <jk:member id=\"%d\" name=\"%s\" type=\"%s\" host=\"%s\" port=\"%d\" address=\"%s\" status=\"%s\"", 
+            jk_printf(s, "      <jk:member id=\"%d\" name=\"%s\" type=\"%s\" host=\"%s\" port=\"%d\" address=\"%s\" status=\"%s\"",
                 j,
                 wr->s->name,
                 status_worker_type(wr->w->type),
@@ -650,7 +650,7 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
                                   wr->s->in_error_state,
                                   wr->s->in_recovering,
                                   wr->s->is_busy) );
-                                      
+
             jk_printf(s, " lbfactor=\"%d\"", wr->s->lb_factor);
             jk_printf(s, " lbvalue=\"%d\"", wr->s->lb_value);
             jk_printf(s, " elected=\"%u\"", wr->s->elected);

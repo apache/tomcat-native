@@ -50,6 +50,9 @@ extern "C"
 #define JK_SHM_DEF_SIZE     (JK_SHM_MAX_WORKERS * 1024)
 #define JK_SHM_ALIGN(x)     JK_ALIGN(x, 1024)
 
+/* Use 1 minute for measuring read/write data */
+#define JK_SERVICE_TRANSFER_INTERVAL    60
+
 /** jk shm worker record structure */
 struct jk_shm_worker
 {
@@ -80,10 +83,14 @@ struct jk_shm_worker
     int     retries;
     /* Statistical data */
     volatile time_t  error_time;
+    /* Service transfer rate time */
+    volatile time_t  service_time;
     /* Number of bytes read from remote */
-    volatile jk_u64_t readed;
+    volatile size_t readed;
+    volatile size_t rd;
     /* Number of bytes transferred to remote */
-    volatile jk_u64_t transferred;
+    volatile size_t transferred;
+    volatile size_t wr;
     /* Number of times the worker was elected */
     volatile size_t  elected;
     /* Number of non 200 responses */

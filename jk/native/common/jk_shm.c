@@ -59,6 +59,9 @@ static const char shm_signature[] = { JK_SHM_MAGIC };
 static jk_shm_t jk_shmem = { 0, NULL, -1, -1, 0, NULL};
 static time_t jk_workers_modified_time = 0;
 static time_t jk_workers_access_time = 0;
+#if defined (WIN32)
+static HANDLE jk_shm_map = NULL;
+#endif
 
 #if defined (WIN32) || defined(NETWARE)
 
@@ -76,8 +79,37 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
 
     jk_shmem.size =  JK_SHM_ALIGN(sizeof(jk_shm_header_t) + sz);
 
+#if defined (WIN32)
+    if (fname) {
+        jk_shm_map = CreateFileMapping(INVALID_HANDLE_VALUE,
+                                       NULL,
+                                       PAGE_READWRITE,
+                                       0,
+                                       sizeof(jk_shm_header_t) + sz,
+                                       fname);
+        if (jk_shm_map == NULL || jk_shm_map == INVALID_HANDLE_VALUE &&
+            GetLastError() == ERROR_ALREADY_EXISTS)
+            jk_shm_map = OpenFileMapping(PAGE_READWRITE, FALSE, fname);
+        if (jk_shm_map == NULL || jk_shm_map == INVALID_HANDLE_VALUE) {
+            JK_TRACE_EXIT(l);
+            return -1;
+        }
+        jk_shmem.hdr = (jk_shm_header_t *)MapViewOfFile(jk_shm_map,
+                                                        FILE_MAP_ALL_ACCESS,
+                                                        0,
+                                                        0,
+                                                        0);
+    }
+    else
+#endif
     jk_shmem.hdr = (jk_shm_header_t *)calloc(1, jk_shmem.size);
     if (!jk_shmem.hdr) {
+#if defined (WIN32)
+        if (jk_shm_map) {
+            CloseHandle(jk_shm_map);
+            jk_shm_map = NULL;
+        }
+#endif
         JK_TRACE_EXIT(l);
         return -1;
     }
@@ -120,6 +152,14 @@ void jk_shm_close()
 {
     if (jk_shmem.hdr) {
         int rc;
+#if defined (WIN32)
+        if (jk_shm_map) {
+            UnmapViewOfFile(jk_shmem.hdr);
+            CloseHandle(jk_shm_map);
+            jk_shm_map = NULL;
+        }
+        else
+#endif
         free(jk_shmem.hdr);
         JK_DELETE_CS(&(jk_shmem.cs), rc);
     }

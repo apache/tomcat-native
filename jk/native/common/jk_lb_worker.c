@@ -225,12 +225,27 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
 {
     unsigned int i;
     int total_factor = 0;
-    jk_u64_t mytraffic = 0;
-    jk_u64_t curmin = 0;
+    size_t mytraffic = 0;
+    size_t curmin = 0;
 
     worker_record_t *candidate = NULL;
     if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
         jk_shm_lock();
+
+    if (p->lbmethod == JK_LB_BYTRAFFIC) {
+        double diff;
+        time_t now = time(NULL);
+        /* Update transfer rate for each worker */
+        for (i = 0; i < p->num_of_workers; i++) {
+            diff = difftime(now, p->lb_workers[i].s->service_time);
+            if (diff > JK_SERVICE_TRANSFER_INTERVAL) {
+                p->lb_workers[i].s->service_time = now;
+                p->lb_workers[i].s->readed /= JK_SERVICE_TRANSFER_INTERVAL;
+                p->lb_workers[i].s->transferred /= JK_SERVICE_TRANSFER_INTERVAL;
+            }
+        }
+    }
+
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* Skip all workers that are not member of domain */
@@ -248,14 +263,14 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
                     candidate = &p->lb_workers[i];
             }
             else {
-                mytraffic = (p->lb_workers[i].s->transferred/p->lb_workers[i].s->lb_factor) +
-                            (p->lb_workers[i].s->readed/p->lb_workers[i].s->lb_factor);
+                mytraffic = (p->lb_workers[i].s->transferred +
+                             p->lb_workers[i].s->readed ) / p->lb_workers[i].s->lb_factor;
                 if (!candidate || mytraffic < curmin) {
                     candidate = &p->lb_workers[i];
                     curmin = mytraffic;
                 }
             }
-        }        
+        }
     }
 
     if (candidate) {
@@ -313,12 +328,22 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
                                              jk_logger_t *l)
 {
     unsigned int i;
-    jk_u64_t mytraffic = 0;
-    jk_u64_t curmin = 0;
+    size_t mytraffic = 0;
+    size_t curmin = 0;
     worker_record_t *candidate = NULL;
+    double diff;
+    time_t now = time(NULL);
 
     if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
         jk_shm_lock();
+    for (i = 0; i < p->num_of_workers; i++) {
+        diff = difftime(now, p->lb_workers[i].s->service_time);
+        if (diff > JK_SERVICE_TRANSFER_INTERVAL) {
+            p->lb_workers[i].s->service_time = now;
+            p->lb_workers[i].s->readed /= JK_SERVICE_TRANSFER_INTERVAL;
+            p->lb_workers[i].s->transferred /= JK_SERVICE_TRANSFER_INTERVAL;
+        }
+    }
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* If the worker is in error state run
@@ -587,8 +612,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_log(l, JK_LOG_DEBUG,
                            "service worker=%s jvm_route=%s",
                            rec->s->name, s->jvm_route);
-                rec->s->elected++;
                 if (rc && end) {
+                    rec->s->elected++;
                     /* Reset endpoint read and write sizes for
                      * this request.
                      */
@@ -602,8 +627,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         rec->s->max_busy = rec->s->busy;
                     service_stat = end->service(end, s, l, &is_service_error);
                     /* Update partial reads and writes if any */
-                    rec->s->readed += end->rd;
-                    rec->s->transferred += end->wr;
+                    if (p->worker->lbmethod == JK_LB_BYTRAFFIC) {
+                        rec->s->readed += end->rd;
+                        rec->s->transferred += end->wr;
+                    }
                     end->done(&end, l);
                     /* When returning the endpoint mark the worker as not busy.
                      * We have at least one endpoint free
@@ -815,7 +842,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 }
                 if (secret && (p->lb_workers[i].w->type == JK_AJP13_WORKER_TYPE ||
                     p->lb_workers[i].w->type == JK_AJP14_WORKER_TYPE)) {
-                    ajp_worker_t *aw = (ajp_worker_t *)p->lb_workers[i].w->worker_private; 
+                    ajp_worker_t *aw = (ajp_worker_t *)p->lb_workers[i].w->worker_private;
                     if (!aw->secret)
                         aw->secret = secret;
                 }
