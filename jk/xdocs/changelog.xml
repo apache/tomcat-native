@@ -26,10 +26,14 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      <bug>36525</bug>: Solaris core dump. (mturk)
+      </fix>
+      <fix>
       <bug>36102</bug>: Worker actions do not persist. (mturk)
       </fix>
       <fix>
-      <bug>36525</bug>: Solaris core dump. (murk)
+      <bug>35864</bug>: Status worker doesn't list workers.
+      Patch provided by Martin Goldhahn. (mturk)
       </fix>
       <fix>
       <bug>35809</bug>: JkMountCopy don't work for Apache 2.0 Patch provided by
