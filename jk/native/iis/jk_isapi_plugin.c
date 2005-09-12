@@ -51,11 +51,22 @@
  * 3. The contents of the Translate header, if any
  *
  */
-#define URI_HEADER_NAME              ("TOMCATURI:")
-#define QUERY_HEADER_NAME            ("TOMCATQUERY:")
-#define WORKER_HEADER_NAME           ("TOMCATWORKER:")
-#define TOMCAT_TRANSLATE_HEADER_NAME ("TOMCATTRANSLATE:")
-#define CONTENT_LENGTH               ("CONTENT_LENGTH:")
+#define URI_HEADER_NAME_BASE         ("TOMCATURI")
+#define QUERY_HEADER_NAME_BASE       ("TOMCATQUERY")
+#define WORKER_HEADER_NAME_BASE      ("TOMCATWORKER")
+#define TOMCAT_TRANSLATE_HEADER_NAME_BASE ("TOMCATTRANSLATE")
+
+static char URI_HEADER_NAME[_MAX_FNAME];
+static char QUERY_HEADER_NAME[_MAX_FNAME];
+static char WORKER_HEADER_NAME[_MAX_FNAME];
+static char TOMCAT_TRANSLATE_HEADER_NAME[_MAX_FNAME];
+
+/* The template used to construct our unique headers
+ * from the base name and module instance
+ */
+#define HEADER_TEMPLATE ("%s_%p:")
+
+#define CONTENT_LENGTH               ("CONTENT_LENGTH")
 
 #define HTTP_URI_HEADER_NAME         ("HTTP_TOMCATURI")
 #define HTTP_QUERY_HEADER_NAME       ("HTTP_TOMCATQUERY")
@@ -1090,6 +1101,11 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
         else {
             fReturn = JK_FALSE;
         }
+        /* Construct redirector headers to use for this redirector instance */
+        sprintf(URI_HEADER_NAME, HEADER_TEMPLATE, URI_HEADER_NAME_BASE, hInst);
+        sprintf(QUERY_HEADER_NAME, HEADER_TEMPLATE, QUERY_HEADER_NAME_BASE, hInst);
+        sprintf(WORKER_HEADER_NAME, HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
+        sprintf(TOMCAT_TRANSLATE_HEADER_NAME, HEADER_TEMPLATE, TOMCAT_TRANSLATE_HEADER_NAME_BASE, hInst);
     break;
     case DLL_PROCESS_DETACH:
         __try {
