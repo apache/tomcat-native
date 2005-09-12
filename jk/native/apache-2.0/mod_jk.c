@@ -68,7 +68,21 @@
 
 #include "apr_strings.h"
 
+/* Yes; sorta sucks - with luck we will clean this up before httpd-2.2
+ * ships, leaving AP_NEED_SET_MUTEX_PERMS def'd as 1 or 0 on all platforms.
+ */
 #ifdef AP_NEED_SET_MUTEX_PERMS
+# define JK_NEED_SET_MUTEX_PERMS AP_NEED_SET_MUTEX_PERMS
+#else
+  /* A special case for httpd-2.0 */
+# if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+#  define JK_NEED_SET_MUTEX_PERMS 1
+# else
+#  define JK_NEED_SET_MUTEX_PERMS 0
+# endif
+#endif
+
+#if JK_NEED_SET_MUTEX_PERMS
 #include "unixd.h"      /* for unixd_set_global_mutex_perms */
 #endif
 /*
@@ -2419,7 +2433,7 @@ static int jk_post_config(apr_pool_t * pconf,
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
-#ifdef AP_NEED_SET_MUTEX_PERMS
+#ifdef JK_NEED_SET_MUTEX_PERMS
     rv = unixd_set_global_mutex_perms(jk_log_lock);
     if (rv != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
