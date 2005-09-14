@@ -51,26 +51,25 @@
  * 3. The contents of the Translate header, if any
  *
  */
-#define URI_HEADER_NAME_BASE         ("TOMCATURI")
-#define QUERY_HEADER_NAME_BASE       ("TOMCATQUERY")
-#define WORKER_HEADER_NAME_BASE      ("TOMCATWORKER")
+#define URI_HEADER_NAME_BASE              ("TOMCATURI")
+#define QUERY_HEADER_NAME_BASE            ("TOMCATQUERY")
+#define WORKER_HEADER_NAME_BASE           ("TOMCATWORKER")
 #define TOMCAT_TRANSLATE_HEADER_NAME_BASE ("TOMCATTRANSLATE")
+#define CONTENT_LENGTH                    ("CONTENT_LENGTH:")
+/* The template used to construct our unique headers
+ * from the base name and module instance
+ */
+#define HEADER_TEMPLATE      ("%s%p:")
+#define HTTP_HEADER_TEMPLATE ("HTTP_%s%p")
 
 static char URI_HEADER_NAME[_MAX_FNAME];
 static char QUERY_HEADER_NAME[_MAX_FNAME];
 static char WORKER_HEADER_NAME[_MAX_FNAME];
 static char TOMCAT_TRANSLATE_HEADER_NAME[_MAX_FNAME];
 
-/* The template used to construct our unique headers
- * from the base name and module instance
- */
-#define HEADER_TEMPLATE ("%s_%p:")
-
-#define CONTENT_LENGTH               ("CONTENT_LENGTH")
-
-#define HTTP_URI_HEADER_NAME         ("HTTP_TOMCATURI")
-#define HTTP_QUERY_HEADER_NAME       ("HTTP_TOMCATQUERY")
-#define HTTP_WORKER_HEADER_NAME      ("HTTP_TOMCATWORKER")
+static char HTTP_URI_HEADER_NAME[_MAX_FNAME];
+static char HTTP_QUERY_HEADER_NAME[_MAX_FNAME];
+static char HTTP_WORKER_HEADER_NAME[_MAX_FNAME];
 
 #define REGISTRY_LOCATION       ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\1.0")
 #define EXTENSION_URI_TAG       ("extension_uri")
@@ -133,7 +132,7 @@ static int is_mapread = JK_FALSE;
 static int iis5 = -1;
 
 static jk_uri_worker_map_t *uw_map = NULL;
-static jk_map_t *wp_map = NULL; /* worker_properties */
+static jk_map_t *workers_map = NULL;
 static jk_logger_t *logger = NULL;
 static char *SERVER_NAME = "SERVER_NAME";
 static char *SERVER_SOFTWARE = "SERVER_SOFTWARE";
@@ -1071,9 +1070,9 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
             uri_worker_map_free(&uw_map, logger);
             is_mapread = JK_FALSE;
         }
-        memset(&worker_env, 0, sizeof(worker_env));
-        if (wp_map) {
-            jk_map_free(&wp_map);
+        if (workers_map) {
+            jk_map_free(&workers_map);
+            workers_map = NULL;
         }
         wc_close(logger);
         if (logger) {
@@ -1111,6 +1110,11 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
         sprintf(QUERY_HEADER_NAME, HEADER_TEMPLATE, QUERY_HEADER_NAME_BASE, hInst);
         sprintf(WORKER_HEADER_NAME, HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
         sprintf(TOMCAT_TRANSLATE_HEADER_NAME, HEADER_TEMPLATE, TOMCAT_TRANSLATE_HEADER_NAME_BASE, hInst);
+
+        sprintf(HTTP_URI_HEADER_NAME, HTTP_HEADER_TEMPLATE, URI_HEADER_NAME_BASE, hInst);
+        sprintf(HTTP_QUERY_HEADER_NAME, HTTP_HEADER_TEMPLATE, QUERY_HEADER_NAME_BASE, hInst);
+        sprintf(HTTP_WORKER_HEADER_NAME, HTTP_HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
+
     break;
     case DLL_PROCESS_DETACH:
         __try {
@@ -1168,20 +1172,24 @@ static int init_jk(char *serverName)
     }
     if (rc) {
         rc = JK_FALSE;
-        if (jk_map_alloc(&wp_map)) {
-            if (jk_map_read_properties(wp_map, worker_file, NULL)) {
+        if (jk_map_alloc(&workers_map)) {
+            if (jk_map_read_properties(workers_map, worker_file, NULL)) {
                 /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
 
                 worker_env.uri_to_worker = uw_map;
                 worker_env.server_name = serverName;
 
-                if (wc_open(wp_map, &worker_env, logger)) {
+                if (wc_open(workers_map, &worker_env, logger)) {
                     rc = JK_TRUE;
                 }
             }
             else {
                 jk_log(logger, JK_LOG_EMERG,
                        "Unable to read worker file %s.", worker_file);
+            }
+            if (rc != JK_TRUE) {
+                jk_map_free(&workers_map);
+                workers_map = NULL;
             }
         }
     }
