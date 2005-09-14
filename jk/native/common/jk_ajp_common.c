@@ -36,7 +36,7 @@
 #endif
 
 /* Sleep for 100ms */
-static void jk_sleep_def(void)
+void jk_sleep_def(void)
 {
 #ifdef OS2
     DosSleep(100);

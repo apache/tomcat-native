@@ -55,6 +55,8 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf);
 
 int jk_is_socket_connected(int sd);
 
+void jk_sleep_def();
+
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
