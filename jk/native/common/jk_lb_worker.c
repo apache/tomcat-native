@@ -652,13 +652,19 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      * mark the worker as busy rather then
                      * as in error
                      */
-                    rec->s->is_busy = JK_TRUE;
+                    if (p->worker->s->retries < num_of_workers)
+                        rec->s->is_busy = JK_TRUE;
                     jk_log(l, JK_LOG_INFO,
-                           "could not get free endpoint for worker %s",
-                           rec->s->name);
+                           "could not get free endpoint for worker %s (attempt %d)",
+                           rec->s->name, attempt);
                     /* Decrement the worker count and try another worker */
-                    --num_of_workers;
-                    prec = rec;
+                    if (attempt > p->worker->s->retries)
+                        num_of_workers = 0;
+                    /* In case of retries > 3 sleep 100 ms
+                     * on each next attempt.
+                     */
+                    else if (attempt > JK_RETRIES)
+                        jk_sleep_def();    
                     continue;
                 }
                 if (service_stat == JK_FALSE) {
@@ -725,6 +731,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_log(l, JK_LOG_DEBUG,
                            "recoverable error... will try to recover on other host");
             }
+#if 0
             else {
                 /* NULL record, no more workers left ... */
                 jk_log(l, JK_LOG_ERROR,
@@ -733,6 +740,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 *is_error = JK_HTTP_SERVER_BUSY;
                 return JK_FALSE;
             }
+#endif
             --num_of_workers;
             prec = rec;
         }

@@ -26,6 +26,13 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        Fix lb for worker mpm's with cachesize set to lower number then
+        ThreadsPerChild is. If retries is set to value larger then 3 sleep for
+        100 ms on each attempt. This enables to tune the connection cache,
+        and serialize incoming connections instead returning busy if connection
+        count is larger then cachesize. (mturk)
+      </fix>
+      <fix>
       <bug>36525</bug>: Solaris core dump. (mturk)
       </fix>
       <fix>
