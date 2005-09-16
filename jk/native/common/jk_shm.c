@@ -26,8 +26,8 @@
 #include "jk_mt.h"
 #include "jk_shm.h"
 
-/** jk shm header record structure */
-struct jk_shm_header
+/** jk shm header core data structure */
+struct jk_shm_header_data
 {
     /* Shared memory magic JK_SHM_MAGIC */
     char   magic[8];
@@ -36,6 +36,17 @@ struct jk_shm_header
     unsigned int childs;
     unsigned int workers;
     time_t modified;
+};
+
+typedef struct jk_shm_header_data jk_shm_header_data_t;
+
+/** jk shm header record structure */
+struct jk_shm_header
+{
+    union {
+        jk_shm_header_data_t data;
+        char alignbuf[JK_SHM_ALIGN(sizeof(jk_shm_header_data_t))];
+    };
     char   buf[1];
 };
 
@@ -116,13 +127,13 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
     jk_shmem.filename = "memory";
     jk_shmem.fd       = 0;
     jk_shmem.attached = 0;
-    memcpy(jk_shmem.hdr->magic, shm_signature, 8);
-    jk_shmem.hdr->size = sz;
+    memcpy(jk_shmem.hdr->data.magic, shm_signature, 8);
+    jk_shmem.hdr->data.size = sz;
     JK_INIT_CS(&(jk_shmem.cs), rc);
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "Initialized shared memory size=%u free=%u addr=%#lx",
-               jk_shmem.size, jk_shmem.hdr->size, jk_shmem.hdr);
+               jk_shmem.size, jk_shmem.hdr->data.size, jk_shmem.hdr);
     JK_TRACE_EXIT(l);
     return 0;
 }
@@ -132,12 +143,12 @@ int jk_shm_attach(const char *fname, size_t sz, jk_logger_t *l)
     JK_TRACE_ENTER(l);
     if (!jk_shm_open(fname, sz, l)) {
         jk_shmem.attached = 1;
-        jk_shmem.hdr->childs++;
+        jk_shmem.hdr->data.childs++;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Attached shared memory [%d] size=%u free=%u addr=%#lx",
-                   jk_shmem.hdr->childs, jk_shmem.hdr->size,
-                   jk_shmem.hdr->size - jk_shmem.hdr->pos,
+                   jk_shmem.hdr->data.childs, jk_shmem.hdr->data.size,
+                   jk_shmem.hdr->data.size - jk_shmem.hdr->data.pos,
                    jk_shmem.hdr);
         JK_TRACE_EXIT(l);
         return 0;
@@ -306,20 +317,20 @@ static int do_shm_open(const char *fname, int attached,
     /* Clear shared memory */
     if (!attached) {
         memset(jk_shmem.hdr, 0, jk_shmem.size);
-        memcpy(jk_shmem.hdr->magic, shm_signature, 8);
-        jk_shmem.hdr->size = sz;
+        memcpy(jk_shmem.hdr->data.magic, shm_signature, 8);
+        jk_shmem.hdr->data.size = sz;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Initialized shared memory size=%u free=%u addr=%#lx",
-                   jk_shmem.size, jk_shmem.hdr->size, jk_shmem.hdr);
+                   jk_shmem.size, jk_shmem.hdr->data.size, jk_shmem.hdr);
     }
     else {
-        jk_shmem.hdr->childs++;
+        jk_shmem.hdr->data.childs++;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_INFO,
                    "Attached shared memory [%d] size=%u free=%u addr=%#lx",
-                   jk_shmem.hdr->childs, jk_shmem.hdr->size,
-                   jk_shmem.hdr->size - jk_shmem.hdr->pos,
+                   jk_shmem.hdr->data.childs, jk_shmem.hdr->data.size,
+                   jk_shmem.hdr->data.size - jk_shmem.hdr->data.pos,
                    jk_shmem.hdr);
         /* TODO: check header magic */
     }
@@ -376,9 +387,9 @@ void *jk_shm_alloc(jk_pool_t *p, size_t size)
 
     if (jk_shmem.hdr) {
         size = JK_ALIGN_DEFAULT(size);
-        if ((jk_shmem.hdr->size - jk_shmem.hdr->pos) >= size) {
-            rc = &(jk_shmem.hdr->buf[jk_shmem.hdr->pos]);
-            jk_shmem.hdr->pos += size;
+        if ((jk_shmem.hdr->data.size - jk_shmem.hdr->data.pos) >= size) {
+            rc = &(jk_shmem.hdr->buf[jk_shmem.hdr->data.pos]);
+            jk_shmem.hdr->data.pos += size;
         }
     }
     else if (p)
@@ -396,7 +407,7 @@ const char *jk_shm_name()
 time_t jk_shm_get_workers_time()
 {
     if (jk_shmem.hdr)
-        return jk_shmem.hdr->modified;
+        return jk_shmem.hdr->data.modified;
     else
         return jk_workers_modified_time;
 }
@@ -404,7 +415,7 @@ time_t jk_shm_get_workers_time()
 void jk_shm_set_workers_time(time_t t)
 {
     if (jk_shmem.hdr)
-        jk_shmem.hdr->modified = t;
+        jk_shmem.hdr->data.modified = t;
     else
         jk_workers_modified_time = t;
     jk_workers_access_time = t;
@@ -450,8 +461,8 @@ jk_shm_worker_t *jk_shm_alloc_worker(jk_pool_t *p)
     if (w) {
         memset(w, 0, sizeof(jk_shm_worker_t));
         if (jk_shmem.hdr) {
-            jk_shmem.hdr->workers++;
-            w->id = jk_shmem.hdr->workers;
+            jk_shmem.hdr->data.workers++;
+            w->id = jk_shmem.hdr->data.workers;
         }
         else
             w->id = -1;

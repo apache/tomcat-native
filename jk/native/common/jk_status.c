@@ -166,7 +166,7 @@ static int jk_printf(jk_ws_service_t *s, const char *fmt, ...)
 }
 
 /* Actually APR's apr_strfsize */
-static char *status_strfsize(size_t size, char *buf)
+static char *status_strfsize(jk_u64_t size, char *buf)
 {
     const char ord[] = "KMGTPE";
     const char *o = ord;
