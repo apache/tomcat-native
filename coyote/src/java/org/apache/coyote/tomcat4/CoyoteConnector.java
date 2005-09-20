@@ -17,7 +17,6 @@
 package org.apache.coyote.tomcat4;
 
 
-import java.util.Vector;
 import org.apache.tomcat.util.IntrospectionUtils;
 
 import org.apache.coyote.Adapter;
@@ -96,12 +95,6 @@ public final class CoyoteConnector
 
 
     /**
-     * The set of processors that have ever been created.
-     */
-    private Vector created = new Vector();
-
-
-    /**
      * The current number of processors that have been created.
      */
     private int curProcessors = 0;
@@ -155,6 +148,10 @@ public final class CoyoteConnector
      */
     private int maxProcessors = 20;
 
+    /**
+     * The maximum permitted size of the request and response HTTP headers.
+     */
+    private int maxHttpHeaderSize = 4 * 1024;
 
     /**
      * Linger value on the incoming connection.
@@ -252,18 +249,6 @@ public final class CoyoteConnector
 
 
     /**
-     * The shutdown signal to our background thread
-     */
-    private boolean stopped = false;
-
-
-    /**
-     * The background thread.
-     */
-    private Thread thread = null;
-
-
-    /**
      * Use TCP no delay ?
      */
     private boolean tcpNoDelay = true;
@@ -286,6 +271,7 @@ public final class CoyoteConnector
     /**
      * Compression value.
      */
+    private String compressableMimeTypes = "text/html,text/xml,text/plain";
     private String compression = "off";
 
 
@@ -560,6 +546,22 @@ public final class CoyoteConnector
 
     }
 
+    /**
+     * Get the list of compressable MIME types.
+     */
+    public String getCompressableMimeType() {
+        return compressableMimeTypes;
+    }
+
+    /**
+     * Set the list of compressable MIME types.
+     * 
+     * @param compressableMimeTypes The new list of MIME types to enable for
+     * compression.
+     */
+    public void setCompressableMimeType(String compressableMimeTypes) {
+        this.compressableMimeTypes = compressableMimeTypes;
+    }
 
     /**
      * Get the value of compression.
@@ -740,6 +742,23 @@ public final class CoyoteConnector
 
     }
 
+    /**
+     * Return the maximum permitted size of the HTTP request and response
+     * headers.
+     */
+    public int getMaxHttpHeaderSize() {
+        return maxHttpHeaderSize;
+    }
+
+    /**
+     * Set the maximum permitted size of the HTTP request and response
+     * headers.
+     * 
+     * @param maxHttpHeaderSize The new maximum header size in bytes.
+     */
+    public void setMaxHttpHeaderSize(int maxHttpHeaderSize) {
+        this.maxHttpHeaderSize = maxHttpHeaderSize;
+    }
 
     /**
      * Return the port number on which we listen for requests.
@@ -1082,26 +1101,6 @@ public final class CoyoteConnector
     }
 
 
-    /**
-     * Log a message on the Logger associated with our Container (if any).
-     *
-     * @param message Message to be logged
-     * @param throwable Associated exception
-     */
-    private void log(String message, Throwable throwable) {
-
-        Logger logger = container.getLogger();
-        String localName = "CoyoteConnector";
-        if (logger != null)
-            logger.log(localName + " " + message, throwable);
-        else {
-            System.out.println(localName + " " + message);
-            throwable.printStackTrace(System.out);
-        }
-
-    }
-
-
     // ------------------------------------------------------ Lifecycle Methods
 
 
@@ -1198,6 +1197,10 @@ public final class CoyoteConnector
                                        "" + tomcatAuthentication);
         IntrospectionUtils.setProperty(protocolHandler, "compression",
                                        compression);
+        IntrospectionUtils.setProperty(protocolHandler, "compressableMimeTypes",
+                                       compressableMimeTypes);
+        IntrospectionUtils.setProperty(protocolHandler, "maxHttpHeaderSize",
+                                       "" + maxHttpHeaderSize);
         if (address != null) {
             IntrospectionUtils.setProperty(protocolHandler, "address",
                                            address);
