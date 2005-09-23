@@ -126,8 +126,8 @@ static char *get_cookie(jk_ws_service_t *s, const char *name)
                             result = id_start;
                         }
                         else {
-                            int osz = strlen(result) + 1;
-                            int sz = osz + strlen(id_start) + 1;
+                            size_t osz = strlen(result) + 1;
+                            size_t sz = osz + strlen(id_start) + 1;
                             result =
                                 jk_pool_realloc(s->pool, sz, result, osz);
                             strcat(result, ";");
@@ -664,7 +664,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     /* In case of attempt > num of workers sleep for 100 ms
                      * on each consequtive attempt.
                      */
-                    if (attempt > p->worker->num_of_workers)
+                    if (attempt > (int)p->worker->num_of_workers)
                         jk_sleep_def();    
                     continue;
                 }
