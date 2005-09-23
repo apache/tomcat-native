@@ -79,6 +79,10 @@ static char HTTP_WORKER_HEADER_NAME[_MAX_FNAME];
 #define URI_SELECT_UNPARSED_VERB    ("unparsed")
 #define URI_SELECT_ESCAPED_VERB     ("escaped")
 
+#define TRANSLATE_HEADER                              ("Translate:")
+#define TRANSLATE_HEADER_NAME                         ("Translate")
+#define TRANSLATE_HEADER_NAME_LC                      ("translate")
+
 #define BAD_REQUEST     -1
 #define BAD_PATH        -2
 #define MAX_SERVERNAME  128
@@ -907,7 +911,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                  * This allows the servlet to handle 'Translate: f'.
                  */
                 if (GetHeader
-                    (pfc, "Translate:", (LPVOID) Translate,
+                    (pfc, TRANSLATE_HEADER, (LPVOID) Translate,
                      (LPDWORD) & szTranslate) && Translate != NULL
                     && szTranslate > 0) {
                     if (!AddHeader
@@ -1555,8 +1559,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
                 }
                 else if (!strnicmp(tmp, TOMCAT_TRANSLATE_HEADER_NAME,
                                    strlen(TOMCAT_TRANSLATE_HEADER_NAME))) {
-                    tmp += 6;   /* TOMCAT */
-                    s->headers_names[i] = tmp;
+                    s->headers_names[i] = TRANSLATE_HEADER_NAME_LC;
                 }
                 else {
                     s->headers_names[i] = tmp;
