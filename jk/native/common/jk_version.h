@@ -32,7 +32,7 @@
 #define JK_VERBETA      0
 #define JK_BETASTRING   "0"
 /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
-#define JK_VERISRELEASE 0
+#define JK_VERISRELEASE 1
 #define JK_VERRC        0
 #define JK_RCSTRING     "0"
 
