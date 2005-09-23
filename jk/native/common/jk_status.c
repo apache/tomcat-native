@@ -738,6 +738,32 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
     }
 }
 
+static void reset_worker(jk_ws_service_t *s, status_worker_t *sw,
+                         const char *dworker, jk_logger_t *l)
+{
+    unsigned int i;
+    lb_worker_t *lb;
+    jk_worker_t *w = wc_get_worker_for_name(dworker, l);
+
+    if (w && w->type == JK_LB_WORKER_TYPE) {
+        lb = (lb_worker_t *)w->worker_private;
+        for (i = 0; i < lb->num_of_workers; i++) {
+            worker_record_t *wr = &(lb->lb_workers[i]);
+            wr->s->busy             = 0;
+            wr->s->elected          = 0;
+            wr->s->error_time       = 0;
+            wr->s->errors           = 0;
+            wr->s->lb_value         = 0;
+            wr->s->max_busy         = 0;
+            wr->s->readed           = 0;
+            wr->s->transferred      = 0;
+            wr->s->is_busy          = JK_FALSE;
+            wr->s->in_error_state   = JK_FALSE;
+            wr->s->in_recovering    = JK_FALSE;
+        }
+    }
+}
+
 static int status_cmd_type(const char *req)
 {
     if (!req)
@@ -748,6 +774,8 @@ static int status_cmd_type(const char *req)
         return 1;
     else if (!strncmp(req, "cmd=update", 10))
         return 2;
+    else if (!strncmp(req, "cmd=reset", 9))
+        return 3;
     else
         return 0;
 }
@@ -800,7 +828,20 @@ static int JK_METHOD service(jk_endpoint_t *e,
             /* unlock the shared memory */
             jk_shm_unlock();
         }
-        if(mime == 0) {
+        else if ((cmd == 3) && worker) {
+            /* lock shared memory */
+            jk_shm_lock();
+            reset_worker(s, p->s_worker, worker, l);
+            /* update modification time to reflect the current config */
+            jk_shm_set_workers_time(time(NULL));
+            /* Since we updated the config no need to reload
+             * on the next request
+             */
+            jk_shm_sync_access_time();
+            /* unlock the shared memory */
+            jk_shm_unlock();
+        }
+        if (mime == 0) {
             s->start_response(s, 200, "OK", headers_names, headers_vhtml, 3);
             s->write(s, JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
             if (p->s_worker->css) {
