@@ -1529,7 +1529,10 @@ static int init_ws_service(isapi_private_data_t * private_data,
             size_t len_of_http_prefix = strlen("HTTP_");
             BOOL need_content_length_header = (s->content_length == 0);
 
-            cnt -= 2;           /* For our two special headers */
+            cnt -= 2;           /* For our two special headers:
+                                 * HTTP_TOMCATURI_XXXXXXXX
+                                 * HTTP_TOMCATWORKER_XXXXXXXX
+                                 */
             /* allocate an extra header slot in case we need to add a content-length header */
             s->headers_names =
                 jk_pool_alloc(&private_data->p, (cnt + 1) * sizeof(char *));
@@ -1549,6 +1552,14 @@ static int init_ws_service(isapi_private_data_t * private_data,
                 if (!strnicmp(tmp, URI_HEADER_NAME, strlen(URI_HEADER_NAME))
                     || !strnicmp(tmp, WORKER_HEADER_NAME,
                                  strlen(WORKER_HEADER_NAME))) {
+                    real_header = JK_FALSE;
+                }
+                else if (!strnicmp(tmp, QUERY_HEADER_NAME,
+                                   strlen(QUERY_HEADER_NAME))) {
+                    /* HTTP_TOMCATQUERY_XXXXXXXX was supplied,
+                     * remove it from the count and skip
+                     */
+                    cnt--;
                     real_header = JK_FALSE;
                 }
                 else if (need_content_length_header &&
