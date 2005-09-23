@@ -595,7 +595,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
         while (num_of_workers) {
             worker_record_t *rec =
-                get_most_suitable_worker(p->worker, s, attempt++, l);
+                get_most_suitable_worker(p->worker, s, attempt, l);
             int rc;
             /* Do not reuse previous worker, because
              * that worker already failed.
@@ -650,20 +650,21 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 else {
                     /* If we can not get the endpoint
                      * mark the worker as busy rather then
-                     * as in error
+                     * as in error if the attemp number is
+                     * greater then the number of retries.
                      */
-                    if (p->worker->s->retries < num_of_workers)
+                    attempt++;
+                    if (attempt > p->worker->s->retries) {
                         rec->s->is_busy = JK_TRUE;
+                        num_of_workers = 0;
+                    }
                     jk_log(l, JK_LOG_INFO,
                            "could not get free endpoint for worker %s (attempt %d)",
                            rec->s->name, attempt);
-                    /* Decrement the worker count and try another worker */
-                    if (attempt > p->worker->s->retries)
-                        num_of_workers = 0;
-                    /* In case of retries > 3 sleep 100 ms
-                     * on each next attempt.
+                    /* In case of attempt > num of workers sleep for 100 ms
+                     * on each consequtive attempt.
                      */
-                    else if (attempt > JK_RETRIES)
+                    if (attempt > p->worker->num_of_workers)
                         jk_sleep_def();    
                     continue;
                 }
