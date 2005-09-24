@@ -34,6 +34,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanNotificationInfo;
@@ -320,12 +321,12 @@ public class ChannelNioSocket extends JkHandler
         ep.setNote( socketNote, s );
         if(log.isDebugEnabled() )
             log.debug("Accepted socket " + s +" channel "  + sc.isBlocking());
-        if( linger > 0 )
-            s.setSoLinger( true, linger);
-        if( socketTimeout > 0 ) 
-            s.setSoTimeout( socketTimeout );
-        
-        s.setTcpNoDelay( tcpNoDelay ); // set socket tcpnodelay state
+
+        try {
+            setSocketOptions(s);
+        } catch(SocketException sex) {
+            log.debug("Error initializing Socket Options", sex);
+        }
         
         requestCount++;
 
@@ -335,6 +336,16 @@ public class ChannelNioSocket extends JkHandler
         ep.setNote( isNote, is );
         ep.setNote( osNote, os );
         ep.setControl( tp );
+    }
+
+    private void setSocketOptions(Socket s) throws SocketException {
+        if( socketTimeout > 0 ) 
+            s.setSoTimeout( socketTimeout );
+        
+        s.setTcpNoDelay( tcpNoDelay ); // set socket tcpnodelay state
+
+        if( linger > 0 )
+            s.setSoLinger( true, linger);
     }
 
     public void resetCounters() {

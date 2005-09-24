@@ -294,12 +294,12 @@ public class ChannelSocket extends JkHandler
         ep.setNote( socketNote, s );
         if(log.isDebugEnabled() )
             log.debug("Accepted socket " + s );
-        if( linger > 0 )
-            s.setSoLinger( true, linger);
-        if( socketTimeout > 0 ) 
-            s.setSoTimeout( socketTimeout );
-        
-        s.setTcpNoDelay( tcpNoDelay ); // set socket tcpnodelay state
+
+        try {
+            setSocketOptions(s);
+        } catch(SocketException sex) {
+            log.debug("Error initializing Socket Options", sex);
+        }
         
         requestCount++;
 
@@ -312,6 +312,16 @@ public class ChannelSocket extends JkHandler
         ep.setNote( isNote, is );
         ep.setNote( osNote, os );
         ep.setControl( tp );
+    }
+
+    private void setSocketOptions(Socket s) throws SocketException {
+        if( socketTimeout > 0 ) 
+            s.setSoTimeout( socketTimeout );
+        
+        s.setTcpNoDelay( tcpNoDelay ); // set socket tcpnodelay state
+
+        if( linger > 0 )
+            s.setSoLinger( true, linger);
     }
 
     public void resetCounters() {
