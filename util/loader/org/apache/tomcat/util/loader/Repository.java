@@ -46,23 +46,26 @@ import java.util.Vector;
  */
 public class Repository {
    
-    private static final boolean DEBUG=true; //LoaderProperties.getProperty("loader.Repository.debug") != null;
+    private static final boolean DEBUG=Loader.getProperty("loader.debug.Repository") != null;
     
     // Allows the (experimental) use of jar indexes
     // Right now ( for small set of jars, incomplete build ) it's a tiny 3.5 -> 3.4 sec dif.
-    private static final boolean USE_IDX=true;// //LoaderProperties.getProperty("loader.Repository.useIdx") != null;
+    private static final boolean USE_IDX=Loader.getProperty("loader.Repository.noIndex") == null;
     
     private Vector loaders=new Vector();
     private String name;
     private Vector grpModules=new Vector();
     private transient Loader loader;
     
-    private Repository parent;
-
     private transient ModuleClassLoader groupClassLoader;
     private Hashtable prefixes=new Hashtable();
 
-    public Repository() {
+    // For delegation
+    private ClassLoader parentClassLoader;
+    private Repository parent;
+
+
+    private Repository() {
     }
 
     public Repository(Loader loader) {
@@ -74,13 +77,16 @@ public class Repository {
         return loader;
     }
     
-    public void addModule(  Module mod ) {
+    void addModule(  Module mod ) {
         mod.setRepository( this );
 
         grpModules.addElement(mod);
         if( loader.listener!=null ) {
             loader.listener.moduleAdd(mod);
         }
+        
+        if( parentClassLoader != null ) 
+            mod.setParentClassLoader( parentClassLoader );
 
         if(! mod.isStarted()) {
             mod.start();
@@ -92,6 +98,8 @@ public class Repository {
         try {
             if( USE_IDX ) {
                 processJarIndex(mod);
+                // TODO: if we are in the initial starting, write cache only once
+                // TODO: write it only if there is a change in the timestamp
                 writeCacheIdx();
             }
         } catch (Exception e) {
@@ -101,11 +109,34 @@ public class Repository {
         
     }
     
+    public void newModule( String path ) {
+        Module m=new Module();
+        m.setPath( path );
+        addModule( m );
+    }
+    
     public Enumeration getModules() {
         return grpModules.elements();
     }
     
-    public Repository getParent() {
+    public void checkReload() {
+        try {
+        Enumeration mE=grpModules.elements();
+        while( mE.hasMoreElements() ) {
+            Module m=(Module)mE.nextElement();
+            log("Modified " + m + " " + m.modified());
+            
+            if( m.modified() ) {
+                m.stop();
+                m.start();
+            }
+        }
+        } catch( Throwable t ) {
+            t.printStackTrace();
+        }
+    }
+    
+    Repository getParent() {
         return parent;
     }
 
@@ -116,6 +147,16 @@ public class Repository {
     public void setParent(Repository parent) {
         this.parent = parent;
     }
+    
+    /** Set the parent class loader - can be used instead of setParent, 
+     * in case this is the top loader and needs to delagate to embedding app
+     * 
+     * @param myL
+     */
+    public void setParentClassLoader(ClassLoader myL) {
+        this.parentClassLoader=myL;
+    }
+
 
     /** Add a class loder to the group.
      *
@@ -144,6 +185,7 @@ public class Repository {
         loaders.removeElement(cl);
 
         if(DEBUG) log("removed " + loaders.size() + "/" + oldSize + ": "  + cl);
+        // TODO: remove from index
     }
 
     /** Return a class loader associated with the group.
@@ -153,16 +195,27 @@ public class Repository {
      */
     public ClassLoader getClassLoader() {
         if( groupClassLoader==null ) {
-            if( parent == null ) {
+            ClassLoader pcl=parentClassLoader;
+            if( pcl==null && parent!=null ) {
+                pcl=parent.getClassLoader();
+            } 
+            if( pcl==null ) {
+                pcl=Thread.currentThread().getContextClassLoader();
+             }
+
+            if( pcl == null ) {
+                // allow delegation to embedding app
                 groupClassLoader=new ModuleClassLoader(new URL[0]);
             } else {
-                groupClassLoader=new ModuleClassLoader(new URL[0], parent.getClassLoader());
+                groupClassLoader=new ModuleClassLoader(new URL[0], pcl);
             }
+            if( DEBUG ) log("---------- Created repository loader " + pcl );
             groupClassLoader.start();
             groupClassLoader.setRepository(this);
         }
         return groupClassLoader;
     }
+    
     /** 
      * Find a class in the group. It'll iterate over each loader
      * and try to find the class - using only the method that
@@ -173,29 +226,17 @@ public class Repository {
      * @param classN
      * @return
      */
-    public Class findClass(ClassLoader caller, String classN ) {
+    Class findClass(ClassLoader caller, String classN ) {
         Class clazz=null;
         
         // do we have it in index ?
         if( USE_IDX ) {
-        int lastIdx=classN.lastIndexOf(".");
-        String prefix=(lastIdx>0) ? classN.substring(0, lastIdx) : classN;
-        Object mO=prefixes.get(prefix.replace('.', '/'));
-        if( mO!=null ) {
-            if( mO instanceof Module ) {
-                Module m=(Module)mO;
-                try {
-                    Class c=((ModuleClassLoader)m.getClassLoader()).findLocalClass(classN);
-                    //log("Prefix: " +prefix + " " + classN  + " " + m);
-                    return c;
-                } catch (Exception e) {
-                    //log("Prefix err: " +prefix + " " + classN  + " " + m + " " + e);
-                    //return null;
-                }
-            } else {
-                Module mA[]=(Module[])mO;
-                for( int i=0; i<mA.length; i++ ) {
-                    Module m=mA[i];
+            int lastIdx=classN.lastIndexOf(".");
+            String prefix=(lastIdx>0) ? classN.substring(0, lastIdx) : classN;
+            Object mO=prefixes.get(prefix.replace('.', '/'));
+            if( mO!=null ) {
+                if( mO instanceof Module ) {
+                    Module m=(Module)mO;
                     try {
                         Class c=((ModuleClassLoader)m.getClassLoader()).findLocalClass(classN);
                         //log("Prefix: " +prefix + " " + classN  + " " + m);
@@ -204,9 +245,21 @@ public class Repository {
                         //log("Prefix err: " +prefix + " " + classN  + " " + m + " " + e);
                         //return null;
                     }
+                } else {
+                    Module mA[]=(Module[])mO;
+                    for( int i=0; i<mA.length; i++ ) {
+                        Module m=mA[i];
+                        try {
+                            Class c=((ModuleClassLoader)m.getClassLoader()).findLocalClass(classN);
+                            //log("Prefix: " +prefix + " " + classN  + " " + m);
+                            return c;
+                        } catch (Exception e) {
+                            //log("Prefix err: " +prefix + " " + classN  + " " + m + " " + e);
+                            //return null;
+                        }
+                    }
                 }
             }
-        }
         }
 
         // TODO: move the vector to a []
@@ -243,9 +296,9 @@ public class Repository {
      * @param name2
      * @return
      */
-    public URL findResource(ModuleClassLoader caller, String classN) {
+    URL findResource(ModuleClassLoader caller, String classN) {
         URL url=null;
-        
+        if( DEBUG ) log("Repository.findResource " + classN + " " + caller );
         for( int i=loaders.size()-1; i>=0; i-- ) {
             // TODO: for regular CL, just use loadClass, they'll not recurse
             // The behavior for non-SCL or not in the group loader is the same as for parent loader
@@ -380,6 +433,12 @@ public class Repository {
     
     
     private void writeCacheIdx() throws IOException {
+        // For each module we write the timestamp, filename then the index
+        // The idea is to load this single file to avoid scanning many jars
+
+        // we'll use the cache 
+        
         
     }
+
 }

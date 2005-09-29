@@ -17,6 +17,11 @@
 
 package org.apache.tomcat.util.loader;
 
+/**
+ * Interface providing notifications on Module events.
+ * 
+ * @author Costin Manolache
+ */
 public interface ModuleListener {
     
     /** Called when a module group is created. This is only called when a new group

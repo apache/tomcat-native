@@ -21,17 +21,16 @@ package org.apache.tomcat.util.loader;
 import java.io.File;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 // Based on org.apache.catalina.Loader - removed most of the catalina-specific
 
 /**
- *  Base representation for "server extensions" ( connectors, realms, etc ), webapps,
- * libraries.   
- * 
+ * Represent one unit of code - jar, webapp, etc. Modules can be reloaded independently,
+ * and may be part of a flat structure or a hierarchy.
  * 
  * @author Costin Manolache
- * 
  * @author Craig R. McClanahan
  * @author Remy Maucherat
  */
@@ -220,6 +219,16 @@ public class Module implements Serializable {
 
     // ------------------------------------------------------- Private Methods
 
+    /** 
+     * Experiment for basic lifecycle driven by higher layer.
+     * start() and stop() methods will be called on the class when the
+     * module is stopped and started.
+     * 
+     */
+    //public void addModuleClass(String s) {
+        
+    //}
+    
     /** Set the class used to construct the class loader.
      * 
      * The alternative is to set the context class loader to allow loaderClass
@@ -262,6 +271,7 @@ public class Module implements Serializable {
         } else {
             classLoader=new ModuleClassLoader( classpath, parentClassLoader);
         }
+        System.err.println("---- Created class loader " + classpath + " " + parentClassLoader + " repo=" + repository.getName() + " " + parent);
         
         classLoader.setModule(this);
         classLoader.setDelegate( delegate );
@@ -285,6 +295,22 @@ public class Module implements Serializable {
      */
     public void setClasspath(URL[] array) {
         this.classpath=array;
+    }
+    
+    /** Set the path to the module.
+     * In normal use, each module will be associated with one jar or 
+     * classpath dir.
+     * 
+     * @param name
+     */
+    public void setPath(String name) {
+        this.classpath=new URL[1];
+        try {
+            classpath[0]=new URL(name);
+        } catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
 
@@ -331,6 +357,11 @@ public class Module implements Serializable {
      */
     public String getName() {
         return classpath[0].getFile(); // this.toString();
+    }
+
+
+    public void setParentClassLoader(ClassLoader parentClassLoader2) {
+        this.parentClassLoader=parentClassLoader2;
     }
 
 

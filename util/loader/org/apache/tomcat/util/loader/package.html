@@ -1,29 +1,32 @@
 <html>
 <body>
 
-The goal of this package is to provide class loading functionality,
-similar in behavior with Jboss and MLET loaders. There 
-is no policy, just a mechanism - how it is used depends on the higher level. 
+The goal of this package is to provide class loading functionality, similar in behavior with Jboss and MLET loaders. There 
+is no specific policy, just a mechanism - how it is used depends on the application. It is based on the tomcat5.x class
+loader, with additional support for the 'repository' delegation.
 
-This package only deals with class loading, so it has to minimize the dependencies.
-Currently there is no dependency except bare JDK1.3. Debug logging is minimal and done
-using System.err.
+The main class is Loader - it controls a hierarchy of Repositories, each consisting of one or more Modules. Each Module corresponds to one jar file 
+or directory - and will have a ModuleClassLoader that answers only for that file. The Repository is associated with a ModuleClassLoader that delegates to 
+each Module. It is possible to add/remove/replace Modules at runtime - just like in JMX and JBoss. In normal tomcat, only webapps can be reloaded - this also allow connectors, valves, and any internal server jar to be reloaded.
 
-There is no JMX depenency - the modules and loaders can be registered with JMX 
-by a module using the ModuleListener, after jmx class loader is created. 
-TODO: conditional loading of jmx.jar, parser based on jdk version. 
+The package only deals with class loading, with minimal the dependencies. Currently there is no dependency except bare JDK1.3. 
 
-Configuration uses a simple properties file describing the classpaths and the 
-classes to launch - i.e. all a class loader needs to know, and 
-similar with the old catalina.properties. 
+The modules and loaders can be registered with JMX by a module using the ModuleListener, after jmx class loader is created. Note that JMX is not a dependency and doesn't have to be in the classpath - it can be loaded in a Repository, and then something like Modeler will do the mapping. 
 
-To implement a good module system on top of this we need lifecycle ( already present
-in tomcat ) and discipline in making sure there are no stale references to 
-objects in a module after its death. An OSGI-like system may seem to 
-deal with the second problem - but it doesn't solve anything, it just makes 
-the references more visible and requires major changes in how you code, as 
-well as rewriting of most apis and implementations - and in the end it still 
-doesn't solve the problem. 
+Configuration uses a simple properties file describing the classpaths and the classes to launch - i.e. all a class loader needs to know, and similar with the old catalina.properties. 
+
+To implement a good module system on top of this we need lifecycle ( already present in tomcat ) and discipline in making sure there are no stale references to  objects in a module after its death. 
+
+An OSGI-like system may seem to deal with the second problem - but it doesn't solve anything, it just makes 
+the references more visible and requires major changes in how you code, as well as rewriting of most apis and implementations - and in the end it still 
+doesn't solve the problem. JBoss and JMX are actually on the right track in this, as oposed to OSGI. 
+
+The loader is also trying to stick to the minimal classloading-related functionality - unlike OSGI wich is reinventing all weels. I started working on the loader after trying to see how OSGI would fit, and realizing that it is a wrong design.
+
+
+<h2>Using loader for launching</h2>
+
+Loader has a main(), and will look up the loader.properties file, create the class loaders, and then launch any 'auto-startup' classes. The must important part of launching an app is setting the classpath, and using Loader allows the app to use more advanced features than using simple CLASSPATH.
 
 </body>
 </html>

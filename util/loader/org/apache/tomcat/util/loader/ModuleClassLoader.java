@@ -68,19 +68,23 @@ public class ModuleClassLoader
     // Don't use commons logging or configs to debug loading - logging is dependent
     // on loaders and drags a lot of stuff in the classpath 
     //
-    private static final boolean DEBUG=false; //LoaderProperties.getProperty("loader.ModuleClassLoader.debug") != null;
-    private static final boolean DEBUGNF=false;//LoaderProperties.getProperty("loader.ModuleClassLoader.debugNF") != null;
+    private static final boolean DEBUG=false; //LoaderProperties.getProperty("loader.debug.ModuleClassLoader") != null;
+    private static final boolean DEBUGNF=false;//LoaderProperties.getProperty("loader.debug.ModuleClassLoaderNF") != null;
     
     // ----------------------------------------------------------- Constructors
 
 
     public ModuleClassLoader(URL repositories[], ClassLoader parent) {
         super(repositories, parent);
+        if(DEBUG) log( "NEW ModuleClassLoader  " + parent + " " + repositories.length);
+        updateStamp();
     }
     
 
     public ModuleClassLoader(URL repositories[]) {
         super(repositories);
+        if(DEBUG) log( "NEW ModuleClassLoader  -null-"+ " " + repositories.length);
+        updateStamp();
     }
 
 
@@ -104,6 +108,8 @@ public class ModuleClassLoader
      */
     protected long lastJarAccessed = 0L;
 
+    protected long lastModified=0L;
+    
     /**
      * Has this component been started?
      */
@@ -112,17 +118,6 @@ public class ModuleClassLoader
     protected Module module;
 
     // ------------------------------------------------------------- Properties
-
-
-    /**
-     * Return the "delegate first" flag for this class loader.
-     */
-//    boolean getDelegate() {
-//
-//        return (this.delegate);
-//
-//    }
-
 
     /**
      * Set the "delegate first" flag for this class loader.
@@ -168,8 +163,13 @@ public class ModuleClassLoader
     void addRepository(String repository) {
         // Add this repository to our underlying class loader
         try {
+            boolean mod=modified();
             URL url = new URL(repository);
             super.addURL(url);
+            if( ! mod ) {
+                // don't check if it is modified, so it works
+                updateStamp();
+            }
         } catch (MalformedURLException e) {
             IllegalArgumentException iae = new IllegalArgumentException
                 ("Invalid repository: " + repository); 
@@ -179,6 +179,30 @@ public class ModuleClassLoader
         }
     }
 
+    void updateStamp() {
+        URL cp[]=super.getURLs();
+        if (cp != null ) {
+            for (int i = 0; i <cp.length; i++) {
+                File f=new File(cp[i].getFile());
+                long lm=f.lastModified();
+                if( lm > lastModified ) lastModified=lm;
+            }
+        }
+    }
+    
+    private boolean dirCheck(File dir ) {
+        log("Checking " + dir );
+        File subd[]=dir.listFiles();
+        for( int i=0; i< subd.length; i++ ) {
+            long lm=subd[i].lastModified();
+            if( lm > lastModified ) return true;
+            if( subd[i].isDirectory() ) {
+                if( dirCheck(subd[i]) ) return true;
+            }
+        }
+        return false;
+    }
+    
     /**
      * Have one or more classes or resources been modified so that a reload
      * is appropriate?
@@ -186,6 +210,19 @@ public class ModuleClassLoader
      * Not public - call it via Module
      */
     boolean modified() {
+        URL cp[]=super.getURLs();
+        if (cp != null ) {
+            for (int i = 0; i <cp.length; i++) {
+                File f=new File(cp[i].getFile());
+                long lm=f.lastModified();
+                if( lm > lastModified ) return true;
+                // assume dirs are used only for debug and small
+                if( f.isDirectory() ) {
+                    if( dirCheck(f) ) return true;
+                }
+            }
+        }
+
         if (DEBUG)
             log("modified() false");
 
@@ -215,8 +252,9 @@ public class ModuleClassLoader
                 log("findClass() -->RuntimeException " + name, e);
             throw e;
         } catch( ClassNotFoundException ex ) {
+            URL cp[]=this.getURLs();
             if (DEBUGNF)
-                log("findClass() NOTFOUND  " + name);
+                log("findClass() NOTFOUND  " + name + " " + (( cp.length > 0 ) ? cp[0].toString() : "") );
             throw ex;
         }
             
@@ -364,7 +402,7 @@ public class ModuleClassLoader
 
     }
 
-    // to avoid duplication
+    // to avoid duplication - get resource from parent, when delegating
     private URL getResourceParentDelegate(String name) {
         URL url=null;
         ClassLoader loader = getParent();
@@ -384,6 +422,7 @@ public class ModuleClassLoader
                 return (url);
             }
         }
+        if( DEBUG ) log("getResource not found by parent " + loader);
 
         return url;
     }
@@ -476,8 +515,8 @@ public class ModuleClassLoader
         try {
             clazz = findClass(name);
             if (clazz != null) {
-//                if (DEBUG)
-//                    log("loadClass - FOUND findClass " + delegate + " " + name + " , " + resolve);
+                if (DEBUG)
+                    log("loadClass - FOUND findClass " + delegate + " " + name + " , " + resolve);
                 if (resolve) resolveClass(clazz);
                 return (clazz);
             }
@@ -515,7 +554,7 @@ public class ModuleClassLoader
             }
         }
 
-        if( DEBUGNF ) log("loadClass(): NOTFOUND " + name );
+        if( DEBUGNF ) log("loadClass(): NOTFOUND " + name + " xxx " + getParent() +  " " + repository.getName() );
         throw new ClassNotFoundException(name);
     }
 
@@ -583,10 +622,10 @@ public class ModuleClassLoader
     // ------------------ Local methods ------------------------
 
     private void log(String s ) {
-        System.err.println("ModuleCL: " + s);
+        System.err.println("ModuleClassLoader: " + s);
     }
     private void log(String s, Throwable t ) {
-        System.err.println("ModuleCL: " + s);
+        System.err.println("ModuleClassLoader: " + s);
         t.printStackTrace();
     }
     
