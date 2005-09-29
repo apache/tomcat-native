@@ -19,7 +19,13 @@ package org.apache.coyote;
 
 /**
  * Enumerated class containing the adapter event codes.
+ * Actions represent callbacks from the servlet container to the coyote
+ * connector.
  *
+ * Actions are implemented by ProtocolHandler, using the ActionHook interface.
+ *
+ * @see ProtocolHandler
+ * @see ActionHook
  * @author Remy Maucherat
  */
 public final class ActionCode {
@@ -40,6 +46,8 @@ public final class ActionCode {
     /**
      * A flush() operation originated by the client ( i.e. a flush() on
      * the servlet output stream or writer, called by a servlet ).
+     * 
+     * Argument is the Response.
      */
     public static final ActionCode ACTION_CLIENT_FLUSH = new ActionCode(4);
 

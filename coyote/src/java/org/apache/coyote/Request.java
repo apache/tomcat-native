@@ -421,6 +421,12 @@ public final class Request {
 
     /**
      * Read data from the input buffer and put it into a byte chunk.
+     *
+     * The buffer is owned by the protocol implementation - it will be reused on the next read.
+     * The Adapter must either process the data in place or copy it to a separate buffer if it needs
+     * to hold it. In most cases this is done during byte->char conversions or via InputStream. Unlike
+     * InputStream, this interface allows the app to process data in place, without copy.
+     *
      */
     public int doRead(ByteChunk chunk) 
         throws IOException {

@@ -18,9 +18,11 @@ package org.apache.coyote;
 
 
 /**
- * Adapter.
+ * Adapter. This represents the entry point in a coyote-based servlet container.
+ *
  *
  * @author Remy Maucherat
+ * @see ProtocolHandler
  */
 public interface Adapter {
 

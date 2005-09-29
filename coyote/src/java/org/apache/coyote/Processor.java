@@ -24,6 +24,8 @@ import java.io.OutputStream;
 /**
  * Processor.
  *
+ * Not really used, should be deprecated. 
+ *
  * @author Remy Maucherat
  */
 public interface Processor {
