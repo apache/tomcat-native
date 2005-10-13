@@ -1,5 +1,5 @@
 /*
- *  Copyright 1999-2004 The Apache Software Foundation
+ *  Copyright 1999-2005 The Apache Software Foundation
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -222,7 +222,6 @@ public class WebXml2Jk {
             log.info("Generating mapping for login-config " );
             
             String authMeth=getContent( getChild( lcN, "auth-method"));
-            String realm=getContent( getChild( lcN, "realm-name"));
             if( authMeth == null ) authMeth="BASIC";
 
             Node n1=getChild( lcN, "form-login-config");
