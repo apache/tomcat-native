@@ -82,6 +82,10 @@ Build the mod_jk 1.2 documentation
 cd jakarta-tomcat-connectors/jk/xdocs
 ant
 
+
+Check the documentation carefully (produced in jakarta-tomcat-connectors/jk/build/docs)
+and copy it to people.apache.org:/x1/www/tomcat.apache.org/connectors-doc
+
 Create the new source distribution
 ----------------------------------
 
