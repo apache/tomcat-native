@@ -191,13 +191,16 @@ public class ModuleClassLoader
     }
     
     private boolean dirCheck(File dir ) {
-        log("Checking " + dir );
+        //log("Checking " + dir );
         File subd[]=dir.listFiles();
         for( int i=0; i< subd.length; i++ ) {
             long lm=subd[i].lastModified();
-            if( lm > lastModified ) return true;
+            if( lm > lastModified ) {
+                log("Modified file: " + dir + " " + subd[i] + " " + lm + " " + lastModified);
+                return true;
+            }
             if( subd[i].isDirectory() ) {
-                if( dirCheck(subd[i]) ) return true;
+                return  dirCheck(subd[i]);
             }
         }
         return false;
@@ -215,10 +218,13 @@ public class ModuleClassLoader
             for (int i = 0; i <cp.length; i++) {
                 File f=new File(cp[i].getFile());
                 long lm=f.lastModified();
-                if( lm > lastModified ) return true;
+                if( lm > lastModified ) {
+                    log( "Modified file: " + f + " " + lm + " " + lastModified);
+                    return true;
+                }
                 // assume dirs are used only for debug and small
                 if( f.isDirectory() ) {
-                    if( dirCheck(f) ) return true;
+                    return dirCheck(f);
                 }
             }
         }
@@ -242,7 +248,14 @@ public class ModuleClassLoader
      * @exception ClassNotFoundException if the class was not found
      */
     public Class findClass(String name) throws ClassNotFoundException {
-
+        return findClass2(name, true);
+    }
+    
+    public Class findClass2(String name, boolean del2repo) throws ClassNotFoundException {
+        if( del2repo ) {
+            return ((RepositoryClassLoader)repository.getClassLoader()).findClass(name);            
+        } // else 
+ 
         Class clazz = null;
             
         try {
@@ -309,6 +322,13 @@ public class ModuleClassLoader
      * @param name Name of the resource to be found
      */
     public URL findResource(final String name) {
+        return findResource2( name, true);
+    }
+        
+    public URL findResource2(final String name, boolean del2repo ) {
+        if( del2repo ) {
+            return ((RepositoryClassLoader)repository.getClassLoader()).findResource(name);
+        } // else:
 
         URL url = null;
 
@@ -339,18 +359,15 @@ public class ModuleClassLoader
      * @exception IOException if an input/output error occurs
      */
     public Enumeration findResources(String name) throws IOException {
-        Vector result=new Vector();
-        
-        Enumeration myRes=super.findResources(name);
-        if( myRes!=null ) {
-            while( myRes.hasMoreElements() ) {
-                result.addElement(myRes.nextElement());
-            }
+        return findResources2(name, true);
+    }
+    
+    Enumeration findResources2(String name, boolean del2repo) throws IOException {
+        if( del2repo ) {
+            return ((RepositoryClassLoader)repository.getClassLoader()).findResources(name);
+        } else {
+            return super.findResources(name);
         }
-        // TODO: same in repository ( parent ? ) 
-        
-        return result.elements();
-
     }
 
     // Next methods implement the search alghoritm - parent, repo, delegation, etc 
@@ -359,6 +376,14 @@ public class ModuleClassLoader
      * 
      */
     public URL getResource(String name) {
+        return getResource2( name, null, true);
+    }
+
+    /** getResource() - same thing, but don't delegate to repo if called 
+     * from repo 
+     * 
+     */
+    URL getResource2(String name, ClassLoader originator, boolean delegate2repo ) {
 
         URL url = null;
 
@@ -379,7 +404,7 @@ public class ModuleClassLoader
 
         // Finally, try the group loaders ( via super() in StandardClassLoader ).
         // not found using normal loading mechanism. load from one of the classes in the group
-        if( repository!=null ) {
+        if( delegate2repo && repository!=null ) {
             url=repository.findResource(this, name);
             if(url!=null ) {
                 if( DEBUG )
@@ -402,6 +427,7 @@ public class ModuleClassLoader
 
     }
 
+    
     // to avoid duplication - get resource from parent, when delegating
     private URL getResourceParentDelegate(String name) {
         URL url=null;
@@ -455,13 +481,20 @@ public class ModuleClassLoader
     public Class loadClass(String name, boolean resolve)
         throws ClassNotFoundException
     {
+        return loadClass2( name, resolve, true );
+    }
+    
+    public Class loadClass2(String name, boolean resolve, boolean del2repo)
+        throws ClassNotFoundException
+    {
 
         Class clazz = null;
 
         // Don't load classes if class loader is stopped
         if (!started) {
-            //log("Not started " + this + " " + module);
-            throw new ThreadDeath();
+            log("Not started " + this + " " + module);
+            //throw new ThreadDeath();
+            start();
         }
 
         // (0) Check our previously loaded local class cache
@@ -526,7 +559,7 @@ public class ModuleClassLoader
 
         // Finally, try the group loaders ( via super() in StandardClassLoader ).
         // not found using normal loading mechanism. load from one of the classes in the group
-        if( repository!=null ) {
+        if( del2repo && repository!=null ) {
             Class cls=repository.findClass(this, name);
             if(cls!=null ) {
                 if( DEBUG )

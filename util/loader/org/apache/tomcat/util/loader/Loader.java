@@ -854,7 +854,7 @@ public final class Loader  {
     }
 
     void notifyModuleStop(Module module) {
-        listener.moduleStop(module);
+        if( listener!=null ) listener.moduleStop(module);
     }
     
     /** Add a module listener. 

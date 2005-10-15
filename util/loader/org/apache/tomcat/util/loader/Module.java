@@ -167,6 +167,8 @@ public class Module implements Serializable {
                 ("Already started");
         started = true;
 
+        log("start()");
+
         // Construct a class loader based on our current repositories list
         try {
 

@@ -57,7 +57,7 @@ public class Repository {
     private Vector grpModules=new Vector();
     private transient Loader loader;
     
-    private transient ModuleClassLoader groupClassLoader;
+    private transient RepositoryClassLoader groupClassLoader;
     private Hashtable prefixes=new Hashtable();
 
     // For delegation
@@ -119,14 +119,17 @@ public class Repository {
         return grpModules.elements();
     }
     
+    /** Reload any module that is modified
+     */
     public void checkReload() {
         try {
         Enumeration mE=grpModules.elements();
         while( mE.hasMoreElements() ) {
             Module m=(Module)mE.nextElement();
-            log("Modified " + m + " " + m.modified());
+            boolean modif=m.modified();
+            log("Modified " + m + " " + modif);
             
-            if( m.modified() ) {
+            if( modif ) {
                 m.stop();
                 m.start();
             }
@@ -135,9 +138,43 @@ public class Repository {
             t.printStackTrace();
         }
     }
+
+    /** Verify if any module is modified. This is a deep search, including dirs.
+     *  Expensive operation.
+     *  
+     * @return
+     */
+    public boolean isModified() {
+        try {
+            Enumeration mE=grpModules.elements();
+            while( mE.hasMoreElements() ) {
+                Module m=(Module)mE.nextElement();
+                boolean modif=m.modified();
+                log("Modified " + m + " " + modif);
+                if( modif ) return true;
+            }
+        } catch( Throwable t ) {
+            t.printStackTrace();
+        }
+        return false;
+    }
     
     Repository getParent() {
         return parent;
+    }
+    
+    public String toString() {
+        return "Repository " + name + "(" + getClasspathString() + ")";
+    }
+
+    private String getClasspathString() {
+        StringBuffer sb=new StringBuffer();
+        Enumeration mE=grpModules.elements();
+        while( mE.hasMoreElements() ) {
+            Module m=(Module)mE.nextElement();
+            sb.append( m.getClasspathString() + ":");
+        }
+        return sb.toString();
     }
 
     /**
@@ -195,6 +232,7 @@ public class Repository {
      */
     public ClassLoader getClassLoader() {
         if( groupClassLoader==null ) {
+            
             ClassLoader pcl=parentClassLoader;
             if( pcl==null && parent!=null ) {
                 pcl=parent.getClassLoader();
@@ -205,13 +243,11 @@ public class Repository {
 
             if( pcl == null ) {
                 // allow delegation to embedding app
-                groupClassLoader=new ModuleClassLoader(new URL[0]);
+                groupClassLoader=new RepositoryClassLoader(new URL[0], this);
             } else {
-                groupClassLoader=new ModuleClassLoader(new URL[0], pcl);
+                groupClassLoader=new RepositoryClassLoader(new URL[0], pcl, this);
             }
             if( DEBUG ) log("---------- Created repository loader " + pcl );
-            groupClassLoader.start();
-            groupClassLoader.setRepository(this);
         }
         return groupClassLoader;
     }
