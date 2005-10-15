@@ -860,7 +860,7 @@ public class ChannelNioSocket extends JkHandler
                 if( msg != null && msg.indexOf( "Connection reset" ) >= 0)
                     log.debug( "Server has been restarted or reset this connection");
                 else if (msg != null && msg.indexOf( "Read timed out" ) >=0 )
-                    log.info( "connection timeout reached");            
+                    log.debug( "connection timeout reached");            
                 else
                     log.error( "Error, processing connection", ex);
                 return false;
