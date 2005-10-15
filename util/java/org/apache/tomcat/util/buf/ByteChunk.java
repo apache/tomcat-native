@@ -33,12 +33,27 @@ import java.io.Serializable;
  * to be able to parse the request without converting to string.
  */
 
+// TODO: This class could either extend ByteBuffer, or better a ByteBuffer inside
+// this way it could provide the search/etc on ByteBuffer, as a helper.
 
 /**
  * This class is used to represent a chunk of bytes, and
  * utilities to manipulate byte[].
  *
  * The buffer can be modified and used for both input and output.
+ *
+ * There are 2 modes: The chunk can be associated with a sink - ByteInputChannel or ByteOutputChannel,
+ * which will be used when the buffer is empty ( on input ) or filled ( on output ).
+ * For output, it can also grow. This operating mode is selected by calling setLimit() or
+ * allocate(initial, limit) with limit != -1.
+ *
+ * Various search and append method are defined - similar with String and StringBuffer, but
+ * operating on bytes.
+ *
+ * This is important because it allows processing the http headers directly on the received bytes,
+ * without converting to chars and Strings until the strings are needed. In addition, the charset
+ * is determined later, from headers or user code.
+ *
  *
  * @author dac@sun.com
  * @author James Todd [gonzo@sun.com]
@@ -47,7 +62,10 @@ import java.io.Serializable;
  */
 public final class ByteChunk implements Cloneable, Serializable {
 
-    // Input interface, used when the buffer is emptied.
+    /** Input interface, used when the buffer is emptiy
+     *
+     * Same as java.nio.channel.ReadableByteChannel
+     */
     public static interface ByteInputChannel {
         /** 
          * Read new bytes ( usually the internal conversion buffer ).
@@ -57,7 +75,9 @@ public final class ByteChunk implements Cloneable, Serializable {
         public int realReadBytes(byte cbuf[], int off, int len)
             throws IOException;
     }
-    // Output interface, used when the buffer is filled.
+
+    /** Same as java.nio.channel.WrittableByteChannel.
+     */
     public static interface ByteOutputChannel {
         /** 
          * Send the bytes ( usually the internal conversion buffer ).
@@ -105,7 +125,7 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
     //--------------------
-        public ByteChunk getClone() {
+    public ByteChunk getClone() {
 	try {
 	    return (ByteChunk)this.clone();
 	} catch( Exception ex) {
@@ -251,6 +271,11 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
     // -------------------- Adding data to the buffer --------------------
+    /** Append a char, by casting it to byte. This IS NOT intended for unicode.
+     *
+     * @param c
+     * @throws IOException
+     */
     public void append( char c )
 	throws IOException
     {
@@ -392,6 +417,11 @@ public final class ByteChunk implements Cloneable, Serializable {
     }
 
 
+    /** Send the buffer to the sink. Called by append() when the limit is reached.
+     *  You can also call it explicitely to force the data to be written.
+     *
+     * @throws IOException
+     */
     public void flushBuffer()
 	throws IOException
     {
@@ -777,7 +807,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 
 
     /**
-     * Convert specified String to a byte array.
+     * Convert specified String to a byte array. This ONLY WORKS for ascii, UTF chars will be truncated.
      * 
      * @param value to convert to byte array
      * @return the byte array value
