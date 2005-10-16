@@ -163,13 +163,6 @@ commons-pool.loc=${mirror}/jakarta/commons/pool/binaries/commons-pool-${commons-
 javaservice.home=${base.path}/javaservice
 javaservice.loc=http://www.alexandriasc.com/software/JavaService/JavaService-bin-1.2.0.zip
 
-
-# ----- Java Database Connectivity (JDBC) Optional Package, version 2.0 -----
-jdbc20ext.home=${base.path}/jdbc2_0-stdext
-jdbc20ext.lib=${jdbc20ext.home}
-jdbc20ext.jar=${jdbc20ext.lib}/jdbc2_0-stdext.jar
-
-
 # ----- Java Management Extensions (JMX), JMX RI 1.0.1 or later or MX4J 1.0 or later -----
 jmx.version=1.1.1
 jmx.home=${base.path}/mx4j-${jmx.version}
