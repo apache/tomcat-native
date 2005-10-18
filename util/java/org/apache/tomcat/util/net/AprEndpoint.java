@@ -1341,7 +1341,7 @@ public class AprEndpoint {
                 Socket.timeoutSet(data.socket, 0);
                 while (true) {
                     long nw = Socket.sendfile(data.socket, data.fd, null, null,
-                                              data.pos, data.end, 0);
+                                              data.pos, data.end - data.pos, 0);
                     if (nw < 0) {
                         if (!(-nw == Status.EAGAIN)) {
                             Socket.destroy(data.socket);
