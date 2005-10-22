@@ -1340,8 +1340,8 @@ public class AprEndpoint {
                 // Set the socket to nonblocking mode
                 Socket.timeoutSet(data.socket, 0);
                 while (true) {
-                    long nw = Socket.sendfile(data.socket, data.fd, null, null,
-                                              data.pos, data.end - data.pos, 0);
+                    long nw = Socket.sendfilen(data.socket, data.fd,
+                                               data.pos, data.end - data.pos, 0);
                     if (nw < 0) {
                         if (!(-nw == Status.EAGAIN)) {
                             Socket.destroy(data.socket);
@@ -1453,9 +1453,9 @@ public class AprEndpoint {
                                 continue;
                             }
                             // Write some data using sendfile
-                            long nw = Socket.sendfile(state.socket, state.fd,
-                                                     null, null, state.pos,
-                                                     state.end - state.pos, 0);
+                            long nw = Socket.sendfilen(state.socket, state.fd,
+                                                       state.pos,
+                                                       state.end - state.pos, 0);
                             if (nw < 0) {
                                 // Close socket and clear pool
                                 remove(state);

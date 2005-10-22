@@ -182,6 +182,7 @@ public class InternalAprOutputBuffer
      */
     public void setSocket(long socket) {
         this.socket = socket;
+        Socket.setsbb(this.socket, bbuf);
     }
 
 
@@ -694,7 +695,7 @@ public class InternalAprOutputBuffer
     protected void flushBuffer()
         throws IOException {
         if (bbuf.position() > 0) {
-            if (Socket.sendb(socket, bbuf, 0, bbuf.position()) < 0) {
+            if (Socket.sendbb(socket, 0, bbuf.position()) < 0) {
                 throw new IOException(sm.getString("iib.failedwrite"));
             }
             bbuf.clear();

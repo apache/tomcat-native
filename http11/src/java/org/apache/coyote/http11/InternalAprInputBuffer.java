@@ -215,6 +215,7 @@ public class InternalAprInputBuffer implements InputBuffer {
      */
     public void setSocket(long socket) {
         this.socket = socket;
+        Socket.setrbb(this.socket, bbuf);
     }
 
 
@@ -405,8 +406,8 @@ public class InternalAprInputBuffer implements InputBuffer {
                 }
                 // Do a simple read with a short timeout
                 bbuf.clear();
-                int nRead = Socket.recvbt
-                    (socket, bbuf, 0, buf.length - lastValid, readTimeout);
+                int nRead = Socket.recvbbt
+                    (socket, 0, buf.length - lastValid, readTimeout);
                 if (nRead > 0) {
                     bbuf.limit(nRead);
                     bbuf.get(buf, pos, nRead);
@@ -435,8 +436,8 @@ public class InternalAprInputBuffer implements InputBuffer {
             }
             // Do a simple read with a short timeout
             bbuf.clear();
-            int nRead = Socket.recvbt
-                (socket, bbuf, 0, buf.length - lastValid, readTimeout);
+            int nRead = Socket.recvbbt
+                (socket, 0, buf.length - lastValid, readTimeout);
             if (nRead > 0) {
                 bbuf.limit(nRead);
                 bbuf.get(buf, pos, nRead);
@@ -779,8 +780,8 @@ public class InternalAprInputBuffer implements InputBuffer {
             }
 
             bbuf.clear();
-            nRead = Socket.recvb
-                (socket, bbuf, 0, buf.length - lastValid);
+            nRead = Socket.recvbb
+                (socket, 0, buf.length - lastValid);
             if (nRead > 0) {
                 bbuf.limit(nRead);
                 bbuf.get(buf, pos, nRead);
@@ -799,8 +800,8 @@ public class InternalAprInputBuffer implements InputBuffer {
             pos = 0;
             lastValid = 0;
             bbuf.clear();
-            nRead = Socket.recvb
-                (socket, bbuf, 0, buf.length);
+            nRead = Socket.recvbb
+                (socket, 0, buf.length);
             if (nRead > 0) {
                 bbuf.limit(nRead);
                 bbuf.get(buf, 0, nRead);
