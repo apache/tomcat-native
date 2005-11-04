@@ -347,6 +347,8 @@ public class AjpAprProcessor implements ActionHook {
 
         // Setting up the socket
         this.socket = socket;
+        Socket.setrbb(this.socket, inputBuffer);
+        Socket.setsbb(this.socket, outputBuffer);
 
         // Error flag
         error = false;
@@ -999,8 +1001,8 @@ public class AjpAprProcessor implements ActionHook {
             inputBuffer.position(0);
         }
         while (inputBuffer.remaining() < n) {
-            int nRead = Socket.recvb
-                (socket, inputBuffer, inputBuffer.limit(), 
+            int nRead = Socket.recvbb
+                (socket, inputBuffer.limit(), 
                         inputBuffer.capacity() - inputBuffer.limit());
             if (nRead > 0) {
                 inputBuffer.limit(inputBuffer.limit() + nRead);
@@ -1031,8 +1033,8 @@ public class AjpAprProcessor implements ActionHook {
             inputBuffer.position(0);
         }
         while (inputBuffer.remaining() < n) {
-            int nRead = Socket.recvbt
-                (socket, inputBuffer, inputBuffer.limit(), 
+            int nRead = Socket.recvbbt
+                (socket, inputBuffer.limit(), 
                         inputBuffer.capacity() - inputBuffer.limit(), readTimeout);
             if (nRead > 0) {
                 inputBuffer.limit(inputBuffer.limit() + nRead);
@@ -1166,7 +1168,7 @@ public class AjpAprProcessor implements ActionHook {
     protected void flush()
         throws IOException {
         if (outputBuffer.position() > 0) {
-            if (Socket.sendb(socket, outputBuffer, 0, outputBuffer.position()) < 0) {
+            if (Socket.sendbb(socket, 0, outputBuffer.position()) < 0) {
                 throw new IOException(sm.getString("ajpprotocol.failedwrite"));
             }
             outputBuffer.clear();
