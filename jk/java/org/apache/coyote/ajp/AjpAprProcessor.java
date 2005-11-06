@@ -830,7 +830,7 @@ public class AjpAprProcessor implements ActionHook {
      */
     public void parseHost(MessageBytes valueMB) {
 
-        if (valueMB == null || valueMB.isNull()) {
+        if (valueMB == null || (valueMB != null && valueMB.isNull()) ) {
             // HTTP/1.0
             // Default is what the socket tells us. Overriden if a host is
             // found/parsed
@@ -838,8 +838,14 @@ public class AjpAprProcessor implements ActionHook {
             InetAddress localAddress = endpoint.getAddress()/*socket.getLocalAddress()*/;
             // Setting the socket-related fields. The adapter doesn't know
             // about socket.
-            request.setLocalHost(localAddress.getHostName());
-            request.serverName().setString(localAddress.getHostName());
+            if(localAddress != null) {
+                request.setLocalHost(localAddress.getHostName());
+                request.serverName().setString(localAddress.getHostName());
+            } else {
+               log.error("host address " + endpoint.getPort() + " '" + endpoint.getAddress() + "'");
+               request.setLocalHost("localhost");
+               request.serverName().setString("localhost");
+            }
             return;
         }
 
