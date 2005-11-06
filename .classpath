@@ -8,11 +8,11 @@
 	<classpathentry kind="src" path="util/java"/>
 	<classpathentry kind="src" path="util/loader"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="D:/JavaDev/libs/commons-logging-1.0.4/commons-logging-api.jar"/>
-	<classpathentry kind="lib" path="D:/JavaDev/libs/mx4j-3.0.1/lib/mx4j.jar"/>
-	<classpathentry kind="lib" path="D:/JavaDev/libs/commons-modeler-1.1/commons-modeler.jar"/>
-	<classpathentry kind="lib" path="D:/JavaDev/libs/apache-ant-1.6.2/lib/ant.jar"/>
-	<classpathentry kind="lib" path="D:/JavaDev/libs/commons-collections-3.1/commons-collections-3.1.jar"/>
-	<classpathentry kind="lib" path="D:/JavaDev/libs/puretls-0.9b4/build/puretls.jar"/>
+	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/commons-logging-1.0.4/commons-logging-api.jar"/>
+	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/mx4j-3.0.1/lib/mx4j.jar"/>
+	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/commons-modeler-1.1/commons-modeler.jar"/>
+	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/commons-collections-3.1/commons-collections-3.1.jar"/>
+	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/puretls-0.9b4/build/puretls.jar"/>
+	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/apache-ant-1.6.5/lib/ant.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
