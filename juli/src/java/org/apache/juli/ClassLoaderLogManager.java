@@ -486,7 +486,6 @@ public class ClassLoaderLogManager extends LogManager {
         }
 
         LogNode findNode(String name) {
-            assert name != null && name.length() > 0;
             LogNode currentNode = this;
             while (name != null) {
                 final int dotIndex = name.indexOf('.');
@@ -516,7 +515,6 @@ public class ClassLoaderLogManager extends LogManager {
                 logger = node.logger;
                 node = node.parent;
             }
-            assert logger != null;
             return logger;
         }
 
