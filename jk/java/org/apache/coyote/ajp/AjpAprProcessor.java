@@ -834,18 +834,7 @@ public class AjpAprProcessor implements ActionHook {
             // HTTP/1.0
             // Default is what the socket tells us. Overriden if a host is
             // found/parsed
-            request.setServerPort(endpoint.getPort()/*socket.getLocalPort()*/);
-            InetAddress localAddress = endpoint.getAddress()/*socket.getLocalAddress()*/;
-            // Setting the socket-related fields. The adapter doesn't know
-            // about socket.
-            if(localAddress != null) {
-                request.setLocalHost(localAddress.getHostName());
-                request.serverName().setString(localAddress.getHostName());
-            } else {
-               log.error("host address " + endpoint.getPort() + " '" + endpoint.getAddress() + "'");
-               request.setLocalHost("localhost");
-               request.serverName().setString("localhost");
-            }
+            request.setServerPort(endpoint.getPort());
             return;
         }
 

@@ -1400,12 +1400,7 @@ public class Http11AprProcessor implements ActionHook {
             // HTTP/1.0
             // Default is what the socket tells us. Overriden if a host is
             // found/parsed
-            request.setServerPort(endpoint.getPort()/*socket.getLocalPort()*/);
-            InetAddress localAddress = endpoint.getAddress()/*socket.getLocalAddress()*/;
-            // Setting the socket-related fields. The adapter doesn't know
-            // about socket.
-            request.setLocalHost(localAddress.getHostName());
-            request.serverName().setString(localAddress.getHostName());
+            request.setServerPort(endpoint.getPort());
             return;
         }
 

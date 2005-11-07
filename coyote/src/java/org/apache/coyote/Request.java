@@ -88,8 +88,6 @@ public final class Request {
     private int serverPort = -1;
     private MessageBytes serverNameMB = MessageBytes.newInstance();
 
-    private String localHost;
-    
     private int remotePort;
     private int localPort;
 
@@ -244,14 +242,6 @@ public final class Request {
     public MessageBytes localAddr() {
         return localAddrMB;
     }
-    
-    public String getLocalHost() {
-        return localHost;
-    }
-
-    public void setLocalHost(String host) {
-        this.localHost = host;
-    }    
     
     public int getRemotePort(){
         return remotePort;

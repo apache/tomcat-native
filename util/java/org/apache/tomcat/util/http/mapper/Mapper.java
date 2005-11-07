@@ -507,6 +507,9 @@ public final class Mapper {
                     MappingData mappingData)
         throws Exception {
 
+        if (host.isNull()) {
+            host.getCharChunk().append(defaultHostName);
+        }
         host.toChars();
         uri.toChars();
         internalMap(host.getCharChunk(), uri.getCharChunk(), mappingData);

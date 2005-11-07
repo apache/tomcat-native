@@ -1355,7 +1355,6 @@ public class Http11Processor implements Processor, ActionHook {
             InetAddress localAddress = socket.getLocalAddress();
             // Setting the socket-related fields. The adapter doesn't know
             // about socket.
-            request.setLocalHost(localAddress.getHostName());
             request.serverName().setString(localAddress.getHostName());
             return;
         }
