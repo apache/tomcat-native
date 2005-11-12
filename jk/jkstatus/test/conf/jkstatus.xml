@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<jk:status xmlns:jk="http://jakarta.apache.org">
+  <jk:server name="localhost" port="80" software="Apache/2.0.54 (Win32) mod_ssl/2.0.54 OpenSSL/0.9.7g mod_jk/1.2.15" version="1.2.15" />
+  <jk:balancers>
+  <jk:balancer id="0" name="lb" type="lb" sticky="True" stickyforce="False" retries="3" recover="60" >
+      <jk:member id="0" name="node1" type="ajp13" host="localhost" port="9012" address="127.0.0.1:9012" status="OK" lbfactor="1" lbvalue="1" elected="0" readed="0" transferred="0" errors="0" busy="0" />
+      <jk:member id="1" name="node2" type="ajp13" host="localhost" port="9022" address="127.0.0.1:9022" status="OK" lbfactor="1" lbvalue="1" elected="0" readed="0" transferred="0" errors="0" busy="0" />
+    <jk:map type="Wildchar" uri="/ClusterTest/*" context="/ClusterTest/*" />
+    <jk:map type="Exact" uri="/ClusterTest" context="/ClusterTest" />
+    <jk:map type="Wildchar" uri="/myapps/*" context="/myapps/*" />
+    <jk:map type="Exact" uri="/myapps" context="/myapps" />
+  </jk:balancer>
+  </jk:balancers>
+</jk:status>
+

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- @author Peter Rossbach -->
+<project name="JkStatusTestcases" basedir="." default="test">
+	<property file="../../../../build/build.properties" />
+	<property file="../../../../build/build.properties.default" />
+	<property name="test.report.logs" value="logs/reports" />
+	<property name="test.results" value="logs/test-results" />
+
+	<property name="compile.optimize" value="true" />
+	<property name="compile.debug" value="true" />
+	<property name="compile.source" value="1.4" />
+	<property name="compile.deprecation" value="true" />
+	<property name="compile.nowarn" value="off" />
+	<property name="compile.encoding" value="ISO-8859-1" />
+	<property name="build.dir" value="build/test" />
+	<property name="src.dir" value="src/share" />
+	<property name="catalina.home" value="../../../../build/build" />
+
+	<!-- Build the classpath -->
+	<path id="project.classpath">
+		<pathelement location="../build/classes" />
+		<pathelement location="${jmx.jar}" />
+		<pathelement location="${commons-logging.jar}" />
+		<pathelement location="${log4j.jar}" />
+		<fileset dir="${catalina.home}/common/endorsed">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${catalina.home}/common/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${catalina.home}/server/lib">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+	<target name="build-prepare">
+		<mkdir dir="${build.dir}" />
+	</target>
+
+	<target name="info" description="Shows a information about this ant script">
+		<echo>
+			This ant script implements some testcases to verify the key functions of tomcat apache mod_jk jkstatus module.
+			You find this script at: ${ant.file}
+		</echo>
+	</target>
+
+	<!-- This target compiles all sources out of the 
+			projects source tree -->
+	<target name="compile" depends="build-prepare" description="This target compiles all sources out of the projects source tree">
+
+		<!-- Copies the static resources out of the src tree
+				to the build/classes dir -->
+		<copy todir="${build.dir}/classes">
+			<fileset dir="${src.dir}">
+				<include name="**" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+
+		<!-- Compiles all sources -->
+		<javac destdir="${build.dir}/classes" srcdir="${src.dir}" includes="**/*.java" excludes="**/.svn/**" deprecation="${compile.deprecation}" debug="${compile.debug}" source="${compile.source}" optimize="${compile.optimize}" nowarn="${compile.nowarn}" encoding="${compile.encoding}">
+			<classpath>
+				<path refid="project.classpath" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="test" depends="compile" description="Run unit tests">
+		<delete dir="${test.results}" />
+		<mkdir dir="${test.results}" />
+		<junit fork="yes" failureProperty="test.failure">
+			<jvmarg value="-Dcatalina.base=${basedir}" />
+			<jvmarg value="-Dcatalina.home=${catalina.home}" />
+			<jvmarg value="-Dlog4j.configuration=file:conf/log4j.xml" />
+			<classpath>
+				<pathelement location="${build.dir}/classes" />
+				<path refid="project.classpath" />
+			</classpath>
+			<formatter type="plain" usefile="false" />
+			<formatter type="xml" />
+			<batchtest todir="${test.results}">
+				<fileset dir="${build.dir}/classes" includes="**/*Test.class" />
+			</batchtest>
+		</junit>
+		<mkdir dir="${test.report.logs}" />
+		<junitreport todir="${test.report.logs}">
+			<fileset dir="${test.results}" />
+			<report format="frames" todir="${test.report.logs}" />
+		</junitreport>
+		<antcall target="checktest" />
+	</target>
+
+	<target name="checktest" if="test.failure">
+		<fail message="some test failed" />
+	</target>
+
+	<target name="clean">
+		<delete dir="${build}/dir" />
+		<delete dir="build" />
+		<delete dir="${test.report.logs}" />
+		<delete dir="${test.results}" />
+		<delete dir="logs" />
+	</target>
+</project>

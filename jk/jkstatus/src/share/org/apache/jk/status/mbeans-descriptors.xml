@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<mbeans-descriptors>
+
+<!--
+  <mbean name="JkStatus"
+         description="represent the apache mod_jk status"
+         domain="Jk"
+         group="Status"
+         type="org.apache.jk.status.JkStatusMbean">
+    
+    <attribute name="className"
+               description="Fully qualified class name of the managed object"
+               type="java.lang.String"
+               writeable="false"/>
+
+    <attribute name="info"
+               description="The base directory for Context configuration files"
+               type="java.lang.String"
+               writeable="false" />
+      
+    <operation name="check"
+               description="Check a web application name for updates"
+               impact="ACTION"
+               returnType="void">
+      <parameter name="name"
+                 description="Application name"
+                 type="java.lang.String"/>
+    </operation>
+
+  </mbean>
+-->
+</mbeans-descriptors>

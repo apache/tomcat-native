@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<antlib>
+  <typedef
+        name="update"
+        classname="org.apache.jk.status.JkStatusUpdateTask" />
+  <typedef
+        name="reset"
+        classname="org.apache.jk.status.JkStatusResetTask" />
+  <typedef
+        name="status"
+        classname="org.apache.jk.status.JkStatusTask" />
+</antlib>

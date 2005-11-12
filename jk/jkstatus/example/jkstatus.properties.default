@@ -1,0 +1,6 @@
+jkstatus.host=localhost
+jkstatus.port=80
+jkstatus.username=manager
+jkstatus.password=tomcat
+jkstatus.url=http://${jkstatus.host}:${jkstatus.port}/jkstatus
+

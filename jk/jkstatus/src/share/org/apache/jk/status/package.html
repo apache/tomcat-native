@@ -1,0 +1,44 @@
+<body>
+
+<p>This package contains a set of <code>Task</code> implementations for
+<em>Ant (version 1.6.x or later)</em> that can be used to interact with the
+Apaache mod_jk status page to show, update, disable and stop mod_jk worker.
+For more information, see
+<a href="http://jakarta.apache.org/tomcat/connectors-doc/index.html"><strong>JK Documenation</strong></a>.</p>
+
+<p>The attributes of each task element correspond
+exactly to the request parameters that are included with an HTTP request
+sent directly to jk status page.  They are summarized as follows:
+</p>
+
+<table>
+  <tr>
+    <th align="center" width="15%">Attribute</th>
+    <th align="center" width="85%">Description</th>
+  </tr>
+  <tr>
+    <td align="center">url</td>
+    <td>
+      The URL of the jk status page you will use to
+      perform the requested operations.  If not specified, defaults to
+      <code>http://localhost:80/jkstatus</code> (which corresponds
+      to a standard installation of Apache mod_jk).
+    </td>
+  </tr>
+  <tr>
+    <td align="center">username</td>
+    <td>
+      The username of a mod_jk status user that has been configured with the
+      <code>Allow user</code> Apache Location constraint.  This attribute is optional.
+    </td>
+  </tr>
+  <tr>
+    <td align="center">password</td>
+    <td>
+      The password of a mod_jk status user that has been configured with the
+      <code>Allow user</code> Apache Location constraint.  This attribute is optional.
+    </td>
+  </tr>
+</table>
+
+</body>

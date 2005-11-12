@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<!-- ===================================================================== -->
+<!-- -->
+<!-- Log4j Configuration -->
+<!-- -->
+<!-- ===================================================================== -->
+<!-- $Id:$ -->
+<!--
+| For more configuration infromation and examples see the Jakarta Log4j
+| owebsite: http://jakarta.apache.org/log4j
+-->
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+
+<!-- ============================== -->
+<!-- Append messages to the console -->
+<!-- ==============================-->
+
+<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+<param name="Target" value="System.out"/>
+<layout class="org.apache.log4j.PatternLayout">
+<!--The default pattern: Date Priority [Category] Message\n-->
+<param name="ConversionPattern" value="%d{ABSOLUTE} %-5p [%c{1}] %m%n"/>
+</layout>
+</appender>
+
+
+<category name="org.apache.jk.status" 
+           additivity="false"> 
+   <priority value="info" />
+   <appender-ref ref="CONSOLE" />
+</category>
+
+<category name="org.apache.catalina" 
+           additivity="false"> 
+   <priority value="info" />
+   <appender-ref ref="CONSOLE" />
+</category>
+<category name="org.apache.tomcat" 
+           additivity="false"> 
+   <priority value="error" />
+   <appender-ref ref="CONSOLE" />
+</category>
+<category name="org.apache.naming" 
+           additivity="false"> 
+   <priority value="info" />
+   <appender-ref ref="CONSOLE" />
+</category>
+<category name="org.apache.commons" 
+           additivity="false"> 
+   <priority value="info" />
+   <appender-ref ref="CONSOLE" />
+</category>
+
+<!-- Setup the Root c  -->
+<root>
+<appender-ref ref="CONSOLE"/>
+</root>
+</log4j:configuration> 
+
