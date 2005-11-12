@@ -104,11 +104,20 @@ public class Http11BaseProtocol implements ProtocolHandler
     public Adapter getAdapter() {
         return adapter;
     }
-
+    
+    protected Http11ConnectionHandler createConnectionHandler() {
+        Http11ConnectionHandler cHandler = new Http11ConnectionHandler( this );
+        setSoLinger(Constants.DEFAULT_CONNECTION_LINGER);
+        setSoTimeout(Constants.DEFAULT_CONNECTION_TIMEOUT);
+        setServerSoTimeout(Constants.DEFAULT_SERVER_SOCKET_TIMEOUT);
+        setTcpNoDelay(Constants.DEFAULT_TCP_NO_DELAY);
+        return cHandler ;
+    }
 
     /** Start the protocol
      */
     public void init() throws Exception {
+        cHandler = createConnectionHandler() ;
         ep.setConnectionHandler( cHandler );
         try {
             checkSocketFactory();
