@@ -59,7 +59,11 @@ import org.apache.tomcat.util.threads.ThreadWithAttributes;
 public class Http11Protocol extends Http11BaseProtocol implements MBeanRegistration
 {
     public Http11Protocol() {
-        super();
+        cHandler = new JmxHttp11ConnectionHandler( this );
+        setSoLinger(Constants.DEFAULT_CONNECTION_LINGER);
+        setSoTimeout(Constants.DEFAULT_CONNECTION_TIMEOUT);
+        setServerSoTimeout(Constants.DEFAULT_SERVER_SOCKET_TIMEOUT);
+        setTcpNoDelay(Constants.DEFAULT_TCP_NO_DELAY);
     }
 
 
@@ -124,7 +128,7 @@ public class Http11Protocol extends Http11BaseProtocol implements MBeanRegistrat
             if( tpData[1] instanceof Object[] ) {
                 tpData=(Object [])tpData[1];
             }
-            ObjectName oname=(ObjectName)tpData[Http11Protocol.THREAD_DATA_OBJECT_NAME];
+            ObjectName oname=(ObjectName)tpData[Http11BaseProtocol.THREAD_DATA_OBJECT_NAME];
             if( oname==null ) return;
             Registry.getRegistry(null, null).unregisterComponent(oname);
             Http11Processor processor =
@@ -141,6 +145,7 @@ public class Http11Protocol extends Http11BaseProtocol implements MBeanRegistrat
 
         JmxHttp11ConnectionHandler( Http11Protocol proto ) {
             super(proto);
+            this.proto = proto ;
         }
 
         public void setAttribute( String name, Object value ) {
@@ -155,7 +160,7 @@ public class Http11Protocol extends Http11BaseProtocol implements MBeanRegistrat
 
             // was set up by supper
             Http11Processor  processor = (Http11Processor)
-                    thData[ Http11Protocol.THREAD_DATA_PROCESSOR];
+                    thData[ Http11BaseProtocol.THREAD_DATA_PROCESSOR];
 
             if( proto.getDomain() != null ) {
                 try {
@@ -165,7 +170,7 @@ public class Http11Protocol extends Http11BaseProtocol implements MBeanRegistrat
                         (proto.getDomain() + ":type=RequestProcessor,worker="
                          + proto.getName() +",name=HttpRequest" + count++ );
                     Registry.getRegistry(null, null).registerComponent( rp, rpName, null);
-                    thData[Http11Protocol.THREAD_DATA_OBJECT_NAME]=rpName;
+                    thData[Http11BaseProtocol.THREAD_DATA_OBJECT_NAME]=rpName;
                 } catch( Exception ex ) {
                     log.warn("Error registering request");
                 }
