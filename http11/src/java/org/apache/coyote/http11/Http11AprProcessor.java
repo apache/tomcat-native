@@ -1173,8 +1173,8 @@ public class Http11AprProcessor implements ActionHook {
             InputFilter savedBody = new SavedRequestInputFilter(body);
             savedBody.setRequest(request);
             
-            InternalInputBuffer internalBuffer = (InternalInputBuffer)
-            request.getInputBuffer();
+            InternalAprInputBuffer internalBuffer = (InternalAprInputBuffer)
+                request.getInputBuffer();
             internalBuffer.addActiveFilter(savedBody);
         }
 
