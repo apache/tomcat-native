@@ -19,7 +19,6 @@ package org.apache.coyote.http11;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.net.InetAddress;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -216,7 +215,7 @@ public class Http11AprProcessor implements ActionHook {
     /**
      * Socket associated with the current connection.
      */
-    protected long socket;
+    protected long socket = 0;
 
 
     /**
@@ -907,6 +906,7 @@ public class Http11AprProcessor implements ActionHook {
         // Recycle
         inputBuffer.recycle();
         outputBuffer.recycle();
+        this.socket = 0;
 
         return openSocket;
         
@@ -1003,7 +1003,7 @@ public class Http11AprProcessor implements ActionHook {
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ADDR_ATTRIBUTE) {
 
             // Get remote host address
-            if (remoteAddr == null) {
+            if (remoteAddr == null && (socket != 0)) {
                 try {
                     long sa = Address.get(Socket.APR_REMOTE, socket);
                     remoteAddr = Address.getip(sa);
@@ -1016,7 +1016,7 @@ public class Http11AprProcessor implements ActionHook {
         } else if (actionCode == ActionCode.ACTION_REQ_LOCAL_NAME_ATTRIBUTE) {
 
             // Get local host name
-            if (localName == null) {
+            if (localName == null && (socket != 0)) {
                 try {
                     long sa = Address.get(Socket.APR_LOCAL, socket);
                     localName = Address.getnameinfo(sa, 0);
@@ -1029,7 +1029,7 @@ public class Http11AprProcessor implements ActionHook {
         } else if (actionCode == ActionCode.ACTION_REQ_HOST_ATTRIBUTE) {
 
             // Get remote host name
-            if (remoteHost == null) {
+            if (remoteHost == null && (socket != 0)) {
                 try {
                     long sa = Address.get(Socket.APR_REMOTE, socket);
                     remoteHost = Address.getnameinfo(sa, 0);
@@ -1042,7 +1042,7 @@ public class Http11AprProcessor implements ActionHook {
         } else if (actionCode == ActionCode.ACTION_REQ_LOCAL_ADDR_ATTRIBUTE) {
 
             // Get local host address
-            if (localAddr == null) {
+            if (localAddr == null && (socket != 0)) {
                 try {
                     long sa = Address.get(Socket.APR_LOCAL, socket);
                     Sockaddr addr = new Sockaddr();
@@ -1060,7 +1060,7 @@ public class Http11AprProcessor implements ActionHook {
         } else if (actionCode == ActionCode.ACTION_REQ_REMOTEPORT_ATTRIBUTE) {
 
             // Get remote port
-            if (remotePort == -1) {
+            if (remotePort == -1 && (socket != 0)) {
                 try {
                     long sa = Address.get(Socket.APR_REMOTE, socket);
                     Sockaddr addr = Address.getInfo(sa);
@@ -1074,7 +1074,7 @@ public class Http11AprProcessor implements ActionHook {
         } else if (actionCode == ActionCode.ACTION_REQ_LOCALPORT_ATTRIBUTE) {
 
             // Get local port
-            if (localPort == -1) {
+            if (localPort == -1 && (socket != 0)) {
                 try {
                     long sa = Address.get(Socket.APR_LOCAL, socket);
                     Sockaddr addr = new Sockaddr();
