@@ -1090,8 +1090,8 @@ public class Http11AprProcessor implements ActionHook {
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_ATTRIBUTE ) {
 
-            try {
-                if (ssl) {
+            if (ssl && (socket != 0)) {
+                try {
                     // Cipher suite
                     Object sslO = SSLSocket.getInfoS(socket, SSL.SSL_INFO_CIPHER);
                     if (sslO != null) {
@@ -1127,14 +1127,14 @@ public class Http11AprProcessor implements ActionHook {
                         request.setAttribute
                             (AprEndpoint.SESSION_ID_KEY, sslO);
                     }
+                } catch (Exception e) {
+                    log.warn(sm.getString("http11processor.socket.ssl"), e);
                 }
-            } catch (Exception e) {
-                log.warn(sm.getString("http11processor.socket.ssl"), e);
             }
 
         } else if (actionCode == ActionCode.ACTION_REQ_SSL_CERTIFICATE) {
 
-            if (ssl) {
+            if (ssl && (socket != 0)) {
                  // Consume and buffer the request body, so that it does not
                  // interfere with the client's handshake messages
                 InputFilter[] inputFilters = inputBuffer.getFilters();
