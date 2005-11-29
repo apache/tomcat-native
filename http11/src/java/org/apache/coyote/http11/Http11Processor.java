@@ -772,6 +772,7 @@ public class Http11Processor implements Processor, ActionHook {
         remoteAddr = null;
         remoteHost = null;
         localAddr = null;
+        localName = null;
         remotePort = -1;
         localPort = -1;
 

@@ -746,6 +746,7 @@ public class Http11AprProcessor implements ActionHook {
         remoteAddr = null;
         remoteHost = null;
         localAddr = null;
+        localName = null;
         remotePort = -1;
         localPort = -1;
 
