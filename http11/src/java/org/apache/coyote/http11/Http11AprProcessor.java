@@ -1045,11 +1045,7 @@ public class Http11AprProcessor implements ActionHook {
             if (localAddr == null && (socket != 0)) {
                 try {
                     long sa = Address.get(Socket.APR_LOCAL, socket);
-                    Sockaddr addr = new Sockaddr();
-                    if (Address.fill(addr, sa)) {
-                        localAddr = addr.hostname;
-                        localPort = addr.port;
-                    }
+                    localAddr = Address.getip(sa);
                 } catch (Exception e) {
                     log.warn(sm.getString("http11processor.socket.info"), e);
                 }
@@ -1077,11 +1073,8 @@ public class Http11AprProcessor implements ActionHook {
             if (localPort == -1 && (socket != 0)) {
                 try {
                     long sa = Address.get(Socket.APR_LOCAL, socket);
-                    Sockaddr addr = new Sockaddr();
-                    if (Address.fill(addr, sa)) {
-                        localAddr = addr.hostname;
-                        localPort = addr.port;
-                    }
+                    Sockaddr addr = Address.getInfo(sa);
+                    localPort = addr.port;
                 } catch (Exception e) {
                     log.warn(sm.getString("http11processor.socket.info"), e);
                 }
