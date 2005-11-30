@@ -636,19 +636,6 @@ public class Http11AprProtocol implements ProtocolHandler, MBeanRegistration
                     ((ActionHook) processor).action(ActionCode.ACTION_START, null);
                 }
 
-                // FIXME: SSL implementation
-                /*
-                if( proto.secure ) {
-                    SSLSupport sslSupport=null;
-                    if(proto.sslImplementation != null)
-                        sslSupport = proto.sslImplementation.getSSLSupport(socket);
-                    processor.setSSLSupport(sslSupport);
-                } else {
-                    processor.setSSLSupport( null );
-                }
-                processor.setSocket( socket );
-                */
-
                 return processor.process(socket);
 
             } catch(java.net.SocketException e) {
