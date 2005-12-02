@@ -12,6 +12,6 @@
 	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/mx4j-3.0.1/lib/mx4j.jar"/>
 	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/commons-modeler-1.1/commons-modeler.jar"/>
 	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/commons-collections-3.1/commons-collections-3.1.jar"/>
-	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/apache-ant-1.6.5/lib/ant.jar"/>
+	<classpathentry kind="var" path="ANT_HOME/lib/ant.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
