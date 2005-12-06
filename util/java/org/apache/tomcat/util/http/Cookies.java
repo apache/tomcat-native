@@ -247,9 +247,8 @@ public final class Cookies { // extends MultiMap {
             int startValue=skipSpaces( bytes, pos, end);
             int endValue=startValue;
             
-            // quote is valid only in version=1 cookies
             cc=bytes[pos];
-            if( ( version == 1 || isSpecial ) && ( cc== '\'' || cc=='"' ) ) {
+            if(  cc== '\'' || cc=='"' ) {
                 startValue++;
                 endValue=indexOf( bytes, startValue, end, cc );
                 pos=endValue+1; // to skip to next cookie
