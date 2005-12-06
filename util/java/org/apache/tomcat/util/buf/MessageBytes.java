@@ -198,18 +198,19 @@ public final class MessageBytes implements Cloneable, Serializable {
     /** Compute the string value
      */
     public String toString() {
-	if( hasStrValue ) return strValue;
-	hasStrValue=true;
-	
-	switch (type) {
-	case T_CHARS:
-	    strValue=charC.toString();
-	    return strValue;
-	case T_BYTES:
-	    strValue=byteC.toString();
-	    return strValue;
-	}
-	return null;
+        if( hasStrValue ) return strValue;
+        
+        switch (type) {
+        case T_CHARS:
+            strValue=charC.toString();
+            hasStrValue=true;
+            return strValue;
+        case T_BYTES:
+            strValue=byteC.toString();
+            hasStrValue=true;
+            return strValue;
+        }
+        return null;
     }
 
     //----------------------------------------
