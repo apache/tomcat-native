@@ -541,12 +541,12 @@ public class AprEndpoint {
         // Bind the server socket
         int ret = Socket.bind(serverSock, inetAddress);
         if (ret != 0) {
-            throw new Exception(sm.getString("endpoint.init.bind", "" + ret));
+            throw new Exception(sm.getString("endpoint.init.bind", Error.strerror(ret)));
         }
         // Start listening on the server socket
         ret = Socket.listen(serverSock, backlog);
         if (ret != 0) {
-            throw new Exception(sm.getString("endpoint.init.listen", "" + ret));
+            throw new Exception(sm.getString("endpoint.init.listen", Error.strerror(ret)));
         }
         if (OS.IS_WIN32 || OS.IS_WIN64) {
             // On Windows set the reuseaddr flag after the bind/listen
