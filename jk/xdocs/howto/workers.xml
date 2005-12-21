@@ -224,6 +224,8 @@ You should note that Ajp13 is now the only out-process protocol supported by Tom
   worker.worker2.socket_keepalive=1
   # worker "worker2" want ajp13 connection to be dropped after 5mn (recycle)
   worker.worker2.recycle_timeout=300
+  # mount can be used as an alternative to the JkMount directive
+  worker.worker2.mount=/contexta /contexta/* /contextb /contextb/*
 </source>
 
 <p>

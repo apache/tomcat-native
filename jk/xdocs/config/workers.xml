@@ -414,6 +414,10 @@ If set to AJP Connector secret keyword, only request with this keyword are succe
 Use <b>request.useSecret="true"</b> and <b>request.secret="secret key word"</b> at your tomcat ajp 
 Connector configuration.
 </directive>
+
+<directive name="mount" default="" required="false">
+Space delimted list of uri maps the worker should handle
+</directive>
  
 </directives>
 </subsection>
