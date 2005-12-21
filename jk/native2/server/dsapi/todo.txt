@@ -1,5 +1,0 @@
-$Id$
-
-Test SSL
-Produce Linux version
-Resolve any licence issues with dsapifilter.h
