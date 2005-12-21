@@ -53,6 +53,8 @@ static const char ssl_cert_end[] = "\r\n-----END CERTIFICATE-----\r\n";
 
 static jk_logger_t *logger = NULL;
 static jk_worker_env_t worker_env;
+static jk_map_t *init_map = NULL;
+static jk_uri_worker_map_t *uw_map = NULL;
 
 #ifdef NETWARE
 int (*PR_IsSocketSecure) (SYS_NETFD * csd);     /* pointer to PR_IsSocketSecure function */
@@ -84,11 +86,19 @@ static int setup_http_headers(nsapi_private_data_t * private_data,
 
 static void init_workers_on_other_threads(void *init_d)
 {
-    jk_map_t *init_map = (jk_map_t *)init_d;
+    init_map = (jk_map_t *)init_d;
     /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
     /* but where are they here in Netscape ? */
     if (wc_open(init_map, &worker_env, logger)) {
-        init_on_other_thread_is_ok = JK_TRUE;
+        if (uri_worker_map_alloc(&uw_map, NULL, logger)) {
+            uw_map->fname = "";
+            worker_env.uri_to_worker = uw_map;
+            init_on_other_thread_is_ok = JK_TRUE;
+        }
+        else {
+            jk_log(logger, JK_LOG_EMERG,
+                   "In init_workers_on_other_threads, failed");
+        }
     }
     else {
         jk_log(logger, JK_LOG_EMERG,
@@ -215,7 +225,6 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
     char *shm_file = pblock_findval(JK_SHM_FILE_TAG, pb);
 
     int rc = REQ_ABORTED;
-    jk_map_t *init_map;
 
     fprintf(stderr,
             "In jk_init.\n   Worker file = %s.\n   Log level = %s.\n   Log File = %s\n",
@@ -260,8 +269,6 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
             }
 */
         }
-
-        jk_map_free(&init_map);
     }
 
 #ifdef NETWARE
@@ -279,9 +286,17 @@ NSAPI_PUBLIC void jk_term(void *p)
         PR_IsSocketSecure = NULL;
     }
 #endif
+    if (uw_map) {
+        uri_worker_map_free(&uw_map, logger);
+    }
+
     wc_close(logger);
     if (logger) {
         jk_close_file_logger(&logger);
+    }
+
+	if (init_map) {
+        jk_map_free(&init_map);
     }
 }
 
@@ -393,6 +408,7 @@ static int init_ws_service(nsapi_private_data_t * private_data,
     s->headers_names = NULL;
     s->headers_values = NULL;
     s->num_headers = 0;
+	s->uw_map = uw_map;
 
 #ifdef NETWARE
     /* on NetWare, we can have virtual servers that are secure.

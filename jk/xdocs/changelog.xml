@@ -21,6 +21,17 @@
   new documentation project for JK was started.
   </p>
 </section>
+<section name="Changes from the released JK 1.2.15">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <fix>
+      <bug>35862</bug>: NSAPI plugin attempts to read freed memory and attempts to
+      dereference a null pointer. Patch provided by Brian Kavanagh. (markt)
+      </fix>
+    </changelog>
+  </subsection>
+</section>
 <section name="Changes from the released JK 1.2.14">
   <br />
   <subsection name="Native">
