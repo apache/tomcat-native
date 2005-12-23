@@ -85,13 +85,13 @@ mod_jk.a: mod_jk.lo $(APACHE_OBJECTS)
 	 ${MOD_LINK} -o $@ $^
 
 mod_jk.so: mod_jk.la
-	$(LIBTOOL) --mode=install cp $< `pwd`/$@
+	$(LIBTOOL) --mode=install cp mod_jk.la `pwd`/$@
 
 #
 # Common part.
 #
 mod_jk.lo: mod_jk.c
-	${SH_COMPILE} -c $< -o $@
+	${SH_COMPILE} -c mod_jk.c -o $@
 
 .c.lo:
 	${SH_COMPILE} -c $< -o $@
