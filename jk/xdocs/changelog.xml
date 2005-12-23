@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      Fix AJP13 Cookie2 parsing. Cookie2 was always send as Cookie.
+      Patch provided by Andre Gebers. (mturk)
+      </fix>
+      <fix>
       <bug>35862</bug>: NSAPI plugin attempts to read freed memory and attempts to
       dereference a null pointer. Patch provided by Brian Kavanagh. (markt)
       </fix>
