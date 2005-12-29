@@ -1364,18 +1364,13 @@ public class Http11AprProcessor implements ActionHook {
         parseHost(valueMB);
 
         if (!contentDelimitation) {
-            // If there's no content length and we're using keep-alive
-            // (HTTP/1.0 with keep-alive or HTTP/1.1), assume
+            // If there's no content length 
+            // (broken HTTP/1.0 or HTTP/1.1), assume
             // the client is not broken and didn't send a body
-            if (keepAlive) {
-                inputBuffer.addActiveFilter
+            inputBuffer.addActiveFilter
                     (inputFilters[Constants.VOID_FILTER]);
-                contentDelimitation = true;
-            }
+            contentDelimitation = true;
         }
-
-        if (!contentDelimitation)
-            keepAlive = false;
 
         // Advertise sendfile support through a request attribute
         if (endpoint.getUseSendfile()) {
