@@ -158,8 +158,9 @@ public class JkInputStream implements InputBuffer, OutputBuffer {
         if( end_of_stream ) {
             return -1;
         }
-        if( isFirst ) {
-            // Handle special first-body-chunk
+
+        if( isFirst && isReadRequired ) {
+            // Handle special first-body-chunk, but only if httpd expects it.
             if( !receive() ) {
                 return 0;
             }
