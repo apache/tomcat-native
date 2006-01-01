@@ -385,6 +385,12 @@ public class AjpAprProcessor implements ActionHook {
                         error = true;
                     }
                     continue;
+                } else if(type != Constants.JK_AJP13_FORWARD_REQUEST) {
+                    // Usually the servlet didn't read the previous request body
+                    if(log.isDebugEnabled()) {
+                        log.debug("Unexpected message: "+type);
+                    }
+                    continue;
                 }
 
                 keptAlive = true;
@@ -1191,7 +1197,7 @@ public class AjpAprProcessor implements ActionHook {
             if (endOfStream) {
                 return -1;
             }
-            if (first) {
+            if (first && req.getContentLength() > 0) {
                 // Handle special first-body-chunk
                 if (!receive()) {
                     return 0;
