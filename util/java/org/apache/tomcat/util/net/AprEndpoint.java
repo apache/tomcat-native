@@ -1212,7 +1212,7 @@ public class AprEndpoint {
             }
 
             // Tell threadStop() we have shut ourselves down successfully
-            synchronized (this) {
+            synchronized (threadSync) {
                 threadSync.notifyAll();
             }
 
