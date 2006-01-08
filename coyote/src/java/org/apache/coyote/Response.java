@@ -117,6 +117,16 @@ public final class Response {
     protected boolean charsetSet = false;
 
     /**
+     * Has the content length been explicitly set.
+     */
+    protected boolean contentLengthSet = false;
+    
+    /**
+     * Has the content type been explicitly set.
+     */
+    protected boolean contentTypeSet = false;
+    
+    /**
      * Request error URI.
      */
     protected String errorURI = null;
@@ -276,12 +286,15 @@ public final class Response {
         
         // Reset the headers only if this is the main request,
         // not for included
-        contentType = null;;
+        contentType = null;
         locale = DEFAULT_LOCALE;
         contentLanguage = null;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
         contentLength = -1;
         charsetSet = false;
+        contentTypeSet = false;
+        contentLengthSet = false;
+        
 
         status = 200;
         message = null;
@@ -312,6 +325,14 @@ public final class Response {
 
     // -------------------- Headers --------------------
     public boolean containsHeader(String name) {
+        char cc=name.charAt(0);
+        if(cc=='C' || cc=='c') {
+            if(name.equalsIgnoreCase("Content-Type")) {
+                return contentTypeSet;
+            } else if(name.equalsIgnoreCase("Content-Length")) {
+                return contentLengthSet;
+            }
+        }
         return headers.getHeader(name) != null;
     }
 
@@ -361,6 +382,7 @@ public final class Response {
         }
         if( name.equalsIgnoreCase( "Content-Language" ) ) {
             // XXX XXX Need to construct Locale or something else
+            // Needs special handling in containsHeader() as well
         }
         return false;
     }
@@ -454,8 +476,11 @@ public final class Response {
 
         if (type == null) {
             this.contentType = null;
+            contentTypeSet = false;
             return;
         }
+
+        contentTypeSet = true;
 
         /*
          * Remove the charset param (if any) from the Content-Type, and use it
@@ -469,7 +494,7 @@ public final class Response {
         while (index != -1) {
             semicolonIndex = index;
             index++;
-            while (index < len && Character.isSpace(type.charAt(index))) {
+            while (index < len && Character.isWhitespace(type.charAt(index))) {
                 index++;
             }
             if (index+8 < len
@@ -526,10 +551,12 @@ public final class Response {
     
     public void setContentLength(int contentLength) {
         this.contentLength = contentLength;
+        contentLengthSet = true;
     }
 
     public void setContentLength(long contentLength) {
         this.contentLength = contentLength;
+        contentLengthSet = true;
     }
 
     public int getContentLength() {
@@ -565,6 +592,8 @@ public final class Response {
         locale = DEFAULT_LOCALE;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
         charsetSet = false;
+        contentLengthSet = false;
+        contentTypeSet = false;
         contentLength = -1;
         status = 200;
         message = null;
