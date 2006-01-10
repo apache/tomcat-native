@@ -235,6 +235,12 @@ public class CoyoteResponse
      */
     protected CharChunk redirectURLCC = new CharChunk();
 
+    
+    /**
+     * Has the Content-Length header been explicitly set.
+     */
+    protected boolean contentLengthSet = false;
+    
 
     // --------------------------------------------------------- Public Methods
 
@@ -260,6 +266,7 @@ public class CoyoteResponse
 
         writer.recycle();
 
+        contentLengthSet = false;
     }
 
 
@@ -579,6 +586,7 @@ public class CoyoteResponse
 
         coyoteResponse.reset();
         outputBuffer.reset();
+        contentLengthSet = false;
 
     }
 
@@ -634,6 +642,8 @@ public class CoyoteResponse
             return;
 
         coyoteResponse.setContentLength(length);
+
+        contentLengthSet = true;
 
     }
 
@@ -848,6 +858,13 @@ public class CoyoteResponse
 
         coyoteResponse.addHeader(name, value);
 
+        char cc=name.charAt(0);
+        if(cc=='C' || cc=='c') {
+            if(name.equalsIgnoreCase("Content-Length")) {
+                contentLengthSet = true;
+            }
+        }
+
     }
 
 
@@ -877,6 +894,20 @@ public class CoyoteResponse
      * @param name Name of the header to check
      */
     public boolean containsHeader(String name) {
+        // Need special handling for Content-Type and Content-Length due to
+        // special handling of these in coyoteResponse
+        char cc=name.charAt(0);
+        if(cc=='C' || cc=='c') {
+            if(name.equalsIgnoreCase("Content-Type")) {
+                // Will return null if this has not been set
+                return (coyoteResponse.getContentType() != null);
+            }
+            if(name.equalsIgnoreCase("Content-Length")) {
+                // Can't use null test since this header is an int
+                return contentLengthSet;
+            }
+        }
+
         return coyoteResponse.containsHeader(name);
     }
 
@@ -1099,6 +1130,13 @@ public class CoyoteResponse
 
         coyoteResponse.setHeader(name, value);
 
+        char cc=name.charAt(0);
+        if(cc=='C' || cc=='c') {
+            if(name.equalsIgnoreCase("Content-Length")) {
+                contentLengthSet = true;
+            }
+        }
+
     }
 
 
@@ -1260,8 +1298,6 @@ public class CoyoteResponse
                 return location;
 
         } catch (MalformedURLException e1) {
-            HttpServletRequest hreq =
-                (HttpServletRequest) request.getRequest();
             String requrl = request.getRequestURL().toString();
             try {
                 url = new URL(new URL(requrl), location);

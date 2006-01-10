@@ -117,16 +117,6 @@ public final class Response {
     protected boolean charsetSet = false;
 
     /**
-     * Has the content length been explicitly set.
-     */
-    protected boolean contentLengthSet = false;
-    
-    /**
-     * Has the content type been explicitly set.
-     */
-    protected boolean contentTypeSet = false;
-    
-    /**
      * Request error URI.
      */
     protected String errorURI = null;
@@ -292,9 +282,6 @@ public final class Response {
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
         contentLength = -1;
         charsetSet = false;
-        contentTypeSet = false;
-        contentLengthSet = false;
-        
 
         status = 200;
         message = null;
@@ -324,15 +311,11 @@ public final class Response {
 
 
     // -------------------- Headers --------------------
+    /**
+     * Warning: This method always returns <code>false<code> for Content-Type
+     * and Content-Length.
+     */
     public boolean containsHeader(String name) {
-        char cc=name.charAt(0);
-        if(cc=='C' || cc=='c') {
-            if(name.equalsIgnoreCase("Content-Type")) {
-                return contentTypeSet;
-            } else if(name.equalsIgnoreCase("Content-Length")) {
-                return contentLengthSet;
-            }
-        }
         return headers.getHeader(name) != null;
     }
 
@@ -382,7 +365,6 @@ public final class Response {
         }
         if( name.equalsIgnoreCase( "Content-Language" ) ) {
             // XXX XXX Need to construct Locale or something else
-            // Needs special handling in containsHeader() as well
         }
         return false;
     }
@@ -476,11 +458,8 @@ public final class Response {
 
         if (type == null) {
             this.contentType = null;
-            contentTypeSet = false;
             return;
         }
-
-        contentTypeSet = true;
 
         /*
          * Remove the charset param (if any) from the Content-Type, and use it
@@ -551,12 +530,10 @@ public final class Response {
     
     public void setContentLength(int contentLength) {
         this.contentLength = contentLength;
-        contentLengthSet = true;
     }
 
     public void setContentLength(long contentLength) {
         this.contentLength = contentLength;
-        contentLengthSet = true;
     }
 
     public int getContentLength() {
@@ -592,8 +569,6 @@ public final class Response {
         locale = DEFAULT_LOCALE;
         characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
         charsetSet = false;
-        contentLengthSet = false;
-        contentTypeSet = false;
         contentLength = -1;
         status = 200;
         message = null;
