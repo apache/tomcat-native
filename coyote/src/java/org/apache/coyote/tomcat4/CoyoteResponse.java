@@ -236,12 +236,6 @@ public class CoyoteResponse
     protected CharChunk redirectURLCC = new CharChunk();
 
     
-    /**
-     * Has the Content-Length header been explicitly set.
-     */
-    protected boolean contentLengthSet = false;
-    
-
     // --------------------------------------------------------- Public Methods
 
 
@@ -265,8 +259,6 @@ public class CoyoteResponse
         }
 
         writer.recycle();
-
-        contentLengthSet = false;
     }
 
 
@@ -586,7 +578,6 @@ public class CoyoteResponse
 
         coyoteResponse.reset();
         outputBuffer.reset();
-        contentLengthSet = false;
 
     }
 
@@ -642,8 +633,6 @@ public class CoyoteResponse
             return;
 
         coyoteResponse.setContentLength(length);
-
-        contentLengthSet = true;
 
     }
 
@@ -858,13 +847,6 @@ public class CoyoteResponse
 
         coyoteResponse.addHeader(name, value);
 
-        char cc=name.charAt(0);
-        if(cc=='C' || cc=='c') {
-            if(name.equalsIgnoreCase("Content-Length")) {
-                contentLengthSet = true;
-            }
-        }
-
     }
 
 
@@ -904,7 +886,7 @@ public class CoyoteResponse
             }
             if(name.equalsIgnoreCase("Content-Length")) {
                 // Can't use null test since this header is an int
-                return contentLengthSet;
+                return (coyoteResponse.getContentLengthLong() != -1);
             }
         }
 
@@ -1129,13 +1111,6 @@ public class CoyoteResponse
             return;
 
         coyoteResponse.setHeader(name, value);
-
-        char cc=name.charAt(0);
-        if(cc=='C' || cc=='c') {
-            if(name.equalsIgnoreCase("Content-Length")) {
-                contentLengthSet = true;
-            }
-        }
 
     }
 
