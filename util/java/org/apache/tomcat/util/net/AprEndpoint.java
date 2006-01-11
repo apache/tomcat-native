@@ -784,12 +784,12 @@ public class AprEndpoint {
             }
 
         } catch (Throwable t) {
-            if (step == 2) {
-                if (log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
+                if (step == 2) {
                     log.debug(sm.getString("endpoint.err.handshake"), t);
+                } else {
+                    log.debug(sm.getString("endpoint.err.unexpected"), t);
                 }
-            } else {
-                log.error(sm.getString("endpoint.err.unexpected"), t);
             }
             // Tell to close the socket
             return false;
@@ -914,8 +914,8 @@ public class AprEndpoint {
                         // Close socket and pool right away
                         Socket.destroy(socket);
                     }
-                } catch (Exception e) {
-                    log.error(sm.getString("endpoint.accept.fail"), e);
+                } catch (Throwable t) {
+                    log.error(sm.getString("endpoint.accept.fail"), t);
                 }
 
                 // The processor will recycle itself when it finishes

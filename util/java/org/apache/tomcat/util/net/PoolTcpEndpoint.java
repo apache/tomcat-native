@@ -527,7 +527,7 @@ public class PoolTcpEndpoint implements Runnable { // implements Endpoint {
             getConnectionHandler().processConnection(con, threadData);
             
         } catch (SocketException se) {
-            log.error(sm.getString("endpoint.err.socket", s.getInetAddress()),
+            log.debug(sm.getString("endpoint.err.socket", s.getInetAddress()),
                     se);
             // Try to close the socket
             try {
