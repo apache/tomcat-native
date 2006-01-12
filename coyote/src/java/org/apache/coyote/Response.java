@@ -473,7 +473,7 @@ public final class Response {
         while (index != -1) {
             semicolonIndex = index;
             index++;
-            while (index < len && Character.isWhitespace(type.charAt(index))) {
+            while (index < len && Character.isSpace(type.charAt(index))) {
                 index++;
             }
             if (index+8 < len
