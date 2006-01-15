@@ -1080,6 +1080,13 @@ public class Http11Processor implements Processor, ActionHook {
                 if (inetAddr != null) {
                     remoteHost = inetAddr.getHostName();
                 }
+                if(remoteHost == null) {
+                    if(remoteAddr != null) {
+                        remoteHost = remoteAddr;
+                    } else { // all we can do is punt
+                        request.remoteHost().recycle();
+                    }
+                }
             }
             request.remoteHost().setString(remoteHost);
 
