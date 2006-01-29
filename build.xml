@@ -185,6 +185,11 @@
     </antcall>
 
     <antcall target="downloadgz">
+      <param name="sourcefile" value="${tomcat5.loc}"/>
+      <param name="destfile" value="${tomcat5.jar}"/>
+    </antcall>
+
+    <antcall target="downloadgz">
       <param name="sourcefile" value="${tomcat41.loc}"/>
       <param name="destfile" value="${tomcat41.jar}"/>
     </antcall>

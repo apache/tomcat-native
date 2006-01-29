@@ -229,6 +229,12 @@ tyrex.lib=${tyrex.home}
 tyrex.jar=${tyrex.lib}/tyrex-1.0.jar
 tyrex.loc=http://belnet.dl.sourceforge.net/sourceforge/tyrex/tyrex-1.0.tgz
 
+# ----- Tomcat5.x.x -----
+tomcat5.version=5.5.15
+tomcat5.home=${base.path}/apache-tomcat-${tomcat5.version}
+tomcat5.jar=${tomcat5.home}/server/lib/catalina.jar
+servlet-api.jar=${tomcat5.home}/common/lib/servlet-api.jar
+tomcat5.loc=http://www.apache.org/dist/tomcat/tomcat-5/v${tomcat5.version}/bin/apache-tomcat-${tomcat5.version}.tar.gz 
 
 # ----- Tomcat4.1.x -----
 tomcat41.version=4.1.31
