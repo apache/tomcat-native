@@ -68,11 +68,11 @@ commons-fileupload.loc=http://www.apache.org/dist/jakarta/commons/fileupload/com
 
 
 # ----- Commons Logging, version 1.0.1 or later -----
-commons-logging.home=${base.path}/commons-logging-1.0.3
+commons-logging.home=${base.path}/commons-logging-1.0.4
 commons-logging.lib=${commons-logging.home}
 commons-logging-api.jar=${commons-logging.lib}/commons-logging-api.jar
 commons-logging.jar=${commons-logging.lib}/commons-logging.jar
-commons-logging.loc=http://www.apache.org/dist/jakarta/commons/logging/binaries/commons-logging-1.0.3.tar.gz
+commons-logging.loc=http://www.apache.org/dist/jakarta/commons/logging/binaries/commons-logging-1.0.4.tar.gz
 
 
 # ----- Java Naming and Directory Interface (JNDI), version 1.2 or later -----
@@ -85,10 +85,10 @@ jaas.jar=${jndi.lib}/jaas.jar
 
 
 # ----- Jakarta Regular Expressions Library, version 1.3 -----
-regexp.home=${base.path}/jakarta-regexp-1.3
+regexp.home=${base.path}/jakarta-regexp-1.4
 regexp.lib=${regexp.home}
-regexp.jar=${regexp.lib}/jakarta-regexp-1.3.jar
-regexp.loc=http://www.apache.org/dist/jakarta/regexp/binaries/jakarta-regexp-1.3.tar.gz
+regexp.jar=${regexp.lib}/jakarta-regexp-1.4.jar
+regexp.loc=http://www.apache.org/dist/jakarta/regexp/binaries/jakarta-regexp-1.4.tar.gz
 
 
 # ----- Jakarta Servlet API Classes (Servlet 2.3 / JSP 1.2) -----
@@ -169,11 +169,11 @@ jdbc20ext.lib=${jdbc20ext.home}
 jdbc20ext.jar=${jdbc20ext.lib}/jdbc2_0-stdext.jar
 
 # ----- Java Management Extensions (JMX), JMX RI 1.0.1 or later or MX4J 1.0 or later -----
-jmx.version=1.1.1
+jmx.version=3.0.1
 jmx.home=${base.path}/mx4j-${jmx.version}
 jmx.lib=${jmx.home}/lib
 jmx.jar=${jmx.lib}/mx4j-jmx.jar
-jmx.loc=http://telia.dl.sourceforge.net/sourceforge/mx4j/mx4j-${jmx.version}.tar.gz
+jmx.loc=http://download.sourceforge.net/mx4j/mx4j-${jmx.version}.tar.gz
 
 
 # ----- Java Secure Sockets Extension (JSSE), version 1.0.2 or later -----
@@ -231,14 +231,14 @@ tyrex.loc=http://belnet.dl.sourceforge.net/sourceforge/tyrex/tyrex-1.0.tgz
 
 
 # ----- Tomcat4.1.x -----
-tomcat41.version=4.1.30
+tomcat41.version=4.1.31
 tomcat41.home=${base.path}/jakarta-tomcat-${tomcat41.version}
 tomcat41.jar=${tomcat41.home}/server/lib/catalina.jar
 servlet-api.jar=${tomcat41.home}/common/lib/servlet.jar
-tomcat41.loc=http://www.apache.org/dist/jakarta/tomcat-4/v${tomcat41.version}/bin/jakarta-tomcat-${tomcat41.version}.tar.gz 
+tomcat41.loc=http://www.apache.org/dist/tomcat/tomcat-4/v${tomcat41.version}/bin/jakarta-tomcat-${tomcat41.version}.tar.gz 
 
 # ----- Tomcat33 -----
 tomcat33.version=3.3.2
 tomcat33.home=${base.path}/jakarta-tomcat-${tomcat33.version}
 tomcat33.jar=${tomcat33.home}/lib/common/tomcat_core.jar
-tomcat33.loc=${mirror}/jakarta/tomcat-3/v${tomcat33.version}/bin/jakarta-tomcat-${tomcat33.version}.tar.gz
+tomcat33.loc=${mirror}/tomcat/tomcat-3/v${tomcat33.version}/bin/jakarta-tomcat-${tomcat33.version}.tar.gz
