@@ -528,10 +528,10 @@ public class AprEndpoint {
         } else {
             addressStr = address.getHostAddress();
         }
-        long inetAddress = Address.info(addressStr, Socket.APR_INET,
+        long inetAddress = Address.info(addressStr, Socket.APR_UNSPEC,
                 port, 0, rootPool);
         // Create the APR server socket
-        serverSock = Socket.create(Socket.APR_INET, Socket.SOCK_STREAM,
+        serverSock = Socket.create(Socket.APR_UNSPEC, Socket.SOCK_STREAM,
                 Socket.APR_PROTO_TCP, rootPool);
         if (OS.IS_UNIX) {
             Socket.optSet(serverSock, Socket.APR_SO_REUSEADDR, 1);    
