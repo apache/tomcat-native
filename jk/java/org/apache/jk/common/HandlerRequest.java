@@ -188,7 +188,7 @@ public class HandlerRequest extends JkHandler
         int portInt=8009; // tcpCon.getPort();
         InetAddress address=null; // tcpCon.getAddress();
 
-        if( requiredSecret == null )
+        if( requiredSecret == null || !shutdownEnabled )
             return;
         
         File f1=new File( wEnv.getJkHome() );
