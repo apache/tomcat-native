@@ -62,12 +62,7 @@ public class Http11Protocol extends Http11BaseProtocol implements MBeanRegistrat
     }
     
     protected Http11ConnectionHandler createConnectionHandler() {
-        Http11ConnectionHandler cHandler = new JmxHttp11ConnectionHandler( this );
-        setSoLinger(Constants.DEFAULT_CONNECTION_LINGER);
-        setSoTimeout(Constants.DEFAULT_CONNECTION_TIMEOUT);
-        setServerSoTimeout(Constants.DEFAULT_SERVER_SOCKET_TIMEOUT);
-        setTcpNoDelay(Constants.DEFAULT_TCP_NO_DELAY);
-        return cHandler ;
+        return new JmxHttp11ConnectionHandler( this ) ;
     }
 
     ObjectName tpOname;

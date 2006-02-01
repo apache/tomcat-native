@@ -31,7 +31,6 @@ import org.apache.coyote.ActionHook;
 import org.apache.coyote.Adapter;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.RequestGroupInfo;
-import org.apache.coyote.RequestInfo;
 import org.apache.tomcat.util.net.PoolTcpEndpoint;
 import org.apache.tomcat.util.net.SSLImplementation;
 import org.apache.tomcat.util.net.SSLSupport;
@@ -40,7 +39,6 @@ import org.apache.tomcat.util.net.TcpConnection;
 import org.apache.tomcat.util.net.TcpConnectionHandler;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.util.threads.ThreadPool;
-import org.apache.tomcat.util.threads.ThreadWithAttributes;
 
 
 /**
@@ -54,6 +52,10 @@ import org.apache.tomcat.util.threads.ThreadWithAttributes;
 public class Http11BaseProtocol implements ProtocolHandler
 {
     public Http11BaseProtocol() {
+        setSoLinger(Constants.DEFAULT_CONNECTION_LINGER);
+        setSoTimeout(Constants.DEFAULT_CONNECTION_TIMEOUT);
+        setServerSoTimeout(Constants.DEFAULT_SERVER_SOCKET_TIMEOUT);
+        setTcpNoDelay(Constants.DEFAULT_TCP_NO_DELAY);
     }
 
     /**
@@ -106,12 +108,7 @@ public class Http11BaseProtocol implements ProtocolHandler
     }
     
     protected Http11ConnectionHandler createConnectionHandler() {
-        Http11ConnectionHandler cHandler = new Http11ConnectionHandler( this );
-        setSoLinger(Constants.DEFAULT_CONNECTION_LINGER);
-        setSoTimeout(Constants.DEFAULT_CONNECTION_TIMEOUT);
-        setServerSoTimeout(Constants.DEFAULT_SERVER_SOCKET_TIMEOUT);
-        setTcpNoDelay(Constants.DEFAULT_TCP_NO_DELAY);
-        return cHandler ;
+        return new Http11ConnectionHandler( this );
     }
 
     /** Start the protocol
