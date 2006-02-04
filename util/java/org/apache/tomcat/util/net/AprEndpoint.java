@@ -590,10 +590,12 @@ public class AprEndpoint {
             SSLContext.setCipherSuite(sslContext, SSLCipherSuite);
             // Load Server key and certificate
             SSLContext.setCertificate(sslContext, SSLCertificateFile, SSLCertificateKeyFile, SSLPassword, SSL.SSL_AIDX_RSA);
+            // Set certificate chain file
+            SSLContext.setCertificateChainFile(sslContext, SSLCertificateChainFile, false);
             // Support Client Certificates
-            if (SSLCACertificateFile != null) {
-                SSLContext.setCACertificate(sslContext, SSLCACertificateFile, null);
-            }
+            SSLContext.setCACertificate(sslContext, SSLCACertificateFile, SSLCACertificatePath);
+            // Set revocation
+            SSLContext.setCARevocation(sslContext, SSLCARevocationFile, SSLCARevocationPath);
             // Client certificate verification
             value = SSL.SSL_CVERIFY_NONE;
             if ("optional".equalsIgnoreCase(SSLVerifyClient)) {
