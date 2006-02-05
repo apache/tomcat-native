@@ -935,6 +935,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     if (query && strlen(query) > 0)
                         strcpy(ld->query, query);
                     pfc->pFilterContext = ld;
+                } else {
+                    isapi_log_data_t *ld = (isapi_log_data_t *)pfc->pFilterContext;
+                    memset(ld, 0, sizeof(isapi_log_data_t));
+                    strcpy(ld->uri, forwardURI);
+                    if (query && strlen(query) > 0)
+                        strcpy(ld->query, query);
                 }
             }
             else {
