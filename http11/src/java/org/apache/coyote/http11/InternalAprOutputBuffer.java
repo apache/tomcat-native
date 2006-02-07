@@ -695,9 +695,14 @@ public class InternalAprOutputBuffer
     protected void flushBuffer()
         throws IOException {
         if (bbuf.position() > 0) {
-            if (Socket.sendbb(socket, 0, bbuf.position()) < 0) {
-                throw new IOException(sm.getString("iib.failedwrite"));
-            }
+            int i = 0;
+            int n = 0;
+            do {
+                if ((n = Socket.sendbb(socket, i, bbuf.position())) < 0) {
+                    throw new IOException();
+                }
+                i += n;
+            } while (i < bbuf.position());
             bbuf.clear();
         }
     }

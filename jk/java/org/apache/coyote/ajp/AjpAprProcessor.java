@@ -1169,9 +1169,14 @@ public class AjpAprProcessor implements ActionHook {
     protected void flush()
         throws IOException {
         if (outputBuffer.position() > 0) {
-            if (Socket.sendbb(socket, 0, outputBuffer.position()) < 0) {
-                throw new IOException(sm.getString("ajpprotocol.failedwrite"));
-            }
+            int i = 0;
+            int n = 0;
+            do {
+                if ((n = Socket.sendbb(socket, i, outputBuffer.position())) < 0) {
+                    throw new IOException();
+                }
+                i += n;
+            } while (i < outputBuffer.position());
             outputBuffer.clear();
         }
     }
