@@ -1429,9 +1429,7 @@ public class AprEndpoint {
                                     sendfileData.put(new Long(data.socket), data);
                                     sendfileCount++;
                                 } else {
-                                    if (log.isDebugEnabled()) {
-                                        log.debug(sm.getString("endpoint.sendfile.addfail", Error.strerror(rv)));
-                                    }
+                                    log.warn(sm.getString("endpoint.sendfile.addfail", Error.strerror(rv)));
                                     // Can't do anything: close the socket right away
                                     Socket.destroy(data.socket);
                                 }
