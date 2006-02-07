@@ -1172,7 +1172,7 @@ public class AjpAprProcessor implements ActionHook {
             int i = 0;
             int n = 0;
             do {
-                if ((n = Socket.sendbb(socket, i, outputBuffer.position())) < 0) {
+                if ((n = Socket.sendbb(socket, i, outputBuffer.position() - i)) < 0) {
                     throw new IOException();
                 }
                 i += n;
