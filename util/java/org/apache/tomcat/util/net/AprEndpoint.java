@@ -174,7 +174,7 @@ public class AprEndpoint {
      */
     protected long serverSockPool = 0;
 
-    
+
     /**
      * SSL context.
      */
@@ -356,7 +356,7 @@ public class AprEndpoint {
      */
     public int getMinSpareThreads() { return 0; }
 
-    
+
     /**
      * SSL engine.
      */
@@ -364,7 +364,7 @@ public class AprEndpoint {
     public String getSSLEngine() { return SSLEngine; }
     public void setSSLEngine(String SSLEngine) { this.SSLEngine = SSLEngine; }
 
-    
+
     /**
      * SSL protocols.
      */
@@ -372,7 +372,7 @@ public class AprEndpoint {
     public String getSSLProtocol() { return SSLProtocol; }
     public void setSSLProtocol(String SSLProtocol) { this.SSLProtocol = SSLProtocol; }
 
-    
+
     /**
      * SSL password (if a cert is encrypted, and no password has been provided, a callback
      * will ask for a password).
@@ -388,15 +388,15 @@ public class AprEndpoint {
     protected String SSLCipherSuite = "ALL";
     public String getSSLCipherSuite() { return SSLCipherSuite; }
     public void setSSLCipherSuite(String SSLCipherSuite) { this.SSLCipherSuite = SSLCipherSuite; }
-    
-    
+
+
     /**
      * SSL certificate file.
      */
     protected String SSLCertificateFile = null;
     public String getSSLCertificateFile() { return SSLCertificateFile; }
     public void setSSLCertificateFile(String SSLCertificateFile) { this.SSLCertificateFile = SSLCertificateFile; }
-    
+
 
     /**
      * SSL certificate key file.
@@ -405,14 +405,14 @@ public class AprEndpoint {
     public String getSSLCertificateKeyFile() { return SSLCertificateKeyFile; }
     public void setSSLCertificateKeyFile(String SSLCertificateKeyFile) { this.SSLCertificateKeyFile = SSLCertificateKeyFile; }
 
-    
+
     /**
      * SSL certificate chain file.
      */
     protected String SSLCertificateChainFile = null;
     public String getSSLCertificateChainFile() { return SSLCertificateChainFile; }
     public void setSSLCertificateChainFile(String SSLCertificateChainFile) { this.SSLCertificateChainFile = SSLCertificateChainFile; }
-    
+
 
     /**
      * SSL CA certificate path.
@@ -420,23 +420,23 @@ public class AprEndpoint {
     protected String SSLCACertificatePath = null;
     public String getSSLCACertificatePath() { return SSLCACertificatePath; }
     public void setSSLCACertificatePath(String SSLCACertificatePath) { this.SSLCACertificatePath = SSLCACertificatePath; }
-    
-    
+
+
     /**
      * SSL CA certificate file.
      */
     protected String SSLCACertificateFile = null;
     public String getSSLCACertificateFile() { return SSLCACertificateFile; }
     public void setSSLCACertificateFile(String SSLCACertificateFile) { this.SSLCACertificateFile = SSLCACertificateFile; }
-    
-    
+
+
     /**
      * SSL CA revocation path.
      */
     protected String SSLCARevocationPath = null;
     public String getSSLCARevocationPath() { return SSLCARevocationPath; }
     public void setSSLCARevocationPath(String SSLCARevocationPath) { this.SSLCARevocationPath = SSLCARevocationPath; }
-    
+
 
     /**
      * SSL CA revocation file.
@@ -444,24 +444,24 @@ public class AprEndpoint {
     protected String SSLCARevocationFile = null;
     public String getSSLCARevocationFile() { return SSLCARevocationFile; }
     public void setSSLCARevocationFile(String SSLCARevocationFile) { this.SSLCARevocationFile = SSLCARevocationFile; }
-    
-    
+
+
     /**
      * SSL verify client.
      */
     protected String SSLVerifyClient = "none";
     public String getSSLVerifyClient() { return SSLVerifyClient; }
     public void setSSLVerifyClient(String SSLVerifyClient) { this.SSLVerifyClient = SSLVerifyClient; }
-     
-    
+
+
     /**
      * SSL verify depth.
      */
     protected int SSLVerifyDepth = 10;
     public int getSSLVerifyDepth() { return SSLVerifyDepth; }
     public void setSSLVerifyDepth(int SSLVerifyDepth) { this.SSLVerifyDepth = SSLVerifyDepth; }
-    
-    
+
+
     // --------------------------------------------------------- Public Methods
 
 
@@ -528,13 +528,16 @@ public class AprEndpoint {
         } else {
             addressStr = address.getHostAddress();
         }
-        long inetAddress = Address.info(addressStr, Socket.APR_UNSPEC,
+        int family = Socket.APR_INET;
+        if (Library.APR_HAVE_IPV6)
+            family= Socket.APR_UNSPEC;
+        long inetAddress = Address.info(addressStr, family,
                 port, 0, rootPool);
         // Create the APR server socket
-        serverSock = Socket.create(Socket.APR_UNSPEC, Socket.SOCK_STREAM,
+        serverSock = Socket.create(family, Socket.SOCK_STREAM,
                 Socket.APR_PROTO_TCP, rootPool);
         if (OS.IS_UNIX) {
-            Socket.optSet(serverSock, Socket.APR_SO_REUSEADDR, 1);    
+            Socket.optSet(serverSock, Socket.APR_SO_REUSEADDR, 1);
         }
         // Deal with the firewalls that tend to drop the inactive sockets
         Socket.optSet(serverSock, Socket.APR_SO_KEEPALIVE, 1);
@@ -550,7 +553,7 @@ public class AprEndpoint {
         }
         if (OS.IS_WIN32 || OS.IS_WIN64) {
             // On Windows set the reuseaddr flag after the bind/listen
-            Socket.optSet(serverSock, Socket.APR_SO_REUSEADDR, 1);    
+            Socket.optSet(serverSock, Socket.APR_SO_REUSEADDR, 1);
         }
 
         // Sendfile usage on systems which don't support it cause major problems
@@ -558,12 +561,12 @@ public class AprEndpoint {
             log.warn(sm.getString("endpoint.sendfile.nosupport"));
             useSendfile = false;
         }
-        
+
         // Delay accepting of new connections until data is available
         // Only Linux kernels 2.4 + have that implemented
         // on other platforms this call is noop and will return APR_ENOTIMPL.
         Socket.optSet(serverSock, Socket.APR_TCP_DEFER_ACCEPT, 1);
-        
+
         // Initialize SSL if needed
         if (!"off".equalsIgnoreCase(SSLEngine)) {
             // Initialize SSL
@@ -609,7 +612,7 @@ public class AprEndpoint {
             // For now, sendfile is not supported with SSL
             useSendfile = false;
         }
-        
+
         initialized = true;
 
     }
@@ -782,7 +785,7 @@ public class AprEndpoint {
                         log.debug(sm.getString("endpoint.err.handshake") + ": " + SSL.getLastError());
                     }
                     return false;
-                }                                 
+                }
             }
 
         } catch (Throwable t) {
@@ -1480,7 +1483,7 @@ public class AprEndpoint {
                                 } else {
                                     // Close the socket since this is
                                     // the end of not keep-alive request.
-                                    Socket.destroy(state.socket);   
+                                    Socket.destroy(state.socket);
                                 }
                             }
                         }
