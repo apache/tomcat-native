@@ -91,12 +91,6 @@ public class AprEndpoint {
 
 
     /**
-     * Synchronization object.
-     */
-    protected final Object threadSync = new Object();
-
-
-    /**
      * The acceptor thread.
      */
     protected Thread acceptorThread = null;
@@ -927,11 +921,6 @@ public class AprEndpoint {
 
             }
 
-            // Notify the threadStop() method that we have shut ourselves down
-            synchronized (threadSync) {
-                threadSync.notifyAll();
-            }
-
         }
 
     }
@@ -1115,11 +1104,6 @@ public class AprEndpoint {
 
             }
 
-            // Notify the threadStop() method that we have shut ourselves down
-            synchronized (threadSync) {
-                threadSync.notifyAll();
-            }
-
         }
 
     }
@@ -1214,11 +1198,6 @@ public class AprEndpoint {
                 // Finish up this request
                 recycleWorkerThread(this);
 
-            }
-
-            // Tell threadStop() we have shut ourselves down successfully
-            synchronized (threadSync) {
-                threadSync.notifyAll();
             }
 
         }
@@ -1504,11 +1483,6 @@ public class AprEndpoint {
                 } catch (Throwable t) {
                     log.error(sm.getString("endpoint.poll.error"), t);
                 }
-            }
-
-            // Notify the threadStop() method that we have shut ourselves down
-            synchronized (threadSync) {
-                threadSync.notifyAll();
             }
 
         }
