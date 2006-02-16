@@ -985,7 +985,7 @@ public class AprEndpoint {
          */
         protected void destroy() {
             // Close all sockets in the add queue
-            for (int i = 0; i < addCount; i--) {
+            for (int i = 0; i < addCount; i++) {
                 Socket.destroy(addS[i]);
             }
             // Close all sockets still in the poller
@@ -1009,7 +1009,7 @@ public class AprEndpoint {
          * @param socket to add to the poller
          */
         public void add(long socket) {
-            synchronized (addS) {
+            synchronized (this) {
                 // Add socket to the list. Newly added sockets will wait
                 // at most for pollTime before being polled
                 if (addCount >= addS.length) {
@@ -1019,7 +1019,7 @@ public class AprEndpoint {
                 }
                 addS[addCount] = socket;
                 addCount++;
-                addS.notify();
+                this.notify();
             }
         }
 
@@ -1046,8 +1046,8 @@ public class AprEndpoint {
                     // Reset maintain time.
                     maintainTime = 0;
                     try {
-                        synchronized (addS) {
-                            addS.wait();
+                        synchronized (this) {
+                            this.wait();
                         }
                     } catch (InterruptedException e) {
                         // Ignore
@@ -1057,7 +1057,7 @@ public class AprEndpoint {
                 try {
                     // Add sockets which are waiting to the poller
                     if (addCount > 0) {
-                        synchronized (addS) {
+                        synchronized (this) {
                             for (int i = (addCount - 1); i >= 0; i--) {
                                 int rv = Poll.add
                                     (serverPollset, addS[i], Poll.APR_POLLIN);
@@ -1373,9 +1373,9 @@ public class AprEndpoint {
             }
             // Add socket to the list. Newly added sockets will wait
             // at most for pollTime before being polled
-            synchronized (addS) {
+            synchronized (this) {
                 addS.add(data);
-                addS.notify();
+                this.notify();
             }
             return false;
         }
@@ -1413,8 +1413,8 @@ public class AprEndpoint {
 
                 while (sendfileCount < 1 && addS.size() < 1) {
                     try {
-                        synchronized (addS) {
-                            addS.wait();
+                        synchronized (this) {
+                            this.wait();
                         }
                     } catch (InterruptedException e) {
                         // Ignore
@@ -1424,7 +1424,7 @@ public class AprEndpoint {
                 try {
                     // Add socket to the poller
                     if (addS.size() > 0) {
-                        synchronized (addS) {
+                        synchronized (this) {
                             for (int i = (addS.size() - 1); i >= 0; i--) {
                                 SendfileData data = (SendfileData) addS.get(i);
                                 int rv = Poll.add(sendfilePollset, data.socket, Poll.APR_POLLOUT);
