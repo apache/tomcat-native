@@ -255,7 +255,7 @@ public final class CharChunk implements Cloneable, Serializable, CharSequence {
         // Optimize on a common case.
         // If the source is going to fill up all the space in buffer, may
         // as well write it directly to the output, and avoid an extra copy
-        if ( optimizedWrite && len == limit && end == start) {
+        if ( optimizedWrite && len == limit && end == start && out != null ) {
             out.realWriteChars( src, off, len );
             return;
         }

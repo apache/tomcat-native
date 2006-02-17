@@ -320,7 +320,7 @@ public final class ByteChunk implements Cloneable, Serializable {
         // If the buffer is empty and the source is going to fill up all the
         // space in buffer, may as well write it directly to the output,
         // and avoid an extra copy
-        if ( optimizedWrite && len == limit && end == start) {
+        if ( optimizedWrite && len == limit && end == start && out != null ) {
             out.realWriteBytes( src, off, len );
             return;
         }
