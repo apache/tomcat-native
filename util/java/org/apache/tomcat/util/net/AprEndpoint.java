@@ -538,12 +538,12 @@ public class AprEndpoint {
         // Bind the server socket
         int ret = Socket.bind(serverSock, inetAddress);
         if (ret != 0) {
-            throw new Exception(sm.getString("endpoint.init.bind", Error.strerror(ret)));
+            throw new Exception(sm.getString("endpoint.init.bind", "" + ret, Error.strerror(ret)));
         }
         // Start listening on the server socket
         ret = Socket.listen(serverSock, backlog);
         if (ret != 0) {
-            throw new Exception(sm.getString("endpoint.init.listen", Error.strerror(ret)));
+            throw new Exception(sm.getString("endpoint.init.listen", "" + ret, Error.strerror(ret)));
         }
         if (OS.IS_WIN32 || OS.IS_WIN64) {
             // On Windows set the reuseaddr flag after the bind/listen
@@ -1079,7 +1079,11 @@ public class AprEndpoint {
                     } else if (rv < 0) {
                         /* Any non timeup error is critical */
                         if (-rv != Status.TIMEUP) {
-                            log.error(sm.getString("endpoint.poll.fail", Error.strerror(-rv)));
+                            int errn = -rv;
+                            if (errn >  Status.APR_OS_START_USERERR) {
+                               errn -=  Status.APR_OS_START_USERERR;
+                            }
+                            log.error(sm.getString("endpoint.poll.fail", "" + (-rv), Error.strerror(-rv)));
                             // Handle poll critical failure
                             synchronized (this) {
                                 destroy();
@@ -1411,7 +1415,7 @@ public class AprEndpoint {
                                     sendfileData.put(new Long(data.socket), data);
                                     sendfileCount++;
                                 } else {
-                                    log.warn(sm.getString("endpoint.sendfile.addfail", Error.strerror(rv)));
+                                    log.warn(sm.getString("endpoint.sendfile.addfail", "" + rv, Error.strerror(rv)));
                                     // Can't do anything: close the socket right away
                                     Socket.destroy(data.socket);
                                 }
@@ -1471,7 +1475,7 @@ public class AprEndpoint {
                         if (-rv == Status.TIMEUP)
                             rv = 0;
                         else {
-                            log.error(sm.getString("endpoint.poll.fail", Error.strerror(-rv)));
+                            log.error(sm.getString("endpoint.poll.fail", "" + (-rv), Error.strerror(-rv)));
                             // Handle poll critical failure
                             synchronized (this) {
                                 destroy();
