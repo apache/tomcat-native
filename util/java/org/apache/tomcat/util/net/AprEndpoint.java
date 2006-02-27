@@ -1083,7 +1083,7 @@ public class AprEndpoint {
                             if (errn >  Status.APR_OS_START_USERERR) {
                                errn -=  Status.APR_OS_START_USERERR;
                             }
-                            log.error(sm.getString("endpoint.poll.fail", "" + (-rv), Error.strerror(-rv)));
+                            log.error(sm.getString("endpoint.poll.fail", "" + errn, Error.strerror(errn)));
                             // Handle poll critical failure
                             synchronized (this) {
                                 destroy();
