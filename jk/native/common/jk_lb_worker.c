@@ -42,7 +42,7 @@
 /*
  * Time to wait before retry...
  */
-#define JK_WORKER_IN_ERROR(w) ((w)->in_error_state  && !(w)->is_disabled && !(w)->is_busy)
+#define JK_WORKER_IN_ERROR(w) ((w)->in_error_state  && !(w)->is_busy)
 #define JK_WORKER_USABLE(w)   (!(w)->in_error_state && !(w)->is_stopped && !(w)->is_disabled && !(w)->is_busy)
 
 struct lb_endpoint
@@ -665,7 +665,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      * on each consequtive attempt.
                      */
                     if (attempt > (int)p->worker->num_of_workers)
-                        jk_sleep_def();    
+                        jk_sleep_def();
                     continue;
                 }
                 if (service_stat == JK_FALSE) {

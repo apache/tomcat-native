@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      <bug>38806</bug>: Reclycle worker even if it is disabled.
+      This fixes hot-standby workers in error state. (mturk)
+      </fix>
+      <fix>
       ISAPI plugin (isapi_redirect.dll) did not provide correct request data
       for IIS
  to include in the IIS log. (markt)
@@ -100,19 +104,19 @@
       <update>
       Added lock directive for load balancer that allows more acurate
       load balancing in case of burst load. (mturk)
-      </update>      
+      </update>
       <update>
       Added worker.maintain directive to allow customizing default 10
       second timeout. On busy servers this value needs to be set on
       higher value. (mturk)
-      </update>      
+      </update>
       <fix>
       Fix for NetWare compiler to deal with different types between AP13
       and AP2 SDKs. (fuankg)
       </fix>
       <update>
       Emit much more legible user.dmp crash analysis output for WIN32. (wrowe)
-      </update>      
+      </update>
      <fix>
      <bug>34558</bug>: Fix first failover request. (mturk)
      </fix>
@@ -127,12 +131,12 @@
       <update>
       Added ForwardLocallAddres JkOptions flag for passing local instead remote
       address. Useful for remote addr valve. (mturk)
-      </update>      
+      </update>
      <fix>Fix that worker not used, when stopped flag is true. (pero)
      </fix>
       <update>
       Add loadbalance default worker secret attribute to the documentation (pero)
-      </update>      
+      </update>
     </changelog>
   </subsection>
 </section>
@@ -148,9 +152,9 @@
       </fix>
       <update>
       Add worker secret attribute to the documentation (pero)
-      </update>      
+      </update>
       <update>
-      Add a stopped flag to worker configuration. Set flag True and 
+      Add a stopped flag to worker configuration. Set flag True and
       complete traffic to worker is stopped.
       Also update the Ant JkStatusUpdateTask at Tomcat 5.5.10 release.
       Only usefull in a replicated session cluster.(pero)
@@ -192,7 +196,7 @@
       </fix>
       <update>
         Add --enable-prefork to the documentation (pero)
-      </update>      
+      </update>
     </changelog>
   </subsection>
 </section>
