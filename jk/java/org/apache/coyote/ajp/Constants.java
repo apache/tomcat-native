@@ -40,20 +40,20 @@ public final class Constants {
     public static final int DEFAULT_CONNECTION_UPLOAD_TIMEOUT = 300000;
     public static final int DEFAULT_SERVER_SOCKET_TIMEOUT = 0;
     public static final boolean DEFAULT_TCP_NO_DELAY = true;
-    
+
     // Prefix codes for message types from server to container
     public static final byte JK_AJP13_FORWARD_REQUEST   = 2;
     public static final byte JK_AJP13_SHUTDOWN          = 7;
     public static final byte JK_AJP13_PING_REQUEST      = 8;
     public static final byte JK_AJP13_CPING_REQUEST     = 10;
-    
+
     // Prefix codes for message types from container to server
     public static final byte JK_AJP13_SEND_BODY_CHUNK   = 3;
     public static final byte JK_AJP13_SEND_HEADERS      = 4;
     public static final byte JK_AJP13_END_RESPONSE      = 5;
     public static final byte JK_AJP13_GET_BODY_CHUNK    = 6;
     public static final byte JK_AJP13_CPONG_REPLY       = 9;
-    
+
     // Integer codes for common response header strings
     public static final int SC_RESP_CONTENT_TYPE        = 0xA001;
     public static final int SC_RESP_CONTENT_LANGUAGE    = 0xA002;
@@ -66,7 +66,7 @@ public final class Constants {
     public static final int SC_RESP_SERVLET_ENGINE      = 0xA009;
     public static final int SC_RESP_STATUS              = 0xA00A;
     public static final int SC_RESP_WWW_AUTHENTICATE    = 0xA00B;
-    
+
     // Integer codes for common (optional) request attribute names
     public static final byte SC_A_CONTEXT       = 1;  // XXX Unused
     public static final byte SC_A_SERVLET_PATH  = 2;  // XXX Unused
@@ -80,13 +80,13 @@ public final class Constants {
     public static final byte SC_A_SSL_KEYSIZE   = 11;
     public static final byte SC_A_SECRET        = 12;
     public static final byte SC_A_STORED_METHOD = 13;
-    
+
     // Used for attributes which are not in the list above
-    public static final byte SC_A_REQ_ATTRIBUTE = 10; 
-    
+    public static final byte SC_A_REQ_ATTRIBUTE = 10;
+
     // Terminates list of attributes
     public static final byte SC_A_ARE_DONE      = (byte)0xFF;
-    
+
     // Ajp13 specific -  needs refactoring for the new model
     /**
      * Maximum Total byte size for a AJP packet
@@ -95,11 +95,12 @@ public final class Constants {
     /**
      * Size of basic packet header
      */
-    public static final int H_SIZE = 4;  
+    public static final int H_SIZE = 4;
     /**
      * Maximum size of data that can be sent in one packet
      */
     public static final int  MAX_READ_SIZE = MAX_PACKET_SIZE - H_SIZE - 2;
+    public static final int  MAX_SEND_SIZE = MAX_PACKET_SIZE - H_SIZE - 4;
 
     // Translates integer codes to names of HTTP methods
     public static final String []methodTransArray = {
@@ -132,7 +133,7 @@ public final class Constants {
             "MKACTIVITY"
     };
     public static final int SC_M_JK_STORED = (byte) 0xFF;
-    
+
     // id's for common request headers
     public static final int SC_REQ_ACCEPT          = 1;
     public static final int SC_REQ_ACCEPT_CHARSET  = 2;
@@ -149,9 +150,9 @@ public final class Constants {
     public static final int SC_REQ_REFERER         = 13;
     public static final int SC_REQ_USER_AGENT      = 14;
     // AJP14 new header
-    public static final byte SC_A_SSL_KEY_SIZE  = 11; // XXX ??? 
-    
-    // Translates integer codes to request header names    
+    public static final byte SC_A_SSL_KEY_SIZE  = 11; // XXX ???
+
+    // Translates integer codes to request header names
     public static final String []headerTransArray = {
             "accept",
             "accept-charset",
@@ -168,21 +169,21 @@ public final class Constants {
             "referer",
             "user-agent"
     };
-    
-    
+
+
     /**
      * CRLF.
      */
     public static final String CRLF = "\r\n";
 
-    
+
     /**
      * Server string.
      */
-    public static final byte[] SERVER_BYTES = 
+    public static final byte[] SERVER_BYTES =
         ByteChunk.convertToBytes("Server: Apache-Coyote/1.1" + CRLF);
 
-    
+
     /**
      * CR.
      */
@@ -254,22 +255,22 @@ public final class Constants {
     public static final byte[] COLON_BYTES = ByteChunk.convertToBytes(": ");
     public static final String CONNECTION = "Connection";
     public static final String CLOSE = "close";
-    public static final byte[] CLOSE_BYTES = 
+    public static final byte[] CLOSE_BYTES =
         ByteChunk.convertToBytes(CLOSE);
     public static final String KEEPALIVE = "keep-alive";
-    public static final byte[] KEEPALIVE_BYTES = 
+    public static final byte[] KEEPALIVE_BYTES =
         ByteChunk.convertToBytes(KEEPALIVE);
     public static final String CHUNKED = "chunked";
-    public static final byte[] ACK_BYTES = 
+    public static final byte[] ACK_BYTES =
         ByteChunk.convertToBytes("HTTP/1.1 100 Continue" + CRLF + CRLF);
     public static final String TRANSFERENCODING = "Transfer-Encoding";
-    public static final byte[] _200_BYTES = 
+    public static final byte[] _200_BYTES =
         ByteChunk.convertToBytes("200");
-    public static final byte[] _400_BYTES = 
+    public static final byte[] _400_BYTES =
         ByteChunk.convertToBytes("400");
-    public static final byte[] _404_BYTES = 
+    public static final byte[] _404_BYTES =
         ByteChunk.convertToBytes("404");
-    
+
 
     /**
      * Identity filters (input and output).
@@ -311,7 +312,7 @@ public final class Constants {
      * HTTP/1.1.
      */
     public static final String HTTP_11 = "HTTP/1.1";
-    public static final byte[] HTTP_11_BYTES = 
+    public static final byte[] HTTP_11_BYTES =
         ByteChunk.convertToBytes(HTTP_11);
 
 
