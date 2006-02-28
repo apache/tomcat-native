@@ -1262,7 +1262,7 @@ public class AjpAprProcessor implements ActionHook {
                 outputBuffer.put((byte) 0x42);
                 outputBuffer.putShort((short) (thisTime + 4));
                 outputBuffer.put(Constants.JK_AJP13_SEND_BODY_CHUNK);
-                outputBuffer.putShort((short) chunk.getLength());
+                outputBuffer.putShort((short) thisTime);
                 outputBuffer.put(chunk.getBytes(), chunk.getOffset() + off, thisTime);
                 outputBuffer.put((byte) 0x00);
                 off += thisTime;
