@@ -251,8 +251,8 @@ public class MsgContext implements ActionHook {
             Response res=(Response)param;
 
             if(  res.isCommitted() ) {
-                if( log.isInfoEnabled() )
-                    log.info("Response already committed " );
+                if( log.isDebugEnabled() )
+                    log.debug("Response already committed " );
             } else {
                 try {
                     jkIS.appendHead( res );
