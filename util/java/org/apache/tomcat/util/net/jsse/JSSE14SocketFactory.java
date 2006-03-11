@@ -117,7 +117,7 @@ public class JSSE14SocketFactory  extends JSSESocketFactory {
             // Determine which cipher suites to enable
             String requestedCiphers = (String)attributes.get("ciphers");
             enabledCiphers = getEnabledCiphers(requestedCiphers,
-                                               sslProxy.getSupportedCipherSuites());
+                                               sslProxy.getDefaultCipherSuites());
 
         } catch(Exception e) {
             if( e instanceof IOException )
