@@ -900,11 +900,10 @@ public class AprEndpoint {
                     }
                 }
 
-                // Allocate a new worker thread
-                Worker workerThread = getWorkerThread();
-
-                // Accept the next incoming connection from the server socket
                 try {
+                    // Allocate a new worker thread
+                    Worker workerThread = getWorkerThread();
+                    // Accept the next incoming connection from the server socket
                     long socket = Socket.accept(serverSock);
                     // Hand this socket off to an appropriate processor
                     if (setSocketOptions(socket)) {
