@@ -721,9 +721,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      * We have at least one endpoint free
                      */
                     rec->s->is_busy = JK_FALSE;
-                    /* Decrement the busy worker count */
-                    rec->s->busy--;
-                    p->worker->s->busy--;
+                    /* Decrement the busy worker count.
+                     * Check if the busy was reset to zero by graceful
+                     * restart of the server.
+                     */
+                    if (rec->s->busy)
+                        rec->s->busy--;
+                    if (p->worker->s->busy)
+                        p->worker->s->busy--;
                     if (service_stat == JK_TRUE) {
                         rec->s->in_error_state = JK_FALSE;
                         rec->s->in_recovering = JK_FALSE;
