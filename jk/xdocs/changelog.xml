@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      Fix pessimistic locking mode. The patch correctly handles the
+      burst load, by syncing the access to the shared memory data. (mturk)
+      </fix>
+      <fix>
       <bug>38806</bug>: Reclycle worker even if it is disabled.
       This fixes hot-standby workers in error state. (mturk)
       </fix>

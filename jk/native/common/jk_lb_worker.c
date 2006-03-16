@@ -227,10 +227,7 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
     int total_factor = 0;
     jk_u64_t mytraffic = 0;
     jk_u64_t curmin = 0;
-
     worker_record_t *candidate = NULL;
-    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
-        jk_shm_lock();
 
     if (p->lbmethod == JK_LB_BYTRAFFIC) {
         double diff;
@@ -278,8 +275,6 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
             candidate->s->lb_value -= total_factor;
         candidate->r = &(candidate->s->domain[0]);
     }
-    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
-        jk_shm_unlock();
 
     return candidate;
 }
@@ -292,8 +287,6 @@ static worker_record_t *find_best_byrequests(lb_worker_t *p,
     int total_factor = 0;
     worker_record_t *candidate = NULL;
 
-    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
-        jk_shm_lock();
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* If the worker is in error state run
@@ -318,8 +311,6 @@ static worker_record_t *find_best_byrequests(lb_worker_t *p,
 
     if (candidate)
         candidate->s->lb_value -= total_factor;
-    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
-        jk_shm_unlock();
 
     return candidate;
 }
@@ -334,8 +325,6 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
     double diff;
     time_t now = time(NULL);
 
-    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
-        jk_shm_lock();
     for (i = 0; i < p->num_of_workers; i++) {
         diff = difftime(now, p->lb_workers[i].s->service_time);
         if (diff > JK_SERVICE_TRANSFER_INTERVAL) {
@@ -367,8 +356,6 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
             }
         }
     }
-    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
-        jk_shm_unlock();
     return candidate;
 }
 
@@ -411,8 +398,6 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
     }
     if (candidate && !uses_domain &&
         p->lbmethod == JK_LB_BYREQUESTS) {
-        if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
-            jk_shm_lock();
 
         for (i = 0; i < p->num_of_workers; i++) {
             if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
@@ -425,8 +410,6 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
             }
         }
         candidate->s->lb_value -= total_factor;
-        if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
-            jk_shm_unlock();
     }
     return candidate;
 }
@@ -500,10 +483,14 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
          */
         sessionid = get_sessionid(s);
     }
-    JK_ENTER_CS(&(p->cs), r);
+    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+        r = jk_shm_lock();
+    else {
+        JK_ENTER_CS(&(p->cs), r);
+    }
     if (!r) {
        jk_log(l, JK_LOG_ERROR,
-              "locking thread with errno=%d",
+              "locking failed with errno=%d",
               errno);
         JK_TRACE_EXIT(l);
         return NULL;
@@ -536,7 +523,11 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                 /* We have a session route. Whow! */
                 rc = find_bysession_route(p, session_route, l);
                 if (rc) {
-                    JK_LEAVE_CS(&(p->cs), r);
+                    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+                        jk_shm_unlock();
+                    else {
+                        JK_LEAVE_CS(&(p->cs), r);
+                    }
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
                                "found worker %s for route %s and partial sessionid %s",
@@ -550,7 +541,11 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
             rc = NULL;
         }
         if (!rc && p->s->sticky_session_force) {
-           JK_LEAVE_CS(&(p->cs), r);
+            if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+                jk_shm_unlock();
+            else {
+                JK_LEAVE_CS(&(p->cs), r);
+            }
             jk_log(l, JK_LOG_INFO,
                    "all workers are in error state for session %s",
                     session);
@@ -559,7 +554,11 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
         }
     }
     rc = find_best_worker(p, l);
-    JK_LEAVE_CS(&(p->cs), r);
+    if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
+        jk_shm_unlock();
+    else {
+        JK_LEAVE_CS(&(p->cs), r);
+    }
     if (rc && JK_IS_DEBUG_LEVEL(l)) {
         jk_log(l, JK_LOG_DEBUG,
                "found best worker (%s) using %s method", rc->s->name,
@@ -613,11 +612,16 @@ static int JK_METHOD service(jk_endpoint_t *e,
                            "service worker=%s jvm_route=%s",
                            rec->s->name, s->jvm_route);
                 if (rc && end) {
-                    rec->s->elected++;
+                    size_t rd = 0;
+                    size_t wr = 0;
                     /* Reset endpoint read and write sizes for
                      * this request.
                      */
                     end->rd = end->wr = 0;
+                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                        jk_shm_lock();
+
+                    rec->s->elected++;
                     /* Increment the number of workers serving request */
                     p->worker->s->busy++;
                     if (p->worker->s->busy > p->worker->s->max_busy)
@@ -625,13 +629,21 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rec->s->busy++;
                     if (rec->s->busy > rec->s->max_busy)
                         rec->s->max_busy = rec->s->busy;
+                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                        jk_shm_unlock();
+
                     service_stat = end->service(end, s, l, &is_service_error);
-                    /* Update partial reads and writes if any */
-                    if (p->worker->lbmethod == JK_LB_BYTRAFFIC) {
-                        rec->s->readed += end->rd;
-                        rec->s->transferred += end->wr;
-                    }
+                    rd = end->rd;
+                    wr = end->wr;
                     end->done(&end, l);
+
+                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                        jk_shm_lock();
+
+                    /* Update partial reads and writes if any */
+                    rec->s->readed += rd;
+                    rec->s->transferred += wr;
+
                     /* When returning the endpoint mark the worker as not busy.
                      * We have at least one endpoint free
                      */
@@ -643,9 +655,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         rec->s->in_error_state = JK_FALSE;
                         rec->s->in_recovering = JK_FALSE;
                         rec->s->error_time = 0;
+                        if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                            jk_shm_unlock();
                         JK_TRACE_EXIT(l);
                         return JK_TRUE;
                     }
+                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                        jk_shm_unlock();
                 }
                 else {
                     /* If we can not get the endpoint
