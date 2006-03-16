@@ -36,10 +36,48 @@
 #define JK_STRNCMP  strncmp
 #endif
 
+
+/*
+ * Given context uri, count the number of path tokens.
+ *
+ * Servlet specification 2.4, SRV.11.1 says
+
+ *   The container will recursively try tomatch the longest
+ *   path-prefix. This is done by stepping down the path tree a
+ *   directory at a time, using the / character as a path
+ *   separator. The longest match determines the servlet selected.
+ *
+ * The implication seems to be `most uri path elements is most exact'.
+ * This is a little helper function to count uri tokens, so we can
+ * keep the worker map sorted with most specific first.
+ */
+static int worker_count_context_uri_tokens(const char * context)
+{
+    const char * c = context;
+    int count = 0;
+    while (c && *c) {
+        if ('/' == *c++)
+            count++;
+    }
+    return count;
+}
+
 static int worker_compare(const void *elem1, const void *elem2)
 {
     uri_worker_record_t *e1 = *(uri_worker_record_t **)elem1;
     uri_worker_record_t *e2 = *(uri_worker_record_t **)elem2;
+    int e1_tokens = 0;
+    int e2_tokens = 0;
+
+    e1_tokens = worker_count_context_uri_tokens(e1->context);
+    e2_tokens = worker_count_context_uri_tokens(e2->context);
+
+    if (e1_tokens != e2_tokens) {
+        return (e2_tokens - e1_tokens);
+    }
+    /* given the same number of URI tokens, use character
+     * length as a tie breaker
+     */
     return ((int)e2->context_len - (int)e1->context_len);
 }
 

@@ -25,6 +25,11 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      <bug>38889</bug>: Use worker map sorting depending on the path
+      elements, to comply with Servlet spec. Patch provided by
+      Steve Revilak. (mturk)
+      </fix>
       <update>
       <bug>36138</bug>: Added Busyness lb method. Patch provided
       by  Chris Lamprecht. (mturk)
