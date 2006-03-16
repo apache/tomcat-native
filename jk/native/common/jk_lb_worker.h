@@ -39,8 +39,10 @@ extern "C"
 
 #define JK_LB_BYREQUESTS      (0)
 #define JK_LB_BYTRAFFIC       (1)
+#define JK_LB_BYBUSYNESS      (2)
 #define JK_LB_METHOD_REQUESTS ("Request")
 #define JK_LB_METHOD_TRAFFIC  ("Traffic")
+#define JK_LB_METHOD_BUSYNESS ("Busyness")
 #define JK_LB_LOCK_DEFAULT     (0)
 #define JK_LB_LOCK_PESSIMISTIC (1)
 #define JK_LB_LM_DEFAULT       ("Optimistic")
@@ -69,7 +71,7 @@ struct lb_worker
     jk_pool_atom_t buf[TINY_POOL_SIZE];
 
     jk_worker_t worker;
-    JK_CRIT_SEC cs; 
+    JK_CRIT_SEC cs;
 
     /* Shared memory worker data */
     jk_shm_worker_t  *s;

@@ -770,6 +770,8 @@ int jk_get_lb_method(jk_map_t *m, const char *wname)
         return JK_LB_BYTRAFFIC;
     else if  (*v == 'r' || *v == 'R' || *v == '0')
         return JK_LB_BYREQUESTS;
+    else if  (*v == 'b' || *v == 'B' || *v == '2')
+        return JK_LB_BYBUSYNESS;
     else
         return JK_LB_BYREQUESTS;
 }

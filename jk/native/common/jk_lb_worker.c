@@ -359,6 +359,77 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
     return candidate;
 }
 
+static worker_record_t *find_best_bybusyness(lb_worker_t *p,
+                                             jk_logger_t *l)
+{
+    static unsigned int next_offset = 0;
+    unsigned int i;
+    unsigned int j;
+    unsigned int offset;
+    int bfn = 1;  /* Numerator of best busy factor */
+    int bfd = 1;  /* Denominator of best busy factor */
+    int curn; /* Numerator of current busy factor */
+    int curd; /* Denominator of current busy factor */
+
+    int left; /* left and right are used to compare rational numbers */
+    int right;
+
+    /* find the least busy worker */
+    worker_record_t *candidate = NULL;
+
+    offset = next_offset;
+
+    /* First try to see if we have available candidate
+	 */
+    for (j = 0; j < p->num_of_workers; j++) {
+        i = (j + offset) % p->num_of_workers;
+
+        /* If the worker is in error state run
+         * retry on that worker. It will be marked as
+         * operational if the retry timeout is elapsed.
+         * The worker might still be unusable, but we try
+         * anyway.
+         */
+        if (JK_WORKER_IN_ERROR(p->lb_workers[i].s)) {
+            retry_worker(&p->lb_workers[i], p->s->recover_wait_time, l);
+        }
+        /* Take into calculation only the workers that are
+         * not in error state, stopped or not disabled.
+         */
+        if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
+            curn = p->lb_workers[i].s->busy;
+            curd = p->lb_workers[i].s->lb_factor;
+
+            /* If the server is restarted under load there is a bug that causes
+             * busy to be reset to zero before all the outstanding connections
+             * finish, they then finally finish.  As a result, the busy value
+             * becomes negative, messing up the busyness load balancing.
+             * When this bug is fixed, this section can be removed
+             */
+            if (curn < 0) {
+               jk_log(l, JK_LOG_WARNING,
+                   "busy value is %d for worker %s, resetting it to zero",
+                   curn, p->lb_workers[i].s->name);
+                p->lb_workers[i].s->busy = 0;
+                curn = 0;
+            }
+
+            /* compare rational numbers: (a/b) < (c/d) iff a*d < c*b
+			 */
+            left  = curn * bfd;
+            right = bfn * curd;
+
+            if (!candidate || (left < right)) {
+                candidate = &p->lb_workers[i];
+                bfn = curn;
+                bfd = curd;
+                next_offset = i + 1;
+            }
+        }
+    }
+    return candidate;
+}
+
 static worker_record_t *find_bysession_route(lb_worker_t *p,
                                              const char *name,
                                              jk_logger_t *l)
@@ -441,6 +512,8 @@ static worker_record_t *find_best_worker(lb_worker_t * p,
         rc = find_best_byrequests(p, l);
     else if (p->lbmethod == JK_LB_BYTRAFFIC)
         rc = find_best_bytraffic(p, l);
+    else if (p->lbmethod == JK_LB_BYBUSYNESS)
+        rc = find_best_bybusyness(p, l);
     /* By default use worker name as session route */
     if (rc)
         rc->r = &(rc->s->name[0]);

@@ -25,6 +25,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      <bug>36138</bug>: Added Busyness lb method. Patch provided
+      by  Chris Lamprecht. (mturk)
+      </update>
       <fix>
       Fix pessimistic locking mode. The patch correctly handles the
       burst load, by syncing the access to the shared memory data. (mturk)

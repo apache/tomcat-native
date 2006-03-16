@@ -90,6 +90,14 @@ static const char *headers_names[] = {
     NULL
 };
 
+static const char *lb_method_type[] = {
+    JK_LB_METHOD_REQUESTS,
+    JK_LB_METHOD_TRAFFIC,
+    JK_LB_METHOD_BUSYNESS,
+    "unknown",
+    NULL
+};
+
 #define HEADERS_NO_CACHE "no-cache", "no-cache", NULL
 
 static const char *headers_vhtml[] = {
@@ -443,7 +451,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session_force),
                     "</td>", NULL);
             jk_printf(s, "<td>%d</td>", lb->s->retries);
-            jk_printf(s, "<td>%s</td>", lb->lbmethod == JK_LB_BYREQUESTS ? JK_LB_METHOD_REQUESTS : JK_LB_METHOD_TRAFFIC);
+            jk_printf(s, "<td>%s</td>", lb_method_type[lb->lbmethod]);
             jk_printf(s, "<td>%s</td>", lb->lblock == JK_LB_LOCK_DEFAULT ? JK_LB_LM_DEFAULT : JK_LB_LM_PESSIMISTIC);
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
             jk_puts(s, "<table><tr>"
