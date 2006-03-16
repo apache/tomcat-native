@@ -1389,7 +1389,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
              * and the length of the chunk (2 bytes). The remaining part of
              * the message is the chunk.
              */
-            if (len > msg->len - 3) {
+            if (len > (unsigned int)(msg->len - 3)) {
                 jk_log(l, JK_LOG_ERROR,
                        "Chunk length too large. Length of AJP message is %i,"
                        " chunk length is %i.", msg->len, len);
