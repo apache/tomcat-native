@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      <bug>38859</bug>: Protect mod_jk against buggy or malicious
+      AJP servers in the backend. Patch provided by Ruediger Pluem. (mturk)
+      </fix>
+      <fix>
       <bug>38889</bug>: Use worker map sorting depending on the path
       elements, to comply with Servlet spec. Patch provided by
       Steve Revilak. (mturk)

@@ -1380,6 +1380,22 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
     case JK_AJP13_SEND_BODY_CHUNK:
         {
             unsigned int len = (unsigned int)jk_b_get_int(msg);
+            /*
+             * Do a sanity check on len to prevent write reading beyond buffer
+             * boundaries and thus revealing possible sensitive memory
+             * contents to the client.
+             * len cannot be larger than msg->len - 3 because the ajp message
+             * contains the magic byte for JK_AJP13_SEND_BODY_CHUNK (1 byte)
+             * and the length of the chunk (2 bytes). The remaining part of
+             * the message is the chunk.
+             */
+            if (len > msg->len - 3) {
+                jk_log(l, JK_LOG_ERROR,
+                       "Chunk length too large. Length of AJP message is %i,"
+                       " chunk length is %i.", msg->len, len);
+                JK_TRACE_EXIT(l);
+                return JK_INTERNAL_ERROR;
+            }
             if (!r->write(r, msg->buf + msg->pos, len)) {
                 jk_log(l, JK_LOG_INFO,
                        "Connection aborted or network problems");
@@ -2065,7 +2081,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
             *e = NULL;
             /* set last_access only if needed */
             if (w->cache_timeout > 0 || w->recycle_timeout > 0)
-                p->last_access = time(NULL); 
+                p->last_access = time(NULL);
             JK_LEAVE_CS(&w->cs, rc);
             if (sock >= 0)
                 jk_shutdown_socket(sock);
@@ -2137,7 +2153,7 @@ int ajp_get_endpoint(jk_worker_t *pThis,
             else {
                 jk_log(l, JK_LOG_WARNING,
                         "Unable to get the free endpoint for worker %s from %d slots",
-                        aw->name, aw->ep_cache_sz);                
+                        aw->name, aw->ep_cache_sz);
             }
             JK_LEAVE_CS(&aw->cs, rc);
         }
