@@ -4,7 +4,7 @@
 ]>
 <document url="workers.html">
 
-    &project; 
+    &project;
 
     <properties>
         <author email="mturk@apache.org">Mladen Turk</author>
@@ -21,34 +21,34 @@ on behalf of some web server. For example, we can have a web server such as
 Apache forwarding servlet requests to a Tomcat process (the worker) running behind it.
 </p>
 <p>
-The scenario described above is a very simple one; 
-in fact one can configure multiple Tomcat workers to serve servlets on 
-behalf of a certain web server. 
+The scenario described above is a very simple one;
+in fact one can configure multiple Tomcat workers to serve servlets on
+behalf of a certain web server.
 The reasons for such configuration can be:
 </p>
 <ul>
 <li>
-We want different contexts to be served by different Tomcat workers to provide a 
+We want different contexts to be served by different Tomcat workers to provide a
 development environment where all the developers share the same web server but
 own a Tomcat worker of their own.
 </li>
 <li>
-We want different virtual hosts served by different Tomcat processes to provide a 
+We want different virtual hosts served by different Tomcat processes to provide a
 clear separation between sites belonging to different companies.
 </li>
 <li>
-We want to provide load balancing, meaning run multiple Tomcat workers each on a 
+We want to provide load balancing, meaning run multiple Tomcat workers each on a
 machine of its own and distribute the requests between them.
 </li>
 </ul>
 
 <p>
 There are probably more reasons for having multiple workers but I guess that this list is enough...
-Tomcat workers are defined in a properties file dubbed <b>workers.properties</b> and this tutorial 
+Tomcat workers are defined in a properties file dubbed <b>workers.properties</b> and this tutorial
 explains how to work with it.
 </p>
 </section>
- 
+
 <section name="Directives">
 <br/>
 <p>Each workers.properties directive consists of three words separated by dot. The first word is always
@@ -72,7 +72,7 @@ The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z
 <directive name="worker.list" default="ajp13" required="true">
 A comma separated list of workers names that the JK will use. When starting up,
 the web server plugin will instantiate the workers whose name appears in the
-worker.list property, these are also the workers to whom you can map requests. 
+worker.list property, these are also the workers to whom you can map requests.
 </directive>
 <directive name="worker.maintain" default="60" required="false">
 Worker connection pool maintain timeout in seconds. If set to the positive
@@ -141,13 +141,13 @@ have information about the cut and couldn't handle it.
 </directive>
 
 <directive name="recycle_timeout" default="0" required="false">
-The number of seconds that told webserver to cut an ajp13 connection after some time of 
+The number of seconds that told webserver to cut an ajp13 connection after some time of
 inactivity. When choosing an endpoint for a request and the assigned socket is open, it will be
 closed if it was not used for the configured time.
-It's a good way to ensure that there won't too old threads living on Tomcat side, 
+It's a good way to ensure that there won't too old threads living on Tomcat side,
 with the extra cost you need to reopen the socket next time a request be forwarded.
 This property is very similar to <b>cache_timeout</b> but works also in non-cache mode.
-If set to value zero (default) no recycle will took place. 
+If set to value zero (default) no recycle will took place.
 </directive>
 
 <directive name="retries" default="3" required="false">
@@ -162,7 +162,7 @@ are maintained as a connection pool.
 It will limit the number of those connection that each web server child
 process can made.
 <p>
-Cachesize property is used only for multi threaded 
+Cachesize property is used only for multi threaded
 web servers such as Apache 2.0 (worker), IIS and Netscape. The cachesize property
 should reflect the number of threads per child process. JK will discover
 the number of threads per child process on Apache 2 web server with worker-mpm and set
@@ -174,9 +174,9 @@ value is 10. For other web servers this value has to be set manually.
 
 <directive name="cache_timeout" default="0" required="false">
 Cache timeout property should be used with <b>cachesize</b> to specify how to time JK should keep
-an open socket in cache before closing it. This property should be used to reduce the number of threads 
+an open socket in cache before closing it. This property should be used to reduce the number of threads
 on the Tomcat WebServer.
-<p> 
+<p>
 Each child could open an ajp13 connection if it have to forward a request to Tomcat, creating
 a new ajp13 thread on Tomcat side.
 </p>
@@ -185,7 +185,7 @@ The problem is that after an ajp13 connection is created, the child won't drop i
 until killed. And since the webserver will keep its childs/threads running
 to handle high-load, even it the child/thread handle only static contents, you could
 finish having many unused ajp13 threads on the Tomcat side.
-</p>. 
+</p>.
 </directive>
 
 <directive name="lbfactor" default="1" required="false">
@@ -194,7 +194,7 @@ this is the load-balancing factor for the worker.
 The load-balancing factor is <i>how much we expect this worker to work</i>, or
 <i>the worker's work quota</i>. Load balancing factor is compared with other workers
 that makes the load balancer. For example if one worker has lb_factor 5 times higher then
-other worker, then it will receive five times more requests. 
+other worker, then it will receive five times more requests.
 </directive>
 
 </directives>
@@ -221,14 +221,14 @@ Load balancer management includes:
 Instantiating the workers in the web server.
 </li>
 <li>
-Using the worker's load-balancing factor, perform weighed-round-robin load balancing where 
+Using the worker's load-balancing factor, perform weighed-round-robin load balancing where
 high lbfactor means stronger machine (that is going to handle more requests)
 </li>
 <li>
 Keeping requests belonging to the same session executing on the same Tomcat worker.
 </li>
 <li>
-Identifying failed Tomcat workers, suspending requests to them and instead fall-backing on 
+Identifying failed Tomcat workers, suspending requests to them and instead fall-backing on
 other workers managed by the lb worker.
 </li>
 </ul>
@@ -276,6 +276,10 @@ Specifies what method load balancer is using for electing best worker.
 If method is set to <b>R[equest]</b> balancer will use number of requests
 to find the best worker. If set to <b>T[raffic]</b> balancer will use
 the network traffic between JK and Tomcat to find the best worker.
+If set to <b>B[usyness]</b> balancer will
+pick the worker with the lowest current load, based on how many requests the
+worker is currently serving. This number is divided by the workers lbfactor,
+and the lowest value (least busy) worker is picked.
 <p>
 This feature has been added in <b>jk 1.2.9</b>.
 </p>
@@ -294,7 +298,7 @@ This feature has been added in <b>jk 1.2.13</b>.
 </directive>
 
 <directive name="secret" default="" required="false">
-Set a default secret word for all defined workers. 
+Set a default secret word for all defined workers.
 See worker secret attribute description for more info.
 <p>
 This feature has been added in <b>jk 1.2.12</b>.
@@ -309,7 +313,7 @@ This feature has been added in <b>jk 1.2.12</b>.
 <br />
 <p>
 The status worker does not communicate with Tomcat.
-Instead it is responsible for the load balancer management. 
+Instead it is responsible for the load balancer management.
 </p>
 <directives>
 <directive name="css" default="" required="false">
@@ -322,20 +326,20 @@ Specifies the url for cascading stylesheet to use.
 <br />
 <directives>
 <directive name="connect_timeout" default="0" required="false">
-Connect timeout property told webserver to send a PING request on ajp13 connection after 
+Connect timeout property told webserver to send a PING request on ajp13 connection after
 connection is established. The parameter is the delay in milliseconds to wait for the PONG reply.
 <p>
-This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13 
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13
 ping/pong support which has been implemented on Tomcat <b>3.3.2+, 4.1.28+ and 5.0.13+</b>.
 Disabled by default.
 </p>
 </directive>
 
 <directive name="prepost_timeout" default="0" required="false">
-Prepost timeout property told webserver to send a PING request on ajp13 connection before 
+Prepost timeout property told webserver to send a PING request on ajp13 connection before
 forwarding to it a request. The parameter is the delay in milliseconds to wait for the PONG reply.
 <p>
-This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13 
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13
 ping/pong support which has been implemented on <b>Tomcat 3.3.2+, 4.1.28+ and 5.0.13+</b>.
 Disabled by default.
 </p>
@@ -345,13 +349,13 @@ Disabled by default.
 Reply_timeout property told webserver to wait some time for reply to a forwarded request
 before considering the remote tomcat is dead and eventually switch to another tomcat in a cluster
 group. By default webserver will wait forever which could be an issue for you.
-The parameter is the number of milliseconds to wait for reply, so adjust it carefully if you 
+The parameter is the number of milliseconds to wait for reply, so adjust it carefully if you
 have long running servlets.
 <p>
 This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and works on all
 servlet engines supporting ajp13.
 Disabled by default.
-</p> 
+</p>
 </directive>
 
 <directive name="recovery_options" default="0" required="false">
@@ -360,10 +364,10 @@ it detect that tomcat failed.
 By default, webserver will forward the request to another tomcat in LB mode
 (or to another ajp thread in ajp13 mode).
 values are : 0 (full recovery), 1 (don't recover if tomcat failed after getting the request),
-2 (don't recover if tomcat failed after sending the headers to client), 3 (don't recover if tomcat failed 
+2 (don't recover if tomcat failed after sending the headers to client), 3 (don't recover if tomcat failed
 getting the request or after sending the headers to client).
 <p>
-This features has been added in <b>jk 1.2.6</b> to avoid problem with hung/broken tomcat's 
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung/broken tomcat's
 and works on all servlet engines supporting ajp13.
 Full recovery by default.
 </p>
@@ -411,18 +415,18 @@ This feature has been added in <b>jk 1.2.11</b>.
 
 <directive name="secret" default="" required="false">
 If set to AJP Connector secret keyword, only request with this keyword are successfull responding.
-Use <b>request.useSecret="true"</b> and <b>request.secret="secret key word"</b> at your tomcat ajp 
+Use <b>request.useSecret="true"</b> and <b>request.secret="secret key word"</b> at your tomcat ajp
 Connector configuration.
 </directive>
 
 <directive name="mount" default="" required="false">
 Space delimted list of uri maps the worker should handle
 </directive>
- 
+
 </directives>
 </subsection>
 
 </section>
- 
+
 </body>
 </document>
