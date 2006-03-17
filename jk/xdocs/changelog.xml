@@ -47,6 +47,9 @@
       This fixes hot-standby workers in error state. (mturk)
       </fix>
       <fix>
+      <bug>37167</bug>: Allow building with BSD-ish like make. (mturk)
+      </fix>
+      <fix>
       ISAPI plugin (isapi_redirect.dll) did not provide correct request data
       for IIS
  to include in the IIS log. (markt)
