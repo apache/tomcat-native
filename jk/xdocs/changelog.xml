@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      <bug>37469</bug>: Fix shared memory close for forked childs.
+      The shared memory will be closed by the parent process. (mturk)
+      </fix>
+      <fix>
       <bug>37332</bug>: Fix potential misuse of buffer length with
       snprintf functions. (mturk)
       </fix>

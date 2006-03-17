@@ -253,7 +253,10 @@ static int do_shm_open(const char *fname, int attached,
         return 0;
     }
     jk_shmem.filename = fname;
-    jk_shmem.attached = attached;
+    if (attached)
+        jk_shmem.attached = (int)getpid();
+    else
+        jk_shmem.attached = 0;
 
     jk_shmem.size = JK_SHM_ALIGN(sizeof(jk_shm_header_t) + sz);
 
@@ -361,6 +364,16 @@ void jk_shm_close()
 {
     int rc;
     if (jk_shmem.hdr) {
+        if (jk_shmem.hdr.attached) {
+            int p = (int)getpid();
+            if (p != jk_shmem.hdr.attached) {
+                /* In case this is a forked child
+                 * do not close the shared memory.
+                 * It will be closed by the parent.
+                 */
+                 return;
+            }
+        }
         if (jk_shmem.fd_lock >= 0) {
             close(jk_shmem.fd_lock);
         }
