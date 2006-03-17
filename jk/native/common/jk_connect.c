@@ -177,7 +177,7 @@ static int nb_connect(int sock, struct sockaddr *addr, int timeout)
                    && (timeout > 0)) {
         fd_set wfdset;
         struct timeval tv;
-        int rclen = sizeof(rc);
+        unsigned int rclen = sizeof(rc);
 
         FD_ZERO(&wfdset);
         FD_SET(sock, &wfdset);
