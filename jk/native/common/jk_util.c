@@ -315,8 +315,8 @@ int jk_log(jk_logger_t *l,
             used += sprintf(&buf[used], "[%04d:%04d] ", getpid(),
                             jk_gettid());
 #else
-            used += snprintf(&buf[used], HUGE_BUFFER_SIZE, "[%04d:%04d] ",
-                             getpid(), jk_gettid());
+            used += snprintf(&buf[used], HUGE_BUFFER_SIZE - used,
+                             "[%04d:%04d] ", getpid(), jk_gettid());
 #endif
             if (used < 0) {
                 return 0;
@@ -338,8 +338,8 @@ int jk_log(jk_logger_t *l,
             used += sprintf(&buf[used], "%s (%d): ", f, line);
 #else
         if (line)
-            used += snprintf(&buf[used], HUGE_BUFFER_SIZE, "%s (%d): ",
-                             f, line);
+            used += snprintf(&buf[used], HUGE_BUFFER_SIZE - used,
+                             "%s (%d): ", f, line);
 #endif
         if (used < 0) {
             return 0;           /* [V] not sure what to return... */

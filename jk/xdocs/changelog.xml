@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      <bug>37332</bug>: Fix potential misuse of buffer length with
+      snprintf functions. (mturk)
+      </fix>
+      <fix>
       <bug>38859</bug>: Protect mod_jk against buggy or malicious
       AJP servers in the backend. Patch provided by Ruediger Pluem. (mturk)
       </fix>
