@@ -364,9 +364,9 @@ void jk_shm_close()
 {
     int rc;
     if (jk_shmem.hdr) {
-        if (jk_shmem.hdr.attached) {
+        if (jk_shmem.attached) {
             int p = (int)getpid();
-            if (p != jk_shmem.hdr.attached) {
+            if (p != jk_shmem.attached) {
                 /* In case this is a forked child
                  * do not close the shared memory.
                  * It will be closed by the parent.
