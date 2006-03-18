@@ -188,7 +188,7 @@ public abstract class JSSESocketFactory
                 vec.copyInto(enabledCiphers);
             }
         } else {
-            enabledCiphers = supportedCiphers;
+            enabledCiphers = sslProxy.getDefaultCipherSuites();
         }
 
         return enabledCiphers;
