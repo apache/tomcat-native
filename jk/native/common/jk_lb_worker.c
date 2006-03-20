@@ -38,7 +38,6 @@
  * The load balancing code in this
  */
 
-
 /*
  * Time to wait before retry...
  */
@@ -227,6 +226,9 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
     int total_factor = 0;
     jk_u64_t mytraffic = 0;
     jk_u64_t curmin = 0;
+    int bfn = 1;
+    int bfd = 1;
+
     worker_record_t *candidate = NULL;
 
     if (p->lbmethod == JK_LB_BYTRAFFIC) {
@@ -242,7 +244,6 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
             }
         }
     }
-
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* Skip all workers that are not member of domain */
@@ -259,12 +260,24 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
                 if (!candidate || p->lb_workers[i].s->lb_value > candidate->s->lb_value)
                     candidate = &p->lb_workers[i];
             }
-            else {
+            else if (p->lbmethod == JK_LB_BYTRAFFIC) {
                 mytraffic = (p->lb_workers[i].s->transferred +
                              p->lb_workers[i].s->readed ) / p->lb_workers[i].s->lb_factor;
                 if (!candidate || mytraffic < curmin) {
                     candidate = &p->lb_workers[i];
                     curmin = mytraffic;
+                }
+            }
+            else {
+                /* compare rational numbers: (a/b) < (c/d) iff a*d < c*b
+    			 */
+                int left  = p->lb_workers[i].s->busy * bfd;
+                int right = bfn * p->lb_workers[i].s->lb_factor;
+
+                if (!candidate || (left < right)) {
+                    candidate = &p->lb_workers[i];
+                    bfn = p->lb_workers[i].s->busy;
+                    bfd = p->lb_workers[i].s->lb_factor;
                 }
             }
         }
@@ -368,8 +381,6 @@ static worker_record_t *find_best_bybusyness(lb_worker_t *p,
     unsigned int offset;
     int bfn = 1;  /* Numerator of best busy factor */
     int bfd = 1;  /* Denominator of best busy factor */
-    int curn; /* Numerator of current busy factor */
-    int curd; /* Denominator of current busy factor */
 
     int left; /* left and right are used to compare rational numbers */
     int right;
@@ -397,32 +408,15 @@ static worker_record_t *find_best_bybusyness(lb_worker_t *p,
          * not in error state, stopped or not disabled.
          */
         if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
-            curn = p->lb_workers[i].s->busy;
-            curd = p->lb_workers[i].s->lb_factor;
-
-            /* If the server is restarted under load there is a bug that causes
-             * busy to be reset to zero before all the outstanding connections
-             * finish, they then finally finish.  As a result, the busy value
-             * becomes negative, messing up the busyness load balancing.
-             * When this bug is fixed, this section can be removed
-             */
-            if (curn < 0) {
-               jk_log(l, JK_LOG_WARNING,
-                   "busy value is %d for worker %s, resetting it to zero",
-                   curn, p->lb_workers[i].s->name);
-                p->lb_workers[i].s->busy = 0;
-                curn = 0;
-            }
-
             /* compare rational numbers: (a/b) < (c/d) iff a*d < c*b
 			 */
-            left  = curn * bfd;
-            right = bfn * curd;
+            left  = p->lb_workers[i].s->busy * bfd;
+            right = bfn * p->lb_workers[i].s->lb_factor;
 
             if (!candidate || (left < right)) {
                 candidate = &p->lb_workers[i];
-                bfn = curn;
-                bfd = curd;
+                bfn = p->lb_workers[i].s->busy;
+                bfd = p->lb_workers[i].s->lb_factor;
                 next_offset = i + 1;
             }
         }
