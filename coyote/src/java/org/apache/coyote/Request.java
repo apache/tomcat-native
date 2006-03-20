@@ -76,7 +76,6 @@ public final class Request {
 
         methodMB.setString("GET");
         uriMB.setString("/");
-        queryMB.setString("");
         protoMB.setString("HTTP/1.0");
 
     }
@@ -486,7 +485,6 @@ public final class Request {
         schemeMB.recycle();
         methodMB.setString("GET");
         uriMB.setString("/");
-        queryMB.setString("");
         protoMB.setString("HTTP/1.0");
         //remoteAddrMB.setString("127.0.0.1");
         //remoteHostMB.setString("localhost");
