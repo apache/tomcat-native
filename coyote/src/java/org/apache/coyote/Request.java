@@ -74,10 +74,6 @@ public final class Request {
         parameters.setURLDecoder(urlDecoder);
         parameters.setHeaders(headers);
 
-        methodMB.setString("GET");
-        uriMB.setString("/");
-        protoMB.setString("HTTP/1.0");
-
     }
 
 
@@ -478,16 +474,8 @@ public final class Request {
         queryMB.recycle();
         methodMB.recycle();
         protoMB.recycle();
-        //remoteAddrMB.recycle();
-        //remoteHostMB.recycle();
 
-        // XXX Do we need such defaults ?
         schemeMB.recycle();
-        methodMB.setString("GET");
-        uriMB.setString("/");
-        protoMB.setString("HTTP/1.0");
-        //remoteAddrMB.setString("127.0.0.1");
-        //remoteHostMB.setString("localhost");
 
         instanceId.recycle();
         remoteUser.recycle();
