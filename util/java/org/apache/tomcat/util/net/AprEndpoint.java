@@ -1076,9 +1076,9 @@ public class AprEndpoint {
                             getWorkerThread().assign(desc[n*2+1]);
                         }
                     } else if (rv < 0) {
-                        /* Any non timeup error is critical */
-                        if (-rv != Status.TIMEUP) {
-                            int errn = -rv;
+                        int errn = -rv;
+                        /* Any non timeup or interrupted error is critical */
+                        if ((errn != Status.TIMEUP) && (errn != Status.EINTR)) {
                             if (errn >  Status.APR_OS_START_USERERR) {
                                errn -=  Status.APR_OS_START_USERERR;
                             }
@@ -1088,6 +1088,7 @@ public class AprEndpoint {
                                 destroy();
                                 init();
                             }
+                            continue;
                         }
                     }
                     if (soTimeout > 0 && maintainTime > 1000000L) {
@@ -1470,16 +1471,19 @@ public class AprEndpoint {
                             }
                         }
                     } else if (rv < 0) {
-                        /* Any non timeup error is critical */
-                        if (-rv == Status.TIMEUP)
-                            rv = 0;
-                        else {
-                            log.error(sm.getString("endpoint.poll.fail", "" + (-rv), Error.strerror(-rv)));
+                        int errn = -rv;
+                        /* Any non timeup or interrupted error is critical */
+                        if ((errn != Status.TIMEUP) && (errn != Status.EINTR)) {
+                            if (errn >  Status.APR_OS_START_USERERR) {
+                                errn -=  Status.APR_OS_START_USERERR;
+                            }
+                            log.error(sm.getString("endpoint.poll.fail", "" + errn, Error.strerror(errn)));
                             // Handle poll critical failure
                             synchronized (this) {
                                 destroy();
                                 init();
                             }
+                            continue;
                         }
                     }
                     /* TODO: See if we need to call the maintain for sendfile poller */
