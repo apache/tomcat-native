@@ -199,7 +199,7 @@ public class Http11BaseProtocol implements ProtocolHandler
     private int maxKeepAliveRequests=100; // as in Apache HTTPD server
     private int timeout = 300000;   // 5 minutes as in Apache HTTPD server
     private int maxSavePostSize = 4 * 1024;
-    private int maxHttpHeaderSize = 4 * 1024;
+    private int maxHttpHeaderSize = 8 * 1024;
     private String reportedname;
     private int socketCloseDelay=-1;
     private boolean disableUploadTimeout = true;
