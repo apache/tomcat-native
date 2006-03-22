@@ -965,16 +965,19 @@ public class AprEndpoint {
          */
         protected void init() {
             pool = Pool.create(serverSockPool);
-            serverPollset = allocatePoller(pollerSize, pool, soTimeout);
-            if (serverPollset == 0 && pollerSize > 1024) {
-                serverPollset = allocatePoller(1024, pool, soTimeout);
+            int size = pollerSize;
+            serverPollset = allocatePoller(size, pool, soTimeout);
+            if (serverPollset == 0 && size > 1024) {
+                size = 1024;
+                serverPollset = allocatePoller(size, pool, soTimeout);
             }
             if (serverPollset == 0) {
-                serverPollset = allocatePoller(62, pool, soTimeout);
+                size = 62;
+                serverPollset = allocatePoller(size, pool, soTimeout);
             }
-            desc = new long[pollerSize * 2];
+            desc = new long[size * 2];
             keepAliveCount = 0;
-            addS = new long[pollerSize];
+            addS = new long[size];
             addCount = 0;
         }
 
@@ -1275,15 +1278,18 @@ public class AprEndpoint {
          */
         protected void init() {
             pool = Pool.create(serverSockPool);
+            int size = sendfileSize;
             sendfilePollset = allocatePoller(sendfileSize, pool, soTimeout);
-            if (sendfilePollset == 0 && pollerSize > 1024) {
-                sendfilePollset = allocatePoller(1024, pool, soTimeout);
+            if (sendfilePollset == 0 && size > 1024) {
+                size = 1024;
+                sendfilePollset = allocatePoller(size, pool, soTimeout);
             }
             if (sendfilePollset == 0) {
-                sendfilePollset = allocatePoller(62, pool, soTimeout);
+                size = 62;
+                sendfilePollset = allocatePoller(size, pool, soTimeout);
             }
-            desc = new long[sendfileSize * 2];
-            sendfileData = new HashMap(sendfileSize);
+            desc = new long[size * 2];
+            sendfileData = new HashMap(size);
             addS = new ArrayList();
         }
 
