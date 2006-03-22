@@ -181,7 +181,7 @@ public class AprEndpoint {
     /**
      * Maximum amount of worker threads.
      */
-    protected int maxThreads = 60;
+    protected int maxThreads = 40;
     public void setMaxThreads(int maxThreads) { this.maxThreads = maxThreads; }
     public int getMaxThreads() { return maxThreads; }
 
@@ -197,7 +197,7 @@ public class AprEndpoint {
     /**
      * Size of the socket poller.
      */
-    protected int pollerSize = 768;
+    protected int pollerSize = 16 * 1024;
     public void setPollerSize(int pollerSize) { this.pollerSize = pollerSize; }
     public int getPollerSize() { return pollerSize; }
 
@@ -205,7 +205,7 @@ public class AprEndpoint {
     /**
      * Size of the sendfile (= concurrent files which can be served).
      */
-    protected int sendfileSize = 256;
+    protected int sendfileSize = 1 * 1024;
     public void setSendfileSize(int sendfileSize) { this.sendfileSize = sendfileSize; }
     public int getSendfileSize() { return sendfileSize; }
 
@@ -280,7 +280,7 @@ public class AprEndpoint {
      * Poll interval, in microseconds. The smaller the value, the more CPU the poller
      * will use, but the more responsive to activity it will be.
      */
-    protected int pollTime = 5000;
+    protected int pollTime = 2000;
     public int getPollTime() { return pollTime; }
     public void setPollTime(int pollTime) { this.pollTime = pollTime; }
 
@@ -627,15 +627,15 @@ public class AprEndpoint {
 
             // Start acceptor thread
             acceptorThread = new Thread(new Acceptor(), getName() + "-Acceptor");
-            acceptorThread.setPriority(getThreadPriority());
-            acceptorThread.setDaemon(true);
+            acceptorThread.setPriority(threadPriority);
+            acceptorThread.setDaemon(daemon);
             acceptorThread.start();
 
             // Start poller thread
             poller = new Poller();
             poller.init();
             pollerThread = new Thread(poller, getName() + "-Poller");
-            pollerThread.setPriority(getThreadPriority());
+            pollerThread.setPriority(threadPriority);
             pollerThread.setDaemon(true);
             pollerThread.start();
 
@@ -644,7 +644,7 @@ public class AprEndpoint {
                 sendfile = new Sendfile();
                 sendfile.init();
                 sendfileThread = new Thread(sendfile, getName() + "-Sendfile");
-                sendfileThread.setPriority(getThreadPriority());
+                sendfileThread.setPriority(threadPriority);
                 sendfileThread.setDaemon(true);
                 sendfileThread.start();
             }
@@ -872,6 +872,25 @@ public class AprEndpoint {
         }
     }
 
+    
+    /**
+     * Allocate a new poller of the specified size.
+     */
+    protected long allocatePoller(int size, long pool, int timeout) {
+        try {
+            return Poll.create(size, pool, 0, timeout * 1000);
+        } catch (Error e) {
+            if (Status.APR_STATUS_IS_EINVAL(e.getError())) {
+                log.info(sm.getString("endpoint.poll.limitedpollsize", "" + size));
+                return 0;
+            } else {
+                log.error(sm.getString("endpoint.poll.initfail"), e);
+                return -1;
+            }
+        }
+    }
+    
+    
 
     // --------------------------------------------------- Acceptor Inner Class
 
@@ -946,21 +965,12 @@ public class AprEndpoint {
          */
         protected void init() {
             pool = Pool.create(serverSockPool);
-            try {
-                serverPollset = Poll.create(pollerSize, pool, 0, soTimeout * 1000);
-            } catch (Error e) {
-                if (Status.APR_STATUS_IS_EINVAL(e.getError())) {
-                    try {
-                        // Use WIN32 maximum poll size
-                        pollerSize = 62;
-                        serverPollset = Poll.create(pollerSize, pool, 0, soTimeout * 1000);
-                        log.warn(sm.getString("endpoint.poll.limitedpollsize"));
-                    } catch (Error err) {
-                        log.error(sm.getString("endpoint.poll.initfail"), e);
-                    }
-                } else {
-                    log.error(sm.getString("endpoint.poll.initfail"), e);
-                }
+            serverPollset = allocatePoller(pollerSize, pool, soTimeout);
+            if (serverPollset == 0 && pollerSize > 1024) {
+                serverPollset = allocatePoller(1024, pool, soTimeout);
+            }
+            if (serverPollset == 0) {
+                serverPollset = allocatePoller(62, pool, soTimeout);
             }
             desc = new long[pollerSize * 2];
             keepAliveCount = 0;
@@ -1080,7 +1090,7 @@ public class AprEndpoint {
                         /* Any non timeup or interrupted error is critical */
                         if ((errn != Status.TIMEUP) && (errn != Status.EINTR)) {
                             if (errn >  Status.APR_OS_START_USERERR) {
-                               errn -=  Status.APR_OS_START_USERERR;
+                                errn -=  Status.APR_OS_START_USERERR;
                             }
                             log.error(sm.getString("endpoint.poll.fail", "" + errn, Error.strerror(errn)));
                             // Handle poll critical failure
@@ -1265,21 +1275,12 @@ public class AprEndpoint {
          */
         protected void init() {
             pool = Pool.create(serverSockPool);
-            try {
-                sendfilePollset = Poll.create(sendfileSize, pool, 0, soTimeout * 1000);
-            } catch (Error e) {
-                if (Status.APR_STATUS_IS_EINVAL(e.getError())) {
-                    try {
-                        // Use WIN32 maximum poll size
-                        sendfileSize = 62;
-                        sendfilePollset = Poll.create(sendfileSize, pool, 0, soTimeout * 1000);
-                        log.warn(sm.getString("endpoint.poll.limitedpollsize"));
-                    } catch (Error err) {
-                        log.error(sm.getString("endpoint.poll.initfail"), e);
-                    }
-                } else {
-                    log.error(sm.getString("endpoint.poll.initfail"), e);
-                }
+            sendfilePollset = allocatePoller(sendfileSize, pool, soTimeout);
+            if (sendfilePollset == 0 && pollerSize > 1024) {
+                sendfilePollset = allocatePoller(1024, pool, soTimeout);
+            }
+            if (sendfilePollset == 0) {
+                sendfilePollset = allocatePoller(62, pool, soTimeout);
             }
             desc = new long[sendfileSize * 2];
             sendfileData = new HashMap(sendfileSize);
@@ -1497,7 +1498,7 @@ public class AprEndpoint {
     }
 
 
-    // -------------------------------------- ConnectionHandler Inner Interface
+    // ------------------------------------------------ Handler Inner Interface
 
 
     /**
