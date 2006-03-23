@@ -86,8 +86,10 @@ public class Http11AprProcessor implements ActionHook {
         
         request = new Request();
         int readTimeout = endpoint.getFirstReadTimeout();
-        if (readTimeout <= 0) {
+        if (readTimeout == 0) {
             readTimeout = 100;
+        } else if (readTimeout < 0) {
+            readTimeout = -1;
         }
         inputBuffer = new InternalAprInputBuffer(request, headerBufferSize,
                 readTimeout);
@@ -763,7 +765,7 @@ public class Http11AprProcessor implements ActionHook {
         long soTimeout = endpoint.getSoTimeout();
         
         int limit = 0;
-        if (endpoint.getFirstReadTimeout() > 0) {
+        if (endpoint.getFirstReadTimeout() > 0 || endpoint.getFirstReadTimeout() < -1) {
             limit = endpoint.getMaxThreads() / 2;
         }
 
