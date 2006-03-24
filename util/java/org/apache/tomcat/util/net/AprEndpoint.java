@@ -19,7 +19,6 @@ package org.apache.tomcat.util.net;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Stack;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -109,10 +108,9 @@ public class AprEndpoint {
 
 
     /**
-     * Available processors.
+     * Available workers.
      */
-    // FIXME: Stack is synced, which makes it a non optimal choice
-    protected Stack workers = new Stack();
+    protected WorkerStack workers = null;
 
 
     /**
@@ -510,7 +508,7 @@ public class AprEndpoint {
 
         if (initialized)
             return;
-
+        
         // Create the root APR memory pool
         rootPool = Pool.create(0);
         // Create the pool for the server socket
@@ -624,6 +622,9 @@ public class AprEndpoint {
         if (!running) {
             running = true;
             paused = false;
+
+            // Create worker collection
+            workers = new WorkerStack(maxThreads);
 
             // Start acceptor thread
             acceptorThread = new Thread(new Acceptor(), getName() + "-Acceptor");
@@ -808,7 +809,7 @@ public class AprEndpoint {
         synchronized (workers) {
             if (workers.size() > 0) {
                 curThreadsBusy++;
-                return ((Worker) workers.pop());
+                return (workers.pop());
             }
             if ((maxThreads > 0) && (curThreads < maxThreads)) {
                 curThreadsBusy++;
@@ -1516,5 +1517,60 @@ public class AprEndpoint {
         public boolean process(long socket);
     }
 
+
+    // ------------------------------------------------- WorkerStack Inner Class
+
+
+    public class WorkerStack {
+        
+        protected Worker[] workers = null;
+        protected int end = 0;
+        
+        public WorkerStack(int size) {
+            workers = new Worker[size];
+        }
+        
+        /** 
+         * Put the object into the queue.
+         * 
+         * @param   object      the object to be appended to the queue (first element). 
+         */
+        public void push(Worker worker) {
+            workers[end++] = worker;
+        }
+        
+        /**
+         * Get the first object out of the queue. Return null if the queue
+         * is empty. 
+         */
+        public Worker pop() {
+            if (end > 0) {
+                return workers[--end];
+            }
+            return null;
+        }
+        
+        /**
+         * Get the first object out of the queue, Return null if the queue
+         * is empty.
+         */
+        public Worker peek() {
+            return workers[end];
+        }
+        
+        /**
+         * Is the queue empty?
+         */
+        public boolean isEmpty() {
+            return (end == 0);
+        }
+        
+        /**
+         * How many elements are there in this queue?
+         */
+        public int size() {
+            return (end);
+        }
+    }
 
 }
