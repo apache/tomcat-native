@@ -90,24 +90,6 @@ public class AprEndpoint {
 
 
     /**
-     * The acceptor thread.
-     */
-    //protected Thread[] acceptorThreads = null;
-
-
-    /**
-     * The socket poller thread.
-     */
-    //protected Thread[] pollerThreads = null;
-
-
-    /**
-     * The sendfile thread.
-     */
-    //protected Thread[] sendfileThreads = null;
-
-
-    /**
      * Available workers.
      */
     protected WorkerStack workers = null;
@@ -606,7 +588,7 @@ public class AprEndpoint {
 
         // Initialize thread count defaults for acceptor, poller and sendfile
         if (acceptorThreadCount == 0) {
-            // FIXME: Default to one per CPU ?
+            // FIXME: Doesn't seem to work that well with multiple accept threads
             acceptorThreadCount = 1;
         }
         if (pollerThreadCount == 0) {
