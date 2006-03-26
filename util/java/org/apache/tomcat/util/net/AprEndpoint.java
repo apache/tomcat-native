@@ -262,7 +262,7 @@ public class AprEndpoint {
      */
     protected int pollTime = 2000;
     public int getPollTime() { return pollTime; }
-    public void setPollTime(int pollTime) { this.pollTime = pollTime; }
+    public void setPollTime(int pollTime) { if (pollTime > 0) { this.pollTime = pollTime; } }
 
 
     /**
