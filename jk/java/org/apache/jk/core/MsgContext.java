@@ -281,7 +281,7 @@ public class MsgContext implements ActionHook {
             if( log.isDebugEnabled() ) log.debug("CLOSE " );
             
             Response res=(Response)param;
-            if( getStatus()== JK_STATUS_CLOSED ) {
+            if( getStatus()== JK_STATUS_CLOSED || getStatus() == JK_STATUS_ERROR) {
                 // Double close - it may happen with forward 
                 if( log.isDebugEnabled() ) log.debug("Double CLOSE - forward ? " + res.getRequest().requestURI() );
                 return;
