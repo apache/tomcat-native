@@ -11,7 +11,7 @@ AC_CANONICAL_SYSTEM
 
 dnl package and version. (synchronization with common/jk_version.h ?)
 PACKAGE=mod_jk
-VERSION=1.2.14
+VERSION=1.2.16
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})
 
@@ -134,30 +134,30 @@ AC_ARG_WITH(apxs,
                         pathname to the apxs tool; defaults to finding
 			apxs in your PATH.],
 [
-    case "${withval}" in 
+    case "${withval}" in
         y | yes | true) find_apxs=true ;;
         n | no | false) find_apxs=false ;;
         *) find_apxs=false ;;
     esac
 
-    if ${TEST} ${find_apxs} ; then    
+    if ${TEST} ${find_apxs} ; then
         AC_MSG_RESULT([need to check for Perl first, apxs depends on it...])
         AC_PATH_PROG(PERL,perl,$PATH)dnl
-    
+
         if ${TEST} ${find_apxs} ; then
             APXS=${withval}
         else
             AC_PATH_PROG(APXS,apxs,$PATH)dnl
         fi
-    
+
         if ${TEST} -n "${APXS}" ; then
-            dnl Seems that we have it, but have to check if it is OK first        
+            dnl Seems that we have it, but have to check if it is OK first
             if ${TEST} ! -x "${APXS}" ; then
                 AC_MSG_ERROR(Invalid location for apxs: '${APXS}')
             fi
-            
+
             ${APXS} -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
-    
+
             if ${TEST} "${apxs_support}" = "false" ; then
                 AC_MSG_RESULT(could not find ${APXS})
                 AC_MSG_ERROR(You must specify a valid --with-apxs path)
@@ -179,7 +179,7 @@ AC_ARG_WITH(apxs,
               	INCTEMP="`$APXS -q APR_INCLUDEDIR` `$APXS -q APU_INCLUDEDIR`"
               	for INC in ${INCTEMP}; do
               	    APRINCLUDEDIR="${APRINCLUDEDIR} -I${INC}"
-              	done              	
+              	done
                 AC_MSG_RESULT([APRINCLUDEDIR is $APRINCLUDEDIR])
               	APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR ${APRINCLUDEDIR}"
               	APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
@@ -187,7 +187,7 @@ AC_ARG_WITH(apxs,
                 LIBTOOL=`$APXS -q LIBTOOL`
             fi
             AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
-    
+
             AC_SUBST(APXS)
         fi
     fi
@@ -202,11 +202,11 @@ dnl this include is copy from os/config.m4
 sinclude(../support/os_apache.m4)
 
 dnl it is copied from the configure of JServ ;=)
-dnl and adapted. 
+dnl and adapted.
 
 apache_dir_is_src="false"
 AC_ARG_WITH(apache,
-[  --with-apache=DIR      Build static Apache module. DIR is the pathname 
+[  --with-apache=DIR      Build static Apache module. DIR is the pathname
                         to the Apache source directory.],
 [
     if ${TEST} ! -z "$WEBSERVER" ; then
@@ -217,10 +217,10 @@ AC_ARG_WITH(apache,
 
     if ${TEST} -n "${withval}" && ${TEST} -d "${withval}" ; then
         if ${TEST} -d "${withval}/src" ; then
-           # handle the case where people use relative paths to 
+           # handle the case where people use relative paths to
            # the apache source directory by pre-pending the current
-           # build directory to the path. there are probably 
-           # errors with this if configure is run while in a 
+           # build directory to the path. there are probably
+           # errors with this if configure is run while in a
            # different directory than what you are in at the time
            if ${TEST} -n "`${ECHO} ${withval}|${GREP} \"^\.\.\"`" ; then
                withval=`pwd`/${withval}
@@ -229,7 +229,7 @@ AC_ARG_WITH(apache,
            apache_dir=${withval}
            apache_dir_is_src="true"
            AC_MSG_RESULT(${apache_dir})
-        
+
            AC_MSG_CHECKING(for Apache include directory)
 
            if ${TEST} -d "${withval}/src/include" ; then
@@ -269,7 +269,7 @@ AC_ARG_WITH(apache,
 
     configure_apache=true
     configure_src=true
-    
+
     AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
 ],
 [
@@ -354,9 +354,9 @@ AC_SUBST(APXSCPPFLAGS)
 AC_SUBST(APXSLDFLAGS)
 
 if ${TEST} -n "${JK_JNI_WORKER}" ; then
-                       
+
 WEBSERVER="jni ${WEBSERVER}"
- 
+
 dnl Find the JDK
 dnl Results go in JAVA_HOME
 dnl Also sets JAVA_PLATFORM to 1 for 1.1 and to 2 for 1.2
@@ -364,10 +364,10 @@ dnl Also sets JAVA_PLATFORM to 1 for 1.1 and to 2 for 1.2
 AC_MSG_CHECKING([for JDK location (please wait)])
 
 dnl The order is: --with-java-home first, environment second, guessed value third.
-    
+
 dnl This is a safe default. Could screw up on the security features, but
 dnl oh well, this is what --with-java2 is for.
-    
+
 if ${TEST} -n "${JAVA_HOME}" ; then
 	JAVA_HOME_ENV="${JAVA_HOME}"
 else
@@ -379,58 +379,58 @@ JAVA_PLATFORM="1"
 AC_ARG_WITH(java-home,
 [  --with-java-home=DIR     Where is your JDK root directory.],
 [
-    
+
     # This stuff works if the command line parameter --with-java-home was
     # specified, so it takes priority rightfully.
-    
+
     JAVA_HOME=${withval}
-	
+
     if ${TEST} ! -d "${JAVA_HOME}" ; then
         AC_MSG_ERROR(Not a directory: ${JAVA_HOME})
     fi
-	
+
     AC_MSG_RESULT(${JAVA_HOME})
-	
+
 ],
 [
     # This works if the parameter was NOT specified, so it's a good time
     # to see what the enviroment says.
-        
+
     # Since Sun uses JAVA_HOME a lot, we check it first and ignore the
     # JAVA_HOME, otherwise just use whatever JAVA_HOME was specified.
-        
+
     if ${TEST} -n "${JAVA_HOME_ENV}" ; then
-            
+
         JAVA_HOME=${JAVA_HOME_ENV}
         AC_MSG_RESULT(${JAVA_HOME_ENV} from environment)
     fi
 ])
 
 if ${TEST} -z "${JAVA_HOME}" ; then
-    
+
     # Oh well, nobody set neither JAVA_HOME nor JAVA_HOME, have to guess
-        
+
     # The following code is based on the code submitted by Henner Zeller
     # for ${srcdir}/src/scripts/package/rpm/ApacheJServ.spec
-        
+
     # Two variables will be set as a result:
     #
     # JAVA_HOME
     # JAVA_PLATFORM
     AC_MSG_CHECKING([Try to guess JDK location])
-        
-        
+
+
     for JAVA_PREFIX in \
 	    /usr/local \
 	    /usr/local/lib \
     	    /usr \
     	    /usr/lib \
             /opt  \
-    	    / 
+    	    /
     do
         for JAVA_PLATFORM in 3 2 1 ;
         do
-            
+
             for subversion in .9 .8 .7 .6 .5 .4 .3 .2 .1 "" ;
                 do
                     for VARIANT in IBMJava2- java java- jdk jdk-;
@@ -439,7 +439,7 @@ if ${TEST} -z "${JAVA_HOME}" ; then
 dnl                        AC_MSG_CHECKING([${GUESS}])
                         if ${TEST} -d "${GUESS}/bin" \
                         && ${TEST} -d "${GUESS}/include" ; then
-                        
+
                             JAVA_HOME="${GUESS}"
                             AC_MSG_RESULT([${GUESS}])
                             break
@@ -471,11 +471,11 @@ dnl                        AC_MSG_CHECKING([${GUESS}])
 
             AC_MSG_CHECKING(Java platform)
             AC_MSG_RESULT([guess ${JAVA_PLATFORM}])
-        fi                                                                      
+        fi
 
-        
+
 else
-    
+
         AC_MSG_CHECKING(Java platform)
 
         AC_ARG_WITH(java-platform,
@@ -484,7 +484,7 @@ else
         [
             dnl This requires a bit of tweaking to be handled properly, but
             dnl the default is good enough
-            
+
             JAVA_PLATFORM="2"
         ])
 
@@ -504,7 +504,7 @@ AC_ARG_WITH(os-type,
 [  --with-os-type[=SUBDIR]     Where is your JDK os-type subdirectory.],
 [
     OS=${withval}
-	
+
     if ${TEST} ! -d "${JAVA_HOME}/${OS}" ; then
         AC_MSG_ERROR(Not a directory: ${JAVA_HOME}/${OS})
     fi
