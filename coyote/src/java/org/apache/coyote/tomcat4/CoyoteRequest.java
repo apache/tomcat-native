@@ -1599,7 +1599,7 @@ public class CoyoteRequest
      */
     public String getQueryString() {
         String queryString = coyoteRequest.queryString().toString();
-        if (queryString.equals("")) {
+        if (queryString == null || queryString.equals("")) {
             return (null);
         } else {
             return queryString;
