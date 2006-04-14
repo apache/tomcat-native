@@ -39,7 +39,7 @@ extern "C"
  */
 
 #define JK_SHM_MAJOR    '1'
-#define JK_SHM_MINOR    '0'
+#define JK_SHM_MINOR    '2'
 #define JK_SHM_STR_SIZ  63
 #define JK_SHM_URI_SIZ  127
 #define JK_SHM_DYNAMIC  16
@@ -47,8 +47,8 @@ extern "C"
 
 /* Really huge numbers, but 64 workers should be enough */
 #define JK_SHM_MAX_WORKERS  64
-#define JK_SHM_DEF_SIZE     (JK_SHM_MAX_WORKERS * 1024)
-#define JK_SHM_ALIGN(x)     JK_ALIGN(x, 1024)
+#define JK_SHM_DEF_SIZE     (JK_SHM_MAX_WORKERS * 512)
+#define JK_SHM_ALIGN(x)     JK_ALIGN(x, 64)
 
 /* Use 1 minute for measuring read/write data */
 #define JK_SERVICE_TRANSFER_INTERVAL    60
@@ -61,6 +61,8 @@ struct jk_shm_worker
     volatile int busy;
     /* Maximum number of busy channels */
     volatile int max_busy;
+    /* Number of currently connected channels */
+    volatile int connected;
     /* worker name */
     char    name[JK_SHM_STR_SIZ+1];
     /* worker domain */
@@ -93,6 +95,10 @@ struct jk_shm_worker
     volatile size_t  elected;
     /* Number of non 200 responses */
     volatile size_t  errors;
+    /* Number of recovery attempts */
+    volatile size_t  recoveries;
+    /* Number of recovery failures */
+    volatile size_t  recovery_errors;
 };
 typedef struct jk_shm_worker jk_shm_worker_t;
 
