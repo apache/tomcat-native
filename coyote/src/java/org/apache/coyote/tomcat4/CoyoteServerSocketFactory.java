@@ -73,6 +73,20 @@ public class CoyoteServerSocketFactory
 
 
     /**
+     * Ciphers to be used.
+     */
+    private String ciphers;
+
+    public String getCiphers() {
+        return (this.ciphers);
+    }
+
+    public void setCiphers(String ciphers) {
+        this.ciphers = ciphers;
+    }
+
+
+    /**
      * Should we require client authentication?
      */
     private String clientAuth = "false";

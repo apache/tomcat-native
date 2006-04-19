@@ -17,6 +17,9 @@
 package org.apache.coyote.tomcat4;
 
 
+import java.net.URLEncoder;
+import java.util.HashMap;
+
 import org.apache.tomcat.util.IntrospectionUtils;
 
 import org.apache.coyote.Adapter;
@@ -31,6 +34,7 @@ import org.apache.catalina.Logger;
 import org.apache.catalina.Request;
 import org.apache.catalina.Response;
 import org.apache.catalina.Service;
+import org.apache.catalina.core.StandardEngine;
 import org.apache.catalina.net.DefaultServerSocketFactory;
 import org.apache.catalina.net.ServerSocketFactory;
 import org.apache.catalina.util.LifecycleSupport;
@@ -38,6 +42,7 @@ import org.apache.catalina.util.StringManager;
 import org.apache.commons.modeler.Registry;
 
 import javax.management.MBeanRegistration;
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.MBeanServer;
 
@@ -53,6 +58,30 @@ import javax.management.MBeanServer;
 public final class CoyoteConnector
     implements Connector, Lifecycle, MBeanRegistration {
 
+
+    // ------------------------------------------------------------ Constructor
+    
+    public CoyoteConnector() throws Exception {
+        this(null);
+    }
+    
+    public CoyoteConnector(String protocolHandlerClassName) throws Exception {
+        
+        if (protocolHandlerClassName != null) {
+            setProtocolHandlerClassName(protocolHandlerClassName);
+        }
+        
+        // Instantiate protocol handler
+        try {
+            Class clazz = Class.forName(this.protocolHandlerClassName);
+            protocolHandler = (ProtocolHandler) clazz.newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new LifecycleException(sm.getString(
+                    "coyoteConnector.protocolHandlerInstantiationFailed", e));
+        }
+
+    }
 
     // ----------------------------------------------------- Instance Variables
 
@@ -132,21 +161,22 @@ public final class CoyoteConnector
 
 
     /**
-     * The minimum number of processors to start at initialization time.
+     * The minimum number of idle processors to have available. This is also
+     * the number of processors that are started at initialization.
      */
-    protected int minProcessors = 5;
+    protected int minProcessors = 4;
 
 
     /**
      * The maximum amount of spare processors.
      */
-    protected int maxSpareProcessors = 5;
+    protected int maxSpareProcessors = 50;
 
 
     /**
      * The maximum number of processors allowed, or <0 for unlimited.
      */
-    private int maxProcessors = 20;
+    private int maxProcessors = 200;
 
     /**
      * The maximum permitted size of the request and response HTTP headers.
@@ -313,9 +343,54 @@ public final class CoyoteConnector
      private boolean useBodyEncodingForURI = true;
 
 
-    // ------------------------------------------------------------- Properties
+     protected static HashMap replacements = new HashMap();
+     static {
+         replacements.put("maxProcessors", "maxThreads");
+         replacements.put("minProcessors", "minSpareThreads");
+         replacements.put("maxSpareProcessors", "maxSpareThreads");
+         replacements.put("acceptCount", "backlog");
+         replacements.put("connectionLinger", "soLinger");
+         replacements.put("connectionTimeout", "soTimeout");
+         replacements.put("connectionUploadTimeout", "timeout");
+         replacements.put("serverSocketTimeout", "serverSoTimeout");
+         replacements.put("clientAuth", "clientauth");
+         replacements.put("keystoreFile", "keystore");
+         replacements.put("randomFile", "randomfile");
+         replacements.put("rootFile", "rootfile");
+         replacements.put("keystorePass", "keypass");
+         replacements.put("keystoreType", "keytype");
+         replacements.put("sslProtocol", "protocol");
+         replacements.put("sslProtocols", "protocols");
+     }
+
+     
+     // ------------------------------------------------------------- Properties
 
 
+     /**
+      * Return a configured property.
+      */
+     public Object getProperty(String name) {
+         String repl = name;
+         if (replacements.get(name) != null) {
+             repl = (String) replacements.get(name);
+         }
+         return IntrospectionUtils.getProperty(protocolHandler, repl);
+     }
+
+     
+     /**
+      * Set a configured property.
+      */
+     public void setProperty(String name, String value) {
+         String repl = name;
+         if (replacements.get(name) != null) {
+             repl = (String) replacements.get(name);
+         }
+         IntrospectionUtils.setProperty(protocolHandler, repl, value);
+     }
+
+     
     /**
      * Return the <code>Service</code> with which we are associated (if any).
      */
@@ -356,7 +431,7 @@ public final class CoyoteConnector
     public void setConnectionLinger(int connectionLinger) {
 
         this.connectionLinger = connectionLinger;
-
+        setProperty("connectionLinger", String.valueOf(connectionLinger));
     }
 
 
@@ -378,7 +453,7 @@ public final class CoyoteConnector
     public void setConnectionTimeout(int connectionTimeout) {
 
         this.connectionTimeout = connectionTimeout;
-
+        setProperty("connectionTimeout", String.valueOf(connectionTimeout));
     }
 
 
@@ -400,6 +475,8 @@ public final class CoyoteConnector
     public void setConnectionUploadTimeout(int connectionUploadTimeout) {
 
         this.connectionUploadTimeout = connectionUploadTimeout;
+        setProperty("connectionUploadTimeout",
+                    String.valueOf(connectionUploadTimeout));
 
     }
 
@@ -422,6 +499,7 @@ public final class CoyoteConnector
     public void setServerSocketTimeout(int serverSocketTimeout) {
 
         this.serverSocketTimeout = serverSocketTimeout;
+        setProperty("serverSocketTimeout", String.valueOf(serverSocketTimeout));
 
     }
 
@@ -444,7 +522,7 @@ public final class CoyoteConnector
     public void setAcceptCount(int count) {
 
         this.acceptCount = count;
-
+        setProperty("acceptCount", String.valueOf(acceptCount));
     }
 
 
@@ -466,7 +544,8 @@ public final class CoyoteConnector
     public void setAddress(String address) {
 
         this.address = address;
-
+        setProperty("address", address);
+        
     }
 
 
@@ -561,6 +640,7 @@ public final class CoyoteConnector
      */
     public void setCompressableMimeType(String compressableMimeTypes) {
         this.compressableMimeTypes = compressableMimeTypes;
+        setProperty("compressableMimeTypes", compressableMimeTypes);
     }
 
     /**
@@ -582,7 +662,8 @@ public final class CoyoteConnector
     public void setCompression(String compression) {
 
         this.compression = compression;
-
+        setProperty("compression", compression);
+        
     }
 
 
@@ -695,7 +776,8 @@ public final class CoyoteConnector
     public void setMinProcessors(int minProcessors) {
 
         this.minProcessors = minProcessors;
-
+        setProperty("minProcessors", String.valueOf(minProcessors));   
+        
     }
 
 
@@ -717,7 +799,7 @@ public final class CoyoteConnector
     public void setMaxProcessors(int maxProcessors) {
 
         this.maxProcessors = maxProcessors;
-
+        setProperty("maxProcessors", String.valueOf(maxProcessors));
     }
 
 
@@ -739,6 +821,7 @@ public final class CoyoteConnector
     public void setMaxSpareProcessors(int maxSpareProcessors) {
 
         this.maxSpareProcessors = maxSpareProcessors;
+        setProperty("maxSpareProcessors", String.valueOf(maxSpareProcessors));
 
     }
 
@@ -758,6 +841,7 @@ public final class CoyoteConnector
      */
     public void setMaxHttpHeaderSize(int maxHttpHeaderSize) {
         this.maxHttpHeaderSize = maxHttpHeaderSize;
+        setProperty("maxHttpHeaderSize", String.valueOf(maxHttpHeaderSize));
     }
 
     /**
@@ -778,10 +862,19 @@ public final class CoyoteConnector
     public void setPort(int port) {
 
         this.port = port;
-
+        setProperty("port", String.valueOf(port));
+        
     }
 
 
+    /**
+     * Return the protocol handler associated with the connector.
+     */
+    public ProtocolHandler getProtocolHandler() {
+
+        return (this.protocolHandler);
+
+    }
     /**
      * Return the class name of the Coyote protocol handler in use.
      */
@@ -892,6 +985,8 @@ public final class CoyoteConnector
      */
     public void setDisableUploadTimeout( boolean isDisabled ) {
         disableUploadTimeout = isDisabled;
+        setProperty("disableUploadTimeout",
+                    String.valueOf(disableUploadTimeout));
     }
 
     /**
@@ -906,6 +1001,8 @@ public final class CoyoteConnector
      */
     public void setMaxKeepAliveRequests(int mkar) {
         maxKeepAliveRequests = mkar;
+        setProperty("maxKeepAliveRequests",
+                    String.valueOf(maxKeepAliveRequests));
     }
 
     /**
@@ -952,6 +1049,8 @@ public final class CoyoteConnector
     public void setSecure(boolean secure) {
 
         this.secure = secure;
+        setProperty("secure",
+                String.valueOf(secure));
 
     }
 
@@ -961,6 +1060,8 @@ public final class CoyoteConnector
 
     public void setTomcatAuthentication(boolean tomcatAuthentication) {
         this.tomcatAuthentication = tomcatAuthentication;
+        setProperty("tomcatAuthentication",
+                    String.valueOf(tomcatAuthentication));
     }
 
     /**
@@ -982,7 +1083,8 @@ public final class CoyoteConnector
     public void setTcpNoDelay(boolean tcpNoDelay) {
 
         this.tcpNoDelay = tcpNoDelay;
-
+        setProperty("tcpNoDelay", String.valueOf(tcpNoDelay));
+        
     }
 
 
@@ -1138,7 +1240,20 @@ public final class CoyoteConnector
 
     }
 
+    protected ObjectName createObjectName(String domain, String type)
+            throws MalformedObjectNameException {
+        String encodedAddr = null;
+        if (getProperty("address") != null) {
+            encodedAddr = URLEncoder.encode(getProperty("address").toString());
+        }
+        String addSuffix = (getProperty("address") == null) ? "" : ",address="
+                + encodedAddr;
+        ObjectName _oname = new ObjectName(domain + ":type=" + type + ",port="
+                + getPort() + addSuffix);
+        return _oname;
+}
 
+    
     /**
      * Initialize this connector (create ServerSocket here!)
      */
@@ -1151,60 +1266,27 @@ public final class CoyoteConnector
 
         this.initialized = true;
 
-        // Initializa adapter
+        if( oname == null && (container instanceof StandardEngine)) {
+            try {
+                // we are loaded directly, via API - and no name was given to us
+                StandardEngine cb=(StandardEngine)container;
+                oname = createObjectName(cb.getName(), "Connector");
+                Registry.getRegistry(null, null)
+                    .registerComponent(this, oname, null);
+            } catch (Exception e) {
+                log ("Error registering connector " + e.toString());
+            }
+            if(debug > 0)
+                log("Creating name for connector " + oname);
+        }
+
+        // Initialize adapter
         adapter = new CoyoteAdapter(this);
 
-        // Instantiate protocol handler
-        try {
-            Class clazz = Class.forName(protocolHandlerClassName);
-            protocolHandler = (ProtocolHandler) clazz.newInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new LifecycleException
-                (sm.getString
-                 ("coyoteConnector.protocolHandlerInstantiationFailed", e));
-        }
         protocolHandler.setAdapter(adapter);
 
         IntrospectionUtils.setProperty(protocolHandler, "jkHome",
                                        System.getProperty("catalina.base"));
-
-        // Set attributes
-        IntrospectionUtils.setProperty(protocolHandler, "port", "" + port);
-        IntrospectionUtils.setProperty(protocolHandler, "maxThreads",
-                                       "" + maxProcessors);
-        IntrospectionUtils.setProperty(protocolHandler, "minSpareThreads",
-                                       "" + minProcessors);
-        IntrospectionUtils.setProperty(protocolHandler, "maxSpareThreads",
-                                       "" + maxSpareProcessors);
-        IntrospectionUtils.setProperty(protocolHandler, "backlog",
-                                       "" + acceptCount);
-        IntrospectionUtils.setProperty(protocolHandler, "tcpNoDelay",
-                                       "" + tcpNoDelay);
-        IntrospectionUtils.setProperty(protocolHandler, "soLinger",
-                                       "" + connectionLinger);
-        IntrospectionUtils.setProperty(protocolHandler, "soTimeout",
-                                       "" + connectionTimeout);
-        IntrospectionUtils.setProperty(protocolHandler, "timeout",
-                                       "" + connectionUploadTimeout);
-        IntrospectionUtils.setProperty(protocolHandler, "serverSoTimeout",
-                                       "" + serverSocketTimeout);
-        IntrospectionUtils.setProperty(protocolHandler, "disableUploadTimeout",
-                                       "" + disableUploadTimeout);
-        IntrospectionUtils.setProperty(protocolHandler, "maxKeepAliveRequests",
-                                       "" + maxKeepAliveRequests);
-        IntrospectionUtils.setProperty(protocolHandler, "tomcatAuthentication",
-                                       "" + tomcatAuthentication);
-        IntrospectionUtils.setProperty(protocolHandler, "compression",
-                                       compression);
-        IntrospectionUtils.setProperty(protocolHandler, "compressableMimeTypes",
-                                       compressableMimeTypes);
-        IntrospectionUtils.setProperty(protocolHandler, "maxHttpHeaderSize",
-                                       "" + maxHttpHeaderSize);
-        if (address != null) {
-            IntrospectionUtils.setProperty(protocolHandler, "address",
-                                           address);
-        }
 
         // Configure secure socket factory
         if (factory instanceof CoyoteServerSocketFactory) {
@@ -1214,7 +1296,9 @@ public final class CoyoteConnector
                 (CoyoteServerSocketFactory) factory;
             IntrospectionUtils.setProperty(protocolHandler, "algorithm",
                                            ssf.getAlgorithm());
-	    IntrospectionUtils.setProperty(protocolHandler, "clientauth",
+            IntrospectionUtils.setProperty(protocolHandler, "ciphers",
+                                           ssf.getCiphers());
+	        IntrospectionUtils.setProperty(protocolHandler, "clientauth",
                                            ssf.getClientAuth());
             IntrospectionUtils.setProperty(protocolHandler, "keystore",
                                            ssf.getKeystoreFile());
@@ -1232,9 +1316,6 @@ public final class CoyoteConnector
             IntrospectionUtils.setProperty(protocolHandler,
                                            "sSLImplementation",
                                            ssf.getSSLImplementation());
-        } else {
-            IntrospectionUtils.setProperty(protocolHandler, "secure",
-                                           "" + false);
         }
 
         try {
@@ -1266,9 +1347,10 @@ public final class CoyoteConnector
         if( this.oname != null ) {
             // We are registred - register the adapter as well.
             try {
-                Registry.getRegistry().registerComponent(protocolHandler,
-                        this.domain + 
-                        ":type=protocolHandler,className=" + protocolHandlerClassName, null);
+                Registry.getRegistry(null, null).registerComponent(
+                        protocolHandler,
+                        this.domain + ":type=protocolHandler,className=" +
+                        protocolHandlerClassName, null);
             } catch( Exception ex ) {
                 ex.printStackTrace();
             }
