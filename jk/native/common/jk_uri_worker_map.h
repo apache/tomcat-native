@@ -33,7 +33,6 @@ extern "C"
 #include "jk_map.h"
 #include "jk_logger.h"
 #include "jk_mt.h"
-#include "jk_shm.h"
 
 /* Urimap reload time. Use 60 seconds by default.
  */

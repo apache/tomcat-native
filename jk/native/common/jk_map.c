@@ -29,7 +29,6 @@
 #include "jk_pool.h"
 #include "jk_map.h"
 #include "jk_util.h"
-#include "jk_shm.h"
 
 #define CAPACITY_INC_SIZE (50)
 #define LENGTH_OF_LINE    (8192)
