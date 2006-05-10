@@ -30,7 +30,7 @@
 struct jk_shm_header_data
 {
     /* Shared memory magic JK_SHM_MAGIC */
-    char   magic[8];
+    char   magic[JK_SHM_MAGIC_SIZ];
     size_t size;
     size_t pos;
     unsigned int childs;
@@ -127,7 +127,7 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
     jk_shmem.filename = "memory";
     jk_shmem.fd       = 0;
     jk_shmem.attached = 0;
-    memcpy(jk_shmem.hdr->h.data.magic, shm_signature, 8);
+    memcpy(jk_shmem.hdr->h.data.magic, shm_signature, JK_SHM_MAGIC_SIZ);
     jk_shmem.hdr->h.data.size = sz;
     JK_INIT_CS(&(jk_shmem.cs), rc);
     if (JK_IS_DEBUG_LEVEL(l))
@@ -320,7 +320,7 @@ static int do_shm_open(const char *fname, int attached,
     /* Clear shared memory */
     if (!attached) {
         memset(jk_shmem.hdr, 0, jk_shmem.size);
-        memcpy(jk_shmem.hdr->h.data.magic, shm_signature, 8);
+        memcpy(jk_shmem.hdr->h.data.magic, shm_signature, JK_SHM_MAGIC_SIZ);
         jk_shmem.hdr->h.data.size = sz;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,

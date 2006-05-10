@@ -44,11 +44,14 @@ extern "C"
 #define JK_SHM_URI_SIZ  127
 #define JK_SHM_DYNAMIC  16
 #define JK_SHM_MAGIC    '!', 'J', 'K', 'S', 'H', 'M', JK_SHM_MAJOR, JK_SHM_MINOR
+#define JK_SHM_MAGIC_SIZ  8
 
 /* Really huge numbers, but 64 workers should be enough */
 #define JK_SHM_MAX_WORKERS  64
-#define JK_SHM_DEF_SIZE     (JK_SHM_MAX_WORKERS * 512)
-#define JK_SHM_ALIGN(x)     JK_ALIGN(x, 64)
+#define JK_SHM_WORKER_SIZE  JK_SHM_ALIGN(sizeof(jk_shm_worker_t))
+#define JK_SHM_DEF_SIZE     (JK_SHM_MAX_WORKERS * JK_SHM_WORKER_SIZE)
+#define JK_SHM_ALIGNMENT    64
+#define JK_SHM_ALIGN(x)     JK_ALIGN(x, JK_SHM_ALIGNMENT)
 
 /* Use 1 minute for measuring read/write data */
 #define JK_SERVICE_TRANSFER_INTERVAL    60
