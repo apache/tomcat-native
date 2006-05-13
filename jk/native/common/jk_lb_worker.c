@@ -38,9 +38,6 @@
  * The load balancing code in this
  */
 
-/*
- * Time to wait before retry...
- */
 #define JK_WORKER_IN_ERROR(w) ((w)->in_error_state  && !(w)->is_busy)
 #define JK_WORKER_USABLE(w)   (!(w)->in_error_state && !(w)->is_stopped && !(w)->is_disabled && !(w)->is_busy)
 

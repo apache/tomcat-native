@@ -48,6 +48,9 @@ extern "C"
 #define JK_LB_LM_DEFAULT       ("Optimistic")
 #define JK_LB_LM_PESSIMISTIC   ("Pessimistic")
 
+/*
+ * Time to wait before retry...
+ */
 #define WAIT_BEFORE_RECOVER   (60)
 
 static const char *lb_method_type[] = {
