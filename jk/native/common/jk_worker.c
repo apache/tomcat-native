@@ -244,11 +244,11 @@ static int build_worker_map(jk_map_t *init_data,
                 return JK_FALSE;
             }
 
-            if (JK_IS_DEBUG_LEVEL(l))
-                jk_log(l, JK_LOG_DEBUG,
-                       "removing old %s worker",
-                       worker_list[i]);
             if (oldw) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "removing old %s worker",
+                           worker_list[i]);
                 oldw->destroy(&oldw, l);
             }
         }
