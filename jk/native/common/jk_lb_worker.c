@@ -628,8 +628,8 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
     }
     if (rc && JK_IS_DEBUG_LEVEL(l)) {
         jk_log(l, JK_LOG_DEBUG,
-               "found best worker (%s) using %s method", rc->s->name,
-               p->lbmethod == JK_LB_BYREQUESTS ? "by request" : "by traffic");
+               "found best worker (%s) using method '%s'",
+               rc->s->name, lb_method_type[p->lbmethod]);
     }
     JK_TRACE_EXIT(l);
     return rc;

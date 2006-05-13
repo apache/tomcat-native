@@ -90,14 +90,6 @@ static const char *headers_names[] = {
     NULL
 };
 
-static const char *lb_method_type[] = {
-    JK_LB_METHOD_REQUESTS,
-    JK_LB_METHOD_TRAFFIC,
-    JK_LB_METHOD_BUSYNESS,
-    "unknown",
-    NULL
-};
-
 #define HEADERS_NO_CACHE "no-cache", "no-cache", NULL
 
 static const char *headers_vhtml[] = {

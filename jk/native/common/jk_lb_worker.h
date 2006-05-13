@@ -50,6 +50,14 @@ extern "C"
 
 #define WAIT_BEFORE_RECOVER   (60)
 
+static const char *lb_method_type[] = {
+    JK_LB_METHOD_REQUESTS,
+    JK_LB_METHOD_TRAFFIC,
+    JK_LB_METHOD_BUSYNESS,
+    "unknown",
+    NULL
+};
+
 struct worker_record
 {
     jk_worker_t     *w;
