@@ -1327,9 +1327,6 @@ static apr_array_header_t *parse_request_log_string(apr_pool_t * p,
         }
     }
 
-    s = "\n";
-    parse_request_log_item(p, (request_log_format_item *) apr_array_push(a),
-                           &s);
     return a;
 }
 

@@ -1306,9 +1306,6 @@ static array_header *parse_request_log_string(pool * p, const char *s,
         }
     }
 
-    s = "\n";
-    parse_request_log_item(p, (request_log_format_item *) ap_push_array(a),
-                           &s);
     return a;
 }
 
