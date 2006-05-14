@@ -26,4 +26,5 @@ jni_connect.so: jk_jnicb.la
 install:
 
 clean:
-	rm -f *.o *.slo *.lo *.so *.la .libs/*
+	rm -f *.o *.lo *.a *.la *.so *.so.* *.slo
+	rm -rf .libs

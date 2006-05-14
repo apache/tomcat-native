@@ -77,5 +77,5 @@ install_dynamic:
 	@echo ""
 
 clean:
-	rm -f *.o *.so *.lo *.la *.slo *.a
+	rm -f *.o *.lo *.a *.la *.so *.so.* *.slo
 	rm -rf .libs

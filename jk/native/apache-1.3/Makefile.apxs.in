@@ -21,4 +21,5 @@ mod_jk.so:
 	$(APXS) -c -o $@ -Wc,"${APXSCFLAGS} ${JK_INCL}" ${JAVA_INCL} "${APXSLDFLAGS}" mod_jk.c ${APACHE_OBJECTS} 
 
 clean:
-	rm *.o *.so
+	rm -f *.o *.lo *.a *.la *.so *.so.* *.slo
+	rm -rf .libs

@@ -28,4 +28,5 @@ all: ${APACHE_OBJECTS}
 install:
 
 clean:
-	rm -f *.o *.slo *.lo
+	rm -f *.o *.lo *.a *.la *.so *.so.* *.slo
+	rm -rf .libs
