@@ -114,11 +114,12 @@
     extern long _ftol2(double dblSource) { return _ftol(dblSource); }
 #endif
 
-static const char *jk_level_werbs[] = {
+/* All entries need to have fixed length 8 chars! */
+static const char *jk_level_verbs[] = {
     "[" JK_LOG_TRACE_VERB "] ",
     "[" JK_LOG_DEBUG_VERB "] ",
-    "[" JK_LOG_INFO_VERB  "]  ",
-    "[" JK_LOG_WARNING_VERB  "]  ",
+    "[" JK_LOG_INFO_VERB "]  ",
+    "[" JK_LOG_WARN_VERB "]  ",
     "[" JK_LOG_ERROR_VERB "] ",
     "[" JK_LOG_EMERG_VERB "] ",
     NULL
@@ -126,7 +127,7 @@ static const char *jk_level_werbs[] = {
 
 const char *jk_log_fmt = JK_TIME_FORMAT;
 
-static void set_time_str(char *str, int len)
+static size_t set_time_str(char *str, int len)
 {
     time_t t = time(NULL);
     struct tm *tms;
@@ -184,10 +185,8 @@ static int JK_METHOD log_to_file(jk_logger_t *l, int level, const char *what)
         if (sz) {
             file_logger_t *p = l->logger_private;
             fwrite(what, 1, sz, p->logfile);
-            fputc('\n', p->logfile);
             /* [V] Flush the dam' thing! */
-            if (l->level < JK_LOG_INFO_LEVEL)
-                fflush(p->logfile);
+            fflush(p->logfile);
         }
 
         return JK_TRUE;
@@ -210,7 +209,7 @@ int jk_parse_log_level(const char *level)
         return JK_LOG_INFO_LEVEL;
     }
 
-    if (0 == strcasecmp(level, JK_LOG_WARNING_VERB)) {
+    if (0 == strcasecmp(level, JK_LOG_WARN_VERB)) {
         return JK_LOG_WARNING_LEVEL;
     }
 
@@ -278,6 +277,8 @@ int jk_log(jk_logger_t *l,
            const char *fmt, ...)
 {
     int rc = 0;
+/* Need to reserve space for newline and terminating zero byte. */
+    static size_t usable_size = HUGE_BUFFER_SIZE-2;
     if (!l || !file || !fmt) {
         return -1;
     }
@@ -306,51 +307,61 @@ int jk_log(jk_logger_t *l,
         if (NULL == buf)
             return -1;
 #endif
-        set_time_str(buf, HUGE_BUFFER_SIZE);
-        used = strlen(buf);
+        used = set_time_str(buf, usable_size);
 
-        /* Log [pid:threadid] for debug and trace levels */
-        if (l->level < JK_LOG_INFO_LEVEL) {
+        if (line) {
+            /* Log [pid:threadid] for all levels except REQUEST. */
+            /* This information helps to correlate lines from different logs. */
+            /* Performance is no issue, because with production log levels */
+            /* we only call it often, if we have a lot of errors */
 #ifdef USE_SPRINTF              /* until we get a snprintf function */
-            used += sprintf(&buf[used], "[%04d:%04d] ", getpid(),
+            rc = sprintf(&buf[used], "[%04d:%04d] ", getpid(),
                             jk_gettid());
 #else
-            used += snprintf(&buf[used], HUGE_BUFFER_SIZE - used,
+            rc = snprintf(&buf[used], usable_size - used,
                              "[%04d:%04d] ", getpid(), jk_gettid());
 #endif
-            if (used < 0) {
+            used += rc;
+            if (rc < 0 || usable_size - used < 8) {
                 return 0;
             }
-        }
-        if (line) {
-            strcat(buf, jk_level_werbs[level]);
+            strcat(buf, jk_level_verbs[level]);
             used += 8;
 
             if (funcname) {
-                strcat(buf, funcname);
-                strcat(buf, "::");
-                used += strlen(funcname) + 2;
+                rc = strlen(funcname) + 2;
+                if (usable_size - used >= rc) {
+                    strcat(buf, funcname);
+                    strcat(buf, "::");
+                    used += rc;
+                }
             }
-        }
 
 #ifdef USE_SPRINTF              /* until we get a snprintf function */
-        if (line)
-            used += sprintf(&buf[used], "%s (%d): ", f, line);
+            rc = sprintf(&buf[used], "%s (%d): ", f, line);
 #else
-        if (line)
-            used += snprintf(&buf[used], HUGE_BUFFER_SIZE - used,
+            rc = snprintf(&buf[used], usable_size - used,
                              "%s (%d): ", f, line);
 #endif
-        if (used < 0) {
-            return 0;           /* [V] not sure what to return... */
+            used += rc;
+            if (rc < 0 || usable_size - used < 0) {
+                return 0;           /* [V] not sure what to return... */
+            }
         }
 
         va_start(args, fmt);
 #ifdef USE_VSPRINTF             /* until we get a vsnprintf function */
         rc = vsprintf(buf + used, fmt, args);
 #else
-        rc = vsnprintf(buf + used, HUGE_BUFFER_SIZE - used, fmt, args);
+        rc = vsnprintf(buf + used, usable_size - used, fmt, args);
 #endif
+        if ( rc <= usable_size - used ) {
+            used += rc;
+        } else {
+            used = usable_size;
+        }
+        buf[used] = '\n';
+        buf[used+1] = 0;
         va_end(args);
         l->log(l, level, buf);
 #ifdef NETWARE

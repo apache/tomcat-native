@@ -62,7 +62,7 @@ struct file_logger_t
 #define JK_LOG_TRACE_VERB   "trace"
 #define JK_LOG_DEBUG_VERB   "debug"
 #define JK_LOG_INFO_VERB    "info"
-#define JK_LOG_WARNING_VERB "warn"
+#define JK_LOG_WARN_VERB    "warn"
 #define JK_LOG_ERROR_VERB   "error"
 #define JK_LOG_EMERG_VERB   "emerg"
 
