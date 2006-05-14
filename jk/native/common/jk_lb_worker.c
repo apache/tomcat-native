@@ -51,6 +51,73 @@ struct lb_endpoint
 typedef struct lb_endpoint lb_endpoint_t;
 
 
+/* Calculate the greatest common divisor of two positive integers */
+static int gcd(int a, int b)
+{
+    int r;
+    if (b > a) {
+        r = a;
+        a = b;
+        b = r;
+    }
+    while (b > 0) {
+        r = a % b;
+        a = b;
+        b = r;
+    }
+    return a;
+}
+
+/* Calculate the smallest common multiple of two positive integers */
+static jk_uint64_t scm(jk_uint64_t a, jk_uint64_t b)
+{
+    return a*b/gcd(a,b);
+}
+
+/* Update the load multipliers wrt. lb_factor */
+void update_mult(lb_worker_t *p, jk_logger_t *l)
+{
+    int i = 0;
+    jk_uint64_t s = 1;
+    JK_TRACE_ENTER(l);
+    for (i = 0; i < p->num_of_workers; i++) {
+        s = scm(s, p->lb_workers[i].s->lb_factor);
+    }
+    for (i = 0; i < p->num_of_workers; i++) {
+        p->lb_workers[i].s->lb_mult = s / p->lb_workers[i].s->lb_factor;
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "worker %s gets multiplicity %"
+                   JK_UINT64_T_FMT,
+                   p->lb_workers[i].s->name,
+                   p->lb_workers[i].s->lb_mult);
+    }
+    JK_TRACE_EXIT(l);
+}
+
+/* Get the correct lb_value when recovering/starting/enabling a worker */
+/* This function needs to be externally synchronized! */
+jk_uint64_t restart_value(lb_worker_t *p, jk_logger_t *l)
+{
+    int i = 0;
+    jk_uint64_t curmax = 0;
+    JK_TRACE_ENTER(l);
+    if (p->lbmethod != JK_LB_BYBUSYNESS) {
+        for (i = 0; i < p->num_of_workers; i++) {
+            if (p->lb_workers[i].s->lb_value > curmax) {
+                curmax = p->lb_workers[i].s->lb_value;
+            }
+        }
+    }
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "restarting worker with lb_value %"
+               JK_UINT64_T_FMT,
+               curmax);
+    JK_TRACE_EXIT(l);
+    return curmax;
+}
+
 /* Retrieve the parameter with the given name                                */
 static char *get_path_param(jk_ws_service_t *s, const char *name)
 {
@@ -159,42 +226,116 @@ static void close_workers(lb_worker_t * p, int num_of_workers, jk_logger_t *l)
     }
 }
 
-static int JK_METHOD maintain_workers(jk_worker_t *p, jk_logger_t *l)
+/* If the worker is in error state run
+ * retry on that worker. It will be marked as
+ * operational if the retry timeout is elapsed.
+ * The worker might still be unusable, but we try
+ * anyway.
+ */
+static void recover_workers(lb_worker_t *p,
+                            jk_uint64_t curmax,
+                            jk_logger_t *l)
 {
-    unsigned int i = 0;
-    lb_worker_t *lb = (lb_worker_t *)p->worker_private;
-    for (i = 0; i < lb->num_of_workers; i++) {
-        if (lb->lb_workers[i].w->maintain) {
-            lb->lb_workers[i].w->maintain(lb->lb_workers[i].w, l);
-        }
-    }
-    return JK_TRUE;
-}
-
-static void retry_worker(worker_record_t *w,
-                         int recover_wait_time,
-                         jk_logger_t *l)
-{
-    int elapsed = (int)difftime(time(NULL), w->s->error_time);
+    int i;
+    time_t now = time(NULL);
+    int elapsed;
+    worker_record_t *w = NULL;
     JK_TRACE_ENTER(l);
 
-    if (elapsed <= recover_wait_time) {
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG,
-                    "worker %s will recover in %d seconds",
-                    w->s->name, recover_wait_time - elapsed);
-    }
-    else {
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG,
-                    "worker %s is marked for recover",
-                    w->s->name);
-        w->s->in_recovering  = JK_TRUE;
-        w->s->in_error_state = JK_FALSE;
-        w->s->is_busy = JK_FALSE;
+    for (i = 0; i < p->num_of_workers; i++) {
+        w = &p->lb_workers[i];
+        if (JK_WORKER_IN_ERROR(w->s)) {
+            elapsed = (int)difftime(now, w->s->error_time);
+            if (elapsed <= p->s->recover_wait_time) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "worker %s will recover in %d seconds",
+                           w->s->name, p->s->recover_wait_time - elapsed);
+            }
+            else {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "worker %s is marked for recovery",
+                           w->s->name);
+                w->s->lb_value = curmax;
+                w->s->in_recovering = JK_TRUE;
+                w->s->in_error_state = JK_FALSE;
+                w->s->is_busy = JK_FALSE;
+            }
+        }
     }
 
     JK_TRACE_EXIT(l);
+}
+
+/* Divide old load values by the decay factor, */
+/* such that older values get less important */
+/* for the routing decisions. */
+static jk_uint64_t decay_load(lb_worker_t *p,
+                              int exponent,
+                              jk_logger_t *l)
+{
+    int i;
+    jk_uint64_t curmax = 0;
+    JK_TRACE_ENTER(l);
+    if (p->lbmethod != JK_LB_BYBUSYNESS) {
+        for (i = 0; i < p->num_of_workers; i++) {
+            p->lb_workers[i].s->lb_value >>= exponent;
+            if (p->lb_workers[i].s->lb_value > curmax) {
+                curmax = p->lb_workers[i].s->lb_value;
+            }
+        }
+    }
+    JK_TRACE_EXIT(l);
+    return curmax;
+}
+
+static int JK_METHOD maintain_workers(jk_worker_t *p, jk_logger_t *l)
+{
+    unsigned int i = 0;
+    jk_uint64_t curmax = 0;
+    int delta;
+    time_t now = time(NULL);
+    JK_TRACE_ENTER(l);
+
+    if (p && p->worker_private) {
+        lb_worker_t *lb = (lb_worker_t *)p->worker_private;
+
+        for (i = 0; i < lb->num_of_workers; i++) {
+            if (lb->lb_workers[i].w->maintain) {
+                lb->lb_workers[i].w->maintain(lb->lb_workers[i].w, l);
+            }
+        }
+
+        jk_shm_lock();
+
+/* Now we check for global maintenance (once for all processes).
+ * Checking workers for recovery and applying decay to the
+ * load values should not be done by each process individually.
+ * Therefore we globally sync and we use a global timestamp.
+ * Since it's possible that we come here a few milliseconds
+ * before the interval has passed, we allow a little tolerance.
+ */
+        delta = difftime(now, lb->s->last_maintain_time) + JK_LB_MAINTAIN_TOLERANCE;
+        if (delta >= lb->maintain_time) {
+            lb->s->last_maintain_time = now;
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "decay with 2^%d",
+                       JK_LB_DECAY_MULT * delta / lb->maintain_time);
+            curmax = decay_load(lb, JK_LB_DECAY_MULT * delta / lb->maintain_time, l);
+            recover_workers(lb, curmax, l);
+        }
+
+        jk_shm_unlock();
+
+    }
+    else {
+        JK_LOG_NULL_PARAMS(l);
+    }
+
+    JK_TRACE_EXIT(l);
+    return JK_TRUE;
 }
 
 static worker_record_t *find_by_session(lb_worker_t *p,
@@ -220,27 +361,10 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
                                            jk_logger_t *l)
 {
     unsigned int i;
-    int total_factor = 0;
-    jk_uint64_t mytraffic = 0;
     jk_uint64_t curmin = 0;
-    int bfn = 1;
-    int bfd = 1;
 
     worker_record_t *candidate = NULL;
 
-    if (p->lbmethod == JK_LB_BYTRAFFIC) {
-        double diff;
-        time_t now = time(NULL);
-        /* Update transfer rate for each worker */
-        for (i = 0; i < p->num_of_workers; i++) {
-            diff = difftime(now, p->lb_workers[i].s->service_time);
-            if (diff > JK_SERVICE_TRANSFER_INTERVAL) {
-                p->lb_workers[i].s->service_time = now;
-                p->lb_workers[i].s->readed /= JK_SERVICE_TRANSFER_INTERVAL;
-                p->lb_workers[i].s->transferred /= JK_SERVICE_TRANSFER_INTERVAL;
-            }
-        }
-    }
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* Skip all workers that are not member of domain */
@@ -248,41 +372,17 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
             strcmp(p->lb_workers[i].s->domain, domain))
             continue;
         /* Take into calculation only the workers that are
-         * not in error state, stopped or not disabled.
+         * not in error state, stopped, disabled or busy.
          */
         if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
-            if (p->lbmethod == JK_LB_BYREQUESTS) {
-                p->lb_workers[i].s->lb_value += p->lb_workers[i].s->lb_factor;
-                total_factor += p->lb_workers[i].s->lb_factor;
-                if (!candidate || p->lb_workers[i].s->lb_value > candidate->s->lb_value)
-                    candidate = &p->lb_workers[i];
-            }
-            else if (p->lbmethod == JK_LB_BYTRAFFIC) {
-                mytraffic = (p->lb_workers[i].s->transferred +
-                             p->lb_workers[i].s->readed ) / p->lb_workers[i].s->lb_factor;
-                if (!candidate || mytraffic < curmin) {
-                    candidate = &p->lb_workers[i];
-                    curmin = mytraffic;
-                }
-            }
-            else {
-                /* compare rational numbers: (a/b) < (c/d) iff a*d < c*b
-    			 */
-                int left  = p->lb_workers[i].s->busy * bfd;
-                int right = bfn * p->lb_workers[i].s->lb_factor;
-
-                if (!candidate || (left < right)) {
-                    candidate = &p->lb_workers[i];
-                    bfn = p->lb_workers[i].s->busy;
-                    bfd = p->lb_workers[i].s->lb_factor;
-                }
+            if (!candidate || p->lb_workers[i].s->lb_value < curmin) {
+                candidate = &p->lb_workers[i];
+                curmin = p->lb_workers[i].s->lb_value;
             }
         }
     }
 
     if (candidate) {
-        if (p->lbmethod == JK_LB_BYREQUESTS)
-            candidate->s->lb_value -= total_factor;
         candidate->r = &(candidate->s->domain[0]);
     }
 
@@ -290,130 +390,31 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
 }
 
 
-static worker_record_t *find_best_byrequests(lb_worker_t *p,
-                                             jk_logger_t *l)
-{
-    unsigned int i;
-    int total_factor = 0;
-    worker_record_t *candidate = NULL;
-
-    /* First try to see if we have available candidate */
-    for (i = 0; i < p->num_of_workers; i++) {
-        /* If the worker is in error state run
-         * retry on that worker. It will be marked as
-         * operational if the retry timeout is elapsed.
-         * The worker might still be unusable, but we try
-         * anyway.
-         */
-        if (JK_WORKER_IN_ERROR(p->lb_workers[i].s)) {
-            retry_worker(&p->lb_workers[i], p->s->recover_wait_time, l);
-        }
-        /* Take into calculation only the workers that are
-         * not in error state, stopped or not disabled.
-         */
-        if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
-            p->lb_workers[i].s->lb_value += p->lb_workers[i].s->lb_factor;
-            total_factor += p->lb_workers[i].s->lb_factor;
-            if (!candidate || p->lb_workers[i].s->lb_value > candidate->s->lb_value)
-                candidate = &p->lb_workers[i];
-        }
-    }
-
-    if (candidate)
-        candidate->s->lb_value -= total_factor;
-
-    return candidate;
-}
-
-static worker_record_t *find_best_bytraffic(lb_worker_t *p,
-                                             jk_logger_t *l)
-{
-    unsigned int i;
-    jk_uint64_t mytraffic = 0;
-    jk_uint64_t curmin = 0;
-    worker_record_t *candidate = NULL;
-    double diff;
-    time_t now = time(NULL);
-
-    for (i = 0; i < p->num_of_workers; i++) {
-        diff = difftime(now, p->lb_workers[i].s->service_time);
-        if (diff > JK_SERVICE_TRANSFER_INTERVAL) {
-            p->lb_workers[i].s->service_time = now;
-            p->lb_workers[i].s->readed /= JK_SERVICE_TRANSFER_INTERVAL;
-            p->lb_workers[i].s->transferred /= JK_SERVICE_TRANSFER_INTERVAL;
-        }
-    }
-    /* First try to see if we have available candidate */
-    for (i = 0; i < p->num_of_workers; i++) {
-        /* If the worker is in error state run
-         * retry on that worker. It will be marked as
-         * operational if the retry timeout is elapsed.
-         * The worker might still be unusable, but we try
-         * anyway.
-         */
-        if (JK_WORKER_IN_ERROR(p->lb_workers[i].s)) {
-            retry_worker(&p->lb_workers[i], p->s->recover_wait_time, l);
-        }
-        /* Take into calculation only the workers that are
-         * not in error state, stopped or not disabled.
-         */
-        if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
-            mytraffic = (p->lb_workers[i].s->transferred/p->lb_workers[i].s->lb_factor) +
-                        (p->lb_workers[i].s->readed/p->lb_workers[i].s->lb_factor);
-            if (!candidate || mytraffic < curmin) {
-                candidate = &p->lb_workers[i];
-                curmin = mytraffic;
-            }
-        }
-    }
-    return candidate;
-}
-
-static worker_record_t *find_best_bybusyness(lb_worker_t *p,
-                                             jk_logger_t *l)
+static worker_record_t *find_best_byvalue(lb_worker_t *p,
+                                          jk_logger_t *l)
 {
     static unsigned int next_offset = 0;
     unsigned int i;
     unsigned int j;
     unsigned int offset;
-    int bfn = 1;  /* Numerator of best busy factor */
-    int bfd = 1;  /* Denominator of best busy factor */
-
-    int left; /* left and right are used to compare rational numbers */
-    int right;
+    jk_uint64_t curmin = 0;
 
     /* find the least busy worker */
     worker_record_t *candidate = NULL;
 
     offset = next_offset;
 
-    /* First try to see if we have available candidate
-	 */
-    for (j = 0; j < p->num_of_workers; j++) {
-        i = (j + offset) % p->num_of_workers;
+    /* First try to see if we have available candidate */
+    for (j = offset; j < p->num_of_workers + offset; j++) {
+        i = j % p->num_of_workers;
 
-        /* If the worker is in error state run
-         * retry on that worker. It will be marked as
-         * operational if the retry timeout is elapsed.
-         * The worker might still be unusable, but we try
-         * anyway.
-         */
-        if (JK_WORKER_IN_ERROR(p->lb_workers[i].s)) {
-            retry_worker(&p->lb_workers[i], p->s->recover_wait_time, l);
-        }
         /* Take into calculation only the workers that are
-         * not in error state, stopped or not disabled.
+         * not in error state, stopped, disabled or busy.
          */
         if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
-            /* compare rational numbers: (a/b) < (c/d) iff a*d < c*b
-			 */
-            left  = p->lb_workers[i].s->busy * bfd;
-            right = bfn * p->lb_workers[i].s->lb_factor;
-
-            if (!candidate || (left < right)) {
+            if (!candidate || (p->lb_workers[i].s->lb_value < curmin)) {
                 candidate = &p->lb_workers[i];
-                bfn = p->lb_workers[i].s->busy;
-                bfd = p->lb_workers[i].s->lb_factor;
+                curmin = p->lb_workers[i].s->lb_value;
                 next_offset = i + 1;
             }
         }
@@ -426,7 +427,6 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
                                              jk_logger_t *l)
 {
     unsigned int i;
-    int total_factor = 0;
     int uses_domain  = 0;
     worker_record_t *candidate = NULL;
 
@@ -436,9 +436,6 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
         candidate = find_best_bydomain(p, name, l);
     }
     if (candidate) {
-        if (JK_WORKER_IN_ERROR(candidate->s)) {
-            retry_worker(candidate, p->s->recover_wait_time, l);
-        }
         if (candidate->s->in_error_state || candidate->s->is_stopped ) {
             /* We have a worker that is error state or stopped.
              * If it has a redirection set use that redirection worker.
@@ -457,21 +454,6 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
             if (candidate && (candidate->s->in_error_state || candidate->s->is_stopped))
                 candidate = NULL;
         }
-    }
-    if (candidate && !uses_domain &&
-        p->lbmethod == JK_LB_BYREQUESTS) {
-
-        for (i = 0; i < p->num_of_workers; i++) {
-            if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
-                /* Skip all workers that are not member of candidate domain */
-                if (*candidate->s->domain &&
-                    strcmp(p->lb_workers[i].s->domain, candidate->s->domain))
-                    continue;
-                p->lb_workers[i].s->lb_value += p->lb_workers[i].s->lb_factor;
-                total_factor += p->lb_workers[i].s->lb_factor;
-            }
-        }
-        candidate->s->lb_value -= total_factor;
     }
     return candidate;
 }
@@ -499,12 +481,7 @@ static worker_record_t *find_best_worker(lb_worker_t * p,
 {
     worker_record_t *rc = NULL;
 
-    if (p->lbmethod == JK_LB_BYREQUESTS)
-        rc = find_best_byrequests(p, l);
-    else if (p->lbmethod == JK_LB_BYTRAFFIC)
-        rc = find_best_bytraffic(p, l);
-    else if (p->lbmethod == JK_LB_BYBUSYNESS)
-        rc = find_best_bybusyness(p, l);
+    rc = find_best_byvalue(p, l);
     /* By default use worker name as session route */
     if (rc)
         rc->r = &(rc->s->name[0]);
@@ -527,10 +504,6 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
         /* No need to find the best worker
          * if there is a single one
          */
-        if (JK_WORKER_IN_ERROR(p->lb_workers[0].s)) {
-            retry_worker(&p->lb_workers[0], p->s->recover_wait_time, l);
-        }
-        /* Check if worker is marked for retry */
         if(!p->lb_workers[0].s->in_error_state && !p->lb_workers[0].s->is_stopped) {
             p->lb_workers[0].r = &(p->lb_workers[0].s->name[0]);
             JK_TRACE_EXIT(l);
@@ -564,7 +537,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
         if (JK_IS_DEBUG_LEVEL(l)) {
             jk_log(l, JK_LOG_DEBUG,
                    "total sessionid is %s",
-                    sessionid ? sessionid : "empty");
+                   sessionid ? sessionid : "empty");
         }
         while (sessionid) {
             char *next = strchr(sessionid, ';');
@@ -582,7 +555,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
                            "searching worker for session route %s",
-                            session_route);
+                           session_route);
 
                 /* We have a session route. Whow! */
                 rc = find_bysession_route(p, session_route, l);
@@ -612,7 +585,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
             }
             jk_log(l, JK_LOG_INFO,
                    "all workers are in error state for session %s",
-                    session);
+                   session);
             JK_TRACE_EXIT(l);
             return NULL;
         }
@@ -691,6 +664,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     if (p->worker->s->busy > p->worker->s->max_busy)
                         p->worker->s->max_busy = p->worker->s->busy;
                     rec->s->busy++;
+                    if (p->worker->lbmethod == JK_LB_BYREQUESTS)
+                        rec->s->lb_value += rec->s->lb_mult;
+                    else if (p->worker->lbmethod == JK_LB_BYBUSYNESS)
+                        rec->s->lb_value += rec->s->lb_mult;
                     if (rec->s->busy > rec->s->max_busy)
                         rec->s->max_busy = rec->s->busy;
                     if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
@@ -707,6 +684,25 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     /* Update partial reads and writes if any */
                     rec->s->readed += rd;
                     rec->s->transferred += wr;
+                    if (p->worker->lbmethod == JK_LB_BYTRAFFIC)
+                        rec->s->lb_value += (rd+wr)*rec->s->lb_mult;
+                    else if (p->worker->lbmethod == JK_LB_BYBUSYNESS)
+                        if (rec->s->lb_value >= rec->s->lb_mult)
+                            rec->s->lb_value -= rec->s->lb_mult;
+                        else {
+                            rec->s->lb_value = 0;
+                            if (JK_IS_DEBUG_LEVEL(l))
+                                jk_log(l, JK_LOG_DEBUG,
+                                       "worker %s has load value to low (%"
+                                       JK_UINT64_T_FMT
+                                       " < %"
+                                       JK_UINT64_T_FMT
+                                       ") ",
+                                       "- correcting to 0",
+                                       rec->s->name,
+                                       rec->s->lb_value,
+                                       rec->s->lb_mult);
+                        }
 
                     /* When returning the endpoint mark the worker as not busy.
                      * We have at least one endpoint free
@@ -919,7 +915,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 if ((s = jk_get_worker_redirect(props, worker_names[i], NULL)))
                     strncpy(p->lb_workers[i].s->redirect, s, JK_SHM_STR_SIZ);
 
-                p->lb_workers[i].s->lb_value = p->lb_workers[i].s->lb_factor;
+                p->lb_workers[i].s->lb_value = 0;
                 p->lb_workers[i].s->in_error_state = JK_FALSE;
                 p->lb_workers[i].s->in_recovering = JK_FALSE;
                 p->lb_workers[i].s->is_busy = JK_FALSE;
@@ -949,14 +945,15 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 close_workers(p, i, l);
             }
             else {
-                if (JK_IS_DEBUG_LEVEL(l)) {
-                    for (i = 0; i < num_of_workers; i++) {
+                for (i = 0; i < num_of_workers; i++) {
+                    if (JK_IS_DEBUG_LEVEL(l)) {
                         jk_log(l, JK_LOG_DEBUG,
                                "Balanced worker %i has name %s in domain %s",
                                i, p->lb_workers[i].s->name, p->lb_workers[i].s->domain);
                     }
                 }
                 p->num_of_workers = num_of_workers;
+                update_mult(p, l);
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
@@ -984,6 +981,8 @@ static int JK_METHOD init(jk_worker_t *pThis,
                                                             WAIT_BEFORE_RECOVER);
     if (p->s->recover_wait_time < WAIT_BEFORE_RECOVER)
         p->s->recover_wait_time = WAIT_BEFORE_RECOVER;
+    p->maintain_time = jk_get_worker_maintain_time(props);
+    p->s->last_maintain_time = time(NULL);
 
     p->lbmethod = jk_get_lb_method(props, p->s->name);
     p->lblock   = jk_get_lb_lock(props, p->s->name);

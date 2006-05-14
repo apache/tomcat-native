@@ -448,7 +448,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
             jk_puts(s, "<table><tr>"
                     "<th>Name</th><th>Type</th><th>Host</th><th>Addr</th>"
-                    "<th>Stat</th><th>F</th><th>V</th><th>Acc</th><th>Err</th>"
+                    "<th>Stat</th><th>F</th><th>M</th><th>V</th><th>Acc</th><th>Err</th>"
                     "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th><th>RR</th><th>Cd</th></tr>\n");
             for (j = 0; j < lb->num_of_workers; j++) {
                 worker_record_t *wr = &(lb->lb_workers[j]);
@@ -472,7 +472,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                                           wr->s->is_busy),
                         "</td>", NULL);
                 jk_printf(s, "<td>%d</td>", wr->s->lb_factor);
-                jk_printf(s, "<td>%d</td>", wr->s->lb_value);
+                jk_printf(s, "<td>%" JK_UINT64_T_FMT "</td>", wr->s->lb_mult);
+                jk_printf(s, "<td>%" JK_UINT64_T_FMT "</td>", wr->s->lb_value);
                 jk_printf(s, "<td>%u</td>", wr->s->elected);
                 jk_printf(s, "<td>%u</td>", wr->s->errors);
                 jk_putv(s, "<td>", status_strfsize(wr->s->transferred, buf),
@@ -579,6 +580,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             "<tr><th>Addr</th><td>Backend Address info</td></tr>\n"
             "<tr><th>Stat</th><td>Worker status</td></tr>\n"
             "<tr><th>F</th><td>Load Balancer Factor</td></tr>\n"
+            "<tr><th>M</th><td>Load Balancer Multiplicity</td></tr>\n"
             "<tr><th>V</th><td>Load Balancer Value</td></tr>\n"
             "<tr><th>Acc</th><td>Number of requests</td></tr>\n"
             "<tr><th>Err</th><td>Number of failed requests</td></tr>\n"
@@ -652,7 +654,8 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
                                   wr->s->is_busy) );
 
             jk_printf(s, " lbfactor=\"%d\"", wr->s->lb_factor);
-            jk_printf(s, " lbvalue=\"%d\"", wr->s->lb_value);
+            jk_printf(s, " lbmult=\"%" JK_UINT64_T_FMT "\"", wr->s->lb_mult);
+            jk_printf(s, " lbvalue=\"%" JK_UINT64_T_FMT "\"", wr->s->lb_value);
             jk_printf(s, " elected=\"%u\"", wr->s->elected);
             jk_printf(s, " errors=\"%u\"", wr->s->errors);
             jk_printf(s, " transferred=\"%" JK_UINT64_T_FMT "\"", wr->s->transferred);
@@ -678,6 +681,7 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
                           const char *dworker, jk_logger_t *l)
 {
     int i;
+    int j;
     char buf[1024];
     const char *b;
     lb_worker_t *lb;
@@ -731,11 +735,30 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
             strncpy(wr->s->domain, b, JK_SHM_STR_SIZ);
         else
             memset(wr->s->domain, 0, JK_SHM_STR_SIZ);
-        wr->s->is_disabled = status_bool("wd", s->query_string);
-        wr->s->is_stopped = status_bool("ws", s->query_string);
+        i = status_bool("wd", s->query_string);
+        j = status_bool("ws", s->query_string);
+        if (wr->s->is_disabled!=i || wr->s->is_stopped!=j) {
+            /* lock shared memory */
+            jk_shm_lock();
+            wr->s->is_disabled = i;
+            wr->s->is_stopped = j;
+            wr->s->lb_value = restart_value(lb, l);
+            if (i+j==0) {
+                jk_log(l, JK_LOG_INFO,
+                       "worker %s restarted in status worker with lb_value %"
+                       JK_UINT64_T_FMT,
+                       wr->s->name,
+                       wr->s->lb_value);
+            }
+            /* unlock the shared memory */
+            jk_shm_unlock();
+        }
         i = status_int("wf", s->query_string, wr->s->lb_factor);
-        if (i > 0)
+        if (i > 0 && wr->s->lb_factor != i) {
             wr->s->lb_factor = i;
+/* Recalculate the load multiplicators wrt. lb_factor */
+            update_mult(lb, l);
+        }
     }
 }
 

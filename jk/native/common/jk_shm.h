@@ -53,9 +53,6 @@ extern "C"
 #define JK_SHM_ALIGNMENT    64
 #define JK_SHM_ALIGN(x)     JK_ALIGN(x, JK_SHM_ALIGNMENT)
 
-/* Use 1 minute for measuring read/write data */
-#define JK_SERVICE_TRANSFER_INTERVAL    60
-
 /** jk shm worker record structure */
 struct jk_shm_worker
 {
@@ -78,8 +75,10 @@ struct jk_shm_worker
     volatile int is_busy;
     /* Current lb factor */
     volatile int lb_factor;
+    /* Current lb reciprocal factor */
+    volatile jk_uint64_t lb_mult;
     /* Current lb value  */
-    volatile int lb_value;
+    volatile jk_uint64_t lb_value;
     volatile int in_error_state;
     volatile int in_recovering;
     int     sticky_session;
@@ -89,7 +88,7 @@ struct jk_shm_worker
     /* Statistical data */
     volatile time_t  error_time;
     /* Service transfer rate time */
-    volatile time_t  service_time;
+    volatile time_t  last_maintain_time;
     /* Number of bytes read from remote */
     volatile jk_uint64_t readed;
     /* Number of bytes transferred to remote */

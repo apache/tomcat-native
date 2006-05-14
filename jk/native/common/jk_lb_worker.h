@@ -48,10 +48,14 @@ extern "C"
 #define JK_LB_LM_DEFAULT       ("Optimistic")
 #define JK_LB_LM_PESSIMISTIC   ("Pessimistic")
 
-/*
- * Time to wait before retry...
- */
+/* Time to wait before retry. */
 #define WAIT_BEFORE_RECOVER   (60)
+/* We accept doing global maintenance if we are */
+/* JK_LB_MAINTAIN_TOLERANCE seconds early. */
+#define JK_LB_MAINTAIN_TOLERANCE (2)
+/* We divide load values by 2^x during global maintenance. */
+/* The exponent x is JK_LB_DECAY_MULT*#MAINT_INTV_SINCE_LAST_MAINT */
+#define JK_LB_DECAY_MULT         (1)
 
 static const char *lb_method_type[] = {
     JK_LB_METHOD_REQUESTS,
@@ -77,6 +81,7 @@ struct lb_worker
     unsigned int num_of_workers;
     int          lbmethod;
     int          lblock;
+    time_t       maintain_time;
 
     jk_pool_t p;
     jk_pool_atom_t buf[TINY_POOL_SIZE];
@@ -91,6 +96,9 @@ typedef struct lb_worker lb_worker_t;
 
 int JK_METHOD lb_worker_factory(jk_worker_t **w,
                                 const char *name, jk_logger_t *l);
+
+jk_uint64_t restart_value(lb_worker_t *p, jk_logger_t *l);
+void update_mult(lb_worker_t * p, jk_logger_t *l);
 
 #ifdef __cplusplus
 }
