@@ -1,0 +1,230 @@
+TODO for tomcat-connectors
+
+$Id$
+
+1) Counter types in shm
+=======================
+
+Why are elected and errors of type size_t?
+
+    /* Number of times the worker was elected */
+    volatile size_t  elected;
+    /* Number of non 200 responses */
+    volatile size_t  errors;
+
+Shouldn't they be jk_uint64_t?
+
+2) Implement "distance"
+=======================
+
+Add a new attribut "distance" to balanced workers.
+Without session Id or stickyness the lb worker will
+choose between al usable workers of the smallest distance.
+
+3) Reduce number of string comparisons in most_suitable
+========================================================
+
+a) redirect/domains
+
+It would be easy to improve the redirect string b an integer, giving the
+index of the worker in the lb. Then lb would not need to search for the redirect worker.
+
+The same way, one could add a list with indizes to workers in the same domain.
+Whenever domain names are managed (init and status worker update) one would
+scan the worker list and update the index list.
+
+Finally one could have a list of workers, whose domain is the same as the redirect
+attribute of the worker, because that's also something we consider.
+
+What I'm not sure about, even in the existing code, is the locking between updates
+by the status worker and the process local information about the workers,
+especially in the case, when status updates a redirect or domain attribute.
+
+I would like to keep these attributes and the new index arrays process local,
+and the processes should find out about changes made by status to shm (redirect/domain)
+and then rebuild their data. No need to get these on every request from the shm,
+only the check for up-to-date should be made.
+
+b) exact matches for jvmRoutes
+
+Could we use hashes instead of string comparisons all the time?
+I'm not sure, if a good enough hash takes longer than a string comparison though.
+
+4) Optimization of JK_WORKER_USABLE
+====================================
+
+We use that one quite a lot. Since it is now a combination of four
+ANDs of negated values, we could also do
+
+#define JK_WORKER_USABLE(w)   (!((w)->in_error_state || ($w)->is_stopped || (w)->is_disabled || (w)->is_busy))
+
+I think it we should consider combining the flags into an additional
+is_usable (makes checks easier, but of course we would have to set it
+every time we change one of the four other flags). But in terms of
+performance that happens rarely.
+
+5) Code separation between factory, validate and init in lb
+============================================================
+
+The factory contains:
+
+        private_data->worker.retries = JK_RETRIES;
+        private_data->s->recover_wait_time = WAIT_BEFORE_RECOVER;
+
+I think, this should move to validate() or init().
+It might even be obsolete, because in init, we already have:
+
+    pThis->retries = jk_get_worker_retries(props, p->s->name,
+    p->s->retries = pThis->retries;
+    p->s->recover_wait_time = jk_get_worker_recover_timeout(props, p->s->name, WAIT_BEFORE_RECOVER);
+    if (p->s->recover_wait_time < WAIT_BEFORE_RECOVER)
+        p->s->recover_wait_time = WAIT_BEFORE_RECOVER;
+
+Then: In validate there is
+
+                p->lb_workers[i].s->error_time = 0;
+
+So shouldn't there also be
+
+                p->lb_workers[i].s->maintain_time = time(NULL);
+
+6) Refactor Logging
+====================
+
+a) Use the same code files for the request logging functions in Apache 1.3 and 2.0.
+
+b) Use the same code files for piped logging in Apache 1.3 and 2.0.
+
+7) ajpget
+==========
+
+Combine ajplib and Apache ab to an ajp13 commandline client ajpget.
+
+8) Parsing workers.properties
+=============================
+
+Parsing of workers.properties aditionally to just looking up attributes
+would help users to detect syntax errors in the file. At the moment
+no information will be logged, e.g. when attributes contain typos.
+
+9) Persisting workers.properties
+=================================
+
+Make workers.properties persist from inside status worker.
+
+10) Reduce number of uses of time(NULL)
+=======================================
+
+We use time(NULL) a lot. Since it only has resolution of a second,
+I'm asking myself, if we could update the actual time in only a few
+places and get time out of some variables when needed. The same does
+not hold true for millisecond time, but in several cases we use the time,
+it's not very critical, that it is exact. These cases are related to:
+
+- last_access for usage against timeout value that is ~minutes
+- error_time for usage against retry timeout that is ~minutes
+- maintain_time for usage against transfer division interval, that is ~minutes
+- uri_worker_map checked for usage against JK_URIMAP_RELOAD=1 minute
+- check against worker_maintain_time which is ~minutes
+
+So I think, it would suffice to set an actual time at the beginning of
+the request/response cycle (used by everything before the request is being
+sent over the socket) and maybe after the response shows up/ an error occurs
+(for everything else, if there is).
+
+For which cases would it be OK, to use the time before sending to TC:
+- uri_worker_map "checked" (uri map lookup starts early)
+- maintain (starts in front of the request)
+- "now" inside retry_worker could be taken from the calling maintain
+- setting/testing last_access in
+  - jk_ajp_common.c:ajp_connect_to_endpoint()
+  - jk_ajp_common.c:ajp_get_endpoint()
+  - jk_ajp_common.c:ajp_maintain()
+
+What about the others:
+- setting last_access in init should use the actual time in
+  jk_ajp_common.c:ajp_create_endpoint_cache()
+
+- setting last_access again after the service could also use the 
+  actual time in jk_ajp_common.c:ajp_done()
+- setting error_time should better use the actual time
+  jk_lb_worker.c service(): rec->s->error_time = time(NULL);
+
+The last two cases could again use the same time, which then would be needed
+to be generated at the end or directly after service.
+
+11) Access/Modification Time in shm
+==================================
+
+a) [Discussion] What will this generally be used for? At the moment,
+only jk_status "uses" it, but it only sets the values, it never asks for them.
+
+b) [Improvement, minor] jk_shm_set_workers_time() implicitly calls
+jk_shm_sync_access_time(), but jk_status does:
+
+            jk_shm_set_workers_time(time(NULL));
+            /* Since we updated the config no need to reload
+             * on the next request
+             */
+            jk_shm_sync_access_time();
+
+two times. So depending on the idea of the functionality of these calls,
+either set_workers_time and sync_access_time should be independently,
+or the second call in jk_status coulkd be removed.
+
+12) "Destroy" functionality
+==========================
+
+[Hint] Destroy on a worker never seems to free shm,
+but I think that was already a flaw without shm.
+
+13) Locks against shm
+=====================
+
+It might be an intersting experiment to implement an improved locking structure.
+It looks like one would need in fact different types of locks.
+In shm we have as read/write information:
+
+Changed only by status worker:
+- redirect, domain, lb_factor, sticky_session, sticky_session_force,
+  recover_wait_time, retries, status (is_disabled, is_stopped).
+
+These changes need some kind of reconfiguration in the threads after
+change and before the next request/response. Since changes are rare,
+here we would be better of, with a simple detect change and copy from
+shm to process procedure. status updates the data in shm and after that
+the time stamp on the shh. Each process checks the time stamp before
+doing a request, and when the time stamp changed it does a writer CS
+lock and updates it's local copy. All threads always do a reader CS
+lock when doing a request/response cycle. Reader CS locks are concurrent,
+writers are exclusive. So readers are not allowed, when the config data is being updated.
+
+Changed by the threads themselves (and via reset by the status worker):
+- counters needed by routing decisions (lb_value, readed, transferred, busy)
+- timers needed by maintenance functions (error_time, servic_time/maintain_time)
+- status is_busy, in_error_state
+- uncritical data with no influence on routing decisions (max_busy, elected, errors,
+  in_recovering)
+
+Here again we could improve by using reader/writer locks. I have a
+tendency for the PESSIMISTIC side of locking, but I think we could
+shrink the code blocks that should be locked. At the monent they are
+pretty big (most of get_most_suitable_worker).
+
+Read-only: name and id.
+
+By the way: at several places we don't check for errors on getting the lock.
+
+14) What I didn't yet check
+===========================
+
+a) Correctness of is_busy handling
+
+b) Correctness of the reset values after reset by status worker
+
+c) What would be the exact behaviour, if shm does not work (memory case).
+   Will this be a critical failure, or will we only experience a
+   degradation in routing decisions.
+
+d) How complete is mod_proxy_ajp/mod_proxy_balancer.
+   Port changes from mod_jk to them.
