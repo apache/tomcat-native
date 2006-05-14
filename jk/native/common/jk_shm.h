@@ -91,9 +91,9 @@ struct jk_shm_worker
     /* Service transfer rate time */
     volatile time_t  service_time;
     /* Number of bytes read from remote */
-    volatile jk_u64_t readed;
+    volatile jk_uint64_t readed;
     /* Number of bytes transferred to remote */
-    volatile jk_u64_t transferred;
+    volatile jk_uint64_t transferred;
     /* Number of times the worker was elected */
     volatile size_t  elected;
     /* Number of non 200 responses */

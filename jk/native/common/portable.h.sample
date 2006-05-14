@@ -8,23 +8,8 @@
 /* Have flock() */
 #define HAVE_FLOCK 1
 
-/* Use int for JK_UINT8 */
-/* #undef HAVE_INT64 */
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
-
-/* Use unsigned long for JK_UINT4 */
-/* #undef HAVE_LONG */
-
-/* Use long for JK_UINT8 */
-/* #undef HAVE_LONG64 */
-
-/* Use longlong for JK_UINT8 */
-/* #undef HAVE_LONGLONG64 */
-
-/* Use long long for JK_UINT8 */
-#define HAVE_LONG_LONG64 
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -50,14 +35,8 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
 
-/* Use uint32_t for JK_UINT4 */
-#define HAVE_UINT32_T 
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
-
-/* Use u_int32_t for JK_UINT4 */
-/* #undef HAVE_U_INT32_T */
 
 /* Have vsnprintf() */
 #define HAVE_VSNPRINTF 1
@@ -80,23 +59,26 @@
 /* Define to the version of this package. */
 #define PACKAGE_VERSION ""
 
-/* The size of a `uint32_t', as computed by sizeof. */
-#define SIZEOF_UINT32_T 4
+/* The size of a `char', as computed by sizeof. */
+#define SIZEOF_CHAR 1
 
-/* The size of a `unsigned int', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_INT 4
+/* The size of a `int', as computed by sizeof. */
+#define SIZEOF_INT 4
 
-/* The size of a `unsigned long', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_LONG 4
+/* The size of a `long', as computed by sizeof. */
+#define SIZEOF_LONG 4
 
-/* The size of a `unsigned longlong', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_LONGLONG 0
+/* The size of a `longlong', as computed by sizeof. */
+#define SIZEOF_LONGLONG 0
 
-/* The size of a `unsigned long long', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_LONG_LONG 8
+/* The size of a `long double', as computed by sizeof. */
+#define SIZEOF_LONG_DOUBLE 16
 
-/* The size of a `u_int32_t', as computed by sizeof. */
-#define SIZEOF_U_INT32_T 4
+/* The size of a `long long', as computed by sizeof. */
+#define SIZEOF_LONG_LONG 8
+
+/* The size of a `short', as computed by sizeof. */
+#define SIZEOF_SHORT 2
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

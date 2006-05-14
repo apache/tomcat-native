@@ -221,8 +221,8 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
 {
     unsigned int i;
     int total_factor = 0;
-    jk_u64_t mytraffic = 0;
-    jk_u64_t curmin = 0;
+    jk_uint64_t mytraffic = 0;
+    jk_uint64_t curmin = 0;
     int bfn = 1;
     int bfd = 1;
 
@@ -329,8 +329,8 @@ static worker_record_t *find_best_bytraffic(lb_worker_t *p,
                                              jk_logger_t *l)
 {
     unsigned int i;
-    jk_u64_t mytraffic = 0;
-    jk_u64_t curmin = 0;
+    jk_uint64_t mytraffic = 0;
+    jk_uint64_t curmin = 0;
     worker_record_t *candidate = NULL;
     double diff;
     time_t now = time(NULL);

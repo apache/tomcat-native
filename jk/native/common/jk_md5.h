@@ -56,24 +56,11 @@ extern "C"
 
 #define JK_MD5_DIGESTSIZE 16
 
-/* JK_UINT4 defines a four byte word */
-#if defined (WIN32)
-    typedef DWORD JK_UINT4;
-#elif defined(NETWARE) && !defined(__NOVELL_LIBC__)
-    typedef unsigned int JK_UINT4;
-#elif defined(HAVE_UINT32_T)
-    typedef uint32_t JK_UINT4;
-#elif defined(HAVE_U_INT32_T)
-    typedef u_int32_t JK_UINT4;
-#else
-    typedef unsigned long JK_UINT4; /* ansi HAVE_LONG */
-#endif
-
 /* MD5 context. */
 typedef struct
 {
-    JK_UINT4 state[4];      /* state (ABCD) */
-    JK_UINT4 count[2];      /* number of bits, modulo 2^64 (lsb first) */
+    jk_uint32_t state[4];      /* state (ABCD) */
+    jk_uint32_t count[2];      /* number of bits, modulo 2^64 (lsb first) */
     unsigned char buffer[64];       /* input buffer */
 } JK_MD5_CTX;
 

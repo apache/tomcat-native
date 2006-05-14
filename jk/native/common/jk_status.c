@@ -166,7 +166,7 @@ static int jk_printf(jk_ws_service_t *s, const char *fmt, ...)
 }
 
 /* Actually APR's apr_strfsize */
-static char *status_strfsize(jk_u64_t size, char *buf)
+static char *status_strfsize(jk_uint64_t size, char *buf)
 {
     const char ord[] = "KMGTPE";
     const char *o = ord;
@@ -654,10 +654,11 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
             jk_printf(s, " lbfactor=\"%d\"", wr->s->lb_factor);
             jk_printf(s, " lbvalue=\"%d\"", wr->s->lb_value);
             jk_printf(s, " elected=\"%u\"", wr->s->elected);
-            jk_printf(s, " readed=\"%u\"", wr->s->readed);
-            jk_printf(s, " transferred=\"%u\"", wr->s->transferred);
             jk_printf(s, " errors=\"%u\"", wr->s->errors);
+            jk_printf(s, " transferred=\"%" JK_UINT64_T_FMT "\"", wr->s->transferred);
+            jk_printf(s, " readed=\"%" JK_UINT64_T_FMT "\"", wr->s->readed);
             jk_printf(s, " busy=\"%u\"", wr->s->busy);
+            jk_printf(s, " maxbusy=\"%u\"", wr->s->max_busy);
             if (wr->s->redirect && *wr->s->redirect)
                 jk_printf(s, " redirect=\"%s\"", wr->s->redirect);
             if (wr->s->domain && *wr->s->domain)

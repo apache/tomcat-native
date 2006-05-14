@@ -50,33 +50,82 @@ AC_SUBST(MKDIR)
 dnl AC_PATH_PROG(LIBTOOL,libtool,$PATH)dnl
 AC_SUBST(LIBTOOL)
 
-AC_CHECK_SIZEOF(uint32_t)
-AC_CHECK_SIZEOF(u_int32_t)
-AC_CHECK_SIZEOF(unsigned long)
-if test "$ac_cv_sizeof_uint32_t" = "4"; then
-    AC_DEFINE(HAVE_UINT32_T, [], [Use uint32_t for JK_UINT4])
-elif test "$ac_cv_sizeof_u_int32_t" = "4"; then
-    AC_DEFINE(HAVE_U_INT32_T, [], [Use u_int32_t for JK_UINT4])
-elif test "$ac_cv_sizeof_unsigned_long" = "4"; then
-    AC_DEFINE(HAVE_LONG, [], [Use unsigned long for JK_UINT4])
+dnl ----------------------------- Checks for standard typedefs
+
+dnl Checks for integer size
+AC_CHECK_SIZEOF(char, 1)
+AC_CHECK_SIZEOF(int, 4)
+AC_CHECK_SIZEOF(long, 4)
+AC_CHECK_SIZEOF(short, 2)
+AC_CHECK_SIZEOF(long double, 12)
+AC_CHECK_SIZEOF(long long, 8)
+AC_CHECK_SIZEOF(longlong, 8)
+
+# Now we need to find what jk_uint32_t (sizeof == 4) will be.
+# The first match is our preference.
+if test "$ac_cv_sizeof_int" = "4"; then
+    int32_t_fmt='#define JK_INT32_T_FMT "d"'
+    uint32_t_fmt='#define JK_UINT32_T_FMT "u"'
+    uint32_t_hex_fmt='#define JK_UINT32_T_HEX_FMT "x"'
+    int32_value="int"
+elif test "$ac_cv_sizeof_long" = "4"; then
+    int32_t_fmt='#define JK_INT32_T_FMT "ld"'
+    uint32_t_fmt='#define JK_UINT32_T_FMT "lu"'
+    uint32_t_hex_fmt='#define JK_UINT32_T_HEX_FMT "lx"'
+    int32_value="long"
 else
+    int32_t_fmt='#error could not detect a 32-bit integer type'
+    uint32_t_fmt='#error could not detect a 32-bit integer type'
+    uint32_t_hex_fmt='#error could not detect a 32-bit integer type'
     AC_ERROR([could not detect a 32-bit integer type])
 fi
 
-AC_CHECK_SIZEOF(unsigned int)
-AC_CHECK_SIZEOF(unsigned long long)
-AC_CHECK_SIZEOF(unsigned longlong)
-if test "$ac_cv_sizeof_unsigned_int" = "8"; then
-    AC_DEFINE(HAVE_INT64, [], [Use int for JK_UINT8])
-elif test "$ac_cv_sizeof_unsigned_long" = "8"; then
-    AC_DEFINE(HAVE_LONG64, [], [Use long for JK_UINT8])
-elif test "$ac_cv_sizeof_unsigned_long_long" = "8"; then
-    AC_DEFINE(HAVE_LONG_LONG64, [], [Use long long for JK_UINT8])
-elif test "$ac_cv_sizeof_unsigned_longlong" = "8"; then
-    AC_DEFINE(HAVE_LONGLONG64, [], [Use longlong for JK_UINT8])
+# Now we need to find what jk_uint64_t (sizeof == 8) will be.
+# The first match is our preference.
+if test "$ac_cv_sizeof_int" = "8"; then
+    int64_t_fmt='#define JK_INT64_T_FMT "d"'
+    uint64_t_fmt='#define JK_UINT64_T_FMT "u"'
+    uint64_t_hex_fmt='#define JK_UINT64_T_HEX_FMT "x"'
+    int64_value="int"
+elif test "$ac_cv_sizeof_long" = "8"; then
+    int64_t_fmt='#define JK_INT64_T_FMT "ld"'
+    uint64_t_fmt='#define JK_UINT64_T_FMT "lu"'
+    uint64_t_hex_fmt='#define JK_UINT64_T_HEX_FMT "lx"'
+    int64_value="long"
+elif test "$ac_cv_sizeof_long_long" = "8"; then
+    # Linux, Solaris, FreeBSD all support ll with printf.
+    # BSD 4.4 originated 'q'.  Solaris is more popular and 
+    # doesn't support 'q'.  Solaris wins.  Exceptions can
+    # go to the OS-dependent section.
+    int64_t_fmt='#define JK_INT64_T_FMT "lld"'
+    uint64_t_fmt='#define JK_UINT64_T_FMT "llu"'
+    uint64_t_hex_fmt='#define JK_UINT64_T_HEX_FMT "llx"'
+    int64_value="long long"
+elif test "$ac_cv_sizeof_long_double" = "8"; then
+    int64_t_fmt='#define JK_INT64_T_FMT "Ld"'
+    uint64_t_fmt='#define JK_UINT64_T_FMT "Lu"'
+    uint64_t_hex_fmt='#define JK_UINT64_T_HEX_FMT "Lx"'
+    int64_value="long double"
+elif test "$ac_cv_sizeof_longlong" = "8"; then
+    int64_t_fmt='#define JK_INT64_T_FMT "qd"'
+    uint64_t_fmt='#define JK_UINT64_T_FMT "qu"'
+    uint64_t_hex_fmt='#define JK_UINT64_T_HEX_FMT "qx"'
+    int64_value="__int64"
 else
+    int64_t_fmt='#error could not detect a 64-bit integer type'
+    uint64_t_fmt='#error could not detect a 64-bit integer type'
+    uint64_t_hex_fmt='#error could not detect a 64-bit integer type'
     AC_ERROR([could not detect a 64-bit integer type])
 fi
+
+AC_SUBST(int32_value)
+AC_SUBST(int32_t_fmt) 
+AC_SUBST(uint32_t_fmt) 
+AC_SUBST(uint32_t_hex_fmt) 
+AC_SUBST(int64_value)
+AC_SUBST(int64_t_fmt) 
+AC_SUBST(uint64_t_fmt) 
+AC_SUBST(uint64_t_hex_fmt) 
 
 dnl check for snprintf and vsnprintf.
 AC_CHECK_FUNC(snprintf, AC_DEFINE(HAVE_SNPRINTF,1,[Have snprintf()]))
@@ -568,5 +617,6 @@ AC_OUTPUT([
 	apache-2.0/Makefile.apxs
 	common/Makefile
 	common/list.mk
+	common/jk_global.h
 	jni/Makefile
 	])

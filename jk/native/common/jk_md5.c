@@ -118,9 +118,9 @@ char *JK_METHOD jk_hextocstr(unsigned char *org, char *dst, int n)
 #define S43 15
 #define S44 21
 
-static void MD5Transform(JK_UINT4 state[4], const unsigned char block[64]);
-static void Encode(unsigned char *output, const JK_UINT4 * input, size_t len);
-static void Decode(JK_UINT4 * output, const unsigned char *input, size_t len);
+static void MD5Transform(jk_uint32_t state[4], const unsigned char block[64]);
+static void Encode(unsigned char *output, const jk_uint32_t * input, size_t len);
+static void Decode(jk_uint32_t * output, const unsigned char *input, size_t len);
 static void jk_MD5Init(JK_MD5_CTX * context);
 static void jk_MD5Update(JK_MD5_CTX * context, const unsigned char *input,
                          size_t inputLen);
@@ -147,22 +147,22 @@ static unsigned char PADDING[64] = {
    Rotation is separate from addition to prevent recomputation.
  */
 #define FF(a, b, c, d, x, s, ac) { \
- (a) += F ((b), (c), (d)) + (x) + (JK_UINT4)(ac); \
+ (a) += F ((b), (c), (d)) + (x) + (jk_uint32_t)(ac); \
  (a) = ROTATE_LEFT ((a), (s)); \
  (a) += (b); \
   }
 #define GG(a, b, c, d, x, s, ac) { \
- (a) += G ((b), (c), (d)) + (x) + (JK_UINT4)(ac); \
+ (a) += G ((b), (c), (d)) + (x) + (jk_uint32_t)(ac); \
  (a) = ROTATE_LEFT ((a), (s)); \
  (a) += (b); \
   }
 #define HH(a, b, c, d, x, s, ac) { \
- (a) += H ((b), (c), (d)) + (x) + (JK_UINT4)(ac); \
+ (a) += H ((b), (c), (d)) + (x) + (jk_uint32_t)(ac); \
  (a) = ROTATE_LEFT ((a), (s)); \
  (a) += (b); \
   }
 #define II(a, b, c, d, x, s, ac) { \
- (a) += I ((b), (c), (d)) + (x) + (JK_UINT4)(ac); \
+ (a) += I ((b), (c), (d)) + (x) + (jk_uint32_t)(ac); \
  (a) = ROTATE_LEFT ((a), (s)); \
  (a) += (b); \
   }
@@ -192,11 +192,11 @@ static void jk_MD5Update(JK_MD5_CTX * context, const unsigned char *input,
     idx = (size_t) ((context->count[0] >> 3) & 0x3F);
 
     /* Update number of bits */
-    if ((context->count[0] += ((JK_UINT4) inputLen << 3))
-        < ((JK_UINT4) inputLen << 3)) {
+    if ((context->count[0] += ((jk_uint32_t) inputLen << 3))
+        < ((jk_uint32_t) inputLen << 3)) {
         context->count[1]++;
     }
-    context->count[1] += (JK_UINT4) inputLen >> 29;
+    context->count[1] += (jk_uint32_t) inputLen >> 29;
 
     partLen = 64 - idx;
 
@@ -283,9 +283,9 @@ static void JK_METHOD jk_MD5Final(unsigned char digest[16], JK_MD5_CTX * context
 }
 
 /* MD5 basic transformation. Transforms state based on block. */
-static void MD5Transform(JK_UINT4 state[4], const unsigned char block[64])
+static void MD5Transform(jk_uint32_t state[4], const unsigned char block[64])
 {
-    JK_UINT4 a = state[0], b = state[1], c = state[2], d = state[3], x[16];
+    jk_uint32_t a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
     Decode(x, block, 64);
 
@@ -370,13 +370,13 @@ static void MD5Transform(JK_UINT4 state[4], const unsigned char block[64])
     memset(x, 0, sizeof(x));
 }
 
-/* Encodes input (JK_UINT4) into output (unsigned char). Assumes len is
+/* Encodes input (jk_uint32_t) into output (unsigned char). Assumes len is
    a multiple of 4.
  */
-static void Encode(unsigned char *output, const JK_UINT4 * input, size_t len)
+static void Encode(unsigned char *output, const jk_uint32_t * input, size_t len)
 {
     size_t i, j;
-    JK_UINT4 k;
+    jk_uint32_t k;
 
     for (i = 0, j = 0; j < len; i++, j += 4) {
         k = input[i];
@@ -387,16 +387,16 @@ static void Encode(unsigned char *output, const JK_UINT4 * input, size_t len)
     }
 }
 
-/* Decodes input (unsigned char) into output (JK_UINT4). Assumes len is
+/* Decodes input (unsigned char) into output (jk_uint32_t). Assumes len is
  * a multiple of 4.
  */
-static void Decode(JK_UINT4 * output, const unsigned char *input, size_t len)
+static void Decode(jk_uint32_t * output, const unsigned char *input, size_t len)
 {
     size_t i, j;
 
     for (i = 0, j = 0; j < len; i++, j += 4)
-        output[i] = ((JK_UINT4) input[j]) | (((JK_UINT4) input[j + 1]) << 8) |
-            (((JK_UINT4) input[j + 2]) << 16) | (((JK_UINT4) input[j + 3]) <<
+        output[i] = ((jk_uint32_t) input[j]) | (((jk_uint32_t) input[j + 1]) << 8) |
+            (((jk_uint32_t) input[j + 2]) << 16) | (((jk_uint32_t) input[j + 3]) <<
                                                  24);
 }
 
