@@ -82,6 +82,14 @@ extern __declspec(dllimport) module dir_module;
 extern module dir_module;
 #endif
 
+static int xfer_flags = (O_WRONLY | O_APPEND | O_CREAT);
+#if defined(OS2) || defined(WIN32) || defined(NETWARE)
+/* OS/2 dosen't support users and groups */
+static mode_t xfer_mode = (S_IREAD | S_IWRITE);
+#else
+static mode_t xfer_mode = (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+#endif
+
 /*
  * Configuration object for the mod_jk module.
  */
@@ -92,6 +100,7 @@ typedef struct
      * Log stuff
      */
     char *log_file;
+    int log_fd;
     int log_level;
     jk_logger_t *log;
 
@@ -880,17 +889,7 @@ static const char *jk_set_log_file(cmd_parms * cmd,
                                                   &jk_module);
 
     /* we need an absolut path */
-    conf->log_file = ap_server_root_relative(cmd->pool, log_file);
-
-#ifdef CHROOTED_APACHE
-    ap_server_strip_chroot(conf->log_file, 0);
-#endif
-
-    if (conf->log_file == log_file)
-        conf->log_file = ap_pstrdup(cmd->pool, log_file);
-
-    if (conf->log_file == NULL)
-        return "JkLogFile file_name invalid";
+    conf->log_file = log_file;
 
     return NULL;
 }
@@ -1874,6 +1873,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->worker_file = NULL;
     c->mount_file = NULL;
     c->log_file = NULL;
+    c->log_fd = -1;
     c->log_level = -1;
     c->log = NULL;
     c->alias_dir = NULL;
@@ -1977,12 +1977,6 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
             ap_overlay_tables(p, overrides->envvars, base->envvars);
     }
 
-    if (overrides->log_file && overrides->log_level >= 0) {
-        if (!jk_open_file_logger
-            (&(overrides->log), overrides->log_file, overrides->log_level)) {
-            overrides->log = NULL;
-        }
-    }
     if (!uri_worker_map_alloc
         (&(overrides->uw_map), overrides->uri_to_context, overrides->log)) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, overrides->s, p,
@@ -1995,28 +1989,93 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
     return overrides;
 }
 
+static int JK_METHOD jk_log_to_file(jk_logger_t *l,
+                                    int level, const char *what)
+{
+    if (l &&
+        (l->level <= level || level == JK_LOG_REQUEST_LEVEL) && 
+         l->logger_private && what) {
+        file_logger_t *flp = l->logger_private;
+        int log_fd = flp->log_fd;
+        size_t sz = strlen(what);
+        if (log_fd >= 0 && sz) {
+            if ( write(log_fd, what, sz) < 0 )
+            {
+                ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO,
+                             NULL,
+                             "mod_jk: jk_log_to_file %s failed",
+                             what);
+            }
+        }
+
+        return JK_TRUE;
+    }
+
+    return JK_FALSE;
+}
+
+static void open_jk_log(server_rec *s, pool *p)
+{
+    jk_logger_t *jkl;
+    file_logger_t *flp;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+
+    if (!conf->log_file || conf->log_fd >= 0)
+        return;               /* virtual log shared w/main server */
+
+    if (*conf->log_file == '|') {
+        piped_log *pl;
+
+        pl = ap_open_piped_log(p, conf->log_file + 1);
+        if (pl == NULL) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, s,
+                         "mod_jk: could not open reliable pipe "
+                         "to jk log %s", conf->log_file + 1);
+            exit(1);
+        }
+        conf->log_fd = ap_piped_log_write_fd(pl);
+    }
+    else if (*conf->log_file != '\0') {
+        char *log_file = ap_server_root_relative(p, conf->log_file);
+        if ((conf->log_fd = ap_popenf_ex(p, log_file, xfer_flags, xfer_mode, 1))
+             < 0) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, s,
+                         "mod_jk: could not open JkLog " "file %s", log_file);
+            exit(1);
+        }
+    }
+
+    jkl = (jk_logger_t *)ap_palloc(p, sizeof(jk_logger_t));
+    flp = (file_logger_t *)ap_palloc(p, sizeof(file_logger_t));
+    if (jkl && flp) {
+        jkl->log = jk_log_to_file;
+        jkl->level = conf->log_level;
+        jkl->logger_private = flp;
+        flp->log_fd = conf->log_fd;
+        conf->log = jkl;
+        if (main_log == NULL)
+            main_log = conf->log;
+        return;
+    }
+
+    return;
+}
+
 static void jk_init(server_rec * s, ap_pool * p)
 {
     int rc;
+    server_rec *t;
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
     jk_map_t *init_map = conf->worker_properties;
 
-    /* Open up log file */
-    if (conf->log_file && conf->log_level >= 0) {
-        if (!jk_open_file_logger
-            (&(conf->log), conf->log_file, conf->log_level)) {
-#ifdef CHROOTED_APACHE
-            conf->log = main_log;
-#else
-            conf->log = NULL;
-#endif
-        }
-        else {
-            main_log = conf->log;
-        }
-    }
+    open_jk_log(s, p);
+    main_log = conf->log;
+    for (t=s; t; t = t->next)
+        open_jk_log(t, p);
 #if !defined(WIN32) && !defined(NETWARE)
     if (!jk_shm_file) {
         jk_shm_file = ap_server_root_relative(p, "logs/jk-runtime-status");
@@ -2311,14 +2370,11 @@ static void jk_generic_cleanup(server_rec * s)
                                                       &jk_module);
 
         if (conf) {
-            wc_close(conf->log);
-            uri_worker_map_free(&(conf->uw_map), conf->log);
+            wc_close(NULL);
+            uri_worker_map_free(&(conf->uw_map), NULL);
             jk_map_free(&(conf->uri_to_context));
             jk_map_free(&(conf->worker_properties));
             jk_map_free(&(conf->automount));
-            if (conf->log)
-                jk_close_file_logger(&(conf->log));
-            conf->log = NULL;
         }
         tmp = tmp->next;
     }

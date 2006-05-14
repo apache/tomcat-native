@@ -338,14 +338,20 @@ We'll discuss here the mod_jk directives and details behind them
 <subsection name="Logging">
 <p>
 <b>JkLogFile</b> specify the location where mod_jk is going to place its log file.
+</p>
 
 <source>
   JkLogFile     /var/log/httpd/mod_jk.log
 </source>
 
-<br/>
-<br/>
+<p>
+Since JK 1.2.3 for Apache 2.0 and JK 1.2.16 for Apache 1.3 this can also
+be used for piped logging:
 </p>
+
+<source>
+  JkLogFile     "|/usr/bin/rotatelogs /var/log/httpd/mod_jk.log 86400"
+</source>
 
 <p>
 <b>JkLogLevel</b>

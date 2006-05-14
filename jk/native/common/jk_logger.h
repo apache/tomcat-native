@@ -46,6 +46,8 @@ struct file_logger_t
     FILE *logfile;
     /* For Apache 2 APR piped logging */
     void *jklogfp;
+    /* For Apache 1.3 piped logging */
+    int log_fd;
 };
 
 /* Level like Java tracing, but available only
