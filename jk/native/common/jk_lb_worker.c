@@ -95,28 +95,17 @@ void update_mult(lb_worker_t *p, jk_logger_t *l)
     JK_TRACE_EXIT(l);
 }
 
-/* Get the correct lb_value when recovering/starting/enabling a worker.
- * This function needs to be externally synchronized!
+/* Reset all lb values.
  */
-jk_uint64_t restart_value(lb_worker_t *p, jk_logger_t *l)
+void reset_lb_values(lb_worker_t *p, jk_logger_t *l)
 {
     int i = 0;
-    jk_uint64_t curmax = 0;
     JK_TRACE_ENTER(l);
     if (p->lbmethod != JK_LB_BYBUSYNESS) {
         for (i = 0; i < p->num_of_workers; i++) {
-            if (p->lb_workers[i].s->lb_value > curmax) {
-                curmax = p->lb_workers[i].s->lb_value;
-            }
+            p->lb_workers[i].s->lb_value = 0;
         }
     }
-    if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG,
-               "restarting worker with lb_value %"
-               JK_UINT64_T_FMT,
-               curmax);
-    JK_TRACE_EXIT(l);
-    return curmax;
 }
 
 /* Retrieve the parameter with the given name                                */
@@ -364,6 +353,7 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
                                            jk_logger_t *l)
 {
     unsigned int i;
+    int d = 0;
     jk_uint64_t curmin = 0;
 
     worker_record_t *candidate = NULL;
@@ -378,9 +368,12 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
          * not in error state, stopped, disabled or busy.
          */
         if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
-            if (!candidate || p->lb_workers[i].s->lb_value < curmin) {
+            if (!candidate || p->lb_workers[i].s->distance < d ||
+                (p->lb_workers[i].s->lb_value < curmin &&
+                p->lb_workers[i].s->distance == d)) {
                 candidate = &p->lb_workers[i];
                 curmin = p->lb_workers[i].s->lb_value;
+                d = p->lb_workers[i].s->distance;
             }
         }
     }
@@ -400,6 +393,7 @@ static worker_record_t *find_best_byvalue(lb_worker_t *p,
     unsigned int i;
     unsigned int j;
     unsigned int offset;
+    int d = 0;
     jk_uint64_t curmin = 0;
 
     /* find the least busy worker */
@@ -415,9 +409,12 @@ static worker_record_t *find_best_byvalue(lb_worker_t *p,
          * not in error state, stopped, disabled or busy.
          */
         if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
-            if (!candidate || (p->lb_workers[i].s->lb_value < curmin)) {
+            if (!candidate || p->lb_workers[i].s->distance < d ||
+                (p->lb_workers[i].s->lb_value < curmin &&
+                p->lb_workers[i].s->distance == d)) {
                 candidate = &p->lb_workers[i];
                 curmin = p->lb_workers[i].s->lb_value;
+                d = p->lb_workers[i].s->distance;
                 next_offset = i + 1;
             }
         }
@@ -914,6 +911,8 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 if (p->lb_workers[i].s->lb_factor < 1) {
                     p->lb_workers[i].s->lb_factor = 1;
                 }
+                p->lb_workers[i].s->distance =
+                    jk_get_distance(props, worker_names[i]);
                 if ((s = jk_get_worker_jvm_route(props, worker_names[i], NULL)))
                     strncpy(p->lb_workers[i].s->jvm_route, s, JK_SHM_STR_SIZ);
                 else

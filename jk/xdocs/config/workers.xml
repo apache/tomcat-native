@@ -373,6 +373,16 @@ Full recovery by default.
 </p>
 </directive>
 
+<directive name="distance" default="0" required="false">
+Express Preferences between the balanced workers of an lb worker.
+A load balancer will never choose some balanced worker 
+in case there is another usable worker with lower distance.
+<p>
+Only in case all workers below a given distance are in error, disabled or stopped,
+workers of a larger distance are eligible for balancing.
+</p>
+</directive>
+
 <directive name="domain" default="" required="false">
 Domain directive can be used only when the worker is a member of the load balancer.
 Workers that share the same domain name are treated as single worker. If sticky_session

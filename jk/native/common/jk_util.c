@@ -57,6 +57,7 @@
 #define SOCKET_KEEPALIVE_OF_WORKER  ("socket_keepalive")
 #define RECYCLE_TIMEOUT_OF_WORKER   ("recycle_timeout")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
+#define DISTANCE_OF_WORKER          ("distance")
 /* deprecated directive. Use balance_workers instead */
 #define BALANCED_WORKERS            ("balanced_workers")
 #define BALANCE_WORKERS             ("balance_workers")
@@ -82,6 +83,7 @@
 #define WORKER_MAINTAIN_PROPERTY_NAME ("worker.maintain")
 #define DEFAULT_MAINTAIN_TIME       (60)
 #define DEFAULT_LB_FACTOR           (1)
+#define DEFAULT_DISTANCE            (0)
 #define LOG_FORMAT                  ("log_format")
 
 #define TOMCAT32_BRIDGE_NAME        ("tomcat32")
@@ -748,6 +750,19 @@ int jk_get_lb_factor(jk_map_t *m, const char *wname)
     return jk_map_get_int(m, buf, DEFAULT_LB_FACTOR);
 }
 
+int jk_get_distance(jk_map_t *m, const char *wname)
+{
+    char buf[1024];
+
+    if (!m || !wname) {
+        return DEFAULT_DISTANCE;
+    }
+
+    MAKE_WORKER_PARAM(DISTANCE_OF_WORKER);
+
+    return jk_map_get_int(m, buf, DEFAULT_DISTANCE);
+}
+
 int jk_get_is_sticky_session(jk_map_t *m, const char *wname)
 {
     int rc = JK_TRUE;
@@ -781,7 +796,7 @@ int jk_get_lb_method(jk_map_t *m, const char *wname)
     char buf[1024];
     const char *v;
     if (!m || !wname) {
-        return DEFAULT_LB_FACTOR;
+        return JK_LB_BYREQUESTS;
     }
 
     MAKE_WORKER_PARAM(METHOD_OF_WORKER);

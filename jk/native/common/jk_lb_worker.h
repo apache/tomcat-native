@@ -57,6 +57,13 @@ extern "C"
 /* The exponent x is JK_LB_DECAY_MULT*#MAINT_INTV_SINCE_LAST_MAINT */
 #define JK_LB_DECAY_MULT         (1)
 
+static const char *lb_locking_type[] = {
+    JK_LB_LM_DEFAULT,
+    JK_LB_LM_PESSIMISTIC,
+    "unknown",
+    NULL
+};
+
 static const char *lb_method_type[] = {
     JK_LB_METHOD_REQUESTS,
     JK_LB_METHOD_TRAFFIC,
@@ -97,7 +104,7 @@ typedef struct lb_worker lb_worker_t;
 int JK_METHOD lb_worker_factory(jk_worker_t **w,
                                 const char *name, jk_logger_t *l);
 
-jk_uint64_t restart_value(lb_worker_t *p, jk_logger_t *l);
+void reset_lb_values(lb_worker_t *p, jk_logger_t *l);
 void update_mult(lb_worker_t * p, jk_logger_t *l);
 
 #ifdef __cplusplus

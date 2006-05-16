@@ -448,7 +448,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
             jk_puts(s, "<table><tr>"
                     "<th>Name</th><th>Type</th><th>jvmRoute</th><th>Host</th><th>Addr</th>"
-                    "<th>Stat</th><th>F</th><th>M</th><th>V</th><th>Acc</th><th>Err</th>"
+                    "<th>Stat</th><th>D</th><th>F</th><th>M</th><th>V</th><th>Acc</th><th>Err</th>"
                     "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th><th>RR</th><th>Cd</th></tr>\n");
             for (j = 0; j < lb->num_of_workers; j++) {
                 worker_record_t *wr = &(lb->lb_workers[j]);
@@ -472,11 +472,12 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                                           wr->s->in_recovering,
                                           wr->s->is_busy),
                         "</td>", NULL);
+                jk_printf(s, "<td>%d</td>", wr->s->distance);
                 jk_printf(s, "<td>%d</td>", wr->s->lb_factor);
                 jk_printf(s, "<td>%" JK_UINT64_T_FMT "</td>", wr->s->lb_mult);
                 jk_printf(s, "<td>%" JK_UINT64_T_FMT "</td>", wr->s->lb_value);
-                jk_printf(s, "<td>%u</td>", wr->s->elected);
-                jk_printf(s, "<td>%u</td>", wr->s->errors);
+                jk_printf(s, "<td>%" JK_UINT64_T_FMT "</td>", wr->s->elected);
+                jk_printf(s, "<td>%" JK_UINT32_T_FMT "</td>", wr->s->errors);
                 jk_putv(s, "<td>", status_strfsize(wr->s->transferred, buf),
                         "</td>", NULL);
                 jk_putv(s, "<td>", status_strfsize(wr->s->readed, buf),
@@ -511,7 +512,9 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_puts(s, "<input type=\"hidden\" name=\"lb\" ");
                 jk_printf(s, "value=\"%u\">\n</table>\n", i);
 
-                jk_puts(s, "<table>\n<tr><td>Load factor:</td><td><input name=\"wf\" type=\"text\" ");
+                jk_puts(s, "<table>\n<tr><td>Distance:</td><td><input name=\"wx\" type=\"text\" ");
+                jk_printf(s, "value=\"%d\"/></td><tr>\n", wr->s->distance);
+                jk_puts(s, "<tr><td>Load factor:</td><td><input name=\"wf\" type=\"text\" ");
                 jk_printf(s, "value=\"%d\"/></td><tr>\n", wr->s->lb_factor);
                 jk_puts(s, "<tr><td>Route Redirect:</td><td><input name=\"wr\" type=\"text\" ");
                 jk_putv(s, "value=\"", wr->s->redirect, NULL);
@@ -577,14 +580,15 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
     }
     /* Display legend */
     jk_puts(s, "<hr/><table>\n"
-            "<tr><th>Name</th><td>Worker route name</td></tr>\n"
+            "<tr><th>Name</th><td>Worker name</td></tr>\n"
             "<tr><th>Type</th><td>Worker type</td></tr>\n"
-            "<tr><th>jvmRoute</th><td>Worker JVM Route</td></tr>\n"
+            "<tr><th>jvmRoute</th><td>Worker JVM route</td></tr>\n"
             "<tr><th>Addr</th><td>Backend Address info</td></tr>\n"
             "<tr><th>Stat</th><td>Worker status</td></tr>\n"
-            "<tr><th>F</th><td>Load Balancer Factor</td></tr>\n"
-            "<tr><th>M</th><td>Load Balancer Multiplicity</td></tr>\n"
-            "<tr><th>V</th><td>Load Balancer Value</td></tr>\n"
+            "<tr><th>D</th><td>Worker distance</td></tr>\n"
+            "<tr><th>F</th><td>Load Balancer factor</td></tr>\n"
+            "<tr><th>M</th><td>Load Balancer multiplicity</td></tr>\n"
+            "<tr><th>V</th><td>Load Balancer value</td></tr>\n"
             "<tr><th>Acc</th><td>Number of requests</td></tr>\n"
             "<tr><th>Err</th><td>Number of failed requests</td></tr>\n"
             "<tr><th>Wr</th><td>Number of bytes transferred/min</td></tr>\n"
@@ -656,11 +660,12 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
                                   wr->s->in_recovering,
                                   wr->s->is_busy) );
 
+            jk_printf(s, " distance=\"%d\"", wr->s->distance);
             jk_printf(s, " lbfactor=\"%d\"", wr->s->lb_factor);
             jk_printf(s, " lbmult=\"%" JK_UINT64_T_FMT "\"", wr->s->lb_mult);
             jk_printf(s, " lbvalue=\"%" JK_UINT64_T_FMT "\"", wr->s->lb_value);
-            jk_printf(s, " elected=\"%u\"", wr->s->elected);
-            jk_printf(s, " errors=\"%u\"", wr->s->errors);
+            jk_printf(s, " elected=\"%" JK_UINT64_T_FMT "\"", wr->s->elected);
+            jk_printf(s, " errors=\"%" JK_UINT32_T_FMT "\"", wr->s->errors);
             jk_printf(s, " transferred=\"%" JK_UINT64_T_FMT "\"", wr->s->transferred);
             jk_printf(s, " readed=\"%" JK_UINT64_T_FMT "\"", wr->s->readed);
             jk_printf(s, " busy=\"%u\"", wr->s->busy);
@@ -747,14 +752,22 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
             jk_shm_lock();
             wr->s->is_disabled = i;
             wr->s->is_stopped = j;
-            wr->s->lb_value = restart_value(lb, l);
+            reset_lb_values(lb, l);
+            /* unlock the shared memory */
+            jk_shm_unlock();
             if (i+j==0) {
                 jk_log(l, JK_LOG_INFO,
-                       "worker %s restarted in status worker with lb_value %"
+                       "worker %s restarted in status worker"
                        JK_UINT64_T_FMT,
-                       wr->s->name,
-                       wr->s->lb_value);
+                       wr->s->name);
             }
+        }
+        i = status_int("wx", s->query_string, wr->s->distance);
+        if (wr->s->distance!=i) {
+            /* lock shared memory */
+            jk_shm_lock();
+            wr->s->distance = i;
+            reset_lb_values(lb, l);
             /* unlock the shared memory */
             jk_shm_unlock();
         }

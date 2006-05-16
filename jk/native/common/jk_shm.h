@@ -71,6 +71,8 @@ struct jk_shm_worker
     char    domain[JK_SHM_STR_SIZ+1];
     /* worker redirect route */
     char    redirect[JK_SHM_STR_SIZ+1];
+    /* worker distance */
+    volatile int distance;
     /* current status of the worker */
     volatile int is_disabled;
     volatile int is_stopped;
@@ -96,13 +98,13 @@ struct jk_shm_worker
     /* Number of bytes transferred to remote */
     volatile jk_uint64_t transferred;
     /* Number of times the worker was elected */
-    volatile size_t  elected;
+    volatile jk_uint64_t  elected;
     /* Number of non 200 responses */
-    volatile size_t  errors;
+    volatile jk_uint32_t  errors;
     /* Number of recovery attempts */
-    volatile size_t  recoveries;
+    volatile jk_uint32_t  recoveries;
     /* Number of recovery failures */
-    volatile size_t  recovery_errors;
+    volatile jk_uint32_t  recovery_errors;
 };
 typedef struct jk_shm_worker jk_shm_worker_t;
 

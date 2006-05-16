@@ -2,26 +2,14 @@ TODO for tomcat-connectors
 
 $Id$
 
-1) Counter types in shm
-=======================
+1) Optimize "distance"
+======================
 
-Why are elected and errors of type size_t?
+Sorting the list of balanced workers by distance would be nice, but:
+How to combine the sorting with the offset implementation (especially
+useful for strategy BUSYNESS under low load).
 
-    /* Number of times the worker was elected */
-    volatile size_t  elected;
-    /* Number of non 200 responses */
-    volatile size_t  errors;
-
-Shouldn't they be jk_uint64_t?
-
-2) Implement "distance"
-=======================
-
-Add a new attribut "distance" to balanced workers.
-Without session Id or stickyness the lb worker will
-choose between al usable workers of the smallest distance.
-
-3) Reduce number of string comparisons in most_suitable
+2) Reduce number of string comparisons in most_suitable
 ========================================================
 
 a) redirect/domains
@@ -50,7 +38,7 @@ b) exact matches for jvmRoutes
 Could we use hashes instead of string comparisons all the time?
 I'm not sure, if a good enough hash takes longer than a string comparison though.
 
-4) Optimization of JK_WORKER_USABLE
+3) Optimization of JK_WORKER_USABLE
 ====================================
 
 We use that one quite a lot. Since it is now a combination of four
@@ -63,7 +51,7 @@ is_usable (makes checks easier, but of course we would have to set it
 every time we change one of the four other flags). But in terms of
 performance that happens rarely.
 
-5) Code separation between factory, validate and init in lb
+4) Code separation between factory, validate and init in lb
 ============================================================
 
 The factory contains:
@@ -88,17 +76,22 @@ So shouldn't there also be
 
                 p->lb_workers[i].s->maintain_time = time(NULL);
 
-6) Refactor Logging
+5) Refactor Logging
 ====================
 
 a) Use the same code files for the request logging functions in Apache 1.3 and 2.0.
 
 b) Use the same code files for piped logging in Apache 1.3 and 2.0.
 
-7) ajpget
+6) ajpget
 ==========
 
 Combine ajplib and Apache ab to an ajp13 commandline client ajpget.
+
+7) Manage lb method and locking via jk_status
+=============================================
+
+It's not yet contained in the shm.
 
 8) Parsing workers.properties
 =============================
@@ -108,7 +101,7 @@ would help users to detect syntax errors in the file. At the moment
 no information will be logged, e.g. when attributes contain typos.
 
 9) Persisting workers.properties
-=================================
+================================
 
 Make workers.properties persist from inside status worker.
 
@@ -154,7 +147,7 @@ The last two cases could again use the same time, which then would be needed
 to be generated at the end or directly after service.
 
 11) Access/Modification Time in shm
-==================================
+===================================
 
 a) [Discussion] What will this generally be used for? At the moment,
 only jk_status "uses" it, but it only sets the values, it never asks for them.
@@ -173,7 +166,7 @@ either set_workers_time and sync_access_time should be independently,
 or the second call in jk_status coulkd be removed.
 
 12) "Destroy" functionality
-==========================
+===========================
 
 [Hint] Destroy on a worker never seems to free shm,
 but I think that was already a flaw without shm.
