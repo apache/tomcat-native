@@ -447,7 +447,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_printf(s, "<td>%s</td>", lb->lblock == JK_LB_LOCK_DEFAULT ? JK_LB_LM_DEFAULT : JK_LB_LM_PESSIMISTIC);
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
             jk_puts(s, "<table><tr>"
-                    "<th>Name</th><th>Type</th><th>Host</th><th>Addr</th>"
+                    "<th>Name</th><th>Type</th><th>jvmRoute</th><th>Host</th><th>Addr</th>"
                     "<th>Stat</th><th>F</th><th>M</th><th>V</th><th>Acc</th><th>Err</th>"
                     "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th><th>RR</th><th>Cd</th></tr>\n");
             for (j = 0; j < lb->num_of_workers; j++) {
@@ -460,6 +460,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 if (dworker && strcmp(dworker, wr->s->name) == 0)
                     selected = j;
                 jk_putv(s, "<td>", status_worker_type(wr->w->type), "</td>", NULL);
+                jk_putv(s, "<td>", wr->s->jvm_route, "</td>", NULL);
                 jk_printf(s, "<td>%s:%d</td>", a->host, a->port);
                 jk_putv(s, "<td>", jk_dump_hinfo(&a->worker_inet_addr, buf),
                         "</td>", NULL);
@@ -497,7 +498,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             if (selected >= 0) {
                 worker_record_t *wr = &(lb->lb_workers[selected]);
                 jk_putv(s, "<hr/><h3>Edit worker settings for ",
-                        wr->s->name, "</h3>\n", NULL);
+                        wr->s->name, " (JVM Route ", 
+                        wr->s->jvm_route, ")</h3>\n", NULL);
                 jk_putv(s, "<form method=\"GET\" action=\"",
                         s->req_uri, "\">\n", NULL);
                 jk_puts(s, "<table>\n<input type=\"hidden\" name=\"cmd\" ");
@@ -577,6 +579,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
     jk_puts(s, "<hr/><table>\n"
             "<tr><th>Name</th><td>Worker route name</td></tr>\n"
             "<tr><th>Type</th><td>Worker type</td></tr>\n"
+            "<tr><th>jvmRoute</th><td>Worker JVM Route</td></tr>\n"
             "<tr><th>Addr</th><td>Backend Address info</td></tr>\n"
             "<tr><th>Stat</th><td>Worker status</td></tr>\n"
             "<tr><th>F</th><td>Load Balancer Factor</td></tr>\n"
@@ -662,6 +665,8 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
             jk_printf(s, " readed=\"%" JK_UINT64_T_FMT "\"", wr->s->readed);
             jk_printf(s, " busy=\"%u\"", wr->s->busy);
             jk_printf(s, " maxbusy=\"%u\"", wr->s->max_busy);
+            if (wr->s->jvm_route && *wr->s->jvm_route)
+                jk_printf(s, " jvm_route=\"%s\"", wr->s->jvm_route);
             if (wr->s->redirect && *wr->s->redirect)
                 jk_printf(s, " redirect=\"%s\"", wr->s->redirect);
             if (wr->s->domain && *wr->s->domain)

@@ -65,6 +65,8 @@ struct jk_shm_worker
     volatile int connected;
     /* worker name */
     char    name[JK_SHM_STR_SIZ+1];
+    /* jvm route */
+    char    jvm_route[JK_SHM_STR_SIZ+1];
     /* worker domain */
     char    domain[JK_SHM_STR_SIZ+1];
     /* worker redirect route */

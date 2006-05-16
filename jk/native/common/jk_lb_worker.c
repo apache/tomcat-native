@@ -95,8 +95,9 @@ void update_mult(lb_worker_t *p, jk_logger_t *l)
     JK_TRACE_EXIT(l);
 }
 
-/* Get the correct lb_value when recovering/starting/enabling a worker */
-/* This function needs to be externally synchronized! */
+/* Get the correct lb_value when recovering/starting/enabling a worker.
+ * This function needs to be externally synchronized!
+ */
 jk_uint64_t restart_value(lb_worker_t *p, jk_logger_t *l)
 {
     int i = 0;
@@ -206,8 +207,9 @@ static char *get_cookie(jk_ws_service_t *s, const char *name)
 }
 
 
-/* Retrieve session id from the cookie or the parameter                      */
-/* (parameter first)                                                         */
+/* Retrieve session id from the cookie or the parameter
+ * (parameter first)
+ */
 static char *get_sessionid(jk_ws_service_t *s)
 {
     char *val;
@@ -268,9 +270,10 @@ static void recover_workers(lb_worker_t *p,
     JK_TRACE_EXIT(l);
 }
 
-/* Divide old load values by the decay factor, */
-/* such that older values get less important */
-/* for the routing decisions. */
+/* Divide old load values by the decay factor,
+ * such that older values get less important
+ * for the routing decisions.
+ */
 static jk_uint64_t decay_load(lb_worker_t *p,
                               int exponent,
                               jk_logger_t *l)
@@ -347,9 +350,9 @@ static worker_record_t *find_by_session(lb_worker_t *p,
     unsigned int i;
 
     for (i = 0; i < p->num_of_workers; i++) {
-        if (strcmp(p->lb_workers[i].s->name, name) == 0) {
+        if (strcmp(p->lb_workers[i].s->jvm_route, name) == 0) {
             rc = &p->lb_workers[i];
-            rc->r = &(rc->s->name[0]);
+            rc->r = &(rc->s->jvm_route[0]);
             break;
         }
     }
@@ -482,9 +485,9 @@ static worker_record_t *find_best_worker(lb_worker_t * p,
     worker_record_t *rc = NULL;
 
     rc = find_best_byvalue(p, l);
-    /* By default use worker name as session route */
+    /* By default use worker jvm route as session route */
     if (rc)
-        rc->r = &(rc->s->name[0]);
+        rc->r = &(rc->s->jvm_route[0]);
     else
         rc = find_failover_worker(p, l);
     return rc;
@@ -505,7 +508,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
          * if there is a single one
          */
         if(!p->lb_workers[0].s->in_error_state && !p->lb_workers[0].s->is_stopped) {
-            p->lb_workers[0].r = &(p->lb_workers[0].s->name[0]);
+            p->lb_workers[0].r = &(p->lb_workers[0].s->jvm_route[0]);
             JK_TRACE_EXIT(l);
             return &p->lb_workers[0];
         }
@@ -567,8 +570,8 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                     }
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
-                               "found worker %s for route %s and partial sessionid %s",
-                               rc->s->name, session_route, sessionid);
+                               "found worker %s (%s) for route %s and partial sessionid %s",
+                               rc->s->name, rc->s->jvm_route, session_route, sessionid);
                         JK_TRACE_EXIT(l);
                     return rc;
                 }
@@ -598,8 +601,8 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
     }
     if (rc && JK_IS_DEBUG_LEVEL(l)) {
         jk_log(l, JK_LOG_DEBUG,
-               "found best worker (%s) using method '%s'",
-               rc->s->name, lb_method_type[p->lbmethod]);
+               "found best worker %s (%s) using method '%s'",
+               rc->s->name, rc->s->jvm_route, lb_method_type[p->lbmethod]);
     }
     JK_TRACE_EXIT(l);
     return rc;
@@ -883,6 +886,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                                   &worker_names,
                                   &num_of_workers) && num_of_workers) {
             unsigned int i = 0;
+            unsigned int j = 0;
 
             p->lb_workers = jk_pool_alloc(&p->p,
                                           num_of_workers *
@@ -910,6 +914,10 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 if (p->lb_workers[i].s->lb_factor < 1) {
                     p->lb_workers[i].s->lb_factor = 1;
                 }
+                if ((s = jk_get_worker_jvm_route(props, worker_names[i], NULL)))
+                    strncpy(p->lb_workers[i].s->jvm_route, s, JK_SHM_STR_SIZ);
+                else
+                    strncpy(p->lb_workers[i].s->jvm_route, worker_names[i], JK_SHM_STR_SIZ);
                 if ((s = jk_get_worker_domain(props, worker_names[i], NULL)))
                     strncpy(p->lb_workers[i].s->domain, s, JK_SHM_STR_SIZ);
                 if ((s = jk_get_worker_redirect(props, worker_names[i], NULL)))
@@ -948,12 +956,30 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 for (i = 0; i < num_of_workers; i++) {
                     if (JK_IS_DEBUG_LEVEL(l)) {
                         jk_log(l, JK_LOG_DEBUG,
-                               "Balanced worker %i has name %s in domain %s",
-                               i, p->lb_workers[i].s->name, p->lb_workers[i].s->domain);
+                               "Balanced worker %i has name %s and jvm_route %s in domain %s",
+                               i,
+                               p->lb_workers[i].s->name,
+                               p->lb_workers[i].s->jvm_route,
+                               p->lb_workers[i].s->domain);
                     }
                 }
                 p->num_of_workers = num_of_workers;
                 update_mult(p, l);
+                for (i = 0; i < num_of_workers; i++) {
+                    for (j = 0; j < i; j++) {
+                        if (strcmp(p->lb_workers[i].s->jvm_route, p->lb_workers[j].s->jvm_route) == 0) {
+                            jk_log(l, JK_LOG_ERROR,
+                                   "Balanced workers number %i (%s) and %i (%s) share the same jvm_route %s - aborting configuration!",
+                                   i,
+                                   p->lb_workers[i].s->name,
+                                   j,
+                                   p->lb_workers[j].s->name,
+                                   p->lb_workers[i].s->jvm_route);
+                            JK_TRACE_EXIT(l);
+                            return JK_FALSE;
+                        }
+                    }
+                }
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
