@@ -74,6 +74,8 @@ int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def);
 
 int jk_get_worker_recover_timeout(jk_map_t *m, const char *wname, int def);
 
+const char *jk_get_worker_jvm_route(jk_map_t *m, const char *wname, const char *def);
+
 const char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def);
 
 const char *jk_get_worker_redirect(jk_map_t *m, const char *wname, const char *def);
@@ -91,6 +93,8 @@ void jk_set_log_format(const char *logformat);
 int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_wokers);
 
 int jk_get_lb_factor(jk_map_t *m, const char *wname);
+
+int jk_get_distance(jk_map_t *m, const char *wname);
 
 int jk_get_is_sticky_session(jk_map_t *m, const char *wname);
 
