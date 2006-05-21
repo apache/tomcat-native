@@ -2194,8 +2194,6 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
                                  "mod_jk: jk_log_to_file %s failed: %s",
                                  what, error);
                 }
-                else
-                    apr_file_putc('\n', p->jklogfp);
                 rv = apr_global_mutex_unlock(jk_log_lock);
                 if (rv != APR_SUCCESS) {
                     ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, NULL,
