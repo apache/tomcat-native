@@ -24,12 +24,6 @@
 #ifndef JK_GLOBAL_H
 #define JK_GLOBAL_H
 
-/* GENERATED FILE WARNING!  DO NOT EDIT jk_global.h
- *
- * You must modify jk_global.h.in instead.
- *
- */
-
 #ifndef NETWARE
 #if !defined(WIN32) && !defined(AS400)
 #include "portable.h"
@@ -249,53 +243,20 @@ extern "C"
 #endif                          /* APR_CHARSET_EBCDIC */
 
 /* jk_uint32_t defines a four byte word */
+/* jk_uint64_t defines a eight byte word */
 #if defined (WIN32)
     typedef UINT32 jk_uint32_t;
-#define JK_INT32_T_FMT "I32d"
 #define JK_UINT32_T_FMT "I32u"
 #define JK_UINT32_T_HEX_FMT "I32x"
-#elif defined(NETWARE) && !defined(__NOVELL_LIBC__)
-    typedef unsigned int jk_uint32_t;
-#else
-    typedef unsigned @int32_value@ jk_uint32_t;
-
-/* And JK_INT32_T_FMT */
-@int32_t_fmt@
-
-/* And JK_UINT32_T_FMT */
-@uint32_t_fmt@
-
-/* And JK_UINT32_T_HEX_FMT */
-@uint32_t_hex_fmt@
-#endif
-#define JK_INT32_T_FMT_LEN  (sizeof(JK_INT32_T_FMT) - 1)
-#define JK_UINT32_T_FMT_LEN  (sizeof(JK_UINT32_T_FMT) - 1)
-#define JK_UINT32_T_HEX_FMT_LEN  (sizeof(JK_UINT32_T_HEX_FMT) - 1)
-
-/* jk_uint64_t defines a four byte word */
-#if defined (WIN32)
     typedef UINT64 jk_uint64_t;
-#define JK_INT64_T_FMT "I64d"
 #define JK_UINT64_T_FMT "I64u"
 #define JK_UINT64_T_HEX_FMT "I64x"
-#elif defined(AS400)
-    typedef unsigned long long jk_uint64_t;
-#define JK_INT64_T_FMT "lld"
-#define JK_UINT64_T_FMT "llu"
-#define JK_UINT64_T_HEX_FMT "llx"
 #else
-    typedef unsigned @int64_value@ jk_uint64_t;
-
-/* And JK_INT64_T_FMT */
-@int64_t_fmt@
-
-/* And JK_UINT64_T_FMT */
-@uint64_t_fmt@
-
-/* And JK_UINT64_T_HEX_FMT */
-@uint64_t_hex_fmt@
+#include "jk_types.h"
 #endif
-#define JK_INT64_T_FMT_LEN  (sizeof(JK_INT64_T_FMT) - 1)
+
+#define JK_UINT32_T_FMT_LEN  (sizeof(JK_UINT32_T_FMT) - 1)
+#define JK_UINT32_T_HEX_FMT_LEN  (sizeof(JK_UINT32_T_HEX_FMT) - 1)
 #define JK_UINT64_T_FMT_LEN  (sizeof(JK_UINT64_T_FMT) - 1)
 #define JK_UINT64_T_HEX_FMT_LEN  (sizeof(JK_UINT64_T_HEX_FMT) - 1)
 
