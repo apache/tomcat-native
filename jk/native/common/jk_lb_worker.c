@@ -19,6 +19,7 @@
  *              several workers.                                           *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  * Author:      Mladen Turk <mturk@apache.org>                             *
+ * Author:      Rainer Jung <rjung@apache.org>                             *
  * Based on:                                                               *
  * Version:     $Revision$                                          *
  ***************************************************************************/

@@ -17,6 +17,7 @@
 /***************************************************************************
  * Description: Status worker, display and manages JK workers              *
  * Author:      Mladen Turk <mturk@jboss.com>                              *
+ * Author:      Rainer Jung <rjung@apache.org>                             *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 

@@ -18,6 +18,7 @@
  * Description: Utility functions (mainly configuration)                   *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  * Author:      Henri Gomez <hgomez@apache.org>                            *
+ * Author:      Rainer Jung <rjung@apache.org>                             *
  * Version:     $Revision$                                          *
  ***************************************************************************/
 

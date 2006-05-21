@@ -17,6 +17,7 @@
 /***************************************************************************
  * Description: Shared Memory object header file                           *
  * Author:      Mladen Turk <mturk@jboss.com>                              *
+ * Author:      Rainer Jung <rjung@apache.org>                             *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 #ifndef _JK_SHM_H

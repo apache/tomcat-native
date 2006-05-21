@@ -17,6 +17,7 @@
 /***************************************************************************
  * Description: load balance worker header file                            *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
+ * Author:      Rainer Jung <rjung@apache.org>                             *
  * Version:     $Revision$                                           *
  ***************************************************************************/
 
