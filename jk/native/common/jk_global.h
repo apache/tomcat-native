@@ -245,12 +245,19 @@ extern "C"
 /* jk_uint32_t defines a four byte word */
 /* jk_uint64_t defines a eight byte word */
 #if defined (WIN32)
-    typedef UINT32 jk_uint32_t;
-#define JK_UINT32_T_FMT "I32u"
-#define JK_UINT32_T_HEX_FMT "I32x"
-    typedef UINT64 jk_uint64_t;
+    typedef unsigned int jk_uint32_t;
+#define JK_UINT32_T_FMT "u"
+#define JK_UINT32_T_HEX_FMT "x"
+    typedef unsigned __int64 jk_uint64_t;
 #define JK_UINT64_T_FMT "I64u"
 #define JK_UINT64_T_HEX_FMT "I64x"
+#elif defined(AS400)
+    typedef unsigned int jk_uint32_t;
+#define JK_UINT32_T_FMT "u"
+#define JK_UINT32_T_HEX_FMT "x"
+    typedef unsigned long long jk_uint64_t;
+#define JK_UINT64_T_FMT "llu"
+#define JK_UINT64_T_HEX_FMT "llx"
 #else
 #include "jk_types.h"
 #endif
