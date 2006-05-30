@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<project name="Apache Jakarta Tomcat Connector Documentation - Top Level Directory"
-        href="http://jakarta.apache.org/tomcat/">
+<project name="Apache Tomcat Connector Documentation - Top Level Directory"
+        href="http://tomcat.apache.org/">
 
-    <title>The Apache Jakarta Tomcat Connector</title>
+    <title>The Apache Tomcat Connector</title>
 
     <logo href="/images/tomcat.gif">
-      The Apache Jakarta Tomcat Connector
+      The Apache Tomcat Connector
     </logo>
 <body>
 
