@@ -34,12 +34,12 @@ General Informations and FAQ about JK
 <p>
 The primary mechanism for support is through the JK 
 documentation included in the doc directory.
-Documentation is also available on the Apache Jakarta web site devoted to the
-<a href="http://jakarta.apache.org/tomcat/tomcat-4.1-doc/jk2/index.html">
-Jakarta Tomcat Connectors Project</a>
+Documentation is also available on the Apache Tomcat web site devoted to the
+<a href="http://tomcat.apache.org/connectors-doc/">
+Apache Tomcat Connectors Project</a>
 For additional help, the best resource is the Tomcat Users Discussion list.  
 You should start by searching
-<a href="http://mail-archives.apache.org/mod_mbox/jakarta-tomcat-user/">
+<a href="http://mail-archives.apache.org/mod_mbox/tomcat-users/">
 the mail list archive</a>
 before you post questions to the list.  
 If you are unable to locate the answer to your question in the archive, 
@@ -55,13 +55,10 @@ to determine how to subscribe to tomcat mailing list.
 
 <subsection name="I can't find JK anywhere. Where is it?">
 <p>
-Now that JK moved to the <b>jakarta-tomcat-connectors</b> repository, 
-the source for JK can be downloaded from a mirror at the
-<a href="http://jakarta.apache.org/site/sourceindex.cgi">
-Jakarta Source Download</a> page and the binaries for JK can
-be downloaded from a mirror at the
-<a href="http://jakarta.apache.org/site/binindex.cgi">
-Jakarta Binary Download</a> page.
+Now that JK moved to the <b>tomcat-connectors</b> repository, 
+the source and the binaries for JK can be downloaded from a mirror at the
+<a href="http://tomcat.apache.org/download-connectors.cgi">
+Tomcat Connectors (mod_jk, mod_jk2) Downloads</a> page.
 </p>
 </subsection>
 
