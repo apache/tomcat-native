@@ -53,9 +53,9 @@ typedef struct lb_endpoint lb_endpoint_t;
 
 
 /* Calculate the greatest common divisor of two positive integers */
-static int gcd(int a, int b)
+static jk_uint64_t gcd(jk_uint64_t a, jk_uint64_t b)
 {
-    int r;
+    jk_uint64_t r;
     if (b > a) {
         r = a;
         a = b;
@@ -72,13 +72,13 @@ static int gcd(int a, int b)
 /* Calculate the smallest common multiple of two positive integers */
 static jk_uint64_t scm(jk_uint64_t a, jk_uint64_t b)
 {
-    return a*b/gcd(a,b);
+    return a * b / gcd(a, b);
 }
 
 /* Update the load multipliers wrt. lb_factor */
 void update_mult(lb_worker_t *p, jk_logger_t *l)
 {
-    int i = 0;
+    unsigned int i = 0;
     jk_uint64_t s = 1;
     JK_TRACE_ENTER(l);
     for (i = 0; i < p->num_of_workers; i++) {
@@ -100,7 +100,7 @@ void update_mult(lb_worker_t *p, jk_logger_t *l)
  */
 void reset_lb_values(lb_worker_t *p, jk_logger_t *l)
 {
-    int i = 0;
+    unsigned int i = 0;
     JK_TRACE_ENTER(l);
     if (p->lbmethod != JK_LB_BYBUSYNESS) {
         for (i = 0; i < p->num_of_workers; i++) {
@@ -228,7 +228,7 @@ static void recover_workers(lb_worker_t *p,
                             jk_uint64_t curmax,
                             jk_logger_t *l)
 {
-    int i;
+    unsigned int i;
     time_t now = time(NULL);
     int elapsed;
     worker_record_t *w = NULL;
@@ -268,7 +268,7 @@ static jk_uint64_t decay_load(lb_worker_t *p,
                               int exponent,
                               jk_logger_t *l)
 {
-    int i;
+    unsigned int i;
     jk_uint64_t curmax = 0;
     JK_TRACE_ENTER(l);
     if (p->lbmethod != JK_LB_BYBUSYNESS) {
@@ -287,7 +287,7 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, jk_logger_t *l)
 {
     unsigned int i = 0;
     jk_uint64_t curmax = 0;
-    int delta;
+    long delta;
     time_t now = time(NULL);
     JK_TRACE_ENTER(l);
 
@@ -309,7 +309,7 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, jk_logger_t *l)
  * Since it's possible that we come here a few milliseconds
  * before the interval has passed, we allow a little tolerance.
  */
-        delta = difftime(now, lb->s->last_maintain_time) + JK_LB_MAINTAIN_TOLERANCE;
+        delta = (long)difftime(now, lb->s->last_maintain_time) + JK_LB_MAINTAIN_TOLERANCE;
         if (delta >= lb->maintain_time) {
             lb->s->last_maintain_time = now;
             if (JK_IS_DEBUG_LEVEL(l))
@@ -427,7 +427,6 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
                                              const char *name,
                                              jk_logger_t *l)
 {
-    unsigned int i;
     int uses_domain  = 0;
     worker_record_t *candidate = NULL;
 
