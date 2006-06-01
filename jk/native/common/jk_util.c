@@ -137,7 +137,7 @@ static size_t set_time_str(char *str, int len)
     struct tm *tms;
 
     tms = localtime(&t);
-    strftime(str, len, jk_log_fmt, tms);
+    return strftime(str, len, jk_log_fmt, tms);
 }
 
 /* Write at most n characters to the buffer in str, return the
@@ -281,23 +281,23 @@ int jk_log(jk_logger_t *l,
            const char *fmt, ...)
 {
     int rc = 0;
-/* Need to reserve space for newline and terminating zero byte. */
-    static size_t usable_size = HUGE_BUFFER_SIZE-2;
+    /* Need to reserve space for newline and terminating zero byte. */
+    static int usable_size = HUGE_BUFFER_SIZE-2;
     if (!l || !file || !fmt) {
         return -1;
     }
 
     if ((l->level <= level) || (level == JK_LOG_REQUEST_LEVEL)) {
 #ifdef NETWARE
-/* On NetWare, this can get called on a thread that has a limited stack so */
-/* we will allocate and free the temporary buffer in this function         */
+        /* On NetWare, this can get called on a thread that has a limited stack so */
+        /* we will allocate and free the temporary buffer in this function         */
         char *buf;
 #else
         char buf[HUGE_BUFFER_SIZE];
 #endif
         char *f = (char *)(file + strlen(file) - 1);
         va_list args;
-        size_t used = 0;
+        int used = 0;
 
         while (f != file && '\\' != *f && '/' != *f) {
             f--;
