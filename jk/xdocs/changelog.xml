@@ -25,6 +25,15 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Renamed cache_timeout firective to connection_pool_timeout. (mturk)
+      </update>
+      <update>
+      Added connection_pool_minsize directive. (mturk)
+      </update>
+      <update>
+      Deprecate recycle_timeout directive. (mturk)
+      </update>
       <fix>
       <bug>37469</bug>: Fix shared memory close for forked childs.
       The shared memory will be closed by the parent process. (mturk)
