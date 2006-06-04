@@ -1,4 +1,4 @@
-#define JK_COPYRIGHT "Copyright 2000-2005 The Apache Software " \
+#define JK_COPYRIGHT "Copyright 2000-2006 The Apache Software " \
                      "Foundation or its licensors, as applicable."
 
 #define JK_LICENSE "Licensed under the Apache License, Version 2.0 " \
@@ -14,7 +14,7 @@
                     "specific language governing permissions and " \
                     "limitations under the License."
 
-#define JK_VERSION_STR  "1.2.16-dev"
+#define JK_VERSION_STR  "1.2.16"
 #define JK_DLL_BASENAME "isapi_redirect-" JK_VERSION_STR
 
 
