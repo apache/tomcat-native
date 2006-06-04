@@ -382,6 +382,12 @@ int jk_map_read_property(jk_map_t *m, const char *str)
                     v = tmpv;
                 }
                 else {
+                    if (jk_is_deprecated_property(prp)) {
+                        /* TODO: Log deprecated directive.
+                         * It would require to pass the jk_log_t
+                         * to jk_map_ functions.
+                         */    
+                    }
                     v = jk_pool_strdup(&m->p, v);
                 }
                 if (v) {
@@ -421,7 +427,7 @@ int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified)
             while (NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
                 trim_prp_comment(prp);
                 if (*prp) {
-                    if ((rc =jk_map_read_property(m, prp)) == JK_FALSE)
+                    if ((rc = jk_map_read_property(m, prp)) == JK_FALSE)
                         break;
                 }
             }
