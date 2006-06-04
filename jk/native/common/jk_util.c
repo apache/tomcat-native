@@ -48,8 +48,9 @@
 #define TYPE_OF_WORKER              ("type")
 #define CACHE_OF_WORKER_DEPRECATED  ("cachesize")
 #define CACHE_OF_WORKER             ("connection_pool_size")
-#define CACHE_OF_WORKER_MIN         ("connection_min_pool_size")
-#define CACHE_TIMEOUT_OF_WORKER     ("cache_timeout")
+#define CACHE_OF_WORKER_MIN         ("connection_pool_minsize")
+#define CACHE_TIMEOUT_DEPRECATED    ("cache_timeout")
+#define CACHE_TIMEOUT_OF_WORKER     ("connection_pool_timeout")
 #define RECOVERY_OPTS_OF_WORKER     ("recovery_options")
 #define CONNECT_TIMEOUT_OF_WORKER   ("connect_timeout")
 #define PREPOST_TIMEOUT_OF_WORKER   ("prepost_timeout")
@@ -57,7 +58,7 @@
 #define SOCKET_TIMEOUT_OF_WORKER    ("socket_timeout")
 #define SOCKET_BUFFER_OF_WORKER     ("socket_buffer")
 #define SOCKET_KEEPALIVE_OF_WORKER  ("socket_keepalive")
-#define RECYCLE_TIMEOUT_OF_WORKER   ("recycle_timeout")
+#define RECYCLE_TIMEOUT_DEPRECATED  ("recycle_timeout")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
 #define DISTANCE_OF_WORKER          ("distance")
 /* deprecated directive. Use balance_workers instead */
@@ -596,12 +597,16 @@ int jk_get_worker_socket_keepalive(jk_map_t *m, const char *wname, int def)
 int jk_get_worker_cache_timeout(jk_map_t *m, const char *wname, int def)
 {
     char buf[1024];
+    int rv;
 
     if (!m || !wname) {
         return -1;
     }
 
     MAKE_WORKER_PARAM(CACHE_TIMEOUT_OF_WORKER);
+    if ((rv = jk_map_get_int(m, buf, -1)) >= 0)
+        return rv;
+    MAKE_WORKER_PARAM(CACHE_TIMEOUT_DEPRECATED);
 
     return jk_map_get_int(m, buf, def);
 }
@@ -647,15 +652,7 @@ int jk_get_worker_reply_timeout(jk_map_t *m, const char *wname, int def)
 
 int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def)
 {
-    char buf[1024];
-
-    if (!m || !wname) {
-        return -1;
-    }
-
-    MAKE_WORKER_PARAM(RECYCLE_TIMEOUT_OF_WORKER);
-
-    return jk_map_get_int(m, buf, def);
+    return def;
 }
 
 int jk_get_worker_retries(jk_map_t *m, const char *wname, int def)
@@ -1085,6 +1082,7 @@ static const char *unique_properties[] = {
     CACHE_OF_WORKER,
     CACHE_OF_WORKER_MIN,
     CACHE_TIMEOUT_OF_WORKER,
+    CACHE_TIMEOUT_DEPRECATED,
     RECOVERY_OPTS_OF_WORKER,
     CONNECT_TIMEOUT_OF_WORKER,
     PREPOST_TIMEOUT_OF_WORKER,
@@ -1092,7 +1090,7 @@ static const char *unique_properties[] = {
     SOCKET_TIMEOUT_OF_WORKER,
     SOCKET_BUFFER_OF_WORKER,
     SOCKET_KEEPALIVE_OF_WORKER,
-    RECYCLE_TIMEOUT_OF_WORKER,
+    RECYCLE_TIMEOUT_DEPRECATED,
     LOAD_FACTOR_OF_WORKER,
     STICKY_SESSION,
     STICKY_SESSION_FORCE,
@@ -1111,6 +1109,8 @@ static const char *unique_properties[] = {
 
 static const char *deprecated_properties[] = {
     CACHE_OF_WORKER_DEPRECATED,
+    CACHE_TIMEOUT_DEPRECATED,
+    RECYCLE_TIMEOUT_DEPRECATED,
     MX_OF_WORKER,
     MS_OF_WORKER,
     CP_OF_WORKER,

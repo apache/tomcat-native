@@ -261,8 +261,6 @@ struct ajp_worker
      */
     int (*logon) (ajp_endpoint_t * ae, jk_logger_t *l);
 
-    /* Reclycle inactive connections */
-    int recycle_timeout;
     /*
      * Handle Socket Timeouts
      */

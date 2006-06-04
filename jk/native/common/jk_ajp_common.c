@@ -866,7 +866,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
                    jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
         }
         /* set last_access only if needed */
-        if (ae->worker->cache_timeout > 0 || ae->worker->recycle_timeout > 0)
+        if (ae->worker->cache_timeout > 0)
             ae->last_access = time(NULL);
         /* Check if we must execute a logon after the physical connect */
         if (ae->worker->logon != NULL) {
@@ -1856,13 +1856,13 @@ static int ajp_create_endpoint_cache(ajp_worker_t *p, int proto, jk_logger_t *l)
     }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-                "setting connection cache size to %u with min %u",
+                "setting connection pool size to %u with min %u",
                 p->ep_cache_sz, p->ep_mincache_sz);
         for (i = 0; i < p->ep_cache_sz; i++) {
             p->ep_cache[i] = (ajp_endpoint_t *)calloc(1, sizeof(ajp_endpoint_t));
             if (!p->ep_cache[i]) {
                 jk_log(l, JK_LOG_ERROR,
-                        "creating endpont cache slot %d errno=%d",
+                        "creating endpont pool slot %d errno=%d",
                         i, errno);
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -1913,9 +1913,6 @@ int ajp_init(jk_worker_t *pThis,
                "setting socket keepalive to %d",
                p->keepalive);
 
-        p->recycle_timeout =
-            jk_get_worker_recycle_timeout(props, p->name, AJP13_DEF_TIMEOUT);
-
         p->cache_timeout =
             jk_get_worker_cache_timeout(props, p->name,
                                         AJP_DEF_CACHE_TIMEOUT);
@@ -1957,11 +1954,7 @@ int ajp_init(jk_worker_t *pThis,
                    p->socket_buf);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "setting connection recycle timeout to %d",
-                   p->recycle_timeout);
-
-            jk_log(l, JK_LOG_DEBUG,
-                   "setting cache timeout to %d",
+                   "setting connection pool timeout to %d",
                    p->cache_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
@@ -2001,7 +1994,7 @@ int ajp_init(jk_worker_t *pThis,
         }
         if (!ajp_create_endpoint_cache(p, proto, l)) {
             jk_log(l, JK_LOG_ERROR,
-                   "allocating ep_cache of size %u",
+                   "allocating connection pool of size %u",
                    p->ep_cache_sz);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
@@ -2080,7 +2073,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
             ajp_reset_endpoint(p, l);
             *e = NULL;
             /* set last_access only if needed */
-            if (w->cache_timeout > 0 || w->recycle_timeout > 0)
+            if (w->cache_timeout > 0)
                 p->last_access = time(NULL);
             JK_LEAVE_CS(&w->cs, rc);
             if (sock >= 0)
@@ -2088,7 +2081,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
             if (i >= 0) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                            "recycling connection cache slot=%u for worker %s",
+                            "recycling connection pool slot=%u for worker %s",
                             i, p->worker->name);
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
@@ -2097,7 +2090,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
              * there is always free empty cache slot
              */
             jk_log(l, JK_LOG_ERROR,
-                    "could not find empty cache slot from %u for worker %s",
+                    "could not find empty connection pool slot from %u for worker %s",
                     w->ep_cache_sz, w->name);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
@@ -2125,7 +2118,7 @@ int ajp_get_endpoint(jk_worker_t *pThis,
         time_t now = 0;
         int rc;
         /* Obtain current time only if needed */
-        if (aw->cache_timeout > 0 || aw->recycle_timeout > 0)
+        if (aw->cache_timeout > 0)
             now = time(NULL);
         *je = NULL;
 
@@ -2145,7 +2138,7 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                 JK_LEAVE_CS(&aw->cs, rc);
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                           "acquired connection cache slot=%u",
+                           "acquired connection pool slot=%u",
                            slot);
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
@@ -2185,7 +2178,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, jk_logger_t *l)
         time_t now;
         int rc;
         /* Obtain current time only if needed */
-        if (aw->cache_timeout > 0 || aw->recycle_timeout > 0)
+        if (aw->cache_timeout > 0)
             now = time(NULL);
         else {
             /* Nothing to do. */
@@ -2200,8 +2193,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, jk_logger_t *l)
                 /* Skip the closed sockets */
                 if (aw->ep_cache[i] && aw->ep_cache[i]->sd >= 0) {
                     int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
-                    if (((aw->cache_timeout > 0) && (elapsed > aw->cache_timeout)) ||
-                        ((aw->recycle_timeout > 0) && (elapsed > aw->recycle_timeout))) {
+                    if ((aw->cache_timeout > 0) && (elapsed > aw->cache_timeout)) {
                         time_t rt = 0;
                         n++;
                         if (JK_IS_DEBUG_LEVEL(l))
@@ -2210,14 +2202,14 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, jk_logger_t *l)
                         ajp_reset_endpoint(aw->ep_cache[i], l);
                         if (JK_IS_DEBUG_LEVEL(l))
                             jk_log(l, JK_LOG_DEBUG,
-                                    "cleaning cache slot=%u elapsed %d in %d",
+                                    "cleaning pool slot=%u elapsed %d in %d",
                                     i, elapsed, (int)(difftime(time(NULL), rt)));
                     }
                 }
                 if (n > aw->ep_mincache_sz) {
                     if (JK_IS_DEBUG_LEVEL(l)) {
                         jk_log(l, JK_LOG_DEBUG,
-                        "reached cache min size %u from %u cache slots",
+                        "reached pool min size %u from %u cache slots",
                         aw->ep_mincache_sz, aw->ep_cache_sz);
                     }
                     break;
@@ -2225,7 +2217,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, jk_logger_t *l)
             }
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                        "recycled %u sockets in %d seconds from %u cache slots",
+                        "recycled %u sockets in %d seconds from %u pool slots",
                         n, (int)(difftime(time(NULL), now)),
                         aw->ep_cache_sz);
             JK_LEAVE_CS(&aw->cs, rc);
