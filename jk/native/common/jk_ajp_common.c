@@ -1753,6 +1753,10 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             }
             if (err == JK_CLIENT_ERROR) {
                 *is_error = JK_HTTP_BAD_REQUEST;
+                if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+                    /* Mark the endpoint for shutdown */
+                    p->reuse = JK_FALSE;
+                }
                 jk_log(l, JK_LOG_INFO,
                        "Sending request to tomcat failed, "
                        "because of client error "

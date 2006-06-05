@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Added RECOVER_ABORT_IF_CLIENTERROR recovery_option that closes
+      the connection if client connection is broken during the request. (mturk)
+      </update>
+      <update>
       Renamed cache_timeout firective to connection_pool_timeout. (mturk)
       </update>
       <update>
