@@ -184,7 +184,7 @@ This feature has been added in <b>jk 1.2.16</b>.
 
 <directive name="connection_pool_timeout" default="0" required="false">
 Cache timeout property should be used with <b>connection_pool_size</b> to specify how long JK should keep
-an incative socket in cache before closing it. This property should be used to reduce the number of threads
+an inactive socket in cache before closing it. This property should be used to reduce the number of threads
 on the Tomcat WebServer.
 <p>
 Each child could open an ajp13 connection if it have to forward a request to Tomcat, creating

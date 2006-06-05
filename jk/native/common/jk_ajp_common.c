@@ -1862,7 +1862,7 @@ static int ajp_create_endpoint_cache(ajp_worker_t *p, int proto, jk_logger_t *l)
             p->ep_cache[i] = (ajp_endpoint_t *)calloc(1, sizeof(ajp_endpoint_t));
             if (!p->ep_cache[i]) {
                 jk_log(l, JK_LOG_ERROR,
-                        "creating endpont pool slot %d errno=%d",
+                        "allocating endpoint slot %d errno=%d",
                         i, errno);
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
