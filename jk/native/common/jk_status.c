@@ -289,8 +289,15 @@ static const char *status_cmd(const char *param, const char *req, char *buf, siz
     *buf = '\0';
     if (!req)
         return NULL;
+    if (!param)
+        return NULL;
     sprintf(ps, "&%s=", param);
     p = strstr(req, ps);
+    if (!p) {
+        sprintf(ps, "%s=", param);
+        if (!strncmp(req, ps, strlen(ps)))
+            p = (char *)req;
+    }
     if (p) {
         p += strlen(ps);
         while (*p) {
@@ -885,8 +892,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
             jk_shm_unlock();
         }
         if (mime == 0) {
+            int refresh = status_int("refresh", s->query_string, -1);
             s->start_response(s, 200, "OK", headers_names, headers_vhtml, 3);
             s->write(s, JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
+            if (refresh >= 0) {
+                jk_printf(s, "\n<meta http-equiv=\"Refresh\" content=\"%d;url=%s?refresh=%d\">",
+                          refresh, s->req_uri, refresh);
+            }
             if (p->s_worker->css) {
                 jk_putv(s, "\n<link rel=\"stylesheet\" type=\"text/css\" href=\"",
                         p->s_worker->css, "\" />\n", NULL);
