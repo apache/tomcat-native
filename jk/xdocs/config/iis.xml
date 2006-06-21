@@ -72,6 +72,10 @@ A string value with the full path to workers.properties file
 A string value with is the full path to uriworkermap.properties file
 (for example <b>c:\jakarta-tomcat\conf\uriworkermap.properties</b>)
 </p></attribute>
+<attribute name="rewrite_rule_file" required="true"><p>
+A string value with is the full path to rewrite.properties file
+(for example <b>c:\jakarta-tomcat\conf\rewrite.properties</b>)
+</p></attribute>
 
 </attributes>
 </section> 
@@ -120,5 +124,31 @@ worker_mount_file=c:\jakarta-tomcat\conf\uriworkermap.properties
     </ul>
 </p>
 </section>
+
+<section name="Using a simple rewrite rules">
+<p>
+The ISAPI redirector with version 1.2.16 can do a simple URL rewriting. Althought not
+as powerfull as Apache Httpd's mod_rewrite, it allows a simple exchange of request uris
+</p>
+<p>
+The rule is in the form rewritten=real-url.
+</p>
+<p>
+The rules must be simple strings. For example:
+</p>
+<p>
+<source>
+# Simple rewrite rules
+
+/jsp/=/jsp-examples/
+/servlets/=/servlets-examples/
+
+</source>
+</p>
+<p>
+Note that the uriworkermap or mount point must point to that new rule.
+</p>
+</section>
+
 </body>
 </document>

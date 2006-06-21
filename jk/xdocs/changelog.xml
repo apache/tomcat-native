@@ -26,6 +26,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Added simple rewrite capability for IIS. Although simple it
+      will fulfill most needs. (mturk)
+      </update>
+      <update>
       Added RECOVER_ABORT_IF_CLIENTERROR recovery_option that closes
       the connection if client connection is broken during the request. (mturk)
       </update>
