@@ -78,6 +78,7 @@ static char HTTP_WORKER_HEADER_NAME[_MAX_FNAME];
 #define URI_SELECT_PARSED_VERB      ("parsed")
 #define URI_SELECT_UNPARSED_VERB    ("unparsed")
 #define URI_SELECT_ESCAPED_VERB     ("escaped")
+#define URI_REWRITE_VERB            ("rewrite_rule_file")
 
 #define TRANSLATE_HEADER                              ("Translate:")
 #define TRANSLATE_HEADER_NAME                         ("Translate")
@@ -137,6 +138,8 @@ static int iis5 = -1;
 
 static jk_uri_worker_map_t *uw_map = NULL;
 static jk_map_t *workers_map = NULL;
+static jk_map_t *rewrite_map = NULL;
+
 static jk_logger_t *logger = NULL;
 static char *SERVER_NAME = "SERVER_NAME";
 static char *SERVER_SOFTWARE = "SERVER_SOFTWARE";
@@ -148,6 +151,7 @@ static char log_file[MAX_PATH * 2];
 static int log_level = JK_LOG_EMERG_LEVEL;
 static char worker_file[MAX_PATH * 2];
 static char worker_mount_file[MAX_PATH * 2] = {0};
+static char rewrite_rule_file[MAX_PATH * 2] = {0};
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -681,6 +685,22 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
     return TRUE;
 }
 
+static void simple_rewrite(char *uri)
+{
+    if (rewrite_map) {
+        int i;
+        char buf[INTERNET_MAX_URL_LENGTH];
+        for (i = 0; i < jk_map_size(rewrite_map); i++) {
+            const char *src = jk_map_name_at(rewrite_map, i);
+            if (strncmp(uri, src, strlen(src)) == 0) {
+                strcpy(buf, jk_map_value_at(rewrite_map, i));
+                strcat(buf, uri + strlen(src));
+                strcpy(uri, buf);
+            }
+        }
+    }
+}
+
 DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                             DWORD dwNotificationType, LPVOID pvNotification)
 {
@@ -895,6 +915,17 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 else {
                     forwardURI = uri;
                 }
+                /* Do a simple rewrite .
+                 * Note that URI can be escaped, so thus the rule has
+                 * to be in that case.
+                 *
+                 * TODO: Add more advanced regexp rewrite.
+                 */
+                simple_rewrite(forwardURI);
+                if (JK_IS_DEBUG_LEVEL(logger))
+                    jk_log(logger, JK_LOG_DEBUG,
+                           "rewriten URI [%s]",
+                           forwardURI);
 
                 if (!AddHeader(pfc, URI_HEADER_NAME, forwardURI) ||
                     ((query != NULL && strlen(query) > 0)
@@ -1172,8 +1203,24 @@ static int init_jk(char *serverName)
         jk_log(logger, JK_LOG_DEBUG, "Using worker file %s.", worker_file);
         jk_log(logger, JK_LOG_DEBUG, "Using worker mount file %s.",
                worker_mount_file);
+        jk_log(logger, JK_LOG_DEBUG, "Using rewrite rule file %s.",
+               rewrite_rule_file);
         jk_log(logger, JK_LOG_DEBUG, "Using uri select %d.", uri_select_option);
     }
+
+    if (rewrite_rule_file[0] && jk_map_alloc(&rewrite_map)) {
+        if (jk_map_read_properties(rewrite_map, rewrite_rule_file, NULL)) {
+            if (JK_IS_DEBUG_LEVEL(logger)) {
+                jk_log(logger, JK_LOG_DEBUG, "Loaded rewrite rule file %s.",
+                       rewrite_rule_file);
+
+            }
+            else {
+                jk_map_free(&rewrite_map);
+            }
+        }
+    }
+
     if (uri_worker_map_alloc(&uw_map, NULL, logger)) {
         rc = JK_FALSE;
         uw_map->fname = worker_mount_file;
@@ -1283,6 +1330,13 @@ static int read_registry_init_data(void)
         else {
             ok = JK_FALSE;
         }
+        tmp = jk_map_get_string(map, URI_REWRITE_VERB, NULL);
+        if (tmp) {
+            strcpy(rewrite_rule_file, tmp);
+        }
+        else {
+            ok = JK_FALSE;
+        }
         tmp = jk_map_get_string(map, URI_SELECT_TAG, NULL);
         if (tmp) {
             int opt = parse_uri_select(tmp);
@@ -1343,6 +1397,16 @@ static int read_registry_init_data(void)
                                           tmpbuf,
                                           sizeof(worker_mount_file))) {
             strcpy(worker_mount_file, tmpbuf);
+        }
+        else {
+            ok = JK_FALSE;
+        }
+
+        if (get_registry_config_parameter(hkey,
+                                          URI_REWRITE_VERB,
+                                          tmpbuf,
+                                          sizeof(rewrite_rule_file))) {
+            strcpy(rewrite_rule_file, tmpbuf);
         }
         else {
             ok = JK_FALSE;
