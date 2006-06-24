@@ -1752,12 +1752,8 @@ static const command_rec jk_cmds[] = {
  */
 static apr_status_t jk_cleanup_shmem(void *data)
 {
-    jk_logger_t *l = data;
     jk_shm_close();
-    if (l && JK_IS_DEBUG_LEVEL(l))
-       jk_log(l, JK_LOG_DEBUG, "Shmem cleanup");
-
-    return 0;
+    return APR_SUCCESS;
 }
 
 /** Main service method, called to forward a request to tomcat
