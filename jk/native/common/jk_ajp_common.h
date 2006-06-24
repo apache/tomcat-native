@@ -355,7 +355,7 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
 int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
                                    jk_msg_buf_t *msg, jk_logger_t *l);
 
-int JK_METHOD ajp_maintain(jk_worker_t *pThis, jk_logger_t *l);
+int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l);
 
 #ifdef __cplusplus
 }

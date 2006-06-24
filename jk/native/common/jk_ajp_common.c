@@ -2173,18 +2173,15 @@ int ajp_get_endpoint(jk_worker_t *pThis,
     return JK_FALSE;
 }
 
-int JK_METHOD ajp_maintain(jk_worker_t *pThis, jk_logger_t *l)
+int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
 
     if (pThis && pThis->worker_private) {
         ajp_worker_t *aw = pThis->worker_private;
-        time_t now;
         int rc;
         /* Obtain current time only if needed */
-        if (aw->cache_timeout > 0)
-            now = time(NULL);
-        else {
+        if (aw->cache_timeout < 1) {
             /* Nothing to do. */
             JK_TRACE_EXIT(l);
             return JK_TRUE;

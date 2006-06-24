@@ -226,10 +226,10 @@ static void close_workers(lb_worker_t * p, int num_of_workers, jk_logger_t *l)
  */
 static void recover_workers(lb_worker_t *p,
                             jk_uint64_t curmax,
+                            time_t now,
                             jk_logger_t *l)
 {
     unsigned int i;
-    time_t now = time(NULL);
     int elapsed;
     worker_record_t *w = NULL;
     JK_TRACE_ENTER(l);
@@ -270,6 +270,7 @@ static jk_uint64_t decay_load(lb_worker_t *p,
 {
     unsigned int i;
     jk_uint64_t curmax = 0;
+
     JK_TRACE_ENTER(l);
     if (p->lbmethod != JK_LB_BYBUSYNESS) {
         for (i = 0; i < p->num_of_workers; i++) {
@@ -283,32 +284,32 @@ static jk_uint64_t decay_load(lb_worker_t *p,
     return curmax;
 }
 
-static int JK_METHOD maintain_workers(jk_worker_t *p, jk_logger_t *l)
+static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l)
 {
     unsigned int i = 0;
     jk_uint64_t curmax = 0;
     long delta;
-    time_t now = time(NULL);
-    JK_TRACE_ENTER(l);
+    now = time(NULL);
 
+    JK_TRACE_ENTER(l);
     if (p && p->worker_private) {
         lb_worker_t *lb = (lb_worker_t *)p->worker_private;
 
         for (i = 0; i < lb->num_of_workers; i++) {
             if (lb->lb_workers[i].w->maintain) {
-                lb->lb_workers[i].w->maintain(lb->lb_workers[i].w, l);
+                lb->lb_workers[i].w->maintain(lb->lb_workers[i].w, now, l);
             }
         }
 
         jk_shm_lock();
 
-/* Now we check for global maintenance (once for all processes).
- * Checking workers for recovery and applying decay to the
- * load values should not be done by each process individually.
- * Therefore we globally sync and we use a global timestamp.
- * Since it's possible that we come here a few milliseconds
- * before the interval has passed, we allow a little tolerance.
- */
+        /* Now we check for global maintenance (once for all processes).
+         * Checking workers for recovery and applying decay to the
+         * load values should not be done by each process individually.
+         * Therefore we globally sync and we use a global timestamp.
+         * Since it's possible that we come here a few milliseconds
+         * before the interval has passed, we allow a little tolerance.
+         */
         delta = (long)difftime(now, lb->s->last_maintain_time) + JK_LB_MAINTAIN_TOLERANCE;
         if (delta >= lb->maintain_time) {
             lb->s->last_maintain_time = now;
@@ -317,7 +318,7 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, jk_logger_t *l)
                        "decay with 2^%d",
                        JK_LB_DECAY_MULT * delta / lb->maintain_time);
             curmax = decay_load(lb, JK_LB_DECAY_MULT * delta / lb->maintain_time, l);
-            recover_workers(lb, curmax, l);
+            recover_workers(lb, curmax, now, l);
         }
 
         jk_shm_unlock();

@@ -425,7 +425,7 @@ struct jk_worker
     /*
      * Maintain this worker.
      */
-    int (JK_METHOD * maintain) (jk_worker_t *w, jk_logger_t *l);
+    int (JK_METHOD * maintain) (jk_worker_t *w, time_t now, jk_logger_t *l);
 
 };
 

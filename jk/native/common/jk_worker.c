@@ -301,7 +301,7 @@ void wc_maintain(jk_logger_t *l)
                         jk_log(l, JK_LOG_DEBUG,
                                "Maintaining worker %s",
                                jk_map_name_at(worker_map, i));
-                    w->maintain(w, l);
+                    w->maintain(w, now, l);
                 }
             }
         }
