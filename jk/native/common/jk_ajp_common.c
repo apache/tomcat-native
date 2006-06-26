@@ -2188,7 +2188,12 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
         }
         JK_ENTER_CS(&aw->cs, rc);
         if (rc) {
-            unsigned int i, n = 0;
+            unsigned int i, n = 0, cnt = 0;
+            /* Count opended slots */
+            for (i = 0; i < aw->ep_cache_sz; i++) {
+                if (aw->ep_cache[i] && aw->ep_cache[i]->sd >= 0)
+                    cnt++;
+            }
             /* Handle worker cache and recycle timeouts */
             for (i = 0; i < aw->ep_cache_sz; i++) {
                 /* Skip the closed sockets */
@@ -2207,7 +2212,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
                                     i, elapsed, (int)(difftime(time(NULL), rt)));
                     }
                 }
-                if (n > aw->ep_mincache_sz) {
+                if ((cnt - n) < aw->ep_mincache_sz) {
                     if (JK_IS_DEBUG_LEVEL(l)) {
                         jk_log(l, JK_LOG_DEBUG,
                         "reached pool min size %u from %u cache slots",
