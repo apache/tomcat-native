@@ -289,7 +289,6 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l
     unsigned int i = 0;
     jk_uint64_t curmax = 0;
     long delta;
-    now = time(NULL);
 
     JK_TRACE_ENTER(l);
     if (p && p->worker_private) {
