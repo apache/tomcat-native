@@ -511,19 +511,19 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                         wr->s->jvm_route, ")</h3>\n", NULL);
                 jk_putv(s, "<form method=\"GET\" action=\"",
                         s->req_uri, "\">\n", NULL);
-                jk_puts(s, "<table>\n<input type=\"hidden\" name=\"cmd\" ");
+                jk_puts(s, "<input type=\"hidden\" name=\"cmd\" ");
                 jk_puts(s, "value=\"update\">\n");
                 jk_puts(s, "<input type=\"hidden\" name=\"w\" ");
                 jk_putv(s, "value=\"", wr->s->name, "\">\n", NULL);
                 jk_puts(s, "<input type=\"hidden\" name=\"id\" ");
-                jk_printf(s, "value=\"%u\">\n</table>\n", selected);
+                jk_printf(s, "value=\"%u\">\n", selected);
                 jk_puts(s, "<input type=\"hidden\" name=\"lb\" ");
-                jk_printf(s, "value=\"%u\">\n</table>\n", i);
+                jk_printf(s, "value=\"%u\">\n", i);
 
                 jk_puts(s, "<table>\n<tr><td>Distance:</td><td><input name=\"wx\" type=\"text\" ");
-                jk_printf(s, "value=\"%d\"/></td><tr>\n", wr->s->distance);
+                jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->s->distance);
                 jk_puts(s, "<tr><td>Load factor:</td><td><input name=\"wf\" type=\"text\" ");
-                jk_printf(s, "value=\"%d\"/></td><tr>\n", wr->s->lb_factor);
+                jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->s->lb_factor);
                 jk_puts(s, "<tr><td>Route Redirect:</td><td><input name=\"wr\" type=\"text\" ");
                 jk_putv(s, "value=\"", wr->s->redirect, NULL);
                 jk_puts(s, "\"/></td></tr>\n");
@@ -538,7 +538,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 if (wr->s->is_stopped)
                     jk_puts(s, "  checked=\"checked\"");
                 jk_puts(s, "/></td></tr>\n");
-                jk_puts(s, "</td></tr>\n</table>\n");
+                jk_puts(s, "</table>\n");
                 jk_puts(s, "<br/><input type=\"submit\" value=\"Update Worker\"/>\n</form>\n");
 
             }
@@ -548,12 +548,12 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                         dworker, "</h3>\n", NULL);
                 jk_putv(s, "<form method=\"GET\" action=\"",
                         s->req_uri, "\">\n", NULL);
-                jk_puts(s, "<table>\n<input type=\"hidden\" name=\"cmd\" ");
+                jk_puts(s, "<input type=\"hidden\" name=\"cmd\" ");
                 jk_puts(s, "value=\"update\"/>\n");
                 jk_puts(s, "<input type=\"hidden\" name=\"w\" ");
                 jk_putv(s, "value=\"", dworker, "\"/>\n", NULL);
                 jk_puts(s, "<input type=\"hidden\" name=\"id\" ");
-                jk_printf(s, "value=\"%u\"/>\n</table>\n", i);
+                jk_printf(s, "value=\"%u\"/>\n", i);
 
                 jk_puts(s, "<table>\n<tr><td>Retries:</td><td><input name=\"lr\" type=\"text\" ");
                 jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->s->retries);
@@ -578,7 +578,6 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                     "<th>Type</th><th>Host</th><th>Addr</th>"
                     "</tr>\n<tr>");
             jk_putv(s, "<td>", status_worker_type(w->type), "</td>", NULL);
-            jk_puts(s, "</tr>\n</table>\n");
             jk_printf(s, "<td>%s:%d</td>", aw->host, aw->port);
             jk_putv(s, "<td>", jk_dump_hinfo(&aw->worker_inet_addr, buf),
                     "</td>\n</tr>\n", NULL);
@@ -782,7 +781,7 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
         i = status_int("wf", s->query_string, wr->s->lb_factor);
         if (i > 0 && wr->s->lb_factor != i) {
             wr->s->lb_factor = i;
-/* Recalculate the load multiplicators wrt. lb_factor */
+            /* Recalculate the load multiplicators wrt. lb_factor */
             update_mult(lb, l);
         }
     }
