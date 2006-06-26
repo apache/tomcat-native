@@ -34,13 +34,64 @@
       the connection if client connection is broken during the request. (mturk)
       </update>
       <update>
-      Renamed cache_timeout firective to connection_pool_timeout. (mturk)
+      Renamed cache_timeout directive to connection_pool_timeout. (mturk)
       </update>
       <update>
       Added connection_pool_minsize directive. (mturk)
       </update>
       <update>
       Deprecate recycle_timeout directive. (mturk)
+      </update>
+      <update>
+      Corrected some HTML syntax bugs in output of status worker. (rjung)
+      </update>
+      <update>
+      Added the refresh=n parameter to the status worker. It will update the display every n seconds. (rjung)
+      </update>
+      <update>
+      Balancer: Add attribute distance to balanced workers to express preferences between workers. (rjung)
+      </update>
+      <update>
+      Balancer: Add attribute jvm_route to balanced workers to be able to use the same target in different balancers. (rjung)
+      </update>
+      <update>
+      Status: Add lb_mult to status. (rjung)
+      </update>
+      <update>
+      Balancer: Make different balancing strategies work in a similar way (use lb_value, use decay during global maintenance, use integer factors for weights. (rjung)
+      </update>
+      <update>
+      Balancer: Improve locking. (rjung)
+      </update>
+      <update>
+      Balancer: Workers start slower after recovering. (rjung)
+      </update>
+      <update>
+      Balancer: Make different balancing strategies work in a similar way (use lb_value, use decay during global maintenance, use integer factors lb_mult for weights). (rjung)
+      </update>
+      <update>
+      Balancer: Move recovery check to global maintenance. (rjung)
+      </update>
+      <update>
+      Balancer: Add global maintenance method, that is called in only one process. (rjung)
+      </update>
+      <update>
+      Extend our use of autoconf to find a 32Bit and a 64Bit unsigned type and their printf formats. (rjung)
+      </update>
+      <update>
+      Logging: piped loggers for JkLogFile and Apache 1.3. (rjung)
+      </update>
+      <update>
+      Logging: Add PID to log lines for each log level apart from REQUEST. (rjung)
+      </update>
+      <update>
+      Logging: flush buffered logs to keep lines in correct order. Output final newline together with log message. (rjung)
+      </update>
+      <update>
+      Reducing shm size. (rjung)
+      </update>
+      <update>
+      Only log removing of old worker, when we actually do it. (rjung)
       </update>
       <fix>
       <bug>37469</bug>: Fix shared memory close for forked childs.
