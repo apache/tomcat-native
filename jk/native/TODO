@@ -114,11 +114,11 @@ places and get time out of some variables when needed. The same does
 not hold true for millisecond time, but in several cases we use the time,
 it's not very critical, that it is exact. These cases are related to:
 
+Some of this is already been done, the remaining parts are:
+
 - last_access for usage against timeout value that is ~minutes
 - error_time for usage against retry timeout that is ~minutes
-- maintain_time for usage against transfer division interval, that is ~minutes
 - uri_worker_map checked for usage against JK_URIMAP_RELOAD=1 minute
-- check against worker_maintain_time which is ~minutes
 
 So I think, it would suffice to set an actual time at the beginning of
 the request/response cycle (used by everything before the request is being
@@ -127,8 +127,6 @@ sent over the socket) and maybe after the response shows up/ an error occurs
 
 For which cases would it be OK, to use the time before sending to TC:
 - uri_worker_map "checked" (uri map lookup starts early)
-- maintain (starts in front of the request)
-- "now" inside retry_worker could be taken from the calling maintain
 - setting/testing last_access in
   - jk_ajp_common.c:ajp_connect_to_endpoint()
   - jk_ajp_common.c:ajp_get_endpoint()
