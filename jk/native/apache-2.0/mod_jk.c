@@ -2192,8 +2192,8 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
                 }
                 rv = apr_global_mutex_unlock(jk_log_lock);
                 if (rv != APR_SUCCESS) {
-                    ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, NULL,
-                                  "apr_global_mutex_unlock(jk_log_lock) failed");
+                    ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL,
+                                 "apr_global_mutex_unlock(jk_log_lock) failed");
                     /* XXX: Maybe this should be fatal? */
                 }
             }
