@@ -2212,7 +2212,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
                                     i, elapsed, (int)(difftime(time(NULL), rt)));
                     }
                 }
-                if ((cnt - n) < aw->ep_mincache_sz) {
+                if ((cnt - n) <= aw->ep_mincache_sz) {
                     if (JK_IS_DEBUG_LEVEL(l)) {
                         jk_log(l, JK_LOG_DEBUG,
                         "reached pool min size %u from %u cache slots",
