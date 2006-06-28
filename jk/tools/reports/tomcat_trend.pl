@@ -16,9 +16,7 @@
 # limitations under the License.
 #
 
-# $Header$
-# $Revision$
-# $Date$
+# $Id$
 
 # Author:  Glenn Nielsen
 
