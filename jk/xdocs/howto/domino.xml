@@ -67,7 +67,7 @@ ${tomcat_home}\bin - Where you place web server plugins
 </ul>
 </p>
 <p>
-In all the examples in this document ${tomcat_home} will be <b>c:\jakarta-tomcat</b>.
+In all the examples in this document ${tomcat_home} will be <b>c:\tomcat</b>.
 A worker is defined to be a tomcat process that accepts work from the Domino server.
 </p>
 </subsection>
@@ -168,13 +168,13 @@ The simplest way is to edit the supplied file <b>tomcat_redirector.reg</b>, whic
   "log_level"="debug"
   "worker_file"="c:\\jk\\conf\\workers.properties"
   "worker_mount_file"="c:\\jk\\conf\\uriworkermap.properties"
-  "tomcat_start"="c:\\jakarta-tomcat\\bin\\tomcat.bat start"
-  "tomcat_stop"="c:\\jakarta-tomcat\\bin\\tomcat.bat stop"
+  "tomcat_start"="c:\\tomcat\\bin\\tomcat.bat start"
+  "tomcat_stop"="c:\\tomcat\\bin\\tomcat.bat stop"
 </source>
 
 <p>
 Edit this file to reflect the location where Tomcat has been installed, i.e. replace the instances 
-of <b>c:\\jakarta-tomcat</b> and <b>c:\\jk</b> with the appropriate path remembering to <b>retain the double backslashes</b>. 
+of <b>c:\\tomcat</b> and <b>c:\\jk</b> with the appropriate path remembering to <b>retain the double backslashes</b>. 
 </p>
 
 <p>
@@ -250,10 +250,10 @@ If all goes well you should see something like this on the server console when t
 
 <screen>
 <read>29/05/2001 18:54:13   JVM: Java Virtual Machine initialized.</read>
-<read>29/05/2001 18:54:14   Attempting to start Tomcat: c:\jakarta-tomcat\bin\tomcat.bat start</read>
-<read>Including all jars in c:\jakarta-tomcat\lib in your CLASSPATH.</read>
+<read>29/05/2001 18:54:14   Attempting to start Tomcat: c:\tomcat\bin\tomcat.bat start</read>
+<read>Including all jars in c:\tomcat\lib in your CLASSPATH.</read>
 <read/>
-<read>Using CLASSPATH: c:\jakarta-tomcat\classes;c:\jakarta-tomcat\lib\ant.jar;c:\jakarta-tomcat\lib\servlet.jar</read>
+<read>Using CLASSPATH: c:\tomcat\classes;c:\tomcat\lib\ant.jar;c:\tomcat\lib\servlet.jar</read>
 <read/>
 <read>Starting Tomcat in new window</read>
 <read>29/05/2001 18:54:15   Apache Tomcat Interceptor (Jakarta/DSAPI/1.0) loaded</read>

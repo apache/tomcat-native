@@ -15,14 +15,14 @@
  */
 
 /***************************************************************************
- * Description: Apache 2 plugin for Jakarta/Tomcat                         *
+ * Description: Apache 2 plugin for Tomcat                                 *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  *              Henri Gomez <hgomez@apache.org>                            *
  * Version:     $Revision$                                          *
  ***************************************************************************/
 
 /*
- * mod_jk: keeps all servlet/jakarta related ramblings together.
+ * mod_jk: keeps all servlet related ramblings together.
  */
 
 #include "ap_config.h"
@@ -86,7 +86,7 @@
 #include "unixd.h"      /* for unixd_set_global_mutex_perms */
 #endif
 /*
- * Jakarta (jk_) include files
+ * jk_ include files
  */
 #ifdef NETWARE
 #define __sys_types_h__
@@ -1619,7 +1619,7 @@ static const command_rec jk_cmds[] = {
      * servlet requests.
      */
     AP_INIT_TAKE1("JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF,
-                  "the name of a worker file for the Jakarta servlet containers"),
+                  "the name of a worker file for the Tomcat servlet containers"),
 
     /*
      * JkMountFile specifies a full path to the location of the
@@ -1629,7 +1629,7 @@ static const command_rec jk_cmds[] = {
      * to redirect servlet requests.
      */
     AP_INIT_TAKE1("JkMountFile", jk_set_mount_file, NULL, RSRC_CONF,
-                  "the name of a mount file for the Jakarta servlet uri mapping"),
+                  "the name of a mount file for the Tomcat servlet uri mapping"),
 
     /*
      * JkAutoMount specifies that the list of handled URLs must be
@@ -1665,29 +1665,29 @@ static const command_rec jk_cmds[] = {
      * JkLogStampFormat specify the time-stamp to be used on log
      */
     AP_INIT_TAKE1("JkLogFile", jk_set_log_file, NULL, RSRC_CONF,
-                  "Full path to the Jakarta Tomcat module log file"),
+                  "Full path to the Tomcat module log file"),
 
     AP_INIT_TAKE1("JkShmFile", jk_set_shm_file, NULL, RSRC_CONF,
-                  "Full path to the Jakarta Tomcat module shared memory file"),
+                  "Full path to the Tomcat module shared memory file"),
 
     AP_INIT_TAKE1("JkShmSize", jk_set_shm_size, NULL, RSRC_CONF,
                   "Size of the shared memory file in KBytes"),
 
     AP_INIT_TAKE1("JkLogLevel", jk_set_log_level, NULL, RSRC_CONF,
-                  "The Jakarta Tomcat module log level, can be debug, "
+                  "The Tomcat module log level, can be debug, "
                   "info, error or emerg"),
     AP_INIT_TAKE1("JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF,
-                  "The Jakarta Tomcat module log format, follow strftime synthax"),
+                  "The Tomcat module log format, follow strftime synthax"),
     AP_INIT_TAKE1("JkRequestLogFormat", jk_set_request_log_format, NULL,
                   RSRC_CONF,
-                  "The Jakarta mod_jk module request log format string"),
+                  "The mod_jk module request log format string"),
 
     /*
      * Automatically Alias webapp context directories into the Apache
      * document space.
      */
     AP_INIT_TAKE1("JkAutoAlias", jk_set_auto_alias, NULL, RSRC_CONF,
-                  "The Jakarta mod_jk module automatic context apache alias directory"),
+                  "The mod_jk module automatic context apache alias directory"),
 
     /*
      * Apache has multiple SSL modules (for example apache_ssl, stronghold

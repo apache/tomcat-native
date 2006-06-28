@@ -1,13 +1,13 @@
-README for jakarta-tomcat-connector
+README for tomcat-connector
 
 $Id$
 
 Please see doc/mod_jk-howto.html for more verbose instructions
 
-* What is jakarta-tomcat-connector ?
+* What is tomcat-connector ?
 
-jakarta-tomcat-connector is a new project to release web-servers connector
-for the jakarta Tomcat servlet engine.
+tomcat-connector is a new project to release web-servers connector
+for the Tomcat servlet engine.
 
 This project didn't start from null since it reuse the latest code from
 mod_jk for the native parts and tomcat 3.3 for the java side of the 

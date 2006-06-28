@@ -23,7 +23,7 @@
         <item name="Frequently asked questions"  href="faq.html"/>
         <item name="Changelog"             href="changelog.html"/>
         <item name="Tools"             href="common/tools.html"/>
-        <item name="Old JK/JK2 documentation" href="http://jakarta.apache.org/tomcat/connectors-doc-archive/jk2/index.html"/>
+        <item name="Old JK/JK2 documentation" href="http://tomcat.apache.org/connectors-doc-archive/jk2/index.html"/>
     </menu>
 
 </body>

@@ -15,7 +15,7 @@
  */
 
 /***************************************************************************
- * Description: NT System service for Jakarta/Tomcat                       *
+ * Description: NT System service for Tomcat                       *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  *              Dave Oxley <Dave@JungleMoss.com>                           *
  * Version:     $Revision$                                           *
@@ -618,7 +618,7 @@ static int set_registry_values(SC_HANDLE   schService, char *name,
     int rc;
     /* Api based */
     HANDLE hAdvApi32;
-    char *szDescription = "Jakarta Tomcat Server";
+    char *szDescription = "Tomcat Server";
     pfnChangeServiceConfig2_t pfnChangeServiceConfig2;
             
     if((hAdvApi32 = GetModuleHandle("advapi32.dll"))
@@ -791,9 +791,9 @@ static void AddToMessageLog(char *lpszMsg)
 
     dwErr = GetLastError();
 
-    hEventSource = RegisterEventSource(NULL, "Jakarta - Tomcat");
+    hEventSource = RegisterEventSource(NULL, "Tomcat");
 
-    sprintf(szMsg, "%s error: %d", "Jakarta - Tomcat", dwErr);
+    sprintf(szMsg, "%s error: %d", "Tomcat", dwErr);
     lpszStrings[0] = szMsg;
     lpszStrings[1] = lpszMsg;
 
@@ -972,7 +972,7 @@ static int exec_cmd(const char *name, HANDLE *hTomcat, char *cmdLine)
 
                         memset(&startupInfo, 0, sizeof(startupInfo));
                         startupInfo.cb = sizeof(startupInfo);
-                        startupInfo.lpTitle = "Jakarta Tomcat";
+                        startupInfo.lpTitle = "Tomcat";
                         startupInfo.dwFlags = STARTF_USESTDHANDLES;
                         startupInfo.hStdInput = NULL;
                         startupInfo.hStdOutput = CreateFile(data.stdout_file,

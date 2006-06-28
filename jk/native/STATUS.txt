@@ -1,4 +1,4 @@
-JAKARTA TOMCAT CONNECTORS (JK) STATUS:			-*-text-*-
+TOMCAT CONNECTORS (JK) STATUS:			-*-text-*-
 Last modified at [$Date$]
 
 Release:

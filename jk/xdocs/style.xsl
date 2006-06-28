@@ -63,7 +63,7 @@
       <xsl:comment>PAGE HEADER</xsl:comment>
       <tr><td colspan="2">
 
-        <xsl:comment>JAKARTA LOGO</xsl:comment>
+        <xsl:comment>TOMCAT LOGO</xsl:comment>
         <xsl:variable name="alt">
           <xsl:value-of select="$home-name"/>
         </xsl:variable>

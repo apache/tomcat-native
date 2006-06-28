@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <project name="Application Developer's Guide"
-        href="http://jakarta.apache.org/tomcat/">
+        href="http://tomcat.apache.org/">
 
-    <title>Jakarta Tomcat Connector</title>
+    <title>Tomcat Connector</title>
 
     <logo href="/images/tomcat.gif">
-    Jakarta Tomcat Connector
+    Tomcat Connector
     </logo>    
 <body>
 

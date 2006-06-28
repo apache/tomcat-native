@@ -58,7 +58,7 @@ A string value pointing to the ISAPI extension <b>/jakarta/isapi_redirect.dll</b
 </p></attribute>
 <attribute name="log_file" required="false"><p>
 A value pointing to location where log file will be created.
-(for example <b>c:\jakarta-tomcat\logs\isapi.log</b>)
+(for example <b>c:\tomcat\logs\isapi.log</b>)
 </p></attribute>
 <attribute name="log_level" required="false"><p>
 A string value for log level 
@@ -66,15 +66,15 @@ A string value for log level
 </p></attribute>
 <attribute name="worker_file" required="true"><p>
 A string value with the full path to workers.properties file
-(for example <b>c:\jakarta-tomcat\conf\workers.properties</b>)
+(for example <b>c:\tomcat\conf\workers.properties</b>)
 </p></attribute>
 <attribute name="worker_mount_file" required="true"><p>
 A string value with is the full path to uriworkermap.properties file
-(for example <b>c:\jakarta-tomcat\conf\uriworkermap.properties</b>)
+(for example <b>c:\tomcat\conf\uriworkermap.properties</b>)
 </p></attribute>
 <attribute name="rewrite_rule_file" required="true"><p>
 A string value with is the full path to rewrite.properties file
-(for example <b>c:\jakarta-tomcat\conf\rewrite.properties</b>)
+(for example <b>c:\tomcat\conf\rewrite.properties</b>)
 </p></attribute>
 
 </attributes>
@@ -100,16 +100,16 @@ The property names and values in the properties file are the same as for the reg
 extension_uri=/jakarta/isapi_redirect.dll
 
 # Full path to the log file for the ISAPI Redirector
-log_file=c:\jakarta-tomcat\logs\isapi_redirect.log
+log_file=c:\tomcat\logs\isapi_redirect.log
 
 # Log level (debug, info, warn, error or trace)
 log_level=info
 
 # Full path to the workers.properties file
-worker_file=c:\jakarta-tomcat\conf\workers.properties
+worker_file=c:\tomcat\conf\workers.properties
 
 # Full path to the uriworkermap.properties file
-worker_mount_file=c:\jakarta-tomcat\conf\uriworkermap.properties
+worker_mount_file=c:\tomcat\conf\uriworkermap.properties
 </source>
 </p>
 <p>

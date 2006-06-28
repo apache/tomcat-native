@@ -64,7 +64,7 @@ ${tomcat_home}\bin - Where you place web server plugins
 </ul>
 </p>
 <p>
-In all the examples in this document ${tomcat_home} will be <b>c:\jakarta-tomcat</b>.
+In all the examples in this document ${tomcat_home} will be <b>c:\tomcat</b>.
 A worker is defined to be a tomcat process that accepts work from the Sun ONE Web Server.
 </p>
 </subsection>
@@ -149,10 +149,10 @@ The extension collects the response from the worker and returns it to the browse
 <section name="Installation">
 <p>
 A pre-built version of the NSAPI redirector, nsapi_redirect.dll, may be available under 
-the win32/i386 directory of jakarta-tomcat-connectors distribution. 
+the win32/i386 directory of tomcat-connectors distribution. 
 For those using Netscape as your browser, try downloading a zip version of the file, if available. 
 
-You can also build a copy locally from the source present in jakarta-tomcat-connectors distribution.
+You can also build a copy locally from the source present in tomcat-connectors distribution.
 
 
 The Tomcat redirector requires two entities:
@@ -293,7 +293,7 @@ that covers the Tomcat context.
 
 <p>
 For example, adding a /example Netscape virtual directory that 
-covers the <b>c:\jakarta-tomcat\webapps\examples</b> directory. 
+covers the <b>c:\tomcat\webapps\examples</b> directory. 
 </p>
 
 <p>
@@ -301,7 +301,7 @@ To add a new virtual directory add the following line to your <b>obj.conf</b>:
 </p>
 
 <source>
-  NameTrans fn=pfx2dir from=/examples dir="c:/jakarta-tomcat/webapps/examples"
+  NameTrans fn=pfx2dir from=/examples dir="c:/tomcat/webapps/examples"
 </source>
 
 <p>

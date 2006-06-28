@@ -95,7 +95,8 @@
 	</ul>
 </p>
 <p>
-	You'll find prebuilt binaries <a href="http://jakarta.apache.org/site/binindex.cgi/">here</a>
+	You'll find a link to prebuilt binaries
+        <a href="http://tomcat.apache.org/download-connectors.cgi/">here</a>
 </p>
 <p>
     Here is the minimum which should be set in <b>httpd.conf</b> directly or 

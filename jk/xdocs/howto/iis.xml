@@ -63,7 +63,7 @@ ${tomcat_home}\bin - Where you place web server plugins
 </ul>
 </p>
 <p>
-In all the examples in this document ${tomcat_home} will be <b>c:\jakarta-tomcat</b>.
+In all the examples in this document ${tomcat_home} will be <b>c:\tomcat</b>.
 A worker is defined to be a tomcat process that accepts work from the IIS server.
 </p>
 </subsection>
@@ -94,7 +94,7 @@ more about the in-process mode can be found in the in process howto.
 <subsection name="IIS 5 and 6 Notes">
 <p>
 There are extra steps you need to take for configuring Tomcat with IIS 5 and 6.  Please see the appropriate links from 
-<a href="http://wiki.apache.org/jakarta-tomcat/Tomcat_2fLinks">Tomcat Useful Links</a>.
+<a href="http://wiki.apache.org/tomcat/Tomcat/Links">Tomcat Useful Links</a>.
 </p>
 </subsection>
 
@@ -146,11 +146,11 @@ The extension collects the response from the worker and returns it to the browse
 <section name="Installation">
 <p>
 A pre-built version of the ISAPI redirector server plugin, isapi_redirect.dll, is available under 
-the win32/i386 directory of jakarta-tomcat-connectors distribution. 
+the win32/i386 directory of tomcat-connectors distribution. 
 For those using Netscape as your browser, try downloading a zip version of the file, if available. 
 There can be problems using Netscape to download DLL files.
 
-You can also build a copy locally from the source present in jakarta-tomcat-connectors distribution.
+You can also build a copy locally from the source present in tomcat-connectors distribution.
 
 The Tomcat redirector requires three entities:
 
@@ -187,8 +187,8 @@ Adding more contexts to the configuration.
 <section name="Configuring the ISAPI Redirector">
 <p>
 In this document I will assume that isapi_redirect.dll is placed in 
-<b>c:\jakarta-tomcat\bin\win32\i386\isapi_redirect.dll</b> and 
-that you created the properties files are in <b>c:\jakarta-tomcat\conf</b>.
+<b>c:\tomcat\bin\win32\i386\isapi_redirect.dll</b> and 
+that you created the properties files are in <b>c:\tomcat\conf</b>.
 </p>
 <p>
 <ol>
@@ -201,7 +201,7 @@ Add a string value with the name <b>extension_uri</b> and a value of <b>/jakarta
 </li>
 <li>
 Add a string value with the name <b>log_file</b> and a value pointing to where you want your 
-log file to be (for example <b>c:\jakarta-tomcat\logs\isapi.log</b>).
+log file to be (for example <b>c:\tomcat\logs\isapi.log</b>).
 </li>
 <li>
 Add a string value with the name <b>log_level</b> and a value for your log level 
@@ -209,30 +209,30 @@ Add a string value with the name <b>log_level</b> and a value for your log level
 </li>
 <li>
 Add a string value with the name <b>worker_file</b> and a value which is the full path 
-to your workers.properties file (for example <b>c:\jakarta-tomcat\conf\workers.properties</b>)
+to your workers.properties file (for example <b>c:\tomcat\conf\workers.properties</b>)
 </li>
 <li>
 Add a string value with the name <b>worker_mount_file</b> and a value which is the full path 
-to your uriworkermap.properties file (for example <b>c:\jakarta-tomcat\conf\uriworkermap.properties</b>)
+to your uriworkermap.properties file (for example <b>c:\tomcat\conf\uriworkermap.properties</b>)
 </li>
 <li>
 Using the IIS management console, add a new virtual directory to your IIS/PWS web site.
 The name of the virtual directory must be jakarta. 
 Its physical path should be the directory where you placed isapi_redirect.dll 
-(in our example it is c:\jakarta-tomcat\bin\win32\i386). 
+(in our example it is c:\tomcat\bin\win32\i386). 
 While creating this new virtual directory assign it with execute access.
 </li>
 <li>
 Using the IIS management console, add isapi_redirect.dll as a filter in your IIS/PWS web site. 
-The name of the filter should reflect its task (I use the name jakarta), 
-its executable must be our c:\jakarta-tomcat\bin\win32\i386\isapi_redirect.dll. 
+The name of the filter should reflect its task (I use the name tomcat), 
+its executable must be our c:\tomcat\bin\win32\i386\isapi_redirect.dll. 
 For PWS, you'll need to use regedit and add/edit the <b>"Filter DLLs"</b> key under 
 <b>HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\W3SVC\Parameters</b>. 
 This key contains a "," separated list of dlls ( full paths ) - 
 you need to insert the full path to isapi_redirect.dll.
 </li>
 <li>
-Restart IIS (stop + start the IIS service), make sure that the jakarta filter is marked with a green up-pointing arrow.
+Restart IIS (stop + start the IIS service), make sure that the tomcat filter is marked with a green up-pointing arrow.
 Under Win98 you may need to <b>cd WINDOWS\SYSTEM\inetsrv</b> and type PWS /stop 
 ( the DLL and log files are locked - even if you click the stop button, 
 PWS will still keep the DLLs in memory. ). Type pws to start it again.
@@ -328,7 +328,7 @@ Configuring the redirector to leave the static files for IIS
 
 <p>
 Adding a Tomcat context to IIS requires the addition of a new IIS virtual directory that covers the Tomcat context. 
-For example adding a /example IIS virtual directory that covers the c:\jakarta-tomcat\webapps\examples directory.
+For example adding a /example IIS virtual directory that covers the c:\tomcat\webapps\examples directory.
 </p>
 
 <p>
@@ -626,7 +626,7 @@ If the above are set correctly, the ISAPI redirector should be able to create th
 </ul>
 
 <p>
-Check the jakarta filter you added and make sure its status shows a green upward-pointing arrow. 
+Check the tomcat filter you added and make sure its status shows a green upward-pointing arrow. 
 If not, check the following:
 </p>
 <ul>

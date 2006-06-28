@@ -1,4 +1,4 @@
-Jakarta Tomcat Connector 
+Tomcat Connector 
 
 This package contains only the tomcat connector:
 

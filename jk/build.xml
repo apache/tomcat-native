@@ -105,7 +105,7 @@
     </target>
 
     <target name="detect" >
-        <echo message="-------- jakarta-tomcat-connectors --------" /> 
+        <echo message="-------- tomcat-connectors --------" /> 
         <available property="tomcat33.detect" 
                    file="${tc3-core.jar}" />
         <available property="tomcat40.detect" 

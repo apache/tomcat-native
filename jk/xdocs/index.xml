@@ -43,10 +43,10 @@ of Jakarta Tomcat Connectors 1.2.15 Stable.
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.14 Stable.
 </p>
-<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.14/jakarta-tomcat-connectors-1.2.14.1-src.tar.gz">JK 1.2.14 release sources</a>
- | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.14/jakarta-tomcat-connectors-1.2.14.1-src.tar.gz.asc">PGP signature</a>
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.14/jakarta-tomcat-connectors-1.2.14.1-src.tar.gz">JK 1.2.14 release sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.14/jakarta-tomcat-connectors-1.2.14.1-src.tar.gz.asc">PGP signature</a>
 </p>
-<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
 </p>
 </li>
 
@@ -54,50 +54,50 @@ of Jakarta Tomcat Connectors 1.2.14 Stable.
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.13 tarbals for testing.
 </p>
-<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.13/jakarta-tomcat-connectors-1.2.13-src.tar.gz">JK 1.2.13 release sources</a>
- | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.13/jakarta-tomcat-connectors-1.2.13-src.tar.gz.asc">PGP signature</a>
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.13/jakarta-tomcat-connectors-1.2.13-src.tar.gz">JK 1.2.13 release sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.13/jakarta-tomcat-connectors-1.2.13-src.tar.gz.asc">PGP signature</a>
 </p>
-<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
 </p>
 </li>
 <li><a href="news/20050101.html#20050507.1">7 May 2005 - <b>JK-1.2.12 released</b></a>
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.12.
 </p>
-<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.12/jakarta-tomcat-connectors-1.2.12-src.tar.gz">JK 1.2.12 release sources</a>
- | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.12/jakarta-tomcat-connectors-1.2.12-src.tar.gz.asc">PGP signature</a>
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.12/jakarta-tomcat-connectors-1.2.12-src.tar.gz">JK 1.2.12 release sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.12/jakarta-tomcat-connectors-1.2.12-src.tar.gz.asc">PGP signature</a>
 </p>
-<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
 </p>
 </li>
 <li><a href="news/20050101.html#20050429.1">29 April 2005 - <b>JK-1.2.11 released</b></a>
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.11.
 </p>
-<p>Downlad the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.11/jakarta-tomcat-connectors-1.2.11-src.tar.gz">JK 1.2.11 release sources</a>
- | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.11/jakarta-tomcat-connectors-1.2.11-src.tar.gz.asc">PGP signature</a>
+<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.11/jakarta-tomcat-connectors-1.2.11-src.tar.gz">JK 1.2.11 release sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.11/jakarta-tomcat-connectors-1.2.11-src.tar.gz.asc">PGP signature</a>
 </p>
-<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
 </p>
 </li>
 <li><a href="news/20050101.html#20050330.1">30 March 2005 - <b>JK-1.2.10 released</b></a>
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.10.
 </p>
-<p>Downlad the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.10/jakarta-tomcat-connectors-1.2.10-src.tar.gz">JK 1.2.10 release sources</a>
- | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.10/jakarta-tomcat-connectors-1.2.10-src.tar.gz.asc">PGP signature</a>
+<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.10/jakarta-tomcat-connectors-1.2.10-src.tar.gz">JK 1.2.10 release sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.10/jakarta-tomcat-connectors-1.2.10-src.tar.gz.asc">PGP signature</a>
 </p>
-<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
 </p>
 </li>
 <li><a href="news/20041100.html#20041224.1">24 December 2004 - <b>JK-1.2.8 released</b></a>
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.8.
 </p>
-<p>Downlad the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.8/jakarta-tomcat-connectors-1.2.8-src.tar.gz">JK 1.2.8 release sources</a>
- | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jk-1.2.8/jakarta-tomcat-connectors-1.2.8-src.tar.gz.asc">PGP signature</a>
+<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.8/jakarta-tomcat-connectors-1.2.8-src.tar.gz">JK 1.2.8 release sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.8/jakarta-tomcat-connectors-1.2.8-src.tar.gz.asc">PGP signature</a>
 </p>
-<p>Download the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
 </p>
 </li>
 <li><a href="news/20041100.html#20041218.1">17 December 2004 - <b>JK-1.2.8-rc-1 released</b></a>
@@ -108,8 +108,8 @@ of Jakarta Tomcat Connectors 1.2.8-rc-1 (Relase Canditate 1).
 We expect it to be ratified as a Stable release when the vote takes place
 in the next week.
 </p> 
-<p>Downlad the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.8-rc-1.tar.gz">JK 1.2.8 release candidate 1 sources</a>
- | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.8-rc-1.tar.gz.asc">PGP signature</a>
+<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.8-rc-1.tar.gz">JK 1.2.8 release candidate 1 sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.8-rc-1.tar.gz.asc">PGP signature</a>
 </p>
 </li>
 <li><a href="news/20041100.html#20041213.1">13 December 2004 - <b>JK-1.2.7-beta-3 released</b></a>
@@ -117,8 +117,8 @@ in the next week.
 of Jakarta Tomcat Connectors 1.2.7-beta-3. The release contains a fix to few configuraton
 problems detected with JK-1.2.7-beta-2 version. 
 </p>
-<p>Downlad the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-3.tar.gz">JK 1.2.7 beta sources</a>
- | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-3.tar.gz.asc">PGP signature</a>
+<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-3.tar.gz">JK 1.2.7 beta sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-3.tar.gz.asc">PGP signature</a>
 </p>
 </li>
 <li><a href="news/20041100.html#20041207.1">7 December 2004 - <b>JK-1.2.7-beta-2 released</b></a>
@@ -126,8 +126,8 @@ problems detected with JK-1.2.7-beta-2 version.
 of Jakarta Tomcat Connectors 1.2.7-beta-2. The release contains a fix to few compilation
 problems detected with JK-1.2.7-beta version. 
 </p>
-<p>Downlad the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-2.tar.gz">JK 1.2.7 beta sources</a>
- | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-2.tar.gz.asc">PGP signature</a>
+<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-2.tar.gz">JK 1.2.7 beta sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-2.tar.gz.asc">PGP signature</a>
 </p>
 </li>
 <li><a href="news/20041100.html#20041130.1">30 November 2004 - <b>JK-1.2.7-beta released</b></a>
@@ -135,8 +135,8 @@ problems detected with JK-1.2.7-beta version.
 of Jakarta Tomcat Connectors 1.2.7-beta. The release contains a significant number
 of bug fixes and new features. 
 </p>
-<p>Downlad the <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-1.tar.gz">JK 1.2.7 beta sources</a>
- | <a href="http://www.apache.org/dist/jakarta/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-1.tar.gz.asc">PGP signature</a>
+<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-1.tar.gz">JK 1.2.7 beta sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-1.tar.gz.asc">PGP signature</a>
 </p>
 </li>
 <li><a href="news/20041100.html#20041115.1">15 November 2004 - <b>JK2 is officially unsupported!</b></a>
@@ -238,7 +238,7 @@ port the protocol to some other container.
 mod-proxy in httpd-2.1 offers an AJP connection as well as load balancing.
 </p>
 </li>
-<li><a href="http://jakarta.apache.org/tomcat/connectors-doc-archive/jk2/index.html">
+<li><a href="http://tomcat.apache.org/connectors-doc-archive/jk2/index.html">
 <b>Old JK/JK2 documentation archive.</b></a>
 <p>Here you can find old JK and JK2 documentation.
 </p>

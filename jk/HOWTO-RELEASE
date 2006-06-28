@@ -1,11 +1,13 @@
 		How to do a mod_jk 1.2 release
 
-If you haven't already, add your public PGP key to
-jakarta-tomcat-connectors/KEYS.
-
-Check out a clean copy of jakarta-tomcat-connectors from CVS to
+Check out a clean copy of tomcat/connectors from subversion to
 make sure you don't have any lingering configure or build files.
 This will make sure that the source distribution created is clean.
+
+We assume, that you check out to a directory tomcat-connectors.
+
+If you haven't already, add your public PGP key to
+tomcat-connectors/KEYS.
 
 Update version numbers as needed
 --------------------------------
@@ -21,182 +23,162 @@ xdocs/howto/workers.xml
 Update the version in jk/native/configure.in.
 
 Update the version in jk/native/common/jk_version.h, here is
-a cvs diff that shows what I changed:
+a svn diff that shows what I changed:
 
 Index: native/common/jk_version.h
 ===================================================================
-RCS file: /home/cvs/jakarta-tomcat-connectors/jk/native/common/jk_version.h,v
-retrieving revision 1.9
-diff -c -w -r1.9 jk_version.h
-*** native/common/jk_version.h  17 Dec 2002 10:36:16 -0000      1.9
---- native/common/jk_version.h  26 Apr 2003 18:05:27 -0000
-***************
-*** 67,80 ****
-  /************** START OF AREA TO MODIFY BEFORE RELEASING *************/
-  #define JK_VERMAJOR     1
-  #define JK_VERMINOR     2
-! #define JK_VERFIX       2
-  #define JK_VERSTRING    "1.2.5"
-  
-  /* Beta number */
-  #define JK_VERBETA      0
-  #define JK_BETASTRING   "1"
-  /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
-! #define JK_VERISRELEASE 0
-  /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
-  
-  #define PACKAGE "mod_jk/"
---- 67,80 ----
-  /************** START OF AREA TO MODIFY BEFORE RELEASING *************/
-  #define JK_VERMAJOR     1
-  #define JK_VERMINOR     2
-! #define JK_VERFIX       3
-  #define JK_VERSTRING    "1.2.5"
-  
-  /* Beta number */
-  #define JK_VERBETA      0
-  #define JK_BETASTRING   "1"
-  /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
-! #define JK_VERISRELEASE 1
-  /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
-  
-  #define PACKAGE "mod_jk/"
+--- native/common/jk_version.h  (revision 417260)
++++ native/common/jk_version.h  (working copy)
+@@ -32,7 +32,7 @@
+ #define JK_VERBETA      0
+ #define JK_BETASTRING   "0"
+ /* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
+-#define JK_VERISRELEASE 0
++#define JK_VERISRELEASE 1
+ #define JK_VERRC        0
+ #define JK_RCSTRING     "0"
 
-After updating revision numbers, commit your changes to CVS.
+After updating revision numbers, commit your changes to subversion.
 
-Tag and branch jakarta-tomcat-connectors in CVS
-------------------------
+Tag and branch tomcat-connectors in subversion
+----------------------------------------------
 
-Change directory (cd) to jakarta-tomcat-connectors
-Use the pattern below for branching and tagging the jakarta-tomcat-connectors directory.
+Use the pattern below for branching and tagging the tomcat-connectors directory.
 
-cvs tag -b JK_{MAJOR_REVISION}_{MINOR_REVISION}_{RELEASE}
+TAG=JK_{MAJOR_REVISION}_{MINOR_REVISION}_{RELEASE}
 
-Here is an example for mod_jk 1.2.5
+svn copy \
+   https://svn.apache.org/repos/asf/tomcat/connectors/trunk/ \
+   https://svn.apache.org/repos/asf/tomcat/connectors/tags/jk1.2.x/TAG/
 
-cvs tag -b JK_1_2_5
+Here is an example for mod_jk 1.2.16
+
+svn copy \
+   https://svn.apache.org/repos/asf/tomcat/connectors/trunk/ \
+   https://svn.apache.org/repos/asf/tomcat/connectors/tags/jk1.2.x/JK_1_2_16/
 
 Build the mod_jk 1.2 documentation
 ----------------------------------
 
-cd jakarta-tomcat-connectors/jk/xdocs
+cd tomcat-connectors/jk/xdocs
 ant
 
 
-Check the documentation carefully (produced in jakarta-tomcat-connectors/jk/build/docs)
+Check the documentation carefully (produced in tomcat-connectors/jk/build/docs)
 and copy it to people.apache.org:/x1/www/tomcat.apache.org/connectors-doc
 
 Create the new source distribution
 ----------------------------------
 
-(A tool named jkrelease.sh in jakarta-tomcat-connectors/jk/tools does the
+(A tool named jkrelease.sh in tomcat-connectors/jk/tools does the
 following steps).
 
 Create the directory
-jakarta-tomcat-connectors-jk-{MAJOR_REVISION}-{MINOR_REVISION}-{RELEASE}-src
+tomcat-connectors-jk-{MAJOR_REVISION}-{MINOR_REVISION}-{RELEASE}-src
 
-For this example mkdir jakarta-tomcat-connectors-jk-1.2.5-src
+For this example mkdir tomcat-connectors-jk-1.2.16-src
 
-Copy the files KEYS and LICENSE from jakarta-tomcat-conectors to
+Copy the files KEYS and LICENSE from tomcat-conectors to
 the source distribution directory.
 
-cp jakarta-tomcat-connectors/KEYS jakarta-tomcat-connectors-jk-1.2.5-src
-cp jakarta-tomcat-connectors/LICENSE jakarta-tomcat-connectors-jk-1.2.5-src
+cp tomcat-connectors/KEYS tomcat-connectors-jk-1.2.16-src
+cp tomcat-connectors/LICENSE tomcat-connectors-jk-1.2.16-src
 
-Copy the directory jakarta-tomcat-connectors/scandoc to the source
+Copy the directory tomcat-connectors/scandoc to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/scandoc jakarta-tomcat-connectors-jk-1.2.5-src
+cp -pr tomcat-connectors/scandoc tomcat-connectors-jk-1.2.16-src
 
-Copy the directory jakarta-tomcat-connectors/common to the source
+Copy the directory tomcat-connectors/common to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/common jakarta-tomcat-connectors-jk-1.2.5-src
+cp -pr tomcat-connectors/common tomcat-connectors-jk-1.2.16-src
 
 Make the jk directory in the source distribution.
 
-mkdir jakarta-tomcat-connectors-jk-1.2.5-src/jk
+mkdir tomcat-connectors-jk-1.2.16-src/jk
 
-Copy the file BUILD.txt from jakarta-tomcat-conectors/jk to 
+Copy the file BUILD.txt from tomcat-conectors/jk to 
 the source distribution jk directory.
 
-cp -p jakarta-tomcat-connectors/jk/BUILD.txt jakarta-tomcat-connectors-jk-1.2.5-src/README.txt
+cp -p tomcat-connectors/jk/BUILD.txt tomcat-connectors-jk-1.2.16-src/README.txt
 
-Copy the directory jakarta-tomcat-connectors/build/docs to the source
+Copy the directory tomcat-connectors/build/docs to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/jk/build/docs jakarta-tomcat-connectors-jk-1.2.5-src/jk
+cp -pr tomcat-connectors/jk/build/docs tomcat-connectors-jk-1.2.16-src/jk
 
-Copy the directory jakarta-tomcat-connectors/tools to the source
+Copy the directory tomcat-connectors/tools to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/jk/tools jakarta-tomcat-connectors-jk-1.2.5-src/jk
+cp -pr tomcat-connectors/jk/tools tomcat-connectors-jk-1.2.16-src/jk
 
 Make the jk conf directory in the source distribution.
 
-mkdir jakarta-tomcat-connectors-jk-1.2.5-src/jk/conf
+mkdir tomcat-connectors-jk-1.2.16-src/jk/conf
 
 Copy the worker.properties file to the jk/conf directory.
 
-cp -p jakarta-tomcat-connectors/jk/conf/worker.properties jakarta-tomcat-connectors-jk-1.2.5-src/jk/conf
+cp -p tomcat-connectors/jk/conf/worker.properties tomcat-connectors-jk-1.2.16-src/jk/conf
 
-Copy the directory jakarta-tomcat-connectors/support to the source
+Copy the directory tomcat-connectors/support to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/jk/support jakarta-tomcat-connectors-jk-1.2.5-src/jk
+cp -pr tomcat-connectors/jk/support tomcat-connectors-jk-1.2.16-src/jk
 
-Copy the directory jakarta-tomcat-connectors/native to the source
+Copy the directory tomcat-connectors/native to the source
 distribution directory.
 
-cp -pr jakarta-tomcat-connectors/jk/native jakarta-tomcat-connectors-jk-1.2.5-src/jk
+cp -pr tomcat-connectors/jk/native tomcat-connectors-jk-1.2.16-src/jk
 
-Remove all the CVS directories from the new source distribution.
+Remove all the CVS and .svn directories from the new source distribution.
 
-find jakarta-tomcat-connectors-jk-1.2.5-src -type d -name CVS | xargs rm -rf
+find tomcat-connectors-jk-1.2.16-src -type d -name CVS | xargs rm -rf
+find tomcat-connectors-jk-1.2.16-src -type d -name .svn | xargs rm -rf
 
-cd to jakarta-tomcat-connectors-jk-1.2.5-src/jk/native and run buildconf.sh
+cd to tomcat-connectors-jk-1.2.16-src/jk/native and run buildconf.sh
 to create the configure script.
 
 Create a tar gzip'd archive
 
-tar zcf jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz jakarta-tomcat-connectors-jk-1.2.5-src
+tar zcf tomcat-connectors-jk-1.2.16-src.tar.gz tomcat-connectors-jk-1.2.16-src
 
 Create a zip archive
 
-zip -r jakarta-tomcat-connectors-jk-1.2.5-src.zip jakarta-tomcat-connectors-jk-1.2.5-src
+zip -r tomcat-connectors-jk-1.2.16-src.zip tomcat-connectors-jk-1.2.16-src
 
 Sign the release using PGP. Here is an example using gpg:
 
-gpg -abs -o jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz.asc jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz
+gpg -abs -o tomcat-connectors-jk-1.2.16-src.tar.gz.asc tomcat-connectors-jk-1.2.16-src.tar.gz
 
 Upload source distribution and documentation to www.apache.org
 -------------------------------------------------------------------
 First update the KEYS on the server if you have added a new pgp key.
 
-scp jakarta-tomcat-connectors/KEYS to the
-/www/www.apache.org/dist/jakarta/tomcat-connectors
+scp tomcat-connectors/KEYS to the
+/www/www.apache.org/dist/tomcat/tomcat-connectors
 directory on the www.apache.org server.
 
-scp jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz* to 
-/www/www.apache.org/dist/jakarta/tomcat-connectors/jk/source
-scp jakarta-tomcat-connectors-jk-1.2.5-src.zip* to   
-/www/www.apache.org/dist/jakarta/tomcat-connectors/jk/source
+scp tomcat-connectors-jk-1.2.16-src.tar.gz* to 
+/www/www.apache.org/dist/tomcat/tomcat-connectors/jk/source
+scp tomcat-connectors-jk-1.2.16-src.zip* to   
+/www/www.apache.org/dist/tomcat/tomcat-connectors/jk/source
 
 ssh to www.apache.org and cd to the
-/www/www.apache.org/dist/jakarta/tomcat-connectors/jk directory.
+/www/www.apache.org/dist/tomcat/tomcat-connectors/jk directory.
 
 Remove the symlinks for current and replace them with a soft link
 to the new source distribution files.
 
-ln -s source/jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz jakarta-tomcat-connectors-jk-src-current.tar.gz
-ln -s source/jakarta-tomcat-connectors-jk-1.2.5-src.tar.gz.asc jakarta-tomcat-connectors-jk-src-current.tar.gz.asc
-ln -s source/jakarta-tomcat-connectors-jk-1.2.5-src.tar.zip jakarta-tomcat-connectors-jk-src-current.zip
-ln -s source/jakarta-tomcat-connectors-jk-1.2.5-src.zip.asc jakarta-tomcat-connectors-jk-src-current.zip.asc
+ln -s source/tomcat-connectors-jk-1.2.16-src.tar.gz tomcat-connectors-jk-src-current.tar.gz
+ln -s source/tomcat-connectors-jk-1.2.16-src.tar.gz.asc tomcat-connectors-jk-src-current.tar.gz.asc
+ln -s source/tomcat-connectors-jk-1.2.16-src.tar.zip tomcat-connectors-jk-src-current.zip
+ln -s source/tomcat-connectors-jk-1.2.16-src.zip.asc tomcat-connectors-jk-src-current.zip.asc
 
 Make sure the group write bit is set on all files and directories
 in the jk directory.
 
-chmod -R g+w /www/www.apache.org/dist/jakarta/tomcat-connectors/jk/
+chmod -R g+w /www/www.apache.org/dist/tomcat/tomcat-connectors/jk/
 
 Build binaries and upload distributions to www.apache.org
 --------------------------------------------------------------
@@ -205,7 +187,7 @@ Build mod_jk for a specific web server and OS.  Package it as appropriate for
 the OS and sign the archive using PGP. Please include the ASF License, the
 generated docs, and the tools.  Please name the distribuiton as follows:
 
-jakarta-tomcat-connectors-jk-{version}-{os-version-cpu}-{web server-version}.(tar.gz|zip)
+tomcat-connectors-jk-{version}-{os-version-cpu}-{web server-version}.(tar.gz|zip)
 
 scp the binary distribution and pgp signature file to the appropriate binaries/{os} directory.
 
@@ -215,21 +197,21 @@ Update source for next version
 ------------------------------
 
 Reset JK_VERISRELEASE to 0 and update JK_VERSTRING, JK_VERMAJOR,
-JK_VERMINOR, and JK_VERFIX as needed.  Commit your changes to CVS.
+JK_VERMINOR, and JK_VERFIX as needed.  Commit your changes to subversion.
 
 Remove old release distributions from www.apache.org
 ----------------------------------------------------
 
 Verify that the old versions of the source and binary distributions are
-available at /www/archive.apache.org/dist/jakarta/tomcat-connector/jk .
+available at /www/archive.apache.org/dist/tomcat/tomcat-connector/jk .
 Copy old source distributions and binaries as needed, then remove the
 old source and binary distributions.
 
 Arrange the downloads_tomcat-connectors.cgi
 -------------------------------------------
 
-Check jakarta-site out:
-svn co https://svn.apache.org/repos/asf/jakarta/site site-jakarta
+Check tomcat-site out:
+svn co https://svn.apache.org/repos/asf/tomcat/site site-tomcat
 
 
 Arrange the file: xdocs/downloads/downloads.xml
@@ -239,9 +221,9 @@ docs/site/downloads/downloads_tomcat-connectors.html
 
 Commit it after checking carefully the changes.
 
-Connect to people.apache.org and update the jakarta.apache.org site image,
-the site jakarta.apache.org should reflect the change after a while.
-cd /x2/www/jakarta.apache.org/site/downloads
+Connect to people.apache.org and update the tomcat.apache.org site image,
+the site tomcat.apache.org should reflect the change after a while.
+cd /x2/www/tomcat.apache.org/site/downloads
 svn update downloads_tomcat-connectors.html
 
 Announcements
@@ -252,7 +234,6 @@ releases can be downloaded from multiple sites.  Please wait
 24 hours before sending out the announcement so that the mirrors
 get a chance to get the new release distributions.
 
-Send an email announcement to announcements@jakarta.apache.org,
-tomcat-user@jakarta.apache.org, tomcat-dev@jakarta.apache.org,
-and announce@apache.org.
+Send an email announcement to users@tomcat.apache.org,
+dev@tomcat.apache.org, and announce@apache.org.
 

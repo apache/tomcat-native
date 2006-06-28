@@ -15,7 +15,7 @@
 
 <section name="Preface">
   <p>
-  This is the Changelog for Jakarta Tomcat Connectors. This changelog
+  This is the Changelog for Tomcat Connectors. This changelog
   does not contain all updates and fixes to the Tomcat connectors (yet).
   It should contain fixes made only after November 10th 2004, when the
   new documentation project for JK was started.

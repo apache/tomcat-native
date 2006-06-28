@@ -19,7 +19,7 @@ Here are the all directives supported by Apache:
 </p>
 <attributes name="Directive">
 <attribute name="JkWorkersFile" required="false"><p>
-The name of a worker file for the Jakarta servlet containers
+The name of a worker file for the Tomcat servlet containers
 </p></attribute>
 <attribute name="JkWorkerProperty" required="false"><p>
 Enables setting workers.properties inside Apache configuration file.
@@ -39,14 +39,14 @@ This directive is available in jk1.2.7 version and later.
 Should the base server mounts be copied to the virtual server.
 </p></attribute>
 <attribute name="JkLogFile" required="false"><p>
-Full or server relative path to the Jakarta Tomcat module log file
+Full or server relative path to the Tomcat Connector module log file
 </p></attribute>
 <attribute name="JkLogLevel" required="false"><p>
-The Jakarta Tomcat module log level, can be debug, info, warn
+The Tomcat Connector module log level, can be debug, info, warn
 error or trace
 </p></attribute>
 <attribute name="JkLogStampFormat" required="false"><p>
-The Jakarta Tomcat Connector module <b>date</b> log format, follow strftime syntax
+The Tomcat Connector module <b>date</b> log format, follow strftime syntax
 </p></attribute>
 <attribute name="JkRequestLogFormat" required="false"><p>
 Request log format string. See detailed description below.

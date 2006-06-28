@@ -1,4 +1,4 @@
-JAKARTA TOMCAT CONNECTORS (JK) CHANGELOG:           -*-text-*-
+TOMCAT CONNECTORS (JK) CHANGELOG:           -*-text-*-
 Last modified at [$Date$]
 PLEASE DON'T WRITE IN THIS FILE BUT IN ../xdocs/changelog.xml AND USE ../tools/jkrelease.sh
 TO BUILD THE TEXT VERSION.

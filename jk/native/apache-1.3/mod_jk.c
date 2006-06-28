@@ -15,7 +15,7 @@
  */
 
 /***************************************************************************
- * Description: Apache 1.3 plugin for Jakarta/Tomcat                       *
+ * Description: Apache 1.3 plugin for Tomcat                                *
  *              See ../common/jk_service.h for general mod_jk info         *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  *              Dan Milstein <danmil@shore.net>                            *
@@ -24,7 +24,7 @@
  ***************************************************************************/
 
 /*
- * mod_jk: keeps all servlet/jakarta related ramblings together.
+ * mod_jk: keeps all servlet related ramblings together.
  */
 
 /* #include "ap_config.h" */
@@ -40,7 +40,7 @@
 #include "http_conf_globals.h"
 
 /*
- * Jakarta (jk_) include files
+ * jk_ include files
  */
 #ifdef NETWARE
 #define _SYS_TYPES_H_
@@ -1586,7 +1586,7 @@ static const command_rec jk_cmds[] = {
      * servlet requests.
      */
     {"JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF, TAKE1,
-     "the name of a worker file for the Jakarta servlet containers"},
+     "the name of a worker file for the Tomcat servlet containers"},
 
     /*
      * JkMountFile specifies a full path to the location of the
@@ -1596,7 +1596,7 @@ static const command_rec jk_cmds[] = {
      * to redirect servlet requests.
      */
     {"JkMountFile", jk_set_mount_file, NULL, RSRC_CONF, TAKE1,
-     "the name of a mount file for the Jakarta servlet uri mappings"},
+     "the name of a mount file for the Tomcat servlet uri mappings"},
 
     /*
      * JkAutoMount specifies that the list of handled URLs must be
@@ -1632,24 +1632,24 @@ static const command_rec jk_cmds[] = {
      * JkLogStampFormat specify the time-stamp to be used on log
      */
     {"JkLogFile", jk_set_log_file, NULL, RSRC_CONF, TAKE1,
-     "Full path to the Jakarta mod_jk module log file"},
+     "Full path to the mod_jk module log file"},
     {"JkShmFile", jk_set_shm_file, NULL, RSRC_CONF, TAKE1,
-     "Full path to the Jakarta mod_jk module shared memory file"},
+     "Full path to the mod_jk module shared memory file"},
     {"JkShmSize", jk_set_shm_size, NULL, RSRC_CONF, TAKE1,
      "Size of the shared memory file in KBytes"},
     {"JkLogLevel", jk_set_log_level, NULL, RSRC_CONF, TAKE1,
-     "The Jakarta mod_jk module log level, can be debug, info, request, error, or emerg"},
+     "The mod_jk module log level, can be debug, info, request, error, or emerg"},
     {"JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF, TAKE1,
-     "The Jakarta mod_jk module log format, follow strftime synthax"},
+     "The mod_jk module log format, follow strftime synthax"},
     {"JkRequestLogFormat", jk_set_request_log_format, NULL, RSRC_CONF, TAKE1,
-     "The Jakarta mod_jk module request log format string"},
+     "The mod_jk module request log format string"},
 
     /*
      * Automatically Alias webapp context directories into the Apache
      * document space.
      */
     {"JkAutoAlias", jk_set_auto_alias, NULL, RSRC_CONF, TAKE1,
-     "The Jakarta mod_jk module automatic context apache alias directory"},
+     "The mod_jk module automatic context apache alias directory"},
 
     /*
      * Apache has multiple SSL modules (for example apache_ssl, stronghold

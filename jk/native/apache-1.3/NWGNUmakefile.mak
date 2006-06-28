@@ -110,7 +110,7 @@ NLM_NAME	= mod_jk
 # This is used by the link '-desc ' directive. 
 # If left blank, NLM_NAME will be used.
 #
-NLM_DESCRIPTION	= Apache $(AP_VERSION_STR) plugin for Jakarta/Tomcat $(JK_VERSION_STR)
+NLM_DESCRIPTION	= Apache $(AP_VERSION_STR) plugin for Tomcat $(JK_VERSION_STR)
 
 #
 # This is used by the '-threadname' directive.  If left blank,
