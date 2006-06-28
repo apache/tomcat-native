@@ -389,7 +389,7 @@ Full recovery by default.
 between the webserver and tomcat will be closed if the client connection
 to the webserver is terminated during the request/response cycle. This allows
 to inform the servlet engine about broken client connections during lengthy operations.
-This features has been added in <b>jk 1.2.16</b>
+This feature has been added in <b>jk 1.2.16</b>
 </p>
 </directive>
 
