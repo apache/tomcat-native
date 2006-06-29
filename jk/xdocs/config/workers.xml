@@ -141,7 +141,7 @@ have information about the cut and couldn't handle it.
 </directive>
 
 <directive name="recycle_timeout" default="0" required="false">
-<warn>This directive has been deprecated since 1.2.16. See <b>Connection Poll</b> directives instead</warn>
+<warn>This directive has been deprecated since 1.2.16. See <b>Connection Pool</b> directives instead</warn>
 </directive>
 
 <directive name="retries" default="3" required="false">
@@ -394,7 +394,7 @@ This feature has been added in <b>jk 1.2.16</b>
 </directive>
 
 <directive name="distance" default="0" required="false">
-Express Preferences between the balanced workers of an lb worker.
+Express preferences between the balanced workers of an lb worker.
 A load balancer will never choose some balanced worker 
 in case there is another usable worker with lower distance.
 <p>

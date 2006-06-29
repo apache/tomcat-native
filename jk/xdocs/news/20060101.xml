@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="20060101.html">
+ 
+  &project;
+ 
+  <properties>
+    <author email="general.AT.tomcat.DOT.apache.DOT.org">Apache Tomcat Connectors Project</author>
+    <title>2006 News and Status</title>
+  </properties>
+
+<body>
+
+<section name="2006 News &amp; Status">
+<br />
+<a name="20060606.1"> 
+<h3>JK-1.2.16 released</h3>
+<p>The Apache Tomcat team is proud to announce the immediate availability
+of Tomcat Connectors 1.2.16. This is a stable release adding some features 
+and a few bug fixes to the 1.2.15 version. Furthermore some worker attributes
+have been <a href="../config/workers.html">deprecated</a>.
+</p>
+<p>
+ Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+<p>If you find any bugs while using this release, please fill in the
+<a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
+Bug Report. When entering bug select <b>Native:JK</b> Component.
+</p>
+</a>
+<hr size="1" noshade="noshade" />
+
+</section>
+</body>
+</document>  
