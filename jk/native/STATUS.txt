@@ -3,7 +3,13 @@ Last modified at [$Date$]
 
 Release:
 
-    1.2.11  : in development
+    1.2.17  : in development
+    1.2.16  : released July, 2006
+    1.2.15  : released November 8, 2005
+    1.2.14  : released July 13, 2005
+    1.2.13  : released May 16, 2005
+    1.2.12  : released May 7, 2005
+    1.2.11  : released April 29, 2005
     1.2.10  : released March 30, 2005
     1.2.9   : not released
     1.2.8   : released December 24, 2004
