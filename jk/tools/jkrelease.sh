@@ -1,52 +1,102 @@
-#/bin/sh
+#!/bin/ksh
 
-# You can change JKTAG and JKEXT to desired CVS tag and version
-JKTAG="HEAD"
-JKEXT="current"
-JKVER="-${JKEXT}-src"
-JKCVST="jakarta-tomcat-connectors"
-JKDIST=${JKCVST}${JKVER}
-rm -rf ${JKDIST}
-rm -f ${JKDIST}.*
-#
-# To use a proxy you need  a recent version of cvs (I have tried with 1.12.9)
-if [ -z "$http_proxy" ]
-then
-  CVSROOT=:pserver:anoncvs@cvs.apache.org:/home/cvspublic
-else
-  PRSTRING=`echo $http_proxy | tr '/' ' ' | tr ':' ' '`
-  HOST=`echo $PRSTRING | awk ' { print $2 } '`
-  PORT=`echo $PRSTRING | awk ' { print $3 } '`
-  CVSROOT=":pserver;proxy=$HOST;proxyport=$PORT:anoncvs@cvs.apache.org:/home/cvspublic"
-fi
-export CVSROOT
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/KEYS
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/LICENSE
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/NOTICE
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/common
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/BUILD.txt
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/conf
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/native
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/support
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/tools
-cvs export -N -r ${JKTAG} -d ${JKDIST} ${JKCVST}/jk/xdocs
-mv ${JKDIST}/${JKCVST}/* ${JKDIST}/
-# Remove extra directories and files
-rm -f ${JKDIST}/jk/native/build.xml
-rm -f ${JKDIST}/jk/conf/jk2.*
-rm -f ${JKDIST}/jk/conf/workers2.*
-rm -f ${JKDIST}/jk/conf/*.manifest
-rm -f ${JKDIST}/jk/conf/*.xml
-rm -f ${JKDIST}/jk/native/CHANGES.txt
-rm -rf ${JKDIST}/${JKCVST}
-rm -rf ${JKDIST}/jk/*/.cvsignore
-rm -rf ${JKDIST}/jk/*/*/.cvsignore
+# Make sure to set your path so that we can find
+# the following binaries:
+# cd, mkdir, cp, rm, find
+# svn
+# ant
+# libtoolize, aclocal, autoheader, automake, autoconf
+# tar, zip, gzip
+# gpg
+# And any one of: w3m, elinks, links
+
+export ANT_HOME=/usr/local/ant
+export JAVA_HOME=/usr/local/jdk1.4.2
+
+# You need to change the version numbers
+JK_VERMAJOR="1"
+JK_VERMINOR="2"
+JK_VERFIX="16"
+ASFROOT="http://svn.apache.org/repos/asf"
+JK_CVST="tomcat-connectors"
+
+JK_OWNER="asf"
+JK_GROUP="asf"
+
+COPY_TOP="KEYS LICENSE NOTICE"
+COPY_JK="BUILD.txt native support tools xdocs"
+COPY_CONF="uriworkermap.properties workers.properties workers.properties.minimal"
+
+JK_VER="${JK_VERMAJOR}.${JK_VERMINOR}.${JK_VERFIX}"
+JK_BRANCH="jk${JK_VERMAJOR}.${JK_VERMINOR}.x"
+JK_TAG="JK_${JK_VERMAJOR}_${JK_VERMINOR}_${JK_VERFIX}"
+
+JK_DIST=${JK_CVST}-${JK_VER}-src
+JK_SVN_URL="${ASFROOT}/tomcat/connectors/tags/${JK_BRANCH}/${JK_TAG}"
+
+#################### NO CHANGE BELOW THIS LINE ##############
+
+umask 022
+
+rm -rf ${JK_DIST}
+rm -rf ${JK_DIST}.*
+
+svn export "${JK_SVN_URL}" ${JK_DIST}.tmp
 
 # Build documentation.
-cd ${JKDIST}/jk/xdocs
+cd ${JK_DIST}.tmp/jk/xdocs
 ant
+cd ../../..
 
-# Check for links or w3m
+# Copying things into source distribution
+srcdir=${JK_DIST}.tmp
+targetdir=${JK_DIST}
+mkdir -p ${targetdir}
+for item in ${COPY_TOP}
+do
+    echo "Copying $item from ${srcdir} ..."
+    cp -pr ${srcdir}/$item ${targetdir}/
+done
+
+srcdir=${JK_DIST}.tmp/jk
+targetdir=${JK_DIST}/jk
+mkdir -p ${targetdir}
+for item in ${COPY_JK}
+do
+    echo "Copying $item from ${srcdir} ..."
+    cp -pr ${srcdir}/$item ${targetdir}/
+done
+
+srcdir=${JK_DIST}.tmp/jk/build
+targetdir=${JK_DIST}/jk
+mkdir -p ${targetdir}
+for item in docs
+do
+    echo "Copying $item from ${srcdir} ..."
+    cp -pr ${srcdir}/$item ${targetdir}/
+done
+
+srcdir=${JK_DIST}.tmp/jk/conf
+targetdir=${JK_DIST}/jk/conf
+mkdir -p ${targetdir}
+for item in ${COPY_CONF}
+do
+    echo "Copying $item from ${srcdir} ..."
+    cp -pr ${srcdir}/$item ${targetdir}/
+done
+
+# Remove extra directories and files
+targetdir=${JK_DIST}/jk
+rm -rf ${targetdir}/xdocs/jk2
+rm -rf ${targetdir}/native/CHANGES.txt
+rm -rf ${targetdir}/native/build.xml
+find ${JK_DIST} -name .cvsignore -exec rm -rf \{\} \; 
+find ${JK_DIST} -name CVS -exec rm -rf \{\} \; 
+find ${JK_DIST} -name .svn -exec rm -rf \{\} \; 
+
+cd ${JK_DIST}/jk/native
+
+# Check for links, elinks or w3m
 W3MOPTS="-dump -cols 80 -t 4 -S -O iso-8859-1 -T text/html"
 LNKOPTS="-dump"
 ELNKOPTS="--dump --no-numbering --no-home"
@@ -63,7 +113,7 @@ do
     fi
   done
 
-  # Try to run it 
+  # Try to run it
   if ${found}
   then
     case ${tool} in
@@ -77,36 +127,35 @@ do
         TOOL="elinks $ELNKOPTS"
         ;;
     esac
-    rm -f BUILDING
-    (cd ../native; ${TOOL} ../build/docs/install/printer/apache1.html 2>/dev/null ) > BUILDING
-    if [ -f BUILDING -a -s BUILDING ]
+    rm -f CHANGES
+    ${TOOL} ../docs/printer/changelog.html > CHANGES 2>/dev/null
+    if [ -f CHANGES -a -s CHANGES ]
     then
       failed=false
       break
     fi
   fi
 done
-if ${failed}
+if [ ${failed} = "true" ]
 then
-  echo "Can't convert html to text (BUILDING)"
+  echo "Can't convert html to text (CHANGES)"
   exit 1
 fi
 
 # Export text docs
-cd ../native
-${TOOL} ../build/docs/install/printer/apache1.html >BUILDING
-${TOOL} ../build/docs/install/printer/apache2.html >>BUILDING
-${TOOL} ../build/docs/install/printer/iis.html >>BUILDING
-${TOOL} ../build/docs/printer/changelog.html >CHANGES
-${TOOL} ../build/docs/news/printer/20050101.html >NEWS
-${TOOL} ../build/docs/news/printer/20041100.html >>NEWS
-rm -rf ../build
-rm -rf ../xdocs/jk2
+${TOOL} ../docs/printer/changelog.html >CHANGES
+${TOOL} ../docs/news/printer/20060101.html >NEWS
+${TOOL} ../docs/news/printer/20050101.html >>NEWS
+${TOOL} ../docs/news/printer/20041100.html >>NEWS
+
+# Generate configure et. al.
 ./buildconf.sh
 cd ../../../
-tar cvf ${JKDIST}.tar ${JKDIST}
-gzip ${JKDIST}.tar
-zip -9 -r ${JKDIST}.zip ${JKDIST}
+
+# Pack and sign
+tar cvf ${JK_DIST}.tar --owner="${JK_OWNER}" --group="${JK_GROUP}" ${JK_DIST}
+gzip ${JK_DIST}.tar
+zip -9 -r ${JK_DIST}.zip ${JK_DIST}
 # Create detatched signature
-gpg -ba ${JKDIST}.tar.gz
-gpg -ba ${JKDIST}.zip
+gpg -ba ${JK_DIST}.tar.gz
+gpg -ba ${JK_DIST}.zip
