@@ -488,6 +488,7 @@ int jk_shutdown_socket(int s)
     unsigned char dummy[512];
     int nbytes;
     int ttl = 0;
+    int rc = 0;
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
     int tmout = SECONDS_TO_LINGER * 1000;
     if (s == INVALID_SOCKET)
@@ -504,19 +505,21 @@ int jk_shutdown_socket(int s)
         return jk_close_socket(s);
     }
 #if defined(WIN32)  || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
-               (const char *) &tmout, sizeof(int));
+    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
+                   (const char *) &tmout, sizeof(int)) == 0)
+        rc = 1;
 #elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO)
     tv.tv_sec  = SECONDS_TO_LINGER;
     tv.tv_usec = 0;
-    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
-               (const void *) &tv, sizeof(tv));
+    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
+                   (const void *) &tv, sizeof(tv)))
+        rc = 1;
 #endif
     /* Read all data from the peer until we reach "end-of-file" (FIN
      * from peer) or we've exceeded our overall timeout. If the client does
-     * not send us bytes within12 second, close the connection.
+     * not send us bytes within 12 second, close the connection.
      */
-    while (1) {
+    while (rc) {
         nbytes = jk_tcp_socket_recvfull(s, dummy, sizeof(dummy));
         if (nbytes <= 0)
             break;
@@ -659,7 +662,7 @@ int jk_is_socket_connected(int sd)
     saved_errno = errno;
     soblock(sd);
     if (rd == -1 && saved_errno == EWOULDBLOCK) {
-    errno = 0;
+        errno = 0;
         return 1;
     }
     else {
