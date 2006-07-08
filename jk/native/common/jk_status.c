@@ -755,13 +755,9 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
         i = status_bool("wd", s->query_string);
         j = status_bool("ws", s->query_string);
         if (wr->s->is_disabled!=i || wr->s->is_stopped!=j) {
-            /* lock shared memory */
-            jk_shm_lock();
             wr->s->is_disabled = i;
             wr->s->is_stopped = j;
             reset_lb_values(lb, l);
-            /* unlock the shared memory */
-            jk_shm_unlock();
             if (i+j==0) {
                 jk_log(l, JK_LOG_INFO,
                        "worker %s restarted in status worker"
@@ -771,12 +767,8 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
         }
         i = status_int("wx", s->query_string, wr->s->distance);
         if (wr->s->distance!=i) {
-            /* lock shared memory */
-            jk_shm_lock();
             wr->s->distance = i;
             reset_lb_values(lb, l);
-            /* unlock the shared memory */
-            jk_shm_unlock();
         }
         i = status_int("wf", s->query_string, wr->s->lb_factor);
         if (i > 0 && wr->s->lb_factor != i) {
