@@ -15,12 +15,11 @@
 
 <section name="2006 News &amp; Status">
 <br />
-<a name="20060606.1"> 
-<h3>JK-1.2.16 released</h3>
+<a name="20060708.1"> 
+<h3>JK-1.2.17 released</h3>
 <p>The Apache Tomcat team is proud to announce the immediate availability
-of Tomcat Connectors 1.2.16. This is a stable release adding some features 
-and a few bug fixes to the 1.2.15 version. Furthermore some worker attributes
-have been <a href="../config/workers.html">deprecated</a>.
+of Tomcat Connectors 1.2.17. This is a stable release adding
+a few bug fixes to the not released 1.2.16 version.
 </p>
 <p>
  Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
@@ -30,6 +29,18 @@ have been <a href="../config/workers.html">deprecated</a>.
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
 </a>
+<hr size="1" noshade="noshade" />
+
+<a name="20060606.1"> 
+<h3>JK-1.2.16 not released</h3>
+<p>Version 1.2.16 of Tomcat Connectors 1.2.16 has not been released 
+due to a bug in the jk status worker. This version adds some features
+and a few bug fixes to the 1.2.15 version. Furthermore some worker attributes
+have been <a href="../config/workers.html">deprecated</a>.
+</p>
+<p>
+ Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+</p>
 <hr size="1" noshade="noshade" />
 
 </section>
