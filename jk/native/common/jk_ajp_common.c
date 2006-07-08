@@ -740,11 +740,11 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
     ajp_worker_t *aw = ae->worker;
     int sock = ae->sd;
 
+    /* Mark existing endpoint socket as closed */
+    ae->sd = -1;
     JK_ENTER_CS(&aw->cs, rc);
     if (rc) {
         unsigned int i;
-        /* Mark existing endpoint socket as closed */
-        ae->sd = -1;
         for (i = 0; i < aw->ep_cache_sz; i++) {
             /* Find cache slot with usable socket */
             if (aw->ep_cache[i] && aw->ep_cache[i]->sd != -1) {
@@ -754,9 +754,10 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
             }
         }
         JK_LEAVE_CS(&aw->cs, rc);
-        /* Close previous socket */
-        jk_close_socket(sock);
     }
+    /* Close previous socket */
+    if (sock > 0)
+        jk_close_socket(sock);
 }
 
 /*
@@ -1781,7 +1782,9 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                        "Sending request to tomcat failed,  "
                        "recoverable operation attempt=%d", i + 1);
             }
-            /* Get another connection from the pool and try again */
+            /* Get another connection from the pool and try again.
+             * Note: All sockets are probably closed already.
+             */
             ajp_next_connection(p, l);
         }
         *is_error = JK_HTTP_SERVER_BUSY;
