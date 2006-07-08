@@ -1218,11 +1218,7 @@ static int ajp_send_request(jk_endpoint_t *e,
      * If we failed to reuse a connection, try to reconnect.
      */
     if (ae->sd < 0) {
-        /* If we the previous connection was in error
-         * try to reconnect only if timeouts are set
-         */
-        if (err && ae->worker->connect_timeout == 0 &&
-                   ae->worker->socket_timeout == 0) {
+        if (err) {
             /* XXX: If err is set, the tomcat is either dead or disconnected */
             jk_log(l, JK_LOG_INFO,
                    "All endpoints are disconnected or dead");
