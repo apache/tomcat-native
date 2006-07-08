@@ -75,7 +75,7 @@
 # define JK_NEED_SET_MUTEX_PERMS AP_NEED_SET_MUTEX_PERMS
 #else
   /* A special case for httpd-2.0 */
-# if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+# if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE) && !defined(AS400)
 #  define JK_NEED_SET_MUTEX_PERMS 1
 # else
 #  define JK_NEED_SET_MUTEX_PERMS 0
