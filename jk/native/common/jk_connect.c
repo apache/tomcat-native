@@ -136,7 +136,7 @@ static int nb_connect(int sock, struct sockaddr *addr, int timeout)
 
         tv.tv_sec  = timeout;
         tv.tv_usec = 0;
-        rc = select(FD_SETSIZE+1, NULL, &wfdset, &efdset, &tv);
+        rc = select(sock + 1, NULL, &wfdset, &efdset, &tv);
         if (rc == SOCKET_ERROR || rc == 0) {
             rc = WSAGetLastError();
             soblock(sock);
@@ -183,7 +183,7 @@ static int nb_connect(int sock, struct sockaddr *addr, int timeout)
         FD_SET(sock, &wfdset);
         tv.tv_sec  = timeout;
         tv.tv_usec = 0;
-        rc = select(sock+1, NULL, &wfdset, NULL, &tv);
+        rc = select(sock + 1, NULL, &wfdset, NULL, &tv);
         if (rc <= 0) {
             /* Save errno */
             int err = errno;
@@ -619,21 +619,21 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
 }
 
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-int jk_is_socket_connected(int sd)
+int jk_is_socket_connected(int sock)
 {
     fd_set fd;
     struct timeval tv;
     int rc;
 
     FD_ZERO(&fd);
-    FD_SET(sd, &fd);
+    FD_SET(sock, &fd);
 
     /* Wait one microsecond */
     tv.tv_sec  = 0;
     tv.tv_usec = 1;
 
     /* If we get a timeout, then we are still connected */
-    if ((rc = select(1, &fd, NULL, NULL, &tv)) == 0) {
+    if ((rc = select(sock + 1, &fd, NULL, NULL, &tv)) == 0) {
         errno = 0;
         return 1;
     }
@@ -646,7 +646,7 @@ int jk_is_socket_connected(int sd)
     }
 }
 #else
-int jk_is_socket_connected(int sd)
+int jk_is_socket_connected(int sock)
 {
     char test_buffer[1];
     int  rd;
@@ -654,13 +654,13 @@ int jk_is_socket_connected(int sd)
 
     errno = 0;
     /* Set socket to nonblocking */
-    if (sononblock(sd) != 0)
+    if (sononblock(sock) != 0)
         return 0;
     do {
-        rd = read(sd, test_buffer, 1);
+        rd = read(sock, test_buffer, 1);
     } while (rd == -1 && errno == EINTR);
     saved_errno = errno;
-    soblock(sd);
+    soblock(sock);
     if (rd == -1 && saved_errno == EWOULDBLOCK) {
         errno = 0;
         return 1;
