@@ -14,13 +14,13 @@
                     "specific language governing permissions and " \
                     "limitations under the License."
 
-#define JK_VERSION_STR  "1.2.16"
+#define JK_VERSION_STR  "1.2.17"
 #define JK_DLL_BASENAME "isapi_redirect-" JK_VERSION_STR
 
 
 1 VERSIONINFO
- FILEVERSION 1,2,16,0
- PRODUCTVERSION 1,2,16,0
+ FILEVERSION 1,2,17,0
+ PRODUCTVERSION 1,2,17,0
  FILEFLAGSMASK 0x3fL
 #if defined(_DEBUG)
  FILEFLAGS 0x01L
