@@ -1929,10 +1929,6 @@ int ajp_init(jk_worker_t *pThis,
         p->keepalive =
             jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
 
-        jk_log(l, JK_LOG_DEBUG,
-               "setting socket keepalive to %d",
-               p->keepalive);
-
         p->cache_timeout =
             jk_get_worker_cache_timeout(props, p->name,
                                         AJP_DEF_CACHE_TIMEOUT);
@@ -1966,35 +1962,42 @@ int ajp_init(jk_worker_t *pThis,
         if (JK_IS_DEBUG_LEVEL(l)) {
 
             jk_log(l, JK_LOG_DEBUG,
-                   "setting socket timeout to %d",
+                   "setting endpoint options:",
+                   p->keepalive);
+            jk_log(l, JK_LOG_DEBUG,
+                   "keepalive:        %d",
+                   p->keepalive);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "timeout:          %d",
                    p->socket_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "setting socket buffer size to %d",
+                   "buffer size:      %d",
                    p->socket_buf);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "setting connection pool timeout to %d",
+                   "pool timeout:     %d",
                    p->cache_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "setting connect timeout to %d",
+                   "connect timeout:  %d",
                    p->connect_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "setting reply timeout to %d",
+                   "reply timeout:    %d",
                    p->reply_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "setting prepost timeout to %d",
+                   "prepost timeout:  %d",
                    p->prepost_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "setting recovery opts to %d",
+                   "recovery options: %d",
                    p->recovery_opts);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "setting number of retries to %d",
+                   "retries:          %d",
                     pThis->retries);
         }
         /*
