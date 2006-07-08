@@ -1218,22 +1218,29 @@ static int ajp_send_request(jk_endpoint_t *e,
      * If we failed to reuse a connection, try to reconnect.
      */
     if (ae->sd < 0) {
-
-        if (err) {
+        /* If we the previous connection was in error
+         * try to reconnect only if timeouts are set
+         */
+        if (err && ae->worker->connect_timeout == 0 &&
+                   ae->worker->socket_timeout == 0) {
             /* XXX: If err is set, the tomcat is either dead or disconnected */
             jk_log(l, JK_LOG_INFO,
                    "All endpoints are disconnected or dead");
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-        /* no need to handle cping/cpong here since it should be at connection time */
-
+        /* Connect to the backend.
+         * This can be either uninitalized connection or a reconnect.
+         */
         if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
             /*
              * After we are connected, each error that we are going to
              * have is probably unrecoverable
              */
             if (ajp_connection_tcp_send_message(ae, op->request, l) != JK_TRUE) {
+                /* Close the socket if unable to send request */
+                jk_close_socket(ae->sd);
+                ae->sd = -1;
                 jk_log(l, JK_LOG_INFO,
                        "Error sending request on a fresh connection");
                 JK_TRACE_EXIT(l);
@@ -1245,7 +1252,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             jk_close_socket(ae->sd);
             ae->sd = -1;
             jk_log(l, JK_LOG_INFO,
-                   "Error connecting to the Tomcat process.");
+                   "Error connecting to the backend server.");
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -1273,6 +1280,9 @@ static int ajp_send_request(jk_endpoint_t *e,
     postlen = op->post->len;
     if (postlen > AJP_HEADER_LEN) {
         if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
+            /* Close the socket if unable to send request */
+            jk_close_socket(ae->sd);
+            ae->sd = -1;
             jk_log(l, JK_LOG_ERROR, "Error resending request body (%d)",
                    postlen);
             JK_TRACE_EXIT(l);
@@ -1290,6 +1300,9 @@ static int ajp_send_request(jk_endpoint_t *e,
 
         if (postlen > AJP_HEADER_LEN) {
             if (ajp_connection_tcp_send_message(ae, s->reco_buf, l) != JK_TRUE) {
+                /* Close the socket if unable to send request */
+                jk_close_socket(ae->sd);
+                ae->sd = -1;
                 jk_log(l, JK_LOG_ERROR,
                        "Error resending request body (lb mode) (%d)",
                        postlen);
@@ -1337,6 +1350,9 @@ static int ajp_send_request(jk_endpoint_t *e,
 
             s->content_read = len;
             if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
+                /* Close the socket if unable to send request */
+                jk_close_socket(ae->sd);
+                ae->sd = -1;
                 jk_log(l, JK_LOG_ERROR, "Error sending request body");
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -2246,6 +2262,3 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
     JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
-
-
-
