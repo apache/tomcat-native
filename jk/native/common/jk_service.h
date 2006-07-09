@@ -34,7 +34,7 @@
 #include "jk_uri_worker_map.h"
 #include "jk_msg_buff.h"
 
-#define JK_RETRIES 3
+#define JK_RETRIES 2
 
 #ifdef __cplusplus
 extern "C"
