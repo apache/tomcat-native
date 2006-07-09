@@ -37,6 +37,17 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Allow JkMount to behave like uriworkermap.properties
+      by parsing pipe symbol as two directive marker. (mturk)
+      </update>
+    </changelog>
+  </subsection>
+</section>
+<section name="Changes from the JK 1.2.16">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <update>
       Added simple rewrite capability for IIS. Although simple it
       will fulfill most needs. (mturk)
       </update>
