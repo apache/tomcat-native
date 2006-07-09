@@ -365,24 +365,45 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
         if (sz > 0) {
             int i;
             for (i = 0; i < sz; i++) {
-                if (uri_worker_map_add
-                    (uw_map, jk_map_name_at(init_data, i),
-                     jk_map_value_at(init_data, i), l) == JK_FALSE) {
+                const char *u = jk_map_name_at(init_data, i);
+                const char *w = jk_map_value_at(init_data, i);
+                /* Multiple mappings like :
+                 * /servlets-examples|/ *
+                 * will create two mappings:
+                 * /servlets-examples
+                 * and:
+                 * /servlets-examples/ *
+                 */
+                if (strchr(u, '|')) {
+                    char *s, *r = strdup(u);
+                    s = strchr(r, '|');
+                    *(s++) = '\0';
+                    /* Add first mapping */
+                    if (!uri_worker_map_add(uw_map, r, w, l)) {
+                        jk_log(l, JK_LOG_ERROR,
+                        "invalid mapping rule %s->%s", r, w);
+                        rc = JK_FALSE;
+                    }
+                    for (; *s; s++)
+                        *(s - 1) = *s;
+                    *(s - 1) = '\0';
+                    /* add second mapping */
+                    if (!uri_worker_map_add(uw_map, r, w, l)) {
+                        jk_log(l, JK_LOG_ERROR,
+                               "invalid mapping rule %s->%s", r, w);
+                        rc = JK_FALSE;
+                    }
+                    free(r);
+                }
+                else if (!uri_worker_map_add(uw_map, u, w, l)) {
+                    jk_log(l, JK_LOG_ERROR,
+                           "invalid mapping rule %s->%s",
+                           u, w);
                     rc = JK_FALSE;
                     break;
                 }
-            }
-
-            if (i == sz) {
-                if (JK_IS_DEBUG_LEVEL(l))
-                    jk_log(l, JK_LOG_DEBUG,
-                           "there are %d rules",
-                           uw_map->size);
-            }
-            else {
-                jk_log(l, JK_LOG_ERROR,
-                       "Parsing error");
-                rc = JK_FALSE;
+                if (rc == JK_FALSE)
+                    break;
             }
         }
 
