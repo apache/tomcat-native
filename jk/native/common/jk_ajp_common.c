@@ -1694,13 +1694,15 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             return JK_CLIENT_ERROR;
         }
 
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG, "processing with %d retries", s->retries);
+        if (JK_IS_DEBUG_LEVEL(l)) {
+            jk_log(l, JK_LOG_DEBUG, "processing %s with %d retries",
+                   p->worker->name, p->worker->worker.retries);
+        }
         /*
          * JK_RETRIES could be replaced by the number of workers in
          * a load-balancing configuration
          */
-        for (i = 0; i < s->retries; i++) {
+        for (i = 0; i < p->worker->worker.retries; i++) {
             /*
              * We're using reqmsg which hold initial request
              * if Tomcat is stopped or restarted, we will pass reqmsg
