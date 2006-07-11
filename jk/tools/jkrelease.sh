@@ -16,7 +16,7 @@ export JAVA_HOME=/usr/local/jdk1.4.2
 # You need to change the version numbers
 JK_VERMAJOR="1"
 JK_VERMINOR="2"
-JK_VERFIX="16"
+JK_VERFIX="17"
 ASFROOT="http://svn.apache.org/repos/asf"
 JK_CVST="tomcat-connectors"
 
@@ -41,7 +41,12 @@ umask 022
 rm -rf ${JK_DIST}
 rm -rf ${JK_DIST}.*
 
-svn export "${JK_SVN_URL}" ${JK_DIST}.tmp
+mkdir -p ${JK_DIST}.tmp
+svn export "${JK_SVN_URL}/jk" ${JK_DIST}.tmp/jk
+for item in ${COPY_TOP}
+do
+    svn export "${JK_SVN_URL}/${item}" ${JK_DIST}.tmp/${item}
+done
 
 # Build documentation.
 cd ${JK_DIST}.tmp/jk/xdocs
