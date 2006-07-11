@@ -29,13 +29,6 @@
       Fix hanging jk status worker when certain attributes are being updated
       due to double locking. (rjung)
       </fix>
-    </changelog>
-  </subsection>
-</section>
-<section name="Changes from JK 1.2.16">
-  <br />
-  <subsection name="Native">
-    <changelog>
       <update>
       Allow JkMount to behave like uriworkermap.properties
       by parsing pipe symbol as two directive marker. (mturk)
