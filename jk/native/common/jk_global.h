@@ -297,6 +297,16 @@ extern "C"
 #define USE_VSPRINTF
 #endif
 
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+typedef SOCKET jk_sock_t;
+#define IS_VALID_SOCKET(s) ((s) != INVALID_SOCKET)
+#define JK_INVALID_SOCKET  INVALID_SOCKET
+#else
+typedef int jk_sock_t;
+#define IS_VALID_SOCKET(s) ((s) > 0)
+#define JK_INVALID_SOCKET  (-1)
+#endif
+
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */

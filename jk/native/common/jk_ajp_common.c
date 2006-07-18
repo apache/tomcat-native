@@ -716,12 +716,12 @@ void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
 
-    if (ae->sd > 0) {
+    if (IS_VALID_SOCKET(ae->sd)) {
         jk_shutdown_socket(ae->sd);
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "closed socket with sd = %d", ae->sd);
-        ae->sd = -1;
+        ae->sd = JK_INVALID_SOCKET;
     }
 
     jk_close_pool(&(ae->pool));
@@ -741,22 +741,22 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
     int sock = ae->sd;
 
     /* Mark existing endpoint socket as closed */
-    ae->sd = -1;
+    ae->sd = JK_INVALID_SOCKET;
     JK_ENTER_CS(&aw->cs, rc);
     if (rc) {
         unsigned int i;
         for (i = 0; i < aw->ep_cache_sz; i++) {
             /* Find cache slot with usable socket */
-            if (aw->ep_cache[i] && aw->ep_cache[i]->sd != -1) {
+            if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
                 ae->sd = aw->ep_cache[i]->sd;
-                aw->ep_cache[i]->sd = -1;
+                aw->ep_cache[i]->sd = JK_INVALID_SOCKET;
                 break;
             }
         }
         JK_LEAVE_CS(&aw->cs, rc);
     }
     /* Close previous socket */
-    if (sock > 0)
+    if (IS_VALID_SOCKET(sock))
         jk_close_socket(sock);
 }
 
@@ -859,7 +859,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
                             ae->worker->keepalive,
                             ae->worker->socket_timeout,
                             ae->worker->socket_buf, l);
-    if (ae->sd >= 0) {
+    if (IS_VALID_SOCKET(ae->sd)) {
         if (JK_IS_DEBUG_LEVEL(l)) {
             jk_log(l, JK_LOG_DEBUG,
                    "Connected socket %d to (%s)",
@@ -1170,7 +1170,7 @@ static int ajp_send_request(jk_endpoint_t *e,
     /*
      * First try to reuse open connections...
      */
-    while ((ae->sd > 0)) {
+    while (IS_VALID_SOCKET(ae->sd)) {
         int rc = 0;
         err = 0;
         if (ae->worker->socket_timeout) {
@@ -1179,7 +1179,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                        "Socket %d is not connected any more (errno=%d)",
                        ae->sd, errno);
                 jk_close_socket(ae->sd);
-                ae->sd = -1;
+                ae->sd = JK_INVALID_SOCKET;
                 err++;
             }
         }
@@ -1218,7 +1218,7 @@ static int ajp_send_request(jk_endpoint_t *e,
     /*
      * If we failed to reuse a connection, try to reconnect.
      */
-    if (ae->sd < 0) {
+    if (!IS_VALID_SOCKET(ae->sd)) {
         if (err) {
             /* XXX: If err is set, the tomcat is either dead or disconnected */
             jk_log(l, JK_LOG_INFO,
@@ -1247,7 +1247,7 @@ static int ajp_send_request(jk_endpoint_t *e,
         else {
             /* Close the socket if unable to connect */
             jk_close_socket(ae->sd);
-            ae->sd = -1;
+            ae->sd = JK_INVALID_SOCKET;
             jk_log(l, JK_LOG_INFO,
                    "Error connecting to the backend server.");
             JK_TRACE_EXIT(l);
@@ -1279,7 +1279,7 @@ static int ajp_send_request(jk_endpoint_t *e,
         if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
             /* Close the socket if unable to send request */
             jk_close_socket(ae->sd);
-            ae->sd = -1;
+            ae->sd = JK_INVALID_SOCKET;
             jk_log(l, JK_LOG_ERROR, "Error resending request body (%d)",
                    postlen);
             JK_TRACE_EXIT(l);
@@ -1888,7 +1888,7 @@ static int ajp_create_endpoint_cache(ajp_worker_t *p, int proto, jk_logger_t *l)
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
-            p->ep_cache[i]->sd = -1;
+            p->ep_cache[i]->sd = JK_INVALID_SOCKET;
             p->ep_cache[i]->reuse = JK_FALSE;
             p->ep_cache[i]->last_access = now;
             jk_open_pool(&(p->ep_cache[i]->pool), p->ep_cache[i]->buf,
@@ -2082,11 +2082,11 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
 
         JK_ENTER_CS(&w->cs, rc);
         if (rc) {
-            int i, sock = -1;
+            int i, sock = JK_INVALID_SOCKET;
 
             if (p->sd > 0 && !p->reuse) {
                 sock  = p->sd;
-                p->sd = -1;
+                p->sd = JK_INVALID_SOCKET;
             }
             for(i = w->ep_cache_sz - 1; i >= 0; i--) {
                 if (w->ep_cache[i] == NULL) {
@@ -2100,7 +2100,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
             if (w->cache_timeout > 0)
                 p->last_access = time(NULL);
             JK_LEAVE_CS(&w->cs, rc);
-            if (sock >= 0)
+            if (IS_VALID_SOCKET(sock))
                 jk_shutdown_socket(sock);
             if (i >= 0) {
                 if (JK_IS_DEBUG_LEVEL(l))
@@ -2211,13 +2211,13 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
             unsigned int i, n = 0, cnt = 0;
             /* Count opended slots */
             for (i = 0; i < aw->ep_cache_sz; i++) {
-                if (aw->ep_cache[i] && aw->ep_cache[i]->sd >= 0)
+                if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd))
                     cnt++;
             }
             /* Handle worker cache and recycle timeouts */
             for (i = 0; i < aw->ep_cache_sz; i++) {
                 /* Skip the closed sockets */
-                if (aw->ep_cache[i] && aw->ep_cache[i]->sd >= 0) {
+                if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
                     int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
                     if ((aw->cache_timeout > 0) && (elapsed > aw->cache_timeout)) {
                         time_t rt = 0;

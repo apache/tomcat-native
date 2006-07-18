@@ -81,7 +81,7 @@ static int soblock(int sd)
     return 0;
 }
 
-static int sononblock(int sd)
+static int sononblock(jk_sock_t sd)
 {
 #ifndef WIN32
     int fd_flags;
@@ -111,7 +111,7 @@ static int sononblock(int sd)
 
 #if defined (WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 /* WIN32 implementation */
-static int nb_connect(int sock, struct sockaddr *addr, int timeout)
+static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
 {
     int rc;
     if (timeout < 1)
@@ -161,7 +161,7 @@ static int nb_connect(int sock, struct sockaddr *addr, int timeout)
 
 #elif !defined(NETWARE)
 /* POSIX implementation */
-static int nb_connect(int sock, struct sockaddr *addr, int timeout)
+static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
 {
     int rc = 0;
 
@@ -210,7 +210,7 @@ static int nb_connect(int sock, struct sockaddr *addr, int timeout)
 }
 #else
 /* NETWARE implementation - blocking for now */
-static int nb_connect(int sock, struct sockaddr *addr, int timeout)
+static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
 {
     return connect(sock, addr, sizeof(struct sockaddr_in));
 }
@@ -294,11 +294,11 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
 
 /** connect to Tomcat */
 
-int jk_open_socket(struct sockaddr_in *addr, int keepalive,
-                   int timeout, int sock_buf, jk_logger_t *l)
+jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
+                         int timeout, int sock_buf, jk_logger_t *l)
 {
     char buf[32];
-    int sock;
+    jk_sock_t sock;
     int set = 1;
     int ret = 0;
 #ifdef SO_LINGER
@@ -308,12 +308,13 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
     JK_TRACE_ENTER(l);
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
+    if (!IS_VALID_SOCKET(sock)) {
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
                "socket() failed with errno=%d", errno);
         JK_TRACE_EXIT(l);
-        return -1;
+        return JK_INVALID_SOCKET;
+;
     }
     /* Disable Nagle algorithm */
     if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (SET_TYPE)&set,
@@ -322,7 +323,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                 "failed setting TCP_NODELAY with errno=%d", errno);
         jk_close_socket(sock);
         JK_TRACE_EXIT(l);
-        return -1;
+        return JK_INVALID_SOCKET;
     }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
@@ -335,7 +336,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                    "failed setting SO_KEEPALIVE with errno=%d", errno);
             jk_close_socket(sock);
             JK_TRACE_EXIT(l);
-            return -1;
+            return JK_INVALID_SOCKET;
         }
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
@@ -352,7 +353,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                     "failed setting SO_SNDBUF with errno=%d", errno);
             jk_close_socket(sock);
             JK_TRACE_EXIT(l);
-            return -1;
+            return JK_INVALID_SOCKET;
         }
         set = sock_buf;
         /* Set socket receive buffer size */
@@ -363,7 +364,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                     "failed setting SO_RCVBUF with errno=%d", errno);
             jk_close_socket(sock);
             JK_TRACE_EXIT(l);
-            return -1;
+            return JK_INVALID_SOCKET;
         }
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
@@ -405,7 +406,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                 "failed setting SO_NOSIGPIPE with errno=%d", errno);
         jk_close_socket(sock);
         JK_TRACE_EXIT(l);
-        return -1;
+        return JK_INVALID_SOCKET;
     }
 #endif
 #ifdef SO_LINGER
@@ -418,7 +419,7 @@ int jk_open_socket(struct sockaddr_in *addr, int keepalive,
                 "failed setting SO_LINGER with errno=%d", errno);
         jk_close_socket(sock);
         JK_TRACE_EXIT(l);
-        return -1;
+        return JK_INVALID_SOCKET;
     }
 #endif
     /* Tries to connect to Tomcat (continues trying while error is EINTR) */
@@ -445,7 +446,7 @@ iSeries when Unix98 is required at compil time */
                "connect to %s failed with errno=%d",
                jk_dump_hinfo(addr, buf), errno);
         jk_close_socket(sock);
-        sock = -1;
+        sock = JK_INVALID_SOCKET;
     }
     else {
         if (JK_IS_DEBUG_LEVEL(l))
@@ -458,7 +459,7 @@ iSeries when Unix98 is required at compil time */
 
 /** close the socket */
 
-int jk_close_socket(int s)
+int jk_close_socket(jk_sock_t s)
 {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
     if (s != INVALID_SOCKET)
@@ -483,7 +484,7 @@ int jk_close_socket(int s)
 #define SHUT_WR 0x01
 #endif
 #endif
-int jk_shutdown_socket(int s)
+int jk_shutdown_socket(jk_sock_t s)
 {
     unsigned char dummy[512];
     int nbytes;
@@ -540,7 +541,7 @@ int jk_shutdown_socket(int s)
  * @bug       this fails on Unixes if len is too big for the underlying
  *             protocol.
  */
-int jk_tcp_socket_sendfull(int sd, const unsigned char *b, int len)
+int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len)
 {
     int sent = 0;
     int wr;
@@ -574,7 +575,7 @@ int jk_tcp_socket_sendfull(int sd, const unsigned char *b, int len)
  * @return    <0: receive failed or connection closed.
  *            >0: length of the received data.
  */
-int jk_tcp_socket_recvfull(int sd, unsigned char *b, int len)
+int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len)
 {
     int rdlen = 0;
     int rd;
@@ -619,7 +620,7 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
 }
 
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-int jk_is_socket_connected(int sock)
+int jk_is_socket_connected(jk_sock_t sock)
 {
     fd_set fd;
     struct timeval tv;
@@ -646,7 +647,7 @@ int jk_is_socket_connected(int sock)
     }
 }
 #else
-int jk_is_socket_connected(int sock)
+int jk_is_socket_connected(jk_sock_t sock)
 {
     char test_buffer[1];
     int  rd;

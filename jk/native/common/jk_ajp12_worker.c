@@ -51,7 +51,7 @@ struct ajp12_endpoint
 {
     ajp12_worker_t *worker;
 
-    int sd;
+    jk_sock_t sd;
     jk_sockbuf_t sb;
 
     jk_endpoint_t endpoint;
@@ -105,11 +105,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
             jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::service, sd = %d",
                    p->sd);
-            if (p->sd >= 0) {
+            if (IS_VALID_SOCKET(p->sd)) {
                 break;
             }
         }
-        if (p->sd >= 0) {
+        if (IS_VALID_SOCKET(p->sd)) {
 
             jk_sb_open(&p->sb, p->sd);
             if (ajpv12_handle_request(p, s, l)) {
@@ -134,7 +134,7 @@ static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
     jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::done");
     if (e && *e && (*e)->endpoint_private) {
         ajp12_endpoint_t *p = (*e)->endpoint_private;
-        if (p->sd > 0) {
+        if (IS_VALID_SOCKET(p->sd)) {
             jk_close_socket(p->sd);
         }
         free(p);
@@ -201,7 +201,7 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
         ajp12_endpoint_t *p =
             (ajp12_endpoint_t *) malloc(sizeof(ajp12_endpoint_t));
         if (p) {
-            p->sd = -1;
+            p->sd = JK_INVALID_SOCKET;
             p->worker = pThis->worker_private;
             p->endpoint.endpoint_private = p;
             p->endpoint.service = service;

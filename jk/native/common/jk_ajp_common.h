@@ -299,7 +299,7 @@ struct ajp_endpoint
 
     int proto;              /* PROTOCOL USED AJP13/AJP14 */
 
-    int sd;
+    jk_sock_t sd;
     int reuse;
 
     jk_endpoint_t endpoint;

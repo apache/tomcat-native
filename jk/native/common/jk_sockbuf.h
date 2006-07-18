@@ -27,9 +27,9 @@
 struct jk_sockbuf
 {
     char buf[SOCKBUF_SIZE];
-    unsigned start;
-    unsigned end;
-    int sd;
+    unsigned int start;
+    unsigned int end;
+    jk_sock_t sd;
 };
 typedef struct jk_sockbuf jk_sockbuf_t;
 
