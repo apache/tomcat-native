@@ -25,8 +25,8 @@
 /************** START OF AREA TO MODIFY BEFORE RELEASING *************/
 #define JK_VERMAJOR     1
 #define JK_VERMINOR     2
-#define JK_VERFIX       17
-#define JK_VERSTRING    "1.2.17"
+#define JK_VERFIX       18
+#define JK_VERSTRING    "1.2.18"
 
 /* Beta number */
 #define JK_VERBETA      0
