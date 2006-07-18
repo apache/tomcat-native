@@ -691,7 +691,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                             rec->s->lb_value -= rec->s->lb_mult;
                         else {
                             rec->s->lb_value = 0;
-                            if (JK_IS_DEBUG_LEVEL(l))
+                            if (JK_IS_DEBUG_LEVEL(l)) {
                                 jk_log(l, JK_LOG_DEBUG,
                                        "worker %s has load value to low (%"
                                        JK_UINT64_T_FMT
@@ -702,6 +702,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                                        rec->s->name,
                                        rec->s->lb_value,
                                        rec->s->lb_mult);
+                            }
                         }
 
                     /* When returning the endpoint mark the worker as not busy.
