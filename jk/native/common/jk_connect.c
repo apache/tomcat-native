@@ -146,7 +146,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
         /* Evaluate the efdset */
         if (FD_ISSET(sock, &efdset)) {
             /* The connect failed. */
-            int rclen = sizeof(rc);
+            int rclen = (int)sizeof(rc);
             if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*) &rc, &rclen))
                 rc = 0;
             soblock(sock);
@@ -177,7 +177,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
                    && (timeout > 0)) {
         fd_set wfdset;
         struct timeval tv;
-        unsigned int rclen = sizeof(rc);
+        socklen_t rclen = (socklen_t)sizeof(rc);
 
         FD_ZERO(&wfdset);
         FD_SET(sock, &wfdset);
