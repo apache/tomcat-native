@@ -710,8 +710,9 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
         if (i > 0)
             lb->s->retries = i;
         i = status_int("lt", s->query_string, lb->s->recover_wait_time);
-        if (i > 59)
-            lb->s->recover_wait_time = i;
+        if (i < 1)
+            i = 1;
+        lb->s->recover_wait_time = i;
         lb->s->sticky_session = status_bool("ls", s->query_string);
         lb->s->sticky_session_force = status_bool("lf", s->query_string);
     }
