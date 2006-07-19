@@ -1005,8 +1005,8 @@ static int JK_METHOD init(jk_worker_t *pThis,
     p->s->retries = pThis->retries;
     p->s->recover_wait_time = jk_get_worker_recover_timeout(props, p->s->name,
                                                             WAIT_BEFORE_RECOVER);
-    if (p->s->recover_wait_time < WAIT_BEFORE_RECOVER)
-        p->s->recover_wait_time = WAIT_BEFORE_RECOVER;
+    if (p->s->recover_wait_time < 1)
+        p->s->recover_wait_time = 1;
     p->maintain_time = jk_get_worker_maintain_time(props);
     p->s->last_maintain_time = time(NULL);
 
