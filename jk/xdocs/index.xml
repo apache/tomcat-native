@@ -28,19 +28,26 @@ manual is described in more detail below.</p>
 <section name="Headlines">
 <br />
 <ul>
-<li><a href="news/20060101.html#20060708.1"><b>JK-1.2.17 released</b></a>
+<li><a href="news/20060101.html#20060720.1"><b>JK-1.2.18 released</b></a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
-of Tomcat Connectors 1.2.17 Stable.
+of Tomcat Connectors 1.2.18 Stable.
 </p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.17/tomcat-connectors-1.2.17-src.tar.gz">JK 1.2.17 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.17/tomcat-connectors-1.2.17-src.tar.gz.asc">PGP signature</a>
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.18/tomcat-connectors-1.2.18-src.tar.gz">JK 1.2.18 release sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.18/tomcat-connectors-1.2.18-src.tar.gz.asc">PGP signature</a>
 </p>
 <p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
 </p>
 </li>
 
+<li><a href="news/20060101.html#20060708.1"><b>JK-1.2.17 not released</b></a>
+<p>Version 1.2.17 of Tomcat Connectors has not been released due to a bug in socket function argument types.
+</p>
+<p>Thanks to all testers for their feedback. All reported new errors have been fixed in Version 1.2.18.
+</p>
+</li>
+
 <li><a href="news/20060101.html#20060629.1"><b>JK-1.2.16 not released</b></a>
-<p>Version 1.2.16 of Tomcat Connectors 1.2.16 has not been released due to a bug in the jk status worker.
+<p>Version 1.2.16 of Tomcat Connectors has not been released due to a bug in the jk status worker.
 </p>
 <p>Thanks to all testers for their feedback. All reported new errors have been fixed in Version 1.2.17.
 </p>

@@ -21,6 +21,19 @@
   new documentation project for JK was started.
   </p>
 </section>
+<section name="Changes from the released JK 1.2.18">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <fix>
+      Using socklen_t in getsockopt. Also introducing jk_sock_t. (mturk)
+      </fix>
+      <update>
+      Allow recovery wait time below 60 seconds (new minimum is 1 second). (mturk)
+      </update>
+    </changelog>
+  </subsection>
+</section>
 <section name="Changes from the released JK 1.2.17">
   <br />
   <subsection name="Native">

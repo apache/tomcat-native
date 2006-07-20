@@ -15,11 +15,11 @@
 
 <section name="2006 News &amp; Status">
 <br />
-<a name="20060708.1"> 
-<h3>JK-1.2.17 released</h3>
+<a name="20060720.1"> 
+<h3>JK-1.2.18 released</h3>
 <p>The Apache Tomcat team is proud to announce the immediate availability
-of Tomcat Connectors 1.2.17. This is a stable release adding
-a few bug fixes to the not released 1.2.16 version.
+of Tomcat Connectors 1.2.18. This is a stable release adding
+a few bug fixes to the not released 1.2.17 version.
 </p>
 <p>
  Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
@@ -27,6 +27,17 @@ a few bug fixes to the not released 1.2.16 version.
 <p>If you find any bugs while using this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
+</p>
+</a>
+<hr size="1" noshade="noshade" />
+
+<a name="20060708.1"> 
+<h3>JK-1.2.17 not released</h3>
+<p>Version 1.2.17 of Tomcat Connectors 1.2.17 has not been released 
+due to a bug in the types chosen for socket arguments.
+</p>
+<p>
+ Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 </a>
 <hr size="1" noshade="noshade" />

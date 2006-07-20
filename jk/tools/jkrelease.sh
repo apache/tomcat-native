@@ -16,7 +16,7 @@ export JAVA_HOME=/usr/local/jdk1.4.2
 # You need to change the version numbers
 JK_VERMAJOR="1"
 JK_VERMINOR="2"
-JK_VERFIX="17"
+JK_VERFIX="18"
 ASFROOT="http://svn.apache.org/repos/asf"
 JK_CVST="tomcat-connectors"
 
@@ -39,7 +39,7 @@ JK_SVN_URL="${ASFROOT}/tomcat/connectors/tags/${JK_BRANCH}/${JK_TAG}"
 umask 022
 
 rm -rf ${JK_DIST}
-rm -rf ${JK_DIST}.*
+rm -rf ${JK_DIST}.tmp
 
 mkdir -p ${JK_DIST}.tmp
 svn export "${JK_SVN_URL}/jk" ${JK_DIST}.tmp/jk
@@ -64,7 +64,7 @@ do
 done
 
 srcdir=${JK_DIST}.tmp/jk
-targetdir=${JK_DIST}/jk
+targetdir=${JK_DIST}
 mkdir -p ${targetdir}
 for item in ${COPY_JK}
 do
@@ -73,7 +73,7 @@ do
 done
 
 srcdir=${JK_DIST}.tmp/jk/build
-targetdir=${JK_DIST}/jk
+targetdir=${JK_DIST}
 mkdir -p ${targetdir}
 for item in docs
 do
@@ -82,7 +82,7 @@ do
 done
 
 srcdir=${JK_DIST}.tmp/jk/conf
-targetdir=${JK_DIST}/jk/conf
+targetdir=${JK_DIST}/conf
 mkdir -p ${targetdir}
 for item in ${COPY_CONF}
 do
@@ -91,7 +91,7 @@ do
 done
 
 # Remove extra directories and files
-targetdir=${JK_DIST}/jk
+targetdir=${JK_DIST}
 rm -rf ${targetdir}/xdocs/jk2
 rm -rf ${targetdir}/native/CHANGES.txt
 rm -rf ${targetdir}/native/build.xml
@@ -99,7 +99,7 @@ find ${JK_DIST} -name .cvsignore -exec rm -rf \{\} \;
 find ${JK_DIST} -name CVS -exec rm -rf \{\} \; 
 find ${JK_DIST} -name .svn -exec rm -rf \{\} \; 
 
-cd ${JK_DIST}/jk/native
+cd ${JK_DIST}/native
 
 # Check for links, elinks or w3m
 W3MOPTS="-dump -cols 80 -t 4 -S -O iso-8859-1 -T text/html"
@@ -155,7 +155,7 @@ ${TOOL} ../docs/news/printer/20041100.html >>NEWS
 
 # Generate configure et. al.
 ./buildconf.sh
-cd ../../../
+cd ../../
 
 # Pack and sign
 tar cvf ${JK_DIST}.tar --owner="${JK_OWNER}" --group="${JK_GROUP}" ${JK_DIST}

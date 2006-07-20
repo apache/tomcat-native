@@ -217,13 +217,11 @@ You should note that Ajp13 is now the only out-process protocol supported by Tom
   worker.worker2.host=www2.x.com
   worker.worker2.port=8009
   worker.worker2.lbfactor=3
-  # worker "worker2" use up to 10 sockets, which will stay no more than 10mn in cache
-  worker.worker2.cachesize=10
-  worker.worker2.cache_timeout=600
+  # worker "worker2" use up to 10 sockets, which will stay no more than 10mn in the connection pool
+  worker.worker2.connection_pool_size=10
+  worker.worker2.connection_pool_timeout=600
   # worker "worker2" ask operating system to send KEEP-ALIVE signal on the connection
   worker.worker2.socket_keepalive=1
-  # worker "worker2" want ajp13 connection to be dropped after 5mn (recycle)
-  worker.worker2.recycle_timeout=300
   # mount can be used as an alternative to the JkMount directive
   worker.worker2.mount=/contexta /contexta/* /contextb /contextb/*
 </source>
@@ -423,8 +421,8 @@ A lb worker that load balance the ajp12 and ajp13 workers
   worker.worker2.host=locahost
   worker.worker2.port=8009
   worker.worker2.lbfactor=1
-  worker.worker2.cachesize=10
-  worker.worker2.cache_timeout=600
+  worker.worker2.connection_pool_size=10
+  worker.worker2.connection_pool_timeout=600
   worker.worker2.socket_keepalive=1
   worker.worker2.socket_timeout=60
   # Set properties for worker3 (jni)
