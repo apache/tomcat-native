@@ -475,10 +475,10 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     unsigned int i;
     char *url_rewrite;
     const char *rv = NULL;
-    const char *url = uri;
-    char  buf[JK_MAX_URI_LEN+1];
+    char  url[JK_MAX_URI_LEN+1];
 
     JK_TRACE_ENTER(l);
+
     if (!uw_map || !uri) {
         JK_LOG_NULL_PARAMS(l);
         JK_TRACE_EXIT(l);
@@ -490,14 +490,19 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         JK_TRACE_EXIT(l);
         return NULL;
     }
+    for (i = 0; i < strlen(uri); i++) 
+        if (uri[i] == ';')
+            break;
+        else
+            url[i] = uri[i];
+    url[i] = '\0';
+    
     url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
     if (url_rewrite) {
-        size_t len = url_rewrite - uri;
+        size_t len = url_rewrite - url;
         if (len > JK_MAX_URI_LEN)
             len = JK_MAX_URI_LEN;
-        strncpy(buf, uri, len);
-        buf[len] = '\0';
-        url = &buf[0];
+        url[len] = '\0';
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG, "Removing Session path '%s' URI '%s'",
                    url_rewrite, url);
