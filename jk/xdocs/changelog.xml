@@ -21,7 +21,18 @@
   new documentation project for JK was started.
   </p>
 </section>
-<section name="Changes from the released JK 1.2.18">
+<section name="Changes in the released JK 1.2.19">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <fix>
+      </fix>
+      <update>
+      </update>
+    </changelog>
+  </subsection>
+</section>
+<section name="Changes in the released JK 1.2.18">
   <br />
   <subsection name="Native">
     <changelog>
@@ -34,7 +45,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes from the released JK 1.2.17">
+<section name="Changes in JK 1.2.17">
   <br />
   <subsection name="Native">
     <changelog>
@@ -49,7 +60,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes from the JK 1.2.16">
+<section name="Changes in JK 1.2.16">
   <br />
   <subsection name="Native">
     <changelog>

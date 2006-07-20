@@ -16,7 +16,7 @@ export JAVA_HOME=/usr/local/jdk1.4.2
 # You need to change the version numbers
 JK_VERMAJOR="1"
 JK_VERMINOR="2"
-JK_VERFIX="18"
+JK_VERFIX="19"
 ASFROOT="http://svn.apache.org/repos/asf"
 JK_CVST="tomcat-connectors"
 
