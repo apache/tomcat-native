@@ -57,7 +57,7 @@ name of the <b>jvmRoute</b> defined in Tomcat's server.xml configuration file.
 </p>
 <p>
 <warn>
-The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z][0-9]</b> and is case insensitive.
+The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z][0-9]</b> and is case sensitive.
 </warn>
 </p>
 
