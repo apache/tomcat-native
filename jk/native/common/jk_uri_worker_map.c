@@ -440,7 +440,7 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
             /* Map is already sorted by context_len */
             if (wildchar_match(uri, uwr->context,
 #ifdef WIN32
-                               1
+                               0
 #else
                                0
 #endif
@@ -529,7 +529,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             /* Map is already sorted by context_len */
             if (wildchar_match(url, uwr->context,
 #ifdef WIN32
-                               1
+                               0
 #else
                                0
 #endif
