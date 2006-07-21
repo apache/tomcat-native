@@ -313,7 +313,7 @@ static int ajpv12_sendstring(ajp12_endpoint_t * p, const char *buffer)
 {
     int bufferlen;
 
-    if (buffer && (bufferlen = strlen(buffer))) {
+    if (buffer && (bufferlen = (int)strlen(buffer))) {
 #if defined(AS400) || defined(_OSD_POSIX)
         char buf[2048];
         if (bufferlen < 2048) {

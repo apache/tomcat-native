@@ -33,7 +33,7 @@ struct jk_sockbuf
 };
 typedef struct jk_sockbuf jk_sockbuf_t;
 
-int jk_sb_open(jk_sockbuf_t *sb, int sd);
+int jk_sb_open(jk_sockbuf_t *sb, jk_sock_t sd);
 
 int jk_sb_write(jk_sockbuf_t *sb, const void *buf, unsigned sz);
 

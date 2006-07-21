@@ -52,7 +52,7 @@ typedef char* SET_TYPE;
 typedef const char* SET_TYPE;
 #endif
 
-static int soblock(int sd)
+static int soblock(jk_sock_t sd)
 {
 /* BeOS uses setsockopt at present for non blocking... */
 #ifndef WIN32
@@ -136,7 +136,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
 
         tv.tv_sec  = timeout;
         tv.tv_usec = 0;
-        rc = select(sock + 1, NULL, &wfdset, &efdset, &tv);
+        rc = select((int)sock + 1, NULL, &wfdset, &efdset, &tv);
         if (rc == SOCKET_ERROR || rc == 0) {
             rc = WSAGetLastError();
             soblock(sock);
@@ -634,7 +634,7 @@ int jk_is_socket_connected(jk_sock_t sock)
     tv.tv_usec = 1;
 
     /* If we get a timeout, then we are still connected */
-    if ((rc = select(sock + 1, &fd, NULL, NULL, &tv)) == 0) {
+    if ((rc = select((int)sock + 1, &fd, NULL, NULL, &tv)) == 0) {
         errno = 0;
         return 1;
     }

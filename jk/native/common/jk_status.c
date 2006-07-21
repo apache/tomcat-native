@@ -260,7 +260,7 @@ static const char *status_val_match(unsigned int match)
 static void jk_puts(jk_ws_service_t *s, const char *str)
 {
     if (str)
-        s->write(s, str, strlen(str));
+        s->write(s, str, (unsigned int)strlen(str));
     else
         s->write(s, "(null)", 6);
 }
@@ -275,7 +275,7 @@ static void jk_putv(jk_ws_service_t *s, ...)
         str = va_arg(va, const char *);
         if (str == NULL)
             break;
-        s->write(s, str, strlen(str));
+        s->write(s, str, (unsigned int)strlen(str));
     }
     va_end(va);
 }

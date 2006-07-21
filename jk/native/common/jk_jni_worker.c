@@ -834,7 +834,7 @@ static int open_jvm1(jni_worker_t * p, JNIEnv ** env, jk_logger_t *l)
     jk_log(l, JK_LOG_DEBUG, "got default jvm args");
 
     if (vm_args.classpath) {
-        unsigned len = strlen(vm_args.classpath) +
+        size_t len = strlen(vm_args.classpath) +
             strlen(p->tomcat_classpath) + 3;
         char *tmp = jk_pool_alloc(&p->p, len);
         if (tmp) {
@@ -907,7 +907,7 @@ static int detect_jvm_version(jk_logger_t *l)
 static char *build_opt_str(jk_pool_t *p,
                            char *opt_name, char *opt_value, jk_logger_t *l)
 {
-    unsigned len = strlen(opt_name) + strlen(opt_value) + 2;
+    size_t len = strlen(opt_name) + strlen(opt_value) + 2;
 
     /* [V] IMHO, these should not be deallocated as long as the JVM runs */
     char *tmp = jk_pool_alloc(p, len);
@@ -927,7 +927,7 @@ static char *build_opt_int(jk_pool_t *p,
                            char *opt_name, int opt_value, jk_logger_t *l)
 {
     /* [V] this should suffice even for 64-bit int */
-    unsigned len = strlen(opt_name) + 20 + 2;
+    size_t len = strlen(opt_name) + 20 + 2;
     /* [V] IMHO, these should not be deallocated as long as the JVM runs */
     char *tmp = jk_pool_alloc(p, len);
 

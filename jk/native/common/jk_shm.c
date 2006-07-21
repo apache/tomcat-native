@@ -97,7 +97,7 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
                                        NULL,
                                        PAGE_READWRITE,
                                        0,
-                                       sizeof(jk_shm_header_t) + sz,
+                                       (DWORD)(sizeof(jk_shm_header_t) + sz),
                                        fname);
         if (jk_shm_map == NULL || jk_shm_map == INVALID_HANDLE_VALUE &&
             GetLastError() == ERROR_ALREADY_EXISTS)

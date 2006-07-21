@@ -265,7 +265,7 @@ static void recover_workers(lb_worker_t *p,
  * for the routing decisions.
  */
 static jk_uint64_t decay_load(lb_worker_t *p,
-                              int exponent,
+                              time_t exponent,
                               jk_logger_t *l)
 {
     unsigned int i;

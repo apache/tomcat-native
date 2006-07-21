@@ -738,7 +738,7 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
 {
     int rc;
     ajp_worker_t *aw = ae->worker;
-    int sock = ae->sd;
+    jk_sock_t sock = ae->sd;
 
     /* Mark existing endpoint socket as closed */
     ae->sd = JK_INVALID_SOCKET;
@@ -775,7 +775,7 @@ static int ajp_is_input_event(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
     tv.tv_usec = (timeout % 1000) * 1000;
 
     do {
-        rc = select(ae->sd + 1, &rset, NULL, NULL, &tv);
+        rc = select((int)ae->sd + 1, &rset, NULL, NULL, &tv);
     } while (rc < 0 && errno == EINTR);
 
     if (rc == 0) {
@@ -2082,7 +2082,8 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
 
         JK_ENTER_CS(&w->cs, rc);
         if (rc) {
-            int i, sock = JK_INVALID_SOCKET;
+            int i;
+            jk_sock_t sock = JK_INVALID_SOCKET;
 
             if (p->sd > 0 && !p->reuse) {
                 sock  = p->sd;

@@ -25,7 +25,7 @@
 
 static int fill_buffer(jk_sockbuf_t *sb);
 
-int jk_sb_open(jk_sockbuf_t *sb, int sd)
+int jk_sb_open(jk_sockbuf_t *sb, jk_sock_t sd)
 {
     if (sb && sd >= 0) {
         sb->end = 0;

@@ -299,7 +299,7 @@ int jk_log(jk_logger_t *l,
 #endif
         char *f = (char *)(file + strlen(file) - 1);
         va_list args;
-        int used = 0;
+        size_t used = 0;
 
         while (f != file && '\\' != *f && '/' != *f) {
             f--;
@@ -335,7 +335,7 @@ int jk_log(jk_logger_t *l,
             used += 8;
 
             if (funcname) {
-                rc = strlen(funcname) + 2;
+                rc = (int)strlen(funcname) + 2;
                 if (usable_size - used >= rc) {
                     strcat(buf, funcname);
                     strcat(buf, "::");
