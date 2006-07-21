@@ -133,13 +133,13 @@ static const char *jk_level_verbs[] = {
 
 const char *jk_log_fmt = JK_TIME_FORMAT;
 
-static size_t set_time_str(char *str, int len)
+static int set_time_str(char *str, int len)
 {
     time_t t = time(NULL);
     struct tm *tms;
 
     tms = localtime(&t);
-    return strftime(str, len, jk_log_fmt, tms);
+    return (int)strftime(str, len, jk_log_fmt, tms);
 }
 
 /* Write at most n characters to the buffer in str, return the
@@ -299,7 +299,7 @@ int jk_log(jk_logger_t *l,
 #endif
         char *f = (char *)(file + strlen(file) - 1);
         va_list args;
-        size_t used = 0;
+        int used = 0;
 
         while (f != file && '\\' != *f && '/' != *f) {
             f--;
