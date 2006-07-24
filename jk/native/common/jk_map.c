@@ -283,10 +283,10 @@ char **jk_map_get_string_list(jk_map_t *m,
          * strtok also by a "*"
          */
 #if defined(AS400) || defined(_REENTRANT)
-        for (p = strtok_r(v, " \t,", &lasts);
-             p; p = strtok_r(NULL, " \t,", &lasts))
+        for (p = strtok_r(v, " \t,*", &lasts);
+             p; p = strtok_r(NULL, " \t,*", &lasts))
 #else
-        for (p = strtok(v, " \t,"); p; p = strtok(NULL, " \t,"))
+        for (p = strtok(v, " \t,*"); p; p = strtok(NULL, " \t,*"))
 #endif
 
         {
