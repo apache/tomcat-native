@@ -998,16 +998,9 @@ public class AprEndpoint {
 
                 try {
                     // Allocate a new worker thread
-                    Worker workerThread = getWorkerThread();
                     // Accept the next incoming connection from the server socket
-                    long socket = Socket.accept(serverSock);
                     // Hand this socket off to an appropriate processor
-                    if (setSocketOptions(socket)) {
-                        workerThread.assign(socket);
-                    } else {
-                        // Close socket and pool right away
-                        Socket.destroy(socket);
-                    }
+                    getWorkerThread().assign(Socket.accept(serverSock), true);
                 } catch (Throwable t) {
                     log.error(sm.getString("endpoint.accept.fail"), t);
                 }
@@ -1166,7 +1159,7 @@ public class AprEndpoint {
                                 continue;
                             }
                             // Hand this socket off to a worker
-                            getWorkerThread().assign(desc[n*2+1]);
+                            getWorkerThread().assign(desc[n*2+1], false);
                         }
                     } else if (rv < 0) {
                         int errn = -rv;
@@ -1218,6 +1211,7 @@ public class AprEndpoint {
         protected Thread thread = null;
         protected boolean available = false;
         protected long socket = 0;
+        protected boolean options = false;
 
 
         /**
@@ -1229,7 +1223,7 @@ public class AprEndpoint {
          *
          * @param socket TCP socket to process
          */
-        protected synchronized void assign(long socket) {
+        protected synchronized void assign(long socket, boolean options) {
 
             // Wait for the Processor to get the previous Socket
             while (available) {
@@ -1241,6 +1235,7 @@ public class AprEndpoint {
 
             // Store the newly available Socket and notify our thread
             this.socket = socket;
+            this.options = options;
             available = true;
             notifyAll();
 
@@ -1286,7 +1281,7 @@ public class AprEndpoint {
                     continue;
 
                 // Process the request from this socket
-                if (!handler.process(socket)) {
+                if ((options && !setSocketOptions(socket)) || !handler.process(socket)) {
                     // Close socket and pool
                     Socket.destroy(socket);
                     socket = 0;
@@ -1552,7 +1547,7 @@ public class AprEndpoint {
                                     Socket.timeoutSet(state.socket, soTimeout * 1000);
                                     // If all done hand this socket off to a worker for
                                     // processing of further requests
-                                    getWorkerThread().assign(state.socket);
+                                    getWorkerThread().assign(state.socket, false);
                                 } else {
                                     // Close the socket since this is
                                     // the end of not keep-alive request.
