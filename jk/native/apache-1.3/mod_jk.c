@@ -2039,8 +2039,13 @@ static void open_jk_log(server_rec *s, pool *p)
     }
     else if (*conf->log_file != '\0') {
         char *log_file = ap_server_root_relative(p, conf->log_file);
+#if AP_MODULE_MAGIC_AT_LEAST(19990320,14)
         if ((conf->log_fd = ap_popenf_ex(p, log_file, xfer_flags, xfer_mode, 1))
              < 0) {
+#else
+        if ((conf->log_fd = ap_popenf(p, log_file, xfer_flags, xfer_mode))
+             < 0) {
+#endif
             ap_log_error(APLOG_MARK, APLOG_ERR, s,
                          "mod_jk: could not open JkLog " "file %s", log_file);
             exit(1);
