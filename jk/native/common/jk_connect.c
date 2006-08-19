@@ -619,7 +619,6 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
     return buf;
 }
 
-#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 int jk_is_socket_connected(jk_sock_t sock)
 {
     fd_set fd;
@@ -632,43 +631,31 @@ int jk_is_socket_connected(jk_sock_t sock)
     /* Wait one microsecond */
     tv.tv_sec  = 0;
     tv.tv_usec = 1;
-
-    /* If we get a timeout, then we are still connected */
-    if ((rc = select((int)sock + 1, &fd, NULL, NULL, &tv)) == 0) {
-        errno = 0;
-        return 1;
-    }
-    else {
-        if (rc == SOCKET_ERROR)
-            errno = WSAGetLastError() - WSABASEERR;
-        else
-            errno = EOF;
-        return 0;
-    }
-}
-#else
-int jk_is_socket_connected(jk_sock_t sock)
-{
-    char test_buffer[1];
-    int  rd;
-    int  saved_errno;
-
-    errno = 0;
-    /* Set socket to nonblocking */
-    if (sononblock(sock) != 0)
-        return 0;
+    
     do {
-        rd = read(sock, test_buffer, 1);
-    } while (rd == -1 && errno == EINTR);
-    saved_errno = errno;
-    soblock(sock);
-    if (rd == -1 && saved_errno == EWOULDBLOCK) {
-        errno = 0;
+        rc = select((int)sock + 1, &fd, NULL, NULL, &tv);
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+        errno = WSAGetLastError() - WSABASEERR;
+#endif        
+    } while (rc == -1 && errno == EINTR);
+
+    if (rc == 0) {
+        /* If we get a timeout, then we are still connected */
         return 1;
     }
-    else {
-        errno = saved_errno ? saved_errno : EOF;
-        return 0;
+    else if (rc == 1) {
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+        u_long nr;
+        if (ioctlsocket(sock, FIONREAD, &nr) == 0) {
+            return nr == 0 ? 0 : 1;
+        }
+#else
+        int nr;
+        if (ioctl(sock, FIONREAD, (void*)&nr) == 0) {
+            return nr == 0 ? 0 : 1;
+        }
+#endif        
     }
+
+    return 0;
 }
-#endif
