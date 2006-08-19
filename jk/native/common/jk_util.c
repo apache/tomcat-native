@@ -317,6 +317,7 @@ int jk_log(jk_logger_t *l,
         used = set_time_str(buf, usable_size);
 
         if (line) {
+#if _MT_CODE
             /* Log [pid:threadid] for all levels except REQUEST. */
             /* This information helps to correlate lines from different logs. */
             /* Performance is no issue, because with production log levels */
@@ -328,6 +329,19 @@ int jk_log(jk_logger_t *l,
             rc = snprintf(&buf[used], usable_size - used,
                              "[%04d:%04d] ", getpid(), jk_gettid());
 #endif
+#else
+            /* Log [pid] for all levels except REQUEST. */
+            /* This information helps to correlate lines from different logs. */
+            /* Performance is no issue, because with production log levels */
+            /* we only call it often, if we have a lot of errors */
+#ifdef USE_SPRINTF              /* until we get a snprintf function */
+            rc = sprintf(&buf[used], "[%04d] ", getpid());
+#else
+            rc = snprintf(&buf[used], usable_size - used,
+                             "[%04d] ", getpid());
+#endif
+#endif
+
             used += rc;
             if (rc < 0 || usable_size - used < 8) {
                 return 0;
