@@ -190,9 +190,10 @@ static int JK_METHOD log_to_file(jk_logger_t *l, int level, const char *what)
         size_t sz = strlen(what);
         if (sz) {
             file_logger_t *p = l->logger_private;
-            fwrite(what, 1, sz, p->logfile);
-            /* [V] Flush the dam' thing! */
-            fflush(p->logfile);
+            if (fwrite(what, 1, sz, p->logfile)) {
+                /* [V] Flush the dam' thing! */
+                fflush(p->logfile);
+            }
         }
 
         return JK_TRUE;
