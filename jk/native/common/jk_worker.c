@@ -279,6 +279,23 @@ static worker_factory get_factory_for(const char *type)
     return NULL;
 }
 
+const char *wc_get_name_for_type(int type, jk_logger_t *l)
+{
+    worker_factory_record_t *factory = &worker_factories[0];
+    while (factory->name) {
+        if (type == factory->type) {
+            jk_log(l, JK_LOG_DEBUG,
+                   "Found worker type '%s'",
+                   factory->name);
+            return factory->name;
+        }
+
+        factory++;
+    }
+
+    return NULL;
+}
+
 void wc_maintain(jk_logger_t *l)
 {
     static time_t last_maintain = 0;

@@ -108,9 +108,10 @@
 #include "jk_worker.h"
 #include "jk_shm.h"
 
-#define JK_WORKER_ID        ("jakarta.worker")
+#define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
+#define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
+#define JK_NOTE_REQUEST_DURATION    ("JK_REQUEST_DURATION")
 #define JK_HANDLER          ("jakarta-servlet")
-#define JK_DURATION         ("jakarta.worker.duration")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet")
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x)
 #define STRNULL_FOR_NULL(x) ((x) ? (x) : "(null)")
@@ -1095,13 +1096,13 @@ static const char *constant_item(request_rec * dummy, char *stuff)
 
 static const char *log_worker_name(request_rec * r, char *a)
 {
-    return apr_table_get(r->notes, JK_WORKER_ID);
+    return apr_table_get(r->notes, JK_NOTE_WORKER_NAME);
 }
 
 
 static const char *log_request_duration(request_rec * r, char *a)
 {
-    return apr_table_get(r->notes, JK_DURATION);
+    return apr_table_get(r->notes, JK_NOTE_REQUEST_DURATION);
 }
 
 static const char *log_request_line(request_rec * r, char *a)
@@ -1790,7 +1791,7 @@ static int jk_handler(request_rec * r)
         JK_TRACE_EXIT(xconf->log);
         return DECLINED;
     }
-    worker_name = apr_table_get(r->notes, JK_WORKER_ID);
+    worker_name = apr_table_get(r->notes, JK_NOTE_WORKER_NAME);
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if ((rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK)) != APR_SUCCESS) {
@@ -1825,7 +1826,7 @@ static int jk_handler(request_rec * r)
             }
         }
         if (worker_name)
-            apr_table_setn(r->notes, JK_WORKER_ID, worker_name);
+            apr_table_setn(r->notes, JK_NOTE_WORKER_NAME, worker_name);
     }
 
     if (JK_IS_DEBUG_LEVEL(xconf->log))
@@ -1876,6 +1877,8 @@ static int jk_handler(request_rec * r)
             s.retries = worker->retries;
             s.ws_private = &private_data;
             s.pool = &private_data.p;
+            apr_table_setn(r->notes, JK_NOTE_WORKER_TYPE,
+                           wc_get_name_for_type(worker->type, xconf->log));
 #ifndef NO_GETTIMEOFDAY
             if (xconf->format != NULL) {
                 gettimeofday(&tv_begin, NULL);
@@ -1941,7 +1944,7 @@ static int jk_handler(request_rec * r)
                 micro = tv_end.tv_usec - tv_begin.tv_usec;
                 seconds = tv_end.tv_sec - tv_begin.tv_sec;
                 duration = apr_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
-                apr_table_setn(r->notes, JK_DURATION, duration);
+                apr_table_setn(r->notes, JK_NOTE_REQUEST_DURATION, duration);
                 request_log_transaction(r, xconf);
             }
 #endif
@@ -2532,14 +2535,14 @@ static int jk_translate(request_rec * r)
 
             if (worker) {
                 r->handler = apr_pstrdup(r->pool, JK_HANDLER);
-                apr_table_setn(r->notes, JK_WORKER_ID, worker);
+                apr_table_setn(r->notes, JK_NOTE_WORKER_NAME, worker);
 
                 /* This could be a sub-request, possibly from mod_dir */
                 /* Also set the HANDLER and uri for subrequest */
                 if (r->main) {
                     r->main->handler = apr_pstrdup(r->main->pool, JK_HANDLER);
                     r->main->uri = apr_pstrdup(r->main->pool, r->uri);
-                    apr_table_setn(r->main->notes, JK_WORKER_ID, worker);
+                    apr_table_setn(r->main->notes, JK_NOTE_WORKER_NAME, worker);
                 }
 
                 return OK;
@@ -2644,7 +2647,7 @@ static int jk_translate(request_rec * r)
 static int jk_map_to_storage(request_rec * r)
 {
 
-    if (!r->proxyreq && !apr_table_get(r->notes, JK_WORKER_ID)) {
+    if (!r->proxyreq && !apr_table_get(r->notes, JK_NOTE_WORKER_NAME)) {
         jk_server_conf_t *conf =
             (jk_server_conf_t *) ap_get_module_config(r->server->
                                                       module_config,
@@ -2675,17 +2678,17 @@ static int jk_map_to_storage(request_rec * r)
 
             if (worker) {
                 r->handler = apr_pstrdup(r->pool, JK_HANDLER);
-                apr_table_setn(r->notes, JK_WORKER_ID, worker);
+                apr_table_setn(r->notes, JK_NOTE_WORKER_NAME, worker);
 
                 /* This could be a sub-request, possibly from mod_dir */
                 if (r->main)
-                    apr_table_setn(r->main->notes, JK_WORKER_ID, worker);
+                    apr_table_setn(r->main->notes, JK_NOTE_WORKER_NAME, worker);
 
             }
         }
     }
 
-    if (apr_table_get(r->notes, JK_WORKER_ID)) {
+    if (apr_table_get(r->notes, JK_NOTE_WORKER_NAME)) {
 
         /* First find just the name of the file, no directory */
         r->filename = (char *)apr_filepath_name_get(r->uri);

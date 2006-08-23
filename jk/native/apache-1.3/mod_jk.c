@@ -60,9 +60,10 @@
 #include "jk_ajp13.h"
 #include "jk_shm.h"
 
-#define JK_WORKER_ID        ("jakarta.worker")
+#define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
+#define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
+#define JK_NOTE_REQUEST_DURATION    ("JK_REQUEST_DURATION")
 #define JK_HANDLER          ("jakarta-servlet")
-#define JK_DURATION         ("jakarta.worker.duration")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet")
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x)
 #define STRNULL_FOR_NULL(x) ((x) ? (x) : "(null)")
@@ -1071,13 +1072,13 @@ static const char *constant_item(request_rec * dummy, char *stuff)
 
 static const char *log_worker_name(request_rec * r, char *a)
 {
-    return ap_table_get(r->notes, JK_WORKER_ID);
+    return ap_table_get(r->notes, JK_NOTE_WORKER_NAME);
 }
 
 
 static const char *log_request_duration(request_rec * r, char *a)
 {
-    return ap_table_get(r->notes, JK_DURATION);
+    return ap_table_get(r->notes, JK_NOTE_REQUEST_DURATION);
 }
 
 static const char *log_request_line(request_rec * r, char *a)
@@ -1711,7 +1712,7 @@ static const command_rec jk_cmds[] = {
 static int jk_handler(request_rec * r)
 {
     /* Retrieve the worker name stored by jk_translate() */
-    const char *worker_name = ap_table_get(r->notes, JK_WORKER_ID);
+    const char *worker_name = ap_table_get(r->notes, JK_NOTE_WORKER_NAME);
     int rc;
 
     if (r->proxyreq) {
@@ -1757,6 +1758,8 @@ static int jk_handler(request_rec * r)
             s.retries = worker->retries;
             s.ws_private = &private_data;
             s.pool = &private_data.p;
+            ap_table_setn(r->notes, JK_NOTE_WORKER_TYPE,
+                          wc_get_name_for_type(worker->type, l));
 #ifndef NO_GETTIMEOFDAY
             if (conf->format != NULL) {
                 gettimeofday(&tv_begin, NULL);
@@ -1799,7 +1802,7 @@ static int jk_handler(request_rec * r)
                     seconds = tv_end.tv_sec - tv_begin.tv_sec;
                     duration =
                         ap_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
-                    ap_table_setn(r->notes, JK_DURATION, duration);
+                    ap_table_setn(r->notes, JK_NOTE_REQUEST_DURATION, duration);
                     request_log_transaction(r, conf);
                 }
 #endif
@@ -2203,7 +2206,7 @@ static int jk_translate(request_rec * r)
 
             if (worker) {
                 r->handler = ap_pstrdup(r->pool, JK_HANDLER);
-                ap_table_setn(r->notes, JK_WORKER_ID, worker);
+                ap_table_setn(r->notes, JK_NOTE_WORKER_NAME, worker);
             }
             else if (conf->alias_dir != NULL) {
                 /* Automatically map uri to a context static file */
@@ -2301,7 +2304,7 @@ static int jk_fixups(request_rec * r)
     if (r->main) {
         jk_server_conf_t *conf = (jk_server_conf_t *)
             ap_get_module_config(r->server->module_config, &jk_module);
-        char *worker = (char *)ap_table_get(r->notes, JK_WORKER_ID);
+        char *worker = (char *)ap_table_get(r->notes, JK_NOTE_WORKER_NAME);
 
         /* Only if we have no worker and ForwardDirectories is set */
         if (!worker && (conf->options & JK_OPT_FWDDIRS)) {

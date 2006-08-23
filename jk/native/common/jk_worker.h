@@ -39,6 +39,8 @@ void wc_close(jk_logger_t *l);
 
 jk_worker_t *wc_get_worker_for_name(const char *name, jk_logger_t *l);
 
+const char *wc_get_name_for_type(int type, jk_logger_t *l);
+
 int wc_create_worker(const char *name, int use_map,
                      jk_map_t *init_data,
                      jk_worker_t **rc,
