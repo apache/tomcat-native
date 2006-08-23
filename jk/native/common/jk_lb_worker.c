@@ -491,11 +491,11 @@ static worker_record_t *find_best_worker(lb_worker_t * p,
 }
 
 static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
+                                                 char *sessionid,
                                                  jk_ws_service_t *s,
                                                  jk_logger_t *l)
 {
     worker_record_t *rc = NULL;
-    char *sessionid = NULL;
     int r;
 
     JK_TRACE_ENTER(l);
@@ -513,12 +513,6 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
             return NULL;
         }
     }
-    else if (p->s->sticky_session) {
-        /* Use sessionid only if sticky_session is
-         * defined for this load balancer
-         */
-        sessionid = get_sessionid(s);
-    }
     if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
         r = jk_shm_lock();
     else {
@@ -533,11 +527,6 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
     }
     if (sessionid) {
         char *session = sessionid;
-        if (JK_IS_DEBUG_LEVEL(l)) {
-            jk_log(l, JK_LOG_DEBUG,
-                   "total sessionid is %s",
-                   sessionid ? sessionid : "empty");
-        }
         while (sessionid) {
             char *next = strchr(sessionid, ';');
             char *session_route = NULL;
@@ -612,6 +601,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     int attempt = 0;
     int num_of_workers;
     worker_record_t *prec = NULL;
+    char *sessionid = NULL;
 
     JK_TRACE_ENTER(l);
 
@@ -634,14 +624,20 @@ static int JK_METHOD service(jk_endpoint_t *e,
     jk_b_set_buffer_size(s->reco_buf, DEF_BUFFER_SZ);
     jk_b_reset(s->reco_buf);
     s->reco_status = RECO_INITED;
+    if (p->worker->s->sticky_session) {
+        /* Use sessionid only if sticky_session is
+         * defined for this load balancer
+         */
+        sessionid = get_sessionid(s);
+    }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "service sticky_session=%d",
-               p->worker->s->sticky_session);
+               "service sticky_session=%d id='%s'",
+               p->worker->s->sticky_session, sessionid ? sessionid : "empty");
 
     while (num_of_workers) {
         worker_record_t *rec =
-            get_most_suitable_worker(p->worker, s, l);
+            get_most_suitable_worker(p->worker, sessionid, s, l);
         int rc;
         /* Do not reuse previous worker, because
          * that worker already failed.
@@ -694,11 +690,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 /* Update partial reads and writes if any */
                 rec->s->readed += rd;
                 rec->s->transferred += wr;
-                if (p->worker->lbmethod == JK_LB_METHOD_TRAFFIC)
+                if (p->worker->lbmethod == JK_LB_METHOD_TRAFFIC) {
                     rec->s->lb_value += (rd+wr)*rec->s->lb_mult;
-                else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS)
-                    if (rec->s->lb_value >= rec->s->lb_mult)
+                }
+                else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS) {
+                    if (rec->s->lb_value >= rec->s->lb_mult) {
                         rec->s->lb_value -= rec->s->lb_mult;
+                    }
                     else {
                         rec->s->lb_value = 0;
                         if (JK_IS_DEBUG_LEVEL(l)) {
@@ -714,6 +712,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                                    rec->s->lb_mult);
                         }
                     }
+                }
 
                 /* When returning the endpoint mark the worker as not busy.
                  * We have at least one endpoint free
@@ -742,7 +741,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             else {
                 /* If we can not get the endpoint
                  * mark the worker as busy rather then
-                 * as in error if the attemp number is
+                 * as in error if the attempt number is
                  * greater then the number of retries.
                  */
                 attempt++;
@@ -754,7 +753,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                        "could not get free endpoint for worker %s (attempt %d)",
                        rec->s->name, attempt);
                 /* In case of attempt > num of workers sleep for 100 ms
-                 * on each consequtive attempt.
+                 * on each consecutive attempt.
                  */
                 if (attempt > (int)p->worker->num_of_workers)
                     jk_sleep_def();
