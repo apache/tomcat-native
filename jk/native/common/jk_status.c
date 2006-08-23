@@ -841,146 +841,148 @@ static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l, int *is_recoverable_error)
 {
+    char buf[128];
+    char *worker = NULL;
+    int cmd;
+    int mime;
+    status_endpoint_t *p;
+
     JK_TRACE_ENTER(l);
 
-    if (e && e->endpoint_private && s) {
-        char buf[128];
-        char *worker = NULL;
-        int cmd;
-        int mime;
-        status_endpoint_t *p = e->endpoint_private;
-
+    if (is_recoverable_error)
         *is_recoverable_error = JK_FALSE;
-
-        /* Step 1: Process GET params and update configuration */
-        cmd = status_cmd_type(s->query_string);
-        mime = status_mime_type(s->query_string);
-        if (cmd > 0 && (status_cmd("w", s->query_string, buf, sizeof(buf)) != NULL))
-            worker = strdup(buf);
-        if ((cmd == 2) && worker) {
-            /* lock shared memory */
-            jk_shm_lock();
-            update_worker(s, p->s_worker, worker, l);
-            /* update modification time to reflect the current config */
-            jk_shm_set_workers_time(time(NULL));
-            /* Since we updated the config no need to reload
-             * on the next request
-             */
-            jk_shm_sync_access_time();
-            /* unlock the shared memory */
-            jk_shm_unlock();
-        }
-        else if ((cmd == 3) && worker) {
-            /* lock shared memory */
-            jk_shm_lock();
-            reset_worker(s, p->s_worker, worker, l);
-            /* update modification time to reflect the current config */
-            jk_shm_set_workers_time(time(NULL));
-            /* Since we updated the config no need to reload
-             * on the next request
-             */
-            jk_shm_sync_access_time();
-            /* unlock the shared memory */
-            jk_shm_unlock();
-        }
-        if (mime == 0) {
-            int refresh = status_int("refresh", s->query_string, -1);
-            s->start_response(s, 200, "OK", headers_names, headers_vhtml, 3);
-            s->write(s, JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
-            if (cmd > 1) {
-                jk_putv(s, "\n<meta http-equiv=\"Refresh\" content=\"0;url=",
-                          s->req_uri, "\">", NULL);
-            }
-            else if (cmd == 0 && refresh >= 0) {
-                jk_printf(s, "\n<meta http-equiv=\"Refresh\" content=\"%d;url=%s?%s\">",
-                          refresh, s->req_uri, s->query_string);
-            }
-            if (p->s_worker->css) {
-                jk_putv(s, "\n<link rel=\"stylesheet\" type=\"text/css\" href=\"",
-                        p->s_worker->css, "\" />\n", NULL);
-            }
-            s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
-            if ( cmd <= 1 ) {
-                jk_puts(s, "<h1>JK Status Manager for ");
-                jk_puts(s, s->server_name);
-                jk_puts(s, "</h1>\n\n");
-                jk_putv(s, "<dl><dt>Server Version:</dt><dd>",
-                        s->server_software, "</dd>\n", NULL);
-                jk_putv(s, "<dt>JK Version:</dt><dd>",
-                            JK_VERSTRING, "\n</dd></dl>\n", NULL);
-            }
-            if ( cmd == 0 ) {
-                jk_putv(s, "[<a href=\"", s->req_uri, NULL);
-                if (refresh >= 0) {
-                    char *buf = jk_pool_alloc(s->pool, sizeof(char *) * BIG_POOL_SIZE);
-                    const char *str = s->query_string;
-                    int result = 0;
-                    int scan = 0;
-    
-                    while (str[scan] != 0) {
-                        if (strncmp(&str[scan], "refresh=", 8) == 0) {
-                            scan += 8;
-                            while (str[scan] != 0 && str[scan] != '&')
-                                scan++;
-                            if (str[scan] == '&')
-                                scan++;
-                        }
-                        else {
-                            if (result > 0 && str[scan] != 0 && str[scan] != '&') {
-                                buf[result] = '&';
-                                result++;
-                            }
-                            while (str[scan] != 0 && str[scan] != '&') {
-                                buf[result] = str[scan];
-                                result++;
-                                scan++;
-                            }
-                            if (str[scan] == '&')
-                                scan++;
-                        }
-                    }
-                    buf[result] = 0;
-    
-                    if (buf && buf[0])
-                        jk_putv(s, "?", buf, NULL);
-                    jk_puts(s, "\">stop");
-                }
-                else {
-                    jk_puts(s, "?");
-                    if (s->query_string && s->query_string[0])
-                        jk_putv(s, s->query_string, "&", NULL);
-                    jk_puts(s, "refresh=10\">start");
-                }
-                jk_puts(s, " auto update</a>]");
-            }
-            if ( cmd <= 1 ) {
-                /* Step 2: Display configuration */
-                display_workers(s, p->s_worker, worker, l);
-            }
-    
-            s->write(s, JK_STATUS_BEND, sizeof(JK_STATUS_BEND) - 1);
-    
-        }
-        else if (mime == 1) {
-            s->start_response(s, 200, "OK", headers_names, headers_vxml, 3);
-            s->write(s, JK_STATUS_XMLH, sizeof(JK_STATUS_XMLH) - 1);
-            dump_config(s, p->s_worker, l);
-            s->write(s, JK_STATUS_XMLE, sizeof(JK_STATUS_XMLE) - 1);
-        }
-        else {
-            s->start_response(s, 200, "OK", headers_names, headers_vtxt, 3);
-            s->write(s,  JK_STATUS_TEXTUPDATE_RESPONCE,
-                     sizeof(JK_STATUS_TEXTUPDATE_RESPONCE) - 1);
-        }
-        if (worker)
-            free(worker);
+    if (!e || !e->endpoint_private || !s || !is_recoverable_error) {
+        JK_LOG_NULL_PARAMS(l);
         JK_TRACE_EXIT(l);
-        return JK_TRUE;
+        return JK_FALSE;
     }
 
-    jk_log(l, JK_LOG_ERROR, "status: end of service with error");
+    p = e->endpoint_private;
+
+    /* Step 1: Process GET params and update configuration */
+    cmd = status_cmd_type(s->query_string);
+    mime = status_mime_type(s->query_string);
+    if (cmd > 0 && (status_cmd("w", s->query_string, buf, sizeof(buf)) != NULL))
+        worker = strdup(buf);
+    if ((cmd == 2) && worker) {
+        /* lock shared memory */
+        jk_shm_lock();
+        update_worker(s, p->s_worker, worker, l);
+        /* update modification time to reflect the current config */
+        jk_shm_set_workers_time(time(NULL));
+        /* Since we updated the config no need to reload
+         * on the next request
+         */
+        jk_shm_sync_access_time();
+        /* unlock the shared memory */
+        jk_shm_unlock();
+    }
+    else if ((cmd == 3) && worker) {
+        /* lock shared memory */
+        jk_shm_lock();
+        reset_worker(s, p->s_worker, worker, l);
+        /* update modification time to reflect the current config */
+        jk_shm_set_workers_time(time(NULL));
+        /* Since we updated the config no need to reload
+         * on the next request
+         */
+        jk_shm_sync_access_time();
+        /* unlock the shared memory */
+        jk_shm_unlock();
+    }
+    if (mime == 0) {
+        int refresh = status_int("refresh", s->query_string, -1);
+        s->start_response(s, 200, "OK", headers_names, headers_vhtml, 3);
+        s->write(s, JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
+        if (cmd > 1) {
+            jk_putv(s, "\n<meta http-equiv=\"Refresh\" content=\"0;url=",
+                      s->req_uri, "\">", NULL);
+        }
+        else if (cmd == 0 && refresh >= 0) {
+            jk_printf(s, "\n<meta http-equiv=\"Refresh\" content=\"%d;url=%s?%s\">",
+                      refresh, s->req_uri, s->query_string);
+        }
+        if (p->s_worker->css) {
+            jk_putv(s, "\n<link rel=\"stylesheet\" type=\"text/css\" href=\"",
+                    p->s_worker->css, "\" />\n", NULL);
+        }
+        s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
+        if ( cmd <= 1 ) {
+            jk_puts(s, "<h1>JK Status Manager for ");
+            jk_puts(s, s->server_name);
+            jk_puts(s, "</h1>\n\n");
+            jk_putv(s, "<dl><dt>Server Version:</dt><dd>",
+                    s->server_software, "</dd>\n", NULL);
+            jk_putv(s, "<dt>JK Version:</dt><dd>",
+                        JK_VERSTRING, "\n</dd></dl>\n", NULL);
+        }
+        if ( cmd == 0 ) {
+            jk_putv(s, "[<a href=\"", s->req_uri, NULL);
+            if (refresh >= 0) {
+                char *buf = jk_pool_alloc(s->pool, sizeof(char *) * BIG_POOL_SIZE);
+                const char *str = s->query_string;
+                int result = 0;
+                int scan = 0;
+
+                while (str[scan] != 0) {
+                    if (strncmp(&str[scan], "refresh=", 8) == 0) {
+                        scan += 8;
+                        while (str[scan] != 0 && str[scan] != '&')
+                            scan++;
+                        if (str[scan] == '&')
+                            scan++;
+                    }
+                    else {
+                        if (result > 0 && str[scan] != 0 && str[scan] != '&') {
+                            buf[result] = '&';
+                            result++;
+                        }
+                        while (str[scan] != 0 && str[scan] != '&') {
+                            buf[result] = str[scan];
+                            result++;
+                            scan++;
+                        }
+                        if (str[scan] == '&')
+                            scan++;
+                    }
+                }
+                buf[result] = 0;
+
+                if (buf && buf[0])
+                    jk_putv(s, "?", buf, NULL);
+                jk_puts(s, "\">stop");
+            }
+            else {
+                jk_puts(s, "?");
+                if (s->query_string && s->query_string[0])
+                    jk_putv(s, s->query_string, "&", NULL);
+                jk_puts(s, "refresh=10\">start");
+            }
+            jk_puts(s, " auto update</a>]");
+        }
+        if ( cmd <= 1 ) {
+            /* Step 2: Display configuration */
+            display_workers(s, p->s_worker, worker, l);
+        }
+
+        s->write(s, JK_STATUS_BEND, sizeof(JK_STATUS_BEND) - 1);
+
+    }
+    else if (mime == 1) {
+        s->start_response(s, 200, "OK", headers_names, headers_vxml, 3);
+        s->write(s, JK_STATUS_XMLH, sizeof(JK_STATUS_XMLH) - 1);
+        dump_config(s, p->s_worker, l);
+        s->write(s, JK_STATUS_XMLE, sizeof(JK_STATUS_XMLE) - 1);
+    }
+    else {
+        s->start_response(s, 200, "OK", headers_names, headers_vtxt, 3);
+        s->write(s,  JK_STATUS_TEXTUPDATE_RESPONCE,
+                 sizeof(JK_STATUS_TEXTUPDATE_RESPONCE) - 1);
+    }
+    if (worker)
+        free(worker);
     JK_TRACE_EXIT(l);
-    return JK_FALSE;
+    return JK_TRUE;
 }
 
 static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)

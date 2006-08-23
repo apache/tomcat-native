@@ -609,234 +609,239 @@ static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l, int *is_error)
 {
+    lb_endpoint_t *p;
+    int attempt = 0;
+    int num_of_workers;
+    worker_record_t *prec = NULL;
+
     JK_TRACE_ENTER(l);
 
-    if (e && e->endpoint_private && s && is_error) {
-        lb_endpoint_t *p = e->endpoint_private;
-        int attempt = 0;
-        int num_of_workers = p->worker->num_of_workers;
-        worker_record_t *prec = NULL;
-        /* Set returned error to OK */
-        *is_error = JK_HTTP_OK;
+    if (is_error)
+        *is_error = JK_HTTP_SERVER_ERROR;
+    if (!e || !e->endpoint_private || !s || !is_error) {
+        JK_LOG_NULL_PARAMS(l);
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
 
-        /* set the recovery post, for LB mode */
-        s->reco_buf = jk_b_new(s->pool);
-        jk_b_set_buffer_size(s->reco_buf, DEF_BUFFER_SZ);
-        jk_b_reset(s->reco_buf);
-        s->reco_status = RECO_INITED;
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG,
-                   "service sticky_session=%d",
-                   p->worker->s->sticky_session);
+    p = e->endpoint_private;
+    num_of_workers = p->worker->num_of_workers;
 
-        while (num_of_workers) {
-            worker_record_t *rec =
-                get_most_suitable_worker(p->worker, s, attempt, l);
-            int rc;
-            /* Do not reuse previous worker, because
-             * that worker already failed.
-             */
-            if (rec && rec != prec) {
-                int is_service_error = JK_HTTP_OK;
-                int service_stat = JK_FALSE;
-                jk_endpoint_t *end = NULL;
+    /* Set returned error to OK */
+    *is_error = JK_HTTP_OK;
 
-                s->jvm_route = rec->r;
-                rc = rec->w->get_endpoint(rec->w, &end, l);
+    /* set the recovery post, for LB mode */
+    s->reco_buf = jk_b_new(s->pool);
+    jk_b_set_buffer_size(s->reco_buf, DEF_BUFFER_SZ);
+    jk_b_reset(s->reco_buf);
+    s->reco_status = RECO_INITED;
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "service sticky_session=%d",
+               p->worker->s->sticky_session);
 
-                if (JK_IS_DEBUG_LEVEL(l))
-                    jk_log(l, JK_LOG_DEBUG,
-                           "service worker=%s jvm_route=%s",
-                           rec->s->name, s->jvm_route);
-                if (rc && end) {
-                    size_t rd = 0;
-                    size_t wr = 0;
-                    /* Reset endpoint read and write sizes for
-                     * this request.
-                     */
-                    end->rd = end->wr = 0;
-                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
-                        jk_shm_lock();
+    while (num_of_workers) {
+        worker_record_t *rec =
+            get_most_suitable_worker(p->worker, s, attempt, l);
+        int rc;
+        /* Do not reuse previous worker, because
+         * that worker already failed.
+         */
+        if (rec && rec != prec) {
+            int is_service_error = JK_HTTP_OK;
+            int service_stat = JK_FALSE;
+            jk_endpoint_t *end = NULL;
 
-                    rec->s->elected++;
-                    /* Increment the number of workers serving request */
-                    p->worker->s->busy++;
-                    if (p->worker->s->busy > p->worker->s->max_busy)
-                        p->worker->s->max_busy = p->worker->s->busy;
-                    rec->s->busy++;
-                    if (p->worker->lbmethod == JK_LB_METHOD_REQUESTS)
-                        rec->s->lb_value += rec->s->lb_mult;
-                    else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS)
-                        rec->s->lb_value += rec->s->lb_mult;
-                    if (rec->s->busy > rec->s->max_busy)
-                        rec->s->max_busy = rec->s->busy;
-                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
-                        jk_shm_unlock();
+            s->jvm_route = rec->r;
+            rc = rec->w->get_endpoint(rec->w, &end, l);
 
-                    service_stat = end->service(end, s, l, &is_service_error);
-                    rd = end->rd;
-                    wr = end->wr;
-                    end->done(&end, l);
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "service worker=%s jvm_route=%s",
+                       rec->s->name, s->jvm_route);
+            if (rc && end) {
+                size_t rd = 0;
+                size_t wr = 0;
+                /* Reset endpoint read and write sizes for
+                 * this request.
+                 */
+                end->rd = end->wr = 0;
+                if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                    jk_shm_lock();
 
-                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
-                        jk_shm_lock();
+                rec->s->elected++;
+                /* Increment the number of workers serving request */
+                p->worker->s->busy++;
+                if (p->worker->s->busy > p->worker->s->max_busy)
+                    p->worker->s->max_busy = p->worker->s->busy;
+                rec->s->busy++;
+                if (p->worker->lbmethod == JK_LB_METHOD_REQUESTS)
+                    rec->s->lb_value += rec->s->lb_mult;
+                else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS)
+                    rec->s->lb_value += rec->s->lb_mult;
+                if (rec->s->busy > rec->s->max_busy)
+                    rec->s->max_busy = rec->s->busy;
+                if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                    jk_shm_unlock();
 
-                    /* Update partial reads and writes if any */
-                    rec->s->readed += rd;
-                    rec->s->transferred += wr;
-                    if (p->worker->lbmethod == JK_LB_METHOD_TRAFFIC)
-                        rec->s->lb_value += (rd+wr)*rec->s->lb_mult;
-                    else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS)
-                        if (rec->s->lb_value >= rec->s->lb_mult)
-                            rec->s->lb_value -= rec->s->lb_mult;
-                        else {
-                            rec->s->lb_value = 0;
-                            if (JK_IS_DEBUG_LEVEL(l)) {
-                                jk_log(l, JK_LOG_DEBUG,
-                                       "worker %s has load value to low (%"
-                                       JK_UINT64_T_FMT
-                                       " < %"
-                                       JK_UINT64_T_FMT
-                                       ") ",
-                                       "- correcting to 0",
-                                       rec->s->name,
-                                       rec->s->lb_value,
-                                       rec->s->lb_mult);
-                            }
+                service_stat = end->service(end, s, l, &is_service_error);
+                rd = end->rd;
+                wr = end->wr;
+                end->done(&end, l);
+
+                if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                    jk_shm_lock();
+
+                /* Update partial reads and writes if any */
+                rec->s->readed += rd;
+                rec->s->transferred += wr;
+                if (p->worker->lbmethod == JK_LB_METHOD_TRAFFIC)
+                    rec->s->lb_value += (rd+wr)*rec->s->lb_mult;
+                else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS)
+                    if (rec->s->lb_value >= rec->s->lb_mult)
+                        rec->s->lb_value -= rec->s->lb_mult;
+                    else {
+                        rec->s->lb_value = 0;
+                        if (JK_IS_DEBUG_LEVEL(l)) {
+                            jk_log(l, JK_LOG_DEBUG,
+                                   "worker %s has load value to low (%"
+                                   JK_UINT64_T_FMT
+                                   " < %"
+                                   JK_UINT64_T_FMT
+                                   ") ",
+                                   "- correcting to 0",
+                                   rec->s->name,
+                                   rec->s->lb_value,
+                                   rec->s->lb_mult);
                         }
-
-                    /* When returning the endpoint mark the worker as not busy.
-                     * We have at least one endpoint free
-                     */
-                    rec->s->is_busy = JK_FALSE;
-                    /* Decrement the busy worker count.
-                     * Check if the busy was reset to zero by graceful
-                     * restart of the server.
-                     */
-                    if (rec->s->busy)
-                        rec->s->busy--;
-                    if (p->worker->s->busy)
-                        p->worker->s->busy--;
-                    if (service_stat == JK_TRUE) {
-                        rec->s->in_error_state = JK_FALSE;
-                        rec->s->in_recovering = JK_FALSE;
-                        rec->s->error_time = 0;
-                        if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
-                            jk_shm_unlock();
-                        JK_TRACE_EXIT(l);
-                        return JK_TRUE;
                     }
-                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
-                        jk_shm_unlock();
-                }
-                else {
-                    /* If we can not get the endpoint
-                     * mark the worker as busy rather then
-                     * as in error if the attemp number is
-                     * greater then the number of retries.
-                     */
-                    attempt++;
-                    if (attempt > p->worker->s->retries) {
-                        rec->s->is_busy = JK_TRUE;
-                        num_of_workers = 0;
-                    }
-                    jk_log(l, JK_LOG_INFO,
-                           "could not get free endpoint for worker %s (attempt %d)",
-                           rec->s->name, attempt);
-                    /* In case of attempt > num of workers sleep for 100 ms
-                     * on each consequtive attempt.
-                     */
-                    if (attempt > (int)p->worker->num_of_workers)
-                        jk_sleep_def();
-                    continue;
-                }
-                if (service_stat == JK_FALSE) {
-                    /*
-                    * Service failed !!!
-                    *
-                    * Time for fault tolerance (if possible)...
-                    */
 
-                    rec->s->errors++;
-                    rec->s->in_error_state = JK_TRUE;
-                    rec->s->in_recovering = JK_FALSE;
-                    rec->s->error_time = time(NULL);
-
-                    if (is_service_error != JK_HTTP_SERVER_BUSY) {
-                        /*
-                        * Error is not recoverable - break with an error.
-                        */
-                        jk_log(l, JK_LOG_ERROR,
-                            "unrecoverable error %d, request failed."
-                            " Tomcat failed in the middle of request,"
-                            " we can't recover to another instance.",
-                            is_service_error);
-                        *is_error = is_service_error;
-                        JK_TRACE_EXIT(l);
-                        return JK_FALSE;
-                    }
-                    jk_log(l, JK_LOG_INFO,
-                           "service failed, worker %s is in error state",
-                           rec->s->name);
-                }
-                else if (service_stat == JK_CLIENT_ERROR) {
-                    /*
-                    * Clent error !!!
-                    * Since this is bad request do not fail over.
-                    */
-                    rec->s->errors++;
+                /* When returning the endpoint mark the worker as not busy.
+                 * We have at least one endpoint free
+                 */
+                rec->s->is_busy = JK_FALSE;
+                /* Decrement the busy worker count.
+                 * Check if the busy was reset to zero by graceful
+                 * restart of the server.
+                 */
+                if (rec->s->busy)
+                    rec->s->busy--;
+                if (p->worker->s->busy)
+                    p->worker->s->busy--;
+                if (service_stat == JK_TRUE) {
                     rec->s->in_error_state = JK_FALSE;
                     rec->s->in_recovering = JK_FALSE;
                     rec->s->error_time = 0;
-                    *is_error = is_service_error;
-
-                    jk_log(l, JK_LOG_INFO,
-                           "unrecoverable error %d, request failed."
-                           " Client failed in the middle of request,"
-                           " we can't recover to another instance.",
-                           is_service_error);
+                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                        jk_shm_unlock();
                     JK_TRACE_EXIT(l);
-                    return JK_CLIENT_ERROR;
+                    return JK_TRUE;
                 }
-                else {
-                    /* If we can not get the endpoint from the worker
-                     * that does not mean that the worker is in error
-                     * state. It means that the worker is busy.
-                     * We will try another worker.
-                     * To prevent infinite loop decrement worker count;
-                     */
-                }
-                /*
-                 * Error is recoverable by submitting the request to
-                 * another worker... Lets try to do that.
-                 */
-                if (JK_IS_DEBUG_LEVEL(l))
-                    jk_log(l, JK_LOG_DEBUG,
-                           "recoverable error... will try to recover on other host");
+                if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                    jk_shm_unlock();
             }
-#if 0
             else {
-                /* NULL record, no more workers left ... */
-                jk_log(l, JK_LOG_ERROR,
-                       "All tomcat instances failed, no more workers left");
-                JK_TRACE_EXIT(l);
-                *is_error = JK_HTTP_SERVER_BUSY;
-                return JK_FALSE;
+                /* If we can not get the endpoint
+                 * mark the worker as busy rather then
+                 * as in error if the attemp number is
+                 * greater then the number of retries.
+                 */
+                attempt++;
+                if (attempt > p->worker->s->retries) {
+                    rec->s->is_busy = JK_TRUE;
+                    num_of_workers = 0;
+                }
+                jk_log(l, JK_LOG_INFO,
+                       "could not get free endpoint for worker %s (attempt %d)",
+                       rec->s->name, attempt);
+                /* In case of attempt > num of workers sleep for 100 ms
+                 * on each consequtive attempt.
+                 */
+                if (attempt > (int)p->worker->num_of_workers)
+                    jk_sleep_def();
+                continue;
             }
-#endif
-            --num_of_workers;
-            prec = rec;
+            if (service_stat == JK_FALSE) {
+                /*
+                * Service failed !!!
+                *
+                * Time for fault tolerance (if possible)...
+                */
+
+                rec->s->errors++;
+                rec->s->in_error_state = JK_TRUE;
+                rec->s->in_recovering = JK_FALSE;
+                rec->s->error_time = time(NULL);
+
+                if (is_service_error != JK_HTTP_SERVER_BUSY) {
+                    /*
+                    * Error is not recoverable - break with an error.
+                    */
+                    jk_log(l, JK_LOG_ERROR,
+                        "unrecoverable error %d, request failed."
+                        " Tomcat failed in the middle of request,"
+                        " we can't recover to another instance.",
+                        is_service_error);
+                    *is_error = is_service_error;
+                    JK_TRACE_EXIT(l);
+                    return JK_FALSE;
+                }
+                jk_log(l, JK_LOG_INFO,
+                       "service failed, worker %s is in error state",
+                       rec->s->name);
+            }
+            else if (service_stat == JK_CLIENT_ERROR) {
+                /*
+                * Client error !!!
+                * Since this is bad request do not fail over.
+                */
+                rec->s->errors++;
+                rec->s->in_error_state = JK_FALSE;
+                rec->s->in_recovering = JK_FALSE;
+                rec->s->error_time = 0;
+                *is_error = is_service_error;
+
+                jk_log(l, JK_LOG_INFO,
+                       "unrecoverable error %d, request failed."
+                       " Client failed in the middle of request,"
+                       " we can't recover to another instance.",
+                       is_service_error);
+                JK_TRACE_EXIT(l);
+                return JK_CLIENT_ERROR;
+            }
+            else {
+                /* If we can not get the endpoint from the worker
+                 * that does not mean that the worker is in error
+                 * state. It means that the worker is busy.
+                 * We will try another worker.
+                 * To prevent infinite loop decrement worker count;
+                 */
+            }
+            /*
+             * Error is recoverable by submitting the request to
+             * another worker... Lets try to do that.
+             */
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "recoverable error... will try to recover on other host");
         }
-        jk_log(l, JK_LOG_INFO,
-               "All tomcat instances are busy or in error state");
-        JK_TRACE_EXIT(l);
-        /* Set error to Timeout */
-        *is_error = JK_HTTP_SERVER_BUSY;
-        return JK_FALSE;
+#if 0
+        else {
+            /* NULL record, no more workers left ... */
+            jk_log(l, JK_LOG_ERROR,
+                   "All tomcat instances failed, no more workers left");
+            JK_TRACE_EXIT(l);
+            *is_error = JK_HTTP_SERVER_BUSY;
+            return JK_FALSE;
+        }
+#endif
+        --num_of_workers;
+        prec = rec;
     }
-    if (is_error)
-        *is_error = JK_HTTP_SERVER_ERROR;
-    JK_LOG_NULL_PARAMS(l);
+    jk_log(l, JK_LOG_INFO,
+           "All tomcat instances are busy or in error state");
+    /* Set error to Timeout */
+    *is_error = JK_HTTP_SERVER_BUSY;
     JK_TRACE_EXIT(l);
     return JK_FALSE;
 }

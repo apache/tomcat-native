@@ -1654,152 +1654,152 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
     int i, err;
     ajp_operation_t oper;
     ajp_operation_t *op = &oper;
+    ajp_endpoint_t *p;
 
     JK_TRACE_ENTER(l);
 
     if (is_error)
         *is_error = JK_HTTP_SERVER_ERROR;
+    if (!e || !e->endpoint_private || !s || !is_error) {
+        JK_LOG_NULL_PARAMS(l);
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
 
-    if (e && e->endpoint_private && s && is_error) {
-        ajp_endpoint_t *p = e->endpoint_private;
-        op->request = jk_b_new(&(p->pool));
-        jk_b_set_buffer_size(op->request, DEF_BUFFER_SZ);
-        jk_b_reset(op->request);
+    p = e->endpoint_private;
+    op->request = jk_b_new(&(p->pool));
+    jk_b_set_buffer_size(op->request, DEF_BUFFER_SZ);
+    jk_b_reset(op->request);
 
-        op->reply = jk_b_new(&(p->pool));
-        jk_b_set_buffer_size(op->reply, DEF_BUFFER_SZ);
-        jk_b_reset(op->reply);
+    op->reply = jk_b_new(&(p->pool));
+    jk_b_set_buffer_size(op->reply, DEF_BUFFER_SZ);
+    jk_b_reset(op->reply);
 
-        op->post = jk_b_new(&(p->pool));
-        jk_b_set_buffer_size(op->post, DEF_BUFFER_SZ);
-        jk_b_reset(op->post);
+    op->post = jk_b_new(&(p->pool));
+    jk_b_set_buffer_size(op->post, DEF_BUFFER_SZ);
+    jk_b_reset(op->post);
 
-        op->recoverable = JK_TRUE;
-        op->uploadfd = -1;      /* not yet used, later ;) */
+    op->recoverable = JK_TRUE;
+    op->uploadfd = -1;      /* not yet used, later ;) */
 
-        p->left_bytes_to_send = s->content_length;
-        p->reuse = JK_FALSE;
+    p->left_bytes_to_send = s->content_length;
+    p->reuse = JK_FALSE;
 
-        s->secret = p->worker->secret;
+    s->secret = p->worker->secret;
 
+    /*
+     * We get here initial request (in reqmsg)
+     */
+    if (!ajp_marshal_into_msgb(op->request, s, l, p)) {
+        *is_error = JK_REQUEST_TOO_LARGE;
+        jk_log(l, JK_LOG_INFO,
+                "Creating AJP message failed, "
+                "without recovery");
+        JK_TRACE_EXIT(l);
+        return JK_CLIENT_ERROR;
+    }
+
+    if (JK_IS_DEBUG_LEVEL(l)) {
+        jk_log(l, JK_LOG_DEBUG, "processing %s with %d retries",
+               p->worker->name, p->worker->worker.retries);
+    }
+    /*
+     * JK_RETRIES could be replaced by the number of workers in
+     * a load-balancing configuration
+     */
+    for (i = 0; i < p->worker->worker.retries; i++) {
         /*
-         * We get here initial request (in reqmsg)
+         * We're using reqmsg which hold initial request
+         * if Tomcat is stopped or restarted, we will pass reqmsg
+         * to next valid tomcat.
          */
-        if (!ajp_marshal_into_msgb(op->request, s, l, p)) {
-            *is_error = JK_REQUEST_TOO_LARGE;
-            jk_log(l, JK_LOG_INFO,
-                    "Creating AJP message failed, "
-                    "without recovery");
-            JK_TRACE_EXIT(l);
-            return JK_CLIENT_ERROR;
-        }
+        err = ajp_send_request(e, s, l, p, op);
+        if (err == JK_TRUE) {
 
-        if (JK_IS_DEBUG_LEVEL(l)) {
-            jk_log(l, JK_LOG_DEBUG, "processing %s with %d retries",
-                   p->worker->name, p->worker->worker.retries);
-        }
-        /*
-         * JK_RETRIES could be replaced by the number of workers in
-         * a load-balancing configuration
-         */
-        for (i = 0; i < p->worker->worker.retries; i++) {
-            /*
-             * We're using reqmsg which hold initial request
-             * if Tomcat is stopped or restarted, we will pass reqmsg
-             * to next valid tomcat.
+            /* If we have the no recoverable error, it's probably because
+             * the sender (browser) stopped sending data before the end
+             * (certainly in a big post)
              */
-            err = ajp_send_request(e, s, l, p, op);
-            if (err == JK_TRUE) {
+            if (!op->recoverable) {
+                *is_error = JK_HTTP_SERVER_ERROR;
+                jk_log(l, JK_LOG_ERROR,
+                       "sending request to tomcat failed "
+                       "without recovery in send loop %d", i);
+                JK_TRACE_EXIT(l);
+                return JK_FALSE;
+            }
 
-                /* If we have the no recoverable error, it's probably because
-                 * the sender (browser) stopped sending data before the end
-                 * (certainly in a big post)
+            /* Up to there we can recover */
+
+            err = ajp_get_reply(e, s, l, p, op);
+            if (err == JK_TRUE) {
+                *is_error = JK_HTTP_OK;
+                /* Done with the request */
+                JK_TRACE_EXIT(l);
+                return JK_TRUE;
+            }
+
+            if (err != JK_CLIENT_ERROR) {
+                /* if we can't get reply, check if no recover flag was set
+                 * if is_recoverable_error is cleared, we have started
+                 * receiving upload data and we must consider that
+                 * operation is no more recoverable
                  */
                 if (!op->recoverable) {
-                    *is_error = JK_HTTP_SERVER_ERROR;
+                    *is_error = JK_HTTP_BAD_GATEWAY;
                     jk_log(l, JK_LOG_ERROR,
-                           "sending request to tomcat failed "
+                           "receiving reply from tomcat failed "
                            "without recovery in send loop %d", i);
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
                 }
-
-                /* Up to there we can recover */
-
-                err = ajp_get_reply(e, s, l, p, op);
-                if (err == JK_TRUE) {
-                    *is_error = JK_HTTP_OK;
-                    /* Done with the request */
-                    JK_TRACE_EXIT(l);
-                    return JK_TRUE;
-                }
-
-                if (err != JK_CLIENT_ERROR) {
-                    /* if we can't get reply, check if no recover flag was set
-                     * if is_recoverable_error is cleared, we have started
-                     * receiving upload data and we must consider that
-                     * operation is no more recoverable
-                     */
-                    if (!op->recoverable) {
-                        *is_error = JK_HTTP_BAD_GATEWAY;
-                        jk_log(l, JK_LOG_ERROR,
-                               "receiving reply from tomcat failed "
-                               "without recovery in send loop %d", i);
-                        JK_TRACE_EXIT(l);
-                        return JK_FALSE;
-                    }
-                    jk_log(l, JK_LOG_INFO,
-                           "Receiving from tomcat failed, "
-                           "recoverable operation attempt=%d", i);
-                    /* Check for custom retries */
-                    if (i >= JK_RETRIES) {
-                        jk_sleep_def();
-                    }
-                }
-                else {
-                    *is_error = JK_HTTP_BAD_REQUEST;
-                    jk_log(l, JK_LOG_INFO,
-                           "Receiving from tomcat failed, "
-                           "because of client error "
-                           "without recovery in send loop %d", i);
-                    JK_TRACE_EXIT(l);
-                    return JK_CLIENT_ERROR;
+                jk_log(l, JK_LOG_INFO,
+                       "Receiving from tomcat failed, "
+                       "recoverable operation attempt=%d", i);
+                /* Check for custom retries */
+                if (i >= JK_RETRIES) {
+                    jk_sleep_def();
                 }
             }
-            if (err == JK_CLIENT_ERROR) {
+            else {
                 *is_error = JK_HTTP_BAD_REQUEST;
-                if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
-                    /* Mark the endpoint for shutdown */
-                    p->reuse = JK_FALSE;
-                }
                 jk_log(l, JK_LOG_INFO,
-                       "Sending request to tomcat failed, "
+                       "Receiving from tomcat failed, "
                        "because of client error "
                        "without recovery in send loop %d", i);
                 JK_TRACE_EXIT(l);
                 return JK_CLIENT_ERROR;
             }
-            else {
-                jk_log(l, JK_LOG_INFO,
-                       "Sending request to tomcat failed,  "
-                       "recoverable operation attempt=%d", i + 1);
-            }
-            /* Get another connection from the pool and try again.
-             * Note: All sockets are probably closed already.
-             */
-            ajp_next_connection(p, l);
         }
-        *is_error = JK_HTTP_SERVER_BUSY;
-        /* Log the error only once per failed request. */
-        jk_log(l, JK_LOG_ERROR,
-               "Error connecting to tomcat. Tomcat is probably not started "
-               "or is listening on the wrong port. worker=%s failed",
-               p->worker->name);
-
+        if (err == JK_CLIENT_ERROR) {
+            *is_error = JK_HTTP_BAD_REQUEST;
+            if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+                /* Mark the endpoint for shutdown */
+                p->reuse = JK_FALSE;
+            }
+            jk_log(l, JK_LOG_INFO,
+                   "Sending request to tomcat failed, "
+                   "because of client error "
+                   "without recovery in send loop %d", i);
+            JK_TRACE_EXIT(l);
+            return JK_CLIENT_ERROR;
+        }
+        else {
+            jk_log(l, JK_LOG_INFO,
+                   "Sending request to tomcat failed,  "
+                   "recoverable operation attempt=%d", i + 1);
+        }
+        /* Get another connection from the pool and try again.
+         * Note: All sockets are probably closed already.
+         */
+        ajp_next_connection(p, l);
     }
-    else {
-        jk_log(l, JK_LOG_ERROR, "end of service with error");
-    }
+    *is_error = JK_HTTP_SERVER_BUSY;
+    /* Log the error only once per failed request. */
+    jk_log(l, JK_LOG_ERROR,
+           "Error connecting to tomcat. Tomcat is probably not started "
+           "or is listening on the wrong port. worker=%s failed",
+           p->worker->name);
 
     JK_TRACE_EXIT(l);
     return JK_FALSE;

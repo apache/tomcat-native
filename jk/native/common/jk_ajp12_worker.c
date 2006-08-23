@@ -87,45 +87,50 @@ static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l, int *is_error)
 {
-    jk_log(l, JK_LOG_DEBUG, "Into jk_endpoint_t::service");
+    ajp12_endpoint_t *p = e->endpoint_private;
+    unsigned int attempt;
+    int rc = -1;
+    /*
+     * AJP12 protocol is not recoverable.
+     */
 
-    if (e && e->endpoint_private && s && is_error) {
-        ajp12_endpoint_t *p = e->endpoint_private;
-        unsigned int attempt;
-        /*
-         * AJP12 protocol is not recoverable.
-         */
+    JK_TRACE_ENTER(l);
+ 
+    if (is_error)
         *is_error = JK_HTTP_SERVER_ERROR;
+    if (!e || !e->endpoint_private || !s || !is_error) {
+        JK_LOG_NULL_PARAMS(l);
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
 
-        for (attempt = 0; attempt < p->worker->connect_retry_attempts;
-             attempt++) {
-            p->sd =
-                jk_open_socket(&p->worker->worker_inet_addr,
-                               JK_FALSE, -1, 0, l);
+    for (attempt = 0; attempt < p->worker->connect_retry_attempts;
+         attempt++) {
+        p->sd =
+            jk_open_socket(&p->worker->worker_inet_addr,
+                           JK_FALSE, -1, 0, l);
 
-            jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::service, sd = %d",
-                   p->sd);
-            if (IS_VALID_SOCKET(p->sd)) {
-                break;
-            }
-        }
-        if (IS_VALID_SOCKET(p->sd)) {
-
-            jk_sb_open(&p->sb, p->sd);
-            if (ajpv12_handle_request(p, s, l)) {
-                jk_log(l, JK_LOG_DEBUG,
-                       "In jk_endpoint_t::service, sent request");
-                return ajpv12_handle_response(p, s, l);
-            }
-        }
-        jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, Error sd = %d",
+        jk_log(l, JK_LOG_DEBUG, "In jk_endpoint_t::service, sd = %d",
                p->sd);
+        if (IS_VALID_SOCKET(p->sd)) {
+            break;
+        }
     }
-    else {
-        jk_log(l, JK_LOG_ERROR,
-               "In jk_endpoint_t::service, NULL parameters");
-    }
+    if (IS_VALID_SOCKET(p->sd)) {
 
+        jk_sb_open(&p->sb, p->sd);
+        if (ajpv12_handle_request(p, s, l)) {
+            jk_log(l, JK_LOG_DEBUG,
+                   "In jk_endpoint_t::service, sent request");
+            rc = ajpv12_handle_response(p, s, l);
+            JK_TRACE_EXIT(l);
+            return rc;
+        }
+    }
+    jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, Error sd = %d",
+           p->sd);
+
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
 

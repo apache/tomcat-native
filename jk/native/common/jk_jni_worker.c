@@ -254,18 +254,16 @@ static int JK_METHOD service(jk_endpoint_t *e,
     jint rc;
 
     JK_TRACE_ENTER(l);
-    if (!e || !e->endpoint_private || !s) {
+
+    if (is_recoverable_error)
+        *is_recoverable_error = JK_FALSE;
+    if (!e || !e->endpoint_private || !s || !is_recoverable_error) {
         JK_LOG_NULL_PARAMS(l);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     p = e->endpoint_private;
-
-    if (!is_recoverable_error) {
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
 
     if (!p->attached) {
         /* Try to attach */
@@ -285,8 +283,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
      * When we call the JVM we cannot know what happens
      * So we can not recover !!!
      */
-    *is_recoverable_error = JK_FALSE;
-
     jk_log(l, JK_LOG_DEBUG, "In service, calling Tomcat...");
 
     rc = (*(p->env))->CallIntMethod(p->env,
