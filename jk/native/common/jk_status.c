@@ -452,7 +452,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                     "</td>", NULL);
             jk_printf(s, "<td>%d</td>", lb->s->retries);
             jk_printf(s, "<td>%s</td>", lb_method_type[lb->lbmethod]);
-            jk_printf(s, "<td>%s</td>", lb->lblock == JK_LB_LOCK_DEFAULT ? JK_LB_LM_DEFAULT : JK_LB_LM_PESSIMISTIC);
+            jk_printf(s, "<td>%s</td>", lb_locking_type[lb->lblock]);
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
             jk_puts(s, "<table><tr>"
                     "<th>Name</th><th>Type</th><th>jvmRoute</th><th>Host</th><th>Addr</th>"
