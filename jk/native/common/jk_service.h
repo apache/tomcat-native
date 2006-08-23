@@ -254,6 +254,14 @@ struct jk_ws_service
      * Flush a chunk of response data back to the browser.
      */
     void (JK_METHOD * flush) (jk_ws_service_t *s);
+
+    /*
+     * Add more data to log facilities.
+     */
+    void (JK_METHOD * add_log_items) (jk_ws_service_t *s,
+                                      const char *const *log_names,
+                                      const char *const *log_values,
+                                      unsigned num_of_items);
 };
 
 /*

@@ -202,6 +202,12 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
                              void *b, unsigned l, unsigned *a);
 
 static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l);
+
+static void JK_METHOD ws_add_log_items(jk_ws_service_t *s,
+                                       const char *const *log_names,
+                                       const char *const *log_values,
+                                       unsigned num_of_log_items);
+
 /* srevilak - new function prototypes */
 static void jk_server_cleanup(void *data);
 static void jk_generic_cleanup(server_rec * s);
@@ -381,6 +387,22 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned len)
     return JK_FALSE;
 }
 
+static void JK_METHOD ws_add_log_items(jk_ws_service_t *s,
+                                       const char *const *log_names,
+                                       const char *const *log_values,
+                                       unsigned num_of_log_items)
+{
+    unsigned h;
+    apache_private_data_t *p = s->ws_private;
+    request_rec *r = p->r;
+
+    for (h = 0; h < num_of_log_items; h++) {
+        if (log_names[h] && log_values[h]) {
+            ap_table_setn(r->notes, log_names[h], log_values[h]);
+        }
+    }
+}
+
 /* ====================================================================== */
 /* Utility functions                                                      */
 /* ====================================================================== */
@@ -455,6 +477,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->read = ws_read;
     s->write = ws_write;
     s->flush = ws_flush;
+    s->add_log_items = ws_add_log_items;
 
     /* Clear RECO status */
     s->reco_status = RECO_NONE;
@@ -2119,7 +2142,7 @@ jk_log(conf->log, JK_LOG_DEBUG, "default secret key = %s", conf->secret_key);
 for (i = 0; i < jk_map_size(conf->automount); i++)
 {
             char *name = jk_map_name_at(conf->automount, i);
-			jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s", name, map_get_string(conf->automount, name, NULL));
+            jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s", name, map_get_string(conf->automount, name, NULL));
 }
 }
 */

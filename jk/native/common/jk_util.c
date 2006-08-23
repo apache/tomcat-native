@@ -1311,6 +1311,7 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->num_attributes = 0;
     s->jvm_route = NULL;
     s->retries = JK_RETRIES;
+    s->add_log_items = NULL;
 }
 
 #ifdef _MT_CODE_PTHREAD
