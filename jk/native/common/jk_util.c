@@ -228,7 +228,7 @@ int jk_parse_log_level(const char *level)
         return JK_LOG_EMERG_LEVEL;
     }
 
-    return JK_LOG_INFO_LEVEL;
+    return JK_LOG_DEF_LEVEL;
 }
 
 int jk_open_file_logger(jk_logger_t **l, const char *file, int level)

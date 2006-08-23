@@ -2042,7 +2042,7 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->worker_file = NULL;
     c->mount_file = NULL;
     c->log_file = NULL;
-    c->log_level = -1;
+    c->log_level = JK_LOG_DEF_LEVEL;
     c->log = NULL;
     c->alias_dir = NULL;
     c->format_string = NULL;

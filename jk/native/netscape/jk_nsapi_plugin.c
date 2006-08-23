@@ -234,7 +234,7 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
     }
 
     if (!log_level_str) {
-        log_level_str = JK_LOG_LEVEL_DEF;
+        log_level_str = JK_LOG_DEF_VERB;
     }
 
     if (!jk_open_file_logger(&logger, log_file,

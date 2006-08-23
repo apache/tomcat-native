@@ -148,7 +148,7 @@ static char *CONTENT_TYPE = "Content-Type:text/html\r\n\r\n";
 static char extension_uri[INTERNET_MAX_URL_LENGTH] =
     "/jakarta/isapi_redirect.dll";
 static char log_file[MAX_PATH * 2];
-static int log_level = JK_LOG_EMERG_LEVEL;
+static int log_level = JK_LOG_DEF_LEVEL;
 static char worker_file[MAX_PATH * 2];
 static char worker_mount_file[MAX_PATH * 2] = {0};
 static char rewrite_rule_file[MAX_PATH * 2] = {0};
@@ -1307,7 +1307,7 @@ static int read_registry_init_data(void)
             log_level = jk_parse_log_level(tmp);
         }
         else {
-            ok = JK_FALSE;
+            log_level = JK_LOG_DEF_LEVEL;
         }
         tmp = jk_map_get_string(map, EXTENSION_URI_TAG, NULL);
         if (tmp) {
@@ -1371,7 +1371,7 @@ static int read_registry_init_data(void)
             log_level = jk_parse_log_level(tmpbuf);
         }
         else {
-            ok = JK_FALSE;
+            log_level = JK_LOG_DEF_LEVEL;
         }
 
         if (get_registry_config_parameter(hkey,

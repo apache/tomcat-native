@@ -1874,7 +1874,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->mount_file = NULL;
     c->log_file = NULL;
     c->log_fd = -1;
-    c->log_level = -1;
+    c->log_level = JK_LOG_DEF_LEVEL;
     c->log = NULL;
     c->alias_dir = NULL;
     c->format_string = NULL;

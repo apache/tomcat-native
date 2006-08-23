@@ -82,7 +82,7 @@ static int initDone = JK_FALSE;
 static jk_uri_worker_map_t *uw_map = NULL;
 static jk_logger_t *logger = NULL;
 
-static int logLevel = JK_LOG_EMERG_LEVEL;
+static int logLevel = JK_LOG_DEF_LEVEL;
 static jk_pool_t cfgPool;
 
 static const char *logFile;
@@ -625,7 +625,7 @@ static int ReadInitData(void)
     GETVNB(JK_WORKER_FILE_TAG, workerFile);
     GETVNB(JK_MOUNT_FILE_TAG, workerMountFile);
 
-    logLevel = (NULL == v) ? 0 : jk_parse_log_level(v);
+    logLevel = (NULL == v) ? JK_LOG_DEF_LEVEL : jk_parse_log_level(v);
 
     tomcatStart = GETV(TOMCAT_START);
     tomcatStop = GETV(TOMCAT_STOP);
