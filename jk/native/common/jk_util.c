@@ -808,21 +808,21 @@ int jk_get_lb_method(jk_map_t *m, const char *wname)
     char buf[1024];
     const char *v;
     if (!m || !wname) {
-        return JK_LB_BYREQUESTS;
+        return JK_LB_METHOD_DEF;
     }
 
     MAKE_WORKER_PARAM(METHOD_OF_WORKER);
     v = jk_map_get_string(m, buf, NULL);
     if (!v)
-        return JK_LB_BYREQUESTS;
+        return JK_LB_METHOD_DEF;
     else if  (*v == 't' || *v == 'T' || *v == '1')
-        return JK_LB_BYTRAFFIC;
+        return JK_LB_METHOD_TRAFFIC;
     else if  (*v == 'r' || *v == 'R' || *v == '0')
-        return JK_LB_BYREQUESTS;
+        return JK_LB_METHOD_REQUESTS;
     else if  (*v == 'b' || *v == 'B' || *v == '2')
-        return JK_LB_BYBUSYNESS;
+        return JK_LB_METHOD_BUSYNESS;
     else
-        return JK_LB_BYREQUESTS;
+        return JK_LB_METHOD_DEF;
 }
 
 int jk_get_lb_lock(jk_map_t *m, const char *wname)
@@ -830,19 +830,19 @@ int jk_get_lb_lock(jk_map_t *m, const char *wname)
     char buf[1024];
     const char *v;
     if (!m || !wname) {
-        return JK_LB_LOCK_DEFAULT;
+        return JK_LB_LOCK_DEF;
     }
 
     MAKE_WORKER_PARAM(LOCK_OF_WORKER);
     v = jk_map_get_string(m, buf, NULL);
     if (!v)
-        return JK_LB_LOCK_DEFAULT;
+        return JK_LB_LOCK_DEF;
     else if  (*v == 'o' || *v == 'O' || *v == '0')
-        return JK_LB_LOCK_DEFAULT;
+        return JK_LB_LOCK_OPTIMISTIC;
     else if  (*v == 'p' || *v == 'P' || *v == '1')
         return JK_LB_LOCK_PESSIMISTIC;
     else
-        return JK_LB_LOCK_DEFAULT;
+        return JK_LB_LOCK_DEF;
 }
 
 int jk_get_lb_worker_list(jk_map_t *m,

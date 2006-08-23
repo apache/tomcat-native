@@ -102,7 +102,7 @@ void reset_lb_values(lb_worker_t *p, jk_logger_t *l)
 {
     unsigned int i = 0;
     JK_TRACE_ENTER(l);
-    if (p->lbmethod != JK_LB_BYBUSYNESS) {
+    if (p->lbmethod != JK_LB_METHOD_BUSYNESS) {
         for (i = 0; i < p->num_of_workers; i++) {
             p->lb_workers[i].s->lb_value = 0;
         }
@@ -272,7 +272,7 @@ static jk_uint64_t decay_load(lb_worker_t *p,
     jk_uint64_t curmax = 0;
 
     JK_TRACE_ENTER(l);
-    if (p->lbmethod != JK_LB_BYBUSYNESS) {
+    if (p->lbmethod != JK_LB_METHOD_BUSYNESS) {
         for (i = 0; i < p->num_of_workers; i++) {
             p->lb_workers[i].s->lb_value >>= exponent;
             if (p->lb_workers[i].s->lb_value > curmax) {
@@ -664,9 +664,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     if (p->worker->s->busy > p->worker->s->max_busy)
                         p->worker->s->max_busy = p->worker->s->busy;
                     rec->s->busy++;
-                    if (p->worker->lbmethod == JK_LB_BYREQUESTS)
+                    if (p->worker->lbmethod == JK_LB_METHOD_REQUESTS)
                         rec->s->lb_value += rec->s->lb_mult;
-                    else if (p->worker->lbmethod == JK_LB_BYBUSYNESS)
+                    else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS)
                         rec->s->lb_value += rec->s->lb_mult;
                     if (rec->s->busy > rec->s->max_busy)
                         rec->s->max_busy = rec->s->busy;
@@ -684,9 +684,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     /* Update partial reads and writes if any */
                     rec->s->readed += rd;
                     rec->s->transferred += wr;
-                    if (p->worker->lbmethod == JK_LB_BYTRAFFIC)
+                    if (p->worker->lbmethod == JK_LB_METHOD_TRAFFIC)
                         rec->s->lb_value += (rd+wr)*rec->s->lb_mult;
-                    else if (p->worker->lbmethod == JK_LB_BYBUSYNESS)
+                    else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS)
                         if (rec->s->lb_value >= rec->s->lb_mult)
                             rec->s->lb_value -= rec->s->lb_mult;
                         else {

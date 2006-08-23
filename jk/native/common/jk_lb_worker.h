@@ -38,16 +38,20 @@ extern "C"
 #define JK_LB_WORKER_TYPE     (5)
 #define JK_LB_DEF_DOMAIN_NAME ("unknown")
 
-#define JK_LB_BYREQUESTS      (0)
-#define JK_LB_BYTRAFFIC       (1)
-#define JK_LB_BYBUSYNESS      (2)
-#define JK_LB_METHOD_REQUESTS ("Request")
-#define JK_LB_METHOD_TRAFFIC  ("Traffic")
-#define JK_LB_METHOD_BUSYNESS ("Busyness")
-#define JK_LB_LOCK_DEFAULT     (0)
-#define JK_LB_LOCK_PESSIMISTIC (1)
-#define JK_LB_LM_DEFAULT       ("Optimistic")
-#define JK_LB_LM_PESSIMISTIC   ("Pessimistic")
+#define JK_LB_METHOD_REQUESTS          (1)
+#define JK_LB_METHOD_TRAFFIC           (2)
+#define JK_LB_METHOD_BUSYNESS          (3)
+#define JK_LB_METHOD_DEF               (JK_LB_METHOD_BUSYNESS)
+#define JK_LB_METHOD_TEXT_REQUESTS     ("Request")
+#define JK_LB_METHOD_TEXT_TRAFFIC      ("Traffic")
+#define JK_LB_METHOD_TEXT_BUSYNESS     ("Busyness")
+#define JK_LB_METHOD_TEXT_DEF          (JK_LB_METHOD_TEXT_BUSYNESS)
+#define JK_LB_LOCK_OPTIMISTIC          (1)
+#define JK_LB_LOCK_PESSIMISTIC         (2)
+#define JK_LB_LOCK_DEF                 (JK_LB_LOCK_DEF)
+#define JK_LB_LOCK_TEXT_OPTIMISTIC     ("Optimistic")
+#define JK_LB_LOCK_TEXT_PESSIMISTIC    ("Pessimistic")
+#define JK_LB_LOCK_TEXT_DEF            (JK_LB_LOCK_TEXT_OPTIMISTIC)
 
 /* Time to wait before retry. */
 #define WAIT_BEFORE_RECOVER   (60)
@@ -59,23 +63,23 @@ extern "C"
 #define JK_LB_DECAY_MULT         (1)
 
 static const char *lb_locking_type[] = {
-    JK_LB_LM_DEFAULT,
-    JK_LB_LM_PESSIMISTIC,
     "unknown",
+    JK_LB_LOCK_TEXT_OPTIMISTIC,
+    JK_LB_LOCK_TEXT_PESSIMISTIC,
     NULL
 };
 
 static const char *lb_method_type[] = {
-    JK_LB_METHOD_REQUESTS,
-    JK_LB_METHOD_TRAFFIC,
-    JK_LB_METHOD_BUSYNESS,
     "unknown",
+    JK_LB_METHOD_TEXT_REQUESTS,
+    JK_LB_METHOD_TEXT_TRAFFIC,
+    JK_LB_METHOD_TEXT_BUSYNESS,
     NULL
 };
 
 struct worker_record
 {
-    jk_worker_t     *w;
+    jk_worker_t      *w;
     /* Shared memory worker data */
     jk_shm_worker_t  *s;
     /* Current jvmRoute. Can be name or domain */
