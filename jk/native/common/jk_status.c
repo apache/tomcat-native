@@ -887,28 +887,79 @@ static int JK_METHOD service(jk_endpoint_t *e,
             int refresh = status_int("refresh", s->query_string, -1);
             s->start_response(s, 200, "OK", headers_names, headers_vhtml, 3);
             s->write(s, JK_STATUS_HEAD, sizeof(JK_STATUS_HEAD) - 1);
-            if (refresh >= 0) {
-                jk_printf(s, "\n<meta http-equiv=\"Refresh\" content=\"%d;url=%s?refresh=%d\">",
-                          refresh, s->req_uri, refresh);
+            if (cmd > 1) {
+                jk_putv(s, "\n<meta http-equiv=\"Refresh\" content=\"0;url=",
+                          s->req_uri, "\">", NULL);
+            }
+            else if (cmd == 0 && refresh >= 0) {
+                jk_printf(s, "\n<meta http-equiv=\"Refresh\" content=\"%d;url=%s?%s\">",
+                          refresh, s->req_uri, s->query_string);
             }
             if (p->s_worker->css) {
                 jk_putv(s, "\n<link rel=\"stylesheet\" type=\"text/css\" href=\"",
                         p->s_worker->css, "\" />\n", NULL);
             }
             s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
-            jk_puts(s, "<h1>JK Status Manager for ");
-            jk_puts(s, s->server_name);
-            jk_puts(s, "</h1>\n\n");
-            jk_putv(s, "<dl><dt>Server Version: ",
-                    s->server_software, "</dt>\n", NULL);
-            jk_putv(s, "<dt>JK Version: ",
-                    JK_VERSTRING, "\n</dt></dl>\n", NULL);
-            /* Step 2: Display configuration */
-            display_workers(s, p->s_worker, worker, l);
-
-
+            if ( cmd <= 1 ) {
+                jk_puts(s, "<h1>JK Status Manager for ");
+                jk_puts(s, s->server_name);
+                jk_puts(s, "</h1>\n\n");
+                jk_putv(s, "<dl><dt>Server Version:</dt><dd>",
+                        s->server_software, "</dd>\n", NULL);
+                jk_putv(s, "<dt>JK Version:</dt><dd>",
+                            JK_VERSTRING, "\n</dd></dl>\n", NULL);
+            }
+            if ( cmd == 0 ) {
+                jk_putv(s, "[<a href=\"", s->req_uri, NULL);
+                if (refresh >= 0) {
+                    char *buf = jk_pool_alloc(s->pool, sizeof(char *) * BIG_POOL_SIZE);
+                    const char *str = s->query_string;
+                    int result = 0;
+                    int scan = 0;
+    
+                    while (str[scan] != 0) {
+                        if (strncmp(&str[scan], "refresh=", 8) == 0) {
+                            scan += 8;
+                            while (str[scan] != 0 && str[scan] != '&')
+                                scan++;
+                            if (str[scan] == '&')
+                                scan++;
+                        }
+                        else {
+                            if (result > 0 && str[scan] != 0 && str[scan] != '&') {
+                                buf[result] = '&';
+                                result++;
+                            }
+                            while (str[scan] != 0 && str[scan] != '&') {
+                                buf[result] = str[scan];
+                                result++;
+                                scan++;
+                            }
+                            if (str[scan] == '&')
+                                scan++;
+                        }
+                    }
+                    buf[result] = 0;
+    
+                    if (buf && buf[0])
+                        jk_putv(s, "?", buf, NULL);
+                    jk_puts(s, "\">stop");
+                }
+                else {
+                    jk_puts(s, "?");
+                    if (s->query_string && s->query_string[0])
+                        jk_putv(s, s->query_string, "&", NULL);
+                    jk_puts(s, "refresh=10\">start");
+                }
+                jk_puts(s, " auto update</a>]");
+            }
+            if ( cmd <= 1 ) {
+                /* Step 2: Display configuration */
+                display_workers(s, p->s_worker, worker, l);
+            }
+    
             s->write(s, JK_STATUS_BEND, sizeof(JK_STATUS_BEND) - 1);
-
+    
         }
         else if (mime == 1) {
             s->start_response(s, 200, "OK", headers_names, headers_vxml, 3);
