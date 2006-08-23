@@ -492,7 +492,6 @@ static worker_record_t *find_best_worker(lb_worker_t * p,
 
 static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                                                  jk_ws_service_t *s,
-                                                 int attempt,
                                                  jk_logger_t *l)
 {
     worker_record_t *rc = NULL;
@@ -642,7 +641,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     while (num_of_workers) {
         worker_record_t *rec =
-            get_most_suitable_worker(p->worker, s, attempt, l);
+            get_most_suitable_worker(p->worker, s, l);
         int rc;
         /* Do not reuse previous worker, because
          * that worker already failed.
