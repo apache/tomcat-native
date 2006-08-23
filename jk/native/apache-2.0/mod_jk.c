@@ -529,7 +529,7 @@ static int init_ws_service(apache_private_data_t * private_data,
      */
     if (JK_IS_DEBUG_LEVEL(conf->log)) {
         jk_log(conf->log, JK_LOG_DEBUG,
-               "Service protocol=%s method=%s host=%s addrr=%s name=%s port=%d auth=%s user=%s laddr=%s raddr=%s",
+               "Service protocol=%s method=%s host=%s addr=%s name=%s port=%d auth=%s user=%s laddr=%s raddr=%s",
                STRNULL_FOR_NULL(s->protocol),
                STRNULL_FOR_NULL(s->method),
                STRNULL_FOR_NULL(s->remote_host),
