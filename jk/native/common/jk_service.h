@@ -200,11 +200,6 @@ struct jk_ws_service
        and it'll work.
      */
     const char *secret;
-    /*
-     * Callbacks into the web server.  For each, the first argument is
-     * essentially a 'this' pointer.  All return JK_TRUE on success
-     * and JK_FALSE on failure.
-     */
 
     /*
      * Area to get POST data for fail-over recovery in POST
@@ -225,6 +220,11 @@ struct jk_ws_service
      */
     jk_uri_worker_map_t *uw_map;
 
+    /*
+     * Callbacks into the web server.  For each, the first argument is
+     * essentially a 'this' pointer.  All return JK_TRUE on success
+     * and JK_FALSE on failure.
+     */
     /*
      * Send the response headers to the browser.
      */
