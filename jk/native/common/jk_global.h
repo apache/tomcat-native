@@ -166,7 +166,6 @@ extern "C"
 #define JK_WORKER_NAME_TAG      ("worker")
 
 #define JK_WORKER_FILE_DEF  ("workers.properties")
-#define JK_LOG_LEVEL_DEF    ("emerg")
 
 #define JK_TRUE  (1)
 #define JK_FALSE (0)
