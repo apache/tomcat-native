@@ -240,6 +240,7 @@ extern "C"
 /* Forward local instead remote address */
 #define JK_OPT_FWDLOCAL             0x0010
 #define JK_OPT_FLUSHPACKETS         0x0020
+#define JK_OPT_DISABLEREUSE         0x0040
 
 /* Check for EBCDIC systems */
 

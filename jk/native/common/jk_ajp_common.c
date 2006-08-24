@@ -1456,12 +1456,17 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 */
             jk_log(l, JK_LOG_INFO, " Protocol error: Reuse is set to false");
         }
+        else if (r->disable_reuse) {
+            ae->reuse = JK_FALSE;
+        }
+        else {
+            /* Reuse in all cases */
+            ae->reuse = JK_TRUE;
+        }
         /* Flush after the last write */
         if (r->flush && !r->flush_packets)
             r->flush(r);
 
-        /* Reuse in all cases */
-        ae->reuse = JK_TRUE;
         JK_TRACE_EXIT(l);
         return JK_AJP13_END_RESPONSE;
         break;
