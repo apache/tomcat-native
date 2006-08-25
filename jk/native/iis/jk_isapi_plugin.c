@@ -1334,9 +1334,6 @@ static int read_registry_init_data(void)
         if (tmp) {
             strcpy(rewrite_rule_file, tmp);
         }
-        else {
-            ok = JK_FALSE;
-        }
         tmp = jk_map_get_string(map, URI_SELECT_TAG, NULL);
         if (tmp) {
             int opt = parse_uri_select(tmp);
