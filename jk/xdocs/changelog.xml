@@ -26,8 +26,15 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      Make rewrite_rule_map and log_level as non mandatory
+      directives for isapi_redirect. (mturk)
+      </fix>
+      <fix>
+      <bug>40107</bug>: Rewrite is_socket_connected function.
+      Non blocking socket is not used any more. (mturk)
       </fix>
       <update>
+      Allow building with VS2005 without too many warnings. (mturk)
       </update>
     </changelog>
   </subsection>
