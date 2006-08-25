@@ -1176,8 +1176,8 @@ static int ajp_send_request(jk_endpoint_t *e,
         if (ae->worker->socket_timeout) {
             if (!jk_is_socket_connected(ae->sd)) {
                 jk_log(l, JK_LOG_INFO,
-                       "Socket %d is not connected any more (errno=%d)",
-                       ae->sd, errno);
+                       "Socket %d is not connected any more",
+                       ae->sd);
                 jk_close_socket(ae->sd);
                 ae->sd = JK_INVALID_SOCKET;
                 err++;
