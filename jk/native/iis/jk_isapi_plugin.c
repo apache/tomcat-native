@@ -1405,9 +1405,6 @@ static int read_registry_init_data(void)
                                           sizeof(rewrite_rule_file))) {
             strcpy(rewrite_rule_file, tmpbuf);
         }
-        else {
-            ok = JK_FALSE;
-        }
 
         if (get_registry_config_parameter(hkey,
                                           URI_SELECT_TAG,
