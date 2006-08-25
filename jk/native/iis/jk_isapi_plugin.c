@@ -1306,9 +1306,6 @@ static int read_registry_init_data(void)
         if (tmp) {
             log_level = jk_parse_log_level(tmp);
         }
-        else {
-            log_level = JK_LOG_DEF_LEVEL;
-        }
         tmp = jk_map_get_string(map, EXTENSION_URI_TAG, NULL);
         if (tmp) {
             strcpy(extension_uri, tmp);
@@ -1366,9 +1363,6 @@ static int read_registry_init_data(void)
                                           JK_LOG_LEVEL_TAG,
                                           tmpbuf, sizeof(tmpbuf))) {
             log_level = jk_parse_log_level(tmpbuf);
-        }
-        else {
-            log_level = JK_LOG_DEF_LEVEL;
         }
 
         if (get_registry_config_parameter(hkey,
