@@ -25,6 +25,31 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      New JkOption to disable connection persistence. Contributed by Jim Jagielski. (rjung)
+      </update>
+      <update>
+      LB: Move sessionid retrieval out of get_most_suitable_worker into service. (rjung)
+      </update>
+      <update>
+      Code cleanup for all service methods (use TRACE, JK_LOG_NULL_PARAMS, null pointer checks). (rjung)
+      </update>
+      <update>
+      JKSTATUS: add refresh link. No refresh for updates. Redirect to list view after update. (rjung)
+      </update>
+      <update>
+      Add new hook add_log_items into servers. (rjung)
+      </update>
+      <update>
+      APACHE httpd: Rename apache logging notes. (rjung)
+      </update>
+      <update>
+      LB: Rename lock and method constants. Add constants for defaults. (rjung)
+      </update>
+      <fix>
+      Default log level should be INFO and not DEBUG.
+      Default log level should be the same for all server types. (rjung)
+      </fix>
       <fix>
       Make rewrite_rule_map and log_level as non mandatory
       directives for isapi_redirect. (mturk)
