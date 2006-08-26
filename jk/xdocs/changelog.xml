@@ -25,6 +25,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      IIS: Fix simple_rewrite for the cases where the
+      rewritten url is larger then the original one. (mturk)
+      </fix>
       <update>
       New JkOption to disable connection persistence. (jim)
       </update>
