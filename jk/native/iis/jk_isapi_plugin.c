@@ -685,7 +685,7 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
     return TRUE;
 }
 
-static void simple_rewrite(char *uri)
+static int simple_rewrite(char *uri)
 {
     if (rewrite_map) {
         int i;
@@ -696,9 +696,11 @@ static void simple_rewrite(char *uri)
                 strcpy(buf, jk_map_value_at(rewrite_map, i));
                 strcat(buf, uri + strlen(src));
                 strcpy(uri, buf);
+                return 1;
             }
         }
     }
+    return 0;
 }
 
 DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
@@ -746,6 +748,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         char Host[INTERNET_MAX_URL_LENGTH] = "";
         char Port[INTERNET_MAX_URL_LENGTH] = "";
         char Translate[INTERNET_MAX_URL_LENGTH];
+        char squery[INTERNET_MAX_URL_LENGTH] = "";
         BOOL(WINAPI * GetHeader)
             (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName,
              LPVOID lpvBuffer, LPDWORD lpdwSize);
@@ -801,6 +804,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             query = strchr(uri, '?');
             if (query) {
                 *query++ = '\0';
+                strcpy(squery, query);
             }
 
             rc = unescape_url(uri);
@@ -921,15 +925,22 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                  *
                  * TODO: Add more advanced regexp rewrite.
                  */
-                simple_rewrite(forwardURI);
-                if (JK_IS_DEBUG_LEVEL(logger))
-                    jk_log(logger, JK_LOG_DEBUG,
-                           "rewriten URI [%s]",
-                           forwardURI);
+                if (JK_IS_DEBUG_LEVEL(logger)) {
+                    char duri[INTERNET_MAX_URL_LENGTH];
+                    strcpy(duri, forwardURI);
+                    if (simple_rewrite(forwardURI)) {
+                        jk_log(logger, JK_LOG_DEBUG,
+                               "rewriten URI [%s]->[%s]",
+                               duri, forwardURI);
+                    }
+                }
+                else {
+                    simple_rewrite(forwardURI);
+                }
 
                 if (!AddHeader(pfc, URI_HEADER_NAME, forwardURI) ||
-                    ((query != NULL && strlen(query) > 0)
-                     ? !AddHeader(pfc, QUERY_HEADER_NAME, query) : FALSE) ||
+                    ((strlen(squery) > 0)
+                     ? !AddHeader(pfc, QUERY_HEADER_NAME, squery) : FALSE) ||
                     !AddHeader(pfc, WORKER_HEADER_NAME, (LPSTR)worker) ||
                     !SetHeader(pfc, "url", extension_uri)) {
                     jk_log(logger, JK_LOG_ERROR,
@@ -963,15 +974,13 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     }
                     memset(ld, 0, sizeof(isapi_log_data_t));
                     strcpy(ld->uri, forwardURI);
-                    if (query && strlen(query) > 0)
-                        strcpy(ld->query, query);
+                    strcpy(ld->query, squery);
                     pfc->pFilterContext = ld;
                 } else {
                     isapi_log_data_t *ld = (isapi_log_data_t *)pfc->pFilterContext;
                     memset(ld, 0, sizeof(isapi_log_data_t));
                     strcpy(ld->uri, forwardURI);
-                    if (query && strlen(query) > 0)
-                        strcpy(ld->query, query);
+                    strcpy(ld->query, squery);
                 }
             }
             else {
