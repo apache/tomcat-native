@@ -57,6 +57,8 @@ char **jk_map_get_string_list(jk_map_t *m,
                            const char *name,
                            unsigned *list_len, const char *def);
 
+int jk_map_add(jk_map_t *m, const char *name, const void *value);
+
 int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old);
 
 int jk_map_read_property(jk_map_t *m, const char *str, jk_logger_t *l);
@@ -74,6 +76,10 @@ void *jk_map_value_at(jk_map_t *m, int idex);
  * 
  */
 char *jk_map_replace_properties(jk_map_t *m, const char *value);
+
+int jk_map_resolve_references(jk_map_t *m, const char *prefix, int wildcard, int depth, jk_logger_t *l);
+
+int jk_map_inherit_properties(jk_map_t *m, const char *from, const char *to);
 
 #ifdef __cplusplus
 }

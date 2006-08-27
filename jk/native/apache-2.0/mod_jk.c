@@ -2430,6 +2430,10 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
         }
     }
 
+    if (jk_map_resolve_references(init_map, "worker.", 1, 1, conf->log) == JK_FALSE) {
+        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, pconf, "Error in resolving configuration references");
+    }
+
     /* we add the URI->WORKER MAP since workers using AJP14
        will feed it */
     worker_env.uri_to_worker = conf->uw_map;

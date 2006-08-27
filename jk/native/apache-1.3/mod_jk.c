@@ -2180,6 +2180,10 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
     ap_add_version_component(JK_EXPOSED_VERSION);
 #endif
 
+    if (jk_map_resolve_references(JK_WORKER_NAME_TAG ".", 1, 1) == JK_FALSE) {
+        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Error in resolving configuration references");
+    }
+
     /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
     worker_env.uri_to_worker = conf->uw_map;
     worker_env.virtual = "*";       /* for now */

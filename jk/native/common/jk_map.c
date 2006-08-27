@@ -29,8 +29,11 @@
 #include "jk_util.h"
 #include "jk_map.h"
 
-#define CAPACITY_INC_SIZE (50)
-#define LENGTH_OF_LINE    (8192)
+#define CAPACITY_INC_SIZE   (50)
+#define LENGTH_OF_LINE      (8192)
+#define JK_MAP_RECURSION    (20)
+#define JK_MAP_REFERENCE    (".reference")
+#define JK_MAP_REFERENCE_SZ (strlen(JK_MAP_REFERENCE))
 
 #ifdef AS400
 #define CASE_MASK 0xbfbfbfbf
@@ -309,6 +312,27 @@ char **jk_map_get_string_list(jk_map_t *m,
     return ar;
 }
 
+int jk_map_add(jk_map_t *m, const char *name, const void *value)
+{
+    int rc = JK_FALSE;
+
+    if (m && name) {
+        unsigned int key;
+        COMPUTE_KEY_CHECKSUM(name, key)
+        map_realloc(m);
+
+        if (m->size < m->capacity) {
+            m->values[m->size] = value;
+            m->names[m->size] = jk_pool_strdup(&m->p, name);
+            m->keys[m->size] = key;
+            m->size++;
+            rc = JK_TRUE;
+        }
+    }
+
+    return rc;
+}
+
 int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
 {
     int rc = JK_FALSE;
@@ -330,15 +354,7 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
             rc = JK_TRUE;
         }
         else {
-            map_realloc(m);
-
-            if (m->size < m->capacity) {
-                m->values[m->size] = value;
-                m->names[m->size] = jk_pool_strdup(&m->p, name);
-                m->keys[m->size] = key;
-                m->size++;
-                rc = JK_TRUE;
-            }
+            rc = jk_map_add(m, name, value);
         }
     }
 
@@ -600,5 +616,104 @@ char *jk_map_replace_properties(jk_map_t *m, const char *value)
         }
     }
 
+    return rc;
+}
+
+/**
+ *  Resolve references
+ *
+ */
+int jk_map_resolve_references(jk_map_t *m, const char *prefix,
+                              int wildcard, int depth, jk_logger_t *l)
+{
+    int rc = JK_FALSE;
+
+    JK_TRACE_ENTER(l);
+
+    if (m && prefix && depth <= JK_MAP_RECURSION) {
+        size_t prelen = strlen(prefix);
+        unsigned int i;
+        rc = JK_TRUE;
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "Checking for references with prefix %s with%s wildcard (recursion %d)",
+                   prefix, wildcard? "" : "out", depth);
+        for (i = 0; i < m->size; i++) {
+            if (m->values[i] && !strncmp(m->names[i], prefix, prelen)) {
+                size_t remain = strlen(m->names[i]) - prelen;
+                if ((remain == JK_MAP_REFERENCE_SZ ) || (wildcard && remain > JK_MAP_REFERENCE_SZ)) {
+                    remain = strlen(m->names[i]) - JK_MAP_REFERENCE_SZ;
+                    if (!strncmp(m->names[i] + remain, JK_MAP_REFERENCE, JK_MAP_REFERENCE_SZ)) {
+                        char *from = jk_pool_alloc(&m->p,
+                                                   (sizeof(char) *
+                                                   (strlen(m->values[i]) + 2)));
+                        char *to = jk_pool_alloc(&m->p,
+                                                 (sizeof(char) *
+                                                 (remain + 2)));
+                        if (!from || !to) {
+                            rc = JK_FALSE;
+                            break;
+                        }
+                        strcpy(from, m->values[i]);
+                        *(from+strlen(m->values[i]))   = '.';
+                        *(from+strlen(m->values[i])+1) = '\0';
+                        strncpy(to, m->names[i], remain);
+                        *(to+remain)   = '.';
+                        *(to+remain+1) = '\0';
+
+                        rc = jk_map_resolve_references(m, m->values[i], 0, ++depth, l);
+                        if (rc == JK_FALSE) {
+                            break;
+                        }
+                        if (JK_IS_DEBUG_LEVEL(l))
+                            jk_log(l, JK_LOG_DEBUG,
+                                   "Copying values from %s to %s",
+                                   from, to);
+                        rc = jk_map_inherit_properties(m, from, to);
+                        if (rc == JK_FALSE) {
+                            break;
+                        }
+                        m->values[i] = NULL;
+                    }
+                }
+            }
+        }
+    }
+    JK_TRACE_EXIT(l);
+    return rc;
+}
+
+/**
+ *  Inherit properties
+ *
+ */
+int jk_map_inherit_properties(jk_map_t *m, const char *from, const char *to)
+{
+    int rc = JK_FALSE;
+
+    if (m && from && to) {
+        unsigned int i;
+        rc = JK_TRUE;
+        for (i = 0; i < m->size; i++) {
+            if (!strncmp(m->names[i], from, strlen(from))) {
+                const char *prp = m->names[i] + strlen(from);
+                char *to_prp = jk_pool_alloc(&m->p,
+                                             (sizeof(char) *
+                                             (strlen(to) +
+                                             strlen(prp) + 1)));
+                if (!to_prp) {
+                    break;
+                }
+                strcpy(to_prp, to);
+                strcat(to_prp, prp);
+                if (jk_map_get_id(m, to_prp) < 0 ) {
+                    rc = jk_map_add(m, to_prp, m->values[i]);
+                    if (rc == JK_FALSE) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
     return rc;
 }
