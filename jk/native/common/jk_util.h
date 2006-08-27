@@ -95,6 +95,8 @@ int jk_get_is_worker_disabled(jk_map_t *m, const char *wname);
 
 int jk_get_is_worker_stopped(jk_map_t *m, const char *wname);
 
+int jk_get_worker_activation(jk_map_t *m, const char *wname);
+
 void jk_set_log_format(const char *logformat);
 
 int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_wokers);

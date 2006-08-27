@@ -74,18 +74,16 @@ struct jk_shm_worker
     char    redirect[JK_SHM_STR_SIZ+1];
     /* worker distance */
     volatile int distance;
-    /* current status of the worker */
-    volatile int is_disabled;
-    volatile int is_stopped;
-    volatile int is_busy;
+    /* current activation state (config) of the worker */
+    volatile int activation;
+    /* current error state (runtime) of the worker */
+    volatile int state;
     /* Current lb factor */
     volatile int lb_factor;
     /* Current lb reciprocal factor */
     volatile jk_uint64_t lb_mult;
     /* Current lb value  */
     volatile jk_uint64_t lb_value;
-    volatile int in_error_state;
-    volatile int in_recovering;
     int     sticky_session;
     int     sticky_session_force;
     int     recover_wait_time;

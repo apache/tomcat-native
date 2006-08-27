@@ -52,9 +52,25 @@ extern "C"
 #define JK_LB_LOCK_TEXT_OPTIMISTIC     ("Optimistic")
 #define JK_LB_LOCK_TEXT_PESSIMISTIC    ("Pessimistic")
 #define JK_LB_LOCK_TEXT_DEF            (JK_LB_LOCK_TEXT_OPTIMISTIC)
+#define JK_LB_STATE_NA                 (1)
+#define JK_LB_STATE_OK                 (2)
+#define JK_LB_STATE_RECOVER            (3)
+#define JK_LB_STATE_BUSY               (4)
+#define JK_LB_STATE_ERROR              (5)
+#define JK_LB_STATE_TEXT_NA            ("N/A")
+#define JK_LB_STATE_TEXT_OK            ("OK")
+#define JK_LB_STATE_TEXT_RECOVER       ("REC")
+#define JK_LB_STATE_TEXT_BUSY          ("BSY")
+#define JK_LB_STATE_TEXT_ERROR         ("ERR")
+#define JK_LB_ACTIVATION_ACTIVE        (1)
+#define JK_LB_ACTIVATION_DISABLED      (2)
+#define JK_LB_ACTIVATION_STOPPED       (3)
+#define JK_LB_ACTIVATION_TEXT_ACTIVE   ("ACT")
+#define JK_LB_ACTIVATION_TEXT_DISABLED ("DIS")
+#define JK_LB_ACTIVATION_TEXT_STOPPED  ("STP")
 
 #define JK_LB_MAX_SZ                 (21)
-#define JK_LB_NOTES_COUNT            (7)
+#define JK_LB_NOTES_COUNT            (9)
 #define JK_NOTE_LB_FIRST_NAME        ("JK_LB_FIRST_NAME")
 #define JK_NOTE_LB_FIRST_VALUE       ("JK_LB_FIRST_VALUE")
 #define JK_NOTE_LB_FIRST_ACCESSED    ("JK_LB_FIRST_ACCESSED")
@@ -62,6 +78,8 @@ extern "C"
 #define JK_NOTE_LB_FIRST_TRANSFERRED ("JK_LB_FIRST_TRANSFERRED")
 #define JK_NOTE_LB_FIRST_ERRORS      ("JK_LB_FIRST_ERRORS")
 #define JK_NOTE_LB_FIRST_BUSY        ("JK_LB_FIRST_BUSY")
+#define JK_NOTE_LB_FIRST_ACTIVATION  ("JK_LB_FIRST_ACTIVATION")
+#define JK_NOTE_LB_FIRST_STATE       ("JK_LB_FIRST_STATE")
 #define JK_NOTE_LB_LAST_NAME         ("JK_LB_LAST_NAME")
 #define JK_NOTE_LB_LAST_VALUE        ("JK_LB_LAST_VALUE")
 #define JK_NOTE_LB_LAST_ACCESSED     ("JK_LB_LAST_ACCESSED")
@@ -69,6 +87,8 @@ extern "C"
 #define JK_NOTE_LB_LAST_TRANSFERRED  ("JK_LB_LAST_TRANSFERRED")
 #define JK_NOTE_LB_LAST_ERRORS       ("JK_LB_LAST_ERRORS")
 #define JK_NOTE_LB_LAST_BUSY         ("JK_LB_LAST_BUSY")
+#define JK_NOTE_LB_LAST_ACTIVATION   ("JK_LB_LAST_ACTIVATION")
+#define JK_NOTE_LB_LAST_STATE        ("JK_LB_LAST_STATE")
 
 /* Minimal time in ms to wait between get_endpoint retries for balanced workers */
 #define JK_LB_MIN_RETRY_WAIT  (25)
@@ -95,6 +115,24 @@ static const char *lb_method_type[] = {
     JK_LB_METHOD_TEXT_REQUESTS,
     JK_LB_METHOD_TEXT_TRAFFIC,
     JK_LB_METHOD_TEXT_BUSYNESS,
+    NULL
+};
+
+static const char *lb_state_type[] = {
+    "unknown",
+    JK_LB_STATE_TEXT_NA,
+    JK_LB_STATE_TEXT_OK,
+    JK_LB_STATE_TEXT_RECOVER,
+    JK_LB_STATE_TEXT_BUSY,
+    JK_LB_STATE_TEXT_ERROR,
+    NULL
+};
+
+static const char *lb_activation_type[] = {
+    "unknown",
+    JK_LB_ACTIVATION_TEXT_ACTIVE,
+    JK_LB_ACTIVATION_TEXT_DISABLED,
+    JK_LB_ACTIVATION_TEXT_STOPPED,
     NULL
 };
 

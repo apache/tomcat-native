@@ -74,6 +74,7 @@
 #define LOCK_OF_WORKER              ("lock")
 #define IS_WORKER_DISABLED          ("disabled")
 #define IS_WORKER_STOPPED           ("stopped")
+#define ACTIVATION_OF_WORKER        ("activation")
 #define WORKER_RECOVER_TIME         ("recover_time")
 
 
@@ -763,6 +764,32 @@ int jk_get_is_worker_stopped(jk_map_t *m, const char *wname)
     return rc;
 }
 
+int jk_get_worker_activation(jk_map_t *m, const char *wname)
+{
+    char buf[1024];
+    const char *v;
+    if (!m || !wname) {
+        return JK_LB_ACTIVATION_ACTIVE;
+    }
+
+    MAKE_WORKER_PARAM(ACTIVATION_OF_WORKER);
+    v = jk_map_get_string(m, buf, NULL);
+    if (v) {
+        if (*v == 'a' || *v == 'A')
+            return JK_LB_ACTIVATION_ACTIVE;
+        else if (*v == 's' || *v == 'S')
+            return JK_LB_ACTIVATION_STOPPED;
+        else if (*v == 'd' || *v == 'D')
+            return JK_LB_ACTIVATION_DISABLED;
+    }
+    else if (jk_get_is_worker_stopped(m, wname))
+        return JK_LB_ACTIVATION_STOPPED;
+    else if (jk_get_is_worker_disabled(m, wname))
+        return JK_LB_ACTIVATION_DISABLED;
+    else
+        return JK_LB_ACTIVATION_ACTIVE;
+}
+
 void jk_set_log_format(const char *logformat)
 {
     jk_log_fmt = (logformat) ? logformat : JK_TIME_FORMAT;
@@ -1121,6 +1148,7 @@ static const char *unique_properties[] = {
     METHOD_OF_WORKER,
     IS_WORKER_DISABLED,
     IS_WORKER_STOPPED,
+    ACTIVATION_OF_WORKER,
     WORKER_RECOVER_TIME,
     SECRET_OF_WORKER,
     RETRIES_OF_WORKER,
@@ -1139,6 +1167,8 @@ static const char *deprecated_properties[] = {
     LIBPATH_OF_WORKER,
     CMD_LINE_OF_WORKER,
     NATIVE_LIB_OF_WORKER,
+    IS_WORKER_DISABLED,
+    IS_WORKER_STOPPED,
     NULL
 };
 

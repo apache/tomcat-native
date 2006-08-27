@@ -39,8 +39,8 @@
  * The load balancing code in this
  */
 
-#define JK_WORKER_IN_ERROR(w) ((w)->in_error_state  && !(w)->is_busy)
-#define JK_WORKER_USABLE(w)   (!(w)->in_error_state && !(w)->is_stopped && !(w)->is_disabled && !(w)->is_busy)
+#define JK_WORKER_USABLE(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->state != JK_LB_STATE_BUSY && (w)->activation != JK_LB_ACTIVATION_STOPPED && (w)->activation != JK_LB_ACTIVATION_DISABLED)
+#define JK_WORKER_USABLE_STICKY(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->activation != JK_LB_ACTIVATION_STOPPED)
 
 struct lb_endpoint
 {
@@ -236,7 +236,7 @@ static void recover_workers(lb_worker_t *p,
 
     for (i = 0; i < p->num_of_workers; i++) {
         w = &p->lb_workers[i];
-        if (JK_WORKER_IN_ERROR(w->s)) {
+        if (w->s->state == JK_LB_STATE_ERROR) {
             elapsed = (int)difftime(now, w->s->error_time);
             if (elapsed <= p->s->recover_wait_time) {
                 if (JK_IS_DEBUG_LEVEL(l))
@@ -250,9 +250,7 @@ static void recover_workers(lb_worker_t *p,
                            "worker %s is marked for recovery",
                            w->s->name);
                 w->s->lb_value = curmax;
-                w->s->in_recovering = JK_TRUE;
-                w->s->in_error_state = JK_FALSE;
-                w->s->is_busy = JK_FALSE;
+                w->s->state = JK_LB_STATE_RECOVER;
             }
         }
     }
@@ -436,7 +434,7 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
         candidate = find_best_bydomain(p, name, l);
     }
     if (candidate) {
-        if (candidate->s->in_error_state || candidate->s->is_stopped ) {
+        if (!JK_WORKER_USABLE_STICKY(candidate->s)) {
             /* We have a worker that is error state or stopped.
              * If it has a redirection set use that redirection worker.
              * This enables to safely remove the member from the
@@ -451,7 +449,7 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
                 uses_domain = 1;
                 candidate = find_best_bydomain(p, candidate->s->domain, l);
             }
-            if (candidate && (candidate->s->in_error_state || candidate->s->is_stopped))
+            if (candidate && !JK_WORKER_USABLE_STICKY(candidate->s))
                 candidate = NULL;
         }
     }
@@ -503,7 +501,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
         /* No need to find the best worker
          * if there is a single one
          */
-        if(!p->lb_workers[0].s->in_error_state && !p->lb_workers[0].s->is_stopped) {
+        if (JK_WORKER_USABLE_STICKY(p->lb_workers[0].s)) {
             p->lb_workers[0].r = &(p->lb_workers[0].s->jvm_route[0]);
             JK_TRACE_EXIT(l);
             return &p->lb_workers[0];
@@ -674,7 +672,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  * as in error if the retry number is
                  * greater then the number of retries.
                  */
-                rec->s->is_busy = JK_TRUE;
+                if (rec->s->state != JK_LB_STATE_ERROR)
+                    rec->s->state = JK_LB_STATE_BUSY;
                 jk_log(l, JK_LOG_INFO,
                        "could not get free endpoint for worker %s (%d retries)",
                        rec->s->name, retry);
@@ -743,7 +742,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 /* When returning the endpoint mark the worker as not busy.
                  * We have at least one endpoint free
                  */
-                rec->s->is_busy = JK_FALSE;
+                if (rec->s->state == JK_LB_STATE_BUSY)
+                    rec->s->state = JK_LB_STATE_OK;
                 /* Decrement the busy worker count.
                  * Check if the busy was reset to zero by graceful
                  * restart of the server.
@@ -753,8 +753,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if (p->worker->s->busy)
                     p->worker->s->busy--;
                 if (service_stat == JK_TRUE) {
-                    rec->s->in_error_state = JK_FALSE;
-                    rec->s->in_recovering = JK_FALSE;
+                    rec->s->state = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
                     if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                         jk_shm_unlock();
@@ -768,8 +767,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     */
 
                     rec->s->errors++;
-                    rec->s->in_error_state = JK_TRUE;
-                    rec->s->in_recovering = JK_FALSE;
+                    rec->s->state = JK_LB_STATE_ERROR;
                     rec->s->error_time = time(NULL);
                     if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                         jk_shm_unlock();
@@ -797,8 +795,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     * Since this is bad request do not fail over.
                     */
                     rec->s->errors++;
-                    rec->s->in_error_state = JK_FALSE;
-                    rec->s->in_recovering = JK_FALSE;
+                    rec->s->state = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
                     if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                         jk_shm_unlock();
@@ -855,6 +852,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     snprintf(buf, JK_LB_MAX_SZ, "%d", prec->s->busy);
                     log_names[6] = JK_NOTE_LB_FIRST_BUSY;
                     log_values[6] = buf;
+                    log_names[7] = JK_NOTE_LB_FIRST_ACTIVATION;
+                    log_values[7] = lb_activation_type[rec->s->activation];
+                    log_names[8] = JK_NOTE_LB_FIRST_STATE;
+                    log_values[8] = lb_state_type[rec->s->state];
                     s->add_log_items(s, log_names, log_values, JK_LB_NOTES_COUNT);
                 }
             }
@@ -905,6 +906,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
             snprintf(buf, JK_LB_MAX_SZ, "%d", prec->s->busy);
             log_names[6] = JK_NOTE_LB_LAST_BUSY;
             log_values[6] = buf;
+            log_names[7] = JK_NOTE_LB_LAST_ACTIVATION;
+            log_values[7] = lb_activation_type[prec->s->activation];
+            log_names[8] = JK_NOTE_LB_LAST_STATE;
+            log_values[8] = lb_state_type[prec->s->state];
             s->add_log_items(s, log_names, log_values, JK_LB_NOTES_COUNT);
         }
     }
@@ -996,14 +1001,9 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                     strncpy(p->lb_workers[i].s->redirect, s, JK_SHM_STR_SIZ);
 
                 p->lb_workers[i].s->lb_value = 0;
-                p->lb_workers[i].s->in_error_state = JK_FALSE;
-                p->lb_workers[i].s->in_recovering = JK_FALSE;
-                p->lb_workers[i].s->is_busy = JK_FALSE;
+                p->lb_workers[i].s->state = JK_LB_STATE_NA;
                 p->lb_workers[i].s->error_time = 0;
-                /* Worker can be initaly disabled as hot standby */
-                p->lb_workers[i].s->is_disabled = jk_get_is_worker_disabled(props, worker_names[i]);
-                /* Worker can be initaly deactive as cold standby */
-                p->lb_workers[i].s->is_stopped = jk_get_is_worker_stopped(props, worker_names[i]);
+                p->lb_workers[i].s->activation = jk_get_worker_activation(props, worker_names[i]);
                 if (!wc_create_worker(p->lb_workers[i].s->name, 0,
                                       props,
                                       &(p->lb_workers[i].w),

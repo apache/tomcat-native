@@ -217,22 +217,6 @@ static const char *status_val_bool(int v)
         return "True";
 }
 
-static const char *status_val_status(int s, int d, int e, int r, int b)
-{
-    if (s)
-        return "Stopped";
-    else if (d)
-        return "Disabled";
-    else if (r)
-        return "Recovering";
-    else if (e)
-        return "Error";
-    else if (b)
-        return "Busy";
-    else
-        return "OK";
-}
-
 static const char *status_val_match(unsigned int match)
 {
     if (match & MATCH_TYPE_STOPPED)
@@ -456,7 +440,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
             jk_puts(s, "<table><tr>"
                     "<th>Name</th><th>Type</th><th>jvmRoute</th><th>Host</th><th>Addr</th>"
-                    "<th>Stat</th><th>D</th><th>F</th><th>M</th><th>V</th><th>Acc</th><th>Err</th>"
+                    "<th>Act</th><th>Stat</th><th>D</th><th>F</th><th>M</th><th>V</th><th>Acc</th><th>Err</th>"
                     "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th><th>RR</th><th>Cd</th></tr>\n");
             for (j = 0; j < lb->num_of_workers; j++) {
                 worker_record_t *wr = &(lb->lb_workers[j]);
@@ -473,13 +457,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_putv(s, "<td>", jk_dump_hinfo(&a->worker_inet_addr, buf),
                         "</td>", NULL);
                 /* TODO: descriptive status */
-                jk_putv(s, "<td>",
-                        status_val_status(wr->s->is_stopped,
-                                          wr->s->is_disabled,
-                                          wr->s->in_error_state,
-                                          wr->s->in_recovering,
-                                          wr->s->is_busy),
-                        "</td>", NULL);
+                jk_putv(s, "<td>", lb_activation_type[wr->s->activation], "</td>", NULL);
+                jk_putv(s, "<td>", lb_state_type[wr->s->state], "</td>", NULL);
                 jk_printf(s, "<td>%d</td>", wr->s->distance);
                 jk_printf(s, "<td>%d</td>", wr->s->lb_factor);
                 jk_printf(s, "<td>%" JK_UINT64_T_FMT "</td>", wr->s->lb_mult);
@@ -530,13 +509,21 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_puts(s, "<tr><td>Cluster Domain:</td><td><input name=\"wc\" type=\"text\" ");
                 jk_putv(s, "value=\"", wr->s->domain, NULL);
                 jk_puts(s, "\"/></td></tr>\n");
-                jk_puts(s, "<tr><td>Disabled:</td><td><input name=\"wd\" type=\"checkbox\"");
-                if (wr->s->is_disabled)
-                    jk_puts(s, "  checked=\"checked\"");
+                jk_puts(s, "<tr><td>Activation:</td><td></td></tr>\n");
+                jk_puts(s, "<tr><td>&nbsp;&nbsp;Active</td><td><input name=\"wa\" type=\"radio\"");
+                jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_ACTIVE);
+                if (wr->s->activation == JK_LB_ACTIVATION_ACTIVE)
+                    jk_puts(s, " checked=\"checked\"");
                 jk_puts(s, "/></td></tr>\n");
-                jk_puts(s, "<tr><td>Stopped:</td><td><input name=\"ws\" type=\"checkbox\"");
-                if (wr->s->is_stopped)
-                    jk_puts(s, "  checked=\"checked\"");
+                jk_puts(s, "<tr><td>&nbsp;&nbsp;Disabled</td><td><input name=\"wa\" type=\"radio\"");
+                jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_DISABLED);
+                if (wr->s->activation == JK_LB_ACTIVATION_DISABLED)
+                    jk_puts(s, " checked=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
+                jk_puts(s, "<tr><td>&nbsp;&nbsp;Stopped</td><td><input name=\"wa\" type=\"radio\"");
+                jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_STOPPED);
+                if (wr->s->activation == JK_LB_ACTIVATION_STOPPED)
+                    jk_puts(s, " checked=\"checked\"");
                 jk_puts(s, "/></td></tr>\n");
                 jk_puts(s, "</table>\n");
                 jk_puts(s, "<br/><input type=\"submit\" value=\"Update Worker\"/>\n</form>\n");
@@ -591,7 +578,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             "<tr><th>Type</th><td>Worker type</td></tr>\n"
             "<tr><th>jvmRoute</th><td>Worker JVM route</td></tr>\n"
             "<tr><th>Addr</th><td>Backend Address info</td></tr>\n"
-            "<tr><th>Stat</th><td>Worker status</td></tr>\n"
+            "<tr><th>Act</th><td>Worker activation configuration</td></tr>\n"
+            "<tr><th>Stat</th><td>Worker error status</td></tr>\n"
             "<tr><th>D</th><td>Worker distance</td></tr>\n"
             "<tr><th>F</th><td>Load Balancer factor</td></tr>\n"
             "<tr><th>M</th><td>Load Balancer multiplicity</td></tr>\n"
@@ -654,18 +642,15 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
             worker_record_t *wr = &(lb->lb_workers[j]);
             ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
             /* TODO: descriptive status */
-            jk_printf(s, "      <jk:member id=\"%d\" name=\"%s\" type=\"%s\" host=\"%s\" port=\"%d\" address=\"%s\" status=\"%s\"",
+            jk_printf(s, "      <jk:member id=\"%d\" name=\"%s\" type=\"%s\" host=\"%s\" port=\"%d\" address=\"%s\" activation=\"%s\" state=\"%s\"",
                 j,
                 wr->s->name,
                 status_worker_type(wr->w->type),
                 a->host,
                 a->port,
                 jk_dump_hinfo(&a->worker_inet_addr, buf),
-                status_val_status(wr->s->is_stopped,
-                                  wr->s->is_disabled,
-                                  wr->s->in_error_state,
-                                  wr->s->in_recovering,
-                                  wr->s->is_busy) );
+                lb_activation_type[wr->s->activation],
+                lb_state_type[wr->s->state]);
 
             jk_printf(s, " distance=\"%d\"", wr->s->distance);
             jk_printf(s, " lbfactor=\"%d\"", wr->s->lb_factor);
@@ -698,7 +683,6 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
                           const char *dworker, jk_logger_t *l)
 {
     int i;
-    int j;
     char buf[1024];
     const char *b;
     lb_worker_t *lb;
@@ -753,21 +737,17 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
             strncpy(wr->s->domain, b, JK_SHM_STR_SIZ);
         else
             memset(wr->s->domain, 0, JK_SHM_STR_SIZ);
-        i = status_bool("wd", s->query_string);
-        j = status_bool("ws", s->query_string);
-        if (wr->s->is_disabled!=i || wr->s->is_stopped!=j) {
-            wr->s->is_disabled = i;
-            wr->s->is_stopped = j;
+        i = status_int("wa", s->query_string, wr->s->activation);
+        if (wr->s->activation != i) {
+            wr->s->activation = i;
             reset_lb_values(lb, l);
-            if (i+j==0) {
-                jk_log(l, JK_LOG_INFO,
-                       "worker %s restarted in status worker"
-                       JK_UINT64_T_FMT,
-                       wr->s->name);
-            }
+            jk_log(l, JK_LOG_INFO,
+                   "worker '%s' activation changed to '%s' via status worker",
+                   wr->s->name,
+                   lb_activation_type[wr->s->activation]);
         }
         i = status_int("wx", s->query_string, wr->s->distance);
-        if (wr->s->distance!=i) {
+        if (wr->s->distance != i) {
             wr->s->distance = i;
             reset_lb_values(lb, l);
         }
@@ -799,9 +779,7 @@ static void reset_worker(jk_ws_service_t *s, status_worker_t *sw,
             wr->s->max_busy         = 0;
             wr->s->readed           = 0;
             wr->s->transferred      = 0;
-            wr->s->is_busy          = JK_FALSE;
-            wr->s->in_error_state   = JK_FALSE;
-            wr->s->in_recovering    = JK_FALSE;
+            wr->s->state            = JK_LB_STATE_NA;
         }
     }
 }
@@ -914,7 +892,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             jk_putv(s, "<dl><dt>Server Version:</dt><dd>",
                     s->server_software, "</dd>\n", NULL);
             jk_putv(s, "<dt>JK Version:</dt><dd>",
-                        JK_VERSTRING, "\n</dd></dl>\n", NULL);
+                    JK_VERSTRING, "\n</dd></dl>\n", NULL);
         }
         if ( cmd == 0 ) {
             jk_putv(s, "[<a href=\"", s->req_uri, NULL);
