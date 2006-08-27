@@ -30,6 +30,10 @@
 #include "jk_pool.h"
 #include "jk_service.h"
 
+#define JK_SLEEP_DEF     (100)
+
+void jk_sleep(int ms);
+
 int jk_parse_log_level(const char *level);
 
 int jk_open_file_logger(jk_logger_t **l, const char *file, int level);

@@ -35,25 +35,6 @@
 #include "novsock2.h"
 #endif
 
-/* Sleep for 100ms */
-void jk_sleep_def(void)
-{
-#ifdef OS2
-    DosSleep(100);
-#elif defined(BEOS)
-    snooze(100 * 1000);
-#elif defined(NETWARE)
-    delay(100);
-#elif defined(WIN32)
-    Sleep(100);
-#else
-    struct timeval tv;
-    tv.tv_usec = 100 * 1000;
-    tv.tv_sec = 0;
-    select(0, NULL, NULL, NULL, &tv);
-#endif
-}
-
 const char *response_trans_headers[] = {
     "Content-Type",
     "Content-Language",
@@ -1763,7 +1744,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                        "recoverable operation attempt=%d", i);
                 /* Check for custom retries */
                 if (i >= JK_RETRIES) {
-                    jk_sleep_def();
+                    jk_sleep(JK_SLEEP_DEF);
                 }
             }
             else {

@@ -133,6 +133,25 @@ static const char *jk_level_verbs[] = {
 
 const char *jk_log_fmt = JK_TIME_FORMAT;
 
+/* Sleep for 100ms */
+void jk_sleep(int ms)
+{
+#ifdef OS2
+    DosSleep(ms);
+#elif defined(BEOS)
+    snooze(ms * 1000);
+#elif defined(NETWARE)
+    delay(ms);
+#elif defined(WIN32)
+    Sleep(ms);
+#else
+    struct timeval tv;
+    tv.tv_usec = ms * 1000;
+    tv.tv_sec = 0;
+    select(0, NULL, NULL, NULL, &tv);
+#endif
+}
+
 static int set_time_str(char *str, int len)
 {
     time_t t = time(NULL);

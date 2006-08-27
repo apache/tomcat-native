@@ -756,7 +756,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  * on each consecutive attempt.
                  */
                 if (attempt > (int)p->worker->num_of_workers)
-                    jk_sleep_def();
+                    jk_sleep(JK_SLEEP_DEF);
                 continue;
             }
             if (service_stat == JK_FALSE) {
