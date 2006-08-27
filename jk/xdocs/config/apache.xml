@@ -234,7 +234,7 @@ This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
 </p>
 
 <p>
-JkOptions <b>ForwardURICompat</b>, you told mod_jk to send the URI to Tomcat normally, 
+JkOptions <b>ForwardURICompat</b>, you ask mod_jk to send the URI to Tomcat normally, 
 which is less spec compliant but mod_rewrite compatible, 
 use it for compatibility with Tomcat 3.2.x engines (on by default).
 
@@ -312,7 +312,7 @@ file that Tomcat normally serves - for instance Velocity pages and JSP pages.
 </p>
 
 <p>
-JkOptions <b>ForwardLocalAddress</b>, you told mod_jk to send the local address,
+JkOptions <b>ForwardLocalAddress</b>, you ask mod_jk to send the local address,
 of the Apache web server instead remote client address. This can be used by
 Tomcat remote address valve for allowing connections only from registered Apache
 web servers.
@@ -326,11 +326,32 @@ web servers.
 </p>
 
 <p>
-JkOptions <b>FlushPackets</b>, you told mod_jk to make a flush after each AJP
+JkOptions <b>FlushPackets</b>, you ask mod_jk to make a flush after each AJP
 packet received from Tomcat.
 
 <source>  
   JkOptions     +FlushPackets
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>DisableReuse</b>, you ask mod_jk to close connections immediately
+after their use. Normally mod_jk uses persistent connections and pools idle
+connections to reuse them, when new requests have to be sent to Tomcat.
+</p>
+
+<p>
+Using this option will have a strong performance penalty for Apache and Tomcat.
+Use this only as a last resort in case of unfixable network problems.
+If a firewall between Apache and Tomcat silently kills idle connections,
+try to use the worker attribute socket_keepalive in combination with an appropriate
+TCP keepalive value in your OS.
+
+<source>  
+  JkOptions     +DisableReuse
 </source>
 
 <br/>
