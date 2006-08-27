@@ -1218,7 +1218,7 @@ static int init_jk(char *serverName)
     }
 
     if (rewrite_rule_file[0] && jk_map_alloc(&rewrite_map)) {
-        if (jk_map_read_properties(rewrite_map, rewrite_rule_file, NULL)) {
+        if (jk_map_read_properties(rewrite_map, rewrite_rule_file, NULL, logger)) {
             if (JK_IS_DEBUG_LEVEL(logger)) {
                 jk_log(logger, JK_LOG_DEBUG, "Loaded rewrite rule file %s.",
                        rewrite_rule_file);
@@ -1239,7 +1239,7 @@ static int init_jk(char *serverName)
     if (rc) {
         rc = JK_FALSE;
         if (jk_map_alloc(&workers_map)) {
-            if (jk_map_read_properties(workers_map, worker_file, NULL)) {
+            if (jk_map_read_properties(workers_map, worker_file, NULL, logger)) {
                 /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
 
                 worker_env.uri_to_worker = uw_map;
@@ -1299,7 +1299,7 @@ static int read_registry_init_data(void)
     jk_map_t *map;
 
     if (jk_map_alloc(&map)) {
-        if (jk_map_read_properties(map, ini_file_name, NULL)) {
+        if (jk_map_read_properties(map, ini_file_name, NULL, logger)) {
             using_ini_file = JK_TRUE;
         }
     }

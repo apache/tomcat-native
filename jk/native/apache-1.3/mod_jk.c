@@ -1604,7 +1604,8 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    if (jk_map_read_property(conf->worker_properties, line) == JK_FALSE)
+    jk_logger_t *l = conf->log ? conf->log : main_log;
+    if (jk_map_read_property(conf->worker_properties, line, l) == JK_FALSE)
         return ap_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line);
 
     return NULL;
@@ -2164,7 +2165,7 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
 
     /*if(map_alloc(&init_map)) { */
 
-    if (!jk_map_read_properties(init_map, conf->worker_file, NULL)) {
+    if (!jk_map_read_properties(init_map, conf->worker_file, NULL, conf->log)) {
 
         if (jk_map_size(init_map) == 0) {
             ap_log_error(APLOG_MARK, APLOG_EMERG, NULL,

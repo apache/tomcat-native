@@ -25,9 +25,9 @@
 #define _JK_UTIL_H
 
 #include "jk_global.h"
+#include "jk_logger.h"
 #include "jk_map.h"
 #include "jk_pool.h"
-#include "jk_logger.h"
 #include "jk_service.h"
 
 int jk_parse_log_level(const char *level);

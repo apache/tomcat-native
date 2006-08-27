@@ -580,7 +580,7 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
 
     jk_map_alloc(&map);
     if (jk_map_read_properties(map, uw_map->fname,
-                               &uw_map->modified)) {
+                               &uw_map->modified, l)) {
         int i;
         for (i = 0; i < jk_map_size(map); i++) {
             const char *u = jk_map_name_at(map, i);

@@ -1635,7 +1635,7 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    if (jk_map_read_property(conf->worker_properties, line) == JK_FALSE)
+    if (jk_map_read_property(conf->worker_properties, line, conf->log) == JK_FALSE)
         return apr_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line);
 
     return NULL;
@@ -2420,7 +2420,7 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     }
 
     /*     if(map_alloc(&init_map)) { */
-    if (!jk_map_read_properties(init_map, conf->worker_file, NULL)) {
+    if (!jk_map_read_properties(init_map, conf->worker_file, NULL, conf->log)) {
         if (jk_map_size(init_map) == 0) {
             ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT,
                          0, NULL,

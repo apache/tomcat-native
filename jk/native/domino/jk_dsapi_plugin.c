@@ -962,7 +962,7 @@ static unsigned int ParsedRequest(FilterContext * context,
             DEBUG(("Initialising worker map\n"));
 
             if (jk_map_alloc(&map)) {
-                if (jk_map_read_properties(map, workerMountFile))
+                if (jk_map_read_properties(map, workerMountFile, logger))
                     if (uri_worker_map_alloc(&uw_map, map, logger))
                         ok = JK_TRUE;
                 jk_map_free(&map);
@@ -975,7 +975,7 @@ static unsigned int ParsedRequest(FilterContext * context,
                 DEBUG(("About to allocate map\n"));
                 if (jk_map_alloc(&map)) {
                     DEBUG(("About to read %s\n", workerFile));
-                    if (jk_map_read_properties(map, workerFile)) {
+                    if (jk_map_read_properties(map, workerFile, logger)) {
 #if defined(JK_VERSION) && JK_VERSION >= MAKEVERSION(1, 2, 0, 1)
                         char server[256];
 
