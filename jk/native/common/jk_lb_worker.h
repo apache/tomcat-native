@@ -53,6 +53,23 @@ extern "C"
 #define JK_LB_LOCK_TEXT_PESSIMISTIC    ("Pessimistic")
 #define JK_LB_LOCK_TEXT_DEF            (JK_LB_LOCK_TEXT_OPTIMISTIC)
 
+#define JK_LB_MAX_SZ                 (21)
+#define JK_LB_NOTES_COUNT            (7)
+#define JK_NOTE_LB_FIRST_NAME        ("JK_LB_FIRST_NAME")
+#define JK_NOTE_LB_FIRST_VALUE       ("JK_LB_FIRST_VALUE")
+#define JK_NOTE_LB_FIRST_ACCESSED    ("JK_LB_FIRST_ACCESSED")
+#define JK_NOTE_LB_FIRST_READ        ("JK_LB_FIRST_READ")
+#define JK_NOTE_LB_FIRST_TRANSFERRED ("JK_LB_FIRST_TRANSFERRED")
+#define JK_NOTE_LB_FIRST_ERRORS      ("JK_LB_FIRST_ERRORS")
+#define JK_NOTE_LB_FIRST_BUSY        ("JK_LB_FIRST_BUSY")
+#define JK_NOTE_LB_LAST_NAME         ("JK_LB_LAST_NAME")
+#define JK_NOTE_LB_LAST_VALUE        ("JK_LB_LAST_VALUE")
+#define JK_NOTE_LB_LAST_ACCESSED     ("JK_LB_LAST_ACCESSED")
+#define JK_NOTE_LB_LAST_READ         ("JK_LB_LAST_READ")
+#define JK_NOTE_LB_LAST_TRANSFERRED  ("JK_LB_LAST_TRANSFERRED")
+#define JK_NOTE_LB_LAST_ERRORS       ("JK_LB_LAST_ERRORS")
+#define JK_NOTE_LB_LAST_BUSY         ("JK_LB_LAST_BUSY")
+
 /* Minimal time in ms to wait between get_endpoint retries for balanced workers */
 #define JK_LB_MIN_RETRY_WAIT  (25)
 /* Maximal time in ms to wait between get_endpoint retries for balanced workers */

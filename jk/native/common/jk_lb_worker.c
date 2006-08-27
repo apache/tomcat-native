@@ -599,7 +599,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
 {
     lb_endpoint_t *p;
     int attempt = 1;
+    worker_record_t *prec = NULL;
     int num_of_workers;
+    int first = 1;
     int rc = -1;
     char *sessionid = NULL;
 
@@ -648,6 +650,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             int retry = 0;
             int retry_wait = JK_LB_MIN_RETRY_WAIT;
             s->jvm_route = rec->r;
+            prec = rec;
 
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
@@ -821,6 +824,40 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_log(l, JK_LOG_DEBUG,
                            "recoverable error... will try to recover on other worker");
             }
+            if (first == 1 && s->add_log_items) {
+                first = 0;
+                const char **log_names = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT);
+                const char **log_values = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT);
+                char *buf = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT * JK_LB_MAX_SZ);;
+                if (log_names && log_values && buf) {
+                    log_names[0] = JK_NOTE_LB_FIRST_NAME;
+                    log_values[0] = prec->s->name;
+                    snprintf(buf, JK_LB_MAX_SZ, "%" JK_UINT64_T_FMT, prec->s->lb_value);
+                    log_names[1] = JK_NOTE_LB_FIRST_VALUE;
+                    log_values[1] = buf;
+                    buf += JK_LB_MAX_SZ;
+                    snprintf(buf, JK_LB_MAX_SZ, "%" JK_UINT64_T_FMT, prec->s->elected);
+                    log_names[2] = JK_NOTE_LB_FIRST_ACCESSED;
+                    log_values[2] = buf;
+                    buf += JK_LB_MAX_SZ;
+                    snprintf(buf, JK_LB_MAX_SZ, "%" JK_UINT64_T_FMT, prec->s->readed);
+                    log_names[3] = JK_NOTE_LB_FIRST_READ;
+                    log_values[3] = buf;
+                    buf += JK_LB_MAX_SZ;
+                    snprintf(buf, JK_LB_MAX_SZ, "%" JK_UINT64_T_FMT, prec->s->transferred);
+                    log_names[4] = JK_NOTE_LB_FIRST_TRANSFERRED;
+                    log_values[4] = buf;
+                    buf += JK_LB_MAX_SZ;
+                    snprintf(buf, JK_LB_MAX_SZ, "%" JK_UINT32_T_FMT, prec->s->errors);
+                    log_names[5] = JK_NOTE_LB_FIRST_ERRORS;
+                    log_values[5] = buf;
+                    buf += JK_LB_MAX_SZ;
+                    snprintf(buf, JK_LB_MAX_SZ, "%d", prec->s->busy);
+                    log_names[6] = JK_NOTE_LB_FIRST_BUSY;
+                    log_values[6] = buf;
+                    s->add_log_items(s, log_names, log_values, JK_LB_NOTES_COUNT);
+                }
+            }
         }
         else {
             /* NULL record, no more workers left ... */
@@ -837,6 +874,39 @@ static int JK_METHOD service(jk_endpoint_t *e,
         /* Set error to Timeout */
         *is_error = JK_HTTP_SERVER_BUSY;
         rc = JK_FALSE;
+    }
+    if (prec && s->add_log_items) {
+        const char **log_names = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT);
+        const char **log_values = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT);
+        char *buf = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT * JK_LB_MAX_SZ);;
+        if (log_names && log_values && buf) {
+            log_names[0] = JK_NOTE_LB_LAST_NAME;
+            log_values[0] = prec->s->name;
+            snprintf(buf, JK_LB_MAX_SZ, "%" JK_UINT64_T_FMT, prec->s->lb_value);
+            log_names[1] = JK_NOTE_LB_LAST_VALUE;
+            log_values[1] = buf;
+            buf += JK_LB_MAX_SZ;
+            snprintf(buf, JK_LB_MAX_SZ, "%" JK_UINT64_T_FMT, prec->s->elected);
+            log_names[2] = JK_NOTE_LB_LAST_ACCESSED;
+            log_values[2] = buf;
+            buf += JK_LB_MAX_SZ;
+            snprintf(buf, JK_LB_MAX_SZ, "%" JK_UINT64_T_FMT, prec->s->readed);
+            log_names[3] = JK_NOTE_LB_LAST_READ;
+            log_values[3] = buf;
+            buf += JK_LB_MAX_SZ;
+            snprintf(buf, JK_LB_MAX_SZ, "%" JK_UINT64_T_FMT, prec->s->transferred);
+            log_names[4] = JK_NOTE_LB_LAST_TRANSFERRED;
+            log_values[4] = buf;
+            buf += JK_LB_MAX_SZ;
+            snprintf(buf, JK_LB_MAX_SZ, "%" JK_UINT32_T_FMT, prec->s->errors);
+            log_names[5] = JK_NOTE_LB_LAST_ERRORS;
+            log_values[5] = buf;
+            buf += JK_LB_MAX_SZ;
+            snprintf(buf, JK_LB_MAX_SZ, "%d", prec->s->busy);
+            log_names[6] = JK_NOTE_LB_LAST_BUSY;
+            log_values[6] = buf;
+            s->add_log_items(s, log_names, log_values, JK_LB_NOTES_COUNT);
+        }
     }
 
     JK_TRACE_EXIT(l);
