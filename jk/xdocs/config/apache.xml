@@ -210,6 +210,43 @@ here is a list of the available request log format options:
 <br/>
 </p>
 
+<p>
+You can also log mod_jk information using the Apache standard module <b>mod_log_config</b>.
+The module sets several notes in the Apache httpd notes table.
+Most of them are are only useful in combination with a load balancer worker.
+</p>
+                       
+<p>
+<attributes name="Note">
+  <attribute name="JK_WORKER_NAME" required="false">Name of the worker selected by the URI mapping</attribute>
+  <attribute name="JK_WORKER_TYPE" required="false">Type of the worker selected by the URI mapping</attribute>
+  <attribute name="JK_REQUEST_DURATION" required="false">Request duration in seconds and microseconds.
+                                                         At the moment only available if JkRequestLogFormat is set.</attribute>
+  <attribute name="JK_LB_FIRST_NAME" required="false">Load-Balancer: Name of the first worker tried</attribute>
+  <attribute name="JK_LB_FIRST_TYPE" required="false">Load-Balancer: Type of the first worker tried</attribute>
+  <attribute name="JK_LB_FIRST_ACCESSED" required="false">Load-Balancer: Access count for the first worker tried</attribute>
+  <attribute name="JK_LB_FIRST_READ" required="false">Load-Balancer: Bytes read for the first worker tried</attribute>
+  <attribute name="JK_LB_FIRST_TRANSFERRED" required="false">Load-Balancer: Bytes transferred for the first worker tried</attribute>
+  <attribute name="JK_LB_FIRST_ERRORS" required="false">Load-Balancer: Error count for the first worker tried</attribute>
+  <attribute name="JK_LB_FIRST_BUSY" required="false">Load-Balancer: Busy count for the first worker tried</attribute>
+  <attribute name="JK_LB_LAST_NAME" required="false">Load-Balancer: Name of the last worker tried</attribute>
+  <attribute name="JK_LB_LAST_TYPE" required="false">Load-Balancer: Type of the last worker tried</attribute>
+  <attribute name="JK_LB_LAST_ACCESSED" required="false">Load-Balancer: Access count for the last worker tried</attribute>
+  <attribute name="JK_LB_LAST_READ" required="false">Load-Balancer: Bytes read for the last worker tried</attribute>
+  <attribute name="JK_LB_LAST_TRANSFERRED" required="false">Load-Balancer: Bytes transferred for the last worker tried</attribute>
+  <attribute name="JK_LB_LAST_ERRORS" required="false">Load-Balancer: Error count for the last worker tried</attribute>
+  <attribute name="JK_LB_LAST_BUSY" required="false">Load-Balancer: Busy count for the last worker tried</attribute>
+</attributes>
+
+<source>
+  LogFormat     "%h %l %u %t \"%r\" %>s %b %{JK_WORKER_NAME}n %{JK_LB_FIRST_NAME}n %{JK_LB_FIRST_BUSY}n %{JK_LB_LAST_NAME}n %{JK_LB_LAST_BUSY}n" mod_jk_log
+  CustomLog     logs/access_log     mod_jk_log
+</source>
+
+<br/>
+<br/>
+</p>
+
 </subsection>
 
 <subsection name="Forwarding">
