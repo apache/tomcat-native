@@ -376,6 +376,70 @@ change your Java Home, Tomcat Home or OS path separator
 
 </subsection>
 
+<subsection name="Hierarchical property configuration">
+<p>
+Workers can reference configurations of other workers.
+If worker "x" references worker "y", then it inherits all
+configuration parameters from "y", except for the ones
+that have explicitely been set for "x".
+</p>
+
+<source>
+  # worker toe defines some default settings
+  worker.toe.type=ajp13
+  worker.toe.socket_keepalive=true
+  worker.toe.connect_timeout=10000
+  worker.toe.recovery_options=7
+  # workers tic and tac inherit those values
+  worker.tic.reference=worker.toe
+  worker.tac.reference=worker.toe
+</source>
+
+<p>
+Please note, that the reference contains
+the full prefix to the referenced configuration attributes,
+not only the name of the referenced worker.
+</p>
+
+<p>
+References can be nested. Be careful to avoid loops!
+</p>
+References are especially useful, when configuring load balancers.
+Try to understand the following two stage references:
+</p>
+
+<source>
+  # We only use one load balancer
+  worker.list=lb
+  # Let's define some defaults
+  worker.basic.port=8009
+  worker.basic.type=ajp13
+  worker.basic.socket_keepalive=true
+  worker.basic.connect_timeout=10000
+  worker.basic.recovery_options=7
+  # And we use them in two groups
+  worker.lb1.domain=dom1
+  worker.lb1.distance=0
+  worker.lb1.reference=worker.basic
+  worker.lb2.domain=dom2
+  worker.lb2.distance=1
+  worker.lb2.reference=worker.basic
+  # Now we configure the load balancer
+  worker.lb.type=lb
+  worker.lb.method=B
+  worker.lb.balanced_workers=w11,w12,w21,w22
+  worker.w11.host=myhost11
+  worker.w11.reference=worker.lb1
+  worker.w12.host=myhost12
+  worker.w12.reference=worker.lb1
+  worker.w21.host=myhost21
+  worker.w21.reference=worker.lb2
+  worker.w22.host=myhost22
+  worker.w22.reference=worker.lb2
+</source>
+
+</subsection>
+
 </section>
 
 <section name="A sample worker.properties">

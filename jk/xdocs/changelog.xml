@@ -25,6 +25,12 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Implement hierarchical worker configuration via attribute "reference". (rjung)
+      </update>
+      <update>
+      Log deprecated properties. (rjung)
+      </update>
       <fix>
       IIS: Fix simple_rewrite for the cases where the
       rewritten url is larger then the original one. (mturk)
@@ -65,6 +71,10 @@
       <update>
       Allow building with VS2005 without too many warnings. (mturk)
       </update>
+      <fix>
+      Decide by MMN, which piped log API we should use.
+      mod_jk 1.2.18 broke compilation with Apache 1.3 pre 1.3.28. (rjung)
+      </fix>
     </changelog>
   </subsection>
 </section>

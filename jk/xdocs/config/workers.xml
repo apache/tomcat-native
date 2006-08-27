@@ -521,6 +521,26 @@ This feature has been added in <b>jk 1.2.16</b>.
 </p>
 </directive>
 
+<directive name="reference" default="" required="false">
+This directive allows to copy configurations between workers
+in a hierarchical way. If worker castor sets <b>worker.castor.reference=worker.pollux</b>
+then it inherits all properties of <b>pollux</b>, except for the ones that
+are explicitely set for <b>castor</b>.
+<p>
+Please note, that the value of the directive is not only the name of the referred worker,
+but the complete prefix including "worker.".
+</p>
+<p>
+This directive is especially useful, if one has a lot of balanced workers in a load balancer
+and these workers share most of their properties. You can set all of these properties
+in a phantom worker, e.g. using the prefix "worker.template1", and then simply
+reference those common properties in all balanced workers.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.19</b>.
+</p>
+</directive>
+
 <directive name="secret" default="" required="false">
 If set to AJP Connector secret keyword, only request with this keyword are successfull responding.
 Use <b>request.useSecret="true"</b> and <b>request.secret="secret key word"</b> at your tomcat ajp
