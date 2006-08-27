@@ -53,6 +53,10 @@ extern "C"
 #define JK_LB_LOCK_TEXT_PESSIMISTIC    ("Pessimistic")
 #define JK_LB_LOCK_TEXT_DEF            (JK_LB_LOCK_TEXT_OPTIMISTIC)
 
+/* Minimal time in ms to wait between get_endpoint retries for balanced workers */
+#define JK_LB_MIN_RETRY_WAIT  (25)
+/* Maximal time in ms to wait between get_endpoint retries for balanced workers */
+#define JK_LB_MAX_RETRY_WAIT  (100)
 /* Time to wait before retry. */
 #define WAIT_BEFORE_RECOVER   (60)
 /* We accept doing global maintenance if we are */
