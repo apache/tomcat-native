@@ -363,8 +363,11 @@ web servers.
 </p>
 
 <p>
-JkOptions <b>FlushPackets</b>, you ask mod_jk to make a flush after each AJP
-packet received from Tomcat.
+JkOptions <b>FlushPackets</b>, you ask mod_jk to flush Apache's connection
+buffer after each AJP packet chunk received from Tomcat. This option can have
+a strong performance penalty for Apache and Tomcat as writes are performed
+more often than would normally be required (ie: at the end of each
+response).
 
 <source>  
   JkOptions     +FlushPackets
