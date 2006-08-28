@@ -26,6 +26,16 @@
   <subsection name="Native">
     <changelog>
       <update>
+      LB: Combine ok/error/recovering/busy runtime states into a single scalar.
+      LB: Combine active/disabled/stopped configuration states into a single scalar.
+      </update>
+      <update>
+      LB: Add several Apache notes to enable standard logging for load balancer results.
+      </update>
+      <update>
+      LB: Reorganisation of the main load balancer service loop. (rjung)
+      </update>
+      <update>
       Implement hierarchical worker configuration via attribute "reference". (rjung)
       </update>
       <update>
