@@ -578,6 +578,7 @@ public class AjpAprProcessor implements ActionHook {
 
         } else if (actionCode == ActionCode.ACTION_REQ_SET_BODY_REPLAY) {
 
+            request.setContentLength(-1); // reset content length
             // Set the given bytes as the content
             ByteChunk bc = (ByteChunk) param;
             bodyBytes.setBytes(bc.getBytes(), bc.getStart(), bc.getLength());
