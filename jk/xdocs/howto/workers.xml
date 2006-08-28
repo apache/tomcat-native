@@ -404,6 +404,8 @@ not only the name of the referenced worker.
 <p>
 References can be nested. Be careful to avoid loops!
 </p>
+
+<p>
 References are especially useful, when configuring load balancers.
 Try to understand the following two stage references:
 </p>
