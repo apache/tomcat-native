@@ -279,7 +279,7 @@ can persist session data across multiple instances of Tomcat. By default sticky_
 <subsection name="Advanced lb Worker properties">
 <p>
 With JK 1.2.x, new load-balancing and fault-tolerant support has been added via
-2 new properties, <b>redirect</b> and <b>disabled</b>.
+2 new properties, <b>redirect</b> and <b>activation</b>.
 </p>
 
 <p>
@@ -309,7 +309,7 @@ a loadbalancer in front of the nodes.
   worker.worker2.type=ajp13
   worker.worker2.lbfactor=1
   # Disable worker2 for all requests except failover
-  worker.worker2.disabled=True
+  worker.worker2.activation=disabled
   
   # Define the LB worker
   worker.router.type=lb

@@ -486,7 +486,27 @@ This feature has been added in <b>jk 1.2.9</b>.
 </p>
 </directive>
 
+<directive name="activation" default="Active" required="false">
+Using this directive, a balanced worker of a load balancer
+can be configured as disabled or stopped. A disabled worker only gets
+requests, which belong to sessions for that worker. A stopped
+worker does not get any requests. Users will loose their sessions,
+unless session replication via clustering is used.
+<p>
+Use <b>d</b> or <b>D</b> to disable and <b>s</b> or <b>S</b> to stop.
+If this directive is not present the deprecated directives
+"disabled" or "stopped" are used.
+</p>
+<p>
+This flag can be changed at runtime using status worker.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.19</b>.
+</p>
+</directive>
+
 <directive name="disabled" default="False" required="false">
+<warn>This directive has been deprecated since 1.2.19. See <b>activation</b> instead.</warn>
 If set to <b>True</b> or <b>1</b> the worker will be disabled if member
 of load balancer. This flag can be changed at runtime using status worker.
 <p>
@@ -495,6 +515,7 @@ This feature has been added in <b>jk 1.2.9</b>.
 </directive>
 
 <directive name="stopped" default="False" required="false">
+<warn>This directive has been deprecated since 1.2.19. See <b>activation</b> instead.</warn>
 If set to <b>True</b> or <b>1</b> the worker will be stopped if member
 of load balancer. The flag is needed for stop complete traffic of a sticky session
 worker. It is only usefull, when you have a cluster that replicated the sessions.
