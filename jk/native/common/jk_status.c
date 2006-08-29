@@ -897,14 +897,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
         if ( cmd == 0 ) {
             jk_putv(s, "[<a href=\"", s->req_uri, NULL);
             if (refresh >= 0) {
-                char *buf = jk_pool_alloc(s->pool, sizeof(char *) * BIG_POOL_SIZE);
                 const char *str = s->query_string;
+                char *buf = jk_pool_alloc(s->pool, sizeof(char *) * (strlen(str)+1));
                 int result = 0;
                 int scan = 0;
 
                 while (str[scan] != 0) {
-                    if (strncmp(&str[scan], "refresh=", 8) == 0) {
-                        scan += 8;
+                    if (strncmp(&str[scan], "refresh=", strlen("refresh=")) == 0) {
+                        scan += strlen("refresh=");
                         while (str[scan] != 0 && str[scan] != '&')
                             scan++;
                         if (str[scan] == '&')
@@ -924,7 +924,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                             scan++;
                     }
                 }
-                buf[result] = 0;
+                buf[result] = '\0';
 
                 if (buf && buf[0])
                     jk_putv(s, "?", buf, NULL);
