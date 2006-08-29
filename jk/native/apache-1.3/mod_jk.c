@@ -2180,7 +2180,7 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
     ap_add_version_component(JK_EXPOSED_VERSION);
 #endif
 
-    if (jk_map_resolve_references(JK_WORKER_NAME_TAG ".", 1, 1) == JK_FALSE) {
+    if (jk_map_resolve_references(init_map, "worker.", 1, 1, conf->log) == JK_FALSE) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Error in resolving configuration references");
     }
 
