@@ -1169,6 +1169,7 @@ static const char *deprecated_properties[] = {
     LIBPATH_OF_WORKER,
     CMD_LINE_OF_WORKER,
     NATIVE_LIB_OF_WORKER,
+    BALANCED_WORKERS,
     IS_WORKER_DISABLED,
     IS_WORKER_STOPPED,
     NULL
