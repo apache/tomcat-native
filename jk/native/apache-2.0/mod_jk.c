@@ -1036,7 +1036,7 @@ static const char *jk_set_auto_alias(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    conf->alias_dir = directory;
+    conf->alias_dir = apr_pstrdup(cmd->pool, directory);
 
     if (conf->alias_dir == NULL)
         return "JkAutoAlias directory invalid";
