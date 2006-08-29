@@ -738,7 +738,7 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
         else
             memset(wr->s->domain, 0, JK_SHM_STR_SIZ);
         i = status_int("wa", s->query_string, wr->s->activation);
-        if (wr->s->activation != i) {
+        if (wr->s->activation != i && i>0 && i<= JK_LB_ACTIVATION_STOPPED) {
             wr->s->activation = i;
             reset_lb_values(lb, l);
             jk_log(l, JK_LOG_INFO,
