@@ -1003,7 +1003,13 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 p->lb_workers[i].s->lb_value = 0;
                 p->lb_workers[i].s->state = JK_LB_STATE_NA;
                 p->lb_workers[i].s->error_time = 0;
-                p->lb_workers[i].s->activation = jk_get_worker_activation(props, worker_names[i]);
+                if ((p->lb_workers[i].s->activation = 
+                     jk_get_worker_activation(props, worker_names[i])) < 0) {
+                     jk_log(l, JK_LOG_ERROR,
+                            "Invalid Activation mode for worker %s",
+                            worker_names[i]);
+                     break;
+                }
                 if (!wc_create_worker(p->lb_workers[i].s->name, 0,
                                       props,
                                       &(p->lb_workers[i].w),

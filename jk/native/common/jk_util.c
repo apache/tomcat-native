@@ -781,6 +781,8 @@ int jk_get_worker_activation(jk_map_t *m, const char *wname)
             return JK_LB_ACTIVATION_STOPPED;
         else if (*v == 'd' || *v == 'D')
             return JK_LB_ACTIVATION_DISABLED;
+        else
+            return -1;
     }
     else if (jk_get_is_worker_stopped(m, wname))
         return JK_LB_ACTIVATION_STOPPED;
