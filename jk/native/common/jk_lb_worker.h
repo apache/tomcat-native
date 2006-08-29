@@ -69,7 +69,7 @@ extern "C"
 #define JK_LB_ACTIVATION_TEXT_DISABLED ("DIS")
 #define JK_LB_ACTIVATION_TEXT_STOPPED  ("STP")
 
-#define JK_LB_MAX_SZ                 (21)
+#define JK_LB_UINT64_STR_SZ          (21)
 #define JK_LB_NOTES_COUNT            (9)
 #define JK_NOTE_LB_FIRST_NAME        ("JK_LB_FIRST_NAME")
 #define JK_NOTE_LB_FIRST_VALUE       ("JK_LB_FIRST_VALUE")
