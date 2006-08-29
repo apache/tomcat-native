@@ -822,10 +822,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                            "recoverable error... will try to recover on other worker");
             }
             if (first == 1 && s->add_log_items) {
-                first = 0;
                 const char **log_names = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT);
                 const char **log_values = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT);
                 char *buf = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT * JK_LB_MAX_SZ);;
+                first = 0;
                 if (log_names && log_values && buf) {
                     log_names[0] = JK_NOTE_LB_FIRST_NAME;
                     log_values[0] = prec->s->name;
