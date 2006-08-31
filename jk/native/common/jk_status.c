@@ -392,6 +392,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
 {
     unsigned int i;
     char buf[32];
+    time_t now = time(NULL);
 
     for (i = 0; i < sw->we->num_of_workers; i++) {
         jk_worker_t *w = wc_get_worker_for_name(sw->we->worker_list[i], l);
@@ -428,6 +429,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                     "<th>Retries</th>"
                     "<th>Method</th>"
                     "<th>Lock</th>"
+                    "<th>Recovery timeout</th>"
                     "</tr>\n<tr>");
             jk_putv(s, "<td>", status_worker_type(w->type), "</td>", NULL);
             jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session),
@@ -437,11 +439,12 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_printf(s, "<td>%d</td>", lb->s->retries);
             jk_printf(s, "<td>%s</td>", lb_method_type[lb->lbmethod]);
             jk_printf(s, "<td>%s</td>", lb_locking_type[lb->lblock]);
+            jk_printf(s, "<td>%d</td>", lb->s->recover_wait_time);
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
             jk_puts(s, "<table><tr>"
                     "<th>Name</th><th>Type</th><th>jvmRoute</th><th>Host</th><th>Addr</th>"
                     "<th>Act</th><th>Stat</th><th>D</th><th>F</th><th>M</th><th>V</th><th>Acc</th><th>Err</th>"
-                    "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th><th>RR</th><th>Cd</th></tr>\n");
+                    "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th><th>RR</th><th>Cd</th><th>Rs</th></tr>\n");
             for (j = 0; j < lb->num_of_workers; j++) {
                 worker_record_t *wr = &(lb->lb_workers[j]);
                 ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
@@ -480,13 +483,21 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                     jk_puts(s, wr->s->domain);
                 else
                     jk_puts(s,"&nbsp;");
+                if (wr->s->state == JK_LB_STATE_ERROR) {
+                    int rs =  lb->s->recover_wait_time - (int)difftime(now, wr->s->error_time);
+                    jk_printf(s, "</td>\n<td>%u", rs < 0 ? 0 : rs);
+                }
+                else
+                    jk_puts(s, "</td>\n<td>");
+
+
                 jk_puts(s, "</td>\n</tr>\n");
             }
             jk_puts(s, "</table><br/>\n");
             if (selected >= 0) {
                 worker_record_t *wr = &(lb->lb_workers[selected]);
                 jk_putv(s, "<hr/><h3>Edit worker settings for ",
-                        wr->s->name, " (JVM Route ", 
+                        wr->s->name, " (JVM Route ",
                         wr->s->jvm_route, ")</h3>\n", NULL);
                 jk_putv(s, "<form method=\"GET\" action=\"",
                         s->req_uri, "\">\n", NULL);
@@ -592,6 +603,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             "<tr><th>Max</th><td>Maximum number of busy connections</td></tr>\n"
             "<tr><th>RR</th><td>Route redirect</td></tr>\n"
             "<tr><th>Cd</th><td>Cluster domain</td></tr>\n"
+            "<tr><th>Rs</th><td>Recovery scheduled</td></tr>\n"
             "</table>");
 }
 
