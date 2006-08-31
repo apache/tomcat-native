@@ -904,6 +904,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     p->s_worker->css, "\" />\n", NULL);
         }
         s->write(s, JK_STATUS_HEND, sizeof(JK_STATUS_HEND) - 1);
+        jk_printf(s, "<!-- TOMCAT_CONNECTOR_VER_%02d%02d%02d -->\n", JK_VERMAJOR, JK_VERMINOR, JK_VERFIX);
+        jk_printf(s, "<!-- TOMCAT_CONNECTOR_STR_%s -->\n", JK_EXPOSED_VERSION);
         if ( cmd <= 1 ) {
             jk_puts(s, "<h1>JK Status Manager for ");
             jk_puts(s, s->server_name);
