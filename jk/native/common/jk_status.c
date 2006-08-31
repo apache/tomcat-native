@@ -510,8 +510,12 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_puts(s, "<input type=\"hidden\" name=\"lb\" ");
                 jk_printf(s, "value=\"%u\">\n", i);
 
-                jk_puts(s, "<table>\n<tr><td>Distance:</td><td><input name=\"wx\" type=\"text\" ");
+                jk_puts(s, "<table>\n<tr><td>Route:</td><td><input name=\"wn\" type=\"text\" ");
+                jk_printf(s, "value=\"%s\"/></td></tr>\n", wr->s->jvm_route);
+
+                jk_puts(s, "<tr><td>Distance:</td><td><input name=\"wx\" type=\"text\" ");
                 jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->s->distance);
+
                 jk_puts(s, "<tr><td>Load factor:</td><td><input name=\"wf\" type=\"text\" ");
                 jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->s->lb_factor);
                 jk_puts(s, "<tr><td>Route Redirect:</td><td><input name=\"wr\" type=\"text\" ");
@@ -749,6 +753,10 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
             strncpy(wr->s->domain, b, JK_SHM_STR_SIZ);
         else
             memset(wr->s->domain, 0, JK_SHM_STR_SIZ);
+        if ((b = status_cmd("wn", s->query_string, buf, sizeof(buf)))) {
+            if (strlen(b) > 0)
+                strncpy(wr->s->jvm_route, b, JK_SHM_STR_SIZ);
+        }
         i = status_int("wa", s->query_string, wr->s->activation);
         if (wr->s->activation != i && i>0 && i<= JK_LB_ACTIVATION_STOPPED) {
             wr->s->activation = i;
