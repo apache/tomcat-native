@@ -1,0 +1,46 @@
+ABOUT
+-----
+
+The Tomcat redirector was developed using Visual C++ Ver.6.0, 
+so having this environment is a prerequisite if you want to perform 
+a custom build.
+
+REQUIREMENT
+-----------
+
+* MS VC 6.0 (+ update, latest service pack is sp5)
+  isapi_redirector.dll can be built using the command line tools, or 
+  from within the Visual Studio IDE Workbench. The command line build 
+  requires the environment to reflect the PATH, INCLUDE, LIB and other 
+  variables that can be configured with the vcvars32 batch file: 
+  
+  "c:\Program Files\DevStudio\VC\Bin\vcvars32.bat"
+
+* MS PLATFORM SDK
+  Visual C++ 6.0 builds require an updated Microsoft Windows Platform SDK 
+  (http://www.microsoft.com/msdownload/platformsdk/sdkupdate/) to enable 
+  some isapi_redirector.dll features. For command line builds,
+  the Platform SDK environment is prepared by the setenv batch file:
+  
+  "c:\Program Files\Microsoft Platform SDK\setenv.bat"
+
+  Note that the Windows Platform SDK is only needed if you want authenticate 
+  using IIS to compile a isapi_redirector.dll.. 
+
+
+
+BUILDING
+--------
+ 
+The steps that you need to take are:
+
+   1. Change directory to the isapi redirector plugins source directory.
+   
+   2. Execute the following command:
+      MSDEV isapi.dsp /MAKE ALL
+      If msdev is not in your path, enter the full path to msdev.exe
+
+This will build both release and debug versions of the redirector plugin.
+
+An alternative will be to open the isapi workspace file (isapi.dsw) in msdev and 
+build it using the build menu.

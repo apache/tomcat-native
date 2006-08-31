@@ -1,0 +1,30 @@
+# workers.properties.minimal -
+#
+# This file provides minimal jk configuration properties needed to
+# connect to Tomcat.
+#
+# The workers that jk should create and work with
+#
+
+worker.list=wlb,jkstatus
+
+#
+# Defining a worker named ajp13w and of type ajp13
+# Note that the name and the type do not have to match.
+#
+worker.ajp13w.type=ajp13
+worker.ajp13w.host=localhost
+worker.ajp13w.port=8009
+
+#
+# Defining a load balancer
+# 
+
+worker.wlb.type=lb
+worker.wlb.balance_workers=ajp13w
+
+#
+# Define status worker
+#
+
+worker.jkstatus.type=status
