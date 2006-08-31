@@ -1264,7 +1264,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             jk_log(l, JK_LOG_ERROR, "Error resending request body (%d)",
                    postlen);
             JK_TRACE_EXIT(l);
-            return JK_FALSE;
+            return JK_SERVER_ERROR;
         }
         else {
             if (JK_IS_DEBUG_LEVEL(l))
@@ -1285,7 +1285,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                        "Error resending request body (lb mode) (%d)",
                        postlen);
                 JK_TRACE_EXIT(l);
-                return JK_FALSE;
+                return JK_SERVER_ERROR;
             }
         }
         else {
@@ -1317,7 +1317,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                 /* the browser stop sending data, no need to recover */
                 op->recoverable = JK_FALSE;
                 JK_TRACE_EXIT(l);
-                return len;
+                return JK_CLIENT_ERROR;
             }
 
             /* If a RECOVERY buffer is available in LB mode, fill it */
@@ -1333,7 +1333,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                 ae->sd = -1;
                 jk_log(l, JK_LOG_ERROR, "Error sending request body");
                 JK_TRACE_EXIT(l);
-                return JK_FALSE;
+                return JK_SERVER_ERROR;
             }
         }
     }
@@ -1393,7 +1393,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 jk_log(l, JK_LOG_INFO,
                        "Backend connection aborted or network problems");
                 JK_TRACE_EXIT(l);
-                return JK_CLIENT_ERROR;
+                return JK_SERVER_ERROR;
             }
             if (r->flush && r->flush_packets)
                 r->flush(r);
@@ -1617,6 +1617,17 @@ static int ajp_get_reply(jk_endpoint_t *e,
             JK_TRACE_EXIT(l);
             return JK_CLIENT_ERROR;
         }
+        else if (JK_SERVER_ERROR == rc) {
+            /*
+             * Tomcat has stop talking to us, so get out.
+             * We assume this isn't our fault, so just a normal exit.
+             * In most (all?)  cases, the ajp13_endpoint::reuse will still be
+             * false here, so this will be functionally the same as an
+             * un-recoverable error.  We just won't log it as such.
+             */
+            JK_TRACE_EXIT(l);
+            return JK_SERVER_ERROR;
+        }
         else if (rc < 0) {
             JK_TRACE_EXIT(l);
             return (JK_FALSE);  /* XXX error */
@@ -1726,7 +1737,24 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 return JK_TRUE;
             }
 
-            if (err != JK_CLIENT_ERROR) {
+            if (err == JK_CLIENT_ERROR) {
+                *is_error = JK_HTTP_BAD_REQUEST;
+                jk_log(l, JK_LOG_INFO,
+                       "Receiving from tomcat failed, "
+                       "because of client error "
+                       "without recovery in send loop %d", i);
+                JK_TRACE_EXIT(l);
+                return JK_CLIENT_ERROR;
+            }
+            else if (err == JK_SERVER_ERROR) {
+                *is_error = JK_HTTP_SERVER_ERROR;
+                jk_log(l, JK_LOG_INFO,
+                       "Sending to tomcat failed, "
+                       "without recovery in send loop %d", i);
+                JK_TRACE_EXIT(l);
+                return JK_SERVER_ERROR;
+            }
+            else {
                 /* if we can't get reply, check if no recover flag was set
                  * if is_recoverable_error is cleared, we have started
                  * receiving upload data and we must consider that
@@ -1747,15 +1775,6 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 if (i >= JK_RETRIES) {
                     jk_sleep(JK_SLEEP_DEF);
                 }
-            }
-            else {
-                *is_error = JK_HTTP_BAD_REQUEST;
-                jk_log(l, JK_LOG_INFO,
-                       "Receiving from tomcat failed, "
-                       "because of client error "
-                       "without recovery in send loop %d", i);
-                JK_TRACE_EXIT(l);
-                return JK_CLIENT_ERROR;
             }
         }
         if (err == JK_CLIENT_ERROR) {

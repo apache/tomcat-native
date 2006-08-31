@@ -759,10 +759,27 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         jk_shm_unlock();
                     rc = JK_TRUE;
                 }
-                else if (service_stat == JK_FALSE) {
+                else if (service_stat == JK_CLIENT_ERROR) {
+                    /*
+                    * Client error !!!
+                    * Since this is bad request do not fail over.
+                    */
+                    rec->s->errors++;
+                    rec->s->state = JK_LB_STATE_OK;
+                    rec->s->error_time = 0;
+                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                        jk_shm_unlock();
+                    jk_log(l, JK_LOG_INFO,
+                           "unrecoverable error %d, request failed."
+                           " Client failed in the middle of request,"
+                           " we can't recover to another instance.",
+                           is_service_error);
+                    *is_error = is_service_error;
+                    rc = JK_CLIENT_ERROR;
+                }
+                else {
                     /*
                     * Service failed !!!
-                    *
                     * Time for fault tolerance (if possible)...
                     */
 
@@ -788,28 +805,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         jk_log(l, JK_LOG_INFO,
                                "service failed, worker %s is in error state",
                                rec->s->name);
-                }
-                else if (service_stat == JK_CLIENT_ERROR) {
-                    /*
-                    * Client error !!!
-                    * Since this is bad request do not fail over.
-                    */
-                    rec->s->errors++;
-                    rec->s->state = JK_LB_STATE_OK;
-                    rec->s->error_time = 0;
-                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
-                        jk_shm_unlock();
-                    jk_log(l, JK_LOG_INFO,
-                           "unrecoverable error %d, request failed."
-                           " Client failed in the middle of request,"
-                           " we can't recover to another instance.",
-                           is_service_error);
-                    *is_error = is_service_error;
-                    rc = JK_CLIENT_ERROR;
-                }
-                else {
-                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
-                        jk_shm_unlock();
                 }
             }
             if ( rc == -1 ) {
