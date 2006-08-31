@@ -1,9 +1,0 @@
-LIBRARY	     "isapi_redirect"
-
-EXPORTS
-	HttpFilterProc
-	GetFilterVersion
-	GetExtensionVersion
-	HttpExtensionProc	
-	TerminateFilter
-	TerminateExtension
