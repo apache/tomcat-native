@@ -1391,7 +1391,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             }
             if (!r->write(r, msg->buf + msg->pos, len)) {
                 jk_log(l, JK_LOG_INFO,
-                       "Connection aborted or network problems");
+                       "Backend connection aborted or network problems");
                 JK_TRACE_EXIT(l);
                 return JK_CLIENT_ERROR;
             }
@@ -1422,7 +1422,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             }
 
             jk_log(l, JK_LOG_INFO,
-                   "Connection aborted or network problems");
+                   "Client connection aborted or network problems");
 
             JK_TRACE_EXIT(l);
             return JK_CLIENT_ERROR;
@@ -1433,9 +1433,10 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
         ae->reuse = (int)jk_b_get_byte(msg);
         if (!ae->reuse) {
             /*
-                * Strange protocol error.
-                */
-            jk_log(l, JK_LOG_INFO, " Protocol error: Reuse is set to false");
+             * AJP13 protocol reuse flag set to false.
+             * Tomcat will close its side of the connection.
+             */
+            jk_log(l, JK_LOG_INFO, "AJP13 protocol: Reuse is set to false");
         }
         else if (r->disable_reuse) {
             ae->reuse = JK_FALSE;
@@ -1454,7 +1455,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
 
     default:
         jk_log(l, JK_LOG_ERROR,
-               "Invalid code: %d", code);
+               "Unknown AJP protocol code: %02X", code);
         JK_TRACE_EXIT(l);
         return JK_AJP13_ERROR;
     }
