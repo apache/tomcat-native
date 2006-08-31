@@ -26,6 +26,13 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Allow changing jvm Route from status manager. (mturk)
+      </update>
+      <fix>
+      Do not retun 400 if Tomcat fails in the midle of the post
+      request. Return 500 insted. (mturk)
+      </fix>
+      <update>
       LB: Combine ok/error/recovering/busy runtime states into a single scalar.
       LB: Combine active/disabled/stopped configuration states into a single scalar.
       </update>
