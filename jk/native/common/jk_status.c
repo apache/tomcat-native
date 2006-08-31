@@ -497,8 +497,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             if (selected >= 0) {
                 worker_record_t *wr = &(lb->lb_workers[selected]);
                 jk_putv(s, "<hr/><h3>Edit worker settings for ",
-                        wr->s->name, " (JVM Route ",
-                        wr->s->jvm_route, ")</h3>\n", NULL);
+                        wr->s->name, NULL);
                 jk_putv(s, "<form method=\"GET\" action=\"",
                         s->req_uri, "\">\n", NULL);
                 jk_puts(s, "<input type=\"hidden\" name=\"cmd\" ");
