@@ -258,6 +258,30 @@ static void recover_workers(lb_worker_t *p,
     JK_TRACE_EXIT(l);
 }
 
+static int force_recovery(lb_worker_t *p,
+                          jk_logger_t *l)
+{
+    unsigned int i;
+    int forced = 0;
+    worker_record_t *w = NULL;
+    JK_TRACE_ENTER(l);
+
+    for (i = 0; i < p->num_of_workers; i++) {
+        w = &p->lb_workers[i];
+        if (w->s->state == JK_LB_STATE_ERROR) {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_INFO,
+                       "worker %s is marked for recovery",
+                       w->s->name);
+            w->s->state = JK_LB_STATE_RECOVER;
+            forced++;
+        }
+    }
+
+    JK_TRACE_EXIT(l);
+    return forced;
+}
+
 /* Divide old load values by the decay factor,
  * such that older values get less important
  * for the routing decisions.
@@ -290,6 +314,7 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l
 
     JK_TRACE_ENTER(l);
     if (p && p->worker_private) {
+        unsigned int n = 0;
         lb_worker_t *lb = (lb_worker_t *)p->worker_private;
 
         for (i = 0; i < lb->num_of_workers; i++) {
@@ -318,6 +343,14 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l
             recover_workers(lb, curmax, now, l);
         }
 
+        for (i = 0; i < lb->num_of_workers; i++) {
+            if (lb->lb_workers[i].s->state != JK_LB_STATE_ERROR) {
+                ++n;
+            }
+        }
+        if (!n) {
+            force_recovery(lb, l);    
+        }
         jk_shm_unlock();
 
     }
@@ -857,10 +890,35 @@ static int JK_METHOD service(jk_endpoint_t *e,
         }
         else {
             /* NULL record, no more workers left ... */
-            jk_log(l, JK_LOG_ERROR,
-                   "All tomcat instances failed, no more workers left");
-            *is_error = JK_HTTP_SERVER_BUSY;
-            rc = JK_FALSE;
+            if (attempt == 0) {
+                int nf;
+                /* Force recovery only on first attempt.
+                 * If the second fails, Tomcat is still disconnected.
+                 */
+                 jk_shm_lock();
+                 nf = force_recovery(p->worker, l);
+                 jk_shm_unlock();
+
+                if (nf) {
+                    jk_log(l, JK_LOG_INFO,
+                           "Forcing recovery on first attempt for %d workers", nf);                    
+                }
+                else {
+                    /* No workers in error state.
+                     * Somebody set them all to disabled?
+                     */    
+                    jk_log(l, JK_LOG_ERROR,
+                           "All tomcat instances failed, no more workers left for recovery");
+                    *is_error = JK_HTTP_SERVER_BUSY;
+                    rc = JK_FALSE;
+                }
+            }
+            else {
+                jk_log(l, JK_LOG_ERROR,
+                       "All tomcat instances failed, no more workers left");
+                *is_error = JK_HTTP_SERVER_BUSY;
+                rc = JK_FALSE;
+            }
         }
         attempt++;
     }
