@@ -111,6 +111,7 @@
 #define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
 #define JK_NOTE_REQUEST_DURATION    ("JK_REQUEST_DURATION")
+#define JK_NOTE_WORKER_ROUTE        ("JK_WORKER_ROUTE")
 #define JK_HANDLER          ("jakarta-servlet")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet")
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x)
@@ -1126,6 +1127,11 @@ static const char *log_worker_name(request_rec * r, char *a)
     return apr_table_get(r->notes, JK_NOTE_WORKER_NAME);
 }
 
+static const char *log_worker_route(request_rec * r, char *a)
+{
+    return apr_table_get(r->notes, JK_NOTE_WORKER_ROUTE);
+}
+
 
 static const char *log_request_duration(request_rec * r, char *a)
 {
@@ -1236,6 +1242,7 @@ static struct log_item_list
     'm', log_request_method}, {
     'q', log_request_query}, {
     'w', log_worker_name}, {
+    'R', log_worker_route}, {
     '\0'}
 };
 
@@ -1886,9 +1893,7 @@ static int jk_handler(request_rec * r)
         }
 
         if (worker) {
-#ifndef NO_GETTIMEOFDAY
-            struct timeval tv_begin, tv_end;
-#endif
+            apr_time_t request_begin;
             int is_error = HTTP_INTERNAL_SERVER_ERROR;
             int rc = JK_FALSE;
             apache_private_data_t private_data;
@@ -1909,11 +1914,10 @@ static int jk_handler(request_rec * r)
             s.pool = &private_data.p;
             apr_table_setn(r->notes, JK_NOTE_WORKER_TYPE,
                            wc_get_name_for_type(worker->type, xconf->log));
-#ifndef NO_GETTIMEOFDAY
+                           
             if (xconf->format != NULL) {
-                gettimeofday(&tv_begin, NULL);
+                request_begin = apr_time_now();
             }
-#endif
 
             if (init_ws_service(&private_data, &s, xconf)) {
                 jk_endpoint_t *end = NULL;
@@ -1962,22 +1966,20 @@ static int jk_handler(request_rec * r)
                 JK_TRACE_EXIT(xconf->log);
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
-#ifndef NO_GETTIMEOFDAY
             if (xconf->format != NULL) {
-                char *duration = NULL;
                 long micro, seconds;
-                gettimeofday(&tv_end, NULL);
-                if (tv_end.tv_usec < tv_begin.tv_usec) {
-                    tv_end.tv_usec += 1000000;
-                    tv_end.tv_sec--;
-                }
-                micro = tv_end.tv_usec - tv_begin.tv_usec;
-                seconds = tv_end.tv_sec - tv_begin.tv_sec;
+                char *duration = NULL;
+                apr_time_t rd = apr_time_now() - request_begin;
+                seconds = (long)apr_time_sec(rd);
+                micro = (long)(rd - apr_time_from_sec(seconds));
+                
                 duration = apr_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
                 apr_table_setn(r->notes, JK_NOTE_REQUEST_DURATION, duration);
+                if (s.jvm_route && *s.jvm_route)
+                    apr_table_setn(r->notes, JK_NOTE_WORKER_ROUTE, s.jvm_route);
+
                 request_log_transaction(r, xconf);
             }
-#endif
 
             jk_close_pool(&private_data.p);
 
