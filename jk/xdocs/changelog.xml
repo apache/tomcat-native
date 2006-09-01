@@ -26,6 +26,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Added %R JkRequestLogFormat option for Apache 1 and Apache 2. (mturk)
+      </update>
+      <update>
       Allow changing jvm Route from status manager. (mturk)
       </update>
       <fix>

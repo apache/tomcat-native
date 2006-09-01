@@ -419,6 +419,7 @@ here is a list of the available request log format options:
   <tr><td>%v</td><td>The canonical ServerName of the server serving the request</td></tr>
   <tr><td>%V</td><td>The server name according to the UseCanonicalName setting</td></tr>
   <tr><td>%w</td><td>Tomcat worker name</td></tr>
+  <tr><td>%R</td><td>Session route name (available with 1.2.19 and up)</td></tr>
 </table>
 
 <source>
