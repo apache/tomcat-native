@@ -63,6 +63,7 @@
 #define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
 #define JK_NOTE_REQUEST_DURATION    ("JK_REQUEST_DURATION")
+#define JK_NOTE_WORKER_ROUTE        ("JK_WORKER_ROUTE")
 #define JK_HANDLER          ("jakarta-servlet")
 #define JK_MAGIC_TYPE       ("application/x-jakarta-servlet")
 #define NULL_FOR_EMPTY(x)   ((x && !strlen(x)) ? NULL : x)
@@ -490,7 +491,7 @@ static int init_ws_service(apache_private_data_t * private_data,
         (char *)ap_get_remote_host(r->connection, r->per_dir_config,
                                    REMOTE_HOST);
     s->remote_host = NULL_FOR_EMPTY(s->remote_host);
-    
+
     if (conf->options & JK_OPT_FWDLOCAL)
         s->remote_addr = NULL_FOR_EMPTY(r->connection->local_ip);
     else
@@ -1104,6 +1105,10 @@ static const char *log_worker_name(request_rec * r, char *a)
     return ap_table_get(r->notes, JK_NOTE_WORKER_NAME);
 }
 
+static const char *log_worker_route(request_rec * r, char *a)
+{
+    return ap_table_get(r->notes, JK_NOTE_WORKER_ROUTE);
+}
 
 static const char *log_request_duration(request_rec * r, char *a)
 {
@@ -1218,6 +1223,7 @@ static struct log_item_list
     'm', log_request_method}, {
     'q', log_request_query}, {
     'w', log_worker_name}, {
+    'R', log_worker_route}, {
     '\0'}
 };
 
@@ -1822,10 +1828,10 @@ static int jk_handler(request_rec * r)
                         }
                     }
                 }
-#ifndef NO_GETTIMEOFDAY
                 if (conf->format != NULL) {
-                    char *duration = NULL;
+#ifndef NO_GETTIMEOFDAY
                     long micro, seconds;
+                    char *duration = NULL;
                     gettimeofday(&tv_end, NULL);
                     if (tv_end.tv_usec < tv_begin.tv_usec) {
                         tv_end.tv_usec += 1000000;
@@ -1836,9 +1842,11 @@ static int jk_handler(request_rec * r)
                     duration =
                         ap_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
                     ap_table_setn(r->notes, JK_NOTE_REQUEST_DURATION, duration);
+#endif
+                    if (s.jvm_route && *s.jvm_route)
+                        ap_table_setn(r->notes, JK_NOTE_WORKER_ROUTE, s.jvm_route);
                     request_log_transaction(r, conf);
                 }
-#endif
             }
             else {
                 jk_log(l, JK_LOG_ERROR, "Could not init service"
@@ -1863,7 +1871,7 @@ static int jk_handler(request_rec * r)
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG, "Service finished"
                            " with status=%d for worker=%s",
-                           r->status, worker_name); 
+                           r->status, worker_name);
                 JK_TRACE_EXIT(l);
                 return OK;      /* NOT r->status, even if it has changed. */
             }
@@ -2029,7 +2037,7 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
                                     int level, const char *what)
 {
     if (l &&
-        (l->level <= level || level == JK_LOG_REQUEST_LEVEL) && 
+        (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
          l->logger_private && what) {
         file_logger_t *flp = l->logger_private;
         int log_fd = flp->log_fd;
@@ -2126,7 +2134,7 @@ static void jk_init(server_rec * s, ap_pool * p)
                          "Using default %s", jk_shm_file);
     }
 #endif
-    
+
     if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
             jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s",
@@ -2141,7 +2149,7 @@ static void jk_init(server_rec * s, ap_pool * p)
                      "No JkShmFile defined in httpd.conf. "
                      "LoadBalancer will not function properly!");
 #endif
- 
+
     /* SREVILAK -- register cleanup handler to clear resources on restart,
      * to make sure log file gets closed in the parent process  */
     ap_register_cleanup(p, s, jk_server_cleanup, ap_null_cleanup);
@@ -2230,7 +2238,7 @@ static int jk_translate(request_rec * r)
                 r->prev && r->prev->handler &&
                 !strcmp(r->prev->handler, JK_HANDLER) && clean_uri &&
                 strlen(clean_uri) && clean_uri[strlen(clean_uri) - 1] == '/') {
-                
+
                 if (worker_env.num_of_workers) {
                     /* Nothing here to do but assign the first worker since we
                      * already tried mapping and it didn't work out */
