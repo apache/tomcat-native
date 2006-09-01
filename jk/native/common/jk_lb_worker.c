@@ -621,7 +621,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     /* set the recovery post, for LB mode */
     s->reco_buf = jk_b_new(s->pool);
-    jk_b_set_buffer_size(s->reco_buf, DEF_BUFFER_SZ);
+    jk_b_set_buffer_size(s->reco_buf, p->worker->max_packet_size);
     jk_b_reset(s->reco_buf);
     s->reco_status = RECO_INITED;
     if (p->worker->s->sticky_session) {
@@ -957,7 +957,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                                   &num_of_workers) && num_of_workers) {
             unsigned int i = 0;
             unsigned int j = 0;
-
+            p->max_packet_size = DEF_BUFFER_SZ;
             p->lb_workers = jk_pool_alloc(&p->p,
                                           num_of_workers *
                                           sizeof(worker_record_t));
@@ -975,6 +975,15 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                     return JK_FALSE;
                 }
             }
+
+            /* Calculate the maximum packet size from all workers
+             * for the recovery buffer.
+             */
+            for (i = 0; i < num_of_workers; i++) {
+                unsigned int ms = jk_get_max_packet_size(props, worker_names[i]);
+                if (ms > p->max_packet_size)
+                    p->max_packet_size = ms;
+           }
             for (i = 0; i < num_of_workers; i++) {
                 const char *s;
                 strncpy(p->lb_workers[i].s->name, worker_names[i],

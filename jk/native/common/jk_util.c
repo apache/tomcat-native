@@ -76,6 +76,7 @@
 #define IS_WORKER_STOPPED           ("stopped")
 #define ACTIVATION_OF_WORKER        ("activation")
 #define WORKER_RECOVER_TIME         ("recover_time")
+#define WORKER_MAX_PACKET_SIZE      ("max_packet_size")
 
 
 #define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
@@ -891,6 +892,26 @@ int jk_get_lb_lock(jk_map_t *m, const char *wname)
         return JK_LB_LOCK_PESSIMISTIC;
     else
         return JK_LB_LOCK_DEF;
+}
+
+int jk_get_max_packet_size(jk_map_t *m, const char *wname)
+{
+    char buf[1024];
+    int sz;
+
+    if (!m || !wname) {
+        return DEF_BUFFER_SZ;
+    }
+
+    MAKE_WORKER_PARAM(DISTANCE_OF_WORKER);
+    sz = jk_map_get_int(m, buf, DEF_BUFFER_SZ);
+    sz = JK_ALIGN(sz, 1024);
+    if (sz < DEF_BUFFER_SZ)
+        sz = DEF_BUFFER_SZ;
+    else if (sz > 64*1024)
+        sz = 64*1024;
+    
+    return sz;
 }
 
 int jk_get_lb_worker_list(jk_map_t *m,

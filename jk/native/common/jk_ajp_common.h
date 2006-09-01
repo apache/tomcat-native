@@ -283,7 +283,9 @@ struct ajp_worker
     /*
      * Recovery option
      */
-    unsigned recovery_opts; /* Set the recovery option */
+    unsigned int recovery_opts; /* Set the recovery option */
+    
+    unsigned int max_packet_size;  /*  Maximum AJP Packet size */
 };
 
 

@@ -166,6 +166,8 @@ int jk_get_worker_def_cache_size(int protocol);
 
 int jk_get_worker_maintain_time(jk_map_t *m);
 
+int jk_get_max_packet_size(jk_map_t *m, const char *wname);
+
 #define TC32_BRIDGE_TYPE    32
 #define TC33_BRIDGE_TYPE    33
 #define TC40_BRIDGE_TYPE    40

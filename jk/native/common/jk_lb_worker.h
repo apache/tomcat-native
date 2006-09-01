@@ -153,6 +153,7 @@ struct lb_worker
     int          lbmethod;
     int          lblock;
     time_t       maintain_time;
+    unsigned int max_packet_size;
 
     jk_pool_t p;
     jk_pool_atom_t buf[TINY_POOL_SIZE];

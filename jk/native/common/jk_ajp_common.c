@@ -1666,15 +1666,15 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
 
     p = e->endpoint_private;
     op->request = jk_b_new(&(p->pool));
-    jk_b_set_buffer_size(op->request, DEF_BUFFER_SZ);
+    jk_b_set_buffer_size(op->request, p->worker->max_packet_size);
     jk_b_reset(op->request);
 
     op->reply = jk_b_new(&(p->pool));
-    jk_b_set_buffer_size(op->reply, DEF_BUFFER_SZ);
+    jk_b_set_buffer_size(op->reply, p->worker->max_packet_size);
     jk_b_reset(op->reply);
 
     op->post = jk_b_new(&(p->pool));
-    jk_b_set_buffer_size(op->post, DEF_BUFFER_SZ);
+    jk_b_set_buffer_size(op->post, p->worker->max_packet_size);
     jk_b_reset(op->post);
 
     op->recoverable = JK_TRUE;
@@ -1955,6 +1955,8 @@ int ajp_init(jk_worker_t *pThis,
         p->recovery_opts =
             jk_get_worker_recovery_opts(props, p->name,
                                         AJP_DEF_RECOVERY_OPTS);
+        p->max_packet_size =
+            jk_get_max_packet_size(props, p->name);
 
         pThis->retries =
             jk_get_worker_retries(props, p->name,
@@ -2006,6 +2008,10 @@ int ajp_init(jk_worker_t *pThis,
             jk_log(l, JK_LOG_DEBUG,
                    "retries:          %d",
                     pThis->retries);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "max packet size:  %d",
+                    p->max_packet_size);
         }
         /*
          *  Need to initialize secret here since we could return from inside
