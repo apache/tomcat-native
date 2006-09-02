@@ -841,6 +841,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
                             ae->worker->socket_timeout,
                             ae->worker->socket_buf, l);
     if (IS_VALID_SOCKET(ae->sd)) {
+        ae->last_errno = 0;
         if (JK_IS_DEBUG_LEVEL(l)) {
             jk_log(l, JK_LOG_DEBUG,
                    "Connected socket %d to (%s)",
@@ -866,6 +867,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
+    ae->last_errno = errno;
 
     jk_log(l, JK_LOG_INFO,
            "Failed opening socket to (%s) with (errno=%d)",
@@ -905,10 +907,12 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
                                      msg->len)) > 0) {
         ae->endpoint.wr += msg->len;
         JK_TRACE_EXIT(l);
+        ae->last_errno = 0;
         return JK_TRUE;
     }
+    ae->last_errno = errno;
     jk_log(l, JK_LOG_ERROR,
-           "sendfull returned %d with errno=%d ", rc, errno);
+           "sendfull returned %d with errno=%d ", rc, ae->last_errno);
 
     JK_TRACE_EXIT(l);
     return JK_FALSE;
@@ -932,6 +936,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN);
 
     if (rc < 0) {
+        ae->last_errno = errno;
         if (rc == JK_SOCKET_EOF) {
             jk_log(l, JK_LOG_INFO,
                    "Tomcat has forced a connection close for socket %d",
@@ -947,6 +952,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
         }
         return JK_FALSE;
     }
+    ae->last_errno = 0;
     ae->endpoint.rd += rc;
     header = ((unsigned int)head[0] << 8) | head[1];
 
@@ -1004,6 +1010,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
 
     rc = jk_tcp_socket_recvfull(ae->sd, msg->buf, msglen);
     if (rc < 0) {
+        ae->last_errno = errno;
         jk_log(l, JK_LOG_ERROR,
                "ERROR: can't receive the response message from tomcat, "
                "network problems or tomcat (%s) is down %d",
@@ -1011,6 +1018,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
+    ae->last_errno = 0;
     ae->endpoint.rd += rc;
 
     if (ae->proto == AJP13_PROTO) {
@@ -1157,8 +1165,8 @@ static int ajp_send_request(jk_endpoint_t *e,
         if (ae->worker->socket_timeout) {
             if (!jk_is_socket_connected(ae->sd)) {
                 jk_log(l, JK_LOG_INFO,
-                       "Socket %d is not connected any more",
-                       ae->sd);
+                       "Socket %d is not connected any more (errno=%d)",
+                       ae->sd, ae->last_errno);
                 jk_close_socket(ae->sd);
                 ae->sd = JK_INVALID_SOCKET;
                 err++;
@@ -1220,7 +1228,8 @@ static int ajp_send_request(jk_endpoint_t *e,
                 jk_close_socket(ae->sd);
                 ae->sd = -1;
                 jk_log(l, JK_LOG_INFO,
-                       "Error sending request on a fresh connection");
+                       "Error sending request on a fresh connection (errno=%d)",
+                       ae->last_errno);
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
@@ -1230,7 +1239,8 @@ static int ajp_send_request(jk_endpoint_t *e,
             jk_close_socket(ae->sd);
             ae->sd = JK_INVALID_SOCKET;
             jk_log(l, JK_LOG_INFO,
-                   "Error connecting to the backend server.");
+                   "Error connecting to the backend server (errno=%d)",
+                   ae->last_errno);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -1261,7 +1271,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             /* Close the socket if unable to send request */
             jk_close_socket(ae->sd);
             ae->sd = JK_INVALID_SOCKET;
-            jk_log(l, JK_LOG_ERROR, "Error resending request body (%d)",
+            jk_log(l, JK_LOG_ERROR, "failed resending request body (%d)",
                    postlen);
             JK_TRACE_EXIT(l);
             return JK_SERVER_ERROR;
@@ -1282,7 +1292,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                 jk_close_socket(ae->sd);
                 ae->sd = -1;
                 jk_log(l, JK_LOG_ERROR,
-                       "Error resending request body (lb mode) (%d)",
+                       "failed resending request body (lb mode) (%d)",
                        postlen);
                 JK_TRACE_EXIT(l);
                 return JK_SERVER_ERROR;
@@ -1391,9 +1401,9 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             }
             if (!r->write(r, msg->buf + msg->pos, len)) {
                 jk_log(l, JK_LOG_INFO,
-                       "Backend connection aborted or network problems");
+                       "Writing to client aborted or client network problems");
                 JK_TRACE_EXIT(l);
-                return JK_SERVER_ERROR;
+                return JK_CLIENT_ERROR;
             }
             if (r->flush && r->flush_packets)
                 r->flush(r);
@@ -1422,7 +1432,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             }
 
             jk_log(l, JK_LOG_INFO,
-                   "Client connection aborted or network problems");
+                   "Reding from client aborted or client network problems");
 
             JK_TRACE_EXIT(l);
             return JK_CLIENT_ERROR;
@@ -1436,7 +1446,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
              * AJP13 protocol reuse flag set to false.
              * Tomcat will close its side of the connection.
              */
-            jk_log(l, JK_LOG_INFO, "AJP13 protocol: Reuse is set to false");
+            jk_log(l, JK_LOG_WARNING, "AJP13 protocol: Reuse is set to false");
         }
         else if (r->disable_reuse) {
             ae->reuse = JK_FALSE;
@@ -1597,6 +1607,15 @@ static int ajp_get_reply(jk_endpoint_t *e,
                 return JK_FALSE;
             }
         }
+        else if (JK_AJP13_ERROR == rc) {
+            /*
+             * Tomcat has send invalid AJP message.
+             * Locadbalancer if present will decide if
+             * failover is possible.
+             */
+            JK_TRACE_EXIT(l);
+            return JK_SERVER_ERROR;
+        }
         else if (JK_FATAL_ERROR == rc) {
             /*
              * we won't be able to gracefully recover from this so
@@ -1620,10 +1639,8 @@ static int ajp_get_reply(jk_endpoint_t *e,
         else if (JK_SERVER_ERROR == rc) {
             /*
              * Tomcat has stop talking to us, so get out.
-             * We assume this isn't our fault, so just a normal exit.
-             * In most (all?)  cases, the ajp13_endpoint::reuse will still be
-             * false here, so this will be functionally the same as an
-             * un-recoverable error.  We just won't log it as such.
+             * Locadbalancer if present will decide if
+             * failover is possible.
              */
             JK_TRACE_EXIT(l);
             return JK_SERVER_ERROR;
@@ -1739,8 +1756,12 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
 
             if (err == JK_CLIENT_ERROR) {
                 *is_error = JK_HTTP_BAD_REQUEST;
+                if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+                    /* Mark the endpoint for shutdown */
+                    p->reuse = JK_FALSE;
+                }
                 jk_log(l, JK_LOG_INFO,
-                       "Receiving from tomcat failed, "
+                       "request failed, "
                        "because of client error "
                        "without recovery in send loop %d", i);
                 JK_TRACE_EXIT(l);
@@ -1749,7 +1770,8 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             else if (err == JK_SERVER_ERROR) {
                 *is_error = JK_HTTP_SERVER_ERROR;
                 jk_log(l, JK_LOG_INFO,
-                       "Sending to tomcat failed, "
+                       "request failed, "
+                       "because of client error "
                        "without recovery in send loop %d", i);
                 JK_TRACE_EXIT(l);
                 return JK_SERVER_ERROR;
