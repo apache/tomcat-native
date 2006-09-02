@@ -1387,7 +1387,7 @@ static apr_array_header_t *parse_request_log_string(apr_pool_t * p,
  */
 
 static const char *jk_set_request_log_format(cmd_parms * cmd,
-                                             void *dummy, char *format)
+                                             void *dummy, const char *format)
 {
     const char *err_string = NULL;
     server_rec *s = cmd->server;
@@ -1893,7 +1893,7 @@ static int jk_handler(request_rec * r)
         }
 
         if (worker) {
-            apr_time_t request_begin;
+            apr_time_t request_begin = 0;
             int is_error = HTTP_INTERNAL_SERVER_ERROR;
             int rc = JK_FALSE;
             apache_private_data_t private_data;
@@ -1914,7 +1914,7 @@ static int jk_handler(request_rec * r)
             s.pool = &private_data.p;
             apr_table_setn(r->notes, JK_NOTE_WORKER_TYPE,
                            wc_get_name_for_type(worker->type, xconf->log));
-                           
+
             if (xconf->format != NULL) {
                 request_begin = apr_time_now();
             }
@@ -1972,7 +1972,7 @@ static int jk_handler(request_rec * r)
                 apr_time_t rd = apr_time_now() - request_begin;
                 seconds = (long)apr_time_sec(rd);
                 micro = (long)(rd - apr_time_from_sec(seconds));
-                
+
                 duration = apr_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
                 apr_table_setn(r->notes, JK_NOTE_REQUEST_DURATION, duration);
                 if (s.jvm_route && *s.jvm_route)
