@@ -488,6 +488,7 @@ public class JkMain implements MBeanRegistration
         replacements.put("address", "channelSocket.address");            
         replacements.put("bufferSize", "channelSocket.bufferSize");
         replacements.put("tomcatAuthentication", "request.tomcatAuthentication");            
+        replacements.put("packetSize", "channelSocket.packetSize");
     }
 
     private void preProcessProperties() {

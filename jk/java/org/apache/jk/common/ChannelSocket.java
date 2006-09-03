@@ -87,6 +87,8 @@ public class ChannelSocket extends JkHandler
     private int linger=100;
     private int socketTimeout;
     private int bufferSize = -1;
+    private int packetSize = 8*1024;
+
 
     private long requestCount=0;
     
@@ -202,6 +204,17 @@ public class ChannelSocket extends JkHandler
 
     public int getBufferSize() {
         return bufferSize;
+    }
+
+    public void setPacketSize(int ps) {
+        if(ps < 8*1024) {
+            ps = 8*1024;
+        }
+        packetSize = ps;
+    }
+
+    public int getPacketSize() {
+        return packetSize;
     }
 
     /** At startup we'll look for the first free port in the range.
@@ -664,7 +677,7 @@ public class ChannelSocket extends JkHandler
      */
     void processConnection(MsgContext ep) {
         try {
-            MsgAjp recv=new MsgAjp();
+            MsgAjp recv=new MsgAjp(packetSize);
             while( running ) {
                 if(paused) { // Drop the connection on pause
                     break;
