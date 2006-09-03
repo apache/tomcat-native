@@ -280,6 +280,9 @@ static void close_workers(lb_worker_t * p, int num_of_workers, jk_logger_t *l)
  * operational if the retry timeout is elapsed.
  * The worker might still be unusable, but we try
  * anyway.
+ * If the worker is in ok state and got no requests
+ * since the last global maintenance, we mark its
+ * state as not available.
  */
 static void recover_workers(lb_worker_t *p,
                             jk_uint64_t curmax,
@@ -310,6 +313,12 @@ static void recover_workers(lb_worker_t *p,
                 w->s->state = JK_LB_STATE_RECOVER;
             }
         }
+        else {
+            if (w->s->state == JK_LB_STATE_OK &&
+                w->s->elected == w->s->elected_snapshot)
+                w->s->state = JK_LB_STATE_NA;
+        }
+        w->s->elected_snapshot = w->s->elected;
     }
 
     JK_TRACE_EXIT(l);

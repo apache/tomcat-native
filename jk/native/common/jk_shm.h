@@ -98,6 +98,8 @@ struct jk_shm_worker
     volatile jk_uint64_t transferred;
     /* Number of times the worker was elected */
     volatile jk_uint64_t  elected;
+    /* Number of times the worker was elected - snapshot during maintenance */
+    volatile jk_uint64_t  elected_snapshot;
     /* Number of non 200 responses */
     volatile jk_uint32_t  errors;
     /* Number of recovery attempts */
