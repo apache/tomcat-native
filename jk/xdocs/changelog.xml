@@ -26,6 +26,32 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Docs: Seperate deprecated directives in their own table. (rjung)
+      </update>
+      <update>
+      Docs: Allow "-" and "_" in worker names. (rjung)
+      </update>
+      <update>
+      Allow multiple lines with attributes "balance_workers" and "mount". (rjung)
+      </update>
+      <fix>
+      Make jk_is_some_property match more precisely. (rjung)
+      </fix>
+      <update>
+      JkStatus: Make refresh interval changeable. (rjung)
+      </update>
+      <fix>
+      JkStatus: Adjust display of recover time wrt. global maintenance. (rjung)
+      </fix>
+      <update>
+      LB: Resetting worker state from OK to NA, if worker has been idle
+      too long. (rjung)
+      </update>
+      <fix>
+      Avoid compiler warnings concerning the use of lb_*_type arrays.
+      Use functions instead. (rjung)
+      </fix>
+      <update>
       Added %R JkRequestLogFormat option for Apache 1 and Apache 2. (mturk)
       </update>
       <update>
