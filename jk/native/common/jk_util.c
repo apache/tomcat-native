@@ -119,6 +119,13 @@
     extern long _ftol2(double dblSource) { return _ftol(dblSource); }
 #endif
 
+static const char *list_properties[] = {
+    BALANCE_WORKERS,
+    MOUNT_OF_WORKER,
+    "list",
+    NULL
+};
+
 static const char *unique_properties[] = {
     SECRET_OF_WORKER,
     HOST_OF_WORKER,
@@ -1199,6 +1206,17 @@ int jk_is_path_property(const char *prp_name)
 int jk_is_cmd_line_property(const char *prp_name)
 {
     return jk_is_some_property(prp_name, CMD_LINE_OF_WORKER, ".");
+}
+
+int jk_is_list_property(const char *prp_name)
+{
+    const char **props = &list_properties[0];
+    while (*props) {
+        if (jk_is_some_property(prp_name, *props, "."))
+            return JK_TRUE;
+        props++;
+    }
+    return JK_FALSE;
 }
 
 int jk_is_unique_property(const char *prp_name)

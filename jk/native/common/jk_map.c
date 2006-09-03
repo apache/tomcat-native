@@ -390,7 +390,7 @@ int jk_map_read_property(jk_map_t *m, const char *str, jk_logger_t *l)
                             sep = PATH_SEPERATOR;
                         else if (jk_is_cmd_line_property(prp))
                             sep = ' ';
-                        else if (!strcasecmp(prp, "worker.list"))
+                        else if (jk_is_list_property(prp))
                             sep = ',';
                         sprintf(tmpv, "%s%c%s", oldv, sep, v);
                     }

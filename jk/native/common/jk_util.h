@@ -139,6 +139,8 @@ int jk_get_worker_cmd_line(jk_map_t *m, const char *wname, const char **cmd_line
 
 int jk_file_exists(const char *f);
 
+int jk_is_list_property(const char *prp_name);
+
 int jk_is_path_property(const char *prp_name);
 
 int jk_is_cmd_line_property(const char *prp_name);
