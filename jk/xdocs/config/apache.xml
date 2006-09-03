@@ -78,7 +78,7 @@ Set one of more options to configure the mod_jk module. See below for
 details about this directive
 </p></attribute>
 <attribute name="JkEnvVar" required="false"><p>
-Adds a name of environment variable that should be sent to servlet-engine
+Adds a name of environment variable that should be sent to servlet-engine as a request atribute
 </p></attribute>
 
 <attribute name="JkShmFile" required="false"><p>
@@ -399,7 +399,9 @@ TCP keepalive value in your OS.
 </p>
 
 <p>
-The directive <b>JkEnvVar</b> allow you to forward an environment vars from Apache server to Tomcat engine.
+The directive <b>JkEnvVar</b> allow you to forward an environment variable from Apache server to Tomcat engine.
+The variable can be retrieved on the Tomcat side as a request attribute.
+You can add a default value as a second parameter to the directive.
 
 <source>  
   JkEnvVar     SSL_CLIENT_V_START
