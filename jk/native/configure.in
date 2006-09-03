@@ -132,8 +132,12 @@ AC_CHECK_FUNC(snprintf, AC_DEFINE(HAVE_SNPRINTF,1,[Have snprintf()]))
 AC_CHECK_FUNC(vsnprintf, AC_DEFINE(HAVE_VSNPRINTF,1,[Have vsnprintf()]))
 dnl check for flock function.
 AC_CHECK_FUNC(flock, AC_DEFINE(HAVE_FLOCK,1,[Have flock()]))
+
 dnl check for -lsocket library
 AC_CHECK_LIB(socket, setsockopt, [LIBS="$LIBS -lsocket"])
+
+dnl check for filio.h used on Solaris to define FIONREAD ioctl.
+AC_CHECK_HEADERS(sys/filio.h)
 
 AC_DEFUN([JK_CHECK_SETSOCKOPT], [
 AC_MSG_CHECKING(whether to use $1 with setsockopt())

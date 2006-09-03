@@ -37,6 +37,11 @@
 static apr_pool_t *jk_apr_pool = NULL;
 #endif
 
+#ifdef HAVE_SYS_FILIO_H
+/* FIONREAD on Solaris et al. */
+#include <sys/filio.h>
+#endif
+
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 #define JK_IS_SOCKET_ERROR(x) ((x) == SOCKET_ERROR)
 #define JK_GET_SOCKET_ERRNO() errno = WSAGetLastError() - WSABASEERR
