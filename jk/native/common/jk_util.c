@@ -34,7 +34,6 @@
 #define STDERR_OF_WORKER            ("stderr")
 #define STDOUT_OF_WORKER            ("stdout")
 #define SECRET_OF_WORKER            ("secret")
-#define CONF_OF_WORKER              ("conf")
 #define MX_OF_WORKER                ("mx")
 #define MS_OF_WORKER                ("ms")
 #define CP_OF_WORKER                ("class_path")
@@ -61,8 +60,7 @@
 #define RECYCLE_TIMEOUT_DEPRECATED  ("recycle_timeout")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
 #define DISTANCE_OF_WORKER          ("distance")
-/* deprecated directive. Use balance_workers instead */
-#define BALANCED_WORKERS            ("balanced_workers")
+#define BALANCED_WORKERS_DEPRECATED ("balanced_workers")
 #define BALANCE_WORKERS             ("balance_workers")
 #define STICKY_SESSION              ("sticky_session")
 #define STICKY_SESSION_FORCE        ("sticky_session_force")
@@ -72,8 +70,8 @@
 #define MOUNT_OF_WORKER             ("mount")
 #define METHOD_OF_WORKER            ("method")
 #define LOCK_OF_WORKER              ("lock")
-#define IS_WORKER_DISABLED          ("disabled")
-#define IS_WORKER_STOPPED           ("stopped")
+#define IS_WORKER_DISABLED_DEPRECATED ("disabled")
+#define IS_WORKER_STOPPED_DEPRECATED  ("stopped")
 #define ACTIVATION_OF_WORKER        ("activation")
 #define WORKER_RECOVER_TIME         ("recover_time")
 #define WORKER_MAX_PACKET_SIZE      ("max_packet_size")
@@ -89,7 +87,6 @@
 #define DEFAULT_MAINTAIN_TIME       (60)
 #define DEFAULT_LB_FACTOR           (1)
 #define DEFAULT_DISTANCE            (0)
-#define LOG_FORMAT                  ("log_format")
 
 #define TOMCAT32_BRIDGE_NAME        ("tomcat32")
 #define TOMCAT33_BRIDGE_NAME        ("tomcat33")
@@ -121,6 +118,63 @@
     extern long _ftol(double); /* defined by VC6 C libs */
     extern long _ftol2(double dblSource) { return _ftol(dblSource); }
 #endif
+
+static const char *unique_properties[] = {
+    SECRET_OF_WORKER,
+    HOST_OF_WORKER,
+    PORT_OF_WORKER,
+    TYPE_OF_WORKER,
+    CACHE_OF_WORKER_DEPRECATED,
+    CACHE_OF_WORKER,
+    CACHE_OF_WORKER_MIN,
+    CACHE_TIMEOUT_DEPRECATED,
+    CACHE_TIMEOUT_OF_WORKER,
+    RECOVERY_OPTS_OF_WORKER,
+    CONNECT_TIMEOUT_OF_WORKER,
+    PREPOST_TIMEOUT_OF_WORKER,
+    REPLY_TIMEOUT_OF_WORKER,
+    SOCKET_TIMEOUT_OF_WORKER,
+    SOCKET_BUFFER_OF_WORKER,
+    SOCKET_KEEPALIVE_OF_WORKER,
+    RECYCLE_TIMEOUT_DEPRECATED,
+    LOAD_FACTOR_OF_WORKER,
+    STICKY_SESSION,
+    STICKY_SESSION_FORCE,
+    JVM_ROUTE_OF_WORKER,
+    DOMAIN_OF_WORKER,
+    REDIRECT_OF_WORKER,
+    METHOD_OF_WORKER,
+    LOCK_OF_WORKER,
+    IS_WORKER_DISABLED_DEPRECATED,
+    IS_WORKER_STOPPED_DEPRECATED,
+    ACTIVATION_OF_WORKER,
+    WORKER_RECOVER_TIME,
+    WORKER_MAX_PACKET_SIZE,
+    RETRIES_OF_WORKER,
+    WORKER_MAINTAIN_PROPERTY_NAME,
+    NULL
+};
+
+static const char *deprecated_properties[] = {
+    SYSPROPS_OF_WORKER,
+    STDERR_OF_WORKER,
+    STDOUT_OF_WORKER,
+    MX_OF_WORKER,
+    MS_OF_WORKER,
+    CP_OF_WORKER,
+    BRIDGE_OF_WORKER,
+    JVM_OF_WORKER,
+    LIBPATH_OF_WORKER,
+    CMD_LINE_OF_WORKER,
+    NATIVE_LIB_OF_WORKER,
+    CACHE_OF_WORKER_DEPRECATED,
+    CACHE_TIMEOUT_DEPRECATED,
+    RECYCLE_TIMEOUT_DEPRECATED,
+    BALANCED_WORKERS_DEPRECATED,
+    IS_WORKER_DISABLED_DEPRECATED,
+    IS_WORKER_STOPPED_DEPRECATED,
+    NULL
+};
 
 /* All entries need to have fixed length 8 chars! */
 static const char *jk_level_verbs[] = {
@@ -743,7 +797,7 @@ int jk_get_is_worker_disabled(jk_map_t *m, const char *wname)
     char buf[1024];
     if (m && wname) {
         int value;
-        MAKE_WORKER_PARAM(IS_WORKER_DISABLED);
+        MAKE_WORKER_PARAM(IS_WORKER_DISABLED_DEPRECATED);
         value = jk_map_get_bool(m, buf, 0);
         if (!value)
             rc = JK_FALSE;
@@ -757,7 +811,7 @@ int jk_get_is_worker_stopped(jk_map_t *m, const char *wname)
     char buf[1024];
     if (m && wname) {
         int value;
-        MAKE_WORKER_PARAM(IS_WORKER_STOPPED);
+        MAKE_WORKER_PARAM(IS_WORKER_STOPPED_DEPRECATED);
         value = jk_map_get_bool(m, buf, 0);
         if (!value)
             rc = JK_FALSE;
@@ -930,7 +984,7 @@ int jk_get_lb_worker_list(jk_map_t *m,
             return JK_TRUE;
         }
         /* Try old balanced_workers directive */
-        MAKE_WORKER_PARAM(BALANCED_WORKERS);
+        MAKE_WORKER_PARAM(BALANCED_WORKERS_DEPRECATED);
         ar = jk_map_get_string_list(m, buf, num_of_wokers, NULL);
         if (ar) {
             *list = ar;
@@ -1142,59 +1196,6 @@ int jk_is_cmd_line_property(const char *prp_name)
 {
     return jk_is_some_property(prp_name, CMD_LINE_OF_WORKER);
 }
-
-static const char *unique_properties[] = {
-    HOST_OF_WORKER,
-    PORT_OF_WORKER,
-    TYPE_OF_WORKER,
-    CACHE_OF_WORKER,
-    CACHE_OF_WORKER_DEPRECATED,
-    CACHE_OF_WORKER,
-    CACHE_OF_WORKER_MIN,
-    CACHE_TIMEOUT_OF_WORKER,
-    CACHE_TIMEOUT_DEPRECATED,
-    RECOVERY_OPTS_OF_WORKER,
-    CONNECT_TIMEOUT_OF_WORKER,
-    PREPOST_TIMEOUT_OF_WORKER,
-    REPLY_TIMEOUT_OF_WORKER,
-    SOCKET_TIMEOUT_OF_WORKER,
-    SOCKET_BUFFER_OF_WORKER,
-    SOCKET_KEEPALIVE_OF_WORKER,
-    RECYCLE_TIMEOUT_DEPRECATED,
-    LOAD_FACTOR_OF_WORKER,
-    STICKY_SESSION,
-    STICKY_SESSION_FORCE,
-    JVM_ROUTE_OF_WORKER,
-    DOMAIN_OF_WORKER,
-    REDIRECT_OF_WORKER,
-    MOUNT_OF_WORKER,
-    METHOD_OF_WORKER,
-    IS_WORKER_DISABLED,
-    IS_WORKER_STOPPED,
-    ACTIVATION_OF_WORKER,
-    WORKER_RECOVER_TIME,
-    SECRET_OF_WORKER,
-    RETRIES_OF_WORKER,
-    NULL
-};
-
-static const char *deprecated_properties[] = {
-    CACHE_OF_WORKER_DEPRECATED,
-    CACHE_TIMEOUT_DEPRECATED,
-    RECYCLE_TIMEOUT_DEPRECATED,
-    MX_OF_WORKER,
-    MS_OF_WORKER,
-    CP_OF_WORKER,
-    BRIDGE_OF_WORKER,
-    JVM_OF_WORKER,
-    LIBPATH_OF_WORKER,
-    CMD_LINE_OF_WORKER,
-    NATIVE_LIB_OF_WORKER,
-    BALANCED_WORKERS,
-    IS_WORKER_DISABLED,
-    IS_WORKER_STOPPED,
-    NULL
-};
 
 int jk_is_unique_property(const char *prp_name)
 {
