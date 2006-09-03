@@ -36,11 +36,13 @@
       request. Return 500 insted. (mturk)
       </fix>
       <update>
-      LB: Combine ok/error/recovering/busy runtime states into a single scalar.
-      LB: Combine active/disabled/stopped configuration states into a single scalar.
+      LB: Combine ok/error/recovering/busy runtime states into a single scalar. (rjung)
       </update>
       <update>
-      LB: Add several Apache notes to enable standard logging for load balancer results.
+      LB: Combine active/disabled/stopped configuration states into a single scalar. (rjung)
+      </update>
+      <update>
+      LB: Add several Apache notes to enable standard logging for load balancer results. (rjung)
       </update>
       <update>
       LB: Reorganisation of the main load balancer service loop. (rjung)
@@ -56,7 +58,7 @@
       rewritten url is larger then the original one. (mturk)
       </fix>
       <update>
-      New JkOption to disable connection persistence. (jim)
+      New JkOption "DisableReuse" to disable connection persistence. (jim)
       </update>
       <update>
       LB: Move sessionid retrieval out of get_most_suitable_worker into service. (rjung)
