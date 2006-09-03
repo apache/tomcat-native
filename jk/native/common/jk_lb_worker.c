@@ -42,6 +42,39 @@
 #define JK_WORKER_USABLE(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->state != JK_LB_STATE_BUSY && (w)->activation != JK_LB_ACTIVATION_STOPPED && (w)->activation != JK_LB_ACTIVATION_DISABLED)
 #define JK_WORKER_USABLE_STICKY(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->activation != JK_LB_ACTIVATION_STOPPED)
 
+static const char *lb_locking_type[] = {
+    "unknown",
+    JK_LB_LOCK_TEXT_OPTIMISTIC,
+    JK_LB_LOCK_TEXT_PESSIMISTIC,
+    NULL
+};
+
+static const char *lb_method_type[] = {
+    "unknown",
+    JK_LB_METHOD_TEXT_REQUESTS,
+    JK_LB_METHOD_TEXT_TRAFFIC,
+    JK_LB_METHOD_TEXT_BUSYNESS,
+    NULL
+};
+
+static const char *lb_state_type[] = {
+    "unknown",
+    JK_LB_STATE_TEXT_NA,
+    JK_LB_STATE_TEXT_OK,
+    JK_LB_STATE_TEXT_RECOVER,
+    JK_LB_STATE_TEXT_BUSY,
+    JK_LB_STATE_TEXT_ERROR,
+    NULL
+};
+
+static const char *lb_activation_type[] = {
+    "unknown",
+    JK_LB_ACTIVATION_TEXT_ACTIVE,
+    JK_LB_ACTIVATION_TEXT_DISABLED,
+    JK_LB_ACTIVATION_TEXT_STOPPED,
+    NULL
+};
+
 struct lb_endpoint
 {
     jk_endpoint_t *e;
@@ -73,6 +106,30 @@ static jk_uint64_t gcd(jk_uint64_t a, jk_uint64_t b)
 static jk_uint64_t scm(jk_uint64_t a, jk_uint64_t b)
 {
     return a * b / gcd(a, b);
+}
+
+/* Return the string representation of the lb lock type */
+const char *jk_lb_get_lock(lb_worker_t *p, jk_logger_t *l)
+{
+    return lb_locking_type[p->lblock];
+}
+
+/* Return the string representation of the lb method type */
+const char *jk_lb_get_method(lb_worker_t *p, jk_logger_t *l)
+{
+    return lb_method_type[p->lbmethod];
+}
+
+/* Return the string representation of the balance worker state */
+const char *jk_lb_get_state(worker_record_t *p, jk_logger_t *l)
+{
+    return lb_state_type[p->s->state];
+}
+
+/* Return the string representation of the balance worker activation */
+const char *jk_lb_get_activation(worker_record_t *p, jk_logger_t *l)
+{
+    return lb_activation_type[p->s->activation];
 }
 
 /* Update the load multipliers wrt. lb_factor */
@@ -618,7 +675,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
     if (rc && JK_IS_DEBUG_LEVEL(l)) {
         jk_log(l, JK_LOG_DEBUG,
                "found best worker %s (%s) using method '%s'",
-               rc->s->name, rc->s->jvm_route, lb_method_type[p->lbmethod]);
+               rc->s->name, rc->s->jvm_route, jk_lb_get_method(p, l));
     }
     JK_TRACE_EXIT(l);
     return rc;
@@ -881,9 +938,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     log_names[6] = JK_NOTE_LB_FIRST_BUSY;
                     log_values[6] = buf;
                     log_names[7] = JK_NOTE_LB_FIRST_ACTIVATION;
-                    log_values[7] = lb_activation_type[rec->s->activation];
+                    log_values[7] = jk_lb_get_activation(rec, l);
                     log_names[8] = JK_NOTE_LB_FIRST_STATE;
-                    log_values[8] = lb_state_type[rec->s->state];
+                    log_values[8] = jk_lb_get_state(rec, l);
                     s->add_log_items(s, log_names, log_values, JK_LB_NOTES_COUNT);
                 }
             }
@@ -960,9 +1017,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
             log_names[6] = JK_NOTE_LB_LAST_BUSY;
             log_values[6] = buf;
             log_names[7] = JK_NOTE_LB_LAST_ACTIVATION;
-            log_values[7] = lb_activation_type[prec->s->activation];
+            log_values[7] = jk_lb_get_activation(prec, l);
             log_names[8] = JK_NOTE_LB_LAST_STATE;
-            log_values[8] = lb_state_type[prec->s->state];
+            log_values[8] = jk_lb_get_state(prec, l);
             s->add_log_items(s, log_names, log_values, JK_LB_NOTES_COUNT);
         }
     }
@@ -1041,7 +1098,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 unsigned int ms = jk_get_max_packet_size(props, worker_names[i]);
                 if (ms > p->max_packet_size)
                     p->max_packet_size = ms;
-           }
+            }
             for (i = 0; i < num_of_workers; i++) {
                 const char *s;
                 strncpy(p->lb_workers[i].s->name, worker_names[i],

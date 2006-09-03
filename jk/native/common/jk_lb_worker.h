@@ -103,39 +103,6 @@ extern "C"
 /* The exponent x is JK_LB_DECAY_MULT*#MAINT_INTV_SINCE_LAST_MAINT */
 #define JK_LB_DECAY_MULT         (1)
 
-static const char *lb_locking_type[] = {
-    "unknown",
-    JK_LB_LOCK_TEXT_OPTIMISTIC,
-    JK_LB_LOCK_TEXT_PESSIMISTIC,
-    NULL
-};
-
-static const char *lb_method_type[] = {
-    "unknown",
-    JK_LB_METHOD_TEXT_REQUESTS,
-    JK_LB_METHOD_TEXT_TRAFFIC,
-    JK_LB_METHOD_TEXT_BUSYNESS,
-    NULL
-};
-
-static const char *lb_state_type[] = {
-    "unknown",
-    JK_LB_STATE_TEXT_NA,
-    JK_LB_STATE_TEXT_OK,
-    JK_LB_STATE_TEXT_RECOVER,
-    JK_LB_STATE_TEXT_BUSY,
-    JK_LB_STATE_TEXT_ERROR,
-    NULL
-};
-
-static const char *lb_activation_type[] = {
-    "unknown",
-    JK_LB_ACTIVATION_TEXT_ACTIVE,
-    JK_LB_ACTIVATION_TEXT_DISABLED,
-    JK_LB_ACTIVATION_TEXT_STOPPED,
-    NULL
-};
-
 struct worker_record
 {
     jk_worker_t      *w;
@@ -169,6 +136,10 @@ typedef struct lb_worker lb_worker_t;
 int JK_METHOD lb_worker_factory(jk_worker_t **w,
                                 const char *name, jk_logger_t *l);
 
+const char *jk_lb_get_lock(lb_worker_t *p, jk_logger_t *l);
+const char *jk_lb_get_method(lb_worker_t *p, jk_logger_t *l);
+const char *jk_lb_get_state(worker_record_t *p, jk_logger_t *l);
+const char *jk_lb_get_activation(worker_record_t *p, jk_logger_t *l);
 void reset_lb_values(lb_worker_t *p, jk_logger_t *l);
 void update_mult(lb_worker_t * p, jk_logger_t *l);
 

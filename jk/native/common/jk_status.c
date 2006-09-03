@@ -437,8 +437,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session_force),
                     "</td>", NULL);
             jk_printf(s, "<td>%d</td>", lb->s->retries);
-            jk_printf(s, "<td>%s</td>", lb_method_type[lb->lbmethod]);
-            jk_printf(s, "<td>%s</td>", lb_locking_type[lb->lblock]);
+            jk_printf(s, "<td>%s</td>", jk_lb_get_method(lb, l));
+            jk_printf(s, "<td>%s</td>", jk_lb_get_lock(lb, l));
             jk_printf(s, "<td>%d</td>", lb->s->recover_wait_time);
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
             jk_puts(s, "<table><tr>"
@@ -460,8 +460,8 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_putv(s, "<td>", jk_dump_hinfo(&a->worker_inet_addr, buf),
                         "</td>", NULL);
                 /* TODO: descriptive status */
-                jk_putv(s, "<td>", lb_activation_type[wr->s->activation], "</td>", NULL);
-                jk_putv(s, "<td>", lb_state_type[wr->s->state], "</td>", NULL);
+                jk_putv(s, "<td>", jk_lb_get_activation(wr, l), "</td>", NULL);
+                jk_putv(s, "<td>", jk_lb_get_state(wr, l), "</td>", NULL);
                 jk_printf(s, "<td>%d</td>", wr->s->distance);
                 jk_printf(s, "<td>%d</td>", wr->s->lb_factor);
                 jk_printf(s, "<td>%" JK_UINT64_T_FMT "</td>", wr->s->lb_mult);
@@ -664,8 +664,8 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
                 a->host,
                 a->port,
                 jk_dump_hinfo(&a->worker_inet_addr, buf),
-                lb_activation_type[wr->s->activation],
-                lb_state_type[wr->s->state]);
+                jk_lb_get_activation(wr, l),
+                jk_lb_get_state(wr, l));
 
             jk_printf(s, " distance=\"%d\"", wr->s->distance);
             jk_printf(s, " lbfactor=\"%d\"", wr->s->lb_factor);
@@ -763,7 +763,7 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
             jk_log(l, JK_LOG_INFO,
                    "worker '%s' activation changed to '%s' via status worker",
                    wr->s->name,
-                   lb_activation_type[wr->s->activation]);
+                   jk_lb_get_activation(wr, l));
         }
         i = status_int("wx", s->query_string, wr->s->distance);
         if (wr->s->distance != i) {
