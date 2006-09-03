@@ -351,9 +351,9 @@ public class MsgContext implements ActionHook {
         } else if ( actionCode == ActionCode.ACTION_REQ_SET_BODY_REPLAY ) {
             if( log.isTraceEnabled() )
                 log.trace("Replay ");
-            req.setContentLength(-1); // reset so re-read
             ByteChunk bc = (ByteChunk)param;
             jkIS.setReplay(bc);
+            req.setContentLength(bc.getLength()); // reset so re-read
         }
     }
     
