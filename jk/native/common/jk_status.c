@@ -473,24 +473,25 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_putv(s, "<td>", status_strfsize(wr->s->readed, buf),
                         "</td>", NULL);
                 jk_printf(s, "<td>%u</td>", wr->s->busy);
-                jk_printf(s, "<td>%u</td><td>", wr->s->max_busy);
+                jk_printf(s, "<td>%u</td>\n<td>", wr->s->max_busy);
                 if (wr->s->redirect && *wr->s->redirect)
                     jk_puts(s, wr->s->redirect);
                 else
                     jk_puts(s,"&nbsp;");
-                jk_puts(s, "</td><td>\n");
+                jk_puts(s, "</td>\n<td>");
                 if (wr->s->domain && *wr->s->domain)
                     jk_puts(s, wr->s->domain);
                 else
                     jk_puts(s,"&nbsp;");
+                jk_puts(s, "</td>\n<td>");
                 if (wr->s->state == JK_LB_STATE_ERROR) {
-                    int rs =  lb->s->recover_wait_time - (int)difftime(now, wr->s->error_time);
-                    jk_printf(s, "</td>\n<td>%u", rs < 0 ? 0 : rs);
+                    int rs = lb->maintain_time - (int)difftime(now, lb->s->last_maintain_time);
+                    if (rs < lb->s->recover_wait_time - (int)difftime(now, wr->s->error_time))
+                        rs += lb->maintain_time;
+                    jk_printf(s, "%u", rs < 0 ? 0 : rs);
                 }
                 else
-                    jk_puts(s, "</td>\n<td>");
-
-
+                    jk_puts(s, "-");
                 jk_puts(s, "</td>\n</tr>\n");
             }
             jk_puts(s, "</table><br/>\n");
