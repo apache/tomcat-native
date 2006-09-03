@@ -1133,12 +1133,12 @@ static int jk_is_some_property(const char *prp_name, const char *suffix)
     return JK_FALSE;
 }
 
-int jk_is_path_poperty(const char *prp_name)
+int jk_is_path_property(const char *prp_name)
 {
     return jk_is_some_property(prp_name, "path");
 }
 
-int jk_is_cmd_line_poperty(const char *prp_name)
+int jk_is_cmd_line_property(const char *prp_name)
 {
     return jk_is_some_property(prp_name, CMD_LINE_OF_WORKER);
 }

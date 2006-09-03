@@ -386,9 +386,9 @@ int jk_map_read_property(jk_map_t *m, const char *str, jk_logger_t *l)
                                        strlen(v) + strlen(oldv) + 3);
                     if (tmpv) {
                         char sep = '*';
-                        if (jk_is_path_poperty(prp))
+                        if (jk_is_path_property(prp))
                             sep = PATH_SEPERATOR;
-                        else if (jk_is_cmd_line_poperty(prp))
+                        else if (jk_is_cmd_line_property(prp))
                             sep = ' ';
                         else if (!strcasecmp(prp, "worker.list"))
                             sep = ',';
