@@ -57,7 +57,7 @@ name of the <b>jvmRoute</b> defined in Tomcat's server.xml configuration file.
 </p>
 <p>
 <warn>
-The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z][0-9]</b> and is case sensitive.
+The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z][0-9][_\-]</b> and is case sensitive.
 </warn>
 </p>
 
@@ -192,7 +192,7 @@ The problem is that after an ajp13 connection is created, the child won't drop i
 until killed. And since the webserver will keep its childs/threads running
 to handle high-load, even it the child/thread handle only static contents, you could
 finish having many unused ajp13 threads on the Tomcat side.
-</p>.
+</p>
 </directive>
 
 <directive name="lbfactor" default="1" required="false">
@@ -236,7 +236,7 @@ The problem is that after an ajp13 connection is created, the child won't drop i
 until killed. And since the webserver will keep its childs/threads running
 to handle high-load, even it the child/thread handle only static contents, you could
 finish having many unused ajp13 threads on the Tomcat side.
-</p>. 
+</p>
 </directive>
 
 <directive name="cachesize" default="1" required="false">
