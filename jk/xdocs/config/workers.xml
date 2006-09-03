@@ -73,6 +73,9 @@ The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z
 A comma separated list of workers names that the JK will use. When starting up,
 the web server plugin will instantiate the workers whose name appears in the
 worker.list property, these are also the workers to whom you can map requests.
+<p>
+This directive can be used multiple times.
+</p>
 </directive>
 <directive name="worker.maintain" default="60" required="false">
 Worker connection pool maintain interval in seconds. If set to the positive
@@ -304,6 +307,9 @@ The following table specifies properties that the lb worker can accept:
 A comma separated list of workers that the load balancer
 need to manage.
 <p>
+This directive can be used multiple times for the same load balancer.
+</p>
+<p>
 This directive replaces old <b>balanced_workers</b> directive and
 can be used only with mod_jk versions 1.2.7 and up.
 </p>
@@ -462,6 +468,9 @@ in case there is another usable worker with lower distance.
 Only in case all workers below a given distance are in error, disabled or stopped,
 workers of a larger distance are eligible for balancing.
 </p>
+<p>
+This feature has been added in <b>jk 1.2.16</b>.
+</p>
 </directive>
 
 <directive name="domain" default="" required="false">
@@ -538,6 +547,9 @@ set the jvm_route attribute of the worker equal to the jvmRoute of the target To
 If this attribute is left empty, the name of the worker will be used.
 </p>
 <p>
+This attribute can be changed at runtime using status worker.
+</p>
+<p>
 This feature has been added in <b>jk 1.2.16</b>.
 </p>
 </directive>
@@ -569,7 +581,10 @@ Connector configuration.
 </directive>
 
 <directive name="mount" default="" required="false">
-Space delimted list of uri maps the worker should handle
+Space delimited list of uri maps the worker should handle.
+<p>
+This directive can be used multiple times for the same worker.
+</p>
 </directive>
 
 </directives>

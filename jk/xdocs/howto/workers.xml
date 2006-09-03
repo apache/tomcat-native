@@ -88,7 +88,7 @@ the file contains entries of the following form:
 
 <p>
 When starting up, the web server plugin will instantiate the workers whose name appears in the 
-<b>worker.list</b> property, these are also the workers to whom you can map requests.
+<b>worker.list</b> property, these are also the workers to whom you can map requests. The directive can be used multiple times.
 </p>
 
 <subsection name="Workers Type">
@@ -261,7 +261,7 @@ The overall result is that workers managed by the same lb worker are load-balanc
 The following table specifies properties that the lb worker can accept:
 <ul>
 <li><b>balance_workers</b> is a comma separated list of workers that the load balancer need to manage. 
-These workers should not appear in the worker.list property.</li>
+These workers should not appear in the worker.list property. This directive can be used multiple times for the same load balancer.</li>
 <li><b>sticky_session</b> specifies whether requests with SESSION ID's should be routed back to the same
 Tomcat worker. If sticky_session is an flag and if it is set to True and sessions are sticky, otherwise
 sticky_session is set to false. Set sticky_session to False when Tomcat is using a Session Manager which
