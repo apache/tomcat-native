@@ -1171,14 +1171,18 @@ int jk_file_exists(const char *f)
     return JK_FALSE;
 }
 
-static int jk_is_some_property(const char *prp_name, const char *suffix)
+static int jk_is_some_property(const char *prp_name, const char *suffix, const char *sep)
 {
+    char buf[1024];
+
     if (prp_name && suffix) {
+        strcpy(buf, sep);
+        strcat(buf, suffix);
         size_t prp_name_len = strlen(prp_name);
-        size_t suffix_len = strlen(suffix);
+        size_t suffix_len = strlen(buf);
         if (prp_name_len >= suffix_len) {
             const char *prp_suffix = prp_name + prp_name_len - suffix_len;
-            if (0 == strcmp(suffix, prp_suffix)) {
+            if (0 == strcmp(buf, prp_suffix)) {
                 return JK_TRUE;
             }
         }
@@ -1189,19 +1193,19 @@ static int jk_is_some_property(const char *prp_name, const char *suffix)
 
 int jk_is_path_property(const char *prp_name)
 {
-    return jk_is_some_property(prp_name, "path");
+    return jk_is_some_property(prp_name, "path", "_");
 }
 
 int jk_is_cmd_line_property(const char *prp_name)
 {
-    return jk_is_some_property(prp_name, CMD_LINE_OF_WORKER);
+    return jk_is_some_property(prp_name, CMD_LINE_OF_WORKER, ".");
 }
 
 int jk_is_unique_property(const char *prp_name)
 {
     const char **props = &unique_properties[0];
     while (*props) {
-        if (jk_is_some_property(prp_name, *props))
+        if (jk_is_some_property(prp_name, *props, "."))
             return JK_TRUE;
         props++;
     }
@@ -1212,7 +1216,7 @@ int jk_is_deprecated_property(const char *prp_name)
 {
     const char **props = &deprecated_properties[0];
     while (*props) {
-        if (jk_is_some_property(prp_name, *props))
+        if (jk_is_some_property(prp_name, *props, "."))
             return JK_TRUE;
         props++;
     }
