@@ -323,6 +323,60 @@
     </table>
   </xsl:template>
 
+  <!-- Process an directives list with nested directive elements -->
+  <xsl:template match="deprecations">
+    <table border="1" cellpadding="5">
+      <tr>
+        <th width="15%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Directive</font>
+        </th>
+        <th width="15%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Successor</font>
+        </th>
+        <th width="10%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Default</font>
+        </th>
+        <th width="60%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Description</font>
+        </th>
+      </tr>
+      <xsl:for-each select="directive">
+        <tr>
+          <td align="left" valign="center">
+            <code><xsl:value-of select="@name"/></code>
+          </td>
+     	  <xsl:choose>
+            <xsl:when test="@successor != ''">
+               <td align="center" valign="center">          
+               <code><xsl:value-of select="@successor"/></code>
+              </td>
+            </xsl:when>
+            <xsl:otherwise>
+              <td align="center" valign="center">          
+              <code>-</code>
+              </td>
+            </xsl:otherwise>
+          </xsl:choose>          
+     	  <xsl:choose>
+            <xsl:when test="@default != ''">
+               <td align="center" valign="center">          
+               <code><xsl:value-of select="@default"/></code>
+              </td>
+            </xsl:when>
+            <xsl:otherwise>
+              <td align="center" valign="center">          
+              <code>-</code>
+              </td>
+            </xsl:otherwise>
+          </xsl:choose>          
+          <td align="left" valign="center">
+            <xsl:apply-templates/>
+          </td>
+        </tr>
+      </xsl:for-each>
+    </table>
+  </xsl:template>
+
   <!-- Fix relative links in printer friendly versions of the docs -->
   <xsl:template match="a">
     <xsl:variable name="href" select="@href"/>

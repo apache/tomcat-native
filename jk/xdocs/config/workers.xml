@@ -209,57 +209,6 @@ other worker, then it will receive five times more requests.
 
 </directives>
 
-<p>Some directives have been deprecated in the past. We include their documentation
-in case you need to use an older version of mod_jk. We urge you to update and not use
-them any more. Please migrate your existing configurations.
-</p>
-<directives>
-<directive name="recycle_timeout" default="0" required="false">
-<warn>This directive has been deprecated since 1.2.16. See <b>connection_pool_timeout</b> instead.</warn>
-The number of seconds that told webserver to cut an ajp13 connection after some time of 
-inactivity. When choosing an endpoint for a request and the assigned socket is open, it will be
-closed if it was not used for the configured time.
-It's a good way to ensure that there won't too old threads living on Tomcat side, 
-with the extra cost you need to reopen the socket next time a request be forwarded.
-This property is very similar to <b>cache_timeout</b> but works also in non-cache mode.
-If set to value zero (default) no recycle will took place. 
-</directive>
-
-<directive name="cache_timeout" default="0" required="false">
-<warn>This directive has been deprecated since 1.2.16. See <b>connection_pool_timeout</b> instead.</warn>
-Cache timeout property should be used with <b>cachesize</b> to specify how to time JK should keep
-an open socket in cache before closing it. This property should be used to reduce the number of threads 
-on the Tomcat WebServer.
-<p> 
-Each child could open an ajp13 connection if it have to forward a request to Tomcat, creating
-a new ajp13 thread on Tomcat side.
-</p>
-<p>
-The problem is that after an ajp13 connection is created, the child won't drop it
-until killed. And since the webserver will keep its childs/threads running
-to handle high-load, even it the child/thread handle only static contents, you could
-finish having many unused ajp13 threads on the Tomcat side.
-</p>
-</directive>
-
-<directive name="cachesize" default="1" required="false">
-<warn>This directive has been deprecated since 1.2.16. See <b>connection_pool_size</b> instead.</warn>
-Cachesize defines the number of connections made to the AJP backend that
-are maintained as a connection pool.
-It will limit the number of those connection that each web server child
-process can made.
-<p>
-Cachesize property is used only for multi threaded 
-web servers such as Apache 2.0 (worker), IIS and Netscape. The cachesize property
-should reflect the number of threads per child process. JK will discover
-the number of threads per child process on Apache 2 web server with worker-mpm and set
-its default value to match the ThreadsPerChild Apache directive. For IIS the default
-value is 10. For other web servers this value has to be set manually.
-</p>
-<warn>Do not use cachesize with values higher then 1 on <b>Apache 2.x prefork</b> or <b>Apache 1.3.x</b>!</warn>
-</directive>
-</directives>
-
 </subsection>
 
 <subsection name="Load balancing directives">
@@ -514,26 +463,6 @@ This feature has been added in <b>jk 1.2.19</b>.
 </p>
 </directive>
 
-<directive name="disabled" default="False" required="false">
-<warn>This directive has been deprecated since 1.2.19. See <b>activation</b> instead.</warn>
-If set to <b>True</b> or <b>1</b> the worker will be disabled if member
-of load balancer. This flag can be changed at runtime using status worker.
-<p>
-This feature has been added in <b>jk 1.2.9</b>.
-</p>
-</directive>
-
-<directive name="stopped" default="False" required="false">
-<warn>This directive has been deprecated since 1.2.19. See <b>activation</b> instead.</warn>
-If set to <b>True</b> or <b>1</b> the worker will be stopped if member
-of load balancer. The flag is needed for stop complete traffic of a sticky session
-worker. It is only usefull, when you have a cluster that replicated the sessions.
-This flag can be changed at runtime using status worker.
-<p>
-This feature has been added in <b>jk 1.2.11</b>.
-</p>
-</directive>
-
 <directive name="jvm_route" default="" required="false">
 Normally the name of a balanced worker in a load balancer is equal to the jvmRoute
 of the corresponding Tomcat instance. If you want to include a worker corresponding
@@ -588,6 +517,87 @@ This directive can be used multiple times for the same worker.
 </directive>
 
 </directives>
+</subsection>
+
+<subsection name="Deprecated worker directives">
+<br/>
+<p>The following directives have been deprecated in the past. We include their documentation
+in case you need to use an older version of mod_jk. We urge you to update and not use
+them any more. Please migrate your existing configurations.
+</p>
+<deprecations>
+<directive name="cachesize" successor="connection_pool_size" default="1" required="false">
+<warn>This directive has been deprecated since 1.2.16.</warn>
+Cachesize defines the number of connections made to the AJP backend that
+are maintained as a connection pool.
+It will limit the number of those connection that each web server child
+process can make.
+<p>
+Cachesize property is used only for multi threaded 
+web servers such as Apache 2.0 (worker), IIS and Netscape. The cachesize property
+should reflect the number of threads per child process. JK will discover
+the number of threads per child process on Apache 2 web server with worker-mpm and set
+its default value to match the ThreadsPerChild Apache directive. For IIS the default
+value is 10. For other web servers this value has to be set manually.
+</p>
+<warn>Do not use cachesize with values higher then 1 on <b>Apache 2.x prefork</b> or <b>Apache 1.3.x</b>!</warn>
+</directive>
+
+<directive name="cache_timeout" successor="connection_pool_timeout" default="0" required="false">
+<warn>This directive has been deprecated since 1.2.16.</warn>
+Cache timeout property should be used with <b>cachesize</b> to specify how to time JK should keep
+an open socket in cache before closing it. This property should be used to reduce the number of threads 
+on the Tomcat WebServer.
+<p> 
+Each child could open an ajp13 connection if it have to forward a request to Tomcat, creating
+a new ajp13 thread on Tomcat side.
+</p>
+<p>
+The problem is that after an ajp13 connection is created, the child won't drop it
+until killed. And since the webserver will keep its childs/threads running
+to handle high-load, even it the child/thread handle only static contents, you could
+finish having many unused ajp13 threads on the Tomcat side.
+</p>
+</directive>
+
+<directive name="recycle_timeout" successor="connection_pool_timeout" default="0" required="false">
+<warn>This directive has been deprecated since 1.2.16.</warn>
+The number of seconds that told webserver to cut an ajp13 connection after some time of 
+inactivity. When choosing an endpoint for a request and the assigned socket is open, it will be
+closed if it was not used for the configured time.
+It's a good way to ensure that there won't too old threads living on Tomcat side, 
+with the extra cost you need to reopen the socket next time a request be forwarded.
+This property is very similar to <b>cache_timeout</b> but works also in non-cache mode.
+If set to value zero (default) no recycle will took place. 
+</directive>
+
+<directive name="balanced_workers" successor="balance_workers" default="" required="true">
+<warn>This directive has been deprecated since 1.2.7.</warn>
+A comma separated list of workers that the load balancer
+need to manage.
+</directive>
+
+<directive name="disabled" successor="activation" default="False" required="false">
+<warn>This directive has been deprecated since 1.2.19.</warn>
+If set to <b>True</b> or <b>1</b> the worker will be disabled if member
+of load balancer. This flag can be changed at runtime using status worker.
+<p>
+This feature has been added in <b>jk 1.2.9</b>.
+</p>
+</directive>
+
+<directive name="stopped" successor="activation" default="False" required="false">
+<warn>This directive has been deprecated since 1.2.19.</warn>
+If set to <b>True</b> or <b>1</b> the worker will be stopped if member
+of load balancer. The flag is needed for stop complete traffic of a sticky session
+worker. It is only usefull, when you have a cluster that replicated the sessions.
+This flag can be changed at runtime using status worker.
+<p>
+This feature has been added in <b>jk 1.2.11</b>.
+</p>
+</directive>
+
+</deprecations>
 </subsection>
 
 </section>
