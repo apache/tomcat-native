@@ -917,7 +917,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     JK_VERSTRING, "\n</dd></dl>\n", NULL);
         }
         if ( cmd == 0 ) {
-            jk_putv(s, "[<a href=\"", s->req_uri, NULL);
             if (refresh >= 0) {
                 const char *str = s->query_string;
                 char *buf = jk_pool_alloc(s->pool, sizeof(char *) * (strlen(str)+1));
@@ -948,17 +947,23 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 }
                 buf[result] = '\0';
 
+                jk_putv(s, "[<a href=\"", s->req_uri, NULL);
                 if (buf && buf[0])
                     jk_putv(s, "?", buf, NULL);
-                jk_puts(s, "\">stop");
+                jk_puts(s, "\">Stop auto refresh</a>]");
             }
             else {
-                jk_puts(s, "?");
+                jk_putv(s, "<form method=\"GET\" action=\"",
+                        s->req_uri, NULL);
                 if (s->query_string && s->query_string[0])
-                    jk_putv(s, s->query_string, "&", NULL);
-                jk_puts(s, "refresh=10\">start");
+                    jk_putv(s, "?", s->query_string, NULL);
+                jk_puts(s, "\">\n");
+                jk_puts(s, "<input type=\"submit\" value=\"Start auto refresh\"/>\n");
+                jk_puts(s, "(interval "
+                        "<input name=\"refresh\" type=\"text\" size=\"3\" value=\"10\"/> "
+                        "seconds)\n");
+                jk_puts(s, "</form>\n");
             }
-            jk_puts(s, " auto update</a>]");
         }
         if ( cmd <= 1 ) {
             /* Step 2: Display configuration */
