@@ -537,12 +537,12 @@ file that Tomcat normally serves - for instance Velocity pages and JSP pages.
 </p>
 
 <p>
-The directive <b>JkEnvVar</b> allow you to forward an environment variable from Apache server to Tomcat engine.
+The directive <b>JkEnvVar</b> allows you to forward an environment variable from Apache server to Tomcat engine.
 The variable can be retrieved on the Tomcat side as a request attribute.
-You can add a default value as a second parameter to the directive.
+You must add a default value as a second parameter to the directive.
 
 <source>
-  JkEnvVar     SSL_CLIENT_V_START
+  JkEnvVar     SSL_CLIENT_V_START     undefined
 </source>
 <br/>
 <br/>
