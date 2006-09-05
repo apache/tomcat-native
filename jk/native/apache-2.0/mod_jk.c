@@ -423,6 +423,8 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned int l)
                 ll -= r;
                 bb += r;
             }
+            if (p->r->connection->aborted)
+                return JK_FALSE;
         }
 
         return JK_TRUE;
