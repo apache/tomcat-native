@@ -21,7 +21,7 @@
   new documentation project for JK was started.
   </p>
 </section>
-<section name="Changes with JK 1.2.19">
+<section name="Changes between 1.2.18 and 1.2.19">
   <br />
   <subsection name="Native">
     <changelog>
@@ -126,7 +126,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes with JK 1.2.18">
+<section name="Changes between 1.2.17 and 1.2.18">
   <br />
   <subsection name="Native">
     <changelog>
@@ -139,7 +139,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes with JK 1.2.17">
+<section name="Changes between 1.2.16 and JK 1.2.17">
   <br />
   <subsection name="Native">
     <changelog>
@@ -154,7 +154,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes with JK 1.2.16">
+<section name="Changes between 1.2.15 and JK 1.2.16">
   <br />
   <subsection name="Native">
     <changelog>
@@ -266,7 +266,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes from the released JK 1.2.15">
+<section name="Changes between 1.2.14 and 1.2.15">
   <br />
   <subsection name="Native">
     <changelog>
@@ -281,7 +281,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes from the released JK 1.2.14">
+<section name="Changes between 1.2.13 and 1.2.14">
   <br />
   <subsection name="Native">
     <changelog>
@@ -313,7 +313,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes from the released JK 1.2.13">
+<section name="Changes between 1.2.12 and 1.2.13">
   <br />
   <subsection name="Native">
     <changelog>
@@ -353,7 +353,7 @@
   </subsection>
 </section>
 
-<section name="Changes from the released JK 1.2.12">
+<section name="Changes between 1.2.11 and 1.2.12">
   <br />
   <subsection name="Native">
     <changelog>
@@ -370,7 +370,7 @@
   </subsection>
 </section>
 
-<section name="Changes from the released JK 1.2.11">
+<section name="Changes between 1.2.10 and 1.2.11">
   <br />
   <subsection name="Native">
     <changelog>
@@ -429,7 +429,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes from the released JK 1.2.10">
+<section name="Changes between 1.2.9 and 1.2.10">
   <br />
   <subsection name="Native">
     <changelog>
@@ -495,7 +495,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes from the released JK 1.2.8">
+<section name="Changes between 1.2.7 and 1.2.8">
   <br />
   <subsection name="Native">
     <changelog>
@@ -554,7 +554,7 @@
     </changelog>
   </subsection>
 </section>
-<section name="Changes from the released JK 1.2.6">
+<section name="Changes between 1.2.6 and 1.2.7">
   <br />
   <subsection name="Native">
     <changelog>
