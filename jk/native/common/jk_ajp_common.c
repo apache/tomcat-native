@@ -1067,7 +1067,7 @@ static int ajp_read_fully_from_server(jk_ws_service_t *s, jk_logger_t *l,
         if (!s->read(s, buf + rdlen, len - rdlen, &this_time)) {
             /* Remote Client read failed. */
             JK_TRACE_EXIT(l);
-            return JK_CLIENT_ERROR;
+            return JK_CLIENT_RD_ERROR;
         }
 
         if (0 == this_time) {
@@ -1111,7 +1111,7 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t * ae,
                "Connection aborted or network problems",
                ae->worker->name);
         JK_TRACE_EXIT(l);
-        return JK_CLIENT_ERROR;
+        return JK_CLIENT_RD_ERROR;
     }
 
     if (!r->is_chunked) {
@@ -1125,7 +1125,7 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t * ae,
             jk_log(l, JK_LOG_INFO,
                    "Failed appending message length");
             JK_TRACE_EXIT(l);
-            return JK_CLIENT_ERROR;
+            return JK_CLIENT_RD_ERROR;
         }
     }
 
@@ -1333,7 +1333,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                 /* the browser stop sending data, no need to recover */
                 op->recoverable = JK_FALSE;
                 JK_TRACE_EXIT(l);
-                return JK_CLIENT_ERROR;
+                return JK_CLIENT_RD_ERROR;
             }
 
             /* If a RECOVERY buffer is available in LB mode, fill it */
@@ -1410,7 +1410,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 jk_log(l, JK_LOG_INFO,
                        "Writing to client aborted or client network problems");
                 JK_TRACE_EXIT(l);
-                return JK_CLIENT_ERROR;
+                return JK_CLIENT_WR_ERROR;
             }
             if (r->flush && r->flush_packets)
                 r->flush(r);
@@ -1442,7 +1442,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                    "Reding from client aborted or client network problems");
 
             JK_TRACE_EXIT(l);
-            return JK_CLIENT_ERROR;
+            return JK_CLIENT_RD_ERROR;
         }
         break;
 
@@ -1636,16 +1636,21 @@ static int ajp_get_reply(jk_endpoint_t *e,
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-        else if (JK_CLIENT_ERROR == rc) {
+        else if (JK_CLIENT_RD_ERROR == rc) {
             /*
-             * Client has stop talking to us, so get out.
+             * Client has stop sending to us, so get out.
              * We assume this isn't our fault, so just a normal exit.
-             * In most (all?)  cases, the ajp13_endpoint::reuse will still be
-             * false here, so this will be functionally the same as an
-             * un-recoverable error.  We just won't log it as such.
              */
             JK_TRACE_EXIT(l);
-            return JK_CLIENT_ERROR;
+            return JK_CLIENT_RD_ERROR;
+        }
+        else if (JK_CLIENT_RD_ERROR == rc) {
+            /*
+             * Client has stop receiving to us, so get out.
+             * We assume this isn't our fault, so just a normal exit.
+             */
+            JK_TRACE_EXIT(l);
+            return JK_CLIENT_WR_ERROR;
         }
         else if (JK_SERVER_ERROR == rc) {
             /*
@@ -1766,7 +1771,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 return JK_TRUE;
             }
 
-            if (err == JK_CLIENT_ERROR) {
+            if (err == JK_CLIENT_RD_ERROR) {
                 *is_error = JK_HTTP_BAD_REQUEST;
                 if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
                     /* Mark the endpoint for shutdown */
@@ -1774,7 +1779,22 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 }
                 jk_log(l, JK_LOG_INFO,
                        "(%s) request failed, "
-                       "because of client error "
+                       "because of client read error "
+                       "without recovery in send loop attempt=%d",
+                       p->worker->name, i);
+                JK_TRACE_EXIT(l);
+                return JK_CLIENT_ERROR;
+            }
+            else if (err == JK_CLIENT_WR_ERROR) {
+                /* XXX: Is this correct to log this as 200? */
+                *is_error = JK_HTTP_OK;
+                if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+                    /* Mark the endpoint for shutdown */
+                    p->reuse = JK_FALSE;
+                }
+                jk_log(l, JK_LOG_INFO,
+                       "(%s) request failed, "
+                       "because of client write error "
                        "without recovery in send loop attempt=%d",
                        p->worker->name, i);
                 JK_TRACE_EXIT(l);
@@ -1784,7 +1804,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 *is_error = JK_HTTP_SERVER_ERROR;
                 jk_log(l, JK_LOG_INFO,
                        "(%s) request failed, "
-                       "because of client error "
+                       "because of server error "
                        "without recovery in send loop attempt=%d",
                        p->worker->name, i);
                 JK_TRACE_EXIT(l);
@@ -1815,7 +1835,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 }
             }
         }
-        if (err == JK_CLIENT_ERROR) {
+        if (err == JK_CLIENT_RD_ERROR) {
             *is_error = JK_HTTP_BAD_REQUEST;
             if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
                 /* Mark the endpoint for shutdown */
@@ -1823,7 +1843,21 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             }
             jk_log(l, JK_LOG_INFO,
                    "(%s) sending request to tomcat failed, "
-                   "because of client error "
+                   "because of client read error "
+                   "without recovery in send loop attempt=%d",
+                   p->worker->name, i);
+            JK_TRACE_EXIT(l);
+            return JK_CLIENT_ERROR;
+        }
+        else if (err == JK_CLIENT_WR_ERROR) {
+            *is_error = JK_HTTP_OK;
+            if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+                /* Mark the endpoint for shutdown */
+                p->reuse = JK_FALSE;
+            }
+            jk_log(l, JK_LOG_INFO,
+                   "(%s) sending request to tomcat failed, "
+                   "because of client write error "
                    "without recovery in send loop attempt=%d",
                    p->worker->name, i);
             JK_TRACE_EXIT(l);

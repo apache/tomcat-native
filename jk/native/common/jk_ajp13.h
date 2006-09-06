@@ -41,6 +41,9 @@ extern "C"
 #define JK_FATAL_ERROR              (-3)
 #define JK_CLIENT_ERROR             (-4)
 #define JK_SERVER_ERROR             (-5)
+#define JK_CLIENT_RD_ERROR          (-6)
+#define JK_CLIENT_WR_ERROR          (-7)
+
 #define AJP13_MAX_SEND_BODY_SZ      (DEF_BUFFER_SZ - 6)
 #define AJP13_DEF_TIMEOUT           (0) /* Idle timout for pooled connections */
 
