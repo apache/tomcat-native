@@ -1183,10 +1183,12 @@ static int jk_is_some_property(const char *prp_name, const char *suffix, const c
     char buf[1024];
 
     if (prp_name && suffix) {
+        size_t prp_name_len;
+        size_t suffix_len;
         strcpy(buf, sep);
         strcat(buf, suffix);
-        size_t prp_name_len = strlen(prp_name);
-        size_t suffix_len = strlen(buf);
+        prp_name_len = strlen(prp_name);
+        suffix_len = strlen(buf);
         if (prp_name_len >= suffix_len) {
             const char *prp_suffix = prp_name + prp_name_len - suffix_len;
             if (0 == strcmp(buf, prp_suffix)) {
