@@ -652,8 +652,13 @@ int jk_is_socket_connected(jk_sock_t sock)
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
         u_long nr;
         if (ioctlsocket(sock, FIONREAD, &nr) == 0) {
+            if (WSAGetLastError() == 0)
+                errno = 0;
+            else
+                errno = WSAGetLastError() - WSABASEERR;
             return nr == 0 ? 0 : 1;
         }
+        errno = WSAGetLastError() - WSABASEERR;
 #else
         int nr;
         if (ioctl(sock, FIONREAD, (void*)&nr) == 0) {
