@@ -379,8 +379,8 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned int l)
             const char *bb = (const char *)b;
 
             if (!p->response_started) {
-                if (JK_IS_DEBUG_LEVEL(main_log))
-                    jk_log(main_log, JK_LOG_DEBUG,
+                if (main_log)
+                    jk_log(main_log, JK_LOG_INFO,
                            "Write without start, starting with defaults");
                 if (!s->start_response(s, 200, NULL, NULL, NULL, 0)) {
                     return JK_FALSE;

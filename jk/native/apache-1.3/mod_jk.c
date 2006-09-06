@@ -315,6 +315,8 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
             else {
                 *actually_read = (unsigned)rv;
             }
+            /* reset timeout after successful read */
+            ap_reset_timeout(p->r);
             return JK_TRUE;
         }
     }
@@ -352,6 +354,9 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned len)
             int r = 0;
 
             if (!p->response_started) {
+                if (main_log)
+                    jk_log(main_log, JK_LOG_INFO,
+                           "Write without start, starting with defaults");
                 if (!s->start_response(s, 200, NULL, NULL, NULL, 0)) {
                     return JK_FALSE;
                 }
