@@ -1644,7 +1644,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
             JK_TRACE_EXIT(l);
             return JK_CLIENT_RD_ERROR;
         }
-        else if (JK_CLIENT_RD_ERROR == rc) {
+        else if (JK_CLIENT_WR_ERROR == rc) {
             /*
              * Client has stop receiving to us, so get out.
              * We assume this isn't our fault, so just a normal exit.
