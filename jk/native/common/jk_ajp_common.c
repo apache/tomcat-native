@@ -1750,8 +1750,8 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 *is_error = JK_HTTP_SERVER_ERROR;
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) sending request to tomcat failed "
-                       "without recovery in send loop %d", i,
-                       p->worker->name);
+                       "without recovery in send loop %d",
+                       p->worker->name, i);
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
@@ -1776,7 +1776,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                        "(%s) request failed, "
                        "because of client error "
                        "without recovery in send loop attempt=%d",
-                       i, p->worker->name);
+                       p->worker->name, i);
                 JK_TRACE_EXIT(l);
                 return JK_CLIENT_ERROR;
             }
@@ -1786,7 +1786,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                        "(%s) request failed, "
                        "because of client error "
                        "without recovery in send loop attempt=%d",
-                       i, p->worker->name);
+                       p->worker->name, i);
                 JK_TRACE_EXIT(l);
                 return JK_SERVER_ERROR;
             }
@@ -1801,14 +1801,14 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                     jk_log(l, JK_LOG_ERROR,
                            "(%s) receiving reply from tomcat failed "
                            "without recovery in send loop attempt=%d",
-                           i, p->worker->name);
+                           p->worker->name, i);
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
                 }
                 jk_log(l, JK_LOG_INFO,
                        "(%s) receiving from tomcat failed, "
-                       "recoverable operation attempt=%d", i,
-                       p->worker->name);
+                       "recoverable operation attempt=%d",
+                       p->worker->name, i);
                 /* Check for custom retries */
                 if (i >= JK_RETRIES) {
                     jk_sleep(JK_SLEEP_DEF);
@@ -1825,7 +1825,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                    "(%s) sending request to tomcat failed, "
                    "because of client error "
                    "without recovery in send loop attempt=%d",
-                   i, p->worker->name);
+                   p->worker->name, i);
             JK_TRACE_EXIT(l);
             return JK_CLIENT_ERROR;
         }
@@ -1833,7 +1833,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             jk_log(l, JK_LOG_INFO,
                    "(%s) sending request to tomcat failed,  "
                    "recoverable operation attempt=%d",
-                   i + 1, p->worker->name);
+                   p->worker->name, i + 1);
         }
         /* Get another connection from the pool and try again.
          * Note: All sockets are probably closed already.
