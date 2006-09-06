@@ -997,10 +997,11 @@ public class AprEndpoint {
                 }
 
                 try {
-                    // Allocate a new worker thread
                     // Accept the next incoming connection from the server socket
+                    long socket = Socket.accept(serverSock);
+                    // Allocate a new worker thread
                     // Hand this socket off to an appropriate processor
-                    getWorkerThread().assign(Socket.accept(serverSock), true);
+                    getWorkerThread().assign(socket, true);
                 } catch (Throwable t) {
                     log.error(sm.getString("endpoint.accept.fail"), t);
                 }
