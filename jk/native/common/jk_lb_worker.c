@@ -863,7 +863,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     * Client error !!!
                     * Since this is bad request do not fail over.
                     */
-                    rec->s->errors++;
+                    rec->s->client_errors++;
                     rec->s->state = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
                     if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
@@ -966,8 +966,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  jk_shm_unlock();
 
                 if (nf) {
+                    /* We have forced recovery.
+                     * Reset the service loop and go again
+                     */
+                    prec = NULL;
+                    rc   = -1;
                     jk_log(l, JK_LOG_INFO,
-                           "Forcing recovery on first attempt for %d workers", nf);                    
+                           "Forcing recovery on first attempt for %d workers", nf);
+                    continue;
                 }
                 else {
                     /* No workers in error state.
