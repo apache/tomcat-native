@@ -26,6 +26,13 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Add feature to force the recovery of workers that are
+      member of loadbalancer if all the members are in error
+      state. This fixes the time gap where 503 was returned
+      caused by recovery_timeout although the backend was
+      ready to handle the requests. (mturk)
+      </update>
+      <update>
       Docs: Seperate deprecated directives in their own table. (rjung)
       </update>
       <update>
