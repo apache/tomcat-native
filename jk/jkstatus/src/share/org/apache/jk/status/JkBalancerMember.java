@@ -22,11 +22,18 @@ import java.io.Serializable;
  * @version $Revision:$ $Date:$
  * @see org.apache.jk.status.JkStatusParser
  */
+/**
+ * @author peter
+ *
+ */
 public class JkBalancerMember implements Serializable {
     
     int id;
 
     String name;
+
+    /* possible with > 1.2.16 */
+    String jvm_route;
 
     String type;
 
@@ -36,12 +43,22 @@ public class JkBalancerMember implements Serializable {
 
     String address;
 
+    /* deprecated with mod_jk 1.2.16*/
     String status;
+    
+    /* possible with > 1.2.16 */
+    String activation; 
 
+    /* possible with > 1.2.16 */
+    String state; 
+        
     int lbfactor;
 
     long lbvalue;
 
+    /* possible with > 1.2.16 */
+    long lbmult = -1 ;
+    
     int elected;
 
     long readed;
@@ -50,12 +67,36 @@ public class JkBalancerMember implements Serializable {
 
     long errors;
 
+    long clienterrors = -1;
+    
     int busy;
-
+    
+    /* possible with > 1.2.16 */
+    int maxbusy = -1;
+    
     String redirect;
     
     String domain;
     
+    /* possible with > 1.2.16 */
+    int distance = -1;
+
+    /**
+     * @return Returns the jvm_route.
+     * @since mod_jk 1.2.19
+     */
+    public String getJvm_route() {
+        return jvm_route;
+    }
+
+    /**
+     * @param jvm_route The jvm_route to set.
+     * @since mod_jk 1.2.19
+     */
+    public void setJvm_route(String jvm_route) {
+        this.jvm_route = jvm_route;
+    }
+
     /**
      * @return Returns the address.
      */
@@ -86,6 +127,23 @@ public class JkBalancerMember implements Serializable {
         this.busy = busy;
     }
 
+
+    /**
+     * @return Returns the maxbusy.
+     * @since mod_jk 1.2.18
+     */
+    public int getMaxbusy() {
+        return maxbusy;
+    }
+
+    /**
+     * @param maxbusy The maxbusy to set.
+     * @since mod_jk 1.2.18
+     */
+    public void setMaxbusy(int maxbusy) {
+        this.maxbusy = maxbusy;
+    }
+
     /**
      * @return Returns the elected.
      */
@@ -99,6 +157,22 @@ public class JkBalancerMember implements Serializable {
      */
     public void setElected(int elected) {
         this.elected = elected;
+    }
+
+    /**
+     * @return Returns the clienterrors.
+     * @since mod_jk 1.2.19
+     */
+    public long getClienterrors() {
+        return clienterrors;
+    }
+
+    /**
+     * @param clienterrors The clienterrors to set.
+     * @since mod_jk 1.2.19
+     */
+    public void setClienterrors(long clienterrors) {
+        this.clienterrors = clienterrors;
     }
 
     /**
@@ -175,6 +249,22 @@ public class JkBalancerMember implements Serializable {
     public void setLbvalue(long lbvalue) {
         this.lbvalue = lbvalue;
     }
+    
+    /**
+     * @return Returns the lbmult.
+     * @since mod_jk 1.2.19
+     */
+    public long getLbmult() {
+        return lbmult;
+    }
+
+    /**
+     * @param lbmult The lbmult to set.
+     * @since mod_jk 1.2.19
+     */
+    public void setLbmult(long lbmult) {
+        this.lbmult = lbmult;
+    }
 
     /**
      * @return Returns the name.
@@ -190,6 +280,7 @@ public class JkBalancerMember implements Serializable {
     public void setName(String name) {
         this.name = name;
     }
+
 
     /**
      * @return Returns the port.
@@ -223,6 +314,7 @@ public class JkBalancerMember implements Serializable {
 
     /**
      * @return Returns the status.
+     * @deprecated since 1.2.16
      */
     public String getStatus() {
         return status;
@@ -231,9 +323,42 @@ public class JkBalancerMember implements Serializable {
     /**
      * @param status
      *            The status to set.
+     * @deprecated since 1.2.16
      */
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    /**
+     * @return Returns the activation.
+     * @since mod_jk 1.2.19
+     */
+    public String getActivation() {
+        return activation;
+    }
+
+    /**
+     * @param activation The activation to set.
+     * @since mod_jk 1.2.19
+     */
+    public void setActivation(String activation) {
+        this.activation = activation;
+    }
+
+    /**
+     * @return Returns the state.
+     * @since mod_jk 1.2.19
+     */
+    public String getState() {
+        return state;
+    }
+
+    /**
+     * @param state The state to set.
+     * @since mod_jk 1.2.19
+     */
+    public void setState(String state) {
+        this.state = state;
     }
 
     /**
@@ -279,6 +404,7 @@ public class JkBalancerMember implements Serializable {
     public void setDomain(String domain) {
         this.domain = domain;
     }
+ 
     /**
      * @return Returns the redirect.
      */
@@ -291,4 +417,22 @@ public class JkBalancerMember implements Serializable {
     public void setRedirect(String redirect) {
         this.redirect = redirect;
     }
+
+    /**
+     * @return Returns the distance.
+     * @since mod_jk 1.2.18
+     */
+    public int getDistance() {
+        return distance;
+    }
+
+    /**
+     * @param distance The distance to set.
+     * @since mod_jk 1.2.18
+     */
+    public void setDistance(int distance) {
+        this.distance = distance;
+    }
+
+
 }

@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.catalina.ant.BaseRedirectorHelperTask;
 import org.apache.tomcat.util.IntrospectionUtils;
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Project;
 
 /**
  * Ant task that implements the show <code>/jkstatus</code> command, supported
@@ -32,6 +33,11 @@ import org.apache.tools.ant.BuildException;
  * @since 5.5.10
  */
 public class JkStatusTask extends BaseRedirectorHelperTask {
+
+    /**
+     * The descriptive information about this implementation.
+     */
+    private static final String info = "org.apache.jk.status.JkStatusTask/1.1";
 
     /**
      * Store status as <code>resultProperty</code> prefix.
@@ -63,6 +69,17 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
     private String worker;
 
     private String loadbalancer;
+
+    /**
+     * Return descriptive information about this implementation and the
+     * corresponding version number, in the format
+     * <code>&lt;description&gt;/&lt;version&gt;</code>.
+     */
+    public String getInfo() {
+
+        return (info);
+
+    }
 
     public String getPassword() {
         return (this.password);
@@ -214,9 +231,14 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
                                 setPropertyWorker(balancerIndex, member);
                             }
                             echoWorker(member);
-                            if (!"OK".equals(member.getStatus())) {
+                            if (member.getStatus() != null && !"OK".equals(member.getStatus())) {
                                 error.append(" worker name=" + member.getName()
                                         + " status=" + member.getStatus()
+                                        + " host=" + member.getAddress());
+                            }
+                            if (member.getState() != null && !("OK".equals(member.getState()) || "N/A".equals(member.getState())) ){
+                                error.append(" worker name=" + member.getName()
+                                        + " state=" + member.getState()
                                         + " host=" + member.getAddress());
                             }
                         }
@@ -297,8 +319,19 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
      */
     private void echoWorker(JkBalancerMember member) {
         if (isEcho()) {
-            handleOutput("worker name=" + member.getName() + " status="
-                    + member.getStatus() + " host=" + member.getAddress());
+            StringBuffer state = new StringBuffer("worker name=") ;
+            state.append( member.getName()) ;
+            if(member.getStatus() != null) {
+                state.append(" status=");
+                state.append(member.getStatus());
+            }
+            if(member.getState() != null) {
+                state.append(" state=");
+                state.append(member.getState())  ;
+            }
+            state.append(" host=");
+            state.append(member.getAddress());
+            handleOutput(state.toString());
         }
     }
 
@@ -356,24 +389,49 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
         createProperty(member, balancerIndex, workerIndex, "host");
         createProperty(member, balancerIndex, workerIndex, "port");
         createProperty(member, balancerIndex, workerIndex, "address");
-        createProperty(member, balancerIndex, workerIndex, "status");
+        if(member.getJvm_route() != null) {
+            createProperty(member, balancerIndex, workerIndex, "jvm_route");
+        }
+        if(member.getStatus() != null) {
+            createProperty(member, balancerIndex, workerIndex, "status");
+        }
+        if(member.getActivation() != null) {
+            createProperty(member, balancerIndex, workerIndex, "activation");
+        }
+        if(member.getState() != null) {
+            createProperty(member, balancerIndex, workerIndex, "state");
+        }
         createProperty(member, balancerIndex, workerIndex, "lbfactor");
         createProperty(member, balancerIndex, workerIndex, "lbvalue");
+        if(member.getLbmult() > 0) {
+            createProperty(member, balancerIndex, workerIndex, "lbmult");
+        }
         createProperty(member, balancerIndex, workerIndex, "elected");
         createProperty(member, balancerIndex, workerIndex, "readed");
         createProperty(member, balancerIndex, workerIndex, "busy");
+        if(member.getMaxbusy() > 0) {
+            createProperty(member, balancerIndex, workerIndex, "maxbusy");
+        }
         createProperty(member, balancerIndex, workerIndex, "transferred");
         createProperty(member, balancerIndex, workerIndex, "errors");
-        if (member.getDomain() != null)
+        if(member.getClienterrors() > 0) {
+            createProperty(member, balancerIndex, workerIndex, "clienterrors");
+        }
+        if(member.getDistance() > 0) {
+            createProperty(member, balancerIndex, workerIndex, "distance");
+        }
+        if (member.getDomain() != null) {
             createProperty(member, balancerIndex, workerIndex, "domain");
-        else
+        } else {
             getProject().setNewProperty(resultproperty + ".balancer." + balancerIndex + ".member." + workerIndex +
                     ".domain", "");          
-        if (member.getRedirect() != null)
+        }
+        if (member.getRedirect() != null) {
             createProperty(member, balancerIndex, workerIndex, "redirect");
-        else
+        } else {
             getProject().setNewProperty(resultproperty + ".balancer." + balancerIndex + ".member." + workerIndex +
                     ".redirect", "");          
+        }
     }
 
     /**
@@ -383,45 +441,74 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
     private void setPropertyWorkerOnly(JkBalancer balancer,
             JkBalancerMember member) {
         String prefix = resultproperty + "." + member.getName();
-        getProject().setNewProperty(prefix + ".lb.id",
+        Project currentProject = getProject();
+        
+        currentProject.setNewProperty(prefix + ".lb.id",
                 Integer.toString(balancer.getId()));
-        getProject().setNewProperty(prefix + ".lb.name", balancer.getName());
-        getProject().setNewProperty(prefix + ".id",
+        currentProject.setNewProperty(prefix + ".lb.name", balancer.getName());
+        currentProject.setNewProperty(prefix + ".id",
                 Integer.toString(member.getId()));
-        getProject().setNewProperty(prefix + ".type", member.getType());
-        getProject().setNewProperty(prefix + ".status", member.getStatus());
-        getProject().setNewProperty(prefix + ".host", member.getHost());
-        getProject().setNewProperty(prefix + ".address", member.getAddress());
-        getProject().setNewProperty(prefix + ".port",
+        currentProject.setNewProperty(prefix + ".type", member.getType());
+        if(member.getJvm_route() != null) {
+            currentProject.setNewProperty(prefix + ".jvm_route", member.getJvm_route());
+        }
+        if(member.getStatus() != null) {
+            currentProject.setNewProperty(prefix + ".status", member.getStatus());
+        }
+        if(member.getActivation() != null) {
+            currentProject.setNewProperty(prefix + ".activation", member.getActivation());
+        }
+        if(member.getState() != null) {
+            currentProject.setNewProperty(prefix + ".state", member.getState());
+        }
+        currentProject.setNewProperty(prefix + ".host", member.getHost());
+        currentProject.setNewProperty(prefix + ".address", member.getAddress());
+        currentProject.setNewProperty(prefix + ".port",
                 Integer.toString(member.getPort()));
-        getProject().setNewProperty(prefix + ".lbfactor",
+        currentProject.setNewProperty(prefix + ".lbfactor",
                 Integer.toString(member.getLbfactor()));
-        getProject().setNewProperty(prefix + ".lbvalue",
+        currentProject.setNewProperty(prefix + ".lbvalue",
                 Long.toString(member.getLbvalue()));
-        getProject().setNewProperty(prefix + ".elected",
+        if(member.getLbmult() > 0) {
+            currentProject.setNewProperty(prefix + ".lbmult",
+                    Long.toString(member.getLbmult()));
+        }
+        currentProject.setNewProperty(prefix + ".elected",
                 Long.toString(member.getElected()));
-        getProject().setNewProperty(prefix + ".readed",
+        currentProject.setNewProperty(prefix + ".readed",
                 Long.toString(member.getReaded()));
-        getProject().setNewProperty(prefix + ".transferred",
+        currentProject.setNewProperty(prefix + ".transferred",
                 Long.toString(member.getTransferred()));
-        getProject().setNewProperty(prefix + ".busy",
+        currentProject.setNewProperty(prefix + ".busy",
                 Integer.toString(member.getBusy()));
-        getProject().setNewProperty(prefix + ".errors",
+        if(member.getMaxbusy() > 0) {
+            currentProject.setNewProperty(prefix + ".maxbusy",
+                    Long.toString(member.getMaxbusy()));
+        }
+        currentProject.setNewProperty(prefix + ".errors",
                 Long.toString(member.getErrors()));
+        if(member.getClienterrors() > 0) {
+            currentProject.setNewProperty(prefix + ".clienterrors",
+                    Long.toString(member.getClienterrors()));
+        }
+        if(member.getDistance() > 0) {
+            currentProject.setNewProperty(prefix + ".distance",
+                    Integer.toString(member.getDistance()));
+        }
         if (member.getDomain() != null)
-            getProject().setNewProperty(prefix + ".domain", member.getDomain());
+            currentProject.setNewProperty(prefix + ".domain", member.getDomain());
         else
-            getProject().setNewProperty(prefix + ".domain", "");
+            currentProject.setNewProperty(prefix + ".domain", "");
         if (member.getRedirect() != null)
-            getProject().setNewProperty(prefix + ".redirect",
+            currentProject.setNewProperty(prefix + ".redirect",
                     member.getRedirect());
         else
-            getProject().setNewProperty(prefix + ".redirect", "");
+            currentProject.setNewProperty(prefix + ".redirect", "");
             
     }
 
     /*
-     * (non-Javadoc)
+     * Set ant property for save error state
      * 
      * @see org.apache.catalina.ant.BaseRedirectorHelperTask#setErrorProperty(java.lang.String)
      */

@@ -21,29 +21,21 @@ import org.apache.tomcat.util.digester.Digester;
 
 /**
  * <code>
+ *
  *  &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
- *  &lt;jk:status xmlns:jk="http://jakarta.apache.org"&gt;
- *     &lt;jk:server name="localhost" port="80" 
- *                software="Apache/2.0.54 (Win32) mod_ssl/2.0.54 OpenSSL/0.9.7g mod_jk/1.2.13-dev" 
- *                version="1.2.12"/&gt;
- *
- *	  &lt;jk:balancers&gt;
- *
- *        &lt;jk:balancer id="0" name="lb" type="lb" 
- *                      sticky="True" stickyforce="False" retries="3" recover="60"&gt;
- *            &lt;jk:member id="0" name="node1" type="ajp13" host="localhost" port="9012" 
- *                       address="127.0.0.1:9012" status="OK" lbfactor="1" lbvalue="1"
- *                       elected="0" readed="0" transferred="0" errors="0" busy="0"/&gt;
- *            &lt;jk:member id="1" name="node2" type="ajp13" host="localhost" port="9022"
- *                       address="127.0.0.1:9022" status="OK" lbfactor="1" lbvalue="1" 
- *                       elected="0" readed="0" transferred="0" errors="0" busy="0"/&gt;
- *            &lt;jk:map type="Wildchar" uri="/ClusterTest/*" context="/ClusterTest/*"/&gt;
- *            &lt;jk:map type="Exact" uri="/ClusterTest" context="/ClusterTest"/&gt;
- *            &lt;jk:map type="Wildchar" uri="/myapps/*" context="/myapps/*"/&gt;
- *            &lt;jk:map type="Exact" uri="/myapps" context="/myapps"/&gt;
- *        &lt;/jk:balancer&gt;
- *     &lt;/jk:balancers&gt;
+ *  &lt;jk:status xmlns:jk="http://tomcat.apache.org"&gt;
+ *    &lt;jk:server name="localhost" port="2010" software="Apache/2.0.58 (Unix) mod_jk/1.2.19-dev" version="1.2.19" /&gt;
+ *    &lt;jk:balancers&gt;
+ *    &lt;jk:balancer id="0" name="loadbalancer" type="lb" sticky="True" stickyforce="False" retries="2" recover="60" &gt;
+ *        &lt;jk:member id="0" name="node01" type="ajp13" host="localhost" port="20012" address="127.0.0.1:20012" activation="ACT" state="N/A" distance="0" lbfactor="1" lbmult="1" lbvalue="0" elected="0" errors="0" transferred="0" readed="0" busy="0" maxbusy="0" jvm_route="node01" /&gt;
+ *        &lt;jk:member id="1" name="node02" type="ajp13" host="localhost" port="20022" address="127.0.0.1:20022" activation="ACT" state="N/A" distance="0" lbfactor="1" lbmult="1" lbvalue="0" elected="0" errors="0" transferred="0" readed="0" busy="0" maxbusy="0" jvm_route="node02" /&gt;
+ *      &lt;jk:map type="Wildchar" uri="/ClusterSession*" context="/ClusterSession*" /&gt;
+ *      &lt;jk:map type="Wildchar" uri="/ClusterTest*" context="/ClusterTest*" /&gt;
+ *      &lt;jk:map type="Wildchar" uri="/test*" context="/test*" /&gt;
+ *    &lt;/jk:balancer&gt;
+ *    &lt;/jk:balancers&gt;
  *  &lt;/jk:status&gt;
+ *
  * </code>
  * @author Peter Rossbach
  * @version $Revision:$ $Date:$
@@ -55,7 +47,18 @@ public class JkStatusParser {
     /**
      * The descriptive information about this implementation.
      */
-    protected static final String info = "org.apache.jk.status.JkStatusParser/1.0";
+    private static final String info = "org.apache.jk.status.JkStatusParser/1.1";
+
+    /**
+     * Return descriptive information about this implementation and the
+     * corresponding version number, in the format
+     * <code>&lt;description&gt;/&lt;version&gt;</code>.
+     */
+    public String getInfo() {
+
+        return (info);
+
+    }
 
     /**
      * The <code>Digester</code> instance used to parse registry descriptors.

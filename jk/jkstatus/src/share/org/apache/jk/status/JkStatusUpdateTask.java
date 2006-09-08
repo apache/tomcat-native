@@ -26,11 +26,17 @@ import org.apache.tools.ant.BuildException;
  * Ant task that implements the <code>/status</code> command, supported by the
  * mod_jk status (1.2.13) application.
  * 
+ * 
  * @author Peter Rossbach
  * @version $Revision: 1.3 $
  * @since 5.5.10
  */
 public class JkStatusUpdateTask extends AbstractCatalinaTask {
+
+    /**
+     * The descriptive information about this implementation.
+     */
+    private static final String info = "org.apache.jk.status.JkStatusUpdateTask/1.1";
 
     private String worker = "lb";
 
@@ -48,24 +54,71 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
 
     private Integer workerLoadFactor;
 
+    private String workerJvmRoute ;
+    
+    private int workerDistance = -1;
+    
     private String workerRedirect;
 
     private String workerClusterDomain;
 
-    private Boolean workerDisabled = Boolean.FALSE;
+    private Boolean workerDisabled ;
 
-    private Boolean workerStopped = Boolean.FALSE;
+    private Boolean workerStopped ;
     
+    private int workerActivation = -1;
+      
     private boolean isLBMode = true;
+    
+    
 
     private String workerLb;
 
+    /**
+     * Return descriptive information about this implementation and the
+     * corresponding version number, in the format
+     * <code>&lt;description&gt;/&lt;version&gt;</code>.
+     */
+    public String getInfo() {
+
+        return (info);
+
+    }
+    
     /**
      *  
      */
     public JkStatusUpdateTask() {
         super();
         setUrl("http://localhost/jkstatus");
+    }
+
+    /**
+     * @return Returns the workerDistance.
+     */
+    public int getWorkerDistance() {
+        return workerDistance;
+    }
+
+    /**
+     * @param workerDistance The workerDistance to set.
+     */
+    public void setWorkerDistance(int workerDistance) {
+        this.workerDistance = workerDistance;
+    }
+
+    /**
+     * @return Returns the workerJvmRoute.
+     */
+    public String getWorkerJvmRoute() {
+        return workerJvmRoute;
+    }
+
+    /**
+     * @param workerJvmRoute The workerJvmRoute to set.
+     */
+    public void setWorkerJvmRoute(String workerJvmRoute) {
+        this.workerJvmRoute = workerJvmRoute;
     }
 
     /**
@@ -219,6 +272,26 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
     }
 
     /**
+     * @return Returns the workerActivation.
+     */
+    public int getWorkerActivation() {
+        return workerActivation;
+    }
+    
+    /**
+     * <ul>
+     * <li>1 active</li>
+     * <li>2 disabled</li>
+     * <li>3 stopped</li>
+     * </ul>
+     * @param workerActivation The workerActivation to set.
+     * 
+     */
+    public void setWorkerActivation(int workerActivation) {
+        this.workerActivation = workerActivation;
+    }
+    
+    /**
      * @return Returns the workerStopped.
      */
     public Boolean getWorkerStopped() {
@@ -283,8 +356,27 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
      * <li><b>load balance example:
      * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=lb&lf=false&ls=true</li>
      * <li><b>worker example:
-     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=node1&l=lb&wf=1&wd=false&ws=false
+     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=node1&wn=node01&l=lb&wf=1&wa=1&wx=0
+     * <br/
+     * <ul>
+     * <li>wa=1 activation</li>
+     * <li>wa=2 disabled</li>
+     * <li>wa=3 stopped</li>
+     * </ul>
      * </li>
+     * </ul>
+     * 
+     * <ul>
+     * <li><b>w:<b/> name tcp worker node</li>
+     * <li><b>l:<b/> name loadbalancer</li>
+     * <li><b>wf:<b/> load factor</li>
+     * <li><b>wn:<b/> jvm route</li>
+     * <li><b>wx:<b/> distance</li>
+     * <li><b>wa:<b/> activation state</li>
+     * <li><b>wr:<b/> redirect route</li>
+     * <li><b>wd:<b/> cluster domain</li>
+     * <li><b>ws:<b/> stopped deprecated 1.2.16</li>
+     * <li><b>wd:<b/> disabled deprecated 1.2.16</li>
      * </ul>
      * 
      * @return create jkstatus link
@@ -317,26 +409,40 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
                 }
             } else {
                 //http://localhost/status?cmd=update&mime=txt&w=node1&l=lb&wf=1&wd=false&ws=false
-                if ((workerLb != null)) { // must be configured
+                if (workerLb != null) { // must be configured
                     sb.append("&l=");
                     sb.append(URLEncoder.encode(workerLb, getCharset()));
                 }
-                if ((workerLoadFactor != null)) { // >= 1
+                if (workerLoadFactor != null) { // >= 1
                     sb.append("&wf=");
                     sb.append(workerLoadFactor);
                 }
-                if ((workerDisabled != null)) {
+                if (workerJvmRoute != null) {
+                    sb.append("&wn=");
+                    sb.append(URLEncoder.encode(workerJvmRoute, getCharset()));
+                } 
+                if (workerDisabled != null) {
                     sb.append("&wd=");
                     sb.append(workerDisabled);
                 }
-                if ((workerStopped != null)) {
+                if (workerStopped != null) {
                     sb.append("&ws=");
                     sb.append(workerStopped);
                 }
-                if ((workerRedirect != null)) { // other worker conrecte lb's
-                    sb.append("&wr=");
+                if (workerActivation > 0 && workerActivation < 4) {
+                    sb.append("&wa=");
+                    sb.append(workerActivation);
+                } 
+                if (workerDistance >= 0) {
+                    sb.append("&wx=");
+                    sb.append(workerDistance);
                 }
-                if ((workerClusterDomain != null)) {
+                if (workerRedirect != null) { // other worker conrecte lb's
+                    sb.append("&wr=");
+                    sb.append(URLEncoder.encode(workerRedirect,
+                            getCharset()));
+                }
+                if (workerClusterDomain != null) {
                     sb.append("&wc=");
                     sb.append(URLEncoder.encode(workerClusterDomain,
                             getCharset()));
@@ -380,14 +486,6 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
             }
             isLBMode = true;
         } else if ("worker".equals(workerType)) {
-            if (workerDisabled == null) {
-                throw new BuildException(
-                        "Must specify at a node worker 'workerDisabled' attribute");
-            }
-            if (workerStopped == null) {
-                throw new BuildException(
-                        "Must specify at a node worker 'workerStopped' attribute");
-            }
             if (workerLoadFactor == null ) {
                 throw new BuildException(
                         "Must specify at a node worker 'workerLoadFactor' attribute");
