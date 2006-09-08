@@ -443,7 +443,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
             jk_puts(s, "<table><tr>"
                     "<th>Name</th><th>Type</th><th>jvmRoute</th><th>Host</th><th>Addr</th>"
-                    "<th>Act</th><th>Stat</th><th>D</th><th>F</th><th>M</th><th>V</th><th>Acc</th><th>Err</th>"
+                    "<th>Act</th><th>Stat</th><th>D</th><th>F</th><th>M</th><th>V</th><th>Acc</th><th>Err</th><th>CE</th>"
                     "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th><th>RR</th><th>Cd</th><th>Rs</th></tr>\n");
             for (j = 0; j < lb->num_of_workers; j++) {
                 worker_record_t *wr = &(lb->lb_workers[j]);
@@ -468,6 +468,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_printf(s, "<td>%" JK_UINT64_T_FMT "</td>", wr->s->lb_value);
                 jk_printf(s, "<td>%" JK_UINT64_T_FMT "</td>", wr->s->elected);
                 jk_printf(s, "<td>%" JK_UINT32_T_FMT "</td>", wr->s->errors);
+                jk_printf(s, "<td>%" JK_UINT32_T_FMT "</td>", wr->s->client_errors);
                 jk_putv(s, "<td>", status_strfsize(wr->s->transferred, buf),
                         "</td>", NULL);
                 jk_putv(s, "<td>", status_strfsize(wr->s->readed, buf),
@@ -601,6 +602,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             "<tr><th>V</th><td>Load Balancer value</td></tr>\n"
             "<tr><th>Acc</th><td>Number of requests</td></tr>\n"
             "<tr><th>Err</th><td>Number of failed requests</td></tr>\n"
+            "<tr><th>CE</th><td>Number of client errors</td></tr>\n"
             "<tr><th>Wr</th><td>Number of bytes transferred/min</td></tr>\n"
             "<tr><th>Rd</th><td>Number of bytes read/min</td></tr>\n"
             "<tr><th>Busy</th><td>Current number of busy connections</td></tr>\n"
@@ -674,6 +676,7 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
             jk_printf(s, " lbvalue=\"%" JK_UINT64_T_FMT "\"", wr->s->lb_value);
             jk_printf(s, " elected=\"%" JK_UINT64_T_FMT "\"", wr->s->elected);
             jk_printf(s, " errors=\"%" JK_UINT32_T_FMT "\"", wr->s->errors);
+            jk_printf(s, " clienterrors=\"%" JK_UINT32_T_FMT "\"", wr->s->client_errors);
             jk_printf(s, " transferred=\"%" JK_UINT64_T_FMT "\"", wr->s->transferred);
             jk_printf(s, " readed=\"%" JK_UINT64_T_FMT "\"", wr->s->readed);
             jk_printf(s, " busy=\"%u\"", wr->s->busy);

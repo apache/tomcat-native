@@ -106,6 +106,8 @@ struct jk_shm_worker
     volatile jk_uint32_t  recoveries;
     /* Number of recovery failures */
     volatile jk_uint32_t  recovery_errors;
+    /* Number of client errors */
+    volatile jk_uint32_t  client_errors;
 };
 typedef struct jk_shm_worker jk_shm_worker_t;
 
