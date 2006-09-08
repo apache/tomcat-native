@@ -699,6 +699,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     worker_record_t *prec = NULL;
     int num_of_workers;
     int first = 1;
+    int was_forced = 0;
     int rc = -1;
     char *sessionid = NULL;
 
@@ -956,15 +957,15 @@ static int JK_METHOD service(jk_endpoint_t *e,
         }
         else {
             /* NULL record, no more workers left ... */
-            if (attempt == 0) {
+            if (attempt == 0 && !was_forced) {
                 int nf;
                 /* Force recovery only on first attempt.
                  * If the second fails, Tomcat is still disconnected.
                  */
-                 jk_shm_lock();
-                 nf = force_recovery(p->worker, l);
-                 jk_shm_unlock();
-
+                jk_shm_lock();
+                nf = force_recovery(p->worker, l);
+                jk_shm_unlock();
+                was_forced = 1;
                 if (nf) {
                     /* We have forced recovery.
                      * Reset the service loop and go again
