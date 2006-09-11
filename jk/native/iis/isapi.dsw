@@ -3,6 +3,18 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
+Project: "dftables"=".\pcre\dftables.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "isapi"=".\isapi.dsp" - Package Owner=<4>
 
 Package=<5>
@@ -11,6 +23,24 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name pcre
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "pcre"=".\pcre\pcre.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name dftables
+    End Project Dependency
 }}}
 
 ###############################################################################
