@@ -283,13 +283,15 @@ static void close_workers(lb_worker_t * p, int num_of_workers, jk_logger_t *l)
  * If the worker is in ok state and got no requests
  * since the last global maintenance, we mark its
  * state as not available.
+ * Return the number of workers not in error state.
  */
-static void recover_workers(lb_worker_t *p,
+static int recover_workers(lb_worker_t *p,
                             jk_uint64_t curmax,
                             time_t now,
                             jk_logger_t *l)
 {
     unsigned int i;
+    int non_error = 0;
     int elapsed;
     worker_record_t *w = NULL;
     JK_TRACE_ENTER(l);
@@ -312,9 +314,11 @@ static void recover_workers(lb_worker_t *p,
                 if (p->lbmethod != JK_LB_METHOD_BUSYNESS)
                     w->s->lb_value = curmax;
                 w->s->state = JK_LB_STATE_RECOVER;
+                non_error++;
             }
         }
         else {
+            non_error++;
             if (w->s->state == JK_LB_STATE_OK &&
                 w->s->elected == w->s->elected_snapshot)
                 w->s->state = JK_LB_STATE_NA;
@@ -323,6 +327,7 @@ static void recover_workers(lb_worker_t *p,
     }
 
     JK_TRACE_EXIT(l);
+    return non_error;
 }
 
 static int force_recovery(lb_worker_t *p,
@@ -407,17 +412,11 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l
                        "decay with 2^%d",
                        JK_LB_DECAY_MULT * delta / lb->maintain_time);
             curmax = decay_load(lb, JK_LB_DECAY_MULT * delta / lb->maintain_time, l);
-            recover_workers(lb, curmax, now, l);
-        }
-
-        for (i = 0; i < lb->num_of_workers; i++) {
-            if (lb->lb_workers[i].s->state != JK_LB_STATE_ERROR) {
-                ++n;
+            if (!recover_workers(lb, curmax, now, l)) {
+                force_recovery(lb, l);    
             }
         }
-        if (!n) {
-            force_recovery(lb, l);    
-        }
+
         jk_shm_unlock();
 
     }
