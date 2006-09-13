@@ -958,7 +958,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         }
         else {
             /* NULL record, no more workers left ... */
-            if (attempt == 0 && !was_forced) {
+            if (!was_forced) {
                 int nf;
                 /* Force recovery only on first attempt.
                  * If the second fails, Tomcat is still disconnected.
