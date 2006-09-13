@@ -960,8 +960,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
             /* NULL record, no more workers left ... */
             if (!was_forced) {
                 int nf;
-                /* Force recovery only on first attempt.
-                 * If the second fails, Tomcat is still disconnected.
+                /* Force recovery only once.
+                 * If it still fails, Tomcat is still disconnected.
                  */
                 jk_shm_lock();
                 nf = force_recovery(p->worker, l);
@@ -974,7 +974,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     prec = NULL;
                     rc   = -1;
                     jk_log(l, JK_LOG_INFO,
-                           "Forcing recovery on first attempt for %d workers", nf);
+                           "Forcing recovery once for %d workers", nf);
                     continue;
                 }
                 else {
