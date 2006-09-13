@@ -309,7 +309,8 @@ static void recover_workers(lb_worker_t *p,
                     jk_log(l, JK_LOG_DEBUG,
                            "worker %s is marked for recovery",
                            w->s->name);
-                w->s->lb_value = curmax;
+                if (p->lbmethod != JK_LB_METHOD_BUSYNESS)
+                    w->s->lb_value = curmax;
                 w->s->state = JK_LB_STATE_RECOVER;
             }
         }
