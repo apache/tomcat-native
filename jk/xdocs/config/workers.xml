@@ -185,7 +185,7 @@ This feature has been added in <b>jk 1.2.16</b>.
 <directive name="connection_pool_timeout" default="0" required="false">
 Cache timeout property should be used with <b>connection_pool_size</b> to specify how long JK should keep
 an inactive socket in cache before closing it. This property should be used to reduce the number of threads
-on the Tomcat WebServer.
+on the Tomcat WebServer. The default value zero disables the closing (infinite timeout).
 <p>
 Each child could open an ajp13 connection if it have to forward a request to Tomcat, creating
 a new ajp13 thread on Tomcat side.
@@ -342,6 +342,7 @@ Specifies the url for cascading stylesheet to use.
 <directive name="connect_timeout" default="0" required="false">
 Connect timeout property told webserver to send a PING request on ajp13 connection after
 connection is established. The parameter is the delay in milliseconds to wait for the PONG reply.
+The default value zero disables the timeout (infinite timeout).
 <p>
 This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13
 ping/pong support which has been implemented on Tomcat <b>3.3.2+, 4.1.28+ and 5.0.13+</b>.
@@ -352,6 +353,7 @@ Disabled by default.
 <directive name="prepost_timeout" default="0" required="false">
 Prepost timeout property told webserver to send a PING request on ajp13 connection before
 forwarding to it a request. The parameter is the delay in milliseconds to wait for the PONG reply.
+The default value zero disables the timeout (infinite timeout).
 <p>
 This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13
 ping/pong support which has been implemented on <b>Tomcat 3.3.2+, 4.1.28+ and 5.0.13+</b>.
@@ -362,7 +364,7 @@ Disabled by default.
 <directive name="reply_timeout" default="0" required="false">
 Reply_timeout property told webserver to wait some time for reply to a forwarded request
 before considering the remote tomcat is dead and eventually switch to another tomcat in a cluster
-group. By default webserver will wait forever which could be an issue for you.
+group. By default (value zero) the webserver will wait forever which could be an issue for you.
 The parameter is the number of milliseconds to wait for reply, so adjust it carefully if you
 have long running servlets.
 <p>
