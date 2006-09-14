@@ -499,7 +499,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             if (selected >= 0) {
                 worker_record_t *wr = &(lb->lb_workers[selected]);
                 jk_putv(s, "<hr/><h3>Edit worker settings for ",
-                        wr->s->name, NULL);
+                        wr->s->name, "</h3>\n", NULL);
                 jk_putv(s, "<form method=\"GET\" action=\"",
                         s->req_uri, "\">\n", NULL);
                 jk_puts(s, "<input type=\"hidden\" name=\"cmd\" ");
@@ -590,12 +590,15 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
     }
     /* Display legend */
     jk_puts(s, "<hr/><table>\n"
+            "<tbody valign=\"baseline\">\n"
             "<tr><th>Name</th><td>Worker name</td></tr>\n"
             "<tr><th>Type</th><td>Worker type</td></tr>\n"
             "<tr><th>jvmRoute</th><td>Worker JVM route</td></tr>\n"
             "<tr><th>Addr</th><td>Backend Address info</td></tr>\n"
-            "<tr><th>Act</th><td>Worker activation configuration</td></tr>\n"
-            "<tr><th>Stat</th><td>Worker error status</td></tr>\n"
+            "<tr><th>Act</th><td>Worker activation configuration</br>\n"
+            "ACT=Active, DIS=Disabled, STP=Stopped</td></tr>\n"
+            "<tr><th>Stat</th><td>Worker error status</br>\n"
+            "OK=OK, N/A=Not availabe, ERR=Error, REC=Recovering, BSY=Busy</td></tr>\n"
             "<tr><th>D</th><td>Worker distance</td></tr>\n"
             "<tr><th>F</th><td>Load Balancer factor</td></tr>\n"
             "<tr><th>M</th><td>Load Balancer multiplicity</td></tr>\n"
@@ -610,6 +613,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             "<tr><th>RR</th><td>Route redirect</td></tr>\n"
             "<tr><th>Cd</th><td>Cluster domain</td></tr>\n"
             "<tr><th>Rs</th><td>Recovery scheduled</td></tr>\n"
+            "</tbody>\n"
             "</table>");
 }
 
