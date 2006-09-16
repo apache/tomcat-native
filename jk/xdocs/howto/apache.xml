@@ -608,7 +608,7 @@ document space for a VirtualHost:
 </source>
 
 <p>
-Starting with mod_jk 1.2.6, and under Apache 2.0, it's possible to exclude some URL/URI from
+Starting with mod_jk 1.2.6 for Apache 2.0 and 1.2.19 for Apache 1.3, it's possible to exclude some URL/URI from
 jk processing by setting the env var <b>no-jk</b>, for example with the SetEnvIf Directive.
 </p>
 

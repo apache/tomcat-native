@@ -38,6 +38,9 @@ This directive is available in jk1.2.7 version and later.
 <attribute name="JkMountCopy" required="false"><p>
 Should the base server mounts be copied to the virtual server.
 </p></attribute>
+<attribute name="JkWorkerIndicator" required="false"><p>
+Name of the Apache environment variable that can be used to set worker names.
+</p></attribute>
 <attribute name="JkLogFile" required="false"><p>
 Full or server relative path to the Tomcat Connector module log file
 </p></attribute>
@@ -540,6 +543,53 @@ number of new entries at runtime that reflects the newly deployed
 applications. Apache will reload the file and update the mount
 points within 60 second interval.
 </p>
+
+</subsection>
+
+<subsection name="Using SetHandler and Environment Variables">
+<p>
+Alternatively to the mod_jk specific directives, you can also use
+SetHandler and environment variables to control, which requests
+are being forwarded via which worker. This gives you more flexibility,
+but the results might be more difficult to understand. If you mix both
+ways of defining the forwards, in general to mod_jk directives will win.
+</p>
+<p>
+<b>SetHandler jakarta-servlet</b> forces requests to be handled by mod_jk.
+If you neither specify any workers via JkMount and the related directives,
+not via the environment variable described below,
+the first worker in the list of all worker will be chosen. You can use SetHandler
+for example in Location blocks or with Apache 2.2 also in RewriteRule.
+</p>
+<p>
+In order to control the worker using <b>SetEnvIf</b> or <b>RewriteRule</b>
+for more complex rules, you can set the environment variable <b>JK_WORKER_NAME</b>
+to the name of your chosen target worker. This enables you to decide on
+the chosen worker in a more flexible way, including dependencies on cookie values.
+</p>
+<p>
+In order to use another variable than <b>JK_WORKER_NAME</b>, you can set the name
+of this variable via the <b>JkWorkerIndicator</b> directive.
+</p>
+<p>
+Finally you can define exclusions from mod_jk forwards by setting the environment
+variable <b>no-jk</b>.
+</p>
+<source>
+  # Automatically map all encoded urls
+  &lt;Location *;jsessionid=&gt;
+    SetHandler jakarta-servlet
+    SetEnv JK_WORKER_NAME my_worker
+  &lt;/Location&gt;
+
+  # Map all subdirs to workers via naming rule
+  # and exclude static content.
+  &lt;Location /apps/&gt;
+    SetHandler jakarta-servlet
+    SetEnvIf REQUEST_URI ^/apps/([^/]*)/ JK_WORKER_NAME $1
+    SetEnvIf REQUEST_URI ^/apps/([^/]*)/static no-jk
+  &lt;/Location&gt;
+</source>
 
 </subsection>
  </section>
