@@ -1853,9 +1853,10 @@ static int jk_handler(request_rec * r)
                                                       &jk_module);
     JK_TRACE_ENTER(xconf->log);
     if (apr_table_get(r->subprocess_env, "no-jk")) {
-        jk_log(xconf->log, JK_LOG_DEBUG,
-               "Into handler no-jk env var detected for uri=%s, declined",
-               r->uri);
+        if (JK_IS_DEBUG_LEVEL(xconf->log))
+            jk_log(xconf->log, JK_LOG_DEBUG,
+                   "Into handler no-jk env var detected for uri=%s, declined",
+                   r->uri);
 
         JK_TRACE_EXIT(xconf->log);
         return DECLINED;

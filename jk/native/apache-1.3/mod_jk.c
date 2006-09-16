@@ -1793,16 +1793,25 @@ static const command_rec jk_cmds[] = {
  */
 static int jk_handler(request_rec * r)
 {
-    /* Retrieve the worker name stored by jk_translate() */
-    const char *worker_name = ap_table_get(r->notes, JK_NOTE_WORKER_NAME);
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(r->server->
                                                   module_config,
                                                   &jk_module);
     jk_logger_t *l = conf->log ? conf->log : main_log;
+    /* Retrieve the worker name stored by jk_translate() */
+    const char *worker_name = ap_table_get(r->notes, JK_NOTE_WORKER_NAME);
     int rc;
 
     JK_TRACE_ENTER(l);
+
+    if (ap_table_get(r->subprocess_env, "no-jk")) {
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "Into handler no-jk env var detected for uri=%s, declined",
+                   r->uri);
+        JK_TRACE_EXIT(l);
+        return DECLINED;
+    }
 
     if (r->proxyreq) {
         jk_log(l, JK_LOG_ERROR,
@@ -2321,6 +2330,14 @@ static int jk_translate(request_rec * r)
             char *clean_uri = ap_pstrdup(r->pool, r->uri);
             const char *worker;
 
+            if (ap_table_get(r->subprocess_env, "no-jk")) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Into translate no-jk env var detected for uri=%s, declined",
+                           r->uri);
+                return DECLINED;
+            }
+
             ap_no2slash(clean_uri);
             worker = map_uri_to_worker(conf->uw_map, clean_uri, l);
 
@@ -2443,7 +2460,16 @@ static int jk_fixups(request_rec * r)
     if (r->main) {
         jk_server_conf_t *conf = (jk_server_conf_t *)
             ap_get_module_config(r->server->module_config, &jk_module);
+        jk_logger_t *l = conf->log ? conf->log : main_log;
         char *worker = (char *)ap_table_get(r->notes, JK_NOTE_WORKER_NAME);
+
+        if (ap_table_get(r->subprocess_env, "no-jk")) {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Into fixup no-jk env var detected for uri=%s, declined",
+                       r->uri);
+            return DECLINED;
+        }
 
         /* Only if we have no worker and ForwardDirectories is set */
         if (!worker && (conf->options & JK_OPT_FWDDIRS)) {
@@ -2451,7 +2477,6 @@ static int jk_fixups(request_rec * r)
             int num_names;
             dir_config_rec *d = (dir_config_rec *)
                 ap_get_module_config(r->per_dir_config, &dir_module);
-            jk_logger_t *l = conf->log ? conf->log : main_log;
 
             /* Direct lift from mod_dir */
             if (d->index_names) {
