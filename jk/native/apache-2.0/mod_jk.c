@@ -1880,7 +1880,8 @@ static int jk_handler(request_rec * r)
            translate and
            sets the handler directly ). We still need to know the worker.
          */
-        if (worker_name = apr_table_get(r->subprocess_env, xconf->worker_indicator)) {
+        worker_name = apr_table_get(r->subprocess_env, xconf->worker_indicator);
+        if (worker_name) {
           /* The JkWorkerIndicator environment variable has
            * been used to explicitely set the worker without JkMount.
            * This is useful in combination with LocationMatch or mod_rewrite.
