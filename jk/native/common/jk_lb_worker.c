@@ -601,9 +601,11 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
          * if there is a single one
          */
         if (JK_WORKER_USABLE_STICKY(p->lb_workers[0].s)) {
-            p->lb_workers[0].r = &(p->lb_workers[0].s->jvm_route[0]);
-            JK_TRACE_EXIT(l);
-            return &p->lb_workers[0];
+            if (p->lb_workers[0].s->activation != JK_LB_ACTIVATION_DISABLED) {
+                p->lb_workers[0].r = &(p->lb_workers[0].s->jvm_route[0]);
+                JK_TRACE_EXIT(l);
+                return &p->lb_workers[0];
+            }
         }
         else {
             JK_TRACE_EXIT(l);
