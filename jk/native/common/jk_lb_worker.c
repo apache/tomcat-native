@@ -386,7 +386,6 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l
 
     JK_TRACE_ENTER(l);
     if (p && p->worker_private) {
-        unsigned int n = 0;
         lb_worker_t *lb = (lb_worker_t *)p->worker_private;
 
         for (i = 0; i < lb->num_of_workers; i++) {
