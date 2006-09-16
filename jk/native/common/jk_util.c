@@ -964,7 +964,7 @@ int jk_get_max_packet_size(jk_map_t *m, const char *wname)
         return DEF_BUFFER_SZ;
     }
 
-    MAKE_WORKER_PARAM(DISTANCE_OF_WORKER);
+    MAKE_WORKER_PARAM(WORKER_MAX_PACKET_SIZE);
     sz = jk_map_get_int(m, buf, DEF_BUFFER_SZ);
     sz = JK_ALIGN(sz, 1024);
     if (sz < DEF_BUFFER_SZ)
