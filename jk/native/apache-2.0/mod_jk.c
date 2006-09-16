@@ -108,6 +108,7 @@
 #include "jk_worker.h"
 #include "jk_shm.h"
 
+#define JK_ENV_WORKER_NAME          ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
 #define JK_NOTE_REQUEST_DURATION    ("JK_REQUEST_DURATION")
@@ -165,6 +166,11 @@ typedef struct
 
     char *format_string;
     apr_array_header_t *format;
+
+    /*
+     * Setting target worker via environment
+     */
+    char *worker_indicator;
 
     /*
      * SSL Support
@@ -1410,6 +1416,25 @@ static const char *jk_set_request_log_format(cmd_parms * cmd,
 
 
 /*
+ * JkWorkerIndicator Directive Handling
+ *
+ * JkWorkerIndicator JkWorker
+ */
+
+static const char *jk_set_worker_indicator(cmd_parms * cmd,
+                                           void *dummy, const char *indicator)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+
+    conf->worker_indicator = apr_pstrdup(cmd->pool, indicator);
+
+    return NULL;
+}
+
+/*
  * JkExtractSSL Directive Handling
  *
  * JkExtractSSL On/Off
@@ -1730,6 +1755,17 @@ static const command_rec jk_cmds[] = {
                   "The mod_jk module automatic context apache alias directory"),
 
     /*
+     * Enable worker name to be set in an environment variable.
+     * this way one can use LocationMatch together with mod_end,
+     * mod_setenvif and mod_rewrite to set the target worker.
+     * Use this in combination with SetHandler jakarta-servlet to
+     * make mod_jk the handler for the request.
+     *
+     */
+    AP_INIT_TAKE1("JkWorkerIndicator", jk_set_worker_indicator, NULL, RSRC_CONF,
+                  "Name of the Apache environment that contains the worker name"),
+
+    /*
      * Apache has multiple SSL modules (for example apache_ssl, stronghold
      * IHS ...). Each of these can have a different SSL environment names
      * The following properties let the administrator specify the envoiroment
@@ -1843,7 +1879,17 @@ static int jk_handler(request_rec * r)
            translate and
            sets the handler directly ). We still need to know the worker.
          */
-        if (worker_env.num_of_workers == 1) {
+        if (worker_name = apr_table_get(r->subprocess_env, xconf->worker_indicator)) {
+          /* The JkWorkerIndicator environment variable has
+           * been used to explicitely set the worker without JkMount.
+           * This is useful in combination with LocationMatch or mod_rewrite.
+           */
+            if (JK_IS_DEBUG_LEVEL(xconf->log))
+                jk_log(xconf->log, JK_LOG_DEBUG,
+                       "Retrieved worker (%s) from env %s for %s",
+                       worker_name, xconf->worker_indicator, r->uri);
+        }
+        else if (worker_env.num_of_workers == 1) {
           /** We have a single worker ( the common case ).
               ( lb is a bit special, it should count as a single worker but
               I'm not sure how ). We also have a manual config directive that
@@ -2088,6 +2134,8 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->was_initialized = JK_FALSE;
     c->options = JK_OPT_FWDURIDEFAULT;
 
+    c->worker_indicator = JK_ENV_WORKER_NAME;
+
     /*
      * By default we will try to gather SSL info.
      * Disable this functionality through JkExtractSSL
@@ -2163,6 +2211,8 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
 {
     jk_server_conf_t *base = (jk_server_conf_t *) basev;
     jk_server_conf_t *overrides = (jk_server_conf_t *) overridesv;
+
+    overrides->worker_indicator = base->worker_indicator;
 
     if (base->ssl_enable) {
         overrides->ssl_enable = base->ssl_enable;

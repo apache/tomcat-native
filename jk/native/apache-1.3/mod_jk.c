@@ -60,6 +60,7 @@
 #include "jk_ajp13.h"
 #include "jk_shm.h"
 
+#define JK_ENV_WORKER_NAME          ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
 #define JK_NOTE_REQUEST_DURATION    ("JK_REQUEST_DURATION")
@@ -131,6 +132,11 @@ typedef struct
 
     char *format_string;
     array_header *format;
+
+    /*
+     * Setting target worker via environment
+     */
+   char *worker_indicator;
 
     /*
      * SSL Support
@@ -1393,6 +1399,25 @@ static const char *jk_set_request_log_format(cmd_parms * cmd,
 }
 
 /*
+ * JkWorkerIndicator Directive Handling
+ *
+ * JkWorkerIndicator JkWorker
+ */
+
+static const char *jk_set_worker_indicator(cmd_parms * cmd,
+                                           void *dummy, char *indicator)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+
+    conf->worker_indicator = ap_pstrdup(cmd->pool, indicator);
+
+    return NULL;
+}
+
+/*
  * JkExtractSSL Directive Handling
  *
  * JkExtractSSL On/Off
@@ -1699,6 +1724,17 @@ static const command_rec jk_cmds[] = {
      "The mod_jk module automatic context apache alias directory"},
 
     /*
+     * Enable worker name to be set in an environment variable.
+     * this way one can use LocationMatch together with mod_end,
+     * mod_setenvif and mod_rewrite to set the target worker.
+     * Use this in combination with SetHandler jakarta-servlet to
+     * make mod_jk the handler for the request.
+     *
+     */
+    {"JkWorkerIndicator", jk_set_worker_indicator, NULL, RSRC_CONF, TAKE1,
+     "Name of the Apache environment that contains the worker name"},
+
+    /*
      * Apache has multiple SSL modules (for example apache_ssl, stronghold
      * IHS ...). Each of these can have a different SSL environment names
      * The following properties let the administrator specify the envoiroment
@@ -1759,26 +1795,72 @@ static int jk_handler(request_rec * r)
 {
     /* Retrieve the worker name stored by jk_translate() */
     const char *worker_name = ap_table_get(r->notes, JK_NOTE_WORKER_NAME);
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(r->server->
+                                                  module_config,
+                                                  &jk_module);
+    jk_logger_t *l = conf->log ? conf->log : main_log;
     int rc;
 
+    JK_TRACE_ENTER(l);
+
     if (r->proxyreq) {
+        jk_log(l, JK_LOG_ERROR,
+               "Request has proxyreq flag set in mod_jk handler - aborting.");
+        JK_TRACE_EXIT(l);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     /* Set up r->read_chunked flags for chunked encoding, if present */
     if ((rc = ap_setup_client_block(r, REQUEST_CHUNKED_DECHUNK))) {
+        jk_log(l, JK_LOG_ERROR,
+               "Could not setup client_block for chunked encoding - aborting");
+        JK_TRACE_EXIT(l);
         return rc;
     }
 
-    if (worker_name) {
-        jk_server_conf_t *conf =
-            (jk_server_conf_t *) ap_get_module_config(r->server->
-                                                      module_config,
-                                                      &jk_module);
-        jk_logger_t *l = conf->log ? conf->log : main_log;
-        jk_worker_t *worker;
+    if (worker_name == NULL && r->handler && !strcmp(r->handler, JK_HANDLER)) {
+        /* we may be here because of a manual directive ( that overrides
+         * translate and
+         * sets the handler directly ). We still need to know the worker.
+         */
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Retrieving environment %s", conf->worker_indicator);
+        worker_name = (char *)ap_table_get(r->subprocess_env, conf->worker_indicator);
+        if (worker_name) {
+          /* The JkWorkerIndicator environment variable has
+           * been used to explicitely set the worker without JkMount.
+           * This is useful in combination with LocationMatch or mod_rewrite.
+           */
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Retrieved worker (%s) from env %s for %s",
+                       worker_name, conf->worker_indicator, r->uri);
+        }
+        else if (worker_env.num_of_workers == 1) {
+          /* We have a single worker ( the common case ).
+           * ( lb is a bit special, it should count as a single worker but
+           * I'm not sure how ). We also have a manual config directive that
+           * explicitely give control to us.
+           */
+            worker_name = worker_env.worker_list[0];
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Single worker (%s) configuration for %s",
+                       worker_name, r->uri);
+        }
+        else if (worker_env.num_of_workers) {
+            worker_name = worker_env.worker_list[0];
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Using first worker (%s) from %d workers for %s",
+                       worker_name, worker_env.num_of_workers, r->uri);
+        }
+    }
 
-        JK_TRACE_ENTER(l);
+    if (worker_name) {
+        jk_worker_t *worker;
 
         worker = wc_get_worker_for_name(worker_name, l);
 
@@ -1908,6 +1990,7 @@ static int jk_handler(request_rec * r)
         }
     }
 
+    JK_TRACE_EXIT(l);
     return HTTP_INTERNAL_SERVER_ERROR;
 }
 
@@ -1932,6 +2015,8 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->format = NULL;
     c->mountcopy = JK_FALSE;
     c->options = JK_OPT_FWDURIDEFAULT;
+
+    c->worker_indicator = JK_ENV_WORKER_NAME;
 
     /*
      * By default we will try to gather SSL info.
@@ -2003,6 +2088,8 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
 {
     jk_server_conf_t *base = (jk_server_conf_t *) basev;
     jk_server_conf_t *overrides = (jk_server_conf_t *) overridesv;
+
+    overrides->worker_indicator = base->worker_indicator;
 
     if (base->ssl_enable) {
         overrides->ssl_enable = base->ssl_enable;
