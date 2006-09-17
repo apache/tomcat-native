@@ -20,7 +20,8 @@
     <pathelement location="${commons-modeler.jar}"/>
     <pathelement location="${commons-logging.jar}"/>
     <pathelement location="${jmx.jar}"/>
-    <pathelement location="${catalina.build}/common/lib/servlet-api.jar"/>
+    <pathelement location="${ant.home}/lib/ant.jar"/>
+      <pathelement location="${catalina.build}/common/lib/servlet-api.jar"/>
   </path>
 
     <!-- Source path -->
