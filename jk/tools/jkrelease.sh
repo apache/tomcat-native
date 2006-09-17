@@ -10,31 +10,58 @@
 # gpg
 # And any one of: w3m, elinks, links
 
+usage() {
+    echo "Usage:: $0 -t VERSION [-T]"
+    echo "        -t: version to package"
+    echo "        -T: package from trunk"
+}
+
+while getopts :t:T c
+do
+    case $c in
+    t)         tag=$OPTARG;;
+    T)         trunk=trunk;;
+    \:)        usage
+               exit 2;;
+    \?)        usage
+               exit 2;;
+    esac
+done
+shift `expr $OPTIND - 1`
+
 export ANT_HOME=/usr/local/ant
 export JAVA_HOME=/usr/local/jdk1.4.2
 
-# You need to change the version numbers
-JK_VERMAJOR="1"
-JK_VERMINOR="2"
-JK_VERFIX="19"
-ASFROOT="http://svn.apache.org/repos/asf"
+SVNROOT="http://svn.apache.org/repos/asf"
+SVNPROJ="tomcat/connectors"
 JK_CVST="tomcat-connectors"
 
 JK_OWNER="asf"
 JK_GROUP="asf"
 
 COPY_TOP="KEYS LICENSE NOTICE"
-COPY_JK="BUILD.txt native support tools xdocs"
+COPY_JK="BUILD.txt native jkstatus support tools xdocs"
 COPY_CONF="uriworkermap.properties workers.properties workers.properties.minimal"
 
-JK_VER="${JK_VERMAJOR}.${JK_VERMINOR}.${JK_VERFIX}"
-JK_BRANCH="jk${JK_VERMAJOR}.${JK_VERMINOR}.x"
-JK_TAG="JK_${JK_VERMAJOR}_${JK_VERMINOR}_${JK_VERFIX}"
-
-JK_DIST=${JK_CVST}-${JK_VER}-src
-JK_SVN_URL="${ASFROOT}/tomcat/connectors/tags/${JK_BRANCH}/${JK_TAG}"
-
 #################### NO CHANGE BELOW THIS LINE ##############
+
+if [ "X$tag" = "X" ]
+then
+    usage
+    exit 2
+fi
+if [ "X$trunk" = "Xtrunk" ]
+then
+    JK_SVN_URL="${SVNROOT}/${SVNPROJ}/trunk"
+    JK_REV=`svn info ${JK_SVN_URL} | awk '$1 == "Revision:" {print $2}'`
+    JK_DIST=${JK_CVST}-${tag}-dev-${JK_REV}-src
+else
+    JK_VER=$tag
+    JK_TAG=`echo $tag | sed -e 's#^#JK_#' -e 's#\.#_#g'`
+    JK_BRANCH=`echo $tag | sed -e 's#^#jk#' -e 's#\.[0-9][0-9]*$##' -e 's#$#.x#'`
+    JK_SVN_URL="${SVNROOT}/${SVNPROJ}/tags/${JK_BRANCH}/${JK_TAG}"
+    JK_DIST=${JK_CVST}-${JK_VER}-src
+fi
 
 umask 022
 
@@ -160,6 +187,7 @@ cd ../../
 # Pack and sign
 tar cvf ${JK_DIST}.tar --owner="${JK_OWNER}" --group="${JK_GROUP}" ${JK_DIST}
 gzip ${JK_DIST}.tar
+perl ${JK_DIST}/tools/lineends.pl --cr ${JK_DIST}
 zip -9 -r ${JK_DIST}.zip ${JK_DIST}
 # Create detatched signature
 gpg -ba ${JK_DIST}.tar.gz
