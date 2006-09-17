@@ -8,6 +8,7 @@
 
   <properties>
     <author email="mturk@apache.org">Mladen Turk</author>
+    <author email="rjung@apache.org">Rainer Jung</author>
     <title>Changelog</title>
   </properties>
 
@@ -25,6 +26,44 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Docs: Add SetHandler and new env var to Apache config docs. (rjung)
+      </update>
+      <update>
+      Apache 1.3: Backport "no-jk" feature. (rjung)
+      </update>
+      <update>
+      Apache: Add an environment variable to make SetHandler "jakarta-servlet" more
+      useful. The variable is JK_WORKER_NAME, but can be changed by the
+      new directive JkWorkerIndicator. (rjung)
+      </update>
+      <fix>
+      LB: Don't use single worker shortcut, if the single worker is being diabled. (rjung)
+      </fix>
+      <fix>
+      Status worker: Add short explanation of activation and error states to legend. (rjung)
+      </fix>
+      <fix>
+      Docs: Add meaning of zero timeout values for various timeouts
+      in workers.properties. (rjung)
+      </fix>
+      <fix>
+      LB: Cleanup of Mladens forced recovery. (rjung)
+      </fix>
+      <fix>
+      LB: Do not change lb_value for recovering workers to max, if 
+      we are using BUSYNESS method. (rjung)
+      </fix>
+      <fix>
+      Apache: Since 1.2.14 mod_jk failed to detect client abort. (rjung)
+      </fix>
+      <fix>
+      Docs: Corrected description of JkEnvVar. (rjung)
+      </fix>
+      <fix>
+      Solaris: Detect filio.h in configure to make the new connection detection
+      build on solaris (r432825). (rjung)
+      </fix>
       <update>
       Add feature to force the recovery of workers that are
       member of loadbalancer if all the members are in error
