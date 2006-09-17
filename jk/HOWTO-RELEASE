@@ -16,13 +16,11 @@ Do a find for all the docs which include the previous version string
 and replace it with the new version.  These are the docs I found which
 had to be updated:
 
-xdocs/howto/apache.xml
-xdocs/howto/quick.xml
-xdocs/howto/workers.xml
+xdocs/index.xml
+xdocs/news/<THISYEAR0101>.xml
+native/STATUS.txt
 
-Update the version in jk/native/configure.in.
-
-Update the version in jk/native/common/jk_version.h, here is
+Update the JK_VERISRELEASE define in jk/native/common/jk_version.h, here is
 a svn diff that shows what I changed:
 
 Index: native/common/jk_version.h
@@ -70,86 +68,8 @@ and copy it to people.apache.org:/x1/www/tomcat.apache.org/connectors-doc
 Create the new source distribution
 ----------------------------------
 
-(A tool named jkrelease.sh in tomcat-connectors/jk/tools does the
-following steps).
-
-Create the directory
-tomcat-connectors-jk-{MAJOR_REVISION}-{MINOR_REVISION}-{RELEASE}-src
-
-For this example mkdir tomcat-connectors-jk-1.2.16-src
-
-Copy the files KEYS and LICENSE from tomcat-conectors to
-the source distribution directory.
-
-cp tomcat-connectors/KEYS tomcat-connectors-jk-1.2.16-src
-cp tomcat-connectors/LICENSE tomcat-connectors-jk-1.2.16-src
-
-Copy the directory tomcat-connectors/scandoc to the source
-distribution directory.
-
-cp -pr tomcat-connectors/scandoc tomcat-connectors-jk-1.2.16-src
-
-Copy the directory tomcat-connectors/common to the source
-distribution directory.
-
-cp -pr tomcat-connectors/common tomcat-connectors-jk-1.2.16-src
-
-Make the jk directory in the source distribution.
-
-mkdir tomcat-connectors-jk-1.2.16-src/jk
-
-Copy the file BUILD.txt from tomcat-conectors/jk to 
-the source distribution jk directory.
-
-cp -p tomcat-connectors/jk/BUILD.txt tomcat-connectors-jk-1.2.16-src/README.txt
-
-Copy the directory tomcat-connectors/build/docs to the source
-distribution directory.
-
-cp -pr tomcat-connectors/jk/build/docs tomcat-connectors-jk-1.2.16-src/jk
-
-Copy the directory tomcat-connectors/tools to the source
-distribution directory.
-
-cp -pr tomcat-connectors/jk/tools tomcat-connectors-jk-1.2.16-src/jk
-
-Make the jk conf directory in the source distribution.
-
-mkdir tomcat-connectors-jk-1.2.16-src/jk/conf
-
-Copy the worker.properties file to the jk/conf directory.
-
-cp -p tomcat-connectors/jk/conf/worker.properties tomcat-connectors-jk-1.2.16-src/jk/conf
-
-Copy the directory tomcat-connectors/support to the source
-distribution directory.
-
-cp -pr tomcat-connectors/jk/support tomcat-connectors-jk-1.2.16-src/jk
-
-Copy the directory tomcat-connectors/native to the source
-distribution directory.
-
-cp -pr tomcat-connectors/jk/native tomcat-connectors-jk-1.2.16-src/jk
-
-Remove all the CVS and .svn directories from the new source distribution.
-
-find tomcat-connectors-jk-1.2.16-src -type d -name CVS | xargs rm -rf
-find tomcat-connectors-jk-1.2.16-src -type d -name .svn | xargs rm -rf
-
-cd to tomcat-connectors-jk-1.2.16-src/jk/native and run buildconf.sh
-to create the configure script.
-
-Create a tar gzip'd archive
-
-tar zcf tomcat-connectors-jk-1.2.16-src.tar.gz tomcat-connectors-jk-1.2.16-src
-
-Create a zip archive
-
-zip -r tomcat-connectors-jk-1.2.16-src.zip tomcat-connectors-jk-1.2.16-src
-
-Sign the release using PGP. Here is an example using gpg:
-
-gpg -abs -o tomcat-connectors-jk-1.2.16-src.tar.gz.asc tomcat-connectors-jk-1.2.16-src.tar.gz
+A tool named jkrelease.sh in tomcat-connectors/jk/tools creates
+a release tarball and a zip including signature files.
 
 Upload source distribution and documentation to www.apache.org
 -------------------------------------------------------------------
@@ -196,8 +116,14 @@ Make sure the group write bit is on for all files you upload.
 Update source for next version
 ------------------------------
 
-Reset JK_VERISRELEASE to 0 and update JK_VERSTRING, JK_VERMAJOR,
-JK_VERMINOR, and JK_VERFIX as needed.  Commit your changes to subversion.
+native/STATUS.txt: Add status "in development" for new version.
+native/configure.in: Update variable VERSION.
+native/common/jk_version.h: Update variables JK_VERMAJOR, JK_VERMINOR, JK_VERFIX,
+                            JK_VERSTRING, and JK_VERISRELEASE.
+native/common/portable.h.sample: Update VERSION define.
+native/iis/isapi_redirect.rc: Update JK_VERSION_STR, FILEVERSION, and PRODUCTVERSION
+native/iis/installer/isapi-redirector-win32-msi.ism: Update ProductVersion.
+xdocs/changelog.xml: Start a new section for the new version.
 
 Remove old release distributions from www.apache.org
 ----------------------------------------------------
