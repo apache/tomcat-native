@@ -23,7 +23,7 @@ import org.apache.catalina.ant.AbstractCatalinaTask;
 import org.apache.tools.ant.BuildException;
 
 /**
- * Ant task that implements the <code>/jkstatus?cmd=reset&amp;l=loadbalancer</code> command, supported by the
+ * Ant task that implements the <code>/jkstatus?cmd=reset&amp;w=loadbalancer</code> command, supported by the
  * mod_jk status (1.2.15) application.
  * 
  * @author Peter Rossbach

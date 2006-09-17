@@ -28,6 +28,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.tomcat.util.digester.Digester;
 
 /**
+ * Create connection to mod_jk jkstatus page.
+ * Optional you can use Http basic auth user and password.
  * @author Peter Rossbach
  * @version $Revision:$ $Date:$
  * @see org.apache.jk.status.JkStatusParser
@@ -83,7 +85,7 @@ public class JkStatusAccessor {
      * @param url
      * @param username
      * @param password
-     * @return
+     * @return HttpConnection
      * @throws IOException
      * @throws MalformedURLException
      * @throws ProtocolException

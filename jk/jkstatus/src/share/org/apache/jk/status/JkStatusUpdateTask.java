@@ -357,15 +357,27 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
      * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=lb&lf=false&ls=true</li>
      * <li><b>worker example:
      * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=node1&wn=node01&l=lb&wf=1&wa=1&wx=0
-     * <br/
+     * <br/>
      * <ul>
-     * <li>wa=1 activation</li>
+     * <li>wa=1 active</li>
      * <li>wa=2 disabled</li>
      * <li>wa=3 stopped</li>
      * </ul>
      * </li>
      * </ul>
+     *
+     * <br/>Loadbalacing parameter:
+     * <br/>
+     * <ul>
+     * <li><b>w:<b/> name lb worker</li>
+     * <li><b>lr:<b/> Number of Retries</li>
+     * <li><b>lt:<b/> recover wait time</li>
+     * <li><b>lf:<b/> Force Sticky Session</li>
+     * <li><b>ls:<b/> Sticky session</li>
+     * </ul>
      * 
+     * <br/>Tcp worker parameter:
+     * <br/>
      * <ul>
      * <li><b>w:<b/> name tcp worker node</li>
      * <li><b>l:<b/> name loadbalancer</li>
