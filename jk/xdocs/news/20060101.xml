@@ -15,6 +15,23 @@
 
 <section name="2006 News &amp; Status">
 <br />
+<a name="20060917.1"> 
+<h3>17 September - JK-1.2.19 released</h3>
+<p>The Apache Tomcat team is proud to announce the immediate availability
+of Tomcat Connectors 1.2.19. This is a stable release adding some features
+and a few bug fixes to version 1.2.18.
+Furthermore the non-functional code trees for isapi and domino have been removed.
+</p>
+<p>
+ Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+<p>If you find any bugs while using this release, please fill in the
+<a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
+Bug Report. When entering bug select <b>Native:JK</b> Component.
+</p>
+</a>
+<hr size="1" noshade="noshade" />
+
 <a name="20060720.1"> 
 <h3>13 July - JK-1.2.18 released</h3>
 <p>The Apache Tomcat team is proud to announce the immediate availability

@@ -8,6 +8,7 @@
 
   <properties>
     <author email="mturk@apache.org">Mladen Turk</author>
+    <author email="rjung@apache.org">Rainer Jung</author>
     <title>Documentation Index</title>
   </properties>
 
@@ -28,6 +29,17 @@ manual is described in more detail below.</p>
 <section name="Headlines">
 <br />
 <ul>
+<li><a href="news/20060101.html#20060917.1">17 September 2006 - <b>JK-1.2.19 released</b></a>
+<p>The Apache Tomcat team is proud to announce the immediate availability
+of Tomcat Connectors 1.2.19 Stable.
+</p>
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.19/tomcat-connectors-1.2.19-src.tar.gz">JK 1.2.19 release sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.19/tomcat-connectors-1.2.19-src.tar.gz.asc">PGP signature</a>
+</p>
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
+</p>
+</li>
+
 <li><a href="news/20060101.html#20060720.1">27 July 2006 - <b>JK-1.2.18 released</b></a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Tomcat Connectors 1.2.18 Stable.
