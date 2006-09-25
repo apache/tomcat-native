@@ -203,6 +203,7 @@ here is a list of the available request log format options:
   <attribute name="%v" required="false">The canonical ServerName of the server serving the request</attribute>
   <attribute name="%V" required="false">The server name according to the UseCanonicalName setting</attribute>
   <attribute name="%w" required="false">Tomcat worker name</attribute>
+  <attribute name="%R" required="false">Real worker name</attribute>
 </attributes>
 
 <source>
@@ -223,6 +224,7 @@ Most of them are are only useful in combination with a load balancer worker.
 <attributes name="Note">
   <attribute name="JK_WORKER_NAME" required="false">Name of the worker selected by the URI mapping</attribute>
   <attribute name="JK_WORKER_TYPE" required="false">Type of the worker selected by the URI mapping</attribute>
+  <attribute name="JK_WORKER_ROUTE" required="false">Actual worker name selected by the URI mapping (usually a member of the load balancer)</attribute>
   <attribute name="JK_REQUEST_DURATION" required="false">Request duration in seconds and microseconds.
                                                          At the moment only available if JkRequestLogFormat is set.</attribute>
   <attribute name="JK_LB_FIRST_NAME" required="false">Load-Balancer: Name of the first worker tried</attribute>
