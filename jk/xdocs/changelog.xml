@@ -26,6 +26,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Apache: Use instdso.sh instead libtool: libtool does not work on HP-UX for example. (jfclere)
+      </update>
     </changelog>
   </subsection>
 </section>
