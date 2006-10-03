@@ -85,7 +85,7 @@ mod_jk.a: mod_jk.lo $(APACHE_OBJECTS)
 	 ${MOD_LINK} -o $@ $^
 
 mod_jk.so: mod_jk.la
-	$(LIBTOOL) --mode=install cp mod_jk.la `pwd`/$@
+	../scripts/build/instdso.sh SH_LIBTOOL='$(LIBTOOL)' mod_jk.la `pwd`
 
 #
 # Common part.
