@@ -589,7 +589,7 @@ variable <b>no-jk</b>.
   # and exclude static content.
   &lt;Location /apps/&gt;
     SetHandler jakarta-servlet
-    SetEnvIf REQUEST_URI ^/apps/([^/]*)/ JK_WORKER_NAME $1
+    SetEnvIf REQUEST_URI ^/apps/([^/]*)/ JK_WORKER_NAME=$1
     SetEnvIf REQUEST_URI ^/apps/([^/]*)/static no-jk
   &lt;/Location&gt;
 </source>
