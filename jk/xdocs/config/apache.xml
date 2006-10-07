@@ -234,6 +234,8 @@ Most of them are are only useful in combination with a load balancer worker.
   <attribute name="JK_LB_FIRST_TRANSFERRED" required="false">Load-Balancer: Bytes transferred for the first worker tried</attribute>
   <attribute name="JK_LB_FIRST_ERRORS" required="false">Load-Balancer: Error count for the first worker tried</attribute>
   <attribute name="JK_LB_FIRST_BUSY" required="false">Load-Balancer: Busy count for the first worker tried</attribute>
+  <attribute name="JK_LB_FIRST_ACTIVATION" required="false">Load-Balancer: Activation state for the first worker tried</attribute>
+  <attribute name="JK_LB_FIRST_STATE" required="false">Load-Balancer: Error state for the first worker tried</attribute>
   <attribute name="JK_LB_LAST_NAME" required="false">Load-Balancer: Name of the last worker tried</attribute>
   <attribute name="JK_LB_LAST_TYPE" required="false">Load-Balancer: Type of the last worker tried</attribute>
   <attribute name="JK_LB_LAST_ACCESSED" required="false">Load-Balancer: Access count for the last worker tried</attribute>
@@ -241,6 +243,8 @@ Most of them are are only useful in combination with a load balancer worker.
   <attribute name="JK_LB_LAST_TRANSFERRED" required="false">Load-Balancer: Bytes transferred for the last worker tried</attribute>
   <attribute name="JK_LB_LAST_ERRORS" required="false">Load-Balancer: Error count for the last worker tried</attribute>
   <attribute name="JK_LB_LAST_BUSY" required="false">Load-Balancer: Busy count for the last worker tried</attribute>
+  <attribute name="JK_LB_LAST_ACTIVATION" required="false">Load-Balancer: Activation state for the last worker tried</attribute>
+  <attribute name="JK_LB_LAST_STATE" required="false">Load-Balancer: Error state for the last worker tried</attribute>
 </attributes>
 
 <source>
