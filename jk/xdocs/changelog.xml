@@ -26,6 +26,15 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      <bug>40716</bug>: Adding "reference" feature to IIS and Netscape.
+      </fix>
+      <fix>
+      Documentation: Corrected SetEnvIf syntax in JK_WORKER_NAME example. (rjung)
+      </fix>
+      <fix>
+      Documentation: Added forgotten STATE and ACTIVATION notes for load balancer logging in Apache. (rjung)
+      </fix>
       <update>
       Apache: Use instdso.sh instead libtool: libtool does not work on HP-UX for example. (jfclere)
       </update>
