@@ -248,6 +248,10 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
             int sleep_cnt;
             SYS_THREAD s;
 
+            if (jk_map_resolve_references(init_map, "worker.", 1, 1, logger) == JK_FALSE) {
+                jk_log(logger, JK_LOG_ERROR, "Error in resolving configuration references");
+            }
+
             s = systhread_start(SYSTHREAD_DEFAULT_PRIORITY,
                                 0, init_workers_on_other_threads, init_map);
             for (sleep_cnt = 0; sleep_cnt < 60; sleep_cnt++) {

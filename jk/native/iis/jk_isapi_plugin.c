@@ -1242,6 +1242,10 @@ static int init_jk(char *serverName)
             if (jk_map_read_properties(workers_map, worker_file, NULL, logger)) {
                 /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
 
+                if (jk_map_resolve_references(workers_map, "worker.", 1, 1, logger) == JK_FALSE) {
+                    jk_log(logger, JK_LOG_ERROR, "Error in resolving configuration references");
+                }
+
                 worker_env.uri_to_worker = uw_map;
                 worker_env.server_name = serverName;
 
