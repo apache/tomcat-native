@@ -29,7 +29,7 @@ import org.apache.tools.ant.Project;
  * by the mod_jk status (1.2.13) application.
  * 
  * @author Peter Rossbach
- * @version $Revision:$
+ * @version $Revision$
  * @since 5.5.10
  */
 public class JkStatusTask extends BaseRedirectorHelperTask {
@@ -403,21 +403,21 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
         }
         createProperty(member, balancerIndex, workerIndex, "lbfactor");
         createProperty(member, balancerIndex, workerIndex, "lbvalue");
-        if(member.getLbmult() > 0) {
+        if(member.getLbmult() >= 0) {
             createProperty(member, balancerIndex, workerIndex, "lbmult");
         }
         createProperty(member, balancerIndex, workerIndex, "elected");
         createProperty(member, balancerIndex, workerIndex, "readed");
         createProperty(member, balancerIndex, workerIndex, "busy");
-        if(member.getMaxbusy() > 0) {
+        if(member.getMaxbusy() >= 0) {
             createProperty(member, balancerIndex, workerIndex, "maxbusy");
         }
         createProperty(member, balancerIndex, workerIndex, "transferred");
         createProperty(member, balancerIndex, workerIndex, "errors");
-        if(member.getClienterrors() > 0) {
+        if(member.getClienterrors() >= 0) {
             createProperty(member, balancerIndex, workerIndex, "clienterrors");
         }
-        if(member.getDistance() > 0) {
+        if(member.getDistance() >= 0) {
             createProperty(member, balancerIndex, workerIndex, "distance");
         }
         if (member.getDomain() != null) {
@@ -469,7 +469,7 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
                 Integer.toString(member.getLbfactor()));
         currentProject.setNewProperty(prefix + ".lbvalue",
                 Long.toString(member.getLbvalue()));
-        if(member.getLbmult() > 0) {
+        if(member.getLbmult() >= 0) {
             currentProject.setNewProperty(prefix + ".lbmult",
                     Long.toString(member.getLbmult()));
         }
@@ -481,17 +481,17 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
                 Long.toString(member.getTransferred()));
         currentProject.setNewProperty(prefix + ".busy",
                 Integer.toString(member.getBusy()));
-        if(member.getMaxbusy() > 0) {
+        if(member.getMaxbusy() >= 0) {
             currentProject.setNewProperty(prefix + ".maxbusy",
                     Long.toString(member.getMaxbusy()));
         }
         currentProject.setNewProperty(prefix + ".errors",
                 Long.toString(member.getErrors()));
-        if(member.getClienterrors() > 0) {
+        if(member.getClienterrors() >= 0) {
             currentProject.setNewProperty(prefix + ".clienterrors",
                     Long.toString(member.getClienterrors()));
         }
-        if(member.getDistance() > 0) {
+        if(member.getDistance() >= 0) {
             currentProject.setNewProperty(prefix + ".distance",
                     Integer.toString(member.getDistance()));
         }
