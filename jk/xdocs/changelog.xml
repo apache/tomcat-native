@@ -27,7 +27,11 @@
   <subsection name="Native">
     <changelog>
       <fix>
-      <bug>40716</bug>: Adding "reference" feature to IIS and Netscape.
+      <bug>40774</bug>: Fixing wrong recursion termination. This one restricted the
+      "reference" feature unintentionally to 20 workers. (rjung)
+      </fix>
+      <fix>
+      <bug>40716</bug>: Adding "reference" feature to IIS and Netscape. (rjung)
       </fix>
       <fix>
       Documentation: Corrected SetEnvIf syntax in JK_WORKER_NAME example. (rjung)

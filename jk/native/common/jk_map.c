@@ -661,7 +661,7 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
                         *(to+remain)   = '.';
                         *(to+remain+1) = '\0';
 
-                        rc = jk_map_resolve_references(m, m->values[i], 0, ++depth, l);
+                        rc = jk_map_resolve_references(m, m->values[i], 0, depth+1, l);
                         if (rc == JK_FALSE) {
                             break;
                         }
