@@ -224,8 +224,6 @@ Aapache web server.
 <section name="HowTo and Install">
 <br />
 <ul>
--rw-------   1 jung     kippdata   16209 Sep 17 00:26 domino.xml
--rw-------   1 jung     kippdata   13478 Sep 17 00:26 nes.xml
 
 <li><a href="howto/apache.html"><b>Apache HowTo and installation documentation</b></a>
 <p>This section contains a detailed description of how to build and
