@@ -221,25 +221,25 @@ Aapache web server.
 </ul>
 </section>
 
-<section name="Installation">
+<section name="HowTo and Install">
 <br />
 <ul>
-<li><a href="install/apache1.html"><b>Apache 1.3.x installation documentation</b></a>
-<p>This section contains detail description of how to build and
-install mod_jk for Apache 1.3.x web server. Browse to this section if you need to
-build mod_jk for Apache 1.3.x web server from sources.
-</p>
-</li>
-<li><a href="install/apache2.html"><b>Apache 2.0.x installation documentation</b></a>
-<p>This section contains detail description of how to build and
-install mod_jk for Apache 2.0.x web server. Browse to this section if you need to
-build mod_jk for Apache 2.0.x web server from sources.
-</p>
-</li>
+-rw-------   1 jung     kippdata   16209 Sep 17 00:26 domino.xml
+-rw-------   1 jung     kippdata   13478 Sep 17 00:26 nes.xml
 
-<li><a href="install/iis.html"><b>IIS installation documentation</b></a>
-<p>This section contains detail description of how to build and
-install isapi_redirector for IIS web server.
+<li><a href="howto/apache.html"><b>Apache HowTo and installation documentation</b></a>
+<p>This section contains a detailed description of how to build and
+install mod_jk for the Apache web server.
+</p>
+</li>
+<li><a href="howto/iis.html"><b>IIS HowTo and installation documentation</b></a>
+<p>This section contains a detailed description of how to build and
+install ISAPI redirector for the IIS web server.
+</p>
+</li>
+<li><a href="howto/nes.html"><b>Netscape/SunOne/Sun web server HowTo and installation documentation</b></a>
+<p>This section contains a detailed description of how to build and
+install NSAPI redirector for the etscape/SunOne/Sun web server.
 </p>
 </li>
 
