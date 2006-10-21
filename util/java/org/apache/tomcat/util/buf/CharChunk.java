@@ -1,5 +1,5 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  Copyright 1999-2004 The Apache Software Foundation
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
  *  The ASF licenses this file to You under the Apache License, Version 2.0
@@ -31,7 +31,7 @@ import java.io.Serializable;
  * @author Costin Manolache
  * @author Remy Maucherat
  */
-public final class CharChunk implements Cloneable, Serializable {
+public final class CharChunk implements Cloneable, Serializable, CharSequence {
 
     // Input interface, used when the buffer is emptied.
     public static interface CharInputChannel {
@@ -702,7 +702,7 @@ public final class CharChunk implements Cloneable, Serializable {
         return buff[index + start];
     }
     
-    public CharChunk subSequence(int start, int end) {
+    public CharSequence subSequence(int start, int end) {
         try {
             CharChunk result = (CharChunk) this.clone();
             result.setOffset(this.start + start);
