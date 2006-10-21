@@ -1,9 +1,10 @@
 /*
- *  Copyright 1999-2004 The Apache Software Foundation
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  contributor license agreements.  See the NOTICE file distributed with
+ *  this work for additional information regarding copyright ownership.
+ *  The ASF licenses this file to You under the Apache License, Version 2.0
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -23,8 +24,8 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.StringTokenizer;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
+import org.apache.regexp.RE;
+import org.apache.regexp.RESyntaxException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -188,7 +189,7 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * List of restricted user agents.
      */
-    protected Pattern[] restrictedUserAgents = null;
+    protected RE[] restrictedUserAgents = null;
 
 
     /**
@@ -285,7 +286,7 @@ public class Http11Processor implements Processor, ActionHook {
     /**
      * List of user agents to not use gzip with
      */
-    protected Pattern noCompressionUserAgents[] = null;
+    protected RE noCompressionUserAgents[] = null;
 
     /**
      * List of MIMES which could be gzipped
@@ -386,10 +387,10 @@ public class Http11Processor implements Processor, ActionHook {
      */
     public void addNoCompressionUserAgent(String userAgent) {
         try {
-            Pattern nRule = Pattern.compile(userAgent);
+            RE nRule = new RE(userAgent);
             noCompressionUserAgents =
                 addREArray(noCompressionUserAgents, nRule);
-        } catch (PatternSyntaxException pse) {
+        } catch (RESyntaxException pse) {
             log.error(sm.getString("http11processor.regexp.error", userAgent), pse);
         }
     }
@@ -400,7 +401,7 @@ public class Http11Processor implements Processor, ActionHook {
      * a large number of connectors, where it would be better to have all of
      * them referenced a single array).
      */
-    public void setNoCompressionUserAgents(Pattern[] noCompressionUserAgents) {
+    public void setNoCompressionUserAgents(RE[] noCompressionUserAgents) {
         this.noCompressionUserAgents = noCompressionUserAgents;
     }
 
@@ -523,14 +524,14 @@ public class Http11Processor implements Processor, ActionHook {
      * @param rArray the REArray
      * @param value Obj
      */
-    private Pattern[] addREArray(Pattern rArray[], Pattern value) {
-        Pattern[] result = null;
+    private RE[] addREArray(RE rArray[], RE value) {
+        RE[] result = null;
         if (rArray == null) {
-            result = new Pattern[1];
+            result = new RE[1];
             result[0] = value;
         }
         else {
-            result = new Pattern[rArray.length + 1];
+            result = new RE[rArray.length + 1];
             for (int i = 0; i < rArray.length; i++)
                 result[i] = rArray[i];
             result[rArray.length] = value;
@@ -582,9 +583,9 @@ public class Http11Processor implements Processor, ActionHook {
      */
     public void addRestrictedUserAgent(String userAgent) {
         try {
-            Pattern nRule = Pattern.compile(userAgent);
+            RE nRule = new RE(userAgent);
             restrictedUserAgents = addREArray(restrictedUserAgents, nRule);
-        } catch (PatternSyntaxException pse) {
+        } catch (RESyntaxException pse) {
             log.error(sm.getString("http11processor.regexp.error", userAgent), pse);
         }
     }
@@ -595,7 +596,7 @@ public class Http11Processor implements Processor, ActionHook {
      * a large number of connectors, where it would be better to have all of
      * them referenced a single array).
      */
-    public void setRestrictedUserAgents(Pattern[] restrictedUserAgents) {
+    public void setRestrictedUserAgents(RE[] restrictedUserAgents) {
         this.restrictedUserAgents = restrictedUserAgents;
     }
 
@@ -1243,7 +1244,7 @@ public class Http11Processor implements Processor, ActionHook {
             if(userAgentValueMB != null) {
                 String userAgentValue = userAgentValueMB.toString();
                 for (int i = 0; i < restrictedUserAgents.length; i++) {
-                    if (restrictedUserAgents[i].matcher(userAgentValue).matches()) {
+                    if (restrictedUserAgents[i].match(userAgentValue)) {
                         http11 = false;
                         keepAlive = false;
                         break;
@@ -1461,7 +1462,7 @@ public class Http11Processor implements Processor, ActionHook {
 
                 // If one Regexp rule match, disable compression
                 for (int i = 0; i < noCompressionUserAgents.length; i++)
-                    if (noCompressionUserAgents[i].matcher(userAgentValue).matches())
+                    if (noCompressionUserAgents[i].match(userAgentValue))
                         return false;
             }
         }
