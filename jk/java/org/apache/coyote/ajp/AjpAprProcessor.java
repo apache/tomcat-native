@@ -262,6 +262,10 @@ public class AjpAprProcessor implements ActionHook {
      */
     protected static final byte[] endMessageArray;
 
+    /**
+     * Direct buffer used for sending explicit flush message.
+     */
+    protected static final ByteBuffer flushMessageBuffer;
 
     // ----------------------------------------------------- Static Initializer
 
@@ -297,6 +301,18 @@ public class AjpAprProcessor implements ActionHook {
         endMessageArray = new byte[endMessage.getLen()];
         System.arraycopy(endMessage.getBuffer(), 0, endMessageArray, 0,
                 endMessage.getLen());
+
+        // Set the flush message buffer
+        AjpMessage flushMessage = new AjpMessage();
+        flushMessage.reset();
+        flushMessage.appendByte(Constants.JK_AJP13_SEND_BODY_CHUNK);
+        flushMessage.appendInt(0);
+        flushMessage.appendByte(0);
+        flushMessage.end();
+        flushMessageBuffer =
+            ByteBuffer.allocateDirect(flushMessage.getLen());
+        flushMessageBuffer.put(flushMessage.getBuffer(), 0,
+                flushMessage.getLen());
 
     }
 
@@ -510,6 +526,11 @@ public class AjpAprProcessor implements ActionHook {
 
             try {
                 flush();
+                // Send explicit flush message
+                if (Socket.sendb(socket, flushMessageBuffer, 0,
+                                 flushMessageBuffer.position()) < 0) {
+                    error = true;                    
+                }
             } catch (IOException e) {
                 // Set error flag
                 error = true;
