@@ -217,6 +217,11 @@ struct jk_ws_service
      */
     int flush_packets;
 
+    /*
+     * If set call flush after AJP13_SEND_HEADERS.
+     */
+    int flush_header;
+
     /* Uri worker map. Added for virtual host support
      */
     jk_uri_worker_map_t *uw_map;

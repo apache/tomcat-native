@@ -1407,14 +1407,23 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 JK_TRACE_EXIT(l);
                 return JK_INTERNAL_ERROR;
             }
-            if (!r->write(r, msg->buf + msg->pos, len)) {
-                jk_log(l, JK_LOG_INFO,
-                       "Writing to client aborted or client network problems");
-                JK_TRACE_EXIT(l);
-                return JK_CLIENT_WR_ERROR;
+            if (len == 0) {
+                /* AJP13_SEND_BODY_CHUNK with length 0 is
+                 * explicit flush packet message.
+                 */
+                if (r->flush)
+                    r->flush(r);
             }
-            if (r->flush && r->flush_packets)
-                r->flush(r);
+            else {            
+                if (!r->write(r, msg->buf + msg->pos, len)) {
+                    jk_log(l, JK_LOG_INFO,
+                           "Writing to client aborted or client network problems");
+                    JK_TRACE_EXIT(l);
+                    return JK_CLIENT_WR_ERROR;
+                }
+                if (r->flush && r->flush_packets)
+                    r->flush(r);
+            }
         }
         break;
 

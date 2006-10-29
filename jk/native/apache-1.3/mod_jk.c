@@ -515,6 +515,10 @@ static int init_ws_service(apache_private_data_t * private_data,
         s->flush_packets = 1;
     else
         s->flush_packets = 0;
+    if (conf->options & JK_OPT_FLUSHEADER)
+        s->flush_header = 1;
+    else
+        s->flush_header = 0;
 
     if (conf->options & JK_OPT_DISABLEREUSE)
         s->disable_reuse = 1;
@@ -1583,6 +1587,9 @@ const char *jk_set_options(cmd_parms * cmd, void *dummy, const char *line)
         }
         else if (!strcasecmp(w, "FlushPackets")) {
             opt = JK_OPT_FLUSHPACKETS;
+        }
+        else if (!strcasecmp(w, "FlushHeader")) {
+            opt = JK_OPT_FLUSHEADER;
         }
         else if (!strcasecmp(w, "DisableReuse")) {
             opt = JK_OPT_DISABLEREUSE;

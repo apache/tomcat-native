@@ -26,6 +26,12 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Apache: Added +FlushHeader JkOptions. (mturk)
+      </update>
+      <update>
+      Added explicit flush when AJP body packet size is zero. (mturk)
+      </update>
       <fix>
       <bug>40774</bug>: Fixing wrong recursion termination. This one restricted the
       "reference" feature unintentionally to 20 workers. (rjung)
