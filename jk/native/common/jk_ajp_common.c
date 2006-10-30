@@ -1385,6 +1385,8 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                               (const char *const *)res.header_names,
                               (const char *const *)res.header_values,
                               res.num_headers);
+            if (r->flush && r->flush_header)
+                r->flush(r);
         }
         return JK_AJP13_SEND_HEADERS;
 
