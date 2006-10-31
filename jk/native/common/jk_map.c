@@ -36,17 +36,11 @@
 #define JK_MAP_REFERENCE    (".reference")
 #define JK_MAP_REFERENCE_SZ (strlen(JK_MAP_REFERENCE))
 
-#ifdef AS400
-#define CASE_MASK 0xbfbfbfbf
-#else
-#define CASE_MASK 0xdfdfdfdf
-#endif
-
 /* Compute the "checksum" for a key, consisting of the first
- * 4 bytes, normalized for case-insensitivity and packed into
- * an int...this checksum allows us to do a single integer
+ * 4 bytes, packed into an int.
+ * This checksum allows us to do a single integer
  * comparison as a fast check to determine whether we can
- * skip a strcasecmp
+ * skip a strcmp
  */
 #define COMPUTE_KEY_CHECKSUM(key, checksum)    \
 {                                              \
@@ -68,7 +62,6 @@
         c = (unsigned int)*++k;                \
         checksum |= c;                         \
     }                                          \
-    checksum &= CASE_MASK;                     \
 }
 
 struct jk_map
@@ -343,7 +336,7 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
         unsigned int key;
         COMPUTE_KEY_CHECKSUM(name, key)
         for (i = 0; i < m->size; i++) {
-            if (m->keys[i] == key && strcasecmp(m->names[i], name) == 0) {
+            if (m->keys[i] == key && strcmp(m->names[i], name) == 0) {
                 break;
             }
         }
