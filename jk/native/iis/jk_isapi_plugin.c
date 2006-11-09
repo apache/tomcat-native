@@ -1225,9 +1225,10 @@ static int init_jk(char *serverName)
                        rewrite_rule_file);
 
             }
-            else {
-                jk_map_free(&rewrite_map);
-            }
+        }
+        else {
+            jk_map_free(&rewrite_map);
+            rewrite_map = NULL;
         }
     }
 

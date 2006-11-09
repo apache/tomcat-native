@@ -26,6 +26,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      <bug>40938</bug>: Fix releasing of rewrite map.
+      Thanks to Chris Adams for spotting that. (mturk)
+      </fix>
       <update>
       Apache: Added +FlushHeader JkOptions. (mturk)
       </update>
