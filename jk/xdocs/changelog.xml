@@ -40,6 +40,10 @@
       <bug>40856</bug>: Fixing case sensitivity bug in URL mapping. (rjung)
       </fix>
       <fix>
+      <bug>40793</bug>: Documentation: Improvements to Apache HowTo provided by
+      Paul Charles Leddy. (markt)
+      </fix>
+      <fix>
       <bug>40774</bug>: Fixing wrong recursion termination. This one restricted the
       "reference" feature unintentionally to 20 workers. (rjung)
       </fix>
