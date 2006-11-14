@@ -21,7 +21,7 @@
  * Author:      Larry Isaacs <larryi@apache.org>                           *
  * Author:      Ignacio J. Ortega <nacho@apache.org>                       *
  * Author:      Mladen Turk <mturk@apache.org>                             *
- * Version:     $Revision$                                          *
+ * Version:     $Revision$                                        *
  ***************************************************************************/
 
 // This define is needed to include wincrypt,h, needed to get client certificates
@@ -87,6 +87,7 @@ static char HTTP_WORKER_HEADER_NAME[_MAX_FNAME];
 #define URI_SELECT_UNPARSED_VERB    ("unparsed")
 #define URI_SELECT_ESCAPED_VERB     ("escaped")
 #define URI_REWRITE_VERB            ("rewrite_rule_file")
+#define SHM_SIZE_VERB               ("shm_size")
 
 #define TRANSLATE_HEADER                              ("Translate:")
 #define TRANSLATE_HEADER_NAME                         ("Translate")
@@ -160,6 +161,7 @@ static int log_level = JK_LOG_DEF_LEVEL;
 static char worker_file[MAX_PATH * 2];
 static char worker_mount_file[MAX_PATH * 2] = {0};
 static char rewrite_rule_file[MAX_PATH * 2] = {0};
+static int shm_config_size = JK_SHM_DEF_SIZE;
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -208,6 +210,9 @@ static int read_registry_init_data(void);
 
 static int get_registry_config_parameter(HKEY hkey,
                                          const char *tag, char *b, DWORD sz);
+
+static int get_registry_config_number(HKEY hkey, const char *tag,
+                                         int *val);
 
 
 static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
@@ -1034,7 +1039,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
 
     /* Initialise jk */
     if (is_inited && !is_mapread) {
-        char serverName[MAX_SERVERNAME];
+        char serverName[MAX_SERVERNAME] = { 0 };
         DWORD dwLen = sizeof(serverName);
         if (lpEcb->
             GetServerVariable(lpEcb->ConnID, SERVER_NAME, serverName,
@@ -1191,17 +1196,29 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
 
 static int init_jk(char *serverName)
 {
+    char shm_name[MAX_SERVERNAME + sizeof(SHM_DEF_NAME) + 1];    
     int rc = JK_FALSE;
 
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
     }
-     /* Simulate shared memory
-      * For now use fixed size.
-      */
-     jk_shm_open(SHM_DEF_NAME, JK_SHM_DEF_SIZE, logger);
+    strcpy(shm_name, SHM_DEF_NAME);
+    if (*serverName) {
+        size_t i;
+        strcat(shm_name, "_");
+        strcpy(shm_name, serverName);
+        for(i = 0; i < strlen(shm_name); i++) {
+            shm_name[i] = toupper(shm_name[i]);
+            if (!isalnum(shm_name[i]))
+                shm_name[i] = '_';   
+        }
+    }
+    /*
+     * Create named shared memory for each server
+     */
+    jk_shm_open(shm_name, shm_config_size, logger);
 
-     jk_set_worker_def_cache_size(DEFAULT_WORKER_THREADS);
+    jk_set_worker_def_cache_size(DEFAULT_WORKER_THREADS);
 
     /* Logging the initialization type: registry or properties file in virtual dir
      */
@@ -1362,6 +1379,10 @@ static int read_registry_init_data(void)
                 ok = JK_FALSE;
             }
         }
+        tmp = jk_map_get_string(map, SHM_SIZE_VERB, NULL);
+        if (tmp) {
+            shm_config_size = atoi(tmp);
+        }
 
     }
     else {
@@ -1432,6 +1453,8 @@ static int read_registry_init_data(void)
                 ok = JK_FALSE;
             }
         }
+        get_registry_config_number(hkey, SHM_SIZE_VERB,
+                                   &shm_config_size);
 
         RegCloseKey(hkey);
     }
@@ -1450,6 +1473,24 @@ static int get_registry_config_parameter(HKEY hkey,
     }
 
     b[sz] = '\0';
+
+    return JK_TRUE;
+}
+
+static int get_registry_config_number(HKEY hkey,
+                                      const char *tag, int *val)
+{
+    DWORD type = 0;
+    DWORD data = 0;
+    DWORD sz   = sizeof(DWORD);
+    LONG lrc;
+
+    lrc = RegQueryValueEx(hkey, tag, (LPDWORD) 0, &type, (LPBYTE)data, &sz);
+    if ((ERROR_SUCCESS != lrc) || (type != REG_DWORD)) {
+        return JK_FALSE;
+    }
+
+    *val = data;
 
     return JK_TRUE;
 }
