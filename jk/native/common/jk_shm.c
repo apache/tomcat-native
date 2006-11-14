@@ -19,7 +19,7 @@
  * Description: Shared Memory support                                      *
  * Author:      Mladen Turk <mturk@jboss.com>                              *
  * Author:      Rainer Jung <rjung@apache.org>                             *
- * Version:     $Revision$                                          *
+ * Version:     $Revision$                                        *
  ***************************************************************************/
 
 #include "jk_global.h"
@@ -82,6 +82,7 @@ static HANDLE jk_shm_map = NULL;
 int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
 {
     int rc;
+    int attached = 0;
     JK_TRACE_ENTER(l);
     if (jk_shmem.hdr) {
         if (JK_IS_DEBUG_LEVEL(l))
@@ -100,9 +101,12 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
                                        0,
                                        (DWORD)(sizeof(jk_shm_header_t) + sz),
                                        fname);
-        if (jk_shm_map == NULL || jk_shm_map == INVALID_HANDLE_VALUE &&
-            GetLastError() == ERROR_ALREADY_EXISTS)
-            jk_shm_map = OpenFileMapping(PAGE_READWRITE, FALSE, fname);
+        if (GetLastError() == ERROR_ALREADY_EXISTS) {
+            attached = 1;
+            if (jk_shm_map == NULL || jk_shm_map == INVALID_HANDLE_VALUE) {
+                jk_shm_map = OpenFileMapping(PAGE_READWRITE, FALSE, fname);
+            }
+        }
         if (jk_shm_map == NULL || jk_shm_map == INVALID_HANDLE_VALUE) {
             JK_TRACE_EXIT(l);
             return -1;
@@ -128,13 +132,37 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
     }
     jk_shmem.filename = "memory";
     jk_shmem.fd       = 0;
-    jk_shmem.attached = 0;
-    memcpy(jk_shmem.hdr->h.data.magic, shm_signature, JK_SHM_MAGIC_SIZ);
-    jk_shmem.hdr->h.data.size = sz;
+    jk_shmem.attached = attached;
+    if (!attached) {
+        memcpy(jk_shmem.hdr->h.data.magic, shm_signature,
+               JK_SHM_MAGIC_SIZ);
+        jk_shmem.hdr->h.data.size = sz;
+        jk_shmem.hdr->h.data.childs = 1;
+    }
+    else {
+        jk_shmem.hdr->h.data.childs++;
+        /*
+         * Reset the shared memory so that
+         * alloc works even for attached memory.
+         * XXX: This might break already used memory
+         * if the number of workers change between
+         * open and attach or between two attach operations.
+         */
+        if (jk_shmem.hdr->h.data.childs > 1) {
+            if (JK_IS_DEBUG_LEVEL(l)) {
+                jk_log(l, JK_LOG_DEBUG,
+                       "Reseting the shared memory for child %d",
+                       jk_shmem.hdr->h.data.childs);
+            }
+        }
+        jk_shmem.hdr->h.data.pos     = 0;
+        jk_shmem.hdr->h.data.workers = 0;
+    }
     JK_INIT_CS(&(jk_shmem.cs), rc);
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "Initialized shared memory size=%u free=%u addr=%#lx",
+               "%s shared memory size=%u free=%u addr=%#lx",
+               attached ? "Attached" : "Initialized",
                jk_shmem.size, jk_shmem.hdr->h.data.size, jk_shmem.hdr);
     JK_TRACE_EXIT(l);
     return 0;
@@ -144,14 +172,16 @@ int jk_shm_attach(const char *fname, size_t sz, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
     if (!jk_shm_open(fname, sz, l)) {
-        jk_shmem.attached = 1;
-        jk_shmem.hdr->h.data.childs++;
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG,
+        if (!jk_shmem.attached) {
+            jk_shmem.attached = 1;
+            if (JK_IS_DEBUG_LEVEL(l)) {
+                jk_log(l, JK_LOG_DEBUG,
                    "Attached shared memory [%d] size=%u free=%u addr=%#lx",
                    jk_shmem.hdr->h.data.childs, jk_shmem.hdr->h.data.size,
                    jk_shmem.hdr->h.data.size - jk_shmem.hdr->h.data.pos,
                    jk_shmem.hdr);
+            }
+        }
         JK_TRACE_EXIT(l);
         return 0;
     }
@@ -167,6 +197,7 @@ void jk_shm_close()
         int rc;
 #if defined (WIN32)
         if (jk_shm_map) {
+            --jk_shmem.hdr->h.data.childs;
             UnmapViewOfFile(jk_shmem.hdr);
             CloseHandle(jk_shm_map);
             jk_shm_map = NULL;
@@ -324,6 +355,7 @@ static int do_shm_open(const char *fname, int attached,
         memset(jk_shmem.hdr, 0, jk_shmem.size);
         memcpy(jk_shmem.hdr->h.data.magic, shm_signature, JK_SHM_MAGIC_SIZ);
         jk_shmem.hdr->h.data.size = sz;
+        jk_shmem.hdr->h.data.childs = 1;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Initialized shared memory size=%u free=%u addr=%#lx",
@@ -337,7 +369,22 @@ static int do_shm_open(const char *fname, int attached,
                    jk_shmem.hdr->h.data.childs, jk_shmem.hdr->h.data.size,
                    jk_shmem.hdr->h.data.size - jk_shmem.hdr->h.data.pos,
                    jk_shmem.hdr);
-        /* TODO: check header magic */
+        /*
+         * Reset the shared memory so that
+         * alloc works even for attached memory.
+         * XXX: This might break already used memory
+         * if the number of workers change between
+         * open and attach or between two attach operations.
+         */
+        if (jk_shmem.hdr->h.data.childs > 1) {
+            if (JK_IS_DEBUG_LEVEL(l)) {
+                jk_log(l, JK_LOG_DEBUG,
+                       "Reseting the shared memory for child %d",
+                       jk_shmem.hdr->h.data.childs);
+            }
+        }
+        jk_shmem.hdr->h.data.pos     = 0;
+        jk_shmem.hdr->h.data.workers = 0;
     }
     JK_INIT_CS(&(jk_shmem.cs), rc);
     if ((rc = do_shm_open_lock(fname, attached, l))) {
@@ -366,6 +413,8 @@ void jk_shm_close()
 {
     int rc;
     if (jk_shmem.hdr) {
+        --jk_shmem.hdr->h.data.childs;
+
         if (jk_shmem.attached) {
             int p = (int)getpid();
             if (p != jk_shmem.attached) {
