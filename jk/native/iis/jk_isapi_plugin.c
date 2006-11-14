@@ -43,6 +43,13 @@
 #define VERSION_STRING "Jakarta/ISAPI/" JK_VERSTRING
 #define SHM_DEF_NAME   "JKISAPISHMEM"
 #define DEFAULT_WORKER_NAME ("ajp13")
+
+/*
+ * This is default value found inside httpd.conf
+ * for MaxClients
+ */
+#define DEFAULT_WORKER_THREADS  250
+
 /*
  * We use special headers to pass values from the filter to the
  * extension. These values are:
@@ -1194,8 +1201,7 @@ static int init_jk(char *serverName)
       */
      jk_shm_open(SHM_DEF_NAME, JK_SHM_DEF_SIZE, logger);
 
-     /* 10 is minimum supported on WINXP */
-     jk_set_worker_def_cache_size(10);
+     jk_set_worker_def_cache_size(DEFAULT_WORKER_THREADS);
 
     /* Logging the initialization type: registry or properties file in virtual dir
      */

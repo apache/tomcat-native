@@ -26,6 +26,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      IIS: Increase default thread count to 250, so its the same as Apache Httpd
+      default configuration. (mturk)
+      </update>
       <fix>
       <bug>40966</bug>: Fix socket descriptor checks on windows. (mturk)
       </fix>
