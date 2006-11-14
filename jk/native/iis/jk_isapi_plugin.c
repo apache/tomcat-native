@@ -1460,7 +1460,13 @@ static int init_ws_service(isapi_private_data_t * private_data,
     s->start_response = start_response;
     s->read = read;
     s->write = write;
+
+    /* Yes we do want to reuse AJP connections */
+    s->disable_reuse = JK_FALSE;
+
     s->flush = NULL;
+    s->flush_packets = JK_FALSE;
+    s->flush_header = JK_FALSE;
 
     /* Clear RECO status */
     s->reco_status = RECO_NONE;

@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      <bug>40965</bug>: Initialize missing service parameters. (mturk)
+      </fix>
+      <fix>
       <bug>40938</bug>: Fix releasing of rewrite map.
       Thanks to Chris Adams for spotting that. (mturk)
       </fix>
