@@ -680,11 +680,11 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
 
 static void ajp_reset_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 {
-    if (ae->sd > 0 && !ae->reuse) {
+    if (IS_VALID_SOCKET(ae->sd) && !ae->reuse) {
         jk_close_socket(ae->sd);
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "reset socket with sd = %d", ae->sd);
+            "reset socket with sd = %u", ae->sd );
         ae->sd = -1;
     }
     jk_reset_pool(&(ae->pool));
@@ -1468,10 +1468,16 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             jk_log(l, JK_LOG_WARNING, "AJP13 protocol: Reuse is set to false");
         }
         else if (r->disable_reuse) {
+            if (JK_IS_DEBUG_LEVEL(l)) {
+                jk_log(l, JK_LOG_DEBUG, "AJP13 protocol: Reuse is disabled");
+            }
             ae->reuse = JK_FALSE;
         }
         else {
             /* Reuse in all cases */
+            if (JK_IS_DEBUG_LEVEL(l)) {
+                jk_log(l, JK_LOG_DEBUG, "AJP13 protocol: Reuse is OK");
+            }
             ae->reuse = JK_TRUE;
         }
         /* Flush after the last write */
@@ -2183,7 +2189,13 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
             int i;
             jk_sock_t sock = JK_INVALID_SOCKET;
 
-            if (p->sd > 0 && !p->reuse) {
+            /* If we are going to close the connection, then park the socket so 
+               we can shut it down nicely rather than letting ajp_reset_endpoint kill it */
+            if (IS_VALID_SOCKET(p->sd) && !p->reuse) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                    "will be shutting down socket %u for worker %s",
+                            p->sd, p->worker->name );
                 sock  = p->sd;
                 p->sd = JK_INVALID_SOCKET;
             }
@@ -2199,8 +2211,15 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
             if (w->cache_timeout > 0)
                 p->last_access = time(NULL);
             JK_LEAVE_CS(&w->cs, rc);
-            if (IS_VALID_SOCKET(sock))
+
+            /* Drain and close the socket */
+            if (IS_VALID_SOCKET(sock)) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                    "Shutting down held socket %u in worker %s",
+                            sock, p->worker->name);
                 jk_shutdown_socket(sock);
+            }
             if (i >= 0) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,

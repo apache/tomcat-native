@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      <bug>40966</bug>: Fix socket descriptor checks on windows. (mturk)
+      </fix>
+      <fix>
       <bug>40965</bug>: Initialize missing service parameters. (mturk)
       </fix>
       <fix>
