@@ -76,6 +76,11 @@ A string value with is the full path to uriworkermap.properties file
 A string value with is the full path to rewrite.properties file
 (for example <b>c:\tomcat\conf\rewrite.properties</b>)
 </p></attribute>
+<attribute name="shm_size" required="false"><p>
+A DWORD value size of the shared memory. Set this value to be
+the number of all defined workers * 400.
+(Set this value only if you have more then 64 workers)</b>)
+</p></attribute>
 
 </attributes>
 </section> 
