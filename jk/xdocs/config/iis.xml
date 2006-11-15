@@ -72,7 +72,7 @@ A string value with the full path to workers.properties file
 A string value with is the full path to uriworkermap.properties file
 (for example <b>c:\tomcat\conf\uriworkermap.properties</b>)
 </p></attribute>
-<attribute name="rewrite_rule_file" required="true"><p>
+<attribute name="rewrite_rule_file" required="false"><p>
 A string value with is the full path to rewrite.properties file
 (for example <b>c:\tomcat\conf\rewrite.properties</b>)
 </p></attribute>
