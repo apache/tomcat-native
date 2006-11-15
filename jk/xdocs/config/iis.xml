@@ -79,7 +79,7 @@ A string value with is the full path to rewrite.properties file
 <attribute name="shm_size" required="false"><p>
 A DWORD value size of the shared memory. Set this value to be
 the number of all defined workers * 400.
-(Set this value only if you have more then 64 workers)</b>)
+(Set this value only if you have <b>more</b> then <b>64</b> workers)
 </p></attribute>
 
 </attributes>
