@@ -1,0 +1,257 @@
+# Microsoft Developer Studio Generated NMAKE File, Based on isapi.dsp
+# Use Platform SDK:
+# SetEnv.cmd /SRV64 /RETAIL
+# nmake -f Makefile.amd64
+#
+!IF "$(OS)" == "Windows_NT"
+NULL=
+!ELSE 
+NULL=nul
+!ENDIF 
+
+CPP=cl.exe
+MTL=midl.exe
+RSC=rc.exe
+OUTDIR=.\Release_ia64
+INTDIR=.\Release_ia64
+# Begin Custom Macros
+OutDir=.\Release_ia64
+# End Custom Macros
+
+ALL : "$(OUTDIR)\isapi_redirect.dll"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\isapi_redirector_src.idb"
+	-@erase "$(INTDIR)\isapi_redirector_src.pdb"
+	-@erase "$(INTDIR)\jk_ajp12_worker.obj"
+	-@erase "$(INTDIR)\jk_ajp13.obj"
+	-@erase "$(INTDIR)\jk_ajp13_worker.obj"
+	-@erase "$(INTDIR)\jk_ajp14.obj"
+	-@erase "$(INTDIR)\jk_ajp14_worker.obj"
+	-@erase "$(INTDIR)\jk_ajp_common.obj"
+	-@erase "$(INTDIR)\jk_connect.obj"
+	-@erase "$(INTDIR)\jk_context.obj"
+	-@erase "$(INTDIR)\jk_isapi_plugin.obj"
+	-@erase "$(INTDIR)\jk_jni_worker.obj"
+	-@erase "$(INTDIR)\jk_lb_worker.obj"
+	-@erase "$(INTDIR)\jk_map.obj"
+	-@erase "$(INTDIR)\jk_md5.obj"
+	-@erase "$(INTDIR)\jk_msg_buff.obj"
+	-@erase "$(INTDIR)\jk_nwmain.obj"
+	-@erase "$(INTDIR)\jk_pool.obj"
+	-@erase "$(INTDIR)\jk_shm.obj"
+	-@erase "$(INTDIR)\jk_sockbuf.obj"
+	-@erase "$(INTDIR)\jk_status.obj"
+	-@erase "$(INTDIR)\jk_uri_worker_map.obj"
+	-@erase "$(INTDIR)\jk_util.obj"
+	-@erase "$(INTDIR)\jk_worker.obj"
+	-@erase "$(OUTDIR)\isapi_redirect.dll"
+	-@erase "$(OUTDIR)\isapi_redirect.exp"
+	-@erase "$(OUTDIR)\isapi_redirect.lib"
+	-@erase "$(OUTDIR)\isapi_redirect.pdb"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\isapi.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib bufferoverflowu.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\isapi_redirect.pdb" /debug /machine:IA64 /def:".\isapi.def" /out:"$(OUTDIR)\isapi_redirect.dll" /implib:"$(OUTDIR)\isapi_redirect.lib" 
+DEF_FILE= \
+	".\isapi.def"
+LINK32_OBJS= \
+	"$(INTDIR)\jk_ajp12_worker.obj" \
+	"$(INTDIR)\jk_ajp13.obj" \
+	"$(INTDIR)\jk_ajp13_worker.obj" \
+	"$(INTDIR)\jk_ajp14.obj" \
+	"$(INTDIR)\jk_ajp14_worker.obj" \
+	"$(INTDIR)\jk_ajp_common.obj" \
+	"$(INTDIR)\jk_connect.obj" \
+	"$(INTDIR)\jk_context.obj" \
+	"$(INTDIR)\jk_isapi_plugin.obj" \
+	"$(INTDIR)\jk_jni_worker.obj" \
+	"$(INTDIR)\jk_lb_worker.obj" \
+	"$(INTDIR)\jk_map.obj" \
+	"$(INTDIR)\jk_md5.obj" \
+	"$(INTDIR)\jk_msg_buff.obj" \
+	"$(INTDIR)\jk_nwmain.obj" \
+	"$(INTDIR)\jk_pool.obj" \
+	"$(INTDIR)\jk_shm.obj" \
+	"$(INTDIR)\jk_sockbuf.obj" \
+	"$(INTDIR)\jk_status.obj" \
+	"$(INTDIR)\jk_uri_worker_map.obj" \
+	"$(INTDIR)\jk_util.obj" \
+	"$(INTDIR)\jk_worker.obj"
+
+"$(OUTDIR)\isapi_redirect.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_IA64_=1" /D "WIN64" /D "_WIN64" /Wp64 /FIPRE64PRA.H /D "ISAPI_EXPORTS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\isapi_redirector_src" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+
+SOURCE=..\common\jk_ajp12_worker.c
+
+"$(INTDIR)\jk_ajp12_worker.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_ajp13.c
+
+"$(INTDIR)\jk_ajp13.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_ajp13_worker.c
+
+"$(INTDIR)\jk_ajp13_worker.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_ajp14.c
+
+"$(INTDIR)\jk_ajp14.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_ajp14_worker.c
+
+"$(INTDIR)\jk_ajp14_worker.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_ajp_common.c
+
+"$(INTDIR)\jk_ajp_common.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_connect.c
+
+"$(INTDIR)\jk_connect.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_context.c
+
+"$(INTDIR)\jk_context.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=.\jk_isapi_plugin.c
+
+"$(INTDIR)\jk_isapi_plugin.obj" : $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=..\common\jk_jni_worker.c
+
+"$(INTDIR)\jk_jni_worker.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_lb_worker.c
+
+"$(INTDIR)\jk_lb_worker.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_map.c
+
+"$(INTDIR)\jk_map.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_md5.c
+
+"$(INTDIR)\jk_md5.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_msg_buff.c
+
+"$(INTDIR)\jk_msg_buff.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_nwmain.c
+
+"$(INTDIR)\jk_nwmain.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_pool.c
+
+"$(INTDIR)\jk_pool.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_shm.c
+
+"$(INTDIR)\jk_shm.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_sockbuf.c
+
+"$(INTDIR)\jk_sockbuf.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_status.c
+
+"$(INTDIR)\jk_status.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_uri_worker_map.c
+
+"$(INTDIR)\jk_uri_worker_map.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_util.c
+
+"$(INTDIR)\jk_util.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_worker.c
+
+"$(INTDIR)\jk_worker.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
