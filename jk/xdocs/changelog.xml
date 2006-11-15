@@ -26,6 +26,14 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      <bug>40877</bug>: Make sure the shared memory is reset on
+      attach for multiple web server child processes. (mturk)
+      </fix>
+      <update>
+      IIS: Added shm_size property to be able to deal with over 64
+      workers configurations. (mturk)
+      </update>
       <update>
       IIS: Increase default thread count to 250, so its the same as Apache Httpd
       default configuration. (mturk)
