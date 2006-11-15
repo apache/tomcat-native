@@ -1485,7 +1485,7 @@ static int get_registry_config_number(HKEY hkey,
     DWORD sz   = sizeof(DWORD);
     LONG lrc;
 
-    lrc = RegQueryValueEx(hkey, tag, (LPDWORD) 0, &type, (LPBYTE)data, &sz);
+    lrc = RegQueryValueEx(hkey, tag, (LPDWORD)0, &type, (LPBYTE)&data, &sz);
     if ((ERROR_SUCCESS != lrc) || (type != REG_DWORD)) {
         return JK_FALSE;
     }
