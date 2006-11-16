@@ -631,17 +631,30 @@ int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
     int rc = JK_TRUE;
     time_t now = time(NULL);
 
-    if ((now - uw_map->checked) > JK_URIMAP_RELOAD) {
+    if (difftime(now, uw_map->checked) > JK_URIMAP_RELOAD) {
         struct stat statbuf;
         uw_map->checked = now;
-        if ((rc = stat(uw_map->fname, &statbuf)) == -1)
+        if ((rc = stat(uw_map->fname, &statbuf)) == -1) {
+            jk_log(l, JK_LOG_ERROR,
+                   "Unable to stat the %s, errno %d",
+                   uw_map->fname, errno);
             return JK_FALSE;
-        if (statbuf.st_mtime == uw_map->modified)
+        }
+        if (statbuf.st_mtime == uw_map->modified) {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "File %s  is not modified",
+                       uw_map->fname);
             return JK_TRUE;
+        }
         JK_ENTER_CS(&(uw_map->cs), rc);
         /* Check if some other thread updated status */
         if (statbuf.st_mtime == uw_map->modified) {
             JK_LEAVE_CS(&(uw_map->cs), rc);
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "File %s  is not modified",
+                       uw_map->fname);
             return JK_TRUE;
         }
         rc = uri_worker_map_load(uw_map, l);
@@ -649,6 +662,6 @@ int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
         jk_log(l, JK_LOG_INFO,
                "Reloaded urimaps from %s", uw_map->fname);
     }
-    return rc;
+    return JK_TRUE;
 }
 
