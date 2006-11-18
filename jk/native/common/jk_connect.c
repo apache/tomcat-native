@@ -467,11 +467,10 @@ iSeries when Unix98 is required at compil time */
 
 int jk_close_socket(jk_sock_t s)
 {
+    if (IS_VALID_SOCKET(s))
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-    if (s != INVALID_SOCKET)
         return closesocket(s) ? -1 : 0;
 #else
-    if (s != -1)
         return close(s);
 #endif
 
@@ -498,11 +497,10 @@ int jk_shutdown_socket(jk_sock_t s)
     int rc = 0;
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
     int tmout = SECONDS_TO_LINGER * 1000;
-    if (s == INVALID_SOCKET)
 #else
     struct timeval tv;
-    if (s < 0)
 #endif
+    if (!IS_VALID_SOCKET(s))
         return -1;
 
     /* Shut down the socket for write, which will send a FIN
