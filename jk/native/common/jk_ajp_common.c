@@ -685,7 +685,7 @@ static void ajp_reset_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
             "reset socket with sd = %u", ae->sd );
-        ae->sd = -1;
+        ae->sd = JK_INVALID_SOCKET;
     }
     jk_reset_pool(&(ae->pool));
 }
@@ -1166,7 +1166,7 @@ static int ajp_send_request(jk_endpoint_t *e,
     while (IS_VALID_SOCKET(ae->sd)) {
         int rc = 0;
         err = 0;
-        if (ae->worker->socket_timeout) {
+        if (ae->worker->socket_timeout > 0) {
             if (!jk_is_socket_connected(ae->sd)) {
                 jk_log(l, JK_LOG_INFO,
                        "(%s) socket %d is not connected any more (errno=%d)",
@@ -1176,7 +1176,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                 err++;
             }
         }
-        if (ae->worker->prepost_timeout != 0 && !err) {
+        if (ae->worker->prepost_timeout > 0 && !err) {
             /* handle cping/cpong if prepost_timeout is set
              * If the socket is disconnected no need to handle
              * the cping/cpong
@@ -1233,7 +1233,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             if (ajp_connection_tcp_send_message(ae, op->request, l) != JK_TRUE) {
                 /* Close the socket if unable to send request */
                 jk_close_socket(ae->sd);
-                ae->sd = -1;
+                ae->sd = JK_INVALID_SOCKET;
                 jk_log(l, JK_LOG_INFO,
                        "(%s) error sending request on a fresh connection (errno=%d)",
                        ae->worker->name, ae->last_errno);
@@ -1297,7 +1297,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             if (ajp_connection_tcp_send_message(ae, s->reco_buf, l) != JK_TRUE) {
                 /* Close the socket if unable to send request */
                 jk_close_socket(ae->sd);
-                ae->sd = -1;
+                ae->sd = JK_INVALID_SOCKET;
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) failed resending request body (lb mode) (%d)",
                        ae->worker->name, postlen);
@@ -1347,7 +1347,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
                 /* Close the socket if unable to send request */
                 jk_close_socket(ae->sd);
-                ae->sd = -1;
+                ae->sd = JK_INVALID_SOCKET;
                 jk_log(l, JK_LOG_ERROR, "(%s) error sending request body",
                        ae->worker->name);
                 JK_TRACE_EXIT(l);
@@ -1527,7 +1527,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
         int rc = 0;
 
         /* If we set a reply timeout, check it something is available */
-        if (p->worker->reply_timeout != 0) {
+        if (p->worker->reply_timeout > 0) {
             if (ajp_is_input_event(p, p->worker->reply_timeout, l) ==
                 JK_FALSE) {
                 jk_log(l, JK_LOG_ERROR,
@@ -2319,7 +2319,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
         ajp_worker_t *aw = pThis->worker_private;
         int rc;
         /* Obtain current time only if needed */
-        if (aw->cache_timeout < 1) {
+        if (aw->cache_timeout <= 0) {
             /* Nothing to do. */
             JK_TRACE_EXIT(l);
             return JK_TRUE;
@@ -2327,7 +2327,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
         JK_ENTER_CS(&aw->cs, rc);
         if (rc) {
             unsigned int i, n = 0, cnt = 0;
-            /* Count opended slots */
+            /* Count open slots */
             for (i = 0; i < aw->ep_cache_sz; i++) {
                 if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd))
                     cnt++;
@@ -2337,7 +2337,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
                 /* Skip the closed sockets */
                 if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
                     int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
-                    if ((aw->cache_timeout > 0) && (elapsed > aw->cache_timeout)) {
+                    if (elapsed > aw->cache_timeout) {
                         time_t rt = 0;
                         n++;
                         if (JK_IS_DEBUG_LEVEL(l))
