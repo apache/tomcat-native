@@ -2149,7 +2149,6 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
         overrides->session_indicator = base->session_indicator;
     if (!overrides->key_size_indicator)
         overrides->key_size_indicator = base->key_size_indicator;
-    }
 
     if (!overrides->secret_key)
         overrides->secret_key = base->secret_key;

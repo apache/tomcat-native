@@ -2276,7 +2276,6 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
         overrides->session_indicator = base->session_indicator;
     if (!overrides->key_size_indicator)
         overrides->key_size_indicator = base->key_size_indicator;
-    }
 
     if (!overrides->secret_key)
         overrides->secret_key = base->secret_key;
@@ -2376,7 +2375,7 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
     conf = ap_get_module_config(s->module_config, &jk_module);
 
     if (conf->log_file == NULL) {
-        conf->log_file = ap_server_root_relative(pconf, JK_LOG_DEF_FILE);
+        conf->log_file = ap_server_root_relative(p, JK_LOG_DEF_FILE);
         if (conf->log_file)
             ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO,
                          0, s,
