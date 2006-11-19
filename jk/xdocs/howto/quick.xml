@@ -61,11 +61,6 @@
   worker.worker1.type=ajp13
   worker.worker1.host=localhost
   worker.worker1.port=8009
-  worker.worker1.lbfactor=50
-  worker.worker1.cachesize=10
-  worker.worker1.cache_timeout=600
-  worker.worker1.socket_keepalive=1
-  worker.worker1.recycle_timeout=300
 
 </source>
 </p>
@@ -129,17 +124,16 @@
   # Where to find workers.properties
   # Update this path to match your conf directory location (put workers.properties next to httpd.conf)
   JkWorkersFile /etc/httpd/conf/workers.properties
+  # Where to put jk shared memory
+  # Update this path to match your local state directory or logs directory
+  JkShmFile     /var/log/httpd/mod_jk.shm
   # Where to put jk logs
   # Update this path to match your logs directory location (put mod_jk.log next to access_log)
   JkLogFile     /var/log/httpd/mod_jk.log
   # Set the jk log level [debug/error/info]
   JkLogLevel    info
-  # Select the log format
+  # Select the timestamp log format
   JkLogStampFormat "[%a %b %d %H:%M:%S %Y] "
-  # JkOptions indicate to send SSL KEY SIZE, 
-  JkOptions     +ForwardKeySize +ForwardURICompat -ForwardDirectories
-  # JkRequestLogFormat set the request format 
-  JkRequestLogFormat     "%w %V %T"
   # Send everything for context /examples to worker named worker1 (ajp13)
   JkMount  /examples/* worker1
 

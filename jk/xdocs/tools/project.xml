@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="Application Developer's Guide"
+        href="http://tomcat.apache.org/">
+
+    <title>Tomcat Connector</title>
+
+    <logo href="/images/tomcat.gif">
+    Tomcat Connector
+    </logo>    
+<body>
+
+    <menu name="Links">
+        <item name="Docs Home"             href="../index.html"/>
+    </menu>
+
+</body>
+</project>

@@ -36,6 +36,129 @@ See worker's <b>type</b> directive.
 <warn>The workers that are member of load balancer must not appear in the
 <b>worker.list</b> directive.</warn>
 </p>
+
+<subsection name="lb Worker properties">
+<p>
+The load-balancing worker does not really communicate with Tomcat workers.
+Instead it is responsible for the management of several "real" workers. 
+This management includes:
+</p>
+
+<ul>
+<li>
+Instantiating the workers in the web server.
+</li>
+<li>
+Using the worker's load-balancing factor, perform weighed-round-robin load balancing where 
+high lbfactor means stronger machine (that is going to handle more requests)
+</li>
+<li>
+Keeping requests belonging to the same session executing on the same Tomcat worker.
+</li>
+<li>
+Identifying failed Tomcat workers, suspending requests to them and instead falling-back on 
+other workers managed by the lb worker.
+</li>
+</ul>
+
+<p>
+The overall result is that workers managed by the same lb worker are load-balanced (based on their lbfactor and current user session) and also fall-backed so a single Tomcat process death will not "kill" the entire site.
+The following table specifies some properties that the lb worker can accept:
+<ul>
+<li><b>balance_workers</b> is a comma separated list of workers that the load balancer need to manage. 
+These workers should not appear in the worker.list property. This directive can be used multiple times for the same load balancer.</li>
+<li><b>sticky_session</b> specifies whether requests with SESSION ID's should be routed back to the same
+Tomcat worker. Set sticky_session to False when Tomcat is using a Session Manager which
+can persist session data across multiple instances of Tomcat. By default sticky_session is set to True.</li>
+</ul>
+</p>
+
+<source>
+  # The worker balance1 while use "real" workers worker1 and worker2
+  worker.balance1.balance_workers=worker1, worker2
+</source>
+
+</subsection>
+
+<subsection name="Advanced lb Worker properties">
+<p>
+With JK 1.2.x, new load-balancing and fault-tolerant support has been added via
+2 new properties, <b>redirect</b> and <b>activation</b>.
+</p>
+
+<p>
+Let's take an example environment:
+</p>
+
+<p>
+A cluster with two nodes (worker1+worker2), running a webserver + tomcat tandem on each node and 
+a loadbalancer in front of the nodes.
+</p>
+
+<source>
+  # The advanced router LB worker
+  worker.list=router
+
+  # Define a worker using ajp13
+  worker.worker1.port=8009
+  worker.worker1.host=node1.domain.org
+  worker.worker1.type=ajp13
+  worker.worker1.lbfactor=1
+  # Define prefered failover node for worker1
+  worker.worker1.redirect=worker2
+
+  # Define another worker using ajp13
+  worker.worker2.port=8009
+  worker.worker2.host=node2.domain.org
+  worker.worker2.type=ajp13
+  worker.worker2.lbfactor=1
+  # Disable worker2 for all requests except failover
+  worker.worker2.activation=disabled
+  
+  # Define the LB worker
+  worker.router.type=lb
+  worker.router.balance_workers=worker1,worker2
+</source>
+
+<p>
+The <b>redirect</b> flag on worker1 tells the <b>lb_worker</b> to redirect the requests
+to worker2 only if worker1 is in error state. In other cases worker2 will not receive
+any requests, thus acting like a hot standby.
+</p>
+
+
+</subsection>
+
+<subsection name="Status Worker properties">
+<p>
+The status worker does not communicate with Tomcat.
+Instead it is responsible for the load balancer management. 
+</p>
+<source>
+  # Add the status worker to the worker list
+  worker.list=jkstatus
+  # Define a 'jkstatus' worker using status
+  worker.jkstatus.type=status
+</source>
+<p>Next thing is to mount the requests to the jkstatus worker. For Apache
+web servers use the:</p>
+<source>
+  # Add the jkstatus mount point
+  JkMount /jkmanager/* jkstatus 
+</source>
+<p>To obtain a higher level of security use the:</p>
+<source>
+  # Enable the JK manager access from localhost only
+ &lt;Location /jkmanager/&gt;
+    JkMount jkstatus
+    Order deny,allow
+    Deny from all
+    Allow from 127.0.0.1
+ &lt;/Location&gt;
+</source>
+
+</subsection>
+
 </section>
 
 </body>

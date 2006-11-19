@@ -193,11 +193,11 @@ The ajp13 typed workers forward requests to out-of-process Tomcat workers using 
 The main difference between ajpv12 and ajpv13 are that:
 <ul>
 <li>
-ajpv13 is a more binary protocol and it try to compress some of the request data by coding 
+ajpv13 is a more binary protocol and it tries to compress some of the request data by coding 
 frequently used strings as small integers.
 </li>
 <li>
-ajpv13 reuse open sockets and leaves them open for future requests (remember when you've got a Firewall between your 
+ajpv13 reuses open sockets and leaves them open for future requests (remember when you've got a Firewall between your 
 WebServer and Tomcat).
 </li>
 <li>
@@ -218,8 +218,7 @@ You should note that Ajp13 is now the only out-process protocol supported by Tom
   worker.worker2.host=www2.x.com
   worker.worker2.port=8009
   worker.worker2.lbfactor=3
-  # worker "worker2" use up to 10 sockets, which will stay no more than 10mn in the connection pool
-  worker.worker2.connection_pool_size=10
+  # worker "worker2" uses connections, which will stay no more than 10mn in the connection pool
   worker.worker2.connection_pool_timeout=600
   # worker "worker2" ask operating system to send KEEP-ALIVE signal on the connection
   worker.worker2.socket_keepalive=1
@@ -252,77 +251,27 @@ high lbfactor means stronger machine (that is going to handle more requests)
 Keeping requests belonging to the same session executing on the same Tomcat worker.
 </li>
 <li>
-Identifying failed Tomcat workers, suspending requests to them and instead fall-backing on 
+Identifying failed Tomcat workers, suspending requests to them and instead falling-back on 
 other workers managed by the lb worker.
 </li>
 </ul>
 
 <p>
 The overall result is that workers managed by the same lb worker are load-balanced (based on their lbfactor and current user session) and also fall-backed so a single Tomcat process death will not "kill" the entire site.
-The following table specifies properties that the lb worker can accept:
+The following table specifies some properties that the lb worker can accept:
 <ul>
 <li><b>balance_workers</b> is a comma separated list of workers that the load balancer need to manage. 
 These workers should not appear in the worker.list property. This directive can be used multiple times for the same load balancer.</li>
 <li><b>sticky_session</b> specifies whether requests with SESSION ID's should be routed back to the same
-Tomcat worker. If sticky_session is an flag and if it is set to True and sessions are sticky, otherwise
-sticky_session is set to false. Set sticky_session to False when Tomcat is using a Session Manager which
+Tomcat worker. Set sticky_session to False when Tomcat is using a Session Manager which
 can persist session data across multiple instances of Tomcat. By default sticky_session is set to True.</li>
 </ul>
 </p>
 
 <source>
-   The worker balance1 while use "real" workers worker1 and worker2
+  # The worker balance1 while use "real" workers worker1 and worker2
   worker.balance1.balance_workers=worker1, worker2
 </source>
-
-</subsection>
-
-<subsection name="Advanced lb Worker properties">
-<p>
-With JK 1.2.x, new load-balancing and fault-tolerant support has been added via
-2 new properties, <b>redirect</b> and <b>activation</b>.
-</p>
-
-<p>
-Let's take an example environment:
-</p>
-
-<p>
-A cluster with two nodes (worker1+worker2), running a webserver + tomcat tandem on each node and 
-a loadbalancer in front of the nodes.
-</p>
-
-<source>
-  # The advanced router LB worker
-  worker.list=router
-
-  # Define a worker using ajp13
-  worker.worker1.port=8009
-  worker.worker1.host=node1.domain.org
-  worker.worker1.type=ajp13
-  worker.worker1.lbfactor=1
-  # Define prefered failover node for worker1
-  worker.worker1.redirect=worker2
-
-  # Define another worker using ajp13
-  worker.worker2.port=8009
-  worker.worker2.host=node2.domain.org
-  worker.worker2.type=ajp13
-  worker.worker2.lbfactor=1
-  # Disable worker2 for all requests except failover
-  worker.worker2.activation=disabled
-  
-  # Define the LB worker
-  worker.router.type=lb
-  worker.router.balance_workers=worker1,worker2
-</source>
-
-<p>
-The <b>redirect</b> flag on worker1 tells the <b>lb_worker</b> to redirect the requests
-to worker2 only if worker1 is in error state. In other cases worker2 will not receive
-any requests, thus acting like a hot standby.
-</p>
-
 
 </subsection>
 
@@ -488,7 +437,6 @@ A lb worker that load balance the ajp12 and ajp13 workers
   worker.worker2.host=locahost
   worker.worker2.port=8009
   worker.worker2.lbfactor=1
-  worker.worker2.connection_pool_size=10
   worker.worker2.connection_pool_timeout=600
   worker.worker2.socket_keepalive=1
   worker.worker2.socket_timeout=60

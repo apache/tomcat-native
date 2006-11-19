@@ -267,19 +267,6 @@ or disable (-) following option.
 </p>
 
 <p>
-JkOptions <b>ForwardKeySize</b>,  you ask mod_jk, when using ajp13, to forward also the SSL Key Size  as 
-required by Servlet API 2.3.
-This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
-
-<source>  
-  JkOptions     +ForwardKeySize
-</source>
-
-<br/>
-<br/>
-</p>
-
-<p>
 JkOptions <b>ForwardURICompat</b>, you ask mod_jk to send the URI to Tomcat normally, 
 which is less spec compliant but mod_rewrite compatible, 
 use it for compatibility with Tomcat 3.2.x engines (on by default).
@@ -387,6 +374,18 @@ response).
 </p>
 
 <p>
+JkOptions <b>FlushHeader</b>, you ask mod_jk to flush Apache's connection
+buffer after the response headers have been  received from Tomcat.
+
+<source>  
+  JkOptions     +FlushHeader
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
 JkOptions <b>DisableReuse</b>, you ask mod_jk to close connections immediately
 after their use. Normally mod_jk uses persistent connections and pools idle
 connections to reuse them, when new requests have to be sent to Tomcat.
@@ -408,8 +407,21 @@ TCP keepalive value in your OS.
 </p>
 
 <p>
-The directive <b>JkEnvVar</b> allows you to forward an environment variable from Apache server to Tomcat engine.
-The variable can be retrieved on the Tomcat side as a request attribute.
+JkOptions <b>ForwardKeySize</b>,  you ask mod_jk, when using ajp13, to forward also the SSL Key Size  as 
+required by Servlet API 2.3.
+This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
+
+<source>  
+  JkOptions     +ForwardKeySize
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+The directive <b>JkEnvVar</b> allows you to forward environment variables from Apache server to Tomcat engine.
+The variables can be retrieved on the Tomcat side as a request attributes.
 You must add a default value as a second parameter to the directive.
 
 <source>  
@@ -531,8 +543,12 @@ When the mount file is changed, JK will reload it's content.
 
   JkMountFile conf/uriworkermap.properties
 </source>
-<p>If mount point uri starts with minus '-' char the mount point
-will be disabled.
+<p>If the mount point uri starts with an exclamation mark '!'
+it defines an exclusion in the same way JkUnmount does.
+If the mount point uri starts with minus sign '-'
+the mount point will only be disabled. A disabled mount can be reenabled
+by deleting the minus sign and waiting for the JkMountFile to reload.
+An exclusion can be disabled by prefixing it with a mninus sign.
 </p>
 <source>
   # Sample uriworkermap.properties file
@@ -544,10 +560,14 @@ will be disabled.
   -/jsp-examples/*=ajp13w
 </source>
 <p>At run time you can change the content of this file. For example
-removing minus char will enable the uri mapping. You can add any
-number of new entries at runtime that reflects the newly deployed
+removing minus signs will enable the previously disabled uri mappings.
+You can add any number of new entries at runtime that reflects the newly deployed
 applications. Apache will reload the file and update the mount
 points within 60 second interval.
+</p>
+<p>
+There is no way to delete entries by dynamic reloading, but you can disable or
+exclude mappings.
 </p>
 
 </subsection>

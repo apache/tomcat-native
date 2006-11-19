@@ -22,7 +22,7 @@
         <item name="HowTo and Install"     href="howto/index.html"/>
         <item name="Frequently asked questions"  href="faq.html"/>
         <item name="Changelog"             href="changelog.html"/>
-        <item name="Tools"             href="common/tools.html"/>
+        <item name="Tools"             href="tools/tools.html"/>
         <item name="Old JK/JK2 documentation" href="http://tomcat.apache.org/connectors-doc-archive/jk2/index.html"/>
     </menu>
 

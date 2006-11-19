@@ -146,6 +146,7 @@ Firewall used to drop inactive connections and will make your WebServer and Tomc
 <p>
 Starting with JK 1.2.0, a <b>socket_keepalive</b> property as been added to ajp13 settings, and you should take a look at 
 it in <a href="howto/workers.html">Workers HowTo</a>.
+If nothing else helps, you can try <b>JkOptions +DisableReuse</b>, but this will have strong performance implications.
 </p>
 </subsection>
 
@@ -158,8 +159,8 @@ even if only Apache handle the requests, ie static contents, the childs are kept
 even if they are no more used. 
 </p>
 <p>
-Since JK 1.2.0, <b>cache_timeout</b> and <b>recycle_timeout</b> properties as been added to close 
-connections after some time of inactivity, for more informations refer to <a href="howto/workers.html">Workers HowTo</a>.
+To close connections after some time of inactivity you can use <b>connection_pool_timeout</b>,
+for more informations refer to <a href="config/workers.html">workers.properties configuration</a>.
 </p>
 </subsection>
 

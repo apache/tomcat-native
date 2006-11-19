@@ -154,7 +154,7 @@ Tomcat. If the number of retries set is greater then three (the default value), 
 each retry after default an extra wait of 100ms will be inserted.
 </directive>
 
-<directive name="connection_pool_size" default="1" required="false">
+<directive name="connection_pool_size" default="see text" required="false">
 This defines the number of connections made to the AJP backend that
 are maintained as a connection pool.
 It will limit the number of those connection that each web server child
@@ -165,7 +165,7 @@ web servers such as Apache 2.0 (worker), IIS and Netscape. The connection_pool_s
 should reflect the number of threads per child process. JK will discover
 the number of threads per child process on Apache 2 web server with worker-mpm and set
 its default value to match the ThreadsPerChild Apache directive. For IIS the default
-value is 10. For other web servers this value has to be set manually.
+value is 10. For other web servers than Apache or IIS this value has to be set manually.
 </p>
 <warn>Do not use connection_pool_size with values higher then 1 on <b>Apache 2.x prefork</b> or <b>Apache 1.3.x</b>!</warn>
 </directive>
@@ -199,9 +199,10 @@ finish having many unused ajp13 threads on the Tomcat side.
 </directive>
 
 <directive name="lbfactor" default="1" required="false">
-Integer number used when the worker will be used inside load balancer worker,
-this is the load-balancing factor for the worker.
-The load-balancing factor is <i>how much we expect this worker to work</i>, or
+Only used for a member worker of a load balancer.
+<p>
+The integer number lbfactor (load-balancing factor) is
+<i>how much we expect this worker to work</i>, or
 <i>the worker's work quota</i>. Load balancing factor is compared with other workers
 that makes the load balancer. For example if one worker has lb_factor 5 times higher then
 other worker, then it will receive five times more requests.
@@ -375,6 +376,8 @@ Disabled by default.
 </directive>
 
 <directive name="recover_time" default="60" required="false">
+Only used for load balancer workers.
+<p>
 The recover time is the time in seconds the load balancer will not try
 to use a worker, after it went into error state. Only after this time has passed,
 a worker in error state will be marked as in recovering, so that it will be
@@ -391,6 +394,8 @@ Every recovery attempt for a worker in error is done by a real request!
 </directive>
 
 <directive name="recovery_options" default="0" required="false">
+Only used for a member worker of a load balancer.
+<p>
 Recovery options property told webserver how to handle recovery when
 it detect that tomcat failed.
 By default, webserver will forward the request to another tomcat in LB mode
@@ -412,7 +417,10 @@ This feature has been added in <b>jk 1.2.16</b>
 </directive>
 
 <directive name="distance" default="0" required="false">
-Express preferences between the balanced workers of an lb worker.
+Only used for a member worker of a load balancer.
+<p>
+An integer number to express preferences between
+the balanced workers of an lb worker.
 A load balancer will never choose some balanced worker 
 in case there is another usable worker with lower distance.
 <p>
@@ -425,6 +433,8 @@ This feature has been added in <b>jk 1.2.16</b>.
 </directive>
 
 <directive name="domain" default="" required="false">
+Only used for a member worker of a load balancer.
+<p>
 Domain directive can be used only when the worker is a member of the load balancer.
 Workers that share the same domain name are treated as single worker. If sticky_session
 is used, then the domain name is used as session route.
@@ -438,6 +448,8 @@ This feature has been added in <b>jk 1.2.8</b>.
 </directive>
 
 <directive name="redirect" default="" required="false">
+Only used for a member worker of a load balancer.
+<p>
 Set to the preferred failover worker. If worker matching SESSION ID is in
 error state then the redirect worker will be used instead. It will be used
 even if being disabled, thus offering hot standby.
@@ -447,6 +459,8 @@ This feature has been added in <b>jk 1.2.9</b>.
 </directive>
 
 <directive name="activation" default="Active" required="false">
+Only used for a member worker of a load balancer.
+<p>
 Using this directive, a balanced worker of a load balancer
 can be configured as disabled or stopped. A disabled worker only gets
 requests, which belong to sessions for that worker. A stopped
@@ -486,6 +500,8 @@ This feature has been added in <b>jk 1.2.16</b>.
 </directive>
 
 <directive name="reference" default="" required="false">
+This attribute can be used for normal workers and for load balancer workers.
+<p>
 This directive allows to copy configurations between workers
 in a hierarchical way. If worker castor sets <b>worker.castor.reference=worker.pollux</b>
 then it inherits all properties of <b>pollux</b>, except for the ones that
@@ -506,13 +522,18 @@ This feature has been added in <b>jk 1.2.19</b>.
 </directive>
 
 <directive name="secret" default="" required="false">
+This attribute can be used for normal workers and for load balancer workers.
+<p>
 If set to AJP Connector secret keyword, only request with this keyword are successfull responding.
 Use <b>request.useSecret="true"</b> and <b>request.secret="secret key word"</b> at your tomcat ajp
 Connector configuration.
 </directive>
 
 <directive name="mount" default="" required="false">
-Space delimited list of uri maps the worker should handle.
+This attribute can be used for normal workers and for load balancer workers.
+<p>
+Space delimited list of uri maps the worker should handle. It is only used,
+if the worker is included in worker.list.
 <p>
 This directive can be used multiple times for the same worker.
 </p>
@@ -528,7 +549,7 @@ in case you need to use an older version of mod_jk. We urge you to update and no
 them any more. Please migrate your existing configurations.
 </p>
 <deprecations>
-<directive name="cachesize" successor="connection_pool_size" default="1" required="false">
+<directive name="cachesize" successor="connection_pool_size" default="see text" required="false">
 <warn>This directive has been deprecated since 1.2.16.</warn>
 Cachesize defines the number of connections made to the AJP backend that
 are maintained as a connection pool.
@@ -540,7 +561,7 @@ web servers such as Apache 2.0 (worker), IIS and Netscape. The cachesize propert
 should reflect the number of threads per child process. JK will discover
 the number of threads per child process on Apache 2 web server with worker-mpm and set
 its default value to match the ThreadsPerChild Apache directive. For IIS the default
-value is 10. For other web servers this value has to be set manually.
+value is 10. For other web servers than Apache or IIS this value has to be set manually.
 </p>
 <warn>Do not use cachesize with values higher then 1 on <b>Apache 2.x prefork</b> or <b>Apache 1.3.x</b>!</warn>
 </directive>

@@ -73,7 +73,8 @@ A <a href="workers.html">worker</a> is defined to be a tomcat process that accep
 The mod_jk module was developed and tested on:
 <ul>
 <li>
-Linux, FreeBSD, AIX, HP-UX, MacOS X, and should works on major Unixes platforms supporting Apache 1.3 and/or 2.0
+Linux, FreeBSD, AIX, HP-UX, MacOS X, Solaris and should works on major Unixes platforms
+supporting Apache 1.3 and/or 2.0/2.2
 </li>
 <li>
 WinNT4.0-i386 SP4/SP5/SP6a (should be able to work with other service packs), Win2K and WinXP and Win98
@@ -307,16 +308,14 @@ Here is a simple configuration:
     AddModule     mod_jk.c
     # Where to find workers.properties
     JkWorkersFile /etc/httpd/conf/workers.properties
+    # Where to put jk shared memory
+    JkShmFile     /var/log/httpd/mod_jk.shm
     # Where to put jk logs
     JkLogFile     /var/log/httpd/mod_jk.log
     # Set the jk log level [debug/error/info]
     JkLogLevel    info
-    # Select the log format
+    # Select the timestamp log format
     JkLogStampFormat "[%a %b %d %H:%M:%S %Y] "
-    # JkOptions indicate to send SSL KEY SIZE,
-    JkOptions     +ForwardKeySize +ForwardURICompat -ForwardDirectories
-    # JkRequestLogFormat set the request format
-    JkRequestLogFormat     "%w %V %T"
     # Send servlet for context /examples to worker named worker1
     JkMount  /examples/servlet/* worker1
     # Send JSPs  for context /examples to worker named worker1
@@ -354,7 +353,7 @@ We'll discuss here the mod_jk directives and details behind them
 </source>
 
 <p>
-Since JK 1.2.3 for Apache 2.0 and JK 1.2.16 for Apache 1.3 this can also
+Since JK 1.2.3 for Apache 2.0/2.2 and JK 1.2.16 for Apache 1.3 this can also
 be used for piped logging:
 </p>
 
@@ -449,14 +448,10 @@ or disable (-) following option.
 </p>
 
 <p>
-JkOptions <b>ForwardKeySize</b>,  you ask mod_jk, when using ajp13, to forward also the SSL Key Size  as
-required by Servlet API 2.3.
-This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
-
-<source>
-  JkOptions     +ForwardKeySize
-</source>
-
+ Exactly one of the following three options <b>+ForwardURIxxx</b>
+ is required. By default, the option ForwardURICompat
+ is turned on. So if you turn this off you will need to switch on one of the other
+ two described below.
 <br/>
 <br/>
 </p>
@@ -470,13 +465,6 @@ use it for compatibility with Tomcat 3.2.x engines (on by default).
   JkOptions     +ForwardURICompat
 </source>
 
-<br/>
-<br/>
-</p>
-<p>
- At least one <b>+ForwardURIxxx</b> is required. By default, the ForwardURICompat
- is turned on. So if you turn this off you will need to switch on one of the other
- two described below.
 <br/>
 <br/>
 </p>
@@ -545,8 +533,83 @@ file that Tomcat normally serves - for instance Velocity pages and JSP pages.
 </p>
 
 <p>
-The directive <b>JkEnvVar</b> allows you to forward an environment variable from Apache server to Tomcat engine.
-The variable can be retrieved on the Tomcat side as a request attribute.
+JkOptions <b>ForwardLocalAddress</b>, you ask mod_jk to send the local address,
+of the Apache web server instead remote client address. This can be used by
+Tomcat remote address valve for allowing connections only from registered Apache
+web servers.
+
+<source>
+  JkOptions     +ForwardLocalAddress
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>FlushPackets</b>, you ask mod_jk to flush Apache's connection
+buffer after each AJP packet chunk received from Tomcat. This option can have
+a strong performance penalty for Apache and Tomcat as writes are performed
+more often than would normally be required (ie: at the end of each
+response).
+
+<source>
+  JkOptions     +FlushPackets
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>FlushHeader</b>, you ask mod_jk to flush Apache's connection
+buffer after the response headers have been  received from Tomcat.
+
+<source>
+  JkOptions     +FlushHeader
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>DisableReuse</b>, you ask mod_jk to close connections immediately
+after their use. Normally mod_jk uses persistent connections and pools idle
+connections to reuse them, when new requests have to be sent to Tomcat.
+</p>
+
+<p>
+Using this option will have a strong performance penalty for Apache and Tomcat.
+Use this only as a last resort in case of unfixable network problems.
+If a firewall between Apache and Tomcat silently kills idle connections,
+try to use the worker attribute socket_keepalive in combination with an appropriate
+TCP keepalive value in your OS.
+
+<source>
+  JkOptions     +DisableReuse
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>ForwardKeySize</b>, you ask mod_jk, when using ajp13, to forward also the SSL Key Size as
+required by Servlet API 2.3.
+This flag shouldn't be set when servlet engine is Tomcat 3.2.x (off by default).
+
+<source>
+  JkOptions     +ForwardKeySize
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+The directive <b>JkEnvVar</b> allows you to forward environment variables from Apache server to Tomcat engine.
+The variables can be retrieved on the Tomcat side as request attributes.
 You must add a default value as a second parameter to the directive.
 
 <source>
@@ -616,7 +679,7 @@ document space for a VirtualHost:
 </source>
 
 <p>
-Starting with mod_jk 1.2.6 for Apache 2.0 and 1.2.19 for Apache 1.3, it's possible to exclude some URL/URI from
+Starting with mod_jk 1.2.6 for Apache 2.0/2.2 and 1.2.19 for Apache 1.3, it's possible to exclude some URL/URI from
 jk processing by setting the env var <b>no-jk</b>, for example with the SetEnvIf Directive.
 </p>
 
@@ -710,7 +773,7 @@ You could set <b>CFLAGS</b> and <b>LDFLAGS</b> to add some platform specifics:
 </screen>
 
 <p>
-If you want to build mod_jk for Apache 1.3 and 2.0, you should
+If you want to build mod_jk for Apache 1.3 and 2.0/2.2, you should
 <ul>
 <li>
 use configure and indicate Apache 1.3 apxs location (--with-apxs)
@@ -725,7 +788,7 @@ copy the mod_jk binary to the apache modules location
 make clean (to remove all previously compiled modules)
 </li>
 <li>
-use configure and indicate Apache 2.0 apxs location,
+use configure and indicate Apache 2.0/2.2 apxs location,
 </li>
 <li>
 then make.
@@ -743,7 +806,7 @@ then make.
   <td>--with-apxs[=FILE]</td>
   <td>FILE is the location of the apxs tool. Default is finding apxs in PATH.
 It builds a shared Apache module. It detects automaticly the Apache version.
-(2.0 and 1.3)</td>
+(2.0/2.2 and 1.3)</td>
   </tr>
   <tr><td>--with-apache=DIR</td>
   <td>DIR is the path where apache sources are located.
@@ -783,7 +846,7 @@ some informations about your Java Environment</td>
 <subsection name="Examples of configure use">
 
 <screen>
-<note>Apache 1.3 and 2.0 build</note>
+<note>Apache 1.3 and 2.0/2.2 build</note>
 <type>./configure --with-apxs=/usr/sbin/apxs</type><br/>
 <type>make</type><br/>
 <type>cp ./apache-1.3/mod_jk.so /usr/lib/apache</type><br/>
@@ -794,7 +857,7 @@ some informations about your Java Environment</td>
 </screen>
 
 <screen>
-<note>Apache 2.0 build with JNI support</note>
+<note>Apache 2.0/2.2 build with JNI support</note>
 <type>./configure --with-apxs2=/opt/apache2/bin/apxs \</type>
 <typenext>--with-java-home=${JAVA_HOME} --with-java-platform=2 \</typenext>
 <typenext>--enable-jni</typenext><br/>
