@@ -245,7 +245,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     for (i = 0; i < uw_map->size; i++) {
         uwr = uw_map->maps[i];
         if (strcmp(uwr->uri, puri) == 0) {
-            if (uwr->match_type & MATCH_TYPE_NO_MATCH == match_type & MATCH_TYPE_NO_MATCH) {
+            if ((uwr->match_type & MATCH_TYPE_NO_MATCH) == (match_type & MATCH_TYPE_NO_MATCH)) {
                 /* Update disabled flag */
                 if (match_type & MATCH_TYPE_DISABLED)
                     uwr->match_type |= MATCH_TYPE_DISABLED;
