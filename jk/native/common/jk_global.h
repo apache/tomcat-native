@@ -171,6 +171,8 @@ extern "C"
 #define JK_TRUE  (1)
 #define JK_FALSE (0)
 
+#define JK_UNSET (-1)
+
 #define JK_LF (10)
 #define JK_CR (13)
 

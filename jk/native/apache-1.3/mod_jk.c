@@ -61,6 +61,8 @@
 #include "jk_ajp13.h"
 #include "jk_shm.h"
 
+#define JK_LOG_DEF_FILE             ("logs/mod_jk.log")
+#define JK_SHM_DEF_FILE             ("logs/jk-runtime-status")
 #define JK_ENV_WORKER_NAME          ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
@@ -2186,7 +2188,15 @@ static void open_jk_log(server_rec *s, pool *p)
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    if (!conf->log_file || conf->log_fd >= 0)
+    if (!s->is_virtual && !conf->log_file) {
+        conf->log_file = ap_server_root_relative(p, JK_LOG_DEF_FILE);
+        if (conf->log_file)
+            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, s,
+                         "No JkLogFile defined in httpd.conf. "
+                         "Using default %s", conf->log_file);
+    }
+
+    if (s->is_virtual && (!conf->log_file || conf->log_fd >= 0))
         return;               /* virtual log shared w/main server */
 
     if (*conf->log_file == '|') {
@@ -2248,7 +2258,7 @@ static void jk_init(server_rec * s, ap_pool * p)
         open_jk_log(t, p);
 #if !defined(WIN32) && !defined(NETWARE)
     if (!jk_shm_file) {
-        jk_shm_file = ap_server_root_relative(p, "logs/jk-runtime-status");
+        jk_shm_file = ap_server_root_relative(p, JK_SHM_DEF_FILE);
         if (jk_shm_file)
             ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, NULL,
                          "No JkShmFile defined in httpd.conf. "

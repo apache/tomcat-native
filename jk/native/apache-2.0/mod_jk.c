@@ -109,6 +109,8 @@
 #include "jk_worker.h"
 #include "jk_shm.h"
 
+#define JK_LOG_DEF_FILE             ("logs/mod_jk.log")
+#define JK_SHM_DEF_FILE             ("logs/jk-runtime-status")
 #define JK_ENV_WORKER_NAME          ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
@@ -2365,7 +2367,12 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
         return 0;
     }
     if (conf->log_file == NULL) {
-        return 0;
+        conf->log_file = ap_server_root_relative(pconf, JK_LOG_DEF_FILE);
+        if (conf->log_file)
+            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO,
+                         0, NULL,
+                         "No JkLogFile defined in httpd.conf. "
+                         "Using default %s", conf->log_file);
     }
     if (*(conf->log_file) == '\0') {
         return 0;
@@ -2469,7 +2476,7 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
 
 #if !defined(WIN32) && !defined(NETWARE)
     if (!jk_shm_file) {
-        jk_shm_file = ap_server_root_relative(pconf, "logs/jk-runtime-status");
+        jk_shm_file = ap_server_root_relative(pconf, JK_SHM_DEF_FILE);
         if (jk_shm_file)
             ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO,
                          0, NULL,
