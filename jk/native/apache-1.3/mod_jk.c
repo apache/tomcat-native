@@ -2696,3 +2696,4 @@ module MODULE_VAR_EXPORT jk_module = {
     NULL,                       /* new_connection */
     NULL                        /* close_connection */
 #endif /* EAPI */
+};
