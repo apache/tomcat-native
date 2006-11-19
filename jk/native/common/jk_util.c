@@ -926,12 +926,14 @@ int jk_get_lb_method(jk_map_t *m, const char *wname)
     v = jk_map_get_string(m, buf, NULL);
     if (!v)
         return JK_LB_METHOD_DEF;
-    else if  (*v == 't' || *v == 'T' || *v == '1')
-        return JK_LB_METHOD_TRAFFIC;
     else if  (*v == 'r' || *v == 'R' || *v == '0')
         return JK_LB_METHOD_REQUESTS;
+    else if  (*v == 't' || *v == 'T' || *v == '1')
+        return JK_LB_METHOD_TRAFFIC;
     else if  (*v == 'b' || *v == 'B' || *v == '2')
         return JK_LB_METHOD_BUSYNESS;
+    else if  (*v == 's' || *v == 'S' || *v == '3')
+        return JK_LB_METHOD_SESSIONS;
     else
         return JK_LB_METHOD_DEF;
 }

@@ -55,6 +55,7 @@ static const char *lb_method_type[] = {
     JK_LB_METHOD_TEXT_REQUESTS,
     JK_LB_METHOD_TEXT_TRAFFIC,
     JK_LB_METHOD_TEXT_BUSYNESS,
+    JK_LB_METHOD_TEXT_SESSIONS,
     NULL
 };
 
@@ -798,6 +799,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     p->worker->s->max_busy = p->worker->s->busy;
                 rec->s->busy++;
                 if (p->worker->lbmethod == JK_LB_METHOD_REQUESTS)
+                    rec->s->lb_value += rec->s->lb_mult;
+                else if (p->worker->lbmethod == JK_LB_METHOD_SESSIONS &&
+                         !sessionid)
                     rec->s->lb_value += rec->s->lb_mult;
                 else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS)
                     rec->s->lb_value += rec->s->lb_mult;
