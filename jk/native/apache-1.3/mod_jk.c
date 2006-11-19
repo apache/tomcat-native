@@ -2260,7 +2260,7 @@ static void jk_init(server_rec * s, ap_pool * p)
     if (!jk_shm_file) {
         jk_shm_file = ap_server_root_relative(p, JK_SHM_DEF_FILE);
         if (jk_shm_file)
-            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, NULL,
+            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, s,
                          "No JkShmFile defined in httpd.conf. "
                          "Using default %s", jk_shm_file);
     }
@@ -2276,7 +2276,7 @@ static void jk_init(server_rec * s, ap_pool * p)
                jk_shm_name(), rc);
 #if !defined(WIN32) && !defined(NETWARE)
     if (!jk_shm_file)
-        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, NULL,
+        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s,
                      "No JkShmFile defined in httpd.conf. "
                      "LoadBalancer will not function properly!");
 #endif
@@ -2309,7 +2309,7 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
     if (!jk_map_read_properties(init_map, conf->worker_file, NULL, conf->log)) {
 
         if (jk_map_size(init_map) == 0) {
-            ap_log_error(APLOG_MARK, APLOG_EMERG, NULL,
+            ap_log_error(APLOG_MARK, APLOG_EMERG, s,
                          "No worker file and no worker options in httpd.conf "
                          "use JkWorkerFile to set workers");
             return;
@@ -2338,7 +2338,7 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
         return;
     }
 
-    ap_log_error(APLOG_MARK, APLOG_ERR, NULL,
+    ap_log_error(APLOG_MARK, APLOG_ERR, s,
                  "Error while opening the workers, jk will not work");
 }
 
