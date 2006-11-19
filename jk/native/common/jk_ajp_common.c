@@ -1166,15 +1166,13 @@ static int ajp_send_request(jk_endpoint_t *e,
     while (IS_VALID_SOCKET(ae->sd)) {
         int rc = 0;
         err = 0;
-        if (ae->worker->socket_timeout > 0) {
-            if (!jk_is_socket_connected(ae->sd)) {
-                jk_log(l, JK_LOG_INFO,
-                       "(%s) socket %d is not connected any more (errno=%d)",
-                       ae->worker->name, ae->sd, errno);
-                jk_close_socket(ae->sd);
-                ae->sd = JK_INVALID_SOCKET;
-                err++;
-            }
+        if (!jk_is_socket_connected(ae->sd)) {
+            jk_log(l, JK_LOG_DEBUG,
+                   "(%s) socket %d is not connected any more (errno=%d)",
+                   ae->worker->name, ae->sd, errno);
+            jk_close_socket(ae->sd);
+            ae->sd = JK_INVALID_SOCKET;
+            err=1;
         }
         if (ae->worker->prepost_timeout > 0 && !err) {
             /* handle cping/cpong if prepost_timeout is set
@@ -1183,7 +1181,7 @@ static int ajp_send_request(jk_endpoint_t *e,
              */
             if (ajp_handle_cping_cpong(ae, ae->worker->prepost_timeout, l) ==
                 JK_FALSE)
-                err++;
+                err=1;
         }
 
         /* If we got an error or can't send data, then try to get a pooled
@@ -1192,16 +1190,18 @@ static int ajp_send_request(jk_endpoint_t *e,
         if (err ||
             ((rc = ajp_connection_tcp_send_message(ae, op->request, l)) != JK_TRUE)) {
             if (rc != JK_FATAL_ERROR) {
-                jk_log(l, JK_LOG_INFO,
+                jk_log(l, JK_LOG_DEBUG,
                        "(%s) error sending request. Will try another pooled connection",
                        ae->worker->name);
                 ajp_next_connection(ae, l);
             }
             else {
                 op->recoverable = JK_FALSE;
-                jk_log(l, JK_LOG_INFO,
+                jk_log(l, JK_LOG_ERROR,
                        "(%s) error sending request. Unrecoverable operation",
                        ae->worker->name);
+                jk_close_socket(ae->sd);
+                ae->sd = JK_INVALID_SOCKET;
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
@@ -1219,8 +1219,8 @@ static int ajp_send_request(jk_endpoint_t *e,
             jk_log(l, JK_LOG_INFO,
                    "(%s) all endpoints are disconnected or dead",
                    ae->worker->name);
-            JK_TRACE_EXIT(l);
-            return JK_FALSE;
+            jk_log(l, JK_LOG_INFO,
+                   "Increase the backend idle connection timeout or the connection_pool_minsize");
         }
         /* Connect to the backend.
          * This can be either uninitalized connection or a reconnect.
@@ -1632,6 +1632,8 @@ static int ajp_get_reply(jk_endpoint_t *e,
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) Tomcat is down or network problems",
                         p->worker->name);
+                jk_close_socket(p->sd);
+                p->sd = JK_INVALID_SOCKET;
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
