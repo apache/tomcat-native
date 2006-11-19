@@ -2287,11 +2287,13 @@ static void jk_init(server_rec * s, ap_pool * p)
 
 /*
 { int i;
-jk_log(conf->log, JK_LOG_DEBUG, "default secret key = %s", conf->secret_key);
+if (JK_IS_DEBUG_LEVEL(conf->log))
+    jk_log(conf->log, JK_LOG_DEBUG, "default secret key = %s", conf->secret_key);
 for (i = 0; i < jk_map_size(conf->automount); i++)
 {
             char *name = jk_map_name_at(conf->automount, i);
-            jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s", name, map_get_string(conf->automount, name, NULL));
+            if (JK_IS_DEBUG_LEVEL(conf->log))
+                jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s", name, map_get_string(conf->automount, name, NULL));
 }
 }
 */
@@ -2383,8 +2385,9 @@ static int jk_translate(request_rec * r)
                      * already tried mapping and it didn't work out */
                     worker = worker_env.worker_list[0];
 
-                    jk_log(l, JK_LOG_DEBUG, "Manual configuration for %s %s",
-                           clean_uri, worker_env.worker_list[0]);
+                    if (JK_IS_DEBUG_LEVEL(l))
+                        jk_log(l, JK_LOG_DEBUG, "Manual configuration for %s %s",
+                               clean_uri, worker_env.worker_list[0]);
                 }
             }
 
@@ -2394,9 +2397,10 @@ static int jk_translate(request_rec * r)
             }
             else if (conf->alias_dir != NULL) {
                 /* Automatically map uri to a context static file */
-                jk_log(l, JK_LOG_DEBUG,
-                       "check alias_dir: %s",
-                       conf->alias_dir);
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "check alias_dir: %s",
+                           conf->alias_dir);
                 if (strlen(clean_uri) > 1) {
                     /* Get the context directory name */
                     char *context_dir = NULL;
@@ -2419,14 +2423,16 @@ static int jk_translate(request_rec * r)
                         }
                         /* Deny access to WEB-INF and META-INF directories */
                         if (child_dir != NULL) {
-                            jk_log(l, JK_LOG_DEBUG,
-                                   "AutoAlias child_dir: %s",
-                                   child_dir);
+                            if (JK_IS_DEBUG_LEVEL(l))
+                                jk_log(l, JK_LOG_DEBUG,
+                                       "AutoAlias child_dir: %s",
+                                       child_dir);
                             if (!strcasecmp(child_dir, "WEB-INF") ||
                                 !strcasecmp(child_dir, "META-INF")) {
-                                jk_log(l, JK_LOG_DEBUG,
-                                       "AutoAlias HTTP_NOT_FOUND for URI: %s",
-                                       r->uri);
+                                if (JK_IS_DEBUG_LEVEL(l))
+                                    jk_log(l, JK_LOG_DEBUG,
+                                           "AutoAlias HTTP_NOT_FOUND for URI: %s",
+                                           r->uri);
                                 return HTTP_NOT_FOUND;
                             }
                         }
@@ -2450,9 +2456,10 @@ static int jk_translate(request_rec * r)
                             ap_pclosedir(r->pool, dir);
                             /* Add code to verify real path ap_os_canonical_name */
                             if (ret != NULL) {
-                                jk_log(l, JK_LOG_DEBUG,
-                                       "AutoAlias OK for file: %s",
-                                       ret);
+                                if (JK_IS_DEBUG_LEVEL(l))
+                                    jk_log(l, JK_LOG_DEBUG,
+                                           "AutoAlias OK for file: %s",
+                                           ret);
                                 r->filename = ret;
                                 return OK;
                             }
@@ -2463,9 +2470,10 @@ static int jk_translate(request_rec * r)
                             if (size > 4
                                 && !strcasecmp(context_dir + (size - 4),
                                                ".war")) {
-                                jk_log(l, JK_LOG_DEBUG,
-                                       "AutoAlias FORBIDDEN for URI: %s",
-                                       r->uri);
+                                if (JK_IS_DEBUG_LEVEL(l))
+                                    jk_log(l, JK_LOG_DEBUG,
+                                           "AutoAlias FORBIDDEN for URI: %s",
+                                           r->uri);
                                 return FORBIDDEN;
                             }
                         }
@@ -2529,8 +2537,9 @@ static int jk_fixups(request_rec * r)
                 /* We'll be checking for handler in r->prev later on */
                 r->main->handler = ap_pstrdup(r->pool, JK_HANDLER);
 
-                jk_log(l, JK_LOG_DEBUG, "ForwardDirectories on: %s",
-                       r->uri);
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG, "ForwardDirectories on: %s",
+                           r->uri);
             }
         }
     }
