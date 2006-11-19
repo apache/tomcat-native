@@ -906,11 +906,11 @@ static const char *jk_set_worker_file(cmd_parms * cmd,
         return err_string;
     }
 
-    /* we need an absolut path (ap_server_root_relative does the ap_pstrdup) */
+    /* we need an absolute path (ap_server_root_relative does the ap_pstrdup) */
     conf->worker_file = ap_server_root_relative(cmd->pool, worker_file);
 
     if (conf->worker_file == NULL)
-        return "JkWorkersFile file_name invalid";
+        return "JkWorkersFile file name invalid";
 
     if (stat(conf->worker_file, &statbuf) == -1)
         return "Can't find the workers file specified";
@@ -934,7 +934,7 @@ static const char *jk_set_mount_file(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    /* we need an absolut path (ap_server_root_relative does the ap_pstrdup) */
+    /* we need an absolute path (ap_server_root_relative does the ap_pstrdup) */
     conf->mount_file = ap_server_root_relative(cmd->pool, mount_file);
 
     if (conf->mount_file == NULL)
@@ -967,7 +967,7 @@ static const char *jk_set_log_file(cmd_parms * cmd,
         conf->log_file = apr_pstrdup(cmd->pool, log_file);
 
     if (conf->log_file == NULL)
-        return "JkLogFile file_name invalid";
+        return "JkLogFile file name invalid";
 
     return NULL;
 }
@@ -2441,7 +2441,7 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
                                      jk_cleanup_shmem);
     }
     else
-        jk_log(conf->log, JK_LOG_ERROR, "Attachning shm:%s errno=%d",
+        jk_log(conf->log, JK_LOG_ERROR, "Attaching shm:%s errno=%d",
                jk_shm_name(), rc);
 
     if (JK_IS_DEBUG_LEVEL(conf->log))
@@ -2505,7 +2505,7 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     if (ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_threads) != APR_SUCCESS)
         mpm_threads = 1;
 #endif
-     jk_set_worker_def_cache_size(mpm_threads);
+    jk_set_worker_def_cache_size(mpm_threads);
 
     if (!uri_worker_map_alloc(&(conf->uw_map),
                               conf->uri_to_context,

@@ -873,7 +873,7 @@ static const char *jk_set_worker_file(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    /* we need an absolut path */
+    /* we need an absolute path */
     conf->worker_file = ap_server_root_relative(cmd->pool, worker_file);
 
 #ifdef CHROOTED_APACHE
@@ -884,7 +884,7 @@ static const char *jk_set_worker_file(cmd_parms * cmd,
         conf->worker_file = ap_pstrdup(cmd->pool, worker_file);
 
     if (conf->worker_file == NULL)
-        return "JkWorkersFile file_name invalid";
+        return "JkWorkersFile file name invalid";
 
     if (stat(conf->worker_file, &statbuf) == -1)
         return "Can't find the workers file specified";
@@ -908,7 +908,7 @@ static const char *jk_set_mount_file(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    /* we need an absolut path (ap_server_root_relative does the ap_pstrdup) */
+    /* we need an absolute path (ap_server_root_relative does the ap_pstrdup) */
     conf->mount_file = ap_server_root_relative(cmd->pool, mount_file);
 
 #ifdef CHROOTED_APACHE
@@ -938,7 +938,7 @@ static const char *jk_set_log_file(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    /* we need an absolut path */
+    /* we need an absolute path */
     conf->log_file = log_file;
 
     return NULL;
@@ -954,7 +954,7 @@ static const char *jk_set_shm_file(cmd_parms * cmd,
                                    void *dummy, char *shm_file)
 {
 
-    /* we need an absolut path */
+    /* we need an absolute path */
     jk_shm_file = ap_server_root_relative(cmd->pool, shm_file);
 
 #ifdef CHROOTED_APACHE
@@ -965,7 +965,7 @@ static const char *jk_set_shm_file(cmd_parms * cmd,
         jk_shm_file = ap_pstrdup(cmd->pool, shm_file);
 
     if (jk_shm_file == NULL)
-        return "JkShmFile file_name invalid";
+        return "JkShmFile file name invalid";
 
     return NULL;
 }
