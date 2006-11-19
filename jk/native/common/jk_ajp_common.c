@@ -1190,7 +1190,7 @@ static int ajp_send_request(jk_endpoint_t *e,
         if (err ||
             ((rc = ajp_connection_tcp_send_message(ae, op->request, l)) != JK_TRUE)) {
             if (rc != JK_FATAL_ERROR) {
-                jk_log(l, JK_LOG_DEBUG,
+                jk_log(l, JK_LOG_INFO,
                        "(%s) error sending request. Will try another pooled connection",
                        ae->worker->name);
                 ajp_next_connection(ae, l);
