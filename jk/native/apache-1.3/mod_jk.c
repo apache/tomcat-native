@@ -63,6 +63,11 @@
 
 #define JK_LOG_DEF_FILE             ("logs/mod_jk.log")
 #define JK_SHM_DEF_FILE             ("logs/jk-runtime-status")
+#define JK_ENV_HTTPS                ("HTTPS")
+#define JK_ENV_CERTS                ("SSL_CLIENT_CERT")
+#define JK_ENV_CIPHER               ("SSL_CIPHER")
+#define JK_ENV_SESSION              ("SSL_SESSION_ID")
+#define JK_ENV_KEY_SIZE             ("SSL_CIPHER_USEKEYSIZE")
 #define JK_ENV_WORKER_NAME          ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
@@ -1408,21 +1413,14 @@ static array_header *parse_request_log_string(pool * p, const char *s,
 static const char *jk_set_request_log_format(cmd_parms * cmd,
                                              void *dummy, char *format)
 {
-    const char *err_string = NULL;
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
     conf->format_string = ap_pstrdup(cmd->pool, format);
-    if (format != NULL) {
-        conf->format =
-            parse_request_log_string(cmd->pool, format, &err_string);
-    }
-    if (conf->format == NULL)
-        return "JkRequestLogFormat format array NULL";
 
-    return err_string;
+    return NULL;
 }
 
 /*
@@ -1586,6 +1584,10 @@ const char *jk_set_options(cmd_parms * cmd, void *dummy, const char *line)
 
         mask = 0;
 
+        if (action == '-' && !strncasecmp(w, "ForwardURI", strlen("ForwardURI")))
+            return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '-", w,
+                               "': ForwardURI* options can not be disabled", NULL);
+
         if (!strcasecmp(w, "ForwardKeySize")) {
             opt = JK_OPT_FWDKEYSIZE;
         }
@@ -1650,7 +1652,6 @@ static const char *jk_add_env_var(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    conf->envvars_in_use = JK_TRUE;
 
     ap_table_add(conf->envvars, env_name, default_value);
 
@@ -2051,44 +2052,36 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->format_string = NULL;
     c->format = NULL;
     c->mountcopy = JK_FALSE;
-    c->options = JK_OPT_FWDURIDEFAULT;
+
     if (s->is_virtual) {
         c->log_level = JK_UNSET;
+        c->options = 0;
+        c->worker_indicator = NULL;
+        c->ssl_enable = JK_UNSET;
+        c->https_indicator = NULL;
+        c->certs_indicator = NULL;
+        c->cipher_indicator = NULL;
+        c->session_indicator = NULL;
+        c->key_size_indicator = NULL;
     } else {
         c->log_level = JK_LOG_DEF_LEVEL;
+        c->options = JK_OPT_FWDURIDEFAULT;
+        c->worker_indicator = JK_ENV_WORKER_NAME;
+        /*
+         * By default we will try to gather SSL info.
+         * Disable this functionality through JkExtractSSL
+         */
+        c->ssl_enable = JK_TRUE;
+        /*
+         * The defaults ssl indicators match those in mod_ssl (seems
+         * to be in more use).
+         */
+        c->https_indicator = JK_ENV_HTTPS;
+        c->certs_indicator = JK_ENV_CERTS;
+        c->cipher_indicator = JK_ENV_CIPHER;
+        c->session_indicator = JK_ENV_SESSION;
+        c->key_size_indicator = JK_ENV_KEY_SIZE;
     }
-
-    c->worker_indicator = JK_ENV_WORKER_NAME;
-
-    /*
-     * By default we will try to gather SSL info.
-     * Disable this functionality through JkExtractSSL
-     */
-    c->ssl_enable = JK_TRUE;
-    /*
-     * The defaults ssl indicators match those in mod_ssl (seems
-     * to be in more use).
-     */
-    c->https_indicator = "HTTPS";
-    c->certs_indicator = "SSL_CLIENT_CERT";
-
-    /*
-     * The following (comented out) environment variables match apache_ssl!
-     * If you are using apache_sslapache_ssl uncomment them (or use the
-     * configuration directives to set them.
-     *
-     c->cipher_indicator = "HTTPS_CIPHER";
-     c->session_indicator = NULL;
-     c->key_size_indicator = NULL;
-     */
-
-    /*
-     * The following environment variables match mod_ssl! If you
-     * are using another module (say apache_ssl) comment them out.
-     */
-    c->cipher_indicator = "SSL_CIPHER";
-    c->session_indicator = "SSL_SESSION_ID";
-    c->key_size_indicator = "SSL_CIPHER_USEKEYSIZE";
 
     if (!jk_map_alloc(&(c->uri_to_context))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
@@ -2136,20 +2129,38 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
     if (overrides->log_level == JK_UNSET)
         overrides->log_level = base->log_level;
 
-    overrides->worker_indicator = base->worker_indicator;
+    if (!overrides->stamp_format_string)
+        overrides->stamp_format_string = base->stamp_format_string;
+    if (!overrides->format_string)
+        overrides->format_string = base->format_string;
 
-    if (base->ssl_enable) {
+    if (!overrides->worker_indicator)
+        overrides->worker_indicator = base->worker_indicator;
+
+    if (overrides->ssl_enable == JK_UNSET)
         overrides->ssl_enable = base->ssl_enable;
+    if (!overrides->https_indicator)
         overrides->https_indicator = base->https_indicator;
+    if (!overrides->certs_indicator)
         overrides->certs_indicator = base->certs_indicator;
+    if (!overrides->cipher_indicator)
         overrides->cipher_indicator = base->cipher_indicator;
+    if (!overrides->session_indicator)
         overrides->session_indicator = base->session_indicator;
+    if (!overrides->key_size_indicator)
         overrides->key_size_indicator = base->key_size_indicator;
     }
 
-    overrides->options = base->options;
-    overrides->stamp_format_string = base->stamp_format_string;
-    overrides->format_string = base->format_string;
+    if (!overrides->secret_key)
+        overrides->secret_key = base->secret_key;
+
+    overrides->options |= base->options;
+
+    if (base->envvars_in_use) {
+        overrides->envvars_in_use = JK_TRUE;
+        overrides->envvars = ap_overlay_tables(p, overrides->envvars,
+                                               base->envvars);
+    }
 
     if (overrides->mountcopy) {
         copy_jk_map(p, overrides->s, base->uri_to_context,
@@ -2158,20 +2169,8 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
         overrides->mount_file = base->mount_file;
     }
 
-    if (base->envvars_in_use) {
-        overrides->envvars_in_use = JK_TRUE;
-        overrides->envvars =
-            ap_overlay_tables(p, overrides->envvars, base->envvars);
-    }
-
-    if (!uri_worker_map_alloc
-        (&(overrides->uw_map), overrides->uri_to_context, overrides->log)) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG, overrides->s, p,
-                      "Memory error");
-    }
-
-    if (base->secret_key)
-        overrides->secret_key = base->secret_key;
+    if (!overrides->alias_dir)
+        overrides->alias_dir = base->alias_dir;
 
     return overrides;
 }
@@ -2305,7 +2304,8 @@ static void open_jk_log(server_rec *s, pool *p)
 static void jk_init(server_rec * s, ap_pool * p)
 {
     int rc;
-    server_rec *t;
+    server_rec *srv = s;
+    const char *err_string = NULL;
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
@@ -2313,8 +2313,31 @@ static void jk_init(server_rec * s, ap_pool * p)
 
     jk_log_fds = ap_make_table(p, 0);
 
-    for (t=s; t; t = t->next)
-        open_jk_log(t, p);
+    /* step through the servers and open each jk logfile
+     * and do additional post config initialization.
+     */
+    for (; srv; srv = srv->next) {
+        jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
+                                                                           &jk_module);
+        open_jk_log(srv, p);
+        if (sconf) {
+            if (!uri_worker_map_alloc(&(sconf->uw_map),
+                                      sconf->uri_to_context, sconf->log))
+                jk_error_exit(APLOG_MARK, APLOG_EMERG, srv,
+                              p, "Memory error");
+            if (sconf->mount_file) {
+                sconf->uw_map->fname = sconf->mount_file;
+                uri_worker_map_load(sconf->uw_map, sconf->log);
+            }
+            if (sconf->format_string) {
+                sconf->format =
+                    parse_request_log_string(p, sconf->format_string, &err_string);
+                if (sconf->format == NULL)
+                    ap_log_error(APLOG_MARK, APLOG_ERR, srv,
+                                 "JkRequestLogFormat format array NULL");
+            }
+        }
+    }
 
 #if !defined(WIN32) && !defined(NETWARE)
     if (!jk_shm_file) {
@@ -2363,14 +2386,6 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
 }
 */
 
-     /* Create mapping from uri's to workers, and start up all the workers */
-    if (!uri_worker_map_alloc
-        (&(conf->uw_map), conf->uri_to_context, conf->log)) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
-    }
-
-    /*if(map_alloc(&init_map)) { */
-
     if (!jk_map_read_properties(init_map, conf->worker_file, NULL, conf->log)) {
 
         if (jk_map_size(init_map) == 0) {
@@ -2394,14 +2409,8 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
     worker_env.uri_to_worker = conf->uw_map;
     worker_env.virtual = "*";       /* for now */
     worker_env.server_name = (char *)ap_get_server_version();
-    if (wc_open(init_map, &worker_env, conf->log)) {
-        /* XXX: For each virtual host? */
-        if (conf && conf->mount_file) {
-            conf->uw_map->fname = conf->mount_file;
-            uri_worker_map_load(conf->uw_map, conf->log);
-        }
+    if (wc_open(init_map, &worker_env, conf->log))
         return;
-    }
 
     ap_log_error(APLOG_MARK, APLOG_ERR, s,
                  "Error while opening the workers, jk will not work");
