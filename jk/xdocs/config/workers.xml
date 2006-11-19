@@ -206,6 +206,7 @@ The integer number lbfactor (load-balancing factor) is
 <i>the worker's work quota</i>. Load balancing factor is compared with other workers
 that makes the load balancer. For example if one worker has lb_factor 5 times higher then
 other worker, then it will receive five times more requests.
+</p>
 </directive>
 
 </directives>
@@ -419,6 +420,7 @@ The recover time is the time in seconds the load balancer will not try
 to use a worker, after it went into error state. Only after this time has passed,
 a worker in error state will be marked as in recovering, so that it will be
 tried for new requests.
+</p>
 <p>
 This interval is not checked every time a request is being processed.
 Instead it is being checked during global maintenance. The time between two
@@ -440,6 +442,7 @@ By default, webserver will forward the request to another tomcat in LB mode
 values are : 0 (full recovery), 1 (don't recover if tomcat failed after getting the request),
 2 (don't recover if tomcat failed after sending the headers to client), 3 (don't recover if tomcat failed
 getting the request or after sending the headers to client).
+</p>
 <p>
 This features has been added in <b>jk 1.2.6</b> to avoid problem with hung/broken tomcat's
 and works on all servlet engines supporting ajp13.
@@ -460,6 +463,7 @@ An integer number to express preferences between
 the balanced workers of an lb worker.
 A load balancer will never choose some balanced worker 
 in case there is another usable worker with lower distance.
+</p>
 <p>
 Only in case all workers below a given distance are in error, disabled or stopped,
 workers of a larger distance are eligible for balancing.
@@ -475,7 +479,9 @@ Only used for a member worker of a load balancer.
 Domain directive can be used only when the worker is a member of the load balancer.
 Workers that share the same domain name are treated as single worker. If sticky_session
 is used, then the domain name is used as session route.
-<p>This directive is used for large system with more then 6 Tomcats, to be able
+</p>
+<p>
+This directive is used for large system with more then 6 Tomcats, to be able
 to cluster the Tomcats in two groups and thus lowering the session replication
 transfer between them.
 </p>
@@ -490,6 +496,7 @@ Only used for a member worker of a load balancer.
 Set to the preferred failover worker. If worker matching SESSION ID is in
 error state then the redirect worker will be used instead. It will be used
 even if being disabled, thus offering hot standby.
+</p>
 <p>
 This feature has been added in <b>jk 1.2.9</b>.
 </p>
@@ -503,6 +510,7 @@ can be configured as disabled or stopped. A disabled worker only gets
 requests, which belong to sessions for that worker. A stopped
 worker does not get any requests. Users will loose their sessions,
 unless session replication via clustering is used.
+</p>
 <p>
 Use <b>d</b> or <b>D</b> to disable and <b>s</b> or <b>S</b> to stop.
 If this directive is not present the deprecated directives
@@ -543,6 +551,7 @@ This directive allows to copy configurations between workers
 in a hierarchical way. If worker castor sets <b>worker.castor.reference=worker.pollux</b>
 then it inherits all properties of <b>pollux</b>, except for the ones that
 are explicitely set for <b>castor</b>.
+</p>
 <p>
 Please note, that the value of the directive is not only the name of the referred worker,
 but the complete prefix including "worker.".
@@ -564,6 +573,7 @@ This attribute can be used for normal workers and for load balancer workers.
 If set to AJP Connector secret keyword, only request with this keyword are successfull responding.
 Use <b>request.useSecret="true"</b> and <b>request.secret="secret key word"</b> at your tomcat ajp
 Connector configuration.
+</p>
 </directive>
 
 <directive name="mount" default="" required="false">
@@ -571,6 +581,7 @@ This attribute can be used for normal workers and for load balancer workers.
 <p>
 Space delimited list of uri maps the worker should handle. It is only used,
 if the worker is included in worker.list.
+</p>
 <p>
 This directive can be used multiple times for the same worker.
 </p>
