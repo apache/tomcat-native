@@ -901,6 +901,11 @@ static const char *jk_set_worker_file(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
+    const char *err_string = ap_check_cmd_context(cmd, GLOBAL_ONLY);
+    if (err_string != NULL) {
+        return err_string;
+    }
+
     /* we need an absolut path (ap_server_root_relative does the ap_pstrdup) */
     conf->worker_file = ap_server_root_relative(cmd->pool, worker_file);
 
@@ -976,6 +981,11 @@ static const char *jk_set_log_file(cmd_parms * cmd,
 static const char *jk_set_shm_file(cmd_parms * cmd,
                                    void *dummy, const char *shm_file)
 {
+    const char *err_string = ap_check_cmd_context(cmd, GLOBAL_ONLY);
+    if (err_string != NULL) {
+        return err_string;
+    }
+
     /* we need an absolute path */
     jk_shm_file = ap_server_root_relative(cmd->pool, shm_file);
     if (jk_shm_file == NULL)
@@ -994,7 +1004,11 @@ static const char *jk_set_shm_size(cmd_parms * cmd,
                                    void *dummy, const char *shm_size)
 {
     int sz = 0;
-    /* we need an absolute path */
+    const char *err_string = ap_check_cmd_context(cmd, GLOBAL_ONLY);
+    if (err_string != NULL) {
+        return err_string;
+    }
+
     sz = atoi(shm_size) * 1024;
     if (sz < JK_SHM_DEF_SIZE)
         sz = JK_SHM_DEF_SIZE;
@@ -1682,6 +1696,11 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
+
+    const char *err_string = ap_check_cmd_context(cmd, GLOBAL_ONLY);
+    if (err_string != NULL) {
+        return err_string;
+    }
 
     if (jk_map_read_property(conf->worker_properties, line, conf->log) == JK_FALSE)
         return apr_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line);
