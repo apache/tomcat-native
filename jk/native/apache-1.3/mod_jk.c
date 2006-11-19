@@ -941,7 +941,18 @@ static const char *jk_set_log_file(cmd_parms * cmd,
                                                   &jk_module);
 
     /* we need an absolute path */
-    conf->log_file = log_file;
+    if (*log_file != '|') {
+        conf->log_file = ap_server_root_relative(cmd->pool, log_file);
+
+#ifdef CHROOTED_APACHE
+        ap_server_strip_chroot(conf->log_file, 0);
+#endif
+
+    }
+    else
+        conf->log_file = ap_pstrdup(cmd->pool, log_file);
+    if (conf->log_file == NULL)
+        return "JkLogFile file name invalid";
 
     return NULL;
 }
@@ -2100,7 +2111,7 @@ static void copy_jk_map(ap_pool * p, server_rec * s, jk_map_t *src,
     int i;
     for (i = 0; i < sz; i++) {
         const char *name = jk_map_name_at(src, i);
-        if (jk_map_get(src, name, NULL) == NULL) {
+        if (jk_map_get(dst, name, NULL) == NULL) {
             if (!jk_map_put (dst, name,
                  ap_pstrdup(p, jk_map_get_string(src, name, NULL)),
                             NULL)) {
@@ -2259,6 +2270,11 @@ static void jk_init(server_rec * s, ap_pool * p)
 #if !defined(WIN32) && !defined(NETWARE)
     if (!jk_shm_file) {
         jk_shm_file = ap_server_root_relative(p, JK_SHM_DEF_FILE);
+
+#ifdef CHROOTED_APACHE
+        ap_server_strip_chroot(jk_shm_file, 0);
+#endif
+
         if (jk_shm_file)
             ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, s,
                          "No JkShmFile defined in httpd.conf. "
@@ -2630,4 +2646,3 @@ module MODULE_VAR_EXPORT jk_module = {
     NULL,                       /* new_connection */
     NULL                        /* close_connection */
 #endif /* EAPI */
-};
