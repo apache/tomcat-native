@@ -2018,7 +2018,7 @@ int ajp_init(jk_worker_t *pThis,
         ajp_worker_t *p = pThis->worker_private;
         p->ep_cache_sz = jk_get_worker_cache_size(props, p->name, cache);
         p->ep_mincache_sz = jk_get_worker_cache_size_min(props, p->name,
-                                                         cache / 2);
+                                                         (cache+1) / 2);
         p->socket_timeout =
             jk_get_worker_socket_timeout(props, p->name, AJP_DEF_SOCKET_TIMEOUT);
 
