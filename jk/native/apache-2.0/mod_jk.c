@@ -211,6 +211,7 @@ struct apache_private_data
 typedef struct apache_private_data apache_private_data_t;
 
 static jk_logger_t *main_log = NULL;
+static apr_hash_t *jk_log_fps = NULL;
 static jk_worker_env_t worker_env;
 static apr_global_mutex_t *jk_log_lock = NULL;
 static char *jk_shm_file = NULL;
@@ -1054,6 +1055,7 @@ static const char *jk_set_log_fmt(cmd_parms * cmd,
                                                   &jk_module);
 
     conf->stamp_format_string = apr_pstrdup(cmd->pool, log_format);
+
     return NULL;
 }
 
@@ -2162,7 +2164,6 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->worker_file = NULL;
     c->mount_file = NULL;
     c->log_file = NULL;
-    c->log_level = JK_LOG_DEF_LEVEL;
     c->log = NULL;
     c->alias_dir = NULL;
     c->stamp_format_string = NULL;
@@ -2171,8 +2172,13 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->mountcopy = JK_FALSE;
     c->was_initialized = JK_FALSE;
     c->options = JK_OPT_FWDURIDEFAULT;
-
     c->worker_indicator = JK_ENV_WORKER_NAME;
+
+    if (s->is_virtual) {
+        c->log_level = JK_UNSET;
+    } else {
+        c->log_level = JK_LOG_DEF_LEVEL;
+    }
 
     /*
      * By default we will try to gather SSL info.
@@ -2250,6 +2256,11 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
     jk_server_conf_t *base = (jk_server_conf_t *) basev;
     jk_server_conf_t *overrides = (jk_server_conf_t *) overridesv;
 
+    if (!overrides->log_file)
+        overrides->log_file = base->log_file;
+    if (overrides->log_level == JK_UNSET)
+        overrides->log_level = base->log_level;
+    
     overrides->worker_indicator = base->worker_indicator;
 
     if (base->ssl_enable) {
@@ -2344,7 +2355,7 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
 static apr_status_t jklog_cleanup(void *d)
 {
     /* set the main_log to NULL */
-    main_log = NULL;
+    d = NULL;
     return APR_SUCCESS;
 }
 
@@ -2353,6 +2364,7 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
     jk_server_conf_t *conf;
     const char *fname;
     apr_status_t rc;
+    apr_file_t *jklogfp;
     piped_log *pl;
     jk_logger_t *jkl;
     file_logger_t *flp;
@@ -2362,47 +2374,51 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
 
     conf = ap_get_module_config(s->module_config, &jk_module);
 
-    if (main_log != NULL) {
-        conf->log = main_log;
-        return 0;
-    }
     if (conf->log_file == NULL) {
         conf->log_file = ap_server_root_relative(pconf, JK_LOG_DEF_FILE);
         if (conf->log_file)
             ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO,
-                         0, NULL,
+                         0, s,
                          "No JkLogFile defined in httpd.conf. "
                          "Using default %s", conf->log_file);
     }
     if (*(conf->log_file) == '\0') {
+        ap_log_error(APLOG_MARK, APLOG_ERR, APR_EBADPATH, s,
+                     "mod_jk: Invalid JkLogFile EMPTY");
+        conf->log = main_log;
         return 0;
     }
 
-    if (*conf->log_file == '|') {
-        if ((pl = ap_open_piped_log(p, conf->log_file + 1)) == NULL) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-                         "mod_jk: could not open reliable pipe "
-                         "to jk log %s", conf->log_file + 1);
-            return -1;
+    jklogfp = apr_hash_get(jk_log_fps, conf->log_file, APR_HASH_KEY_STRING);
+    if (!jklogfp) {
+        if (*conf->log_file == '|') {
+            if ((pl = ap_open_piped_log(p, conf->log_file + 1)) == NULL) {
+                ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+                             "mod_jk: could not open reliable pipe "
+                             "to jk log %s", conf->log_file + 1);
+                return -1;
+            }
+            jklogfp = (void *)ap_piped_log_write_fd(pl);
         }
-        conf->jklogfp = (void *)ap_piped_log_write_fd(pl);
+        else {
+            fname = ap_server_root_relative(p, conf->log_file);
+            if (!fname) {
+                ap_log_error(APLOG_MARK, APLOG_ERR, APR_EBADPATH, s,
+                             "mod_jk: Invalid JkLog " "path %s", conf->log_file);
+                return -1;
+            }
+            if ((rc = apr_file_open(&jklogfp, fname,
+                                    jklog_flags, jklog_mode, p))
+                != APR_SUCCESS) {
+                ap_log_error(APLOG_MARK, APLOG_ERR, rc, s,
+                             "mod_jk: could not open JkLog " "file %s", fname);
+                return -1;
+            }
+        }
+        apr_file_inherit_set(jklogfp);
+        apr_hash_set(jk_log_fps, conf->log_file, APR_HASH_KEY_STRING, jklogfp);
     }
-    else {
-        fname = ap_server_root_relative(p, conf->log_file);
-        if (!fname) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, APR_EBADPATH, s,
-                         "mod_jk: Invalid JkLog " "path %s", conf->log_file);
-            return -1;
-        }
-        if ((rc = apr_file_open(&conf->jklogfp, fname,
-                                jklog_flags, jklog_mode, p))
-            != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, rc, s,
-                         "mod_jk: could not open JkLog " "file %s", fname);
-            return -1;
-        }
-        apr_file_inherit_set(conf->jklogfp);
-    }
+    conf->jklogfp = jklogfp;
     jkl = (jk_logger_t *)apr_palloc(p, sizeof(jk_logger_t));
     flp = (file_logger_t *) apr_palloc(p, sizeof(file_logger_t));
     if (jkl && flp) {
@@ -2414,7 +2430,7 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
         conf->log = jkl;
         if (main_log == NULL)
             main_log = conf->log;
-        apr_pool_cleanup_register(p, main_log, jklog_cleanup, jklog_cleanup);
+        apr_pool_cleanup_register(p, conf->log, jklog_cleanup, jklog_cleanup);
         return 0;
     }
 
@@ -2571,6 +2587,8 @@ static int jk_post_config(apr_pool_t * pconf,
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 #endif
+
+    jk_log_fps = apr_hash_make(pconf);
 
     if (!s->is_virtual) {
         conf = (jk_server_conf_t *)ap_get_module_config(s->module_config,
