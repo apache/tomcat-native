@@ -26,6 +26,14 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Docs: Minor enhancements and syncing with more recent versions. (rjung)
+      </update>
+      <fix>
+      <bug>40997</bug>: Separate uri mappings from their '!'
+      counterpart when checking for duplicates in uriworkermap
+      reloading. (rjung)
+      </fix>
       <fix>
       <bug>40877</bug>: Make sure the shared memory is reset on
       attach for multiple web server child processes. (mturk)
