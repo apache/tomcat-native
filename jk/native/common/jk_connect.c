@@ -120,7 +120,7 @@ static int sononblock(jk_sock_t sd)
 static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
 {
     int rc;
-    if (timeout < 1)
+    if (timeout <= 0)
         return connect(sock, addr, sizeof(struct sockaddr_in));
 
     if ((rc = sononblock(sock)))
@@ -522,7 +522,7 @@ int jk_shutdown_socket(jk_sock_t s)
 #endif
     /* Read all data from the peer until we reach "end-of-file" (FIN
      * from peer) or we've exceeded our overall timeout. If the client does
-     * not send us bytes within 12 second, close the connection.
+     * not send us bytes within 16 second, close the connection.
      */
     while (rc) {
         nbytes = jk_tcp_socket_recvfull(s, dummy, sizeof(dummy));
