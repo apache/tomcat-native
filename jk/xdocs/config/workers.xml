@@ -287,16 +287,53 @@ This feature has been added in <b>jk 1.2.9</b>.
 </directive>
 
 <directive name="method" default="Request" required="false">
-Specifies what method load balancer is using for electing best worker.
-If method is set to <b>R[equest]</b> balancer will use number of requests
-to find the best worker. If set to <b>T[raffic]</b> balancer will use
+Specifies what method load balancer is using for electing the best worker.
+Please note, that session stickyness and perfect load balancing are
+conflicting targets, especially when the number
+of sessions is small, or the usage of sessions is extremely varying
+For huge numbers of sessions this usually is not a problem.
+<p>
+Some methods note, that they aggregate in a sliding time window. They add up
+accesses, and on each run of the global maintain method, the load counters
+get divided by 2. Usually this happens once a minute, depending on the
+setting of worker.maintain. The value of the load counters can be inspected
+using the status worker.
+</p>
+<p>
+If method is set to <b>R[equest]</b> the balancer will use number of requests
+to find the best worker. Accesses will be distributed according to the
+lbfactor in a sliding time window. This is the default value and should be
+working well for most applications.
+</p>
+<p>
+If method is set to <b>S[ession]</b> the balancer will use number of sessions
+to find the best worker. Accesses will be distributed according to the
+lbfactor in a sliding time window. Because the balancer does not keep any state,
+it actually does not know the number of sessions. Instead it counts each request
+without a session cookie or URL encoding as a new session. This method will neither
+know, when a session is being invalidated, nor will it correct its load numbers
+according to session timeouts or worker failover. This method should be used,
+if sessions are your limiting resource, e.g. when you only have limited memory
+and your sessions need a lot of memory.
+</p>
+<p>
+If set to <b>T[raffic]</b> the balancer will use
 the network traffic between JK and Tomcat to find the best worker.
-If set to <b>B[usyness]</b> balancer will
+Accesses will be distributed according to the lbfactor in a sliding time window.
+This method should be used, if network to and from the backends is your
+limiting resource.
+</p>
+<p>
+If set to <b>B[usyness]</b> the balancer will
 pick the worker with the lowest current load, based on how many requests the
 worker is currently serving. This number is divided by the workers lbfactor,
-and the lowest value (least busy) worker is picked.
+and the lowest value (least busy) worker is picked. This method is especially
+interesting, if your request take a long time to process, like for a download
+application.
+</p>
 <p>
 This feature has been added in <b>jk 1.2.9</b>.
+The Session method has been added in <b>jk 1.2.20</b>.
 </p>
 </directive>
 

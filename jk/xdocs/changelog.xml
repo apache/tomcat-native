@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Load Balancer: Added the Sessions strategy. Contributed by Takayuki Kaneko. (rjung)
+      </update>
+      <update>
       Docs: Minor enhancements and syncing with more recent versions. (rjung)
       </update>
       <fix>
