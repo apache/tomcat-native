@@ -2385,7 +2385,7 @@ static int jk_translate(request_rec * r)
             else if (conf->alias_dir != NULL) {
                 /* Automatically map uri to a context static file */
                 jk_log(l, JK_LOG_DEBUG,
-                       "mod_jk::jk_translate, check alias_dir: %s",
+                       "check alias_dir: %s",
                        conf->alias_dir);
                 if (strlen(clean_uri) > 1) {
                     /* Get the context directory name */
@@ -2410,12 +2410,12 @@ static int jk_translate(request_rec * r)
                         /* Deny access to WEB-INF and META-INF directories */
                         if (child_dir != NULL) {
                             jk_log(l, JK_LOG_DEBUG,
-                                   "mod_jk::jk_translate, AutoAlias child_dir: %s",
+                                   "AutoAlias child_dir: %s",
                                    child_dir);
                             if (!strcasecmp(child_dir, "WEB-INF") ||
                                 !strcasecmp(child_dir, "META-INF")) {
                                 jk_log(l, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias HTTP_NOT_FOUND for URI: %s",
+                                       "AutoAlias HTTP_NOT_FOUND for URI: %s",
                                        r->uri);
                                 return HTTP_NOT_FOUND;
                             }
@@ -2441,7 +2441,7 @@ static int jk_translate(request_rec * r)
                             /* Add code to verify real path ap_os_canonical_name */
                             if (ret != NULL) {
                                 jk_log(l, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias OK for file: %s",
+                                       "AutoAlias OK for file: %s",
                                        ret);
                                 r->filename = ret;
                                 return OK;
@@ -2454,7 +2454,7 @@ static int jk_translate(request_rec * r)
                                 && !strcasecmp(context_dir + (size - 4),
                                                ".war")) {
                                 jk_log(l, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias FORBIDDEN for URI: %s",
+                                       "AutoAlias FORBIDDEN for URI: %s",
                                        r->uri);
                                 return FORBIDDEN;
                             }

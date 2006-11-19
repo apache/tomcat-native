@@ -2681,7 +2681,7 @@ static int jk_translate(request_rec * r)
                 /* Automatically map uri to a context static file */
                 if (JK_IS_DEBUG_LEVEL(conf->log))
                     jk_log(conf->log, JK_LOG_DEBUG,
-                           "mod_jk::jk_translate, check alias_dir: %s",
+                           "check alias_dir: %s",
                            conf->alias_dir);
                 if (strlen(clean_uri) > 1) {
                     /* Get the context directory name */
@@ -2707,13 +2707,13 @@ static int jk_translate(request_rec * r)
                         if (child_dir != NULL) {
                             if (JK_IS_DEBUG_LEVEL(conf->log))
                                 jk_log(conf->log, JK_LOG_DEBUG,
-                                       "mod_jk::jk_translate, AutoAlias child_dir: %s",
+                                       "AutoAlias child_dir: %s",
                                        child_dir);
                             if (!strcasecmp(child_dir, "WEB-INF")
                                 || !strcasecmp(child_dir, "META-INF")) {
                                 if (JK_IS_DEBUG_LEVEL(conf->log))
                                     jk_log(conf->log, JK_LOG_DEBUG,
-                                           "mod_jk::jk_translate, AutoAlias HTTP_NOT_FOUND for URI: %s",
+                                           "AutoAlias HTTP_NOT_FOUND for URI: %s",
                                            r->uri);
                                 return HTTP_NOT_FOUND;
                             }
@@ -2742,7 +2742,7 @@ static int jk_translate(request_rec * r)
                             if (ret != NULL) {
                                 if (JK_IS_DEBUG_LEVEL(conf->log))
                                     jk_log(conf->log, JK_LOG_DEBUG,
-                                           "mod_jk::jk_translate, AutoAlias OK for file: %s",
+                                           "AutoAlias OK for file: %s",
                                            ret);
                                 r->filename = ret;
                                 return OK;
@@ -2756,7 +2756,7 @@ static int jk_translate(request_rec * r)
                                                ".war")) {
                                 if (JK_IS_DEBUG_LEVEL(conf->log))
                                     jk_log(conf->log, JK_LOG_DEBUG,
-                                           "mod_jk::jk_translate, AutoAlias HTTP_FORBIDDEN for URI: %s",
+                                           "AutoAlias HTTP_FORBIDDEN for URI: %s",
                                            r->uri);
                                 return HTTP_FORBIDDEN;
                             }
