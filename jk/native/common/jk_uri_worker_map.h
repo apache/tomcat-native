@@ -40,17 +40,27 @@ extern "C"
 #define JK_URIMAP_RELOAD            60
 
 #define MATCH_TYPE_EXACT            0x0001
+/* deprecated
 #define MATCH_TYPE_CONTEXT          0x0002
+ */
 /* match all context path URIs with a path component suffix */
+/* deprecated
 #define MATCH_TYPE_CONTEXT_PATH     0x0004
+ */
+/* deprecated
 #define MATCH_TYPE_SUFFIX           0x0010
+ */
 /* match all URIs of the form *ext */
+/* deprecated
 #define MATCH_TYPE_GENERAL_SUFFIX   0x0020
+ */
 /* match multiple wild characters (*) and (?) */
 #define MATCH_TYPE_WILDCHAR_PATH    0x0040
 #define MATCH_TYPE_NO_MATCH         0x1000
 #define MATCH_TYPE_DISABLED         0x2000
+/* deprecated
 #define MATCH_TYPE_STOPPED          0x4000
+ */
 
 #define JK_MAX_URI_LEN              4095
 struct uri_worker_record

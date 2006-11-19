@@ -245,25 +245,27 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     for (i = 0; i < uw_map->size; i++) {
         uwr = uw_map->maps[i];
         if (strcmp(uwr->uri, puri) == 0) {
-            /* Update disabled flag */
-            if (match_type & MATCH_TYPE_DISABLED)
-                uwr->match_type |= MATCH_TYPE_DISABLED;
-            else
-                uwr->match_type &= ~MATCH_TYPE_DISABLED;
-            if (strcmp(uwr->worker_name, worker) == 0) {
-                jk_log(l, JK_LOG_DEBUG,
-                       "map rule %s=%s already exists",
-                       puri, worker);
-                JK_TRACE_EXIT(l);
-                return JK_TRUE;
-            }
-            else {
-                jk_log(l, JK_LOG_DEBUG,
-                       "changing map rule %s=%s ",
-                       puri, worker);
-                uwr->worker_name = jk_pool_strdup(&uw_map->p, worker);
-                JK_TRACE_EXIT(l);
-                return JK_TRUE;
+            if (uwr->match_type & MATCH_TYPE_NO_MATCH == match_type & MATCH_TYPE_NO_MATCH) {
+                /* Update disabled flag */
+                if (match_type & MATCH_TYPE_DISABLED)
+                    uwr->match_type |= MATCH_TYPE_DISABLED;
+                else
+                    uwr->match_type &= ~MATCH_TYPE_DISABLED;
+                if (strcmp(uwr->worker_name, worker) == 0) {
+                    jk_log(l, JK_LOG_DEBUG,
+                           "map rule %s=%s already exists",
+                           puri, worker);
+                    JK_TRACE_EXIT(l);
+                    return JK_TRUE;
+                }
+                else {
+                    jk_log(l, JK_LOG_DEBUG,
+                           "changing map rule %s=%s ",
+                           puri, worker);
+                    uwr->worker_name = jk_pool_strdup(&uw_map->p, worker);
+                    JK_TRACE_EXIT(l);
+                    return JK_TRUE;
+                }
             }
         }
     }
@@ -434,7 +436,7 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
         if (!(uwr->match_type & MATCH_TYPE_NO_MATCH) ||
             (uwr->match_type & MATCH_TYPE_DISABLED))
             continue;
-        /* Check only mathing workers */
+        /* Check only matching workers */
         if (strcmp(uwr->worker_name, worker))
             continue;
         if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {

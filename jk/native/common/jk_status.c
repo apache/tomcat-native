@@ -220,14 +220,17 @@ static const char *status_val_bool(int v)
 
 static const char *status_val_match(unsigned int match)
 {
-    if (match & MATCH_TYPE_STOPPED)
-        return "Stopped";
-    else if (match & MATCH_TYPE_DISABLED)
+    if (match & MATCH_TYPE_DISABLED)
         return "Disabled";
     else if (match & MATCH_TYPE_NO_MATCH)
         return "Unmount";
     else if (match & MATCH_TYPE_EXACT)
         return "Exact";
+    else if (match & MATCH_TYPE_WILDCHAR_PATH)
+        return "Wildchar";
+/* deprecated
+    else if (match & MATCH_TYPE_STOPPED)
+        return "Stopped";
     else if (match & MATCH_TYPE_CONTEXT)
         return "Context";
     else if (match & MATCH_TYPE_CONTEXT_PATH)
@@ -236,8 +239,7 @@ static const char *status_val_match(unsigned int match)
         return "Suffix";
     else if (match & MATCH_TYPE_GENERAL_SUFFIX)
         return "General Suffix";
-    else if (match & MATCH_TYPE_WILDCHAR_PATH)
-        return "Wildchar";
+ */
     else
         return "Error";
 }
