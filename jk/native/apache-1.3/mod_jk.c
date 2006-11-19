@@ -131,6 +131,7 @@ typedef struct
      * Request Logging
      */
 
+    char *stamp_format_string;
     char *format_string;
     array_header *format;
 
@@ -1017,7 +1018,12 @@ static const char *jk_set_log_level(cmd_parms * cmd,
 static const char *jk_set_log_fmt(cmd_parms * cmd,
                                   void *dummy, char *log_format)
 {
-    jk_set_log_format(log_format);
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+
+    conf->stamp_format_string = ap_pstrdup(cmd->pool, log_format);
     return NULL;
 }
 
@@ -2028,6 +2034,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->log_level = JK_LOG_DEF_LEVEL;
     c->log = NULL;
     c->alias_dir = NULL;
+    c->stamp_format_string = NULL;
     c->format_string = NULL;
     c->format = NULL;
     c->mountcopy = JK_FALSE;
@@ -2118,6 +2125,8 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
     }
 
     overrides->options = base->options;
+    overrides->stamp_format_string = base->stamp_format_string;
+    overrides->format_string = base->format_string;
 
     if (overrides->mountcopy) {
         copy_jk_map(p, overrides->s, base->uri_to_context,
@@ -2212,6 +2221,7 @@ static void open_jk_log(server_rec *s, pool *p)
     if (jkl && flp) {
         jkl->log = jk_log_to_file;
         jkl->level = conf->log_level;
+        jkl->log_fmt = conf->stamp_format_string;
         jkl->logger_private = flp;
         flp->log_fd = conf->log_fd;
         conf->log = jkl;

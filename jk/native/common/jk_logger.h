@@ -36,6 +36,7 @@ struct jk_logger
 {
     void *logger_private;
     int level;
+    const char *log_fmt;
 
     int (JK_METHOD * log) (jk_logger_t *l, int level, const char *what);
 

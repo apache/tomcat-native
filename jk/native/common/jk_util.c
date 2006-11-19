@@ -195,8 +195,6 @@ static const char *jk_level_verbs[] = {
     NULL
 };
 
-const char *jk_log_fmt = JK_TIME_FORMAT;
-
 /* Sleep for 100ms */
 void jk_sleep(int ms)
 {
@@ -216,13 +214,15 @@ void jk_sleep(int ms)
 #endif
 }
 
-static int set_time_str(char *str, int len)
+static int set_time_str(char *str, int len, const char *jk_log_fmt)
 {
     time_t t = time(NULL);
     struct tm *tms;
 
     tms = localtime(&t);
-    return (int)strftime(str, len, jk_log_fmt, tms);
+    if (jk_log_fmt)
+        return (int)strftime(str, len, jk_log_fmt, tms);
+    return (int)strftime(str, len, JK_TIME_FORMAT, tms);
 }
 
 /* Write at most n characters to the buffer in str, return the
@@ -397,7 +397,7 @@ int jk_log(jk_logger_t *l,
         if (NULL == buf)
             return -1;
 #endif
-        used = set_time_str(buf, usable_size);
+        used = set_time_str(buf, usable_size, l->log_fmt);
 
         if (line) {
             /* Log [pid:threadid] for all levels except REQUEST. */
@@ -853,11 +853,6 @@ int jk_get_worker_activation(jk_map_t *m, const char *wname)
         return JK_LB_ACTIVATION_DISABLED;
     else
         return JK_LB_ACTIVATION_ACTIVE;
-}
-
-void jk_set_log_format(const char *logformat)
-{
-    jk_log_fmt = (logformat) ? logformat : JK_TIME_FORMAT;
 }
 
 int jk_get_lb_factor(jk_map_t *m, const char *wname)
