@@ -38,6 +38,22 @@
 #endif
 
 
+static const char *uri_worker_map_source_type[] = {
+    "unknown",
+    SOURCE_TYPE_TEXT_WORKERDEF,
+    SOURCE_TYPE_TEXT_JKMOUNT,
+    SOURCE_TYPE_TEXT_URIMAP,
+    SOURCE_TYPE_TEXT_DISCOVER,
+    NULL
+};
+
+
+/* Return the string representation of the balance worker state */
+const char *uri_worker_map_get_source(uri_worker_record_t *uwr, jk_logger_t *l)
+{
+    return uri_worker_map_source_type[uwr->source_type];
+}
+
 /*
  * Given context uri, count the number of path tokens.
  *
@@ -79,7 +95,10 @@ static int worker_compare(const void *elem1, const void *elem2)
     /* given the same number of URI tokens, use character
      * length as a tie breaker
      */
-    return ((int)e2->context_len - (int)e1->context_len);
+    if(e2->context_len != e1->context_len)
+        return ((int)e2->context_len - (int)e1->context_len);
+
+    return ((int)e2->source_type - (int)e1->source_type);
 }
 
 static void worker_qsort(jk_uri_worker_map_t *uw_map)
@@ -218,8 +237,41 @@ static int uri_worker_map_realloc(jk_uri_worker_map_t *uw_map)
 }
 
 
+/*
+ * Delete all entries of a given source type
+ */
+
+int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
+                         unsigned int source_type, jk_logger_t *l)
+{
+    uri_worker_record_t *uwr = NULL;
+    unsigned int i;
+    unsigned int j;
+
+    JK_TRACE_ENTER(l);
+
+    /* Find if duplicate entry */
+    for (i = 0; i < uw_map->size; i++) {
+        uwr = uw_map->maps[i];
+        if (uwr->source_type == source_type) {
+            jk_log(l, JK_LOG_DEBUG,
+                   "deleting map rule '%s=%s' source '%s'",
+                   uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
+            for (j = i; j < uw_map->size-1; j++)
+                uw_map->maps[j] = uw_map->maps[j+1];
+            uw_map->size--;
+        }
+    }
+
+    JK_TRACE_EXIT(l);
+    return JK_TRUE;
+}
+
+
+
 int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
-                       const char *puri, const char *worker, jk_logger_t *l)
+                       const char *puri, const char *worker,
+                       unsigned int source_type, jk_logger_t *l)
 {
     uri_worker_record_t *uwr = NULL;
     char *uri;
@@ -241,34 +293,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         puri++;
     }
 
-    /* Find if duplicate entry */
-    for (i = 0; i < uw_map->size; i++) {
-        uwr = uw_map->maps[i];
-        if (strcmp(uwr->uri, puri) == 0) {
-            if ((uwr->match_type & MATCH_TYPE_NO_MATCH) == (match_type & MATCH_TYPE_NO_MATCH)) {
-                /* Update disabled flag */
-                if (match_type & MATCH_TYPE_DISABLED)
-                    uwr->match_type |= MATCH_TYPE_DISABLED;
-                else
-                    uwr->match_type &= ~MATCH_TYPE_DISABLED;
-                if (strcmp(uwr->worker_name, worker) == 0) {
-                    jk_log(l, JK_LOG_DEBUG,
-                           "map rule %s=%s already exists",
-                           puri, worker);
-                    JK_TRACE_EXIT(l);
-                    return JK_TRUE;
-                }
-                else {
-                    jk_log(l, JK_LOG_DEBUG,
-                           "changing map rule %s=%s ",
-                           puri, worker);
-                    uwr->worker_name = jk_pool_strdup(&uw_map->p, worker);
-                    JK_TRACE_EXIT(l);
-                    return JK_TRUE;
-                }
-            }
-        }
-    }
     if (uri_worker_map_realloc(uw_map) == JK_FALSE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
@@ -291,6 +315,11 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     }
 
     if (*uri == '/') {
+        uwr->uri = uri;
+        uwr->context = uri;
+        uwr->worker_name = jk_pool_strdup(&uw_map->p, worker);
+        uwr->context_len = strlen(uwr->context);
+        uwr->source_type = source_type;
         if (strchr(uri, '*') ||
             strchr(uri, '?')) {
             /* Something like
@@ -299,21 +328,17 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
              */
             match_type |= MATCH_TYPE_WILDCHAR_PATH;
             jk_log(l, JK_LOG_DEBUG,
-                    "wildchar rule %s=%s was added",
-                    uri, worker);
+                   "wildchar rule '%s=%s' source '%s' was added",
+                   uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
 
         }
         else {
             /* Something like:  JkMount /login/j_security_check ajp13 */
             match_type |= MATCH_TYPE_EXACT;
             jk_log(l, JK_LOG_DEBUG,
-                   "exact rule %s=%s was added",
-                   uri, worker);
+                   "exact rule '%s=%s' source '%s' was added",
+                   uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
         }
-        uwr->uri = uri;
-        uwr->context = uri;
-        uwr->worker_name = jk_pool_strdup(&uw_map->p, worker);
-        uwr->context_len = strlen(uwr->context);
     }
     else {
         /*
@@ -323,7 +348,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
          * not arrive here when using Apache.
          */
         jk_log(l, JK_LOG_ERROR,
-               "invalid context %s",
+               "invalid context '%s': does not begin with '/'",
                uri);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
@@ -382,7 +407,7 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
                     s = strchr(r, '|');
                     *(s++) = '\0';
                     /* Add first mapping */
-                    if (!uri_worker_map_add(uw_map, r, w, l)) {
+                    if (!uri_worker_map_add(uw_map, r, w, SOURCE_TYPE_JKMOUNT, l)) {
                         jk_log(l, JK_LOG_ERROR,
                         "invalid mapping rule %s->%s", r, w);
                         rc = JK_FALSE;
@@ -391,14 +416,14 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
                         *(s - 1) = *s;
                     *(s - 1) = '\0';
                     /* add second mapping */
-                    if (!uri_worker_map_add(uw_map, r, w, l)) {
+                    if (!uri_worker_map_add(uw_map, r, w, SOURCE_TYPE_JKMOUNT, l)) {
                         jk_log(l, JK_LOG_ERROR,
                                "invalid mapping rule %s->%s", r, w);
                         rc = JK_FALSE;
                     }
                     free(r);
                 }
-                else if (!uri_worker_map_add(uw_map, u, w, l)) {
+                else if (!uri_worker_map_add(uw_map, u, w, SOURCE_TYPE_JKMOUNT, l)) {
                     jk_log(l, JK_LOG_ERROR,
                            "invalid mapping rule %s->%s",
                            u, w);
@@ -449,8 +474,8 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
 #endif
                                ) == 0) {
                     jk_log(l, JK_LOG_DEBUG,
-                           "Found a no match %s -> %s",
-                           uwr->worker_name, uwr->context);
+                           "Found a wildchar no match '%s=%s' source '%s'",
+                           uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
                     JK_TRACE_EXIT(l);
                     return JK_TRUE;
              }
@@ -459,8 +484,8 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
             if (strlen(uri) == uwr->context_len) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                            "Found an exact no match %s -> %s",
-                            uwr->worker_name, uwr->context);
+                           "Found an exact no match '%s=%s' source '%s'",
+                           uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
@@ -525,7 +550,8 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             continue;
 
         if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG, "Attempting to map context URI '%s'", uwr->uri);
+            jk_log(l, JK_LOG_DEBUG, "Attempting to map context URI '%s=%s' source '%s'",
+                   uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
 
         if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {
             const char *wname;
@@ -540,8 +566,8 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                     wname = uwr->worker_name;
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
-                               "Found a wildchar match %s -> %s",
-                               uwr->worker_name, uwr->context);
+                               "Found a wildchar match '%s=%s'",
+                               uwr->context, uwr->worker_name);
                     JK_TRACE_EXIT(l);
                     rv = wname;
                     goto cleanup;
@@ -551,8 +577,8 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             if (strlen(url) == uwr->context_len) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                           "Found an exact match %s -> %s",
-                           uwr->worker_name, uwr->context);
+                           "Found an exact match '%s=%s'",
+                           uwr->context, uwr->worker_name);
                 JK_TRACE_EXIT(l);
                 rv = uwr->worker_name;
                 goto cleanup;
@@ -585,6 +611,10 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
     if (jk_map_read_properties(map, uw_map->fname,
                                &uw_map->modified, l)) {
         int i;
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "Reloading urimaps from %s", uw_map->fname);
+        uri_worker_map_clear(uw_map, SOURCE_TYPE_URIMAP, l);
         for (i = 0; i < jk_map_size(map); i++) {
             const char *u = jk_map_name_at(map, i);
             const char *w = jk_map_value_at(map, i);
@@ -600,7 +630,7 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
                 s = strchr(r, '|');
                 *(s++) = '\0';
                 /* Add first mapping */
-                if (!uri_worker_map_add(uw_map, r, w, l)) {
+                if (!uri_worker_map_add(uw_map, r, w, SOURCE_TYPE_URIMAP, l)) {
                     jk_log(l, JK_LOG_ERROR,
                     "invalid mapping rule %s->%s", r, w);
                 }
@@ -608,13 +638,13 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
                    *(s - 1) = *s;
                 *(s - 1) = '\0';
                 /* add second mapping */
-                if (!uri_worker_map_add(uw_map, r, w, l)) {
+                if (!uri_worker_map_add(uw_map, r, w, SOURCE_TYPE_URIMAP, l)) {
                     jk_log(l, JK_LOG_ERROR,
                     "invalid mapping rule %s->%s", r, w);
                 }
                 free(r);
             }
-            else if (!uri_worker_map_add(uw_map, u, w, l)) {
+            else if (!uri_worker_map_add(uw_map, u, w, SOURCE_TYPE_URIMAP, l)) {
                 jk_log(l, JK_LOG_ERROR,
                        "invalid mapping rule %s->%s",
                        u, w);
@@ -666,4 +696,3 @@ int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
     }
     return JK_TRUE;
 }
-

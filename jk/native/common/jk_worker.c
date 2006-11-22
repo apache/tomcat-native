@@ -179,7 +179,7 @@ int wc_create_worker(const char *name, int use_map,
                             "mounting %s to worker %s",
                             map_names[i], name);
                 if (uri_worker_map_add(we->uri_to_worker, map_names[i],
-                                       name, l) == JK_FALSE) {
+                                       name, SOURCE_TYPE_WORKERDEF, l) == JK_FALSE) {
                     w->destroy(&w, l);
                     jk_log(l, JK_LOG_ERROR,
                            "validate failed for %s", name);

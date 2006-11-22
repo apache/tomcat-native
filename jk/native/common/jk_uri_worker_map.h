@@ -62,6 +62,15 @@ extern "C"
 #define MATCH_TYPE_STOPPED          0x4000
  */
 
+#define SOURCE_TYPE_WORKERDEF       0x0001
+#define SOURCE_TYPE_JKMOUNT         0x0002
+#define SOURCE_TYPE_URIMAP          0x0003
+#define SOURCE_TYPE_DISCOVER        0x0004
+#define SOURCE_TYPE_TEXT_WORKERDEF  ("worker definition")
+#define SOURCE_TYPE_TEXT_JKMOUNT    ("JkMount")
+#define SOURCE_TYPE_TEXT_URIMAP     ("uriworkermap")
+#define SOURCE_TYPE_TEXT_DISCOVER   ("ajp14")
+
 #define JK_MAX_URI_LEN              4095
 struct uri_worker_record
 {
@@ -76,6 +85,9 @@ struct uri_worker_record
 
     /* Match type */
     unsigned int match_type;
+
+    /* Definition source type */
+    unsigned int source_type;
 
     /* char length of the context */
     size_t context_len;
@@ -112,6 +124,8 @@ struct jk_uri_worker_map
 };
 typedef struct jk_uri_worker_map jk_uri_worker_map_t;
 
+const char *uri_worker_map_get_source(uri_worker_record_t *uwr, jk_logger_t *l);
+
 int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
                          jk_map_t *init_data, jk_logger_t *l);
 
@@ -121,7 +135,8 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
                         jk_map_t *init_data, jk_logger_t *l);
 
 int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
-                       const char *puri, const char *pworker, jk_logger_t *l);
+                       const char *puri, const char *worker,
+                       unsigned int source_type, jk_logger_t *l);
 
 const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                               const char *uri, jk_logger_t *l);
