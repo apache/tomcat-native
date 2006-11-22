@@ -2292,11 +2292,11 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
         copy_jk_map(p, overrides->s, base->uri_to_context,
                     overrides->uri_to_context);
         copy_jk_map(p, overrides->s, base->automount, overrides->automount);
-        overrides->mount_file = base->mount_file;
+        if (!overrides->mount_file)
+            overrides->mount_file = base->mount_file;
+        if (!overrides->alias_dir)
+            overrides->alias_dir = base->alias_dir;
     }
-
-    if (!overrides->alias_dir)
-        overrides->alias_dir = base->alias_dir;
 
     return overrides;
 }
