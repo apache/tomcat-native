@@ -588,6 +588,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_putv(s, "<td>", jk_dump_hinfo(&aw->worker_inet_addr, buf),
                     "</td>\n</tr>\n", NULL);
             jk_puts(s, "</table>\n");
+            display_maps(s, sw, s->uw_map, dworker, l);
 
         }
     }
