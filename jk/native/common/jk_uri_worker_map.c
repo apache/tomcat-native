@@ -48,10 +48,45 @@ static const char *uri_worker_map_source_type[] = {
 };
 
 
-/* Return the string representation of the balance worker state */
+/* Return the string representation of the uwr source */
 const char *uri_worker_map_get_source(uri_worker_record_t *uwr, jk_logger_t *l)
 {
     return uri_worker_map_source_type[uwr->source_type];
+}
+
+/* Return the string representation of the uwr match type */
+char *uri_worker_map_get_match(uri_worker_record_t *uwr, char *buf, jk_logger_t *l)
+{
+    unsigned int match;
+
+    buf[0] = '\0';
+    match = uwr->match_type;
+
+    if (match & MATCH_TYPE_DISABLED)
+        strcat(buf, "Disabled ");
+/* deprecated
+    if (match & MATCH_TYPE_STOPPED)
+        strcat(buf, "Stopped ");
+ */
+    if (match & MATCH_TYPE_NO_MATCH)
+        strcat(buf, "Unmount ");
+    if (match & MATCH_TYPE_EXACT)
+        strcat(buf, "Exact");
+    else if (match & MATCH_TYPE_WILDCHAR_PATH)
+        strcat(buf, "Wildchar");
+/* deprecated
+    else if (match & MATCH_TYPE_CONTEXT)
+        strcat(buf, "Context");
+    else if (match & MATCH_TYPE_CONTEXT_PATH)
+        strcat(buf, "Context Path");
+    else if (match & MATCH_TYPE_SUFFIX)
+        strcat(buf, "Suffix");
+    else if (match & MATCH_TYPE_GENERAL_SUFFIX)
+        return "General Suffix";
+ */
+    else
+        strcat(buf, "Unknown");
+    return buf;
 }
 
 /*

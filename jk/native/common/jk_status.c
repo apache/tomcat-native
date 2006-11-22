@@ -218,32 +218,6 @@ static const char *status_val_bool(int v)
         return "True";
 }
 
-static const char *status_val_match(unsigned int match)
-{
-    if (match & MATCH_TYPE_DISABLED)
-        return "Disabled";
-    else if (match & MATCH_TYPE_NO_MATCH)
-        return "Unmount";
-    else if (match & MATCH_TYPE_EXACT)
-        return "Exact";
-    else if (match & MATCH_TYPE_WILDCHAR_PATH)
-        return "Wildchar";
-/* deprecated
-    else if (match & MATCH_TYPE_STOPPED)
-        return "Stopped";
-    else if (match & MATCH_TYPE_CONTEXT)
-        return "Context";
-    else if (match & MATCH_TYPE_CONTEXT_PATH)
-        return "Context Path";
-    else if (match & MATCH_TYPE_SUFFIX)
-        return "Suffix";
-    else if (match & MATCH_TYPE_GENERAL_SUFFIX)
-        return "General Suffix";
- */
-    else
-        return "Error";
-}
-
 static void jk_puts(jk_ws_service_t *s, const char *str)
 {
     if (str)
@@ -336,23 +310,24 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
                          jk_uri_worker_map_t *uwmap,
                          const char *worker, jk_logger_t *l)
 {
+    char buf[64];
     unsigned int i;
 
     jk_puts(s, "<br/>Uri Mappings:\n");
     jk_puts(s, "<table>\n<tr><th>Match Type</th><th>Uri</th>"
-               "<th>Context</th></tr>\n");
+               "<th>Source</th></tr>\n");
     for (i = 0; i < uwmap->size; i++) {
         uri_worker_record_t *uwr = uwmap->maps[i];
-        if (strcmp(uwr->worker_name, worker)) {
+        if (worker && strcmp(uwr->worker_name, worker)) {
             continue;
         }
         jk_putv(s, "<tr><td>",
-                status_val_match(uwr->match_type),
+                uri_worker_map_get_match(uwr, buf, l),
                 "</td><td>", NULL);
         jk_puts(s, uwr->uri);
-        jk_putv(s, "</td><td>", uwr->context, NULL);
-
-        jk_puts(s, "</td></tr>\n");
+        jk_putv(s, "</td><td>",
+                uri_worker_map_get_source(uwr, l),
+                "</td></tr>\n", NULL);
     }
     jk_puts(s, "</table>\n");
 }
@@ -361,17 +336,18 @@ static void dump_maps(jk_ws_service_t *s, status_worker_t *sw,
                       jk_uri_worker_map_t *uwmap,
                       const char *worker, jk_logger_t *l)
 {
+    char buf[64];
     unsigned int i;
 
     for (i = 0; i < uwmap->size; i++) {
         uri_worker_record_t *uwr = uwmap->maps[i];
-        if (strcmp(uwr->worker_name, worker)) {
+        if (worker && strcmp(uwr->worker_name, worker)) {
             continue;
         }
-        jk_printf(s, "    <jk:map type=\"%s\" uri=\"%s\" context=\"%s\" />\n",
-              status_val_match(uwr->match_type),
-              uwr->uri,
-              uwr->context) ;
+        jk_printf(s, "    <jk:map type=\"%s\" uri=\"%s\" source=\"%s\" />\n",
+                  uri_worker_map_get_match(uwr, buf, l),
+                  uwr->uri,
+                  uri_worker_map_get_source(uwr, l));
     }
 }
 
@@ -589,7 +565,6 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                     "</td>\n</tr>\n", NULL);
             jk_puts(s, "</table>\n");
             display_maps(s, sw, s->uw_map, dworker, l);
-
         }
     }
     /* Display legend */

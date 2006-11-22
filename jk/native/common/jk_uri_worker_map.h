@@ -126,6 +126,8 @@ typedef struct jk_uri_worker_map jk_uri_worker_map_t;
 
 const char *uri_worker_map_get_source(uri_worker_record_t *uwr, jk_logger_t *l);
 
+char *uri_worker_map_get_match(uri_worker_record_t *uwr, char *buf, jk_logger_t *l);
+
 int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
                          jk_map_t *init_data, jk_logger_t *l);
 
