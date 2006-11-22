@@ -27,6 +27,50 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Status Worker: Add source type to status worker, remove the redundant "context"
+      column in the map listing (context=uri). (rjung)
+      </update>
+      <update>
+      uriworkermap: On reload of the file, all old entries from the previous file
+      version get deleted, before the new ones are being read. (rjung)
+      </update>
+      <fix>
+      Keep normal maps and exclusion maps internally separate. Don't treat them
+      as the same when adding a rule. (rjung)
+      version get deleted, before the new ones are being read. (rjung)
+      </fix>
+      <update>
+      Status Worker: Display mappng rules also for non-lb workers and in global view. (rjung)
+      </update>
+      <update>
+      Apache VHosts: Use the vhost log files instead of the main log. (rjung)
+      </update>
+      <update>
+      Apache VHosts: Allow individual timestamp formats by refactoring the formatting
+      method. (rjung)
+      </update>
+      <update>
+      Apache VHosts: Adding all missing config items to the virtual host level.
+      Don't overwrite the settings from the global server, but inherit them
+      in case they are not set in the virtual host. (rjung)
+      </update>
+      <update>
+      Apache: remove unnecessary function names from log messages. (rjung)
+      </update>
+      <update>
+      Apache: add a default log file location and a message, if the default gets used. (rjung)
+      </update>
+      <update>
+      Apache: add missing JK_IS_DEBUG_LEVEL() (rjung)
+      </update>
+      <update>
+      Apache VHosts: Allow JkWorkersFile, JKWorkerProperty, JkShmFile and JkShmFileSize
+      only in global virtual server. (rjung)
+      </update>
+      <update>
+      Add some more jk_close_socket() and reduce log level for some info messages. (rjung)
+      </update>
+      <update>
       Load Balancer: Added the Sessions strategy. Contributed by Takayuki Kaneko. (rjung)
       </update>
       <update>
