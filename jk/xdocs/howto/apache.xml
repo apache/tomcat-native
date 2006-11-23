@@ -442,16 +442,27 @@ here is a list of the available request log format options:
 <subsection name="Forwarding">
 <p>
 The directive JkOptions allow you to set many forwarding options which will enable (+)
-or disable (-) following option.
+or disable (-) following option. Without any leading signs, options will be enabled.
 <br/>
 <br/>
 </p>
 
 <p>
- Exactly one of the following three options <b>+ForwardURIxxx</b>
- is required. By default, the option ForwardURICompat
- is turned on. So if you turn this off you will need to switch on one of the other
- two described below.
+The three following options <b>+ForwardURIxxx</b> are mutually exclusive.
+Exactly one of them is required, a negative sign prefix is not allowed with them.
+By default, the option ForwardURICompat is turned on.
+You can turn this off by switching on one of the other two.
+<br/>
+<br/>
+</p>
+
+<p>
+All options are inherited from the global server to virtual hosts.
+Options that support enabling (plus options) and disabling (minus options),
+are inherited in the following way:
+<br/>
+<br/>
+options(vhost) = plus_options(global) - minus_options(global) + plus_options(vhost) - minus_options(vhost)
 <br/>
 <br/>
 </p>
@@ -611,6 +622,9 @@ This flag shouldn't be set when servlet engine is Tomcat 3.2.x (off by default).
 The directive <b>JkEnvVar</b> allows you to forward environment variables from Apache server to Tomcat engine.
 The variables can be retrieved on the Tomcat side as request attributes.
 You must add a default value as a second parameter to the directive.
+<br/>
+<br/>
+The variables are inherited from the global server to virtual hosts.
 
 <source>
   JkEnvVar     SSL_CLIENT_V_START     undefined

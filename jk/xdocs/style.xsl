@@ -247,7 +247,7 @@
   <xsl:template match="attributes">
     <table border="1" cellpadding="5">
       <tr>
-        <th width="220px" bgcolor="{$attributes-color}">
+        <th width="20%" bgcolor="{$attributes-color}">
      	  <xsl:choose>
             <xsl:when test="@name != ''">
                <font color="#ffffff"><xsl:value-of select="@name"/></font>
@@ -257,7 +257,7 @@
             </xsl:otherwise>
           </xsl:choose>          
         </th>
-        <th width="*" bgcolor="{$attributes-color}">
+        <th width="80%" bgcolor="{$attributes-color}">
           <font color="#ffffff">Description</font>
         </th>
       </tr>

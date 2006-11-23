@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Apache Docs: Adding requirements, context information, default values and
+      inheritance rules to the Apache config documentation. (rjung)
+      </update>
+      <update>
       Status Worker: Add source type to status worker, remove the redundant "context"
       column in the map listing (context=uri). (rjung)
       </update>

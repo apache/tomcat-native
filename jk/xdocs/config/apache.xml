@@ -13,83 +13,197 @@
 
 <body>
 
-<section name="Configuration Directives">
+<section name="Configuration Directives"> <p>
+Most of the directives are allowed once in the global part of the Apache httpd
+configuration and once in every &lt;VirtualHost&gt; elements. Exceptions from this rule are
+explicitely listed in the table below.
+</p>
+<p>
+Values are inherited from the main server to the virtual hosts. 
+Since version 1.2.20 they can be overwritten in the virtual hosts.
+Exceptions from this rule are
+again explicitely listed in the table below.
+</p>
 <p>
 Here are the all directives supported by Apache:
 </p>
 <attributes name="Directive">
 <attribute name="JkWorkersFile" required="false"><p>
-The name of a worker file for the Tomcat servlet containers
+The name of a worker file for the Tomcat servlet containers.
+<br/>
+This directive is only allowed once. It must be put into
+ the global part of the configuration.
+<br/>
+If you don't use the JkWorkerProperty directives, then you must
+define your workers with a valid JkWorkersFile. There is no default
+value.
 </p></attribute>
 <attribute name="JkWorkerProperty" required="false"><p>
-Enables setting workers.properties inside Apache configuration file.
+Enables setting worker properties inside Apache configuration file.
+The syntax is the same as in the JkWorkersFile (usually workers.properties).
+Simply prefix each line with "JkWorkerProperty" to put it directly into
+the Apache httpd config files.
+<br/>
+This directive is allowed multiple times.
+It must be put into the global part of the configuration.
+<br/>
+If you don't use the JkWorkerProperty directives, then you must
+define your workers with a valid JkWorkersFile. There is no default
+value.
+<br/>
 This directive is available in jk1.2.7 version and later.
 </p></attribute>
-<attribute name="JkMount" required="false"><p>
-A mount point from a context to a Tomcat worker
+<attribute name="JkShmFile" required="false"><p>
+Shared memory file name. Used only on unix platforms.
+<br/>
+This directive is only allowed once. It must be put into
+ the global part of the configuration.
+<br/>
+The default value is logs/jk-runtime-status.
+</p></attribute>
+<attribute name="JkShmSize" required="false"><p>
+Size of the shared memory file name.
+<br/>
+This directive is only allowed once. It must be put into
+ the global part of the configuration.
+<br/>
+The default value depends on the platform. It is usually less than 64KB.
 </p></attribute>
 <attribute name="JkMountFile" required="false"><p>
-File containing multiple mappings from a context to a Tomcat worker
+File containing multiple mappings from a context to a Tomcat worker.
+It is usually called uriworkermap.properties.
+<br/>
+For inheritance rules, see: JkMountCopy.
+<br/>
+There is no default value.
+</p></attribute>
+<attribute name="JkMount" required="false"><p>
+A mount point from a context to a Tomcat worker.
+<br/>
+This directive is allowed multiple times.
+It is allowed in the global configuration and in VirtualHost.
+You can also use it inside Location with a different syntax.
+Inside Location, one omits the first argument (path),
+which gets inherited from the Location.
+For inheritance rules, see: JkMountCopy.
 </p></attribute>
 <attribute name="JkUnMount" required="false"><p>
-A no mount point from a context to a Tomcat worker
+An exclusion mount point from a context to a Tomcat worker.
+All exclusion mounts are checked after mapping a request
+to a tomcat worker. If the request maps also to an exclusion,
+it will not be forwarded to tomcat, and instead be served locally.
+<br/>
+This directive is allowed multiple times.
+It is allowed in the global configuration and in VirtualHost.
+You can also use it inside Location with a different syntax.
+Inside Location, one omits the first argument (path),
+which gets inherited from the Location.
+For inheritance rules, see: JkMountCopy.
+<br/>
 This directive is available in jk1.2.7 version and later.
-</p></attribute>
-<attribute name="JkMountCopy" required="false"><p>
-Should the base server mounts be copied to the virtual server.
-</p></attribute>
-<attribute name="JkWorkerIndicator" required="false"><p>
-Name of the Apache environment variable that can be used to set worker names.
-</p></attribute>
-<attribute name="JkLogFile" required="false"><p>
-Full or server relative path to the Tomcat Connector module log file
-</p></attribute>
-<attribute name="JkLogLevel" required="false"><p>
-The Tomcat Connector module log level, can be debug, info, warn
-error or trace
-</p></attribute>
-<attribute name="JkLogStampFormat" required="false"><p>
-The Tomcat Connector module <b>date</b> log format, follow strftime syntax
-</p></attribute>
-<attribute name="JkRequestLogFormat" required="false"><p>
-Request log format string. See detailed description below.
 </p></attribute>
 <attribute name="JkAutoAlias" required="false"><p>
 Automatically Alias webapp context directories into the Apache
 document space. 
+<br/>
+For inheritance rules, see: JkMountCopy.
+<br/>
+There is no default value.
 </p></attribute>
-<attribute name="JkHTTPSIndicator" required="false"><p>
-Name of the Apache environment variable that contains SSL indication
+<attribute name="JkMountCopy" required="false"><p>
+If this directive is set to On in some virtual server,
+the mounts from the global server will be copied to the
+virtual server, more precisely all mounts defined by JkMount
+or JkUnMount. The Mounts defined by JkMountFile and JkAutoAlias
+will only be inherited, if the VirtualHost does not define
+it's own JkMountFile or JkAutoAlias.
+<br/>
+This directive is only allowed inside VirtualHost.
+<br/>
+The default is Off.
 </p></attribute>
-<attribute name="JkCERTSIndicator" required="false"><p>
-Name of the Apache environment variable that contains SSL client certificates
+<attribute name="JkWorkerIndicator" required="false"><p>
+Name of the Apache environment variable that can be used to set worker names
+in combination with SetHandler jakarta-servlet.
+<br/>
+This directive is only allowed once per virtual server.
+It is allowed in the global configuration and in VirtualHost.
+<br/>
+The default value is JK_WORKER_NAME.
 </p></attribute>
-<attribute name="JkCIPHERIndicator" required="false"><p>
-Name of the Apache environment variable that contains SSL client cipher
+<attribute name="JkLogFile" required="false"><p>
+Full or server relative path to the Tomcat Connector module log file.
+It will also work with pipe, by using a value of the form "| ...".
+<br/>
+The default value is logs/mod_jk.log.
+<br/>
+Pipes are supported for Apache 1.3 only since version 1.2.16.
 </p></attribute>
-<attribute name="JkSESSIONIndicator" required="false"><p>
-Name of the Apache environment variable that contains SSL session
+<attribute name="JkLogLevel" required="false"><p>
+The Tomcat Connector module log level, can be debug, info, warn
+error or trace.
+<br/>
+The default value is info.
 </p></attribute>
-<attribute name="JkKEYSIZEIndicator" required="false"><p>
-Name of the Apache environment variable that contains SSL key size in use
+<attribute name="JkLogStampFormat" required="false"><p>
+The Tomcat Connector module <b>date</b> log format, follow strftime syntax.
+This format will be used for the time stamps in the JkLogFile.
+<br/>
+The default value is "[%a %b %d %H:%M:%S %Y] ".
+</p></attribute>
+<attribute name="JkRequestLogFormat" required="false"><p>
+Request log format string. See detailed description below.
+<br/>
+There is no default value. Without defining a value, the request logging
+is turned off.
 </p></attribute>
 <attribute name="JkExtractSSL" required="false"><p>
 Turns on SSL processing and information gathering by mod_jk
+<br/>
+The default value is On.
+</p></attribute>
+<attribute name="JkHTTPSIndicator" required="false"><p>
+Name of the Apache environment variable that contains SSL indication.
+<br/>
+The default value is "HTTPS".
+</p></attribute>
+<attribute name="JkCERTSIndicator" required="false"><p>
+Name of the Apache environment variable that contains SSL client certificates.
+<br/>
+The default value is "SSL_CLIENT_CERT".
+</p></attribute>
+<attribute name="JkCIPHERIndicator" required="false"><p>
+Name of the Apache environment variable that contains SSL client cipher.
+<br/>
+The default value is "SSL_CIPHER".
+</p></attribute>
+<attribute name="JkSESSIONIndicator" required="false"><p>
+Name of the Apache environment variable that contains SSL session.
+<br/>
+The default value is "SSL_SESSION_ID".
+</p></attribute>
+<attribute name="JkKEYSIZEIndicator" required="false"><p>
+Name of the Apache environment variable that contains SSL key size in use.
+<br/>
+The default value is "SSL_CIPHER_USEKEYSIZE".
 </p></attribute>
 <attribute name="JkOptions" required="false"><p>
 Set one of more options to configure the mod_jk module. See below for
-details about this directive
+details about this directive.
+<br/>
+This directive can be used multiple times per virtual server.
+<br/>
+The default value is "ForwardURICompat".
 </p></attribute>
 <attribute name="JkEnvVar" required="false"><p>
-Adds a name of environment variable that should be sent to servlet-engine as a request atribute
+Adds a name and default value of environment variable that should be sent to servlet-engine
+as a request attribute.
+<br/>
+This directive can be used multiple times per virtual server.
+<br/>
+The default is empty, so no additional variables will be sent.
 </p></attribute>
 
-<attribute name="JkShmFile" required="false"><p>
-Shared memory file name. Used only on unix platforms.
-</p></attribute>
-<attribute name="JkShmSize" required="false"><p>
-Size of the shared memory file name. Default is 64 k.
-</p></attribute>
 
 </attributes>
 </section>
@@ -248,7 +362,8 @@ Most of them are are only useful in combination with a load balancer worker.
 </attributes>
 
 <source>
-  LogFormat     "%h %l %u %t \"%r\" %>s %b %{JK_WORKER_NAME}n %{JK_LB_FIRST_NAME}n %{JK_LB_FIRST_BUSY}n %{JK_LB_LAST_NAME}n %{JK_LB_LAST_BUSY}n" mod_jk_log
+  LogFormat     "%h %l %u %t \"%r\" %>s %b %{JK_WORKER_NAME}n %{JK_LB_FIRST_NAME}n \
+                 %{JK_LB_FIRST_BUSY}n %{JK_LB_LAST_NAME}n %{JK_LB_LAST_BUSY}n" mod_jk_log
   CustomLog     logs/access_log     mod_jk_log
 </source>
 
@@ -261,7 +376,27 @@ Most of them are are only useful in combination with a load balancer worker.
 <subsection name="Forwarding">
 <p>
 The directive JkOptions allow you to set many forwarding options which will enable (+)
-or disable (-) following option.
+or disable (-) following option. Without any leading signs, options will be enabled.
+<br/>
+<br/>
+</p>
+
+<p>
+The three following options <b>+ForwardURIxxx</b> are mutually exclusive.
+Exactly one of them is required, a negative sign prefix is not allowed with them.
+By default, the option ForwardURICompat is turned on.
+You can turn this off by switching on one of the other two.
+<br/>
+<br/>
+</p>
+
+<p>
+All options are inherited from the global server to virtual hosts.
+Options that support enabling (plus options) and disabling (minus options),
+are inherited in the following way:
+<br/>
+<br/>
+options(vhost) = plus_options(global) - minus_options(global) + plus_options(vhost) - minus_options(vhost)
 <br/>
 <br/>
 </p>
@@ -421,8 +556,11 @@ This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
 
 <p>
 The directive <b>JkEnvVar</b> allows you to forward environment variables from Apache server to Tomcat engine.
-The variables can be retrieved on the Tomcat side as a request attributes.
+The variables can be retrieved on the Tomcat side as request attributes.
 You must add a default value as a second parameter to the directive.
+<br/>
+<br/>
+The variables are inherited from the global server to virtual hosts.
 
 <source>  
   JkEnvVar     SSL_CLIENT_V_START     undefined
