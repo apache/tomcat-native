@@ -195,6 +195,7 @@ typedef struct
      * Jk Options
      */
     int options;
+    int exclude_options;
 
     /*
      * Environment variables support
@@ -1653,7 +1654,7 @@ static const char *jk_set_options(cmd_parms * cmd, void *dummy,
         conf->options &= ~mask;
 
         if (action == '-') {
-            conf->options &= ~opt;
+            conf->exclude_options |= opt;
         }
         else if (action == '+') {
             conf->options |= opt;
@@ -2172,6 +2173,7 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->format_string = NULL;
     c->format = NULL;
     c->mountcopy = JK_FALSE;
+    c->exclude_options = 0;
     c->was_initialized = JK_FALSE;
 
     if (s->is_virtual) {
@@ -2280,7 +2282,7 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
     if (!overrides->secret_key)
         overrides->secret_key = base->secret_key;
 
-    overrides->options |= base->options;
+    overrides->options |= (base->options & ~base->exclude_options);
 
     if (base->envvars_in_use) {
         overrides->envvars_in_use = JK_TRUE;
@@ -2614,6 +2616,7 @@ static int jk_post_config(apr_pool_t * pconf,
                             ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                                          "JkRequestLogFormat format array NULL");
                     }
+                    sconf->options &= ~sconf->exclude_options;
                 }
             }
             init_jk(pconf, conf, s);

@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Apache VHosts: Merge JkOptions +base - -base + +vhost - -vhost. (rjung)
+      </update>
+      <update>
       Apache Docs: Adding requirements, context information, default values and
       inheritance rules to the Apache config documentation. (rjung)
       </update>
