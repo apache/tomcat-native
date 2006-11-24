@@ -166,6 +166,33 @@ void reset_lb_values(lb_worker_t *p, jk_logger_t *l)
             p->lb_workers[i].s->lb_value = 0;
         }
     }
+    JK_TRACE_EXIT(l);
+}
+
+/* Syncing config values from shm */
+void jk_lb_pull(lb_worker_t * p, jk_logger_t *l) {
+    JK_TRACE_ENTER(l);
+    p->sticky_session = p->s->sticky_session;
+    p->sticky_session_force = p->s->sticky_session_force;
+    p->recover_wait_time = p->s->recover_wait_time;
+    p->retries = p->s->retries;
+    p->lbmethod = p->s->lbmethod;
+    p->lblock = p->s->lblock;
+    p->sequence = p->s->sequence;
+    JK_TRACE_EXIT(l);
+}
+
+/* Syncing config values from shm */
+void jk_lb_push(lb_worker_t * p, jk_logger_t *l) {
+    JK_TRACE_ENTER(l);
+    p->s->sticky_session = p->sticky_session;
+    p->s->sticky_session_force = p->sticky_session_force;
+    p->s->recover_wait_time = p->recover_wait_time;
+    p->s->retries = p->retries;
+    p->s->lbmethod = p->lbmethod;
+    p->s->lblock = p->lblock;
+    p->s->sequence = p->sequence;
+    JK_TRACE_EXIT(l);
 }
 
 /* Retrieve the parameter with the given name                                */
@@ -541,7 +568,7 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
              * balancer. Of course you will need a some kind of
              * session replication between those two remote.
              */
-            if (p->s->sticky_session_force)
+            if (p->sticky_session_force)
                 candidate = NULL;
             else if (*candidate->s->redirect)
                 candidate = find_by_session(p, candidate->s->redirect, l);
@@ -665,7 +692,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
             sessionid = next;
             rc = NULL;
         }
-        if (!rc && p->s->sticky_session_force) {
+        if (!rc && p->sticky_session_force) {
             if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
                 jk_shm_unlock();
             else {
@@ -727,7 +754,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
     jk_b_set_buffer_size(s->reco_buf, p->worker->max_packet_size);
     jk_b_reset(s->reco_buf);
     s->reco_status = RECO_INITED;
-    if (p->worker->s->sticky_session) {
+
+    jk_shm_lock();
+    if (p->worker->sequence != p->worker->s->sequence)
+        jk_lb_pull(p->worker, l);
+    jk_shm_unlock();
+
+    if (p->worker->sticky_session) {
         /* Use sessionid only if sticky_session is
          * defined for this load balancer
          */
@@ -736,7 +769,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "service sticky_session=%d id='%s'",
-               p->worker->s->sticky_session, sessionid ? sessionid : "empty");
+               p->worker->sticky_session, sessionid ? sessionid : "empty");
 
     while (attempt <= num_of_workers && rc == -1) {
         worker_record_t *rec =
@@ -798,6 +831,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if (p->worker->s->busy > p->worker->s->max_busy)
                     p->worker->s->max_busy = p->worker->s->busy;
                 rec->s->busy++;
+                if (rec->s->busy > rec->s->max_busy)
+                    rec->s->max_busy = rec->s->busy;
                 if (p->worker->lbmethod == JK_LB_METHOD_REQUESTS)
                     rec->s->lb_value += rec->s->lb_mult;
                 else if (p->worker->lbmethod == JK_LB_METHOD_SESSIONS &&
@@ -805,8 +840,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rec->s->lb_value += rec->s->lb_mult;
                 else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS)
                     rec->s->lb_value += rec->s->lb_mult;
-                if (rec->s->busy > rec->s->max_busy)
-                    rec->s->max_busy = rec->s->busy;
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_unlock();
 
@@ -1084,8 +1117,8 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         unsigned int num_of_workers;
         const char *secret;
 
-        p->s->sticky_session = jk_get_is_sticky_session(props, p->s->name);
-        p->s->sticky_session_force = jk_get_is_sticky_session_force(props, p->s->name);
+        p->sticky_session = jk_get_is_sticky_session(props, p->s->name);
+        p->sticky_session_force = jk_get_is_sticky_session_force(props, p->s->name);
         secret = jk_get_worker_secret(props, p->s->name);
 
         if (jk_get_lb_worker_list(props,
@@ -1113,16 +1146,9 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 }
             }
 
-            /* Calculate the maximum packet size from all workers
-             * for the recovery buffer.
-             */
-            for (i = 0; i < num_of_workers; i++) {
-                unsigned int ms = jk_get_max_packet_size(props, worker_names[i]);
-                if (ms > p->max_packet_size)
-                    p->max_packet_size = ms;
-            }
             for (i = 0; i < num_of_workers; i++) {
                 const char *s;
+                unsigned int ms;
                 strncpy(p->lb_workers[i].s->name, worker_names[i],
                         JK_SHM_STR_SIZ);
                 p->lb_workers[i].s->lb_factor =
@@ -1130,6 +1156,12 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 if (p->lb_workers[i].s->lb_factor < 1) {
                     p->lb_workers[i].s->lb_factor = 1;
                 }
+                /* Calculate the maximum packet size from all workers
+                 * for the recovery buffer.
+                 */
+                ms = jk_get_max_packet_size(props, worker_names[i]);
+                if (ms > p->max_packet_size)
+                    p->max_packet_size = ms;
                 p->lb_workers[i].s->distance =
                     jk_get_distance(props, worker_names[i]);
                 if ((s = jk_get_worker_jvm_route(props, worker_names[i], NULL)))
@@ -1216,12 +1248,14 @@ static int JK_METHOD init(jk_worker_t *pThis,
 
     pThis->retries = jk_get_worker_retries(props, p->s->name,
                                            JK_RETRIES);
-    p->s->retries = pThis->retries;
-    p->s->recover_wait_time = jk_get_worker_recover_timeout(props, p->s->name,
+    p->retries = pThis->retries;
+    p->recover_wait_time = jk_get_worker_recover_timeout(props, p->s->name,
                                                             WAIT_BEFORE_RECOVER);
-    if (p->s->recover_wait_time < 1)
-        p->s->recover_wait_time = 1;
+    if (p->recover_wait_time < 1)
+        p->recover_wait_time = 1;
     p->maintain_time = jk_get_worker_maintain_time(props);
+    if(p->maintain_time < 0)
+        p->maintain_time = 0;
     p->s->last_maintain_time = time(NULL);
 
     p->lbmethod = jk_get_lb_method(props, p->s->name);
@@ -1235,6 +1269,11 @@ static int JK_METHOD init(jk_worker_t *pThis,
         JK_TRACE_EXIT(log);
         return JK_FALSE;
     }
+
+    jk_shm_lock();
+    p->sequence++;
+    jk_lb_push(p, log);
+    jk_shm_unlock();
 
     JK_TRACE_EXIT(log);
     return JK_TRUE;
@@ -1317,7 +1356,8 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->worker.destroy = destroy;
         private_data->worker.maintain = maintain_workers;
         private_data->worker.retries = JK_RETRIES;
-        private_data->s->recover_wait_time = WAIT_BEFORE_RECOVER;
+        private_data->recover_wait_time = WAIT_BEFORE_RECOVER;
+        private_data->sequence = 0;
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);
         return JK_LB_WORKER_TYPE;

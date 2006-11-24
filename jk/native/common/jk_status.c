@@ -407,6 +407,12 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
         if (lb != NULL) {
             unsigned int j;
             int selected = -1;
+
+            jk_shm_lock();
+            if (lb->sequence != lb->s->sequence)
+                jk_lb_pull(lb, l);
+            jk_shm_unlock();
+
             jk_puts(s, "<table><tr>"
                     "<th>Type</th><th>Sticky session</th>"
                     "<th>Force Sticky session</th>"
@@ -416,15 +422,23 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                     "<th>Recovery timeout</th>"
                     "</tr>\n<tr>");
             jk_putv(s, "<td>", status_worker_type(w->type), "</td>", NULL);
-            jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session),
+            jk_putv(s, "<td>", status_val_bool(lb->sticky_session),
                     "</td>", NULL);
-            jk_putv(s, "<td>", status_val_bool(lb->s->sticky_session_force),
+            jk_putv(s, "<td>", status_val_bool(lb->sticky_session_force),
                     "</td>", NULL);
-            jk_printf(s, "<td>%d</td>", lb->s->retries);
+            jk_printf(s, "<td>%d</td>", lb->retries);
             jk_printf(s, "<td>%s</td>", jk_lb_get_method(lb, l));
             jk_printf(s, "<td>%s</td>", jk_lb_get_lock(lb, l));
-            jk_printf(s, "<td>%d</td>", lb->s->recover_wait_time);
+            jk_printf(s, "<td>%d</td>", lb->recover_wait_time);
             jk_puts(s, "</tr>\n</table>\n<br/>\n");
+
+            jk_puts(s, "<table><tr>"
+                    "<th>Busy</th><th>Max Busy</th>"
+                    "</tr>\n<tr>");
+            jk_printf(s, "<td>%d</td>", lb->s->busy);
+            jk_printf(s, "<td>%d</td>", lb->s->max_busy);
+            jk_puts(s, "</tr>\n</table>\n<br/>\n");
+
             jk_puts(s, "<table><tr>"
                     "<th>Name</th><th>Type</th><th>jvmRoute</th><th>Host</th><th>Addr</th>"
                     "<th>Act</th><th>Stat</th><th>D</th><th>F</th><th>M</th><th>V</th><th>Acc</th><th>Err</th><th>CE</th>"
@@ -490,8 +504,6 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_puts(s, "value=\"update\">\n");
                 jk_puts(s, "<input type=\"hidden\" name=\"w\" ");
                 jk_putv(s, "value=\"", wr->s->name, "\">\n", NULL);
-                jk_puts(s, "<input type=\"hidden\" name=\"id\" ");
-                jk_printf(s, "value=\"%u\">\n", selected);
                 jk_puts(s, "<input type=\"hidden\" name=\"lb\" ");
                 jk_printf(s, "value=\"%u\">\n", i);
 
@@ -539,19 +551,49 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_puts(s, "value=\"update\"/>\n");
                 jk_puts(s, "<input type=\"hidden\" name=\"w\" ");
                 jk_putv(s, "value=\"", dworker, "\"/>\n", NULL);
-                jk_puts(s, "<input type=\"hidden\" name=\"id\" ");
-                jk_printf(s, "value=\"%u\"/>\n", i);
 
                 jk_puts(s, "<table>\n<tr><td>Retries:</td><td><input name=\"lr\" type=\"text\" ");
-                jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->s->retries);
+                jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->retries);
                 jk_puts(s, "<tr><td>Recover time:</td><td><input name=\"lt\" type=\"text\" ");
-                jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->s->recover_wait_time);
+                jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->recover_wait_time);
                 jk_puts(s, "<tr><td>Sticky session:</td><td><input name=\"ls\" type=\"checkbox\"");
-                if (lb->s->sticky_session)
+                if (lb->sticky_session)
                     jk_puts(s, " checked=\"checked\"");
                 jk_puts(s, "/></td></tr>\n");
                 jk_puts(s, "<tr><td>Force Sticky session:</td><td><input name=\"lf\" type=\"checkbox\"");
-                if (lb->s->sticky_session_force)
+                if (lb->sticky_session_force)
+                    jk_puts(s, " checked=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
+                jk_puts(s, "<tr><td>Method:</td><td></td></tr>\n");
+                jk_puts(s, "<tr><td>&nbsp;&nbsp;Requests</td><td><input name=\"lm\" type=\"radio\"");
+                jk_printf(s, " value=\"%d\"", JK_LB_METHOD_REQUESTS);
+                if (lb->lbmethod == JK_LB_METHOD_REQUESTS)
+                    jk_puts(s, " checked=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
+                jk_puts(s, "<tr><td>&nbsp;&nbsp;Traffic</td><td><input name=\"lm\" type=\"radio\"");
+                jk_printf(s, " value=\"%d\"", JK_LB_METHOD_TRAFFIC);
+                if (lb->lbmethod == JK_LB_METHOD_TRAFFIC)
+                    jk_puts(s, " checked=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
+                jk_puts(s, "<tr><td>&nbsp;&nbsp;Busyness</td><td><input name=\"lm\" type=\"radio\"");
+                jk_printf(s, " value=\"%d\"", JK_LB_METHOD_BUSYNESS);
+                if (lb->lbmethod == JK_LB_METHOD_BUSYNESS)
+                    jk_puts(s, " checked=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
+                jk_puts(s, "<tr><td>&nbsp;&nbsp;Sessions</td><td><input name=\"lm\" type=\"radio\"");
+                jk_printf(s, " value=\"%d\"", JK_LB_METHOD_SESSIONS);
+                if (lb->lbmethod == JK_LB_METHOD_SESSIONS)
+                    jk_puts(s, " checked=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
+                jk_puts(s, "<tr><td>Locking:</td><td></td></tr>\n");
+                jk_puts(s, "<tr><td>&nbsp;&nbsp;Optimistic</td><td><input name=\"ll\" type=\"radio\"");
+                jk_printf(s, " value=\"%d\"", JK_LB_LOCK_OPTIMISTIC);
+                if (lb->lblock == JK_LB_LOCK_OPTIMISTIC)
+                    jk_puts(s, " checked=\"checked\"");
+                jk_puts(s, "/></td></tr>\n");
+                jk_puts(s, "<tr><td>&nbsp;&nbsp;Pessimistic</td><td><input name=\"ll\" type=\"radio\"");
+                jk_printf(s, " value=\"%d\"", JK_LB_LOCK_PESSIMISTIC);
+                if (lb->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_puts(s, " checked=\"checked\"");
                 jk_puts(s, "/></td></tr>\n");
                 jk_puts(s, "</table>\n");
@@ -636,14 +678,24 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
             /* Skip non lb workers */
             continue;
         }
-        jk_printf(s, "  <jk:balancer id=\"%d\" name=\"%s\" type=\"%s\" sticky=\"%s\" stickyforce=\"%s\" retries=\"%d\" recover=\"%d\" >\n",
+
+        jk_shm_lock();
+        if (lb->sequence != lb->s->sequence)
+            jk_lb_pull(lb, l);
+        jk_shm_unlock();
+
+        jk_printf(s, "  <jk:balancer id=\"%d\" name=\"%s\" type=\"%s\" sticky=\"%s\" stickyforce=\"%s\" retries=\"%d\" recover=\"%d\" method=\"%s\" lock=\"%s\" busy=\"%d\" max_busy=\"%d\">\n",
              i,
              lb->s->name,
              status_worker_type(w->type),
-             status_val_bool(lb->s->sticky_session),
-             status_val_bool(lb->s->sticky_session_force),
-             lb->s->retries,
-             lb->s->recover_wait_time);
+             status_val_bool(lb->sticky_session),
+             status_val_bool(lb->sticky_session_force),
+             lb->retries,
+             lb->recover_wait_time,
+             jk_lb_get_lock(lb, l),
+             jk_lb_get_method(lb, l),
+             lb->s->busy,
+             lb->s->max_busy);
         for (j = 0; j < lb->num_of_workers; j++) {
             worker_record_t *wr = &(lb->lb_workers[j]);
             ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
@@ -697,15 +749,27 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
 
     if (w && w->type == JK_LB_WORKER_TYPE) {
         lb = (lb_worker_t *)w->worker_private;
-        i = status_int("lr", s->query_string, lb->s->retries);
+
+        if (lb->sequence != lb->s->sequence)
+            jk_lb_pull(lb, l);
+
+        i = status_int("lr", s->query_string, lb->retries);
         if (i > 0)
-            lb->s->retries = i;
-        i = status_int("lt", s->query_string, lb->s->recover_wait_time);
+            lb->retries = i;
+        i = status_int("lt", s->query_string, lb->recover_wait_time);
         if (i < 1)
             i = 1;
-        lb->s->recover_wait_time = i;
-        lb->s->sticky_session = status_bool("ls", s->query_string, lb->s->sticky_session);
-        lb->s->sticky_session_force = status_bool("lf", s->query_string, lb->s->sticky_session_force);
+        lb->recover_wait_time = i;
+        lb->sticky_session = status_bool("ls", s->query_string, lb->sticky_session);
+        lb->sticky_session_force = status_bool("lf", s->query_string, lb->sticky_session_force);
+        i = status_int("lm", s->query_string, lb->lbmethod);
+        if (i > 0 && i <= JK_LB_METHOD_MAX)
+            lb->lbmethod = i;
+        i = status_int("ll", s->query_string, lb->lblock);
+        if (i > 0 && i <= JK_LB_LOCK_MAX)
+            lb->lblock = i;
+        lb->sequence++;
+        jk_lb_push(lb, l); 
     }
     else  {
         int n = status_int("lb", s->query_string, -1);
@@ -721,18 +785,13 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
         if (!w || w->type != JK_LB_WORKER_TYPE)
             return;
         lb = (lb_worker_t *)w->worker_private;
-        i = status_int("id", s->query_string, -1);
-        if (i >= 0 && i < (int)lb->num_of_workers)
-            wr = &(lb->lb_workers[i]);
-        else {
-            for (i = 0; i < (int)lb->num_of_workers; i++) {
-                if (strcmp(dworker, lb->lb_workers[i].s->name) == 0) {
-                    wr = &(lb->lb_workers[i]);
-                    break;
-                }
+        for (i = 0; i < (int)lb->num_of_workers; i++) {
+            if (strcmp(dworker, lb->lb_workers[i].s->name) == 0) {
+                wr = &(lb->lb_workers[i]);
+                break;
             }
         }
-        if (!wr)
+        if (!wr || i == (int)lb->num_of_workers)
             return;
         a  = (ajp_worker_t *)wr->w->worker_private;
 
@@ -780,9 +839,9 @@ static void reset_worker(jk_ws_service_t *s, status_worker_t *sw,
 
     if (w && w->type == JK_LB_WORKER_TYPE) {
         lb = (lb_worker_t *)w->worker_private;
+        lb->s->max_busy = 0;
         for (i = 0; i < lb->num_of_workers; i++) {
             worker_record_t *wr = &(lb->lb_workers[i]);
-            wr->s->busy             = 0;
             wr->s->client_errors    = 0;
             wr->s->elected          = 0;
             wr->s->elected_snapshot = 0;
@@ -803,15 +862,15 @@ static int status_cmd_type(const char *req)
 {
     char cmdtype[32];
     if (!req)
-	return 0;
+        return 0;
     if (status_cmd("cmd", req, cmdtype, sizeof(cmdtype)) != NULL) {
-	if (!strncmp(cmdtype, "list", strlen("list")))
+        if (!strncmp(cmdtype, "list", strlen("list")))
             return 0;
-	else if (!strncmp(cmdtype, "show", strlen("show")))
+        else if (!strncmp(cmdtype, "show", strlen("show")))
             return 1;
-	else if (!strncmp(cmdtype, "update", strlen("update")))
+        else if (!strncmp(cmdtype, "update", strlen("update")))
             return 2;
-	else if (!strncmp(cmdtype, "reset", strlen("reset")))
+        else if (!strncmp(cmdtype, "reset", strlen("reset")))
             return 3;
     }
     return 0;

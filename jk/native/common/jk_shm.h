@@ -59,6 +59,10 @@ extern "C"
 struct jk_shm_worker
 {
     int     id;
+    /* Sequence counter starting at 0 and increasing
+     * every time we change the config
+     */
+    unsigned int sequence;
     /* Number of currently busy channels */
     volatile int busy;
     /* Maximum number of busy channels */
@@ -89,6 +93,9 @@ struct jk_shm_worker
     int     sticky_session_force;
     int     recover_wait_time;
     int     retries;
+    int     lbmethod;
+    int     lblock;
+    unsigned int max_packet_size;
     /* Statistical data */
     volatile time_t  error_time;
     /* Service transfer rate time */

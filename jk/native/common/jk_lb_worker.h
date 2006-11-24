@@ -44,6 +44,7 @@ extern "C"
 #define JK_LB_METHOD_BUSYNESS          (3)
 #define JK_LB_METHOD_SESSIONS          (4)
 #define JK_LB_METHOD_DEF               (JK_LB_METHOD_REQUESTS)
+#define JK_LB_METHOD_MAX               (JK_LB_METHOD_SESSIONS)
 #define JK_LB_METHOD_TEXT_REQUESTS     ("Request")
 #define JK_LB_METHOD_TEXT_TRAFFIC      ("Traffic")
 #define JK_LB_METHOD_TEXT_BUSYNESS     ("Busyness")
@@ -52,6 +53,7 @@ extern "C"
 #define JK_LB_LOCK_OPTIMISTIC          (1)
 #define JK_LB_LOCK_PESSIMISTIC         (2)
 #define JK_LB_LOCK_DEF                 (JK_LB_LOCK_OPTIMISTIC)
+#define JK_LB_LOCK_MAX                 (JK_LB_LOCK_PESSIMISTIC)
 #define JK_LB_LOCK_TEXT_OPTIMISTIC     ("Optimistic")
 #define JK_LB_LOCK_TEXT_PESSIMISTIC    ("Pessimistic")
 #define JK_LB_LOCK_TEXT_DEF            (JK_LB_LOCK_TEXT_OPTIMISTIC)
@@ -120,10 +122,16 @@ struct lb_worker
 {
     worker_record_t *lb_workers;
     unsigned int num_of_workers;
+    char         name[JK_SHM_STR_SIZ+1];
+    int          sticky_session;
+    int          sticky_session_force;
+    int          recover_wait_time;
+    int          retries;
     int          lbmethod;
     int          lblock;
     time_t       maintain_time;
     unsigned int max_packet_size;
+    unsigned int sequence;
 
     jk_pool_t p;
     jk_pool_atom_t buf[TINY_POOL_SIZE];
@@ -144,6 +152,8 @@ const char *jk_lb_get_method(lb_worker_t *p, jk_logger_t *l);
 const char *jk_lb_get_state(worker_record_t *p, jk_logger_t *l);
 const char *jk_lb_get_activation(worker_record_t *p, jk_logger_t *l);
 void reset_lb_values(lb_worker_t *p, jk_logger_t *l);
+void jk_lb_pull(lb_worker_t * p, jk_logger_t *l);
+void jk_lb_push(lb_worker_t * p, jk_logger_t *l);
 void update_mult(lb_worker_t * p, jk_logger_t *l);
 
 #ifdef __cplusplus
