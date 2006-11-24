@@ -1172,7 +1172,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                    ae->worker->name, ae->sd, errno);
             jk_close_socket(ae->sd);
             ae->sd = JK_INVALID_SOCKET;
-            err=1;
+            err = 1;
         }
         if (ae->worker->prepost_timeout > 0 && !err) {
             /* handle cping/cpong if prepost_timeout is set
@@ -1181,7 +1181,7 @@ static int ajp_send_request(jk_endpoint_t *e,
              */
             if (ajp_handle_cping_cpong(ae, ae->worker->prepost_timeout, l) ==
                 JK_FALSE)
-                err=1;
+                err = 2;
         }
 
         /* If we got an error or can't send data, then try to get a pooled
@@ -1220,12 +1220,25 @@ static int ajp_send_request(jk_endpoint_t *e,
                    "(%s) all endpoints are disconnected or dead",
                    ae->worker->name);
             jk_log(l, JK_LOG_INFO,
-                   "Increase the backend idle connection timeout or the connection_pool_minsize");
+                   "(%s) increase the backend idle connection timeout or the connection_pool_minsize",
+                   ae->worker->name);
         }
         /* Connect to the backend.
          * This can be either uninitalized connection or a reconnect.
          */
         if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
+            /* should we send a CPING to validate connection ? */
+            if (ae->worker->connect_timeout > 0) {
+                if (ajp_handle_cping_cpong(ae,
+                        ae->worker->connect_timeout, l) == JK_FALSE) {
+                    /* Close the socket if unable to cping/cpong */
+                    jk_close_socket(ae->sd);
+                    ae->sd = JK_INVALID_SOCKET;
+                    JK_TRACE_EXIT(l);
+                    return JK_FALSE;
+                }
+            }
+            
             /*
              * After we are connected, each error that we are going to
              * have is probably unrecoverable
