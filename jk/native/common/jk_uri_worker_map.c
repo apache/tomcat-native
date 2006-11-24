@@ -311,7 +311,6 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     uri_worker_record_t *uwr = NULL;
     char *uri;
     unsigned int match_type = 0;
-    unsigned int i;
 
     JK_TRACE_ENTER(l);
 
