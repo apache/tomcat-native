@@ -71,6 +71,8 @@ int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
     }
 
     worker_maintain_time = jk_get_worker_maintain_time(init_data);
+    if(worker_maintain_time < 0)
+        worker_maintain_time = 0;
 
     if (!build_worker_map(init_data, we->worker_list,
                           we->num_of_workers, we, l)) {
