@@ -1199,6 +1199,17 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 close_workers(p, i, l);
             }
             else {
+                /* Update domain names if jvm_route contains period '.' */
+                for (i = 0; i < num_of_workers; i++) {
+                    if (!p->lb_workers[i].s->domain[0]) {
+                        char * id_domain = strchr(p->lb_workers[i].s->jvm_route, '.');
+                        if (id_domain) {
+                            *id_domain = '\0';
+                            strcpy(p->lb_workers[i].s->domain, p->lb_workers[i].s->jvm_route);
+                            *id_domain = '.';    
+                        }
+                    }
+                }
                 for (i = 0; i < num_of_workers; i++) {
                     if (JK_IS_DEBUG_LEVEL(l)) {
                         jk_log(l, JK_LOG_DEBUG,
