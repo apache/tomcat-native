@@ -1209,8 +1209,6 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                             *id_domain = '.';    
                         }
                     }
-                }
-                for (i = 0; i < num_of_workers; i++) {
                     if (JK_IS_DEBUG_LEVEL(l)) {
                         jk_log(l, JK_LOG_DEBUG,
                                "Balanced worker %i has name %s and jvm_route %s in domain %s",
