@@ -357,7 +357,7 @@ static void dump_maps(jk_ws_service_t *s,
 }
 
 
-static int display_worker(jk_ws_service_t *s, jk_worker_t *w,
+static void display_worker(jk_ws_service_t *s, jk_worker_t *w,
                           int refresh, int single,
                           jk_logger_t *l)
 {
@@ -1088,7 +1088,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     char *err = NULL;
     int cmd;
     int mime;
-    int refresh;
+    int refresh = -1;
     status_endpoint_t *p;
 
     JK_TRACE_ENTER(l);
