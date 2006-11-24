@@ -50,7 +50,7 @@
 
 #define JK_STATUS_XMLE "</jk:status>\n"
 
-#define JK_STATUS_TEXTUPDATE_RESPONCE "OK - jk status worker updated\n"
+#define JK_STATUS_TEXTUPDATE_RESPONSE "OK - jk status worker updated\n"
 
 typedef struct status_worker status_worker_t;
 
@@ -292,33 +292,38 @@ static int status_int(const char *param, const char *req, int def)
     return rv;
 }
 
-static int status_bool(const char *param, const char *req)
+static int status_bool(const char *param, const char *req, int def)
 {
     const char *v;
     char buf[32];
-    int rv = 0;
+    int rv = def;
 
     if ((v = status_cmd(param, req, buf, sizeof(buf)))) {
         if (strcasecmp(v, "on") == 0 ||
-            strcasecmp(v, "true") == 0)
+            strcasecmp(v, "true") == 0 ||
+            strcasecmp(v, "1") == 0)
             rv = 1;
+        else if (strcasecmp(v, "off") == 0 ||
+            strcasecmp(v, "false") == 0 ||
+            strcasecmp(v, "0") == 0)
+            rv = 0;
     }
     return rv;
 }
 
-static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
+static void display_maps(jk_ws_service_t *s,
                          jk_uri_worker_map_t *uwmap,
                          const char *worker, jk_logger_t *l)
 {
     char buf[64];
     unsigned int i;
 
-    jk_puts(s, "<br/>Uri Mappings:\n");
+    jk_putv(s, "<hr/><h3>URI Mappings for ", worker, "</h3>\n", NULL);
     jk_puts(s, "<table>\n<tr><th>Match Type</th><th>Uri</th>"
                "<th>Source</th></tr>\n");
     for (i = 0; i < uwmap->size; i++) {
         uri_worker_record_t *uwr = uwmap->maps[i];
-        if (worker && strcmp(uwr->worker_name, worker)) {
+        if (!worker || strcmp(uwr->worker_name, worker)) {
             continue;
         }
         jk_putv(s, "<tr><td>",
@@ -332,7 +337,7 @@ static void display_maps(jk_ws_service_t *s, status_worker_t *sw,
     jk_puts(s, "</table>\n");
 }
 
-static void dump_maps(jk_ws_service_t *s, status_worker_t *sw,
+static void dump_maps(jk_ws_service_t *s,
                       jk_uri_worker_map_t *uwmap,
                       const char *worker, jk_logger_t *l)
 {
@@ -341,7 +346,7 @@ static void dump_maps(jk_ws_service_t *s, status_worker_t *sw,
 
     for (i = 0; i < uwmap->size; i++) {
         uri_worker_record_t *uwr = uwmap->maps[i];
-        if (worker && strcmp(uwr->worker_name, worker)) {
+        if (!worker || strcmp(uwr->worker_name, worker)) {
             continue;
         }
         jk_printf(s, "    <jk:map type=\"%s\" uri=\"%s\" source=\"%s\" />\n",
@@ -551,7 +556,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
                 jk_puts(s, "/></td></tr>\n");
                 jk_puts(s, "</table>\n");
 
-                display_maps(s, sw, s->uw_map, dworker, l);
+                display_maps(s, s->uw_map, dworker, l);
                 jk_puts(s, "<br/><input type=\"submit\" value=\"Update Balancer\"/></form>\n");
             }
         }
@@ -564,7 +569,7 @@ static void display_workers(jk_ws_service_t *s, status_worker_t *sw,
             jk_putv(s, "<td>", jk_dump_hinfo(&aw->worker_inet_addr, buf),
                     "</td>\n</tr>\n", NULL);
             jk_puts(s, "</table>\n");
-            display_maps(s, sw, s->uw_map, dworker, l);
+            display_maps(s, s->uw_map, dworker, l);
         }
     }
     /* Display legend */
@@ -672,7 +677,7 @@ static void dump_config(jk_ws_service_t *s, status_worker_t *sw,
                 jk_printf(s, " domain=\"%s\"", wr->s->domain);
             jk_puts(s, " />\n");
         }
-        dump_maps(s, sw, s->uw_map, lb->s->name, l);
+        dump_maps(s, s->uw_map, lb->s->name, l);
         jk_puts(s, "  </jk:balancer>\n");
 
     }
@@ -699,8 +704,8 @@ static void update_worker(jk_ws_service_t *s, status_worker_t *sw,
         if (i < 1)
             i = 1;
         lb->s->recover_wait_time = i;
-        lb->s->sticky_session = status_bool("ls", s->query_string);
-        lb->s->sticky_session_force = status_bool("lf", s->query_string);
+        lb->s->sticky_session = status_bool("ls", s->query_string, lb->s->sticky_session);
+        lb->s->sticky_session_force = status_bool("lf", s->query_string, lb->s->sticky_session_force);
     }
     else  {
         int n = status_int("lb", s->query_string, -1);
@@ -778,11 +783,15 @@ static void reset_worker(jk_ws_service_t *s, status_worker_t *sw,
         for (i = 0; i < lb->num_of_workers; i++) {
             worker_record_t *wr = &(lb->lb_workers[i]);
             wr->s->busy             = 0;
+            wr->s->client_errors    = 0;
             wr->s->elected          = 0;
+            wr->s->elected_snapshot = 0;
             wr->s->error_time       = 0;
             wr->s->errors           = 0;
             wr->s->lb_value         = 0;
             wr->s->max_busy         = 0;
+            wr->s->recoveries       = 0;
+            wr->s->recovery_errors  = 0;
             wr->s->readed           = 0;
             wr->s->transferred      = 0;
             wr->s->state            = JK_LB_STATE_NA;
@@ -792,18 +801,20 @@ static void reset_worker(jk_ws_service_t *s, status_worker_t *sw,
 
 static int status_cmd_type(const char *req)
 {
+    char cmdtype[32];
     if (!req)
-        return 0;
-    else if (!strncmp(req, "cmd=list", 8))
-        return 0;
-    else if (!strncmp(req, "cmd=show", 8))
-        return 1;
-    else if (!strncmp(req, "cmd=update", 10))
-        return 2;
-    else if (!strncmp(req, "cmd=reset", 9))
-        return 3;
-    else
-        return 0;
+	return 0;
+    if (status_cmd("cmd", req, cmdtype, sizeof(cmdtype)) != NULL) {
+	if (!strncmp(cmdtype, "list", strlen("list")))
+            return 0;
+	else if (!strncmp(cmdtype, "show", strlen("show")))
+            return 1;
+	else if (!strncmp(cmdtype, "update", strlen("update")))
+            return 2;
+	else if (!strncmp(cmdtype, "reset", strlen("reset")))
+            return 3;
+    }
+    return 0;
 }
 
 static int status_mime_type(const char *req)
@@ -967,8 +978,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
     }
     else {
         s->start_response(s, 200, "OK", headers_names, headers_vtxt, 3);
-        s->write(s,  JK_STATUS_TEXTUPDATE_RESPONCE,
-                 sizeof(JK_STATUS_TEXTUPDATE_RESPONCE) - 1);
+        s->write(s,  JK_STATUS_TEXTUPDATE_RESPONSE,
+                 sizeof(JK_STATUS_TEXTUPDATE_RESPONSE) - 1);
     }
     if (worker)
         free(worker);
