@@ -2695,16 +2695,15 @@ static int jk_translate(request_rec * r)
             }
 
             worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
-
+ 
             if (worker) {
                 r->handler = apr_pstrdup(r->pool, JK_HANDLER);
                 apr_table_setn(r->notes, JK_NOTE_WORKER_NAME, worker);
 
                 /* This could be a sub-request, possibly from mod_dir */
-                /* Also set the HANDLER and uri for subrequest */
+                /* Also add the the HANDLER to the main request */
                 if (r->main) {
                     r->main->handler = apr_pstrdup(r->main->pool, JK_HANDLER);
-                    r->main->uri = apr_pstrdup(r->main->pool, r->uri);
                     apr_table_setn(r->main->notes, JK_NOTE_WORKER_NAME, worker);
                 }
 

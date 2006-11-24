@@ -26,6 +26,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        <bug>36121</bug>: Don't change main uri when mod_jk serves
+        included uri. (markt)
+      </fix>
       <update>
       Apache VHosts: Merge JkOptions +base - -base + +vhost - -vhost. (rjung)
       </update>
