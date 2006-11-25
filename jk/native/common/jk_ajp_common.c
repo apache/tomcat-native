@@ -1230,11 +1230,13 @@ static int ajp_send_request(jk_endpoint_t *e,
             jk_log(l, JK_LOG_INFO,
                    "(%s) increase the backend idle connection timeout or the connection_pool_minsize",
                    ae->worker->name);
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
         }
         /* Connect to the backend.
          * This can be either uninitalized connection or a reconnect.
          */
-        if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {            
+        if (ajp_connect_to_endpoint(ae, l) == JK_TRUE) {
             /*
              * After we are connected, each error that we are going to
              * have is probably unrecoverable
