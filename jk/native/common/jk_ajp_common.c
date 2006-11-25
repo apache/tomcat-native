@@ -1179,9 +1179,17 @@ static int ajp_send_request(jk_endpoint_t *e,
              * If the socket is disconnected no need to handle
              * the cping/cpong
              */
-            if (ajp_handle_cping_cpong(ae, ae->worker->prepost_timeout, l) ==
-                JK_FALSE)
+            if (ajp_handle_cping_cpong(ae,
+                        ae->worker->prepost_timeout, l) == JK_FALSE) {
+                /* XXX: Is there any reason to try other
+                 * connections to the node if one of them fails
+                 * the cping/cpong heartbeat?
+                 * Tomcat can be either too busy or simply dead, so
+                 * there is a chance that all oter connections would
+                 * fail as well.
+                 */
                 err = 2;
+            }
         }
 
         /* If we got an error or can't send data, then try to get a pooled
