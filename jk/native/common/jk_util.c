@@ -66,6 +66,7 @@
 #define STICKY_SESSION              ("sticky_session")
 #define STICKY_SESSION_FORCE        ("sticky_session_force")
 #define JVM_ROUTE_OF_WORKER         ("jvm_route")
+#define ROUTE_OF_WORKER             ("route")
 #define DOMAIN_OF_WORKER            ("domain")
 #define REDIRECT_OF_WORKER          ("redirect")
 #define MOUNT_OF_WORKER             ("mount")
@@ -152,6 +153,7 @@ static const char *unique_properties[] = {
     STICKY_SESSION,
     STICKY_SESSION_FORCE,
     JVM_ROUTE_OF_WORKER,
+    ROUTE_OF_WORKER,
     DOMAIN_OF_WORKER,
     REDIRECT_OF_WORKER,
     METHOD_OF_WORKER,
@@ -481,12 +483,18 @@ const char *jk_get_worker_type(jk_map_t *m, const char *wname)
 
 const char *jk_get_worker_jvm_route(jk_map_t *m, const char *wname, const char *def)
 {
+    const char *rv;
     char buf[1024];
     if (!m || !wname) {
         return NULL;
     }
-    MAKE_WORKER_PARAM(JVM_ROUTE_OF_WORKER);
-    return jk_map_get_string(m, buf, def);
+    MAKE_WORKER_PARAM(ROUTE_OF_WORKER);
+    rv = jk_map_get_string(m, buf, def);
+    if (!rv) {
+        MAKE_WORKER_PARAM(JVM_ROUTE_OF_WORKER);
+        rv = jk_map_get_string(m, buf, def);
+    }
+    return rv;
 }
 
 const char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def)
