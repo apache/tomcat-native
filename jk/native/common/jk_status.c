@@ -975,7 +975,7 @@ static void display_worker_xml(jk_ws_service_t *s, jk_worker_t *w,
         jk_printf(s, "  port=\"%d\"\n", aw->port);
         jk_printf(s, "  address=\"%s\"", jk_dump_hinfo(&aw->worker_inet_addr, buf));
         /* Terminate the tag */
-        jk_puts(s, "/>\n");
+        jk_puts(s, ">\n");
         if (name)
             display_maps_xml(s, s->uw_map, sw, name, l);
         jk_putv(s, "</", sw->ns, "ajp>\n", NULL);
