@@ -77,6 +77,10 @@
 #define WORKER_RECOVER_TIME         ("recover_time")
 #define WORKER_MAX_PACKET_SIZE      ("max_packet_size")
 #define STYLE_SHEET_OF_WORKER       ("css")
+#define NAMESPACE_OF_WORKER         ("ns")
+#define XML_NAMESPACE_OF_WORKER     ("xmlns")
+#define XML_DOCTYPE_OF_WORKER       ("doctype")
+
 #define READ_ONLY_OF_WORKER         ("read_only")
 #define USER_OF_WORKER              ("user")
 
@@ -165,6 +169,9 @@ static const char *unique_properties[] = {
     READ_ONLY_OF_WORKER,
     RETRIES_OF_WORKER,
     WORKER_MAINTAIN_PROPERTY_NAME,
+    NAMESPACE_OF_WORKER,
+    XML_NAMESPACE_OF_WORKER,
+    XML_DOCTYPE_OF_WORKER,
     NULL
 };
 
@@ -975,7 +982,7 @@ int jk_get_max_packet_size(jk_map_t *m, const char *wname)
         sz = DEF_BUFFER_SZ;
     else if (sz > 64*1024)
         sz = 64*1024;
-    
+
     return sz;
 }
 
@@ -989,6 +996,46 @@ const char *jk_get_worker_style_sheet(jk_map_t *m, const char *wname, const char
 
     MAKE_WORKER_PARAM(STYLE_SHEET_OF_WORKER);
 
+    return jk_map_get_string(m, buf, def);
+}
+
+const char *jk_get_worker_name_space(jk_map_t *m, const char *wname, const char *def)
+{
+    const char *rc;
+    char buf[1024];
+    if (!m || !wname) {
+        return NULL;
+    }
+    MAKE_WORKER_PARAM(NAMESPACE_OF_WORKER);
+    rc = jk_map_get_string(m, buf, def);
+    if (*rc == '-')
+        return "";
+    else
+        return rc;
+}
+
+const char *jk_get_worker_xmlns(jk_map_t *m, const char *wname, const char *def)
+{
+    const char *rc;
+    char buf[1024];
+    if (!m || !wname) {
+        return NULL;
+    }
+    MAKE_WORKER_PARAM(XML_NAMESPACE_OF_WORKER);
+    rc = jk_map_get_string(m, buf, def);
+    if (*rc == '-')
+        return "";
+    else
+        return rc;
+}
+
+const char *jk_get_worker_xml_doctype(jk_map_t *m, const char *wname, const char *def)
+{
+    char buf[1024];
+    if (!m || !wname) {
+        return NULL;
+    }
+    MAKE_WORKER_PARAM(XML_DOCTYPE_OF_WORKER);
     return jk_map_get_string(m, buf, def);
 }
 

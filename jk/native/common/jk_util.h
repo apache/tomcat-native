@@ -177,6 +177,12 @@ int jk_get_worker_user_list(jk_map_t *m,
                             const char *wname,
                             char ***list, unsigned int *num_of_users);
 
+const char *jk_get_worker_name_space(jk_map_t *m, const char *wname, const char *def);
+
+const char *jk_get_worker_xmlns(jk_map_t *m, const char *wname, const char *def);
+
+const char *jk_get_worker_xml_doctype(jk_map_t *m, const char *wname, const char *def);
+
 #define TC32_BRIDGE_TYPE    32
 #define TC33_BRIDGE_TYPE    33
 #define TC40_BRIDGE_TYPE    40
