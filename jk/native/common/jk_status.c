@@ -642,10 +642,10 @@ static void display_maps_txt(jk_ws_service_t *s,
             continue;
         }
         count++;
-        jk_printf(s, "      JK Map:");
-        jk_printf(s, " type=\"%s\"", uri_worker_map_get_match(uwr, buf, l));
-        jk_printf(s, " uri=\"%s\"", uwr->uri);
-        jk_printf(s, " source=\"%s\"\n", uri_worker_map_get_source(uwr, l));
+        jk_printf(s, "Map:");
+        jk_printf(s, " type=%s", uri_worker_map_get_match(uwr, buf, l));
+        jk_printf(s, " uri=%s", uwr->uri);
+        jk_printf(s, " source=%s\n", uri_worker_map_get_source(uwr, l));
     }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
@@ -1043,68 +1043,66 @@ static void display_worker_txt(jk_ws_service_t *s, jk_worker_t *w,
                good++;
         }
 
-        jk_printf(s, "  Balancer:");
-        jk_printf(s, " name=\"%s\"", name);
-        jk_printf(s, " type=\"%s\"", status_worker_type(w->type));
-        jk_printf(s, " sticky=\"%s\"", status_val_bool(lb->sticky_session));
-        jk_printf(s, " stickyforce=\"%s\"", status_val_bool(lb->sticky_session_force));
-        jk_printf(s, " retries=\"%d\"", lb->retries);
-        jk_printf(s, " recover=\"%d\"", lb->recover_wait_time);
-        jk_printf(s, " method=\"%s\"", jk_lb_get_method(lb, l));
-        jk_printf(s, " lock=\"%s\"", jk_lb_get_lock(lb, l));
-        jk_printf(s, " good=\"%d\"", good);
-        jk_printf(s, " degraded=\"%d\"", degraded);
-        jk_printf(s, " bad=\"%d\"", bad);
-        jk_printf(s, " busy=\"%d\"", lb->s->busy);
-        jk_printf(s, " max_busy=\"%d\"\n", lb->s->max_busy);
+        jk_printf(s, "Balancer:");
+        jk_printf(s, " name=%s", name);
+        jk_printf(s, " type=%s", status_worker_type(w->type));
+        jk_printf(s, " sticky=%s", status_val_bool(lb->sticky_session));
+        jk_printf(s, " stickyforce=%s", status_val_bool(lb->sticky_session_force));
+        jk_printf(s, " retries=%d", lb->retries);
+        jk_printf(s, " recover=%d", lb->recover_wait_time);
+        jk_printf(s, " method=%s", jk_lb_get_method(lb, l));
+        jk_printf(s, " lock=%s", jk_lb_get_lock(lb, l));
+        jk_printf(s, " good=%d", good);
+        jk_printf(s, " degraded=%d", degraded);
+        jk_printf(s, " bad=%d", bad);
+        jk_printf(s, " busy=%d", lb->s->busy);
+        jk_printf(s, " max_busy=%d\n", lb->s->max_busy);
 
         for (j = 0; j < lb->num_of_workers; j++) {
             worker_record_t *wr = &(lb->lb_workers[j]);
             ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
             int rs = 0;
             /* TODO: descriptive status */
-            jk_printf(s, "      Member");
-            jk_printf(s, " name=\"%s\"", wr->s->name);
-            jk_printf(s, " type=\"%s\"", status_worker_type(wr->w->type));
-            jk_printf(s, " host=\"%s\"", a->host);
-            jk_printf(s, " port=\"%d\"", a->port);
-            jk_printf(s, " address=\"%s\"", jk_dump_hinfo(&a->worker_inet_addr, buf));
-            jk_printf(s, " activation=\"%s\"", jk_lb_get_activation(wr, l));
-            jk_printf(s, " lbfactor=\"%d\"", wr->s->lb_factor);
-            jk_printf(s, " jvm_route=\"%s\"", wr->s->jvm_route ? wr->s->jvm_route : "");
-            jk_printf(s, " redirect=\"%s\"", wr->s->redirect ? wr->s->redirect : "");
-            jk_printf(s, " domain=\"%s\"", wr->s->domain ? wr->s->domain : "");
-            jk_printf(s, " distance=\"%d\"", wr->s->distance);
-            jk_printf(s, " state=\"%s\"", jk_lb_get_state(wr, l));
-            jk_printf(s, " lbmult=\"%" JK_UINT64_T_FMT "\"", wr->s->lb_mult);
-            jk_printf(s, " lbvalue=\"%" JK_UINT64_T_FMT "\"", wr->s->lb_value);
-            jk_printf(s, " elected=\"%" JK_UINT64_T_FMT "\"", wr->s->elected);
-            jk_printf(s, " errors=\"%" JK_UINT32_T_FMT "\"", wr->s->errors);
-            jk_printf(s, " clienterrors=\"%" JK_UINT32_T_FMT "\"", wr->s->client_errors);
-            jk_printf(s, " transferred=\"%" JK_UINT64_T_FMT "\"", wr->s->transferred);
-            jk_printf(s, " readed=\"%" JK_UINT64_T_FMT "\"", wr->s->readed);
-            jk_printf(s, " busy=\"%u\"", wr->s->busy);
-            jk_printf(s, " maxbusy=\"%u\"", wr->s->max_busy);
+            jk_printf(s, "Member:");
+            jk_printf(s, " name=%s", wr->s->name);
+            jk_printf(s, " type=%s", status_worker_type(wr->w->type));
+            jk_printf(s, " host=%s", a->host);
+            jk_printf(s, " port=%d", a->port);
+            jk_printf(s, " address=%s", jk_dump_hinfo(&a->worker_inet_addr, buf));
+            jk_printf(s, " activation=%s", jk_lb_get_activation(wr, l));
+            jk_printf(s, " lbfactor=%d", wr->s->lb_factor);
+            jk_printf(s, " jvm_route=%s", wr->s->jvm_route ? wr->s->jvm_route : "");
+            jk_printf(s, " redirect=%s", wr->s->redirect ? wr->s->redirect : "");
+            jk_printf(s, " domain=%s", wr->s->domain ? wr->s->domain : "");
+            jk_printf(s, " distance=%d", wr->s->distance);
+            jk_printf(s, " state=%s", jk_lb_get_state(wr, l));
+            jk_printf(s, " lbmult=%" JK_UINT64_T_FMT, wr->s->lb_mult);
+            jk_printf(s, " lbvalue=%" JK_UINT64_T_FMT, wr->s->lb_value);
+            jk_printf(s, " elected=%" JK_UINT64_T_FMT, wr->s->elected);
+            jk_printf(s, " errors=%" JK_UINT32_T_FMT, wr->s->errors);
+            jk_printf(s, " clienterrors=%" JK_UINT32_T_FMT, wr->s->client_errors);
+            jk_printf(s, " transferred=%" JK_UINT64_T_FMT, wr->s->transferred);
+            jk_printf(s, " readed=%" JK_UINT64_T_FMT, wr->s->readed);
+            jk_printf(s, " busy=%u", wr->s->busy);
+            jk_printf(s, " maxbusy=%u", wr->s->max_busy);
             if (wr->s->state == JK_LB_STATE_ERROR) {
                 int rs = lb->maintain_time - (int)difftime(now, lb->s->last_maintain_time);
                 if (rs < lb->recover_wait_time - (int)difftime(now, wr->s->error_time))
                     rs += lb->maintain_time;
             }
-            jk_printf(s, " time-to-recover=\"%u\"\n", rs < 0 ? 0 : rs);
+            jk_printf(s, " time-to-recover=%u\n", rs < 0 ? 0 : rs);
         }
-        if (name)
-            display_maps_txt(s, s->uw_map, name, l);
     }
     else if (aw) {
-        jk_printf(s, "AJP Worker");
-        jk_printf(s, " name=\"%s\"", name);
-        jk_printf(s, " type=\"%s\"", status_worker_type(w->type));
-        jk_printf(s, " host=\"%s\"", aw->host);
-        jk_printf(s, " port=\"%d\"", aw->port);
-        jk_printf(s, " address=\"%s\"\n", jk_dump_hinfo(&aw->worker_inet_addr, buf));
-        if (name)
-            display_maps_txt(s, s->uw_map, name, l);
+        jk_printf(s, "Ajp:");
+        jk_printf(s, " name=%s", name);
+        jk_printf(s, " type=%s", status_worker_type(w->type));
+        jk_printf(s, " host=%s", aw->host);
+        jk_printf(s, " port=%d", aw->port);
+        jk_printf(s, " address=%s\n", jk_dump_hinfo(&aw->worker_inet_addr, buf));
     }
+    if (name)
+        display_maps_txt(s, s->uw_map, name, l);
     JK_TRACE_EXIT(l);
 }
 
@@ -2431,9 +2429,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                           JK_VERMAJOR, JK_VERMINOR, JK_VERFIX);
                 jk_printf(s, "# TOMCAT_CONNECTOR_STR_%s\n",
                           JK_EXPOSED_VERSION);
-                jk_puts(s, "JK Status Manager for ");
+                jk_puts(s, "Server Name: ");
                 jk_puts(s, s->server_name);
-                jk_printf(s, ":%d", s->server_port);
+                jk_printf(s, "\nServer Port: %d", s->server_port);
                 jk_puts(s, "\n");
                 jk_putv(s, "Server Version: ",
                         s->server_software, "\n", NULL);
