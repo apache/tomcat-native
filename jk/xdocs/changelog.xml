@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Docs: New page with description of uriworkermap. (rjung)
+      </update>
+      <update>
       Docs: Added short description of max_packet_size to worker
       reference. (rjung)
       </update>

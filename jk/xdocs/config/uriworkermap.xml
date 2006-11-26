@@ -1,0 +1,247 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="uriworkermap.html">
+
+    &project;
+
+    <properties>
+        <author email="rjung@apache.org">Rainer Jung</author>
+        <title>uriworkermap.properties configuration</title>
+    </properties>
+
+<body>
+
+<section name="Introduction">
+<br/>
+<p>
+The forwarding of requests from the web server to tomcat gets configured by defining mapping rules.
+Such a rule maps requests to workers. The request part of the map is described by a URI pattern,
+the worker by it's worker name.
+</p>
+<p>
+The so-called <b>uriworkermap</b> file is a mechanism of defining rules,
+which works for all web servers. There exist also other web server specific configuration
+options for defining rules, which will be mostly discussed on the reference pages for
+configuring tomcat connectors for the individual web servers.
+</p>
+<p>
+The name of the file is usually uriworkermap.properties,
+although this is configurable in the web server.
+Please consult the web server specific documentation pages on
+how to enable the uriworkermap file.
+</p>
+<p>
+The main features supported by the uriworkermap file are
+<ul>
+<li>
+Exact and wildchar matches, shortcuts to map a directory and all including content.
+</li>
+<li>
+Exclusion rules, disabling of rules an defined preferences behaviour.
+</li>
+<li>
+Virtual host integration: uri mapping rules can be expressed per virtual host.
+The details are web server specific though.
+</li>
+<li>
+Dynamic reloading: The file gets checked every 60 seconds for changes.
+New versions are automatically reloaded without web server restarts.
+</li>
+<li>
+Integration with the status worker.
+</li>
+<li>
+Support for comments in the rule file.
+</li>
+</ul>
+The following sections describe these aspects in more detail.
+</p>
+</section>
+
+<section name="Syntax">
+<br/>
+<subsection name="Line format">
+<br/>
+<p>
+The file has a line based format. There are no continuation characters,
+so each rule needs to be defined on a single line. Each rule is a pair consisting
+of a URI pattern and a worker name, combined by an equals sign '=':
+<source>
+  /myapp=myworker
+</source>
+The URI pattern is case sensitive.
+</p>
+</subsection>
+<subsection name="Comments, white space">
+<br/>
+<p>
+All text after and including the character '#' gets ignored and can be used for comments.
+Leading and trailing white space gets trimmed around the URI pattern and also around the worker name.
+The following definitions are all equivalent:
+<source>
+  # This is a white space example
+  /myapp=myworker
+     /myapp=myworker
+  /myapp  =  myworker
+</source>
+</p>
+</subsection>
+
+<subsection name="URI patterns">
+<br/>
+<p>
+Inside the URI pattern three special characters can be used, '*', '?' and '|'.
+The character '*' is a wildchar that matches any number of arbitrary characters
+in the URI, '?' matches exactly one character.
+Each URI pattern has to start with the character '/', or with '*' or with '?',
+optionally prefixed by any combination of the modifiers '!' and '-' (see next section).
+<source>
+  # Mapping the URI /myapp1 and everything under /myapp1/:
+  /myapp1=myworker-a
+  /myapp1/*=myworker-a
+  # Mapping all URI which end with a common suffix:
+  *.jsp=myworker
+  *.do=myworker
+</source>
+Since the first case of mapping a certain location and everything inside
+it is very common, the character '|' gives a handy shortcut:
+<source>
+  # Mapping the URI /myapp1 and everything under /myapp1/:
+  /myapp1|/*=myworker-a
+</source>
+The pattern 'X|Y' is exactly equivalent to the two maps 'X' and 'XY'.
+</p>
+</subsection>
+</section>
+
+<section name="Exclusion, Disabling and Preferences">
+<br/>
+
+<subsection name="Exclusions and rule disabling">
+<br/>
+<p>
+Exclusion rules allows to define exclusions from URI rules, which would forward
+requests to tomcat. If the exclusion rule matches, the request will not be forwarded.
+This is usually used to serve static content by the web server.
+An rule is an exclusion rule, if it is suffixed with '!':
+<source>
+  # Mapping the URI /myapp and everything under /myapp/:
+  /myapp|/*=myworker
+  # Exclude the subdirectory static:
+  !/myapp/static|/*=myworker
+  # Exclude some suffixes:
+  !*.html=myworker
+</source>
+</p>
+<p>
+Rule disabling comes into play, if your web server merges rules from various sources,
+and you want to disable any rule defined previously. Since the uriworkermap file gets
+reloaded dynamically, you can use this to temporarily disable request forwarding:
+An rule gets disabled, if it is suffixed with '-':
+<source>
+  # We are not in maintenance.
+  # The maintenance rule got defined someahere else.
+  -/*=maintenance
+</source>
+Exclusion rules can get disabled as well, then the rule starts with '-!'.
+</p>
+</subsection>
+
+<subsection name="Mapping preferences">
+<br/>
+<p>
+The most restrictive URI pattern is applied first. More precisely the URI patterns are
+sorted by the number of '/' characters in the pattern (highest number first), and
+rules with equal numbers are sorted by their string length (longest first).
+</p>
+<p>
+If both distinctions still do not suffice, then the defining source of the rule is considered.
+Rules defined in uriworkermap.properties come first, before rules defined by JkMount (Apache)
+and inside workers.properties using the mount attribute.
+</p>
+<p>
+All disabled rules are ignored. Exclusion rules are applied after all normal rules
+have been applied.
+</p>
+<p>
+There is no defined behaviour, for the following configuration conflict:
+using literally the same URI pattern in the same defining source but with
+different worker targets.
+</p>
+</subsection>
+</section>
+
+<section name="Virtual host integration">
+<br/>
+
+<subsection name="IIS">
+<br/>
+<p>
+When using IIS you can restrict individual rules to special virtual hosts
+by prefixing the URI pattern with the virtual host information:
+<source>
+  # To be completed
+</source>
+</p>
+</subsection>
+
+<subsection name="Apache httpd">
+<br/>
+<p>
+For Apache you can define individual uriworkermap files per virtual host.
+The directive JkMountFile can be used in the main server and in each virtual host.
+If a virtual host does not use JkMountfile, but JkMountCopy is set to 'On',
+then it inhertis the JkMountFile from the main server.
+</p>
+</subsection>
+</section>
+
+<section name="Dynamic reloading">
+<br/>
+<p>
+When a request is being processed, tomcat connectors check the file modification time
+of the uriworkermap file. To keep the performance penalty low, this happens only,
+if the last check happened at least 60 seconds ago.
+</p>
+<p>
+If the file changed, it gets reloaded completely. If there exist rules coming
+from other sources than the uriworkermap file (e.g. the workers.properties mount
+attribute or JkMount with Apache httpd), the new uriworkermap file gets dynamically
+merged with these ones exactly like when you do a web server restart.
+</p>
+<p>
+Until version 1.2.19 reloading behaved slightly differently: it continuously added
+the full contents of the uriworkermap file to the rule mapping. The merging rules
+were, that duplicated got eliminated and old rules could be disabled, by defining the
+rule as disabled in the new file. Rules never got deleted.
+</p>
+</section>
+
+<section name="Status worker integration">
+<br/>
+<p>
+The configuration view of the status worker also shows the various mapping rules.
+After each worker's configuration, the rules are listed, that forward to this worker.
+The list contains three columns:
+<ul>
+<li>
+the type of the rule: Exact or Wildchar, eventually prefixed with Disabled or Unmount (for exclusion rules)
+</li>
+<li>
+the URI pattern
+</li>
+<li>
+and the source of the rule definition: 'worker definition' for the workers.properties file (mount attribute),
+'JkMount' for Apache httpd JkMount and it's relatives and finally 'uriworkermap' for the uriworkermap file.
+</li>
+</ul>
+For Apache httpd, there is an important subtlety: the request going to the status worker
+gets executed in the context of some server (main or virtual). The status worker will only show the
+mapping rules, that are defined for this server (main or virtual).
+</p>
+</section>
+
+</body>
+</document>
