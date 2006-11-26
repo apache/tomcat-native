@@ -379,7 +379,7 @@ static const char *status_get_arg(const char *param, const char *req, char *buf,
 {
     if (status_get_arg_raw(param, req, buf, len)) {
         char *off = buf;
-        while (off=strpbrk(off, JK_STATUS_ESC_CHARS))
+        while ((off = strpbrk(off, JK_STATUS_ESC_CHARS)))
             off[0] = '@';
         return buf;
     }
@@ -1373,7 +1373,6 @@ static void form_all_members(jk_ws_service_t *s, jk_worker_t *w,
 
         for (i = 0; i < lb->num_of_workers; i++) {
             worker_record_t *wr = &(lb->lb_workers[i]);
-            ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
 
             jk_putv(s, "<tr><td>", wr->s->name, "</td><td>\n", NULL);
 
