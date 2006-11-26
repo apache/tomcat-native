@@ -1001,8 +1001,8 @@ static int exec_cmd(const char *name, HANDLE *hTomcat, char *cmdLine)
 
                         memset(&processInformation, 0, sizeof(processInformation));
                         
-						if( cmdLine==NULL ) 
-							cmdLine=data.cmd_line;
+                        if( cmdLine==NULL ) 
+                            cmdLine=data.cmd_line;
 
                         printf(cmdLine);
                         if(CreateProcess(data.java_bin,
@@ -1024,7 +1024,7 @@ static int exec_cmd(const char *name, HANDLE *hTomcat, char *cmdLine)
                             shutdown_port = data.shutdown_port;
                             shutdown_secret = data.shutdown_secret;
                             shutdown_protocol = strdup(data.shutdown_protocol);
-							shutdown_cmd = strdup(data.stop_cmd);
+                            shutdown_cmd = strdup(data.stop_cmd);
 
                             return JK_TRUE;
                         } else {
