@@ -98,8 +98,6 @@ int jk_get_is_worker_stopped(jk_map_t *m, const char *wname);
 
 int jk_get_worker_activation(jk_map_t *m, const char *wname);
 
-void jk_set_log_format(const char *logformat);
-
 int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_wokers);
 
 int jk_get_lb_factor(jk_map_t *m, const char *wname);
@@ -170,6 +168,14 @@ int jk_get_worker_def_cache_size(int protocol);
 int jk_get_worker_maintain_time(jk_map_t *m);
 
 int jk_get_max_packet_size(jk_map_t *m, const char *wname);
+
+const char *jk_get_worker_style_sheet(jk_map_t *m, const char *wname, const char *def);
+
+int jk_get_is_read_only(jk_map_t *m, const char *wname);
+
+int jk_get_worker_user_list(jk_map_t *m,
+                            const char *wname,
+                            char ***list, unsigned int *num_of_users);
 
 #define TC32_BRIDGE_TYPE    32
 #define TC33_BRIDGE_TYPE    33

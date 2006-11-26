@@ -76,7 +76,9 @@
 #define ACTIVATION_OF_WORKER        ("activation")
 #define WORKER_RECOVER_TIME         ("recover_time")
 #define WORKER_MAX_PACKET_SIZE      ("max_packet_size")
-
+#define STYLE_SHEET_OF_WORKER       ("css")
+#define READ_ONLY_OF_WORKER         ("read_only")
+#define USER_OF_WORKER              ("user")
 
 #define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
@@ -123,6 +125,7 @@
 static const char *list_properties[] = {
     BALANCE_WORKERS,
     MOUNT_OF_WORKER,
+    USER_OF_WORKER,
     "list",
     NULL
 };
@@ -158,6 +161,8 @@ static const char *unique_properties[] = {
     ACTIVATION_OF_WORKER,
     WORKER_RECOVER_TIME,
     WORKER_MAX_PACKET_SIZE,
+    STYLE_SHEET_OF_WORKER,
+    READ_ONLY_OF_WORKER,
     RETRIES_OF_WORKER,
     WORKER_MAINTAIN_PROPERTY_NAME,
     NULL
@@ -972,6 +977,55 @@ int jk_get_max_packet_size(jk_map_t *m, const char *wname)
         sz = 64*1024;
     
     return sz;
+}
+
+const char *jk_get_worker_style_sheet(jk_map_t *m, const char *wname, const char *def)
+{
+    char buf[1024];
+
+    if (!m || !wname) {
+        return NULL;
+    }
+
+    MAKE_WORKER_PARAM(STYLE_SHEET_OF_WORKER);
+
+    return jk_map_get_string(m, buf, def);
+}
+
+int jk_get_is_read_only(jk_map_t *m, const char *wname)
+{
+    int rc = JK_FALSE;
+    char buf[1024];
+    if (m && wname) {
+        int value;
+        MAKE_WORKER_PARAM(READ_ONLY_OF_WORKER);
+        value = jk_map_get_bool(m, buf, 0);
+        if (value)
+            rc = JK_TRUE;
+    }
+    return rc;
+}
+
+int jk_get_worker_user_list(jk_map_t *m,
+                            const char *wname,
+                            char ***list, unsigned int *num_of_users)
+{
+    char buf[1024];
+
+    if (m && list && num_of_users && wname) {
+        char **ar = NULL;
+
+        MAKE_WORKER_PARAM(USER_OF_WORKER);
+        ar = jk_map_get_string_list(m, buf, num_of_users, NULL);
+        if (ar) {
+            *list = ar;
+            return JK_TRUE;
+        }
+        *list = NULL;
+        *num_of_users = 0;
+    }
+
+    return JK_FALSE;
 }
 
 int jk_get_lb_worker_list(jk_map_t *m,
