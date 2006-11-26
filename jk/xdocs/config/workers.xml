@@ -372,6 +372,17 @@ Instead it is responsible for the load balancer management.
 <directive name="css" default="" required="false">
 Specifies the url for cascading stylesheet to use.
 </directive>
+<directive name="read_only" default="False" required="false">
+A status worker with read_only=True will not allow any operations,
+that change the runtime state or configuration of the other workers.
+These are edit/update/reset.
+</directive>
+<directive name="user" default="" required="false">
+This directive can be used mutltiple times. It is a list of users
+which gets compared to the user name authenticated by the web server.
+If the name is not contained in this list, access is denied. Per
+default the list is empty and then access is allowed to anybody.
+</directive>
 </directives>
 </subsection>
 

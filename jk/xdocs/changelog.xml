@@ -26,6 +26,34 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Status Worker: All functions accessible also for xml and txt
+      mime types (list, show, update, reset). (rjung)
+      </update>
+      <update>
+      Status Worker: New global health indicators for load balancers
+      named bad (error, recovering or stopped), degraded (busy or disabled)
+      and good (the rest, active and OK or N/A). (rjung)
+      </update>
+      <update>
+      Status Worker: New edit page, to change one attribute for all
+      members of a load balancer. (rjung)
+      </update>
+      <update>
+      Status Worker: Standard logging for status worker. (rjung)
+      </update>
+      <update>
+      Status Worker: code refactoring. (rjung)
+      </update>
+      <update>
+      Status Worker: New attribute user (list) denies access, if
+      the request user in the sense of remote_user is not in this list.
+      Empty list = no deny (rjung)
+      </update>
+      <update>
+      Status Worker: New attribute read_only disables the parts
+      of the status worker, that change states and configurations. (rjung)
+      </update>
       <fix>
         <bug>36121</bug>: Don't change main uri when mod_jk serves
         included uri. (markt)
