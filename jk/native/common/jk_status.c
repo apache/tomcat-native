@@ -19,7 +19,7 @@
  * Description: Status worker, display and manages JK workers              *
  * Author:      Mladen Turk <mturk@jboss.com>                              *
  * Author:      Rainer Jung <rjung@apache.org>                             *
- * Version:     $Revision$                                           *
+ * Version:     $Revision$                                        *
  ***************************************************************************/
 
 #include "jk_pool.h"
@@ -959,7 +959,9 @@ static void display_worker_xml(jk_ws_service_t *s, jk_worker_t *w,
                 if (rs < lb->recover_wait_time - (int)difftime(now, wr->s->error_time))
                     rs += lb->maintain_time;
             }
-            jk_printf(s, "        time-to-recover=\"%u\"/>\n", rs < 0 ? 0 : rs);
+            jk_printf(s, "        time-to-recover=\"%u\"", rs < 0 ? 0 : rs);
+            /* Terminate the tag */
+            jk_puts(s, "/>\n");
         }
         if (name)
             display_maps_xml(s, s->uw_map, sw, name, l);
@@ -971,7 +973,9 @@ static void display_worker_xml(jk_ws_service_t *s, jk_worker_t *w,
         jk_printf(s, "  type=\"%s\"\n", status_worker_type(w->type));
         jk_printf(s, "  host=\"%s\"\n", aw->host);
         jk_printf(s, "  port=\"%d\"\n", aw->port);
-        jk_printf(s, "  address=\"%s\"/>\n", jk_dump_hinfo(&aw->worker_inet_addr, buf));
+        jk_printf(s, "  address=\"%s\"", jk_dump_hinfo(&aw->worker_inet_addr, buf));
+        /* Terminate the tag */
+        jk_puts(s, "/>\n");
         if (name)
             display_maps_xml(s, s->uw_map, sw, name, l);
         jk_putv(s, "</", sw->ns, "ajp>\n", NULL);
