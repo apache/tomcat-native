@@ -1911,7 +1911,6 @@ static int show_worker(jk_ws_service_t *s, status_worker_t *sw,
                        const char *worker, const char *sub_worker,
                        int refresh, jk_logger_t *l)
 {
-    unsigned int i;
     jk_worker_t *w = NULL;
 
     JK_TRACE_ENTER(l);
@@ -1944,7 +1943,6 @@ static int show_worker_xml(jk_ws_service_t *s, status_worker_t *sw,
                            const char *worker, const char *sub_worker,
                            jk_logger_t *l)
 {
-    unsigned int i;
     jk_worker_t *w = NULL;
 
     JK_TRACE_ENTER(l);
@@ -1975,7 +1973,6 @@ static int show_worker_txt(jk_ws_service_t *s, status_worker_t *sw,
                            const char *worker, const char *sub_worker,
                            jk_logger_t *l)
 {
-    unsigned int i;
     jk_worker_t *w = NULL;
 
     JK_TRACE_ENTER(l);
@@ -2270,7 +2267,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     if (w->num_of_users) {
         if (s->remote_user) {
-            unsigned int i;
+            int i;
             denied = 1;
             for (i = 0; i < w->num_of_users; i++) {
                 if (!strcmp(s->remote_user, w->user_names[i])) {
@@ -2602,7 +2599,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
     JK_TRACE_ENTER(log);
     if (pThis && pThis->worker_private) {
         status_worker_t *p = pThis->worker_private;
-        unsigned int i;
+        int i;
         p->we = we;
         p->css = jk_get_worker_style_sheet(props, p->name, NULL);
         p->read_only = jk_get_is_read_only(props, p->name);
