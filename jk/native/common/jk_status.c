@@ -642,7 +642,16 @@ static void display_maps_txt(jk_ws_service_t *s,
             continue;
         }
         count++;
-        jk_printf(s, "Map:");
+    }
+    if (count) {
+        jk_printf(s, "Maps: size=%d\n", count);        
+    }
+    for (i = 0; i < uwmap->size; i++) {
+        uri_worker_record_t *uwr = uwmap->maps[i];
+        if (!worker || strcmp(uwr->worker_name, worker)) {
+            continue;
+        }
+        jk_puts(s, "Map:");
         jk_printf(s, " type=%s", uri_worker_map_get_match(uwr, buf, l));
         jk_printf(s, " uri=%s", uwr->uri);
         jk_printf(s, " source=%s\n", uri_worker_map_get_source(uwr, l));
@@ -1892,9 +1901,21 @@ static int list_workers_txt(jk_ws_service_t *s, status_worker_t *sw,
             continue;
         }
         if (w->type == JK_LB_WORKER_TYPE) {
-            if (!has_lb)
-                jk_puts(s, "Load Balancers:\n");
-            has_lb = 1;
+            has_lb++;
+        }
+    }
+    if (has_lb)
+        jk_printf(s, "Load Balancers: size=%d\n", has_lb);
+
+    for (i = 0; i < sw->we->num_of_workers; i++) {
+        w = wc_get_worker_for_name(sw->we->worker_list[i], l);
+        if (!w) {
+            jk_log(l, JK_LOG_WARNING,
+                   "could not find worker '%s'",
+                   sw->we->worker_list[i]);
+            continue;
+        }
+        if (w->type == JK_LB_WORKER_TYPE) {
             display_worker_txt(s, w, 0, l);
         }
     }
