@@ -1795,7 +1795,7 @@ static void display_legend(jk_ws_service_t *s, jk_logger_t *l)
             "<tbody valign=\"baseline\">\n"
             "<tr><th>Name</th><td>Worker name</td></tr>\n"
             "<tr><th>Type</th><td>Worker type</td></tr>\n"
-            "<tr><th>jvmRoute</th><td>Worker JVM route</td></tr>\n"
+            "<tr><th>Route</th><td>Worker jvmRoute</td></tr>\n"
             "<tr><th>Addr</th><td>Backend Address info</td></tr>\n"
             "<tr><th>Act</th><td>Worker activation configuration</br>\n"
             "ACT=Active, DIS=Disabled, STP=Stopped</td></tr>\n"
