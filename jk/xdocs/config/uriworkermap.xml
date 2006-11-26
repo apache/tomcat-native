@@ -8,6 +8,7 @@
 
     <properties>
         <author email="rjung@apache.org">Rainer Jung</author>
+        <author email="mturk@apache.org">Mladen Turk</author>
         <title>uriworkermap.properties configuration</title>
     </properties>
 
@@ -180,9 +181,26 @@ different worker targets.
 <br/>
 <p>
 When using IIS you can restrict individual rules to special virtual hosts
-by prefixing the URI pattern with the virtual host information:
+by prefixing the URI pattern with the virtual host information.
+The rules is that the url must be prefixed with the host name.
 <source>
-  # To be completed
+  # Use www.foo.org as virtual host
+  /www.foo.org/myapp/*=myworker
+  # Use www.bar.org as virtual host
+  /www.bar.org/myapp/*=myworker
+  # Normal mapping
+  /mysecondapp/*=myworker
+</source>
+</p>
+<p>
+Note that /mysecondapp/* will be mapped to all virtual hosts present.
+In  case one needs to prevent the mappings to some particular virual host then
+the exclusion rule must be used
+<source>
+  # Make sure the myapp is accessible by all virtual hosts
+  /myapp/*=myworker
+  # Disable mapping myapp for www.foo.org virtual host
+  !/www.foo.org/myapp/*=myworker
 </source>
 </p>
 </subsection>
