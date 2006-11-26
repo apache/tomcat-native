@@ -389,6 +389,32 @@ default the list is empty and then access is allowed to anybody.
 This feature has been added in <b>jk 1.2.20</b>.
 </p>
 </directive>
+<directive name="ns" default="jk:" required="false">
+This directive can be used to customize the XML output from the
+status worker. If set to <b>-</b> no namespace will be used.
+<p>
+This feature has been added in <b>jk 1.2.20</b>.
+</p>
+</directive>
+<directive name="xmlns" default="" required="false">
+This directive can be used to customize the XML output from the
+status worker. If set to <b>-</b> no xmlns will be used.
+<p>
+Default value is set to xmlns:jk=&quot;http://tomcat.apache.org&quot;
+</p>
+<p>
+This feature has been added in <b>jk 1.2.20</b>.
+</p>
+</directive>
+<directive name="doctype" default="" required="false">
+This directive can be used to customize the XML output from the
+status worker. This value will be inserted to the output xml
+after the xml header.
+<p>
+This feature has been added in <b>jk 1.2.20</b>.
+</p>
+</directive>
+
 </directives>
 </subsection>
 

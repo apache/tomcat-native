@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Status Worker: Add directives for customizing the XML
+      output (ns, xmlns, doctype). (mturk)
+      </update>
+      <update>
       Docs: New page with description of uriworkermap. (rjung)
       </update>
       <update>
