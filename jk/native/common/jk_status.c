@@ -1905,7 +1905,7 @@ static int list_workers_txt(jk_ws_service_t *s, status_worker_t *sw,
         }
     }
     if (has_lb)
-        jk_printf(s, "Load Balancers: size=%d\n", has_lb);
+        jk_printf(s, "Balancers: size=%d\n", has_lb);
 
     for (i = 0; i < sw->we->num_of_workers; i++) {
         w = wc_get_worker_for_name(sw->we->worker_list[i], l);
@@ -2450,13 +2450,12 @@ static int JK_METHOD service(jk_endpoint_t *e,
                           JK_VERMAJOR, JK_VERMINOR, JK_VERFIX);
                 jk_printf(s, "# TOMCAT_CONNECTOR_STR_%s\n",
                           JK_EXPOSED_VERSION);
-                jk_puts(s, "Server Name: ");
+                jk_puts(s, "Server: name=");
                 jk_puts(s, s->server_name);
-                jk_printf(s, "\nServer Port: %d", s->server_port);
-                jk_puts(s, "\n");
-                jk_putv(s, "Server Version: ",
-                        s->server_software, "\n", NULL);
-                jk_putv(s, "JK Version: ",
+                jk_printf(s, " port=%d", s->server_port);
+                jk_putv(s, " version=\"",
+                        s->server_software, "\"\n", NULL);
+                jk_putv(s, "Jk: version=",
                         JK_VERSTRING, "\n", NULL);
                 if (cmd == JK_STATUS_CMD_LIST) {
                     /* Step 2: Display configuration */
