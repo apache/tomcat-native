@@ -1065,7 +1065,8 @@ static void display_worker_txt(jk_ws_service_t *s, jk_worker_t *w,
         jk_printf(s, " degraded=%d", degraded);
         jk_printf(s, " bad=%d", bad);
         jk_printf(s, " busy=%d", lb->s->busy);
-        jk_printf(s, " max_busy=%d\n", lb->s->max_busy);
+        jk_printf(s, " max_busy=%d", lb->s->max_busy);
+        jk_printf(s, " members=%d\n", lb->num_of_workers);
 
         for (j = 0; j < lb->num_of_workers; j++) {
             worker_record_t *wr = &(lb->lb_workers[j]);
@@ -1888,7 +1889,8 @@ static int list_workers_txt(jk_ws_service_t *s, status_worker_t *sw,
                             jk_logger_t *l)
 {
     unsigned int i;
-    int has_lb = 0;
+    int lb_cnt = 0;
+    int ajp_cnt = 0;
     jk_worker_t *w = NULL;
 
     JK_TRACE_ENTER(l);
@@ -1901,11 +1903,15 @@ static int list_workers_txt(jk_ws_service_t *s, status_worker_t *sw,
             continue;
         }
         if (w->type == JK_LB_WORKER_TYPE) {
-            has_lb++;
+            lb_cnt++;
+        }
+        else if (w->type == JK_AJP13_WORKER_TYPE ||
+                 w->type == JK_AJP14_WORKER_TYPE) {
+            ajp_cnt++;    
         }
     }
-    if (has_lb)
-        jk_printf(s, "Balancers: size=%d\n", has_lb);
+    if (lb_cnt)
+        jk_printf(s, "Balancers: size=%d\n", lb_cnt);
 
     for (i = 0; i < sw->we->num_of_workers; i++) {
         w = wc_get_worker_for_name(sw->we->worker_list[i], l);
@@ -1919,6 +1925,8 @@ static int list_workers_txt(jk_ws_service_t *s, status_worker_t *sw,
             display_worker_txt(s, w, 0, l);
         }
     }
+    if (ajp_cnt)
+        jk_printf(s, "Workers: size=%d\n", ajp_cnt);
 
     for (i = 0; i < sw->we->num_of_workers; i++) {
         w = wc_get_worker_for_name(sw->we->worker_list[i], l);
