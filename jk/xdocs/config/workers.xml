@@ -535,7 +535,7 @@ This feature has been added in <b>jk 1.2.19</b>.
 </p>
 </directive>
 
-<directive name="jvm_route" default="" required="false">
+<directive name="jvm_route" default="worker name" required="false">
 Normally the name of a balanced worker in a load balancer is equal to the jvmRoute
 of the corresponding Tomcat instance. If you want to include a worker corresponding
 to a Tomcat instance into several load balancers with different balancing configuration
@@ -549,6 +549,10 @@ If this attribute is left empty, the name of the worker will be used.
 </p>
 <p>
 This attribute can be changed at runtime using status worker.
+</p>
+<p>
+If the route name contains a period, the part before the first period will be
+used as domain name, unless domain is set explicitly.
 </p>
 <p>
 This feature has been added in <b>jk 1.2.16</b>.
