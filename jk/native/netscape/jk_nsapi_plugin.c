@@ -300,8 +300,8 @@ NSAPI_PUBLIC void jk_term(void *p)
         jk_close_file_logger(&logger);
     }
 
-	if (init_map) {
-        jk_map_free(&init_map);
+    if (init_map) {
+    jk_map_free(&init_map);
     }
 }
 
@@ -413,7 +413,7 @@ static int init_ws_service(nsapi_private_data_t * private_data,
     s->headers_names = NULL;
     s->headers_values = NULL;
     s->num_headers = 0;
-	s->uw_map = uw_map;
+    s->uw_map = uw_map;
 
 #ifdef NETWARE
     /* on NetWare, we can have virtual servers that are secure.
