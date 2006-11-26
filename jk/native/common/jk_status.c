@@ -1910,8 +1910,7 @@ static int list_workers_txt(jk_ws_service_t *s, status_worker_t *sw,
             ajp_cnt++;    
         }
     }
-    if (lb_cnt)
-        jk_printf(s, "Balancers: size=%d\n", lb_cnt);
+    jk_printf(s, "Workers: balancer=%d ajp=%d\n", lb_cnt, ajp_cnt);
 
     for (i = 0; i < sw->we->num_of_workers; i++) {
         w = wc_get_worker_for_name(sw->we->worker_list[i], l);
@@ -1925,8 +1924,6 @@ static int list_workers_txt(jk_ws_service_t *s, status_worker_t *sw,
             display_worker_txt(s, w, 0, l);
         }
     }
-    if (ajp_cnt)
-        jk_printf(s, "Workers: size=%d\n", ajp_cnt);
 
     for (i = 0; i < sw->we->num_of_workers; i++) {
         w = wc_get_worker_for_name(sw->we->worker_list[i], l);
