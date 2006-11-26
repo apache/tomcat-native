@@ -172,6 +172,10 @@ void reset_lb_values(lb_worker_t *p, jk_logger_t *l)
 /* Syncing config values from shm */
 void jk_lb_pull(lb_worker_t * p, jk_logger_t *l) {
     JK_TRACE_ENTER(l);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "syncing mem for lb '%s' from shm",
+               p->s->name);
     p->sticky_session = p->s->sticky_session;
     p->sticky_session_force = p->s->sticky_session_force;
     p->recover_wait_time = p->s->recover_wait_time;
@@ -185,6 +189,10 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l) {
 /* Syncing config values from shm */
 void jk_lb_push(lb_worker_t * p, jk_logger_t *l) {
     JK_TRACE_ENTER(l);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "syncing shm for lb '%s' from mem",
+               p->s->name);
     p->s->sticky_session = p->sticky_session;
     p->s->sticky_session_force = p->sticky_session_force;
     p->s->recover_wait_time = p->recover_wait_time;
@@ -441,7 +449,7 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l
                        JK_LB_DECAY_MULT * delta / lb->maintain_time);
             curmax = decay_load(lb, JK_LB_DECAY_MULT * delta / lb->maintain_time, l);
             if (!recover_workers(lb, curmax, now, l)) {
-                force_recovery(lb, l);    
+                force_recovery(lb, l);
             }
         }
 
@@ -1018,7 +1026,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 else {
                     /* No workers in error state.
                      * Somebody set them all to disabled?
-                     */    
+                     */
                     jk_log(l, JK_LOG_ERROR,
                            "All tomcat instances failed, no more workers left for recovery");
                     *is_error = JK_HTTP_SERVER_BUSY;
@@ -1176,7 +1184,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 p->lb_workers[i].s->lb_value = 0;
                 p->lb_workers[i].s->state = JK_LB_STATE_NA;
                 p->lb_workers[i].s->error_time = 0;
-                p->lb_workers[i].s->activation = 
+                p->lb_workers[i].s->activation =
                     jk_get_worker_activation(props, worker_names[i]);
                 if (!wc_create_worker(p->lb_workers[i].s->name, 0,
                                       props,
@@ -1206,7 +1214,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                         if (id_domain) {
                             *id_domain = '\0';
                             strcpy(p->lb_workers[i].s->domain, p->lb_workers[i].s->jvm_route);
-                            *id_domain = '.';    
+                            *id_domain = '.';
                         }
                     }
                     if (JK_IS_DEBUG_LEVEL(l)) {
