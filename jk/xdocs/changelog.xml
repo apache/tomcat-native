@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Docs: Added short description of max_packet_size to worker
+      reference. (rjung)
+      </update>
+      <update>
       Status Worker: All functions accessible also for xml and txt
       mime types (list, show, update, reset). (rjung)
       </update>

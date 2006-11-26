@@ -376,12 +376,18 @@ Specifies the url for cascading stylesheet to use.
 A status worker with read_only=True will not allow any operations,
 that change the runtime state or configuration of the other workers.
 These are edit/update/reset.
+<p>
+This feature has been added in <b>jk 1.2.20</b>.
+</p>
 </directive>
 <directive name="user" default="" required="false">
 This directive can be used mutltiple times. It is a list of users
 which gets compared to the user name authenticated by the web server.
 If the name is not contained in this list, access is denied. Per
 default the list is empty and then access is allowed to anybody.
+<p>
+This feature has been added in <b>jk 1.2.20</b>.
+</p>
 </directive>
 </directives>
 </subsection>
@@ -440,6 +446,22 @@ runs of global maintenance is controlled by worker.maintain.
 <p>
 Do not set recover_time to a very short time unless you understand the implications.
 Every recovery attempt for a worker in error is done by a real request!
+</p>
+</directive>
+
+<directive name="max_packet_size" default="8192" required="false">
+This attribute sets the maximal AJP packet size in Bytes.
+The maximum value is 65536. If you change it from the default,
+you <b>must</b> also change the packetSize attribute of your AJP
+connector on the tomcat side! The attribute packetSize is only available
+in Tomcat 5.5.20+ and 6.0.2+.
+<p>
+Normally it is not necessary to change the maximum packet size. Problems
+with the default value have been reported when sending certificates or
+certificate chains.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.19</b>.
 </p>
 </directive>
 
@@ -556,6 +578,7 @@ used as domain name, unless domain is set explicitly.
 </p>
 <p>
 This feature has been added in <b>jk 1.2.16</b>.
+The automatic domain rule has been added in <b>jk 1.2.20</b>.
 </p>
 </directive>
 
