@@ -118,6 +118,10 @@
                        "DTD HTML 3.2 Final//EN\">\n"      \
                        "<html><head><title>JK Status Manager</title>"
 
+#define JK_STATUS_COPY "Copyright &#169; 1999-2006, The Apache Software Foundation<br />" \
+                       "Licensed under the <a href=\"http://www.apache.org/licenses/LICENSE-2.0\">" \
+                       "Apache License, Version 2.0</a>."
+
 #define JK_STATUS_HEND "</head>\n<body>\n"
 #define JK_STATUS_BEND "</body>\n</html>\n"
 
@@ -1788,7 +1792,7 @@ static void commit_all_members(jk_ws_service_t *s, jk_worker_t *w,
 
 
 
-static void display_legend(jk_ws_service_t *s, jk_logger_t *l)
+static void display_legend(jk_ws_service_t *s, status_worker_t *sw, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
     jk_puts(s, "<hr/><table>\n"
@@ -1816,7 +1820,16 @@ static void display_legend(jk_ws_service_t *s, jk_logger_t *l)
             "<tr><th>Cd</th><td>Cluster domain</td></tr>\n"
             "<tr><th>Rs</th><td>Recovery scheduled</td></tr>\n"
             "</tbody>\n"
-            "</table>");
+            "</table>\n");
+    if (sw->css) {            
+        jk_putv(s, "<hr/><div class=\"footer\">", JK_STATUS_COPY,
+                "</div>\n", NULL);
+    }
+    else {
+        jk_putv(s, "<hr/><p align=\"center\"><small>", JK_STATUS_COPY,
+                "</small></p>\n", NULL);        
+    }
+                
     JK_TRACE_EXIT(l);
 }
 
@@ -1838,7 +1851,8 @@ static int list_workers(jk_ws_service_t *s, status_worker_t *sw,
         }
         display_worker(s, w, refresh, 0, l);
     }
-    display_legend(s, l);
+    display_legend(s, sw, l);
+    
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
@@ -1968,7 +1982,7 @@ static int show_worker(jk_ws_service_t *s, status_worker_t *sw,
     }
     /* XXX : Until now we use the lb view even if we only want to show a member */
     display_worker(s, w, refresh, 1, l);
-    display_legend(s, l);
+    display_legend(s, sw, l);
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
@@ -2098,7 +2112,7 @@ static int edit_worker(jk_ws_service_t *s, status_worker_t *sw,
         }
         form_member(s, wr, worker, from, refresh, l);
     }
-    display_legend(s, l);
+    display_legend(s, sw, l);
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
