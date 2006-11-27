@@ -80,7 +80,15 @@ A string value with is the full path to rewrite.properties file
 A DWORD value size of the shared memory. Set this value to be
 the number of all defined workers * 400.
 (Set this value only if you have <b>more</b> then <b>64</b> workers)
-</p></attribute>
+</p>
+<p>This directive has been added in version 1.2.20</p>
+</attribute>
+<attribute name="worker_mount_reload" required="false"><p>
+A DWORD value specifying the time in seconds upon which the
+<b>worker_mount_file</b> will be reloaded.
+</p>
+<p>This directive has been added in version 1.2.20</p>
+</attribute>
 
 </attributes>
 </section> 

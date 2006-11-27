@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      IIS: Make uriworkermap file reload check interval configurable. (mturk)
+      </update>
+      <update>
       Apache: Make uriworkermap file reload check interval configurable. (rjung)
       </update>
       <update>
