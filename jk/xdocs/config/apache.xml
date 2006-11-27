@@ -77,6 +77,16 @@ For inheritance rules, see: JkMountCopy.
 <br/>
 There is no default value.
 </p></attribute>
+<attribute name="JkMountFileReload" required="false"><p>
+This directive configures the reload check interval in seconds.
+The JkMountFile is checked periodically for changes.
+A changed file gets reloaded automatically. If you set
+this directive to "0", reload checking is turned off.
+<br/>
+The default value is 60 seconds.
+<br/>
+This directive has been added in version 1.2.20 of mod_jk.
+</p></attribute>
 <attribute name="JkMount" required="false"><p>
 A mount point from a context to a Tomcat worker.
 <br/>

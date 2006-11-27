@@ -647,7 +647,8 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
         int i;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "Loading urimaps from %s", uw_map->fname);
+                   "Loading urimaps from %s with reload check interval %d seconds",
+                   uw_map->fname, uw_map->reload);
         uri_worker_map_clear(uw_map, SOURCE_TYPE_URIMAP, l);
         for (i = 0; i < jk_map_size(map); i++) {
             const char *u = jk_map_name_at(map, i);
@@ -697,7 +698,7 @@ int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
     int rc = JK_TRUE;
     time_t now = time(NULL);
 
-    if (difftime(now, uw_map->checked) > JK_URIMAP_RELOAD) {
+    if (uw_map->reload > 0 && difftime(now, uw_map->checked) > uw_map->reload) {
         struct stat statbuf;
         uw_map->checked = now;
         if ((rc = stat(uw_map->fname, &statbuf)) == -1) {

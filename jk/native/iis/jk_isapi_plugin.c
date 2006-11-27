@@ -1258,6 +1258,7 @@ static int init_jk(char *serverName)
     if (uri_worker_map_alloc(&uw_map, NULL, logger)) {
         rc = JK_FALSE;
         uw_map->fname = worker_mount_file;
+        uw_map->reload = JK_URIMAP_DEF_RELOAD;
         if (worker_mount_file[0])
             rc = uri_worker_map_load(uw_map, logger);
     }

@@ -168,6 +168,10 @@ extern "C"
 
 #define JK_WORKER_FILE_DEF  ("workers.properties")
 
+/* Urimap reload check time. Use 60 seconds by default.
+ */
+#define JK_URIMAP_DEF_RELOAD    (60)
+
 #define JK_TRUE  (1)
 #define JK_FALSE (0)
 

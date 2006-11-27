@@ -35,10 +35,6 @@ extern "C"
 #include "jk_logger.h"
 #include "jk_mt.h"
 
-/* Urimap reload time. Use 60 seconds by default.
- */
-#define JK_URIMAP_RELOAD            60
-
 #define MATCH_TYPE_EXACT            0x0001
 /* deprecated
 #define MATCH_TYPE_CONTEXT          0x0002
@@ -117,6 +113,8 @@ struct jk_uri_worker_map
     JK_CRIT_SEC cs;
     /* uriworkermap filename */
     const char *fname;    
+    /* uriworkermap reload check interval */
+    int reload;    
     /* Last modified time */
     time_t  modified;
     /* Last checked time */

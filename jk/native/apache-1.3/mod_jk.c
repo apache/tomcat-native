@@ -121,6 +121,7 @@ typedef struct
     jk_map_t *worker_properties;
     char *worker_file;
     char *mount_file;
+    char *mount_file_reload;
     jk_map_t *uri_to_context;
 
     int mountcopy;
@@ -934,6 +935,32 @@ static const char *jk_set_mount_file(cmd_parms * cmd,
 }
 
 /*
+ * JkMountFileReload Directive Handling
+ *
+ * JkMountFileReload seconds
+ */
+
+static const char *jk_set_mount_file_reload(cmd_parms * cmd,
+                                            void *dummy, char *mount_file_reload)
+{
+    server_rec *s = cmd->server;
+    int interval;
+
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+
+    interval = atoi(mount_file_reload);
+    if (interval < 0) {
+        interval = 0;
+    }
+
+    conf->mount_file_reload = interval;
+
+    return NULL;
+}
+
+/*
  * JkLogFile Directive Handling
  *
  * JkLogFile file
@@ -1702,6 +1729,16 @@ static const command_rec jk_cmds[] = {
      "the name of a mount file for the Tomcat servlet uri mappings"},
 
     /*
+     * JkMountFileReload specifies the reload check interval for the
+     * uriworker properties file.
+     *
+     * Default value is: JK_URIMAP_DEF_RELOAD
+     */
+    {"JkMountFileReload", jk_set_mount_file_reload, NULL, RSRC_CONF, TAKE1,
+     "the reload check interval of the mount file"},
+
+    /*
+     * JkAutoMount specifies that the list of handled URLs must be
      * JkAutoMount specifies that the list of handled URLs must be
      * asked to the servlet engine (autoconf feature)
      */
@@ -2056,6 +2093,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->exclude_options = 0;
 
     if (s->is_virtual) {
+        c->mount_file_reload = JK_UNSET;
         c->log_level = JK_UNSET;
         c->options = 0;
         c->worker_indicator = NULL;
@@ -2066,6 +2104,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
         c->session_indicator = NULL;
         c->key_size_indicator = NULL;
     } else {
+        c->mount_file_reload = JK_URIMAP_DEF_RELOAD;
         c->log_level = JK_LOG_DEF_LEVEL;
         c->options = JK_OPT_FWDURIDEFAULT;
         c->worker_indicator = JK_ENV_WORKER_NAME;
@@ -2163,6 +2202,8 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
                                                base->envvars);
     }
 
+    if (overrides->mount_file_reload == JK_UNSET)
+        overrides->mount_file_reload = base->mount_file_reload;
     if (overrides->mountcopy) {
         copy_jk_map(p, overrides->s, base->uri_to_context,
                     overrides->uri_to_context);
@@ -2328,6 +2369,7 @@ static void jk_init(server_rec * s, ap_pool * p)
                               p, "Memory error");
             if (sconf->mount_file) {
                 sconf->uw_map->fname = sconf->mount_file;
+                sconf->uw_map->reload = sconf->mount_file_reload;
                 uri_worker_map_load(sconf->uw_map, sconf->log);
             }
             if (sconf->format_string) {

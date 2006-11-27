@@ -93,6 +93,7 @@ static void init_workers_on_other_threads(void *init_d)
     if (wc_open(init_map, &worker_env, logger)) {
         if (uri_worker_map_alloc(&uw_map, NULL, logger)) {
             uw_map->fname = "";
+            uw_map->reload = JK_URIMAP_DEF_RELOAD;
             worker_env.uri_to_worker = uw_map;
             init_on_other_thread_is_ok = JK_TRUE;
         }

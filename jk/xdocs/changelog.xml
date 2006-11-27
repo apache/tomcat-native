@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Apache: Make uriworkermap file reload check interval configurable. (rjung)
+      </update>
+      <update>
       Status Worker: Add directives for customizing the XML
       output (ns, xmlns, doctype). (mturk)
       </update>

@@ -47,7 +47,7 @@ Virtual host integration: uri mapping rules can be expressed per virtual host.
 The details are web server specific though.
 </li>
 <li>
-Dynamic reloading: The file gets checked every 60 seconds for changes.
+Dynamic reloading: The file gets checked periodically for changes.
 New versions are automatically reloaded without web server restarts.
 </li>
 <li>
@@ -222,6 +222,11 @@ then it inhertis the JkMountFile from the main server.
 When a request is being processed, tomcat connectors check the file modification time
 of the uriworkermap file. To keep the performance penalty low, this happens only,
 if the last check happened at least 60 seconds ago.
+</p>
+<p>
+IIS does the check every 60 seconds. For Apache you can configure the
+interval using the directive JkMountFile. The default value is also 60 seconds.
+A value of "0" turns off the reloading.
 </p>
 <p>
 If the file changed, it gets reloaded completely. If there exist rules coming
