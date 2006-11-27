@@ -2561,8 +2561,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         jk_puts(s, "</form>\n");
                     }
                     jk_puts(s, "<hr/>[<b>S</b>=Show only this worker");
-                    if (w->read_only)
-                        jk_puts(s, ", <b>E</b>=Edit worker, <b>R</b>=Reset worker state\n");
+                    if (!w->read_only)
+                        jk_puts(s, ", <b>E</b>=Edit worker, <b>R</b>=Reset worker state");
                     jk_puts(s, "]&nbsp;\n");
                 }
                 if (cmd == JK_STATUS_CMD_LIST) {
