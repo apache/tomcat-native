@@ -121,7 +121,7 @@ typedef struct
     jk_map_t *worker_properties;
     char *worker_file;
     char *mount_file;
-    char *mount_file_reload;
+    int mount_file_reload;
     jk_map_t *uri_to_context;
 
     int mountcopy;
