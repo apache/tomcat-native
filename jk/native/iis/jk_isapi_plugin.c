@@ -88,10 +88,12 @@ static char HTTP_WORKER_HEADER_NAME[_MAX_FNAME];
 #define URI_SELECT_ESCAPED_VERB     ("escaped")
 #define URI_REWRITE_VERB            ("rewrite_rule_file")
 #define SHM_SIZE_VERB               ("shm_size")
+#define WORKER_MOUNT_RELOAD_VERB    ("worker_mount_reload")
 
-#define TRANSLATE_HEADER                              ("Translate:")
-#define TRANSLATE_HEADER_NAME                         ("Translate")
-#define TRANSLATE_HEADER_NAME_LC                      ("translate")
+
+#define TRANSLATE_HEADER            ("Translate:")
+#define TRANSLATE_HEADER_NAME       ("Translate")
+#define TRANSLATE_HEADER_NAME_LC    ("translate")
 
 #define BAD_REQUEST     -1
 #define BAD_PATH        -2
@@ -160,6 +162,7 @@ static char log_file[MAX_PATH * 2];
 static int log_level = JK_LOG_DEF_LEVEL;
 static char worker_file[MAX_PATH * 2];
 static char worker_mount_file[MAX_PATH * 2] = {0};
+static int  worker_mount_reload = JK_URIMAP_DEF_RELOAD;
 static char rewrite_rule_file[MAX_PATH * 2] = {0};
 static int shm_config_size = JK_SHM_DEF_SIZE;
 
@@ -1196,7 +1199,7 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
 
 static int init_jk(char *serverName)
 {
-    char shm_name[MAX_SERVERNAME + sizeof(SHM_DEF_NAME) + 1];    
+    char shm_name[MAX_SERVERNAME + sizeof(SHM_DEF_NAME) + 1];
     int rc = JK_FALSE;
 
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
@@ -1210,7 +1213,7 @@ static int init_jk(char *serverName)
         for(i = 0; i < strlen(shm_name); i++) {
             shm_name[i] = toupper(shm_name[i]);
             if (!isalnum(shm_name[i]))
-                shm_name[i] = '_';   
+                shm_name[i] = '_';
         }
     }
     /*
@@ -1258,7 +1261,7 @@ static int init_jk(char *serverName)
     if (uri_worker_map_alloc(&uw_map, NULL, logger)) {
         rc = JK_FALSE;
         uw_map->fname = worker_mount_file;
-        uw_map->reload = JK_URIMAP_DEF_RELOAD;
+        uw_map->reload = worker_mount_reload;
         if (worker_mount_file[0])
             rc = uri_worker_map_load(uw_map, logger);
     }
@@ -1384,6 +1387,10 @@ static int read_registry_init_data(void)
         if (tmp) {
             shm_config_size = atoi(tmp);
         }
+        tmp = jk_map_get_string(map, WORKER_MOUNT_RELOAD_VERB, NULL);
+        if (tmp) {
+            worker_mount_reload = atoi(tmp);
+        }
 
     }
     else {
@@ -1456,6 +1463,9 @@ static int read_registry_init_data(void)
         }
         get_registry_config_number(hkey, SHM_SIZE_VERB,
                                    &shm_config_size);
+
+        get_registry_config_number(hkey, WORKER_MOUNT_RELOAD_VERB,
+                                   &worker_mount_reload);
 
         RegCloseKey(hkey);
     }
