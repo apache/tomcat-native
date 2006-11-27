@@ -224,9 +224,9 @@ of the uriworkermap file. To keep the performance penalty low, this happens only
 if the last check happened at least 60 seconds ago.
 </p>
 <p>
-IIS does the check every 60 seconds. For Apache you can configure the
-interval using the directive JkMountFile. The default value is also 60 seconds.
-A value of "0" turns off the reloading.
+For Apache you can configure the interval using the directive JkMountFile,
+for IIS you would use the attribute worker_mount_reload.
+The default value is 60 seconds. A value of "0" turns off the reloading.
 </p>
 <p>
 If the file changed, it gets reloaded completely. If there exist rules coming
