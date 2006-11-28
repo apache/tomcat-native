@@ -1277,6 +1277,7 @@ static void form_member(jk_ws_service_t *s, worker_record_t *wr,
     status_start_form(s, "GET", JK_STATUS_CMD_UPDATE,
                       0, from, refresh, worker, wr->s->name);
 
+    jk_puts(s, "<table>\n");
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ACTIVATION,
             ":</td><td></td></tr>\n", NULL);
     jk_putv(s, "<tr><td>&nbsp;&nbsp;Active</td><td><input name=\"",
@@ -1301,7 +1302,7 @@ static void form_member(jk_ws_service_t *s, worker_record_t *wr,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LBM_FACTOR, "\" type=\"text\" ", NULL);
     jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->s->lb_factor);
-    jk_putv(s, "<table>\n<tr><td>", JK_STATUS_ARG_LBM_TEXT_ROUTE,
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ROUTE,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LBM_ROUTE, "\" type=\"text\" ", NULL);
     jk_printf(s, "value=\"%s\"/></td></tr>\n", wr->s->jvm_route);
