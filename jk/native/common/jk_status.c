@@ -678,6 +678,13 @@ static void display_worker(jk_ws_service_t *s, jk_worker_t *w,
     lb_worker_t *lb = NULL;
 
     JK_TRACE_ENTER(l);
+    if (single) {
+        jk_puts(s, "<hr/>\n");
+        status_write_uri(s, "Back to full worker list", JK_STATUS_CMD_LIST,
+                         0, 0, refresh, NULL, NULL);
+        jk_puts(s, "<br/>\n");
+        from = JK_STATUS_CMD_SHOW;
+    }
     if (w->type == JK_LB_WORKER_TYPE) {
         lb = (lb_worker_t *)w->worker_private;
         name = lb->s->name;
@@ -701,13 +708,6 @@ static void display_worker(jk_ws_service_t *s, jk_worker_t *w,
                    "worker type not implemented");
         JK_TRACE_EXIT(l);
         return;
-    }
-    if (single) {
-        jk_puts(s, "<hr/>\n");
-        status_write_uri(s, "Back to full worker list", JK_STATUS_CMD_LIST,
-                         0, 0, refresh, NULL, NULL);
-        jk_puts(s, "<br/>\n");
-        from = JK_STATUS_CMD_SHOW;
     }
 
     if (lb) {
@@ -1128,6 +1128,10 @@ static void form_worker(jk_ws_service_t *s, jk_worker_t *w,
     lb_worker_t *lb = NULL;
 
     JK_TRACE_ENTER(l);
+    jk_puts(s, "<hr/>\n");
+    status_write_uri(s, "Back to worker view", from,
+                     0, 0, refresh, NULL, NULL);
+    jk_puts(s, "<br/>\n");
     if (w->type == JK_LB_WORKER_TYPE) {
         lb = (lb_worker_t *)w->worker_private;
         name = lb->s->name;
@@ -1272,6 +1276,11 @@ static void form_member(jk_ws_service_t *s, worker_record_t *wr,
         jk_log(l, JK_LOG_DEBUG,
                "producing edit form for sub worker '%s' of lb worker '%s'",
                wr->s->name, worker);
+
+    jk_puts(s, "<hr/>\n");
+    status_write_uri(s, "Back to worker view", from,
+                     0, 0, refresh, NULL, NULL);
+    jk_puts(s, "<br/>\n");
     jk_putv(s, "<hr/><h3>Edit worker settings for ",
             wr->s->name, "</h3>\n", NULL);
     status_start_form(s, "GET", JK_STATUS_CMD_UPDATE,
@@ -1336,6 +1345,10 @@ static void form_all_members(jk_ws_service_t *s, jk_worker_t *w,
     unsigned int i;
 
     JK_TRACE_ENTER(l);
+    jk_puts(s, "<hr/>\n");
+    status_write_uri(s, "Back to worker view", from,
+                     0, 0, refresh, NULL, NULL);
+    jk_puts(s, "<br/>\n");
     if (!attribute) {
         jk_log(l, JK_LOG_WARNING,
                "missing request parameter '%s'",
