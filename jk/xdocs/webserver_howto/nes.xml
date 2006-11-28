@@ -42,8 +42,8 @@ using the NSAPI redirector plugin.
 </p>
 
 <p>
-It is recommanded that you also read the <a href="workers.html">Workers HowTo</a> document
-to learn how to setup the working entities between your WebServer and Tomcat Engines.
+It is recommended that you also read the <a href="../generic_howto/workers.html">Workers HowTo</a> document
+to learn how to setup the working entities between your web server and Tomcat Engines.
 </p>
 
 
@@ -101,7 +101,7 @@ The ajp12 protocol is only available in Tomcat 3.2.x and 3.3.x.
 
 <p>
 The <b>ajp12</b> has been <b>deprecated</b> with Tomcat 3.3.x and you should use instead 
-<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.0.x, 4.1.x and 5.
+<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.0.x, 4.1.x, 5.0.x, 5.5.x and 6.
 </p>
 
 <p>
@@ -403,7 +403,9 @@ For example, if we want to submit the <b>/examples</b> context to the worker nam
 </source>
 
 <p>
-More informations on using and configuring workers in the <a href="workers.html">Workers HowTO</a>
+More informations on using and configuring workers in the <a href="../generic_howto/workers.html">Workers HowTo</a>
+and in the <a href="../config/workers.html">worker.properties configuration reference</a>.
+
 </p>
 </subsection>
 

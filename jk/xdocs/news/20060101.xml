@@ -15,6 +15,23 @@
 
 <section name="2006 News &amp; Status">
 <br />
+<a name="20060928.1"> 
+<h3>28 November - JK-1.2.20 released</h3>
+<p>The Apache Tomcat team is proud to announce the immediate availability
+of Tomcat Connectors 1.2.20. This is a stable release adding new features
+and a few bug fixes to version 1.2.19.
+Furthermore the documenation has been reorganised.
+</p>
+<p>
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+<p>If you find any bugs while using this release, please fill in the
+<a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
+Bug Report. When entering bug select <b>Native:JK</b> Component.
+</p>
+</a>
+<hr size="1" noshade="noshade" />
+
 <a name="20060917.1"> 
 <h3>17 September - JK-1.2.19 released</h3>
 <p>The Apache Tomcat team is proud to announce the immediate availability
@@ -23,7 +40,7 @@ and a few bug fixes to version 1.2.18.
 Furthermore the non-functional code trees for isapi and domino have been removed.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs while using this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -39,7 +56,7 @@ of Tomcat Connectors 1.2.18. This is a stable release adding
 a few bug fixes to the not released 1.2.17 version.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs while using this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -54,7 +71,7 @@ Bug Report. When entering bug select <b>Native:JK</b> Component.
 due to a bug in the types chosen for socket arguments.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 </a>
 <hr size="1" noshade="noshade" />
@@ -67,7 +84,7 @@ and a few bug fixes to the 1.2.15 version. Furthermore some worker attributes
 have been <a href="../config/workers.html">deprecated</a>.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 </a>
 <hr size="1" noshade="noshade" />

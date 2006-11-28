@@ -67,21 +67,16 @@ Tomcat Connectors (mod_jk, mod_jk2) Downloads</a> page.
 <br />
 <p>
 <b>JK</b> is a project covering web-servers to Tomcat connectors,
-whereas <b>mod_jk</b> is the <a href="howto/apache.html">Apache module</a> developed in JK.
+whereas <b>mod_jk</b> is the <a href="../webserver_howto/apache.html">Apache module</a> developed in JK.
 </p>
 
 <p>
-<a href="howto/domino.html">Domino webserver</a> support is implemented on JK, using a redirector
-called <b>dsapi redirector</b>.
-</p>
-
-<p>
-<a href="howto/iis.html">IIS webserver</a>support is implemented on JK, using a redirector
+<a href="../webserver_howto/iis.html">IIS webserver</a>support is implemented on JK, using a redirector
 called <b>isapi redirector</b>.
 </p>
 
 <p>
-<a href="howto/nes.html">Netscape/iPlanet webserver</a>webserver support is implemented on JK, using a redirector
+<a href="../webserver_howto/nes.html">Netscape/SunONE/Sun webserver</a>webserver support is implemented on JK, using a redirector
 called <b>nsapi redirector</b>.
 </p>
 
@@ -95,42 +90,40 @@ For <b>JK 1.2.x</b>, you should read :
 <ul>
 
 <li>
-<a href="howto/quick.html">For the impatients</a>
+<a href="../generic_howto/quick.html">For the impatient</a>
 </li>
 
 <li>
-<a href="howto/apache.html">Apache and JK</a>
+<a href="../webserver_howto/apache.html">Apache and JK</a>
 </li>
 
 <li>
-<a href="howto/domino.html">Domino and JK</a>
+<a href="../webserver_howto/iis.html">IIS and JK</a>
 </li>
 
 <li>
-<a href="howto/iis.html">IIS and JK</a>
+<a href="../webserver_howto/nes.html">Netscape/SunONE/Sun and JK</a>
 </li>
 
 <li>
-<a href="howto/nes.html">Netscape/iPlanet and JK</a>
-</li>
-
-<li>
-<a href="howto/workers.html">Workers configuration</a>
+<a href="../generic_howto/workers.html">Workers configuration</a>
 </li>
 </ul>
 
 <p> 
+For more detailed information, have a look at the configuration reference pages.
 You could also try searching the mailing list archives for "JK" or look at the source.
 </p>
 </subsection>
 
 <subsection name="Which protocol should I use? Ajp12 or Ajp13?">
 <p>
-<a href="common/ajpv13a.html">Ajp13</a> is a newer protocol, it's faster, and it works better with SSL. 
+<a href="../ajp/ajpv13a.html">Ajp13</a> is a newer protocol, it's faster, and it works better with SSL. 
 You almost certainly want to use it now that <strong>ajp12 is deprecated</strong>.
 </p>
 <p> 
-Also ajp13 is supported by all Apache Tomcat including 3.2.x , 3.3.x, 4.0.x, 4.1.x and the new tomcat 5. 
+Also ajp13 is supported by all Apache Tomcat including 3.2.x , 3.3.x, 4.0.x, 4.1.x, 5.0.x, 5.5.x
+and the new tomcat 6. 
 </p>
 
 <p>
@@ -138,29 +131,32 @@ Others Servlet engines like <b>jetty</b> have support for Ajp13.
 </p>
 </subsection>
 
-<subsection name="I've got a firewall between my WebServer and Tomcat who drop ajp13 connections after some times">
+<subsection name="I've got a firewall between my web server and Tomcat which drops ajp13 connections after some time">
 <p>
-Ajp13 use persistant connections where the traffic could be null if there is no request to be sent to Tomcat. 
-Firewall used to drop inactive connections and will make your WebServer and Tomcat think the connection is valid. 
+Ajp13 uses persistant connections where the traffic could be null if there is no request to be sent to Tomcat. 
+Firewalls use to drop inactive connections and will make your web server and Tomcat think the connection is valid. 
 </p>
 <p>
 Starting with JK 1.2.0, a <b>socket_keepalive</b> property as been added to ajp13 settings, and you should take a look at 
-it in <a href="howto/workers.html">Workers HowTo</a>.
+it in <a href="../generic_howto/workers.html">Workers HowTo</a> and
+<a href="../config/workers.html">workers.properties reference</a>.
 If nothing else helps, you can try <b>JkOptions +DisableReuse</b>, but this will have strong performance implications.
 </p>
 </subsection>
 
-<subsection name="Under heavy load, I've got many threads in Tomcat even if my Apache Web Server handle much of the load">
+<subsection name="Under heavy load, I've got many threads in Tomcat even if my Apache Web Server handles much of the load">
 <p>
-Under heavy load, Apache WebServer create many childs to handle the load, which will in turn create many connections 
+Under heavy load, Apache Web Server creates many children to handle the load,
+which will in turn create many connections 
 to Tomcat to forward the requests they should handle. 
-Apache WebServer will normally kill the childs/threads when the load decrease. But if the load is still there and 
-even if only Apache handle the requests, ie static contents, the childs are kept and with them the ajp13 connections, 
+Apache Web Server will normally kill the children/threads when the load decreases.
+But if the load is still there and even if only Apache handles the requests,
+ie static contents, the children are kept and with them all the ajp13 connections, 
 even if they are no more used. 
 </p>
 <p>
 To close connections after some time of inactivity you can use <b>connection_pool_timeout</b>,
-for more informations refer to <a href="config/workers.html">workers.properties configuration</a>.
+for more informations refer to <a href="../config/workers.html">workers.properties reference</a>.
 </p>
 </subsection>
 
@@ -172,19 +168,20 @@ Informations and FAQ about mod_jk and Apache Web Servers.
 </p>
 <subsection name="Whenever I restart Tomcat, Apache locks up!">
 <p>
-The Ajp13 protocol keeps an open socket between Tomcat and Apache. Release of mod_jk present in J-T-C handle the network failure. 
-But with previous release of mod_jk, you may have to restart Apache as well.
+The Ajp13 protocol keeps an open socket between Tomcat and Apache.
+Release of mod_jk present in J-T-C handles the network failure. 
+But with very ancient releases of mod_jk, you may have to restart Apache as well.
 </p>
 </subsection>
 
-<subsection name="Why did exist two files mod_jk.so (-eapi ad -noeapi) in download dir for Linux ?">
+<subsection name="Why do there exist two files mod_jk.so (-eapi ad -noeapi) in download directories for Apache 1.3?">
 <p>
-Many versions of Apache use of modified API, known at Extended API, developed for use with the
-<a href="http://www.modssl.org">mod_ssl module</a>.
+Many versions of Apache use a modified API, known at Extended API, developed for use with the
+<a href="http://www.modssl.org">mod_ssl module</a>. Starting with Apache 2.0 there is no more difference.
 </p>
 
 <p>
-For example, Apache present in certains recent Linux distributions include the
+For example, Apache 1.3 present in certains recent Linux distributions include the
 <b>mod_ssl</b> module.
 </p>
 
@@ -253,9 +250,21 @@ This check may be removed if the future.
 </p>
 </subsection>
 
-<subsection name="JNI didn't works with Apache 1.3">
+<subsection name="Does it work for Apache 2.2?">
 <p>
-JNI support require a multi-threaded environment which is not the general case for Apache 1.3. 
+mod_jk works well with Apache 2.2. You need a binary module compiled for version 2.2 of the Apache web server.
+A binary compiled for version 2.0 will not work.
+</p>
+<p>
+Important parts of the functionality of mod_jk have been reimplemented as Apache httpd modules mod_proxy_ajp
+and mod_proxy_balancer. These are part of the standard distributoin of Apache 2.2. The new modules do not contain
+all features of mod_jk, but you get them automatically with every Apache 2.2.
+</p>
+</subsection>
+
+<subsection name="JNI doesn't work with Apache 1.3">
+<p>
+JNI support requires a multi-threaded environment which is not the general case for Apache 1.3. 
 You should verify if Apache 1.3 has been build with thread support and if not you could add the 
 the pthreads library to your <b>httpd.conf</b> file. 
 </p>
@@ -267,7 +276,7 @@ the pthreads library to your <b>httpd.conf</b> file.
 
 <p>
 Also keep in mind that JNI is suited for multi-threaded servers and you should consider upgrading 
-to Apache 2.0 to support JNI.
+to Apache 2.x to support JNI.
 </p>
 </subsection>
 
@@ -297,44 +306,17 @@ before your httpd server starts.
 
 <subsection name="Mixed errors when building via configure">
 <p>
-configure assume you have some GNU tools allready installed and configured for your system, and ad minima <b>libtool</b>.
+configure assume you have some GNU tools already installed and configured for your system, and ad minima <b>libtool</b>.
 </p>
 <p>
 Also some systems may have mixed cc and gcc setup which may make you puzzled when trying to link an Apache built with native
 c compiler with a jk/jk2 build with gcc.
 </p>
 <p>
-In fine some native make didn't works as expect so you should use a GNU make <b>gmake</b>.
+In case the make processing doesn't work as expected, you should use a GNU make <b>gmake</b>.
 </p>
 </subsection>
 
-<subsection name="JK2 build report error about missing FIONBIO on Solaris 8">
-<p>
-In JK2 before v2.0.2, you should add <source>#define BSD_COMP</source> in top
-of jk/native2/common/jk_channel_socket.c to have Solaris build succeed.
-</p>
-</subsection>
-
-
 </section>
-
-<section name="IIS">
-<p>
-Informations and FAQ about JK and IIS Web Servers. 
-</p>
-<todo>
-More informations to be added.
-</todo>
-</section>
-
-<section name="NES/iPlanet">
-<p>
-Informations and FAQ about JK and NES/iPlanet Web Servers. 
-</p>
-<todo>
-More informations to be added.
-</todo>
-</section>
-
 </body>
 </document>

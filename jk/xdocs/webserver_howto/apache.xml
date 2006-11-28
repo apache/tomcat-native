@@ -36,8 +36,12 @@ the Tomcat redirector module.
 </p>
 
 <p>
-It is recommanded that you also read the <a href="workers.html">Workers HowTo</a> document
-to learn how to setup the working entities between your WebServer and Tomcat Engines.
+It is recommended that you also read the <a href="workers.html">Workers HowTo</a> document
+to learn how to setup the working entities between your web server and Tomcat Engines.
+For more detailed configuration information consult the reference documentation for
+<a href="../config/worker.html">workers.properties</a>,
+<a href="../config/uriworkermap.html">uriworkermap</a>
+and <a href="../config/apache.html">Apache</a>.
 </p>
 
 <p>
@@ -64,7 +68,7 @@ ${tomcat_home}\bin - Where you place web server plugins
 </p>
 <p>
 In all the examples in this document ${tomcat_home} will be <b>/var/tomcat3</b>.
-A <a href="workers.html">worker</a> is defined to be a tomcat process that accepts work from the Apache server.
+A <a href="../generic_howto/workers.html">worker</a> is defined to be a tomcat process that accepts work from the Apache server.
 </p>
 </subsection>
 
@@ -89,7 +93,7 @@ Netware
 iSeries V5R1 and V5R2 with Apache 2.0.39. Be sure to have the latest Apache PTF installed.
 </li>
 <li>
-Tomcat 3.2.x, Tomcat 3.3.x, Tomcat 4.0.x, Tomcat 4.1.x and Tomcat 5
+Tomcat 3.2.x, Tomcat 3.3.x, Tomcat 4.0.x, Tomcat 4.1.x, Tomcat 5.0.x, Tomcat 5.5.x and Tomcat 6.
 </li>
 </ul>
 </p>
@@ -106,8 +110,8 @@ The ajp12 protocol is only available in Tomcat 3.2.x and 3.3.x.
 </p>
 
 <p>
-The <b>ajp12</b> has been <b>deprecated</b> with Tomcat 3.3.x and you should use instead
-<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.0.x, 4.1.x and 5.
+The <b>ajp12</b> has been <b>deprecated</b> with Tomcat 3.3.x and you should use instead 
+<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.x, 5 and 5.5 and Tomcat 6.
 </p>
 
 <p>
@@ -187,7 +191,7 @@ For others, the binary distribution of mod_jk offers simpler installation.
 </p>
 
 <p>
-For example JK 1.2.5 can be downloaded from a mirror
+For example JK 1.2.x can be downloaded from a mirror
 <a href="http://tomcat.apache.org/download-connectors.cgi">
 here</a> (look for JK 1.2 Binary Releases). The "JK 1.2 Binary Releases" link contains binary version for a variety of
 operating systems for both Apache 1.3 and Apache 2.
@@ -281,7 +285,7 @@ You should use custom configuration when :
 </p>
 <ul>
 <li>
-You couldn't use <b>mod_jk.conf-auto</b> since Tomcat engine isn't on the same machine that your Apache WebServer,
+You couldn't use <b>mod_jk.conf-auto</b> since Tomcat engine isn't on the same machine that your Apache web server,
 ie when you have an Apache in front of a Tomcat Farm.
 </li>
 <li>

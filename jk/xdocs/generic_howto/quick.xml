@@ -37,7 +37,7 @@
     is the same for all JK implementations (Apache/IIS/NES).
     </li>
     <li>
-    <b>WebServers</b> add-ons to be set on the webserver side. 
+    <b>web server</b> add-ons to be set on the webserver side. 
     </li>
     </ul>
 </p>
@@ -66,7 +66,7 @@
 </p>
 </section>
 
-<section name="Minimum Apache WebServer configuration">
+<section name="Minimum Apache web server configuration">
 <p>
    Here is a minimun informations about Apache configuration, a 
    complete documentation is available in <a href="apache.html">Apache HowTo</a>.
@@ -141,16 +141,7 @@
 </p>
 </section>
 
-<section name="Minimum Domino WebServer configuration">
-<p>
-	A complete documentation is available in <a href="domino.html">Domino HowTo</a>.
-<todo>
-More informations to be added!
-</todo>
-</p>
-</section>
-
-<section name="Minimum IIS WebServer configuration">
+<section name="Minimum IIS web server configuration">
 <p>
 	A complete documentation is available in <a href="iis.html">IIS HowTo</a>.
 </p>
@@ -159,7 +150,7 @@ More informations to be added!
 </todo>
 </section>
 
-<section name="Minimum NES/iPlanet WebServer configuration">
+<section name="Minimum NES/iPlanet web server configuration">
 <p>
 	A complete documentation is available in <a href="nes.html">Netscape/iPlanet HowTo</a>.
 <todo>
@@ -171,7 +162,7 @@ More informations to be added?
 
 <section name="Test your configuration">
 <p>
-	(Re)start the Web server and browse to the <a href="http://localhost/examples/">http://localhost/examples/</a>
+	(Re)start the web server and browse to the <a href="http://localhost/examples/">http://localhost/examples/</a>
 </p>
 
 </section>

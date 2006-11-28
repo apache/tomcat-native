@@ -134,15 +134,22 @@ that <b>Ant</b> can see the
     You should see the ant compiler messages scrolling by rapidly and then stop 
 with the following:
 <screen>
-<read>[style] Transforming into C:\build\tomcat-connectors\jk\build\docs></read>
-<read>[style] Processing C:\build\tomcat-connectors\jk\xdocs\faq.xml 
+<read>[style] Transforming into C:\build\tomcat-connectors\jk\build\docs\news\printer></read>
+<read>[style] Processing C:\build\tomcat-connectors\jk\xdocs\news\20041100.xml 
 to</read>
-<read>C:\build\tomcat-connectors\jk\build\docs\faq.html</read>
+<read>C:\build\tomcat-connectors\jk\build\docs\news/20041100.html</read>
 <read>[style] Loading stylesheet C:\build\tomcat-connectors\jk\xdocs\style.xsl</read>
+<read>[style] Processing C:\build\tomcat-connectors\jk\xdocs\news\20050101.xml 
+to</read>
+<read>C:\build\tomcat-connectors\jk\build\docs\news/20050101.html</read>
+<read>[style] Processing C:\build\tomcat-connectors\jk\xdocs\news\20060101.xml 
+to</read>
+<read>C:\build\tomcat-connectors\jk\build\docs\news/20060101.html</read>
+<read>[style] Transforming into C:\build\tomcat-connectors\jk\build\docs></read>
 <read>[style] Processing C:\build\tomcat-connectors\jk\xdocs\index.xml 
 to</read>
 <read>C:\build\tomcat-connectors\jk\build\docs\index.html</read>
-<read>[copy] Copying 8 files to C:\build\tomcat-connectors\jk\build\docs</read>
+<read>[style] Loading stylesheet C:\build\tomcat-connectors\jk\xdocs\style.xsl</read>
 <read> </read>
 <read>BUILD SUCCESSFUL</read>
 <read>Total time: 10 seconds</read>

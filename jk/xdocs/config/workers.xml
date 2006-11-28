@@ -105,7 +105,7 @@ defines the directives that can be applied to the worker.
 <p>AJP13 worker is the preferred worker type that JK uses for communication
 between web server and Tomcat. This type of worker uses sockets as communication
 channel. For detailed description of the AJP13 protocol stack browse to
-<a href="../common/ajpv13a.html">AJPv13 protocol specification</a>
+<a href="../ajp/ajpv13a.html">AJPv13 protocol specification</a>
 </p>
 </directive>
 </directives>
@@ -185,7 +185,7 @@ This feature has been added in <b>jk 1.2.16</b>.
 <directive name="connection_pool_timeout" default="0" required="false">
 Cache timeout property should be used with <b>connection_pool_size</b> to specify how long JK should keep
 an inactive socket in cache before closing it. This property should be used to reduce the number of threads
-on the Tomcat WebServer. The default value zero disables the closing (infinite timeout).
+on the Tomcat web server. The default value zero disables the closing (infinite timeout).
 <p>
 Each child could open an ajp13 connection if it have to forward a request to Tomcat, creating
 a new ajp13 thread on Tomcat side.
@@ -682,7 +682,7 @@ value is 10. For other web servers than Apache or IIS this value has to be set m
 <warn>This directive has been deprecated since 1.2.16.</warn>
 Cache timeout property should be used with <b>cachesize</b> to specify how to time JK should keep
 an open socket in cache before closing it. This property should be used to reduce the number of threads 
-on the Tomcat WebServer.
+on the Tomcat web server.
 <p> 
 Each child could open an ajp13 connection if it have to forward a request to Tomcat, creating
 a new ajp13 thread on Tomcat side.

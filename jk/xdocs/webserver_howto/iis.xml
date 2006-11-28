@@ -41,8 +41,12 @@ JSP requests to Tomcat (and this way, serve them to clients).
 </p>
 
 <p>
-It is recommanded that you also read the <a href="workers.html">Workers HowTo</a> document
-to learn how to setup the working entities between your WebServer and Tomcat Engines.
+It is recommended that you also read the <a href="workers.html">Workers HowTo</a> document
+to learn how to setup the working entities between your web server and Tomcat Engines.
+For more detailed configuration information consult the reference documentation for
+<a href="../config/worker.html">workers.properties</a>,
+<a href="../config/uriworkermap.html">uriworkermap</a>
+and <a href="../config/iis.html">IIS</a>.
 </p>
 
 
@@ -81,7 +85,7 @@ WinNT4.0-i386 SP4/SP5/SP6a (should be able to work with other service packs), Wi
 IIS4.0 and PWS4.0 (numerous people have working IIS 5 and IIS 6 configurations)
 </li>
 <li>
-Tomcat 3.2 and later, Tomcat 4.x and Tomcat 5
+Tomcat 3.2 and later, Tomcat 4.x, Tomcat 5 and 5.5 and Tomcat 6
 </li>
 </ul>
 </p>
@@ -106,7 +110,7 @@ The ajp12 protocol is only available in Tomcat 3.2.x and 3.3.x.
 
 <p>
 The <b>ajp12</b> has been <b>deprecated</b> with Tomcat 3.3.x and you should use instead 
-<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.x and 5.
+<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.x, 5 and 5.5 and Tomcat 6.
 </p>
 
 <p>
@@ -160,11 +164,11 @@ The Tomcat redirector requires three entities:
 <b>isapi_redirect.dll</b> - The IIS server plugin, either obtain a pre-built DLL or build it yourself (see the build section).
 </li>
 <li>
-<b>workers.properties</b> - A file that describes the host(s) and port(s) used by the workers (Tomcat processes). 
+<b><a href="../config/workers.html">workers.properties</a></b> - A file that describes the host(s) and port(s) used by the workers (Tomcat processes). 
 A sample workers.properties can be found under the conf directory.
 </li>
 <li>
-<b>uriworkermap.properties</b> - A file that maps URL-Path patterns to workers. 
+<b><a href="../config/uriworkermap.html">uriworkermap.properties</a></b> - A file that maps URL-Path patterns to workers. 
 A sample uriworkermap.properties can be found under the conf directory as well.
 </li>
 </ul>
@@ -407,12 +411,12 @@ Defining workers is done in workers.properties, this file includes two types of 
 
 <p>
 The above example defined two workers, now we can use these workers to serve two different contexts 
-each with its own worker : 
+each with its own worker: 
 <source>
   example uriworkermap.properties fragment
   /examples/*=worker1
   /webpages/*=worker2
-</source>>
+</source>
 </p>
 
 <p>
@@ -421,7 +425,8 @@ As you can see the <b>examples</b> context is served by <b>worker1</b> while the
 </p>
 
 <p>
-More informations on using and configuring workers in the <a href="workers.html">Workers HowTO</a>
+More informations on using and configuring workers in the <a href="../generic_howto/workers.html">Workers HowTo</a>
+and in the <a href="../config/workers.html">worker.properties configuration reference</a>.
 </p>
 
 </subsection>

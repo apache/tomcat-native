@@ -113,10 +113,9 @@ Defining workers of a certain type should be done with the following property fo
 </p>
 
 <p>
-<b>worker</b>. <b>worker name</b>.<b>type</b>=&lt;worker type&gt;
+<b>worker</b>.<b>worker name</b>.<b>type</b>=&lt;worker type&gt;
 Where worker name is the name assigned to the worker and the worker type is one of the four types defined 
-in the table (a worker name may not contain any space (a good naming convention for queue named should 
-follow the Java variable naming rules).
+in the table (a worker name may only contain any space the characters [a-zA-Z0-9\-_]).
 </p>
 
 <source>
@@ -149,7 +148,7 @@ Each worker has a set of properties that you can set as specified in the followi
 <subsection name="ajp12 Worker properties">
 <p><warn>
 The <b>ajp12</b> has been <b>deprecated</b> with Tomcat 3.3.x and you should use instead 
-<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.x and 5.
+<b>ajp13</b> which is the only ajp protocol known by Tomcat 4.x and 5 and 5.5 and Tomcat 6.
 </warn></p> 
 <p>
 The ajp12 typed workers forward requests to out-of-process Tomcat workers 
@@ -161,16 +160,16 @@ the ajp12 worker properties are :
 </p>
 
 <p>
-<b>host</b> property set the host where the Tomcat worker is listening for ajp12 requests.
+<b>host</b> property sets the host where the Tomcat worker is listening for ajp12 requests.
 </p>
 
 <p>
-<b>port</b> property set The port where the Tomcat worker is listening for ajp12 requests
+<b>port</b> property sets the port where the Tomcat worker is listening for ajp12 requests
 </p>
 
 <p>
 <b>lbfactor</b>property is used when working with a load balancer worker, this is the load-balancing factor for the worker.
-We'll see more on this in the lb worker section.
+We'll see more on this in the <a href="../generic_howto/loadbalancers.html">lb worker</a> section.
 </p>
 
 <source>
@@ -198,7 +197,7 @@ frequently used strings as small integers.
 </li>
 <li>
 ajpv13 reuses open sockets and leaves them open for future requests (remember when you've got a Firewall between your 
-WebServer and Tomcat).
+web server and Tomcat).
 </li>
 <li>
 ajpv13 has special treatment for SSL information so that the container can implement 
@@ -209,7 +208,7 @@ SSL related methods such as isSecure().
 </p>
 
 <p>
-You should note that Ajp13 is now the only out-process protocol supported by Tomcat 4.0.x, 4.1.x and 5.
+You should note that Ajp13 is now the only out-process protocol supported by Tomcat 4.0.x, 4.1.x, 5.0.x, 5.5.x and 6.
 </p>
 
 

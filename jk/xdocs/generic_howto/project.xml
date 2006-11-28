@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<project name="Apache Tomcat Connector Documentation - Configuration Reference"
+<project name="Apache Tomcat Connector Documentation - Generic HowTo"
         href="http://tomcat.apache.org/">
 
-    <title>The Apache Tomcat Connector - Configuration Reference</title>
+    <title>The Apache Tomcat Connector - Generic HowTo</title>
 
     <logo href="/images/tomcat.gif">
-      The Apache Tomcat Connector - Configuration Reference
+      The Apache Tomcat Connector - Generic HowTo
     </logo>
 <body>
 
@@ -51,6 +51,6 @@
         <item name="2005"                       href="../news/20050101.html"/>
         <item name="2004"                       href="../news/20041100.html"/>
     </menu>
-    
+
 </body>
 </project>

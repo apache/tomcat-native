@@ -221,10 +221,10 @@ then it inhertis the JkMountFile from the main server.
 <p>
 When a request is being processed, tomcat connectors check the file modification time
 of the uriworkermap file. To keep the performance penalty low, this happens only,
-if the last check happened at least 60 seconds ago.
+if the last check happened at least n seconds ago.
 </p>
 <p>
-For Apache you can configure the interval using the directive JkMountFile,
+For Apache you can configure the interval "n" using the directive JkMountFile,
 for IIS you would use the attribute worker_mount_reload.
 The default value is 60 seconds. A value of "0" turns off the reloading.
 </p>

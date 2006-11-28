@@ -27,7 +27,7 @@
 of Jakarta Tomcat Connectors 1.2.8.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs during testing this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -45,7 +45,7 @@ We expect it to be ratified as a Stable release when the vote takes place
 in the next week.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs during testing this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -64,7 +64,7 @@ We expect it to be ratified as a Stable release when the vote takes place
 in the next week.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs during testing this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -84,7 +84,7 @@ We expect it to be ratified as a Stable release when the vote takes place
 in the next two weeks.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs during testing this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -104,7 +104,7 @@ We expect it to be ratified as a Stable release when the vote takes place
 in the next two weeks.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <warn>
 Since release 1.2.7 the <b>socket_timeout</b> property has been renamed to

@@ -28,7 +28,7 @@ of Jakarta Tomcat Connectors 1.2.15. This is Stable release and it contains
 few bug fixes found in 1.2.14 version.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs while using this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -44,7 +44,7 @@ of Jakarta Tomcat Connectors 1.2.14. This is Stable release and it contains
 few bug fixes found in 1.2.13 version.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs while using this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -59,7 +59,7 @@ of Jakarta Tomcat Connectors 1.2.13. This is development release and contains
 few bug fixes found in 1.2.12 version.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs while using this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -78,7 +78,7 @@ We expect it to be ratified as a Stable release when the vote takes place
 in the next week.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs while using this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -96,7 +96,7 @@ of bug fixes and new features.
 This version has not been released.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs while using this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
@@ -115,7 +115,7 @@ We expect it to be ratified as a Stable release when the vote takes place
 in the next two weeks.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <warn>
 Since release 1.2.10 the <b>JkShmFile</b> property has been added for
@@ -139,7 +139,7 @@ We expect it to be ratified as a Stable release when the vote takes place
 in the next two weeks.
 </p>
 <p>
- Please see the <a href="../changelog.html">ChangeLog</a> for a full list of changes.
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <warn>
 Since release 1.2.9 the <b>JkShmFile</b> property has been added for

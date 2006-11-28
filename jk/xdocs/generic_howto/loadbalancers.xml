@@ -29,11 +29,14 @@
 <body>
 <section name="Introduction"> 
 <br/>
-<p>Load balancer is a virtual worker that does not really communicate with Tomcat workers.
+<p>A Load balancer is a virtual worker that does not really communicate with Tomcat workers.
 Instead it is responsible for the management of several "real" workers.
-The worker is supposed to be a load balancer if it's worker type is <b>lb</b>.
-See worker's <b>type</b> directive.
-<warn>The workers that are member of load balancer must not appear in the
+The worker is supposed to be a load balancer if its worker type is <b>lb</b>.
+See workers <b>type</b> directive. For a complete reference of all load balancer configuration
+items, please consult the worker <a href="../config/workers.html">reference</a>.
+The comprehensive status management features of the load balancer together with the status worker,
+makes its use an interesting option, even if only combined with a single "real" worker.
+<warn>The workers that are member of load balancer do not need to appear in the
 <b>worker.list</b> directive.</warn>
 </p>
 
@@ -66,9 +69,9 @@ The overall result is that workers managed by the same lb worker are load-balanc
 The following table specifies some properties that the lb worker can accept:
 <ul>
 <li><b>balance_workers</b> is a comma separated list of workers that the load balancer need to manage. 
-These workers should not appear in the worker.list property. This directive can be used multiple times for the same load balancer.</li>
+These workers do not need to appear in the worker.list property. This directive can be used multiple times for the same load balancer.</li>
 <li><b>sticky_session</b> specifies whether requests with SESSION ID's should be routed back to the same
-Tomcat worker. Set sticky_session to False when Tomcat is using a Session Manager which
+Tomcat worker. You can set sticky_session to False when Tomcat is using a Session Manager which
 can persist session data across multiple instances of Tomcat. By default sticky_session is set to True.</li>
 </ul>
 </p>

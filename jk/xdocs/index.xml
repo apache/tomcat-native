@@ -21,7 +21,7 @@
 
 </p>
 <p>Select one of the links from the navigation menu (to the left) to drill
-down to the more detailed documentation that is available.  Each available
+down to the more detailed documentation that is available. Each available
 manual is described in more detail below.</p>
 
 </section>
@@ -29,6 +29,16 @@ manual is described in more detail below.</p>
 <section name="Headlines">
 <br />
 <ul>
+<li><a href="news/20060101.html#20060928.1">28 November 2006 - <b>JK-1.2.20 released</b></a>
+<p>The Apache Tomcat team is proud to announce the immediate availability
+of Tomcat Connectors 1.2.20 Stable.
+</p>
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.20/tomcat-connectors-1.2.20-src.tar.gz">JK 1.2.20 release sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.20/tomcat-connectors-1.2.20-src.tar.gz.asc">PGP signature</a>
+</p>
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
+</p>
+</li>
 <li><a href="news/20060101.html#20060917.1">17 September 2006 - <b>JK-1.2.19 released</b></a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Tomcat Connectors 1.2.19 Stable.
@@ -39,238 +49,123 @@ of Tomcat Connectors 1.2.19 Stable.
 <p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
 </p>
 </li>
-
-<li><a href="news/20060101.html#20060720.1">27 July 2006 - <b>JK-1.2.18 released</b></a>
-<p>The Apache Tomcat team is proud to announce the immediate availability
-of Tomcat Connectors 1.2.18 Stable.
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.18/tomcat-connectors-1.2.18-src.tar.gz">JK 1.2.18 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.18/tomcat-connectors-1.2.18-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-
-<li><a href="news/20060101.html#20060708.1"><b>JK-1.2.17 not released</b></a>
-<p>Version 1.2.17 of Tomcat Connectors has not been released due to a bug in socket function argument types.
-</p>
-<p>Thanks to all testers for their feedback. All reported new errors have been fixed in Version 1.2.18.
-</p>
-</li>
-
-<li><a href="news/20060101.html#20060629.1"><b>JK-1.2.16 not released</b></a>
-<p>Version 1.2.16 of Tomcat Connectors has not been released due to a bug in the jk status worker.
-</p>
-<p>Thanks to all testers for their feedback. All reported new errors have been fixed in Version 1.2.17.
-</p>
-</li>
-
-<li><a href="news/20050101.html#20051108.1">8 November 2005 - <b>JK-1.2.15 released</b></a>
-<p>The Apache Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.15 Stable.
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.15/jakarta-tomcat-connectors-1.2.15-src.tar.gz">JK 1.2.15 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.15/jakarta-tomcat-connectors-1.2.15-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-
-<li><a href="news/20050101.html#20050713.1">13 July 2005 - <b>JK-1.2.14 released</b></a>
-<p>The Apache Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.14 Stable.
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.14/jakarta-tomcat-connectors-1.2.14.1-src.tar.gz">JK 1.2.14 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.14/jakarta-tomcat-connectors-1.2.14.1-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-
-<li><a href="news/20050101.html#20050516.1">16 May 2005 - <b>JK-1.2.13 released</b></a>
-<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.13 tarbals for testing.
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.13/jakarta-tomcat-connectors-1.2.13-src.tar.gz">JK 1.2.13 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.13/jakarta-tomcat-connectors-1.2.13-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-<li><a href="news/20050101.html#20050507.1">7 May 2005 - <b>JK-1.2.12 released</b></a>
-<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.12.
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.12/jakarta-tomcat-connectors-1.2.12-src.tar.gz">JK 1.2.12 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.12/jakarta-tomcat-connectors-1.2.12-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-<li><a href="news/20050101.html#20050429.1">29 April 2005 - <b>JK-1.2.11 released</b></a>
-<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.11.
-</p>
-<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.11/jakarta-tomcat-connectors-1.2.11-src.tar.gz">JK 1.2.11 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.11/jakarta-tomcat-connectors-1.2.11-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-<li><a href="news/20050101.html#20050330.1">30 March 2005 - <b>JK-1.2.10 released</b></a>
-<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.10.
-</p>
-<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.10/jakarta-tomcat-connectors-1.2.10-src.tar.gz">JK 1.2.10 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.10/jakarta-tomcat-connectors-1.2.10-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-<li><a href="news/20041100.html#20041224.1">24 December 2004 - <b>JK-1.2.8 released</b></a>
-<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.8.
-</p>
-<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.8/jakarta-tomcat-connectors-1.2.8-src.tar.gz">JK 1.2.8 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.8/jakarta-tomcat-connectors-1.2.8-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-<li><a href="news/20041100.html#20041218.1">17 December 2004 - <b>JK-1.2.8-rc-1 released</b></a>
-<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.8-rc-1 (Relase Canditate 1).
-</p>
-<p>
-We expect it to be ratified as a Stable release when the vote takes place
-in the next week.
-</p> 
-<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.8-rc-1.tar.gz">JK 1.2.8 release candidate 1 sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.8-rc-1.tar.gz.asc">PGP signature</a>
-</p>
-</li>
-<li><a href="news/20041100.html#20041213.1">13 December 2004 - <b>JK-1.2.7-beta-3 released</b></a>
-<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.7-beta-3. The release contains a fix to few configuraton
-problems detected with JK-1.2.7-beta-2 version. 
-</p>
-<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-3.tar.gz">JK 1.2.7 beta sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-3.tar.gz.asc">PGP signature</a>
-</p>
-</li>
-<li><a href="news/20041100.html#20041207.1">7 December 2004 - <b>JK-1.2.7-beta-2 released</b></a>
-<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.7-beta-2. The release contains a fix to few compilation
-problems detected with JK-1.2.7-beta version. 
-</p>
-<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-2.tar.gz">JK 1.2.7 beta sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-2.tar.gz.asc">PGP signature</a>
-</p>
-</li>
-<li><a href="news/20041100.html#20041130.1">30 November 2004 - <b>JK-1.2.7-beta released</b></a>
-<p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
-of Jakarta Tomcat Connectors 1.2.7-beta. The release contains a significant number
-of bug fixes and new features. 
-</p>
-<p>Downlad the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-1.tar.gz">JK 1.2.7 beta sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jakarta-tomcat-connectors-1.2.7-beta-1.tar.gz.asc">PGP signature</a>
-</p>
-</li>
-<li><a href="news/20041100.html#20041115.1">15 November 2004 - <b>JK2 is officially unsupported!</b></a>
-<p>JK2 has been put in maintainer mode and no further development will take place.
-The reason for shutting down JK2 development was the lack of developers interest.
-Other reason was lack of users interest in adopting JK2, caused by configuration
-complexity when compared to JK.
-</p>
-<p>JK2 will have it's successor within core Apache2.1/2.2 distribution.
-We have developed new <b>proxy_ajp</b> that is an addition to
-the mod_proxy and uses Tomcat's AJP protocol stack. It is developped in httpd-2.1
-and integrated in it. We have also developed a new <b>proxy_balancer</b> module
-for load balancing http and ajp protocol stacks.
-</p>
-<p>JK will be fully supported for all other web servers. The next JK release is
-planned for the end of November. Lots of code from JK2 has been ported to JK
-</p>
-</li>
 </ul>
 </section>
 
-<section name="Configuration">
+<section name="Configuration Reference">
 <br />
 <ul>
-<li><a href="config/workers.html"><b>Workers.properties Documentation</b></a>
+<li><a href="config/workers.html"><b>workers.properties</b></a>
 <p>A Tomcat worker is a Tomcat instance that is waiting to execute servlets
 on behalf of some web server. For example, we can have a web server such as Apache
 forwarding servlet requests to a Tomcat process (the worker) running behind it. 
 </p>
-<p>This section contains detail description of all workers.properties
+<p>This page contains detailed description of all workers.properties
 directives.
 </p>
 </li>
 
-<li><a href="config/apache.html"><b>Apache Documentation</b></a>
-<p>This section contains detail description of all directives related to
-Aapache web server. 
+<li><a href="config/uriworkermap.html"><b>uriworkermap.properties</b></a>
+<p>
+The forwarding of requests from the web server to tomcat gets configured by defining mapping rules.
+The so-called <b>uriworkermap</b> file is a mechanism of defining those rules.
 </p>
 </li>
-<li><a href="config/iis.html"><b>IIS Documentation</b></a>
-<p>This section contains detail description of all IIS directives.
+
+<li><a href="config/apache.html"><b>Apache</b></a>
+<p>This page contains detailed description of all directives related to
+Apache web server. 
+</p>
+</li>
+
+<li><a href="config/iis.html"><b>IIS</b></a>
+<p>This page contains detailed description of all IIS directives.
 </p>
 </li>
 
 </ul>
 </section>
 
-<section name="HowTo and Install">
+<section name="Generic HowTo">
 <br />
 <ul>
 
-<li><a href="howto/apache.html"><b>Apache HowTo and installation documentation</b></a>
-<p>This section contains a detailed description of how to build and
-install mod_jk for the Apache web server.
+<li><a href="generic_howto/quick.html"><b>Quick Start</b></a>
+<p>This page describes the configuration files used by JK on the
+Web Server side for the 'impatients'.
 </p>
 </li>
-<li><a href="howto/iis.html"><b>IIS HowTo and installation documentation</b></a>
-<p>This section contains a detailed description of how to build and
-install ISAPI redirector for the IIS web server.
+<li><a href="generic_howto/workers.html"><b>All about workers</b></a>
+<p>This page contains an overview about the various aspects of defining
+and using workers.
 </p>
 </li>
-<li><a href="howto/nes.html"><b>Netscape/SunOne/Sun web server HowTo and installation documentation</b></a>
-<p>This section contains a detailed description of how to build and
-install NSAPI redirector for the etscape/SunOne/Sun web server.
+<li><a href="generic_howto/loadbalancers.html"><b>Load Balancing</b></a>
+<p>This page contains an introduction on load balancing with JK.
 </p>
 </li>
 
 </ul>
 </section>
 
+<section name="Webserver HowTo">
+<br />
+<p>These pages contain detailed descriptions of how to build and
+install JK for the various web servers.
+</p>
+<ul>
+
+<li><a href="webserver_howto/apache.html"><b>Apache</b></a>
+</li>
+<li><a href="webserver_howto/iis.html"><b>IIS</b></a>
+</li>
+<li><a href="webserver_howto/nes.html"><b>Netscape/SunOne/Sun</b></a>
+</li>
+
+</ul>
+</section>
+
+<section name="AJP Protocol Reference">
+<br />
+<ul>
+<li><a href="ajp/ajpv13a.html"><b>AJPv13</b></a>
+<p>This page describes the Apache JServ Protocol version 1.3 (hereafter
+<b>ajp13</b>). 
+</p>
+</li>
+<li><a href="ajp/ajpv13ext.html"><b>AJPv13 Extension Proposal</b></a>
+<p>This page describes an extension proposal for ajp13.
+</p>
+</li>
+</ul>
+
+</section>
 
 <section name="Miscellaneous documentation">
 <br />
 <ul>
-<li><a href="common/ajpv13a.html"><b>AJPv13 Protocol Documentation</b></a>
-<p>This section describes the Apache JServ Protocol version 1.3 (hereafter
-<b>ajp13</b>). There is, apparently, no current documentation of how the
-protocol works. This document is an attempt to remedy that, in order to
-make life easier for maintainers of JK, and for anyone who wants to
-port the protocol to some other container. 
-</p>
-</li>
-<li><a href="howto/index.html"><b>HowTo Documentation</b></a>
-<p>This section contains various howto documents General Informations and FAQ about JK 
-</p>
-</li>
-<li><a href="faq.html"><b>General Informations and FAQ about JK</b></a>
+<li><a href="miscellaneous/faq.html"><b>Frequently asked questions</b></a>
 <p>
 </p>
 </li>
-<li><a href="changelog.html"><b>Details the changes made to JK</b></a>
+<li><a href="miscellaneous/changelog.html"><b>Changelog</b></a>
 <p>
+The FAQ detail the changes made in each version of JK.
 </p>
 </li>
-<li><a href="proxy.html"><b>Using ajp-proxy in httpd-2.1</b></a>
+<li><a href="http://issues.apache.org/bugzilla/buglist.cgi?query_format=advanced&amp;short_desc_type=allwordssubstr&amp;short_desc=&amp;product=Tomcat+5&amp;component=Native%3AJK&amp;long_desc_type=substring&amp;long_desc=&amp;bug_file_loc_type=allwordssubstr&amp;bug_file_loc=&amp;keywords_type=allwords&amp;keywords=&amp;bug_status=NEW&amp;bug_status=ASSIGNED&amp;bug_status=REOPENED&amp;emailassigned_to1=1&amp;emailtype1=substring&amp;email1=&amp;emailassigned_to2=1&amp;emailreporter2=1&amp;emailcc2=1&amp;emailtype2=substring&amp;email2=&amp;bugidtype=include&amp;bug_id=&amp;votes=&amp;chfieldfrom=&amp;chfieldto=Now&amp;chfieldvalue=&amp;cmdtype=doit&amp;order=Reuse+same+sort+as+last+time&amp;field0-0-0=noop&amp;type0-0-0=noop&amp;value0-0-0=">
+<b>Current Native:JK bugs</b></a>
+<p>This is the Bugzilla Bug List related to Native:JK.
+</p>
+</li>
+<li><a href="miscellaneous/doccontrib.html"><b>Contribute documentation</b></a>
 <p>
-mod-proxy in httpd-2.1 offers an AJP connection as well as load balancing.
+This page describes, how to contribute to the JK documentation.
+</p>
+</li>
+<li><a href="miscellaneous/tools.html"><b>Tools</b></a>
+<p>
+This page contains information, on some tool scripts contained in the Jk distribution.
 </p>
 </li>
 <li><a href="http://tomcat.apache.org/connectors-doc-archive/jk2/index.html">
@@ -278,15 +173,25 @@ mod-proxy in httpd-2.1 offers an AJP connection as well as load balancing.
 <p>Here you can find old JK and JK2 documentation.
 </p>
 </li>
-<li><a href="http://issues.apache.org/bugzilla/buglist.cgi?query_format=advanced&amp;short_desc_type=allwordssubstr&amp;short_desc=&amp;product=Tomcat+5&amp;component=Native%3AJK&amp;long_desc_type=substring&amp;long_desc=&amp;bug_file_loc_type=allwordssubstr&amp;bug_file_loc=&amp;keywords_type=allwords&amp;keywords=&amp;bug_status=NEW&amp;bug_status=ASSIGNED&amp;bug_status=REOPENED&amp;emailassigned_to1=1&amp;emailtype1=substring&amp;email1=&amp;emailassigned_to2=1&amp;emailreporter2=1&amp;emailcc2=1&amp;emailtype2=substring&amp;email2=&amp;bugidtype=include&amp;bug_id=&amp;votes=&amp;chfieldfrom=&amp;chfieldto=Now&amp;chfieldvalue=&amp;cmdtype=doit&amp;order=Reuse+same+sort+as+last+time&amp;field0-0-0=noop&amp;type0-0-0=noop&amp;value0-0-0=">
-<b>Current Native:JK bugs</b></a>
-<p>This is Buzgilla Bug List related to Native:JK.
-</p>
-</li>
 </ul>
 
 </section>
 
+<section name="News">
+<br />
+<p>Release news from various years.
+</p>
+
+<ul>
+<li><a href="news/2006"><b>2006</b></a>
+</li>
+<li><a href="news/2006"><b>2005</b></a>
+</li>
+<li><a href="news/2006"><b>2004</b></a>
+</li>
+
+</ul>
+</section>
 
 </body>
 </document>

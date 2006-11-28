@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<project name="Apache Tomcat Connector Documentation - Configuration Reference"
+<project name="Apache Tomcat Connector Documentation - Webserver HowTo"
         href="http://tomcat.apache.org/">
 
-    <title>The Apache Tomcat Connector - Configuration Reference</title>
+    <title>The Apache Tomcat Connector - Webserver HowTo</title>
 
     <logo href="/images/tomcat.gif">
-      The Apache Tomcat Connector - Configuration Reference
+      The Apache Tomcat Connector - Webserver HowTo
     </logo>
 <body>
 
