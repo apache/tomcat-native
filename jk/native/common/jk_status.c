@@ -151,7 +151,7 @@ struct status_worker
     const char        *doctype;
     int               read_only;
     char              **user_names;
-    int               num_of_users;
+    unsigned int      num_of_users;
     jk_worker_t       worker;
     status_endpoint_t ep;
     jk_worker_env_t   *we;
@@ -2316,7 +2316,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     if (w->num_of_users) {
         if (s->remote_user) {
-            int i;
+            unsigned int i;
             denied = 1;
             for (i = 0; i < w->num_of_users; i++) {
                 if (!strcmp(s->remote_user, w->user_names[i])) {
@@ -2654,7 +2654,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
     JK_TRACE_ENTER(log);
     if (pThis && pThis->worker_private) {
         status_worker_t *p = pThis->worker_private;
-        int i;
+        unsigned int i;
         p->we = we;
         p->css = jk_get_worker_style_sheet(props, p->name, NULL);
         p->ns = jk_get_worker_name_space(props, p->name, JK_NSDEF);
