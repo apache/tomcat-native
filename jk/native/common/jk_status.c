@@ -2609,14 +2609,30 @@ static int JK_METHOD service(jk_endpoint_t *e,
     }
     if (err) {
         if (mime == JK_STATUS_MIME_HTML) {
-            jk_putv(s, "<p><b>", err, "</b></p>", NULL);
+            jk_putv(s, "<p><b>Result: ERROR - ", err, "</b></p>", NULL);
             jk_putv(s, "<a href=\"", s->req_uri, "\">JK Status Manager</a>", NULL);
         }
         else if (mime == JK_STATUS_MIME_XML) {
-            jk_putv(s, "<Error>", err, "</Error>", NULL);
+            jk_putv(s, "  <", w->ns, "result\n", NULL);
+            jk_puts(s, "   type=\"ERROR\"\n");
+            jk_putv(s, "   msg=\"", err, "\"/>\n", NULL);
         }
         else {
-            jk_puts(s, err);
+            jk_putv(s, "ERROR - ", err, NULL);
+        }
+    }
+    else {
+        if (mime == JK_STATUS_MIME_HTML) {
+            jk_puts(s, "<p><b>Result: OK - Action finished</b></p>");
+            jk_putv(s, "<a href=\"", s->req_uri, "\">JK Status Manager</a>", NULL);
+        }
+        else if (mime == JK_STATUS_MIME_XML) {
+            jk_putv(s, "  <", w->ns, "result\n", NULL);
+            jk_puts(s, "   type=\"OK\"\n");
+            jk_puts(s, "   msg=\"Action finished\"/>\n");
+        }
+        else {
+            jk_puts(s, "OK - Action finished");
         }
     }
     if (mime == JK_STATUS_MIME_HTML) {
