@@ -972,7 +972,7 @@ static void display_worker_xml(jk_ws_service_t *s, jk_worker_t *w,
                 if (rs < lb->recover_wait_time - (int)difftime(now, wr->s->error_time))
                     rs += lb->maintain_time;
             }
-            jk_printf(s, "        time-to-recover=\"%u\"", rs < 0 ? 0 : rs);
+            jk_printf(s, "        time_to_recover=\"%u\"", rs < 0 ? 0 : rs);
             /* Terminate the tag */
             jk_puts(s, "/>\n");
         }
@@ -1104,7 +1104,7 @@ static void display_worker_txt(jk_ws_service_t *s, jk_worker_t *w,
                 if (rs < lb->recover_wait_time - (int)difftime(now, wr->s->error_time))
                     rs += lb->maintain_time;
             }
-            jk_printf(s, " time-to-recover=%u\n", rs < 0 ? 0 : rs);
+            jk_printf(s, " time_to_recover=%u\n", rs < 0 ? 0 : rs);
         }
     }
     else if (aw) {
