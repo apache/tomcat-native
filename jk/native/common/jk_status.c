@@ -739,7 +739,7 @@ static void display_worker(jk_ws_service_t *s, jk_worker_t *w,
         status_write_uri(s, "R", JK_STATUS_CMD_RESET,
                          0, from, refresh, name, NULL);
         jk_puts(s, "]&nbsp;&nbsp;");
-        jk_putv(s, "Worker Status for ", name, "<h3/>\n", NULL);
+        jk_putv(s, "Worker Status for ", name, "</h3>\n", NULL);
         jk_putv(s, "<table><tr>"
                 "<th>Type</th><th>", JK_STATUS_ARG_LB_TEXT_STICKY, "</th>"
                 "<th>", JK_STATUS_ARG_LB_TEXT_STICKY_FORCE, "</th>"
@@ -781,7 +781,7 @@ static void display_worker(jk_ws_service_t *s, jk_worker_t *w,
         jk_printf(s, "<td>%d</td>", lb->s->busy);
         jk_printf(s, "<td>%d</td>", lb->s->max_busy);
         jk_puts(s, "</tr>\n</table>\n<br/>\n");
-        jk_puts(s, "<p><h4>Balancer Members</h4></p>\n");
+        jk_puts(s, "<h4>Balancer Members</h4>\n");
         jk_putv(s, "<table><tr>"
                 "<th>&nbsp;</th><th>Name</th><th>Type</th>"
                 "<th>Host</th><th>Addr</th>"
