@@ -342,7 +342,7 @@ static const char *status_val_bool(int v)
         return "True";
 }
 
-static char *status_get_arg_raw(const char *param, const char *req, char *buf, size_t len)
+static int status_get_arg_raw(const char *param, const char *req, char *buf, size_t len)
 {
     char ps[32];
     char *p;
@@ -350,9 +350,9 @@ static char *status_get_arg_raw(const char *param, const char *req, char *buf, s
 
     *buf = '\0';
     if (!req)
-        return NULL;
+        return JK_FALSE;
     if (!param)
-        return NULL;
+        return JK_FALSE;
     sprintf(ps, "&%s=", param);
     p = strstr(req, ps);
     if (!p) {
@@ -373,23 +373,25 @@ static char *status_get_arg_raw(const char *param, const char *req, char *buf, s
         }
         buf[l] = '\0';
         if (l)
-            return buf;
+            return JK_TRUE;
         else
-            return NULL;
+            return JK_UNSET;
     }
     else
-        return NULL;
+        return JK_FALSE;
 }
 
-static const char *status_get_arg(const char *param, const char *req, char *buf, size_t len)
+static int status_get_arg(const char *param, const char *req, char *buf, size_t len)
 {
-    if (status_get_arg_raw(param, req, buf, len)) {
+    int rv;
+
+    rv = status_get_arg_raw(param, req, buf, len);
+    if (rv == JK_TRUE) {
         char *off = buf;
         while ((off = strpbrk(off, JK_STATUS_ESC_CHARS)))
             off[0] = '@';
-        return buf;
     }
-    return NULL;
+    return rv;
 }
 
 static int status_get_int(const char *param, const char *req, int def)
@@ -397,7 +399,7 @@ static int status_get_int(const char *param, const char *req, int def)
     char buf[32];
     int rv = def;
 
-    if (status_get_arg_raw(param, req, buf, sizeof(buf) -1)) {
+    if (status_get_arg_raw(param, req, buf, sizeof(buf)) == JK_TRUE) {
         rv = atoi(buf);
     }
     return rv;
@@ -408,7 +410,7 @@ static int status_get_bool(const char *param, const char *req, int def)
     char buf[32];
     int rv = def;
 
-    if (status_get_arg_raw(param, req, buf, sizeof(buf))) {
+    if (status_get_arg_raw(param, req, buf, sizeof(buf)) == JK_TRUE) {
         if (strcasecmp(buf, "on") == 0 ||
             strcasecmp(buf, "true") == 0 ||
             strcasecmp(buf, "1") == 0)
@@ -549,16 +551,16 @@ static void status_parse_uri(jk_ws_service_t *s,
     *refresh = 0;
     if (!s->query_string)
         return;
-    if (status_get_arg_raw(JK_STATUS_ARG_CMD, s->query_string, buf, sizeof(buf)))
+    if (status_get_arg_raw(JK_STATUS_ARG_CMD, s->query_string, buf, sizeof(buf)) == JK_TRUE)
         *cmd = status_cmd_int(buf);
-    if (status_get_arg_raw(JK_STATUS_ARG_MIME, s->query_string, buf, sizeof(buf)))
+    if (status_get_arg_raw(JK_STATUS_ARG_MIME, s->query_string, buf, sizeof(buf)) == JK_TRUE)
         *mime = status_mime_int(buf);
-    if (status_get_arg_raw(JK_STATUS_ARG_FROM, s->query_string, buf, sizeof(buf)))
+    if (status_get_arg_raw(JK_STATUS_ARG_FROM, s->query_string, buf, sizeof(buf)) == JK_TRUE)
         *from = status_cmd_int(buf);
     *refresh = status_get_int(JK_STATUS_ARG_REFRESH, s->query_string, 0);
-    if (status_get_arg(JK_STATUS_ARG_WORKER, s->query_string, buf, sizeof(buf)))
+    if (status_get_arg(JK_STATUS_ARG_WORKER, s->query_string, buf, sizeof(buf)) == JK_TRUE)
         strncpy(worker, buf, JK_SHM_STR_SIZ);
-    if (status_get_arg(JK_STATUS_ARG_WORKER_MEMBER, s->query_string, buf, sizeof(buf)))
+    if (status_get_arg(JK_STATUS_ARG_WORKER_MEMBER, s->query_string, buf, sizeof(buf)) == JK_TRUE)
         strncpy(sub_worker, buf, JK_SHM_STR_SIZ);
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
@@ -1553,6 +1555,7 @@ static int commit_member(jk_ws_service_t *s, worker_record_t *wr,
 {
     char buf[128];
     int rc = 0;
+    int rv;
     int i;
 
     JK_TRACE_ENTER(l);
@@ -1580,8 +1583,8 @@ static int commit_member(jk_ws_service_t *s, worker_record_t *wr,
         /* Recalculate the load multiplicators wrt. lb_factor */
         rc |= 2;
     }
-    if (status_get_arg(JK_STATUS_ARG_LBM_ROUTE,
-                       s->query_string, buf, sizeof(buf))) {
+    if ((rv = status_get_arg(JK_STATUS_ARG_LBM_ROUTE,
+                             s->query_string, buf, sizeof(buf))) == JK_TRUE) {
         if (strncmp(wr->s->jvm_route, buf, JK_SHM_STR_SIZ)) {
             jk_log(l, JK_LOG_INFO,
                    "setting 'jvm_route' for sub worker '%s' of lb worker '%s' to '%s'",
@@ -1597,14 +1600,14 @@ static int commit_member(jk_ws_service_t *s, worker_record_t *wr,
             }
         }
     }
-    else {
+    else if (rv == JK_UNSET) {
         jk_log(l, JK_LOG_INFO,
                "resetting 'jvm_route' for sub worker '%s' of lb worker '%s'",
                wr->s->name, worker);
         memset(wr->s->jvm_route, 0, JK_SHM_STR_SIZ);
     }
-    if (status_get_arg(JK_STATUS_ARG_LBM_REDIRECT,
-                       s->query_string, buf, sizeof(buf))) {
+    if ((rv = status_get_arg(JK_STATUS_ARG_LBM_REDIRECT,
+                             s->query_string, buf, sizeof(buf))) == JK_TRUE) {
         if (strncmp(wr->s->redirect, buf, JK_SHM_STR_SIZ)) {
             jk_log(l, JK_LOG_INFO,
                    "setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
@@ -1612,14 +1615,14 @@ static int commit_member(jk_ws_service_t *s, worker_record_t *wr,
             strncpy(wr->s->redirect, buf, JK_SHM_STR_SIZ);
         }
     }
-    else {
+    else if (rv == JK_UNSET) {
         jk_log(l, JK_LOG_INFO,
                "resetting 'redirect' for sub worker '%s' of lb worker '%s'",
                wr->s->name, worker);
         memset(wr->s->redirect, 0, JK_SHM_STR_SIZ);
     }
-    if (status_get_arg(JK_STATUS_ARG_LBM_DOMAIN,
-                       s->query_string, buf, sizeof(buf))) {
+    if ((rv = status_get_arg(JK_STATUS_ARG_LBM_DOMAIN,
+                             s->query_string, buf, sizeof(buf))) == JK_TRUE) {
         if (strncmp(wr->s->domain, buf, JK_SHM_STR_SIZ)) {
             jk_log(l, JK_LOG_INFO,
                    "setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
@@ -1627,7 +1630,7 @@ static int commit_member(jk_ws_service_t *s, worker_record_t *wr,
             strncpy(wr->s->domain, buf, JK_SHM_STR_SIZ);
         }
     }
-    else {
+    else if (rv == JK_UNSET) {
         jk_log(l, JK_LOG_INFO,
                "resetting 'domain' for sub worker '%s' of lb worker '%s'",
                wr->s->name, worker);
@@ -1726,63 +1729,6 @@ static void commit_all_members(jk_ws_service_t *s, jk_worker_t *w,
                     rc = 2;
                 }
             }
-            else if (!strcmp(attribute, JK_STATUS_ARG_LBM_ROUTE)) {
-                if (status_get_arg(vname, s->query_string, buf, sizeof(buf))) {
-                    if (strncmp(wr->s->jvm_route, buf, JK_SHM_STR_SIZ)) {
-                        jk_log(l, JK_LOG_INFO,
-                               "setting 'jvm_route' for sub worker '%s' of lb worker '%s' to '%s'",
-                               wr->s->name, name, buf);
-                        strncpy(wr->s->jvm_route, buf, JK_SHM_STR_SIZ);
-                        if (!wr->s->domain[0]) {
-                            char * id_domain = strchr(wr->s->jvm_route, '.');
-                            if (id_domain) {
-                                *id_domain = '\0';
-                                strcpy(wr->s->domain, wr->s->jvm_route);
-                                *id_domain = '.';
-                            }
-                        }
-                    }
-                }
-                else {
-                    jk_log(l, JK_LOG_INFO,
-                           "resetting 'jvm_route' for sub worker '%s' of lb worker '%s'",
-                           wr->s->name, name);
-                    memset(wr->s->jvm_route, 0, JK_SHM_STR_SIZ);
-                }
-            }
-            else if (!strcmp(attribute, JK_STATUS_ARG_LBM_REDIRECT)) {
-                if (status_get_arg(vname, s->query_string, buf, sizeof(buf))) {
-                    if (strncmp(wr->s->redirect, buf, JK_SHM_STR_SIZ)) {
-                        jk_log(l, JK_LOG_INFO,
-                               "setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
-                               wr->s->name, name, buf);
-                        strncpy(wr->s->redirect, buf, JK_SHM_STR_SIZ);
-                    }
-                }
-                else {
-                    jk_log(l, JK_LOG_INFO,
-                           "resetting 'redirect' for sub worker '%s' of lb worker '%s'",
-                           wr->s->name, name);
-                    memset(wr->s->redirect, 0, JK_SHM_STR_SIZ);
-                }
-            }
-            else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DOMAIN)) {
-                if (status_get_arg(vname, s->query_string, buf, sizeof(buf))) {
-                    if (strncmp(wr->s->domain, buf, JK_SHM_STR_SIZ)) {
-                        jk_log(l, JK_LOG_INFO,
-                               "setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
-                               wr->s->name, name, buf);
-                        strncpy(wr->s->domain, buf, JK_SHM_STR_SIZ);
-                    }
-                }
-                else {
-                    jk_log(l, JK_LOG_INFO,
-                           "resetting 'domain' for sub worker '%s' of lb worker '%s'",
-                           wr->s->name, name);
-                    memset(wr->s->domain, 0, JK_SHM_STR_SIZ);
-                }
-
-            }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DISTANCE)) {
                 i = status_get_int(vname, s->query_string, wr->s->distance);
                 if (i != wr->s->distance && i > 0) {
@@ -1791,7 +1737,66 @@ static void commit_all_members(jk_ws_service_t *s, jk_worker_t *w,
                            wr->s->name, name, i);
                     wr->s->lb_factor = i;
                 }
-
+            }
+            else {
+                int rv = status_get_arg(vname, s->query_string, buf, sizeof(buf));
+                if (!strcmp(attribute, JK_STATUS_ARG_LBM_ROUTE)) {
+                    if (rv == JK_TRUE) {
+                        if (strncmp(wr->s->jvm_route, buf, JK_SHM_STR_SIZ)) {
+                            jk_log(l, JK_LOG_INFO,
+                                   "setting 'jvm_route' for sub worker '%s' of lb worker '%s' to '%s'",
+                                   wr->s->name, name, buf);
+                            strncpy(wr->s->jvm_route, buf, JK_SHM_STR_SIZ);
+                            if (!wr->s->domain[0]) {
+                                char * id_domain = strchr(wr->s->jvm_route, '.');
+                                if (id_domain) {
+                                    *id_domain = '\0';
+                                    strcpy(wr->s->domain, wr->s->jvm_route);
+                                    *id_domain = '.';
+                                }
+                            }
+                        }
+                    }
+                    else if (rv == JK_UNSET) {
+                        jk_log(l, JK_LOG_INFO,
+                               "resetting 'jvm_route' for sub worker '%s' of lb worker '%s'",
+                               wr->s->name, name);
+                        memset(wr->s->jvm_route, 0, JK_SHM_STR_SIZ);
+                    }
+                }
+                else if (!strcmp(attribute, JK_STATUS_ARG_LBM_REDIRECT)) {
+                    if (rv == JK_TRUE) {
+                        if (strncmp(wr->s->redirect, buf, JK_SHM_STR_SIZ)) {
+                            jk_log(l, JK_LOG_INFO,
+                                   "setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
+                                   wr->s->name, name, buf);
+                            strncpy(wr->s->redirect, buf, JK_SHM_STR_SIZ);
+                        }
+                    }
+                    else if (rv == JK_UNSET) {
+                        jk_log(l, JK_LOG_INFO,
+                               "resetting 'redirect' for sub worker '%s' of lb worker '%s'",
+                               wr->s->name, name);
+                        memset(wr->s->redirect, 0, JK_SHM_STR_SIZ);
+                    }
+                }
+                else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DOMAIN)) {
+                    if (rv == JK_TRUE) {
+                        if (strncmp(wr->s->domain, buf, JK_SHM_STR_SIZ)) {
+                            jk_log(l, JK_LOG_INFO,
+                                   "setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
+                                   wr->s->name, name, buf);
+                            strncpy(wr->s->domain, buf, JK_SHM_STR_SIZ);
+                        }
+                    }
+                    else if (rv == JK_UNSET) {
+                        jk_log(l, JK_LOG_INFO,
+                               "resetting 'domain' for sub worker '%s' of lb worker '%s'",
+                               wr->s->name, name);
+                        memset(wr->s->domain, 0, JK_SHM_STR_SIZ);
+                    }
+    
+                }
             }
         }
         if (rc == 1)
@@ -2091,7 +2096,8 @@ static int edit_worker(jk_ws_service_t *s, status_worker_t *sw,
     if (!sub_worker || !sub_worker[0]) {
         char buf[128];
 
-        if (status_get_arg_raw(JK_STATUS_ARG_LB_MEMBER_ATT, s->query_string, buf, sizeof(buf)))
+        if (status_get_arg_raw(JK_STATUS_ARG_LB_MEMBER_ATT,
+                               s->query_string, buf, sizeof(buf)) == JK_TRUE)
             form_all_members(s, w, buf, from, refresh, l);
         else
             form_worker(s, w, from, refresh, l);
@@ -2160,7 +2166,8 @@ static int update_worker(jk_ws_service_t *s, status_worker_t *sw,
     if (!sub_worker || !sub_worker[0]) {
         char buf[128];
 
-        if (status_get_arg_raw(JK_STATUS_ARG_LB_MEMBER_ATT, s->query_string, buf, sizeof(buf)))
+        if (status_get_arg_raw(JK_STATUS_ARG_LB_MEMBER_ATT,
+                               s->query_string, buf, sizeof(buf)) == JK_TRUE)
             commit_all_members(s, w, buf, l);
         else
             commit_worker(s, w, l);
