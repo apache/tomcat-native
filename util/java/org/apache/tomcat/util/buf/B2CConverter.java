@@ -183,8 +183,6 @@ public class B2CConverter {
  * 
  */
 final class  ReadConvertor extends InputStreamReader {
-    // stream with flush() and close(). overriden.
-    private IntermediateInputStream iis;
     
     // Has a private, internal byte[8192]
     
@@ -194,7 +192,6 @@ final class  ReadConvertor extends InputStreamReader {
         throws UnsupportedEncodingException
     {
         super( in, enc );
-        iis=in;
     }
     
     /** Overriden - will do nothing but reset internal state.

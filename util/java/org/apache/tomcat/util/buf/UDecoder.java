@@ -30,9 +30,6 @@ import java.io.IOException;
  */
 public final class UDecoder {
     
-    private static org.apache.commons.logging.Log log=
-        org.apache.commons.logging.LogFactory.getLog(UDecoder.class );
-    
     public UDecoder() 
     {
     }
@@ -266,12 +263,6 @@ public final class UDecoder {
 	digit +=(b2>='A') ? ( (b2 & 0xDF)-'A') + 10 :
 	    (b2 -'0');
 	return digit;
-    }
-
-    private final static int debug=0;
-    private static void log( String s ) {
-        if (log.isDebugEnabled())
-            log.debug("URLDecoder: " + s );
     }
 
 }

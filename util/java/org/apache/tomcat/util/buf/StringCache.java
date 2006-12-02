@@ -253,8 +253,6 @@ public class StringCache {
                         while (n < size) {
                             Object key = tempMap.lastKey();
                             ArrayList list = (ArrayList) tempMap.get(key);
-                            ByteEntry[] list2 = 
-                                (ByteEntry[]) list.toArray(new ByteEntry[list.size()]);
                             for (int i = 0; i < list.size() && n < size; i++) {
                                 ByteEntry entry = (ByteEntry) list.get(i);
                                 tempChunk.setBytes(entry.name, 0, entry.name.length);
@@ -367,8 +365,6 @@ public class StringCache {
                         while (n < size) {
                             Object key = tempMap.lastKey();
                             ArrayList list = (ArrayList) tempMap.get(key);
-                            CharEntry[] list2 = 
-                                (CharEntry[]) list.toArray(new CharEntry[list.size()]);
                             for (int i = 0; i < list.size() && n < size; i++) {
                                 CharEntry entry = (CharEntry) list.get(i);
                                 tempChunk.setChars(entry.name, 0, entry.name.length);
