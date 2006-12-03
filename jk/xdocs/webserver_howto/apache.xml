@@ -625,7 +625,9 @@ This flag shouldn't be set when servlet engine is Tomcat 3.2.x (off by default).
 <p>
 The directive <b>JkEnvVar</b> allows you to forward environment variables from Apache server to Tomcat engine.
 The variables can be retrieved on the Tomcat side as request attributes.
-You must add a default value as a second parameter to the directive.
+You can add a default value as a second parameter to the directive.
+If the default value is not given explicitely, the empty string
+will be used as a default.
 <br/>
 <br/>
 The variables are inherited from the global server to virtual hosts.

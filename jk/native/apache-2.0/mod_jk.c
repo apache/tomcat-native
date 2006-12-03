@@ -1711,7 +1711,10 @@ static const char *jk_add_env_var(cmd_parms * cmd,
 
     conf->envvars_in_use = JK_TRUE;
 
-    apr_table_add(conf->envvars, env_name, default_value);
+    /* env_name is mandatory, default_value is optional.
+     * No value means set the variable to an empty string.
+     */
+    apr_table_setn(conf->envvars, env_name, default_value ? default_value : "");
 
     return NULL;
 }
@@ -1885,9 +1888,9 @@ static const command_rec jk_cmds[] = {
      * JkEnvVar let user defines envs var passed from WebServer to
      * Servlet Engine
      */
-    AP_INIT_TAKE2("JkEnvVar", jk_add_env_var, NULL, RSRC_CONF,
-                  "Adds a name of environment variable that should be sent "
-                  "to servlet-engine"),
+    AP_INIT_TAKE12("JkEnvVar", jk_add_env_var, NULL, RSRC_CONF,
+                  "Adds a name of environment variable and an optional value "
+                  "that should be sent to servlet-engine"),
 
     AP_INIT_RAW_ARGS("JkWorkerProperty", jk_set_worker_property,
                      NULL, RSRC_CONF,
@@ -2323,9 +2326,20 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
     overrides->options |= (base->options & ~base->exclude_options);
 
     if (base->envvars_in_use) {
-        overrides->envvars_in_use = JK_TRUE;
-        overrides->envvars = apr_table_overlay(p, overrides->envvars,
-                                               base->envvars);
+        int i;
+        const apr_array_header_t *arr;
+        const apr_table_entry_t *elts;
+
+        arr = apr_table_elts(base->envvars);
+        if (arr) {
+            overrides->envvars_in_use = JK_TRUE;
+            elts = (const apr_table_entry_t *)arr->elts;
+            for (i = 0; i < arr->nelts; ++i) {
+                if (!apr_table_get(overrides->envvars, elts[i].key)) {
+                    apr_table_setn(overrides->envvars, elts[i].key, elts[i].val);
+                }
+            }
+        }
     }
 
     if (overrides->mount_file_reload == JK_UNSET)

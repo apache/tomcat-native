@@ -26,6 +26,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      Apache: Fix incorrect handling of JkEnvVar when Vars are set multiple times. (rjung)
+      </fix>
       <update>
       Renamed jvm_route to route. Deprecated jvm_route, but still use it as fallback
       when parsing the worker configuration. (rjung)
