@@ -160,7 +160,7 @@ do
         ;;
     esac
     rm -f CHANGES
-    ${TOOL} ../docs/printer/changelog.html > CHANGES 2>/dev/null
+    ${TOOL} ../docs/miscellaneous/printer/changelog.html > CHANGES 2>/dev/null
     if [ -f CHANGES -a -s CHANGES ]
     then
       failed=false
@@ -175,7 +175,6 @@ then
 fi
 
 # Export text docs
-${TOOL} ../docs/printer/changelog.html >CHANGES
 ${TOOL} ../docs/news/printer/20060101.html >NEWS
 ${TOOL} ../docs/news/printer/20050101.html >>NEWS
 ${TOOL} ../docs/news/printer/20041100.html >>NEWS
