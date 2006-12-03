@@ -821,7 +821,7 @@ static void display_worker(jk_ws_service_t *s, jk_worker_t *w,
                     "</td>", NULL);
             jk_printf(s, "<td>%u</td>", wr->s->busy);
             jk_printf(s, "<td>%u</td>", wr->s->max_busy);
-            jk_putv(s, "<td>", wr->s->jvm_route, "</td><td>", NULL);
+            jk_putv(s, "<td>", wr->s->route, "</td><td>", NULL);
             if (wr->s->redirect && *wr->s->redirect)
                 jk_puts(s, wr->s->redirect);
             else
@@ -955,7 +955,7 @@ static void display_worker_xml(jk_ws_service_t *s, jk_worker_t *w,
             jk_printf(s, "        address=\"%s\"\n", jk_dump_hinfo(&a->worker_inet_addr, buf));
             jk_printf(s, "        activation=\"%s\"\n", jk_lb_get_activation(wr, l));
             jk_printf(s, "        lbfactor=\"%d\"\n", wr->s->lb_factor);
-            jk_printf(s, "        jvm_route=\"%s\"\n", wr->s->jvm_route ? wr->s->jvm_route : "");
+            jk_printf(s, "        route=\"%s\"\n", wr->s->route ? wr->s->route : "");
             jk_printf(s, "        redirect=\"%s\"\n", wr->s->redirect ? wr->s->redirect : "");
             jk_printf(s, "        domain=\"%s\"\n", wr->s->domain ? wr->s->domain : "");
             jk_printf(s, "        distance=\"%d\"\n", wr->s->distance);
@@ -1087,7 +1087,7 @@ static void display_worker_txt(jk_ws_service_t *s, jk_worker_t *w,
             jk_printf(s, " address=%s", jk_dump_hinfo(&a->worker_inet_addr, buf));
             jk_printf(s, " activation=%s", jk_lb_get_activation(wr, l));
             jk_printf(s, " lbfactor=%d", wr->s->lb_factor);
-            jk_printf(s, " jvm_route=%s", wr->s->jvm_route ? wr->s->jvm_route : "");
+            jk_printf(s, " route=%s", wr->s->route ? wr->s->route : "");
             jk_printf(s, " redirect=%s", wr->s->redirect ? wr->s->redirect : "");
             jk_printf(s, " domain=%s", wr->s->domain ? wr->s->domain : "");
             jk_printf(s, " distance=%d", wr->s->distance);
@@ -1316,7 +1316,7 @@ static void form_member(jk_ws_service_t *s, worker_record_t *wr,
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ROUTE,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LBM_ROUTE, "\" type=\"text\" ", NULL);
-    jk_printf(s, "value=\"%s\"/></td></tr>\n", wr->s->jvm_route);
+    jk_printf(s, "value=\"%s\"/></td></tr>\n", wr->s->route);
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_REDIRECT,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LBM_REDIRECT, "\" type=\"text\" ", NULL);
@@ -1440,7 +1440,7 @@ static void form_all_members(jk_ws_service_t *s, jk_worker_t *w,
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_ROUTE)) {
                 jk_printf(s, "<input name=\"val%d\" type=\"text\"", i);
-                jk_putv(s, "value=\"", wr->s->jvm_route, "\"/>\n", NULL);
+                jk_putv(s, "value=\"", wr->s->route, "\"/>\n", NULL);
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_REDIRECT)) {
                 jk_printf(s, "<input name=\"val%d\" type=\"text\"", i);
@@ -1585,16 +1585,16 @@ static int commit_member(jk_ws_service_t *s, worker_record_t *wr,
     }
     if ((rv = status_get_arg(JK_STATUS_ARG_LBM_ROUTE,
                              s->query_string, buf, sizeof(buf))) == JK_TRUE) {
-        if (strncmp(wr->s->jvm_route, buf, JK_SHM_STR_SIZ)) {
+        if (strncmp(wr->s->route, buf, JK_SHM_STR_SIZ)) {
             jk_log(l, JK_LOG_INFO,
-                   "setting 'jvm_route' for sub worker '%s' of lb worker '%s' to '%s'",
+                   "setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
                    wr->s->name, worker, buf);
-            strncpy(wr->s->jvm_route, buf, JK_SHM_STR_SIZ);
+            strncpy(wr->s->route, buf, JK_SHM_STR_SIZ);
             if (!wr->s->domain[0]) {
-                char * id_domain = strchr(wr->s->jvm_route, '.');
+                char * id_domain = strchr(wr->s->route, '.');
                 if (id_domain) {
                     *id_domain = '\0';
-                    strcpy(wr->s->domain, wr->s->jvm_route);
+                    strcpy(wr->s->domain, wr->s->route);
                     *id_domain = '.';
                 }
             }
@@ -1602,9 +1602,9 @@ static int commit_member(jk_ws_service_t *s, worker_record_t *wr,
     }
     else if (rv == JK_UNSET) {
         jk_log(l, JK_LOG_INFO,
-               "resetting 'jvm_route' for sub worker '%s' of lb worker '%s'",
+               "resetting 'route' for sub worker '%s' of lb worker '%s'",
                wr->s->name, worker);
-        memset(wr->s->jvm_route, 0, JK_SHM_STR_SIZ);
+        memset(wr->s->route, 0, JK_SHM_STR_SIZ);
     }
     if ((rv = status_get_arg(JK_STATUS_ARG_LBM_REDIRECT,
                              s->query_string, buf, sizeof(buf))) == JK_TRUE) {
@@ -1742,16 +1742,16 @@ static void commit_all_members(jk_ws_service_t *s, jk_worker_t *w,
                 int rv = status_get_arg(vname, s->query_string, buf, sizeof(buf));
                 if (!strcmp(attribute, JK_STATUS_ARG_LBM_ROUTE)) {
                     if (rv == JK_TRUE) {
-                        if (strncmp(wr->s->jvm_route, buf, JK_SHM_STR_SIZ)) {
+                        if (strncmp(wr->s->route, buf, JK_SHM_STR_SIZ)) {
                             jk_log(l, JK_LOG_INFO,
-                                   "setting 'jvm_route' for sub worker '%s' of lb worker '%s' to '%s'",
+                                   "setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
                                    wr->s->name, name, buf);
-                            strncpy(wr->s->jvm_route, buf, JK_SHM_STR_SIZ);
+                            strncpy(wr->s->route, buf, JK_SHM_STR_SIZ);
                             if (!wr->s->domain[0]) {
-                                char * id_domain = strchr(wr->s->jvm_route, '.');
+                                char * id_domain = strchr(wr->s->route, '.');
                                 if (id_domain) {
                                     *id_domain = '\0';
-                                    strcpy(wr->s->domain, wr->s->jvm_route);
+                                    strcpy(wr->s->domain, wr->s->route);
                                     *id_domain = '.';
                                 }
                             }
@@ -1759,9 +1759,9 @@ static void commit_all_members(jk_ws_service_t *s, jk_worker_t *w,
                     }
                     else if (rv == JK_UNSET) {
                         jk_log(l, JK_LOG_INFO,
-                               "resetting 'jvm_route' for sub worker '%s' of lb worker '%s'",
+                               "resetting 'route' for sub worker '%s' of lb worker '%s'",
                                wr->s->name, name);
-                        memset(wr->s->jvm_route, 0, JK_SHM_STR_SIZ);
+                        memset(wr->s->route, 0, JK_SHM_STR_SIZ);
                     }
                 }
                 else if (!strcmp(attribute, JK_STATUS_ARG_LBM_REDIRECT)) {
@@ -1818,7 +1818,7 @@ static void display_legend(jk_ws_service_t *s, status_worker_t *sw, jk_logger_t 
             "<tbody valign=\"baseline\">\n"
             "<tr><th>Name</th><td>Worker name</td></tr>\n"
             "<tr><th>Type</th><td>Worker type</td></tr>\n"
-            "<tr><th>Route</th><td>Worker jvmRoute</td></tr>\n"
+            "<tr><th>Route</th><td>Worker route</td></tr>\n"
             "<tr><th>Addr</th><td>Backend Address info</td></tr>\n"
             "<tr><th>Act</th><td>Worker activation configuration</br>\n"
             "ACT=Active, DIS=Disabled, STP=Stopped</td></tr>\n"

@@ -65,7 +65,8 @@
 #define BALANCE_WORKERS             ("balance_workers")
 #define STICKY_SESSION              ("sticky_session")
 #define STICKY_SESSION_FORCE        ("sticky_session_force")
-#define JVM_ROUTE_OF_WORKER         ("jvm_route")
+#define JVM_ROUTE_OF_WORKER_DEPRECATED ("jvm_route")
+#define ROUTE_OF_WORKER             ("route")
 #define DOMAIN_OF_WORKER            ("domain")
 #define REDIRECT_OF_WORKER          ("redirect")
 #define MOUNT_OF_WORKER             ("mount")
@@ -155,7 +156,8 @@ static const char *unique_properties[] = {
     LOAD_FACTOR_OF_WORKER,
     STICKY_SESSION,
     STICKY_SESSION_FORCE,
-    JVM_ROUTE_OF_WORKER,
+    JVM_ROUTE_OF_WORKER_DEPRECATED,
+    ROUTE_OF_WORKER,
     DOMAIN_OF_WORKER,
     REDIRECT_OF_WORKER,
     METHOD_OF_WORKER,
@@ -191,6 +193,7 @@ static const char *deprecated_properties[] = {
     CACHE_TIMEOUT_DEPRECATED,
     RECYCLE_TIMEOUT_DEPRECATED,
     BALANCED_WORKERS_DEPRECATED,
+    JVM_ROUTE_OF_WORKER_DEPRECATED,
     IS_WORKER_DISABLED_DEPRECATED,
     IS_WORKER_STOPPED_DEPRECATED,
     NULL
@@ -486,13 +489,20 @@ const char *jk_get_worker_type(jk_map_t *m, const char *wname)
     return jk_map_get_string(m, buf, DEFAULT_WORKER_TYPE);
 }
 
-const char *jk_get_worker_jvm_route(jk_map_t *m, const char *wname, const char *def)
+const char *jk_get_worker_route(jk_map_t *m, const char *wname, const char *def)
 {
     char buf[1024];
+    const char *v;
     if (!m || !wname) {
         return NULL;
     }
-    MAKE_WORKER_PARAM(JVM_ROUTE_OF_WORKER);
+    MAKE_WORKER_PARAM(ROUTE_OF_WORKER);
+    v = jk_map_get_string(m, buf, NULL);
+    if (v) {
+        return v;
+    }
+    /* Try old jvm_route directive */
+    MAKE_WORKER_PARAM(JVM_ROUTE_OF_WORKER_DEPRECATED);
     return jk_map_get_string(m, buf, def);
 }
 
@@ -1507,7 +1517,7 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->attributes_names = NULL;
     s->attributes_values = NULL;
     s->num_attributes = 0;
-    s->jvm_route = NULL;
+    s->route = NULL;
     s->retries = JK_RETRIES;
     s->add_log_items = NULL;
 }

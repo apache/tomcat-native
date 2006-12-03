@@ -187,12 +187,12 @@ struct jk_ws_service
     unsigned num_attributes;        /* Number of request attributes     */
 
     /*
-     * The jvm route is in use when the adapter load balance among
-     * several JVMs. It is the ID of a specific JVM in the load balance
-     * group. We are using this variable to implement JVM session
+     * The route is in use when the adapter load balance among
+     * several workers. It is the ID of a specific target in the load balance
+     * group. We are using this variable to implement target session
      * affinity
      */
-    const char *jvm_route;
+    const char *route;
 
     /* Temp solution for auth. For native1 it'll be sent on each request,
        if an option is present. For native2 it'll be sent with the first

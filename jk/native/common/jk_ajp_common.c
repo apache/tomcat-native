@@ -348,7 +348,7 @@ AJPV13_REQUEST/AJPV14_REQUEST=
     ?remote_user   (byte)(string)
     ?auth_type     (byte)(string)
     ?query_string  (byte)(string)
-    ?jvm_route     (byte)(string)
+    ?route         (byte)(string)
     ?ssl_cert      (byte)(string)
     ?ssl_cipher    (byte)(string)
     ?ssl_session   (byte)(string)
@@ -457,11 +457,11 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t *msg,
             return JK_FALSE;
         }
     }
-    if (s->jvm_route) {
-        if (jk_b_append_byte(msg, SC_A_JVM_ROUTE) ||
-            jk_b_append_string(msg, s->jvm_route)) {
+    if (s->route) {
+        if (jk_b_append_byte(msg, SC_A_ROUTE) ||
+            jk_b_append_string(msg, s->route)) {
             jk_log(l, JK_LOG_ERROR,
-                   "failed appending the jvm route");
+                   "failed appending the route");
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }

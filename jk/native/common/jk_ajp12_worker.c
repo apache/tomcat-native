@@ -400,7 +400,7 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
            ajpv12_sendstring(p, s->server_name) &&
 #endif
            ajpv12_sendint(p, s->server_port) && ajpv12_sendstring(p, s->protocol) && ajpv12_sendstring(p, 0) && /* SERVER_SIGNATURE */
-           ajpv12_sendstring(p, s->server_software) && ajpv12_sendstring(p, s->jvm_route) &&    /* JSERV_ROUTE */
+           ajpv12_sendstring(p, s->server_software) && ajpv12_sendstring(p, s->route) &&    /* JSERV_ROUTE */
            ajpv12_sendstring(p, "") &&  /* JSERV ajpv12 compatibility */
            ajpv12_sendstring(p, ""));   /* JSERV ajpv12 compatibility */
 

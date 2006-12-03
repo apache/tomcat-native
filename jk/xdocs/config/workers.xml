@@ -583,14 +583,14 @@ This feature has been added in <b>jk 1.2.19</b>.
 </p>
 </directive>
 
-<directive name="jvm_route" default="worker name" required="false">
+<directive name="route" default="worker name" required="false">
 Normally the name of a balanced worker in a load balancer is equal to the jvmRoute
 of the corresponding Tomcat instance. If you want to include a worker corresponding
 to a Tomcat instance into several load balancers with different balancing configuration
 (e.g. disabled, stopped) you can use this attribute.
 <p>
 Define a seperate worker per lb and per Tomcat instance with an arbitrary worker name and 
-set the jvm_route attribute of the worker equal to the jvmRoute of the target Tomcat instance.
+set the route attribute of the worker equal to the jvmRoute of the target Tomcat instance.
 </p>
 <p>
 If this attribute is left empty, the name of the worker will be used.
@@ -603,8 +603,9 @@ If the route name contains a period, the part before the first period will be
 used as domain name, unless domain is set explicitly.
 </p>
 <p>
-This feature has been added in <b>jk 1.2.16</b>.
-The automatic domain rule has been added in <b>jk 1.2.20</b>.
+This feature has been added in <b>jk 1.2.16</b>.<br/>
+The automatic domain rule has been added in <b>jk 1.2.20</b>.<br/>
+The attribute has been renamed from jvm_route to route in <b>jk 1.2.20</b>.
 </p>
 </directive>
 
@@ -729,6 +730,27 @@ worker. It is only usefull, when you have a cluster that replicated the sessions
 This flag can be changed at runtime using status worker.
 <p>
 This feature has been added in <b>jk 1.2.11</b>.
+</p>
+</directive>
+
+<directive name="jvm_route" successor="route" default="worker name" required="false">
+<warn>This directive has been deprecated since 1.2.20.</warn>
+Normally the name of a balanced worker in a load balancer is equal to the jvmRoute
+of the corresponding Tomcat instance. If you want to include a worker corresponding
+to a Tomcat instance into several load balancers with different balancing configuration
+(e.g. disabled, stopped) you can use this attribute.
+<p>
+Define a seperate worker per lb and per Tomcat instance with an arbitrary worker name and 
+set the jvm_route attribute of the worker equal to the jvmRoute of the target Tomcat instance.
+</p>
+<p>
+If this attribute is left empty, the name of the worker will be used.
+</p>
+<p>
+This attribute can be changed at runtime using status worker.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.16</b>.
 </p>
 </directive>
 

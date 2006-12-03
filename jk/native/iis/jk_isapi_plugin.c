@@ -1513,7 +1513,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
 
     DWORD huge_buf_sz;
 
-    s->jvm_route = NULL;
+    s->route = NULL;
 
     s->start_response = start_response;
     s->read = read;

@@ -366,7 +366,7 @@ static int init_ws_service(nsapi_private_data_t * private_data,
     char *tmp;
     int rc;
 
-    s->jvm_route = NULL;
+    s->route = NULL;
     s->start_response = start_response;
     s->read = ws_read;
     s->write = ws_write;

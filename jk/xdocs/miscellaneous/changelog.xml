@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Renamed jvm_route to route. Deprecated jvm_route, but still use it as fallback
+      when parsing the worker configuration. (rjung)
+      </update>
+      <update>
       IIS: Make uriworkermap file reload check interval configurable. (mturk)
       </update>
       <update>

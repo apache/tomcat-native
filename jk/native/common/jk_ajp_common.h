@@ -43,7 +43,7 @@ extern "C"
 #define SC_A_REMOTE_USER        (unsigned char)3
 #define SC_A_AUTH_TYPE          (unsigned char)4
 #define SC_A_QUERY_STRING       (unsigned char)5
-#define SC_A_JVM_ROUTE          (unsigned char)6
+#define SC_A_ROUTE              (unsigned char)6
 #define SC_A_SSL_CERT           (unsigned char)7
 #define SC_A_SSL_CIPHER         (unsigned char)8
 #define SC_A_SSL_SESSION        (unsigned char)9

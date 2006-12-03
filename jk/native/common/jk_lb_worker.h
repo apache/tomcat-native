@@ -114,7 +114,7 @@ struct worker_record
     jk_worker_t      *w;
     /* Shared memory worker data */
     jk_shm_worker_t  *s;
-    /* Current jvmRoute. Can be name or domain */
+    /* Current route. Can be name or domain */
     const char       *r;
 };
 typedef struct worker_record worker_record_t;

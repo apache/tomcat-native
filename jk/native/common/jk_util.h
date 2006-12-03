@@ -82,7 +82,7 @@ int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def);
 
 int jk_get_worker_recover_timeout(jk_map_t *m, const char *wname, int def);
 
-const char *jk_get_worker_jvm_route(jk_map_t *m, const char *wname, const char *def);
+const char *jk_get_worker_route(jk_map_t *m, const char *wname, const char *def);
 
 const char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def);
 

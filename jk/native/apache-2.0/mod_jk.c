@@ -516,7 +516,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     request_rec *r = private_data->r;
 
     char *ssl_temp = NULL;
-    s->jvm_route = NULL;        /* Used for sticky session routing */
+    s->route = NULL;        /* Used for sticky session routing */
 
     /* Copy in function pointers (which are really methods) */
     s->start_response = ws_start_response;
@@ -2101,8 +2101,8 @@ static int jk_handler(request_rec * r)
 
                 duration = apr_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
                 apr_table_setn(r->notes, JK_NOTE_REQUEST_DURATION, duration);
-                if (s.jvm_route && *s.jvm_route)
-                    apr_table_setn(r->notes, JK_NOTE_WORKER_ROUTE, s.jvm_route);
+                if (s.route && *s.route)
+                    apr_table_setn(r->notes, JK_NOTE_WORKER_ROUTE, s.route);
 
                 request_log_transaction(r, xconf);
             }
