@@ -26,6 +26,19 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Status Worker: Add directive to make property prefix
+      and good/bad rule configurable. (rjung)
+      </update>
+      <update>
+      Status Worker: Omit lb members when att=nosw. (rjung)
+      </update>
+      <update>
+      Status Worker: New command cmd=version for a short version output. (rjung)
+      </update>
+      <update>
+      Status Worker: New output stype mime=prop produces property lists. (rjung)
+      </update>
       <fix>
       Apache: Fix incorrect handling of JkEnvVar when Vars are set multiple times. (rjung)
       </fix>

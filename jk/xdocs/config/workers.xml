@@ -381,10 +381,69 @@ This feature has been added in <b>jk 1.2.20</b>.
 </p>
 </directive>
 <directive name="user" default="" required="false">
-This directive can be used mutltiple times. It is a list of users
+It is a list of users
 which gets compared to the user name authenticated by the web server.
 If the name is not contained in this list, access is denied. Per
 default the list is empty and then access is allowed to anybody.
+<p>
+This directive can be used multiple times.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.20</b>.
+</p>
+</directive>
+<directive name="good" default="a.o,a.n,a.b,a.r" required="false">
+For every load balancer worker, the status worker shows a summary
+of the state of its members. There are three such states,
+"good", "bad" and "degraded".
+<p>
+These states are determined depending on the activation of the members
+(active, disabled, stopped) and their runtime state
+(ok, n/a, busy, recovering, error).
+By default, members are assumed to be "good", if their activation
+is "active" and their runtime state is not "error".
+</p>
+<p>
+You can change this mapping, by assigning a list of values to the
+attribute "good". Each value gives a possible match for the members,
+and one match suffices. Each value is either a single character, or two
+characters combined with a dot ".". The single characters are the
+first characters in the words "active", "disabled", "stopped",
+"ok", "na", "busy", "recovering", "error". If a value consists only
+of a single character, then all members with this activation or runtime
+state will be assumed good. A combination of an activation and a runtime
+state concatenated with a dot "." does only apply to a member, that has
+exactly this activation and state.
+</p>
+<p>
+Members of a load balancer will first be matched against the state "bad",
+if they don't match, the state "good" will be tried, and if they
+still don't match, their state will be "degraded".
+</p>
+<p>
+This directive can be used multiple times.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.20</b>.
+</p>
+</directive>
+<directive name="bad" default="s,e" required="false">
+See: "good".
+<p>
+By default, members are assumed to be "bad", if their activation
+is "stopped" or their runtime state is "error".
+</p>
+<p>
+This directive can be used multiple times.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.20</b>.
+</p>
+</directive>
+<directive name="prefix" default="worker" required="false">
+The prefix, which will be used by the status worker
+when producing properties output (mime=prop).
+Each property keyy will be prefixed by this value.
 <p>
 This feature has been added in <b>jk 1.2.20</b>.
 </p>
