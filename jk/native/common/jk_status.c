@@ -971,6 +971,20 @@ static void display_maps(jk_ws_service_t *s,
     int count=0;
 
     JK_TRACE_ENTER(l);
+    for (i = 0; i < uwmap->size; i++) {
+        uri_worker_record_t *uwr = uwmap->maps[i];
+        if (!worker || strcmp(uwr->worker_name, worker)) {
+            continue;
+        }
+        count++;
+    }
+    if (!count) {
+        jk_putv(s, "<hr/><h3>Warning: No URI Mappings defined for ",
+                worker, " !</h3>\n", NULL);
+        JK_TRACE_EXIT(l);
+        return;    
+    }
+    count = 0;
     jk_putv(s, "<hr/><h3>URI Mappings for ", worker, "</h3>\n", NULL);
     jk_puts(s, "<table>\n");
     jk_printf(s, JK_STATUS_TABLE_HEAD_3_STRING,
@@ -1029,7 +1043,8 @@ static void display_maps_xml(jk_ws_service_t *s,
         jk_print_xml_att_string(s, 10, "source", uri_worker_map_get_source(uwr, l));
         jk_print_xml_stop_elt(s, 8, 1);
     }
-    jk_print_xml_close_elt(s, sw, 6, "maps");
+    if (count)
+        jk_print_xml_close_elt(s, sw, 6, "maps");
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "dumped %d maps for worker '%s'",
@@ -2502,9 +2517,11 @@ static void list_workers_type_mime(jk_ws_service_t *s, status_worker_t *sw,
         else if (mime == JK_STATUS_MIME_PROP) {
             jk_print_prop_att_int(s, sw, NULL, "lb_cnt", count);
         }
+#if 0
         else {
             jk_printf(s, "<hr/><h2>Listing %d load balancing worker%s</h2>\n", count, count>1 ? "s" : "");
         }
+#endif
     }
     else {
         if (mime == JK_STATUS_MIME_XML) {
@@ -2551,6 +2568,13 @@ static void list_workers_type_mime(jk_ws_service_t *s, status_worker_t *sw,
     if (list_lb) {
         if (mime == JK_STATUS_MIME_XML) {
             jk_print_xml_close_elt(s, sw, 0, "balancers");
+        }
+        else if (mime == JK_STATUS_MIME_TXT) {
+        }
+        else if (mime == JK_STATUS_MIME_PROP) {
+        }
+        else {
+            display_legend(s, sw, l);
         }
     }
     else {
