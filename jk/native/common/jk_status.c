@@ -3160,12 +3160,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 jk_printf(s, ":%d", s->server_port);
                 jk_puts(s, "</h1>\n\n");
                 if ((cmd == JK_STATUS_CMD_LIST) ||
+                    (cmd == JK_STATUS_CMD_SHOW) ||
                     (cmd == JK_STATUS_CMD_VERSION)) {
                     jk_putv(s, "<table><tr><td>Server Version:</td><td>",
                             s->server_software, "</td></tr>\n", NULL);
                     jk_putv(s, "<tr><td>JK Version:</td><td>",
                             JK_EXPOSED_VERSION, "</td></tr></table>\n", NULL);
-                    jk_puts(s, "<hr/>");
+                    jk_puts(s, "<hr/>\n");
                 }
                 if (cmd == JK_STATUS_CMD_LIST ||
                     cmd == JK_STATUS_CMD_SHOW) {
@@ -3215,7 +3216,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                                 "\" type=\"text\" size=\"3\" value=\"10\"/> "
                                 "seconds)", NULL);
                         jk_puts(s, "</form>\n");
-                        jk_puts(s, "<hr/>\n");
                     }
                 }
                 if (cmd == JK_STATUS_CMD_SHOW ||
