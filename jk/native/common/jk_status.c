@@ -135,6 +135,7 @@
 #define JK_STATUS_MASK_GOOD_DEF            0x0000000F
 #define JK_STATUS_MASK_BAD_DEF             0x00FF1010
 
+#define JK_STATUS_REFRESH                  "3"
 #define JK_STATUS_ESC_CHARS                ("<>?&")
 
 #define JK_STATUS_HEAD                     "<!DOCTYPE HTML PUBLIC \"-//W3C//" \
@@ -3044,12 +3045,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
             /* unlock the shared memory */
             jk_shm_unlock();
             if (mime == JK_STATUS_MIME_HTML) {
-                jk_puts(s, "\n<meta http-equiv=\"Refresh\" content=\"3;url=");
+                jk_puts(s, "\n<meta http-equiv=\"Refresh\" content=\""
+                        JK_STATUS_REFRESH ";url=");
                 status_write_uri(s, NULL, from, 0, 0, refresh,
                                 worker, NULL, option);
                 jk_puts(s, "\">");
                 if (!err) {
-                    jk_putv(s, "<p><b>Result: OK - You will be redirected in 3 seconds.</b><p/>", NULL);
+                    jk_puts(s, "<p><b>Result: OK - You will be redirected in "
+                            JK_STATUS_REFRESH " seconds.</b><p/>");
                 }
             }
         }
@@ -3062,12 +3065,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
             /* unlock the shared memory */
             jk_shm_unlock();
             if (mime == JK_STATUS_MIME_HTML) {
-                jk_puts(s, "\n<meta http-equiv=\"Refresh\" content=\"3;url=");
+                jk_puts(s, "\n<meta http-equiv=\"Refresh\" content=\""
+                        JK_STATUS_REFRESH ";url=");
                 status_write_uri(s, NULL, from, 0, 0, refresh,
                                  worker, NULL, option);
                 jk_puts(s, "\">");
                 if (!err) {
-                    jk_putv(s, "<p><b>Result: OK - You will be redirected in 3 seconds.</b><p/>", NULL);
+                    jk_puts(s, "<p><b>Result: OK - You will be redirected in "
+                            JK_STATUS_REFRESH " seconds.</b><p/>");
                 }
             }
         }
