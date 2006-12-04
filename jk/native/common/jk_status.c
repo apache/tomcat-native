@@ -900,21 +900,21 @@ static void status_write_uri(jk_ws_service_t *s, const char *text,
         jk_putv(s, s->req_uri, "?", JK_STATUS_ARG_CMD, "=",
                 status_cmd_text(cmd), NULL);
         if (mime)
-            jk_putv(s, "&", JK_STATUS_ARG_MIME, "=",
+            jk_putv(s, "&amp;", JK_STATUS_ARG_MIME, "=",
                     status_mime_text(mime), NULL);
         if (from)
-            jk_putv(s, "&", JK_STATUS_ARG_FROM, "=",
+            jk_putv(s, "&amp;", JK_STATUS_ARG_FROM, "=",
                     status_cmd_text(from), NULL);
         if (refresh)
-            jk_printf(s, "&%s=%d", JK_STATUS_ARG_REFRESH, refresh);
+            jk_printf(s, "&amp;%s=%d", JK_STATUS_ARG_REFRESH, refresh);
         if (worker)
-            jk_putv(s, "&", JK_STATUS_ARG_WORKER, "=",
+            jk_putv(s, "&amp;", JK_STATUS_ARG_WORKER, "=",
                     worker, NULL);
         if (sub_worker)
-            jk_putv(s, "&", JK_STATUS_ARG_WORKER_MEMBER, "=",
+            jk_putv(s, "&amp;", JK_STATUS_ARG_WORKER_MEMBER, "=",
                     sub_worker, NULL);
         if (option)
-            jk_putv(s, "&", JK_STATUS_ARG_OPTION, "=",
+            jk_putv(s, "&amp;", JK_STATUS_ARG_OPTION, "=",
                     option, NULL);
     }
     if (text)
