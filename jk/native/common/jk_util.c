@@ -81,9 +81,12 @@
 #define NAMESPACE_OF_WORKER         ("ns")
 #define XML_NAMESPACE_OF_WORKER     ("xmlns")
 #define XML_DOCTYPE_OF_WORKER       ("doctype")
+#define PROP_PREFIX_OF_WORKER       ("prefix")
 
 #define READ_ONLY_OF_WORKER         ("read_only")
 #define USER_OF_WORKER              ("user")
+#define GOOD_RATING_OF_WORKER       ("good")
+#define BAD_RATING_OF_WORKER        ("bad")
 
 #define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
@@ -131,6 +134,8 @@ static const char *list_properties[] = {
     BALANCE_WORKERS,
     MOUNT_OF_WORKER,
     USER_OF_WORKER,
+    GOOD_RATING_OF_WORKER,
+    BAD_RATING_OF_WORKER,
     "list",
     NULL
 };
@@ -174,6 +179,7 @@ static const char *unique_properties[] = {
     NAMESPACE_OF_WORKER,
     XML_NAMESPACE_OF_WORKER,
     XML_DOCTYPE_OF_WORKER,
+    PROP_PREFIX_OF_WORKER,
     NULL
 };
 
@@ -804,19 +810,19 @@ const char *jk_get_worker_secret_key(jk_map_t *m, const char *wname)
     return jk_map_get_string(m, buf, NULL);
 }
 
-int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_wokers)
+int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_workers)
 {
-    if (m && list && num_of_wokers) {
+    if (m && list && num_of_workers) {
         char **ar = jk_map_get_string_list(m,
                                         WORKER_LIST_PROPERTY_NAME,
-                                        num_of_wokers,
+                                        num_of_workers,
                                         DEFAULT_WORKER);
         if (ar) {
             *list = ar;
             return JK_TRUE;
         }
         *list = NULL;
-        *num_of_wokers = 0;
+        *num_of_workers = 0;
     }
 
     return JK_FALSE;
@@ -1049,6 +1055,16 @@ const char *jk_get_worker_xml_doctype(jk_map_t *m, const char *wname, const char
     return jk_map_get_string(m, buf, def);
 }
 
+const char *jk_get_worker_prop_prefix(jk_map_t *m, const char *wname, const char *def)
+{
+    char buf[1024];
+    if (!m || !wname) {
+        return NULL;
+    }
+    MAKE_WORKER_PARAM(PROP_PREFIX_OF_WORKER);
+    return jk_map_get_string(m, buf, def);
+}
+
 int jk_get_is_read_only(jk_map_t *m, const char *wname)
 {
     int rc = JK_FALSE;
@@ -1065,21 +1081,65 @@ int jk_get_is_read_only(jk_map_t *m, const char *wname)
 
 int jk_get_worker_user_list(jk_map_t *m,
                             const char *wname,
-                            char ***list, unsigned int *num_of_users)
+                            char ***list, unsigned int *num)
 {
     char buf[1024];
 
-    if (m && list && num_of_users && wname) {
+    if (m && list && num && wname) {
         char **ar = NULL;
 
         MAKE_WORKER_PARAM(USER_OF_WORKER);
-        ar = jk_map_get_string_list(m, buf, num_of_users, NULL);
+        ar = jk_map_get_string_list(m, buf, num, NULL);
         if (ar) {
             *list = ar;
             return JK_TRUE;
         }
         *list = NULL;
-        *num_of_users = 0;
+        *num = 0;
+    }
+
+    return JK_FALSE;
+}
+
+int jk_get_worker_good_rating(jk_map_t *m,
+                              const char *wname,
+                              char ***list, unsigned int *num)
+{
+    char buf[1024];
+
+    if (m && list && num && wname) {
+        char **ar = NULL;
+
+        MAKE_WORKER_PARAM(GOOD_RATING_OF_WORKER);
+        ar = jk_map_get_string_list(m, buf, num, NULL);
+        if (ar) {
+            *list = ar;
+            return JK_TRUE;
+        }
+        *list = NULL;
+        *num = 0;
+    }
+
+    return JK_FALSE;
+}
+
+int jk_get_worker_bad_rating(jk_map_t *m,
+                             const char *wname,
+                             char ***list, unsigned int *num)
+{
+    char buf[1024];
+
+    if (m && list && num && wname) {
+        char **ar = NULL;
+
+        MAKE_WORKER_PARAM(BAD_RATING_OF_WORKER);
+        ar = jk_map_get_string_list(m, buf, num, NULL);
+        if (ar) {
+            *list = ar;
+            return JK_TRUE;
+        }
+        *list = NULL;
+        *num = 0;
     }
 
     return JK_FALSE;
@@ -1087,28 +1147,28 @@ int jk_get_worker_user_list(jk_map_t *m,
 
 int jk_get_lb_worker_list(jk_map_t *m,
                           const char *wname,
-                          char ***list, unsigned int *num_of_wokers)
+                          char ***list, unsigned int *num_of_workers)
 {
     char buf[1024];
 
-    if (m && list && num_of_wokers && wname) {
+    if (m && list && num_of_workers && wname) {
         char **ar = NULL;
 
         MAKE_WORKER_PARAM(BALANCE_WORKERS);
-        ar = jk_map_get_string_list(m, buf, num_of_wokers, NULL);
+        ar = jk_map_get_string_list(m, buf, num_of_workers, NULL);
         if (ar) {
             *list = ar;
             return JK_TRUE;
         }
         /* Try old balanced_workers directive */
         MAKE_WORKER_PARAM(BALANCED_WORKERS_DEPRECATED);
-        ar = jk_map_get_string_list(m, buf, num_of_wokers, NULL);
+        ar = jk_map_get_string_list(m, buf, num_of_workers, NULL);
         if (ar) {
             *list = ar;
             return JK_TRUE;
         }
         *list = NULL;
-        *num_of_wokers = 0;
+        *num_of_workers = 0;
     }
 
     return JK_FALSE;

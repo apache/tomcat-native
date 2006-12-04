@@ -98,7 +98,7 @@ int jk_get_is_worker_stopped(jk_map_t *m, const char *wname);
 
 int jk_get_worker_activation(jk_map_t *m, const char *wname);
 
-int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_wokers);
+int jk_get_worker_list(jk_map_t *m, char ***list, unsigned *num_of_workers);
 
 int jk_get_lb_factor(jk_map_t *m, const char *wname);
 
@@ -114,7 +114,7 @@ int jk_get_lb_lock(jk_map_t *m, const char *wname);
 
 int jk_get_lb_worker_list(jk_map_t *m,
                           const char *lb_wname,
-                          char ***list, unsigned int *num_of_wokers);
+                          char ***list, unsigned int *num_of_workers);
 int jk_get_worker_mount_list(jk_map_t *m,
                              const char *wname,
                              char ***list, unsigned int *num_of_maps);
@@ -175,13 +175,23 @@ int jk_get_is_read_only(jk_map_t *m, const char *wname);
 
 int jk_get_worker_user_list(jk_map_t *m,
                             const char *wname,
-                            char ***list, unsigned int *num_of_users);
+                            char ***list, unsigned int *num);
+
+int jk_get_worker_good_rating(jk_map_t *m,
+                              const char *wname,
+                              char ***list, unsigned int *num);
+
+int jk_get_worker_bad_rating(jk_map_t *m,
+                             const char *wname,
+                             char ***list, unsigned int *num);
 
 const char *jk_get_worker_name_space(jk_map_t *m, const char *wname, const char *def);
 
 const char *jk_get_worker_xmlns(jk_map_t *m, const char *wname, const char *def);
 
 const char *jk_get_worker_xml_doctype(jk_map_t *m, const char *wname, const char *def);
+
+const char *jk_get_worker_prop_prefix(jk_map_t *m, const char *wname, const char *def);
 
 #define TC32_BRIDGE_TYPE    32
 #define TC33_BRIDGE_TYPE    33
