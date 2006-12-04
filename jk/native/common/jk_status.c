@@ -388,9 +388,9 @@ static int jk_printf(jk_ws_service_t *s, const char *fmt, ...)
     return rc;
 }
 
-static int jk_print_xml_start_elt(jk_ws_service_t *s, status_worker_t *sw,
-                                  int indentation, int close_tag,
-                                  const char *name)
+static void jk_print_xml_start_elt(jk_ws_service_t *s, status_worker_t *sw,
+                                   int indentation, int close_tag,
+                                   const char *name)
 {
     if (close_tag) {
         jk_printf(s, "%*s<%s%s>\n", indentation, "", sw->ns, name);
@@ -400,15 +400,15 @@ static int jk_print_xml_start_elt(jk_ws_service_t *s, status_worker_t *sw,
     }
 }
 
-static int jk_print_xml_close_elt(jk_ws_service_t *s, status_worker_t *sw,
-                                  int indentation,
-                                  const char *name)
+static void jk_print_xml_close_elt(jk_ws_service_t *s, status_worker_t *sw,
+                                   int indentation,
+                                   const char *name)
 {
     jk_printf(s, "%*s</%s%s>\n", indentation, "", sw->ns, name);
 }
 
-static int jk_print_xml_stop_elt(jk_ws_service_t *s,
-                                 int indentation, int close_tag)
+static void jk_print_xml_stop_elt(jk_ws_service_t *s,
+                                  int indentation, int close_tag)
 {
     if (close_tag) {
         jk_printf(s, "%*s/>\n", indentation, "");
@@ -418,44 +418,44 @@ static int jk_print_xml_stop_elt(jk_ws_service_t *s,
     }
 }
 
-static int jk_print_xml_att_string(jk_ws_service_t *s,
-                                   int indentation,
-                                   const char *key, const char *value)
+static void jk_print_xml_att_string(jk_ws_service_t *s,
+                                    int indentation,
+                                    const char *key, const char *value)
 {
     jk_printf(s, "%*s%s=\"%s\"\n", indentation, "", key, value ? value : "");
 }
 
-static int jk_print_xml_att_int(jk_ws_service_t *s,
-                                int indentation,
-                                const char *key, int value)
+static void jk_print_xml_att_int(jk_ws_service_t *s,
+                                 int indentation,
+                                 const char *key, int value)
 {
     jk_printf(s, "%*s%s=\"%d\"\n", indentation, "", key, value);
 }
 
-static int jk_print_xml_att_uint(jk_ws_service_t *s,
-                                 int indentation,
-                                 const char *key, unsigned value)
+static void jk_print_xml_att_uint(jk_ws_service_t *s,
+                                  int indentation,
+                                  const char *key, unsigned value)
 {
     jk_printf(s, "%*s%s=\"%u\"\n", indentation, "", key, value);
 }
 
-static int jk_print_xml_att_uint32(jk_ws_service_t *s,
-                                   int indentation,
-                                   const char *key, jk_uint32_t value)
+static void jk_print_xml_att_uint32(jk_ws_service_t *s,
+                                    int indentation,
+                                    const char *key, jk_uint32_t value)
 {
     jk_printf(s, "%*s%s=\"%" JK_UINT32_T_FMT "\"\n", indentation, "", key, value);
 }
 
-static int jk_print_xml_att_uint64(jk_ws_service_t *s,
-                                   int indentation,
-                                   const char *key, jk_uint64_t value)
+static void jk_print_xml_att_uint64(jk_ws_service_t *s,
+                                    int indentation,
+                                    const char *key, jk_uint64_t value)
 {
     jk_printf(s, "%*s%s=\"%" JK_UINT64_T_FMT "\"\n", indentation, "", key, value);
 }
 
-static int jk_print_prop_att_string(jk_ws_service_t *s, status_worker_t *sw,
-                                    const char *name,
-                                    const char *key, const char *value)
+static void jk_print_prop_att_string(jk_ws_service_t *s, status_worker_t *sw,
+                                     const char *name,
+                                     const char *key, const char *value)
 {
     if (name) {
         jk_printf(s, "%s.%s.%s=%s\n", sw->prefix, name, key, value ? value : "");
@@ -465,9 +465,9 @@ static int jk_print_prop_att_string(jk_ws_service_t *s, status_worker_t *sw,
     }
 }
 
-static int jk_print_prop_att_int(jk_ws_service_t *s, status_worker_t *sw,
-                                 const char *name,
-                                 const char *key, int value)
+static void jk_print_prop_att_int(jk_ws_service_t *s, status_worker_t *sw,
+                                  const char *name,
+                                  const char *key, int value)
 {
     if (name) {
         jk_printf(s, "%s.%s.%s=%d\n", sw->prefix, name, key, value);
@@ -477,9 +477,9 @@ static int jk_print_prop_att_int(jk_ws_service_t *s, status_worker_t *sw,
     }
 }
 
-static int jk_print_prop_att_uint(jk_ws_service_t *s, status_worker_t *sw,
-                                  const char *name,
-                                  const char *key, unsigned value)
+static void jk_print_prop_att_uint(jk_ws_service_t *s, status_worker_t *sw,
+                                   const char *name,
+                                   const char *key, unsigned value)
 {
     if (name) {
         jk_printf(s, "%s.%s.%s=%u\n", sw->prefix, name, key, value);
@@ -489,9 +489,9 @@ static int jk_print_prop_att_uint(jk_ws_service_t *s, status_worker_t *sw,
     }
 }
 
-static int jk_print_prop_att_uint32(jk_ws_service_t *s, status_worker_t *sw,
-                                    const char *name,
-                                    const char *key, jk_uint32_t value)
+static void jk_print_prop_att_uint32(jk_ws_service_t *s, status_worker_t *sw,
+                                     const char *name,
+                                     const char *key, jk_uint32_t value)
 {
     if (name) {
         jk_printf(s, "%s.%s.%s=%" JK_UINT32_T_FMT "\n", sw->prefix, name, key, value);
@@ -501,9 +501,9 @@ static int jk_print_prop_att_uint32(jk_ws_service_t *s, status_worker_t *sw,
     }
 }
 
-static int jk_print_prop_att_uint64(jk_ws_service_t *s, status_worker_t *sw,
-                                    const char *name,
-                                    const char *key, jk_uint64_t value)
+static void jk_print_prop_att_uint64(jk_ws_service_t *s, status_worker_t *sw,
+                                     const char *name,
+                                     const char *key, jk_uint64_t value)
 {
     if (name) {
         jk_printf(s, "%s.%s.%s=%" JK_UINT64_T_FMT "\n", sw->prefix, name, key, value);
@@ -513,9 +513,9 @@ static int jk_print_prop_att_uint64(jk_ws_service_t *s, status_worker_t *sw,
     }
 }
 
-static int jk_print_prop_item_string(jk_ws_service_t *s, status_worker_t *sw,
-                                     const char *name, const char *list, int num,
-                                     const char *key, const char *value)
+static void jk_print_prop_item_string(jk_ws_service_t *s, status_worker_t *sw,
+                                      const char *name, const char *list, int num,
+                                      const char *key, const char *value)
 {
     if (name) {
         jk_printf(s, "%s.%s.%s.%d.%s=%s\n", sw->prefix, name, list, num, key, value ? value : "");
@@ -1043,8 +1043,6 @@ static void display_maps_txt(jk_ws_service_t *s,
                              const char *worker, jk_logger_t *l)
 {
     char buf[64];
-    char *mount;
-    char *off;
     unsigned int i;
     int count=0;
 
@@ -2575,10 +2573,8 @@ static int list_workers(jk_ws_service_t *s, status_worker_t *sw,
                         int mime, int show_members,
                         int refresh, jk_logger_t *l)
 {
-    unsigned int i;
     int lb_cnt = 0;
     int ajp_cnt = 0;
-    jk_worker_t *w = NULL;
 
     JK_TRACE_ENTER(l);
     count_workers_xml(s, sw, &lb_cnt, &ajp_cnt, l);
