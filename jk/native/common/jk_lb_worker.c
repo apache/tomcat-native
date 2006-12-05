@@ -79,7 +79,6 @@ static const char *lb_activation_type[] = {
 
 struct lb_endpoint
 {
-    jk_endpoint_t *e;
     lb_worker_t *worker;
 
     jk_endpoint_t endpoint;
@@ -1098,10 +1097,6 @@ static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
     if (e && *e && (*e)->endpoint_private) {
         lb_endpoint_t *p = (*e)->endpoint_private;
 
-        if (p->e) {
-            p->e->done(&p->e, l);
-        }
-
         free(p);
         *e = NULL;
         JK_TRACE_EXIT(l);
@@ -1303,7 +1298,6 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
 
     if (pThis && pThis->worker_private && pend) {
         lb_endpoint_t *p = (lb_endpoint_t *) malloc(sizeof(lb_endpoint_t));
-        p->e = NULL;
         p->worker = pThis->worker_private;
         p->endpoint.endpoint_private = p;
         p->endpoint.service = service;
