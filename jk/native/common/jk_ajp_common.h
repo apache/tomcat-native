@@ -287,6 +287,11 @@ struct ajp_worker
     unsigned int recovery_opts; /* Set the recovery option */
     
     unsigned int max_packet_size;  /*  Maximum AJP Packet size */
+    
+    /* 
+     * HTTP status that will cause failover (0 means disabled)
+     */
+     int http_status_fail;
 };
 
 

@@ -1398,6 +1398,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                               res.num_headers);
             if (r->flush && r->flush_header)
                 r->flush(r);
+            r->http_status = res.status;
         }
         return JK_AJP13_SEND_HEADERS;
 
@@ -1625,6 +1626,11 @@ static int ajp_get_reply(jk_endpoint_t *e,
             return JK_TRUE;
         }
         else if (JK_AJP13_SEND_HEADERS == rc) {
+            if (p->worker->http_status_fail &&
+                (p->worker->http_status_fail == s->http_status)) {
+                JK_TRACE_EXIT(l);
+                return JK_STATUS_ERROR;
+            }
             headeratclient = JK_TRUE;
         }
         else if (JK_AJP13_HAS_RESPONSE == rc) {
@@ -1840,6 +1846,18 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                        p->worker->name, i);
                 JK_TRACE_EXIT(l);
                 return JK_SERVER_ERROR;
+            }
+            else if (err == JK_STATUS_ERROR) {
+                jk_log(l, JK_LOG_INFO,
+                       "(%s) request failed, "
+                       "because of response status %d, "
+                       "recoverable operation attempt=%d",
+                       p->worker->http_status_fail,
+                       p->worker->name, i);
+                JK_TRACE_EXIT(l);
+                if (i >= JK_RETRIES) {
+                    jk_sleep(JK_SLEEP_DEF);
+                }
             }
             else {
                 /* if we can't get reply, check if no recover flag was set
@@ -2062,6 +2080,8 @@ int ajp_init(jk_worker_t *pThis,
                                         AJP_DEF_RECOVERY_OPTS);
         p->max_packet_size =
             jk_get_max_packet_size(props, p->name);
+
+        p->http_status_fail = jk_get_worker_retry_on_status(props, p->name);
 
         pThis->retries =
             jk_get_worker_retries(props, p->name,

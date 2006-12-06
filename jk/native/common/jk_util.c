@@ -91,6 +91,7 @@
 #define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
 #define RETRIES_OF_WORKER           ("retries")
+#define STATUS_FAIL_OF_WORKER       ("retry_on_status")
 
 #define DEFAULT_WORKER              JK_AJP13_WORKER_NAME
 #define WORKER_LIST_PROPERTY_NAME     ("worker.list")
@@ -180,6 +181,7 @@ static const char *unique_properties[] = {
     XML_NAMESPACE_OF_WORKER,
     XML_DOCTYPE_OF_WORKER,
     PROP_PREFIX_OF_WORKER,
+    STATUS_FAIL_OF_WORKER,
     NULL
 };
 
@@ -1001,6 +1003,20 @@ int jk_get_max_packet_size(jk_map_t *m, const char *wname)
 
     return sz;
 }
+
+int jk_get_worker_retry_on_status(jk_map_t *m, const char *wname)
+{
+    char buf[1024];
+
+    if (!m || !wname) {
+        return 0;
+    }
+
+    MAKE_WORKER_PARAM(STATUS_FAIL_OF_WORKER);
+    return jk_map_get_int(m, buf, 0);
+
+}
+
 
 const char *jk_get_worker_style_sheet(jk_map_t *m, const char *wname, const char *def)
 {

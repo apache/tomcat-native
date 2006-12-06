@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Added retry_on_status for workers directive. (mturk)
+      </update>
+      <update>
       Status Worker: Add directive to make property prefix
       and good/bad rule configurable. (rjung)
       </update>

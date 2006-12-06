@@ -222,6 +222,11 @@ struct jk_ws_service
      */
     int flush_header;
 
+    /*
+     * HTTP status sent from container.
+     */
+    int http_status;
+
     /* Uri worker map. Added for virtual host support
      */
     jk_uri_worker_map_t *uw_map;
