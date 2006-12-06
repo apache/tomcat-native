@@ -91,7 +91,7 @@
 #define DEFAULT_WORKER_TYPE         JK_AJP13_WORKER_NAME
 #define SECRET_KEY_OF_WORKER        ("secretkey")
 #define RETRIES_OF_WORKER           ("retries")
-#define STATUS_FAIL_OF_WORKER       ("retry_on_status")
+#define STATUS_FAIL_OF_WORKER       ("fail_on_status")
 
 #define DEFAULT_WORKER              JK_AJP13_WORKER_NAME
 #define WORKER_LIST_PROPERTY_NAME     ("worker.list")
@@ -1004,7 +1004,7 @@ int jk_get_max_packet_size(jk_map_t *m, const char *wname)
     return sz;
 }
 
-int jk_get_worker_retry_on_status(jk_map_t *m, const char *wname)
+int jk_get_worker_fail_on_status(jk_map_t *m, const char *wname)
 {
     char buf[1024];
 

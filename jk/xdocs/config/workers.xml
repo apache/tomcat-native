@@ -711,7 +711,7 @@ This directive can be used multiple times for the same worker.
 </p>
 </directive>
 
-<directive name="retry_on_status" default="0" required="false">
+<directive name="fail_on_status" default="0" required="false">
 Set this value to the HTTP status code that will cause a worker to fail
 if returned from Servlet contatiner. Use this directive to deal with
 cases when the servlet container can temporary return non-200 responses

@@ -193,7 +193,7 @@ const char *jk_get_worker_xml_doctype(jk_map_t *m, const char *wname, const char
 
 const char *jk_get_worker_prop_prefix(jk_map_t *m, const char *wname, const char *def);
 
-int jk_get_worker_retry_on_status(jk_map_t *m, const char *wname);
+int jk_get_worker_fail_on_status(jk_map_t *m, const char *wname);
 
 #define TC32_BRIDGE_TYPE    32
 #define TC33_BRIDGE_TYPE    33

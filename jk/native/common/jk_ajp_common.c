@@ -2081,7 +2081,7 @@ int ajp_init(jk_worker_t *pThis,
         p->max_packet_size =
             jk_get_max_packet_size(props, p->name);
 
-        p->http_status_fail = jk_get_worker_retry_on_status(props, p->name);
+        p->http_status_fail = jk_get_worker_fail_on_status(props, p->name);
 
         pThis->retries =
             jk_get_worker_retries(props, p->name,
