@@ -130,7 +130,7 @@ struct lb_worker
     int          retries;
     int          lbmethod;
     int          lblock;
-    time_t       maintain_time;
+    int          maintain_time;
     unsigned int max_packet_size;
     unsigned int sequence;
 
