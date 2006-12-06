@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Docs: New reference guide page for status worker. (rjung)
+      </update>
+      <update>
       Docs: Renaming the config dir to reference and using the title
       Reference Guide in the docs. (rjung)
       </update>

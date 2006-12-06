@@ -14,8 +14,9 @@
     </menu>
 
     <menu name="Reference Guide">
-        <item name="Workers.properties"         href="../reference/workers.html"/>
-        <item name="Uriworkermap.properties"    href="../reference/uriworkermap.html"/>
+        <item name="workers.properties"         href="../reference/workers.html"/>
+        <item name="uriworkermap.properties"    href="../reference/uriworkermap.html"/>
+        <item name="Status Worker"              href="../reference/status.html"/>
         <item name="Apache"                     href="../reference/apache.html"/>
         <item name="IIS"                        href="../reference/iis.html"/>
     </menu>

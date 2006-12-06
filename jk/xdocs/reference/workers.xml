@@ -443,7 +443,7 @@ This feature has been added in <b>jk 1.2.20</b>.
 <directive name="prefix" default="worker" required="false">
 The prefix, which will be used by the status worker
 when producing properties output (mime=prop).
-Each property keyy will be prefixed by this value.
+Each property key will be prefixed by this value.
 <p>
 This feature has been added in <b>jk 1.2.20</b>.
 </p>
