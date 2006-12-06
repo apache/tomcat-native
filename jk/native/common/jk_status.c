@@ -3111,8 +3111,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         const char *str = s->query_string;
                         char *buf = jk_pool_alloc(s->pool, sizeof(char *) * (strlen(str)+1));
                         int result = 0;
-                        int scan = 0;
-                        int len = strlen(JK_STATUS_ARG_REFRESH);
+                        size_t scan = 0;
+                        size_t len = strlen(JK_STATUS_ARG_REFRESH);
 
                         while (str[scan] != '\0') {
                             if (strncmp(&str[scan], JK_STATUS_ARG_REFRESH, len) == 0 &&
