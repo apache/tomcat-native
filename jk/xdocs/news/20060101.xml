@@ -81,7 +81,7 @@ due to a bug in the types chosen for socket arguments.
 <p>Version 1.2.16 of Tomcat Connectors 1.2.16 has not been released 
 due to a bug in the jk status worker. This version adds some features
 and a few bug fixes to the 1.2.15 version. Furthermore some worker attributes
-have been <a href="../config/workers.html">deprecated</a>.
+have been <a href="../reference/workers.html">deprecated</a>.
 </p>
 <p>
  Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.

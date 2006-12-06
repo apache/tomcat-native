@@ -33,7 +33,7 @@
 Instead it is responsible for the management of several "real" workers.
 The worker is supposed to be a load balancer if its worker type is <b>lb</b>.
 See workers <b>type</b> directive. For a complete reference of all load balancer configuration
-items, please consult the worker <a href="../config/workers.html">reference</a>.
+items, please consult the worker <a href="../reference/workers.html">reference</a>.
 The comprehensive status management features of the load balancer together with the status worker,
 makes its use an interesting option, even if only combined with a single "real" worker.
 <warn>The workers that are member of load balancer do not need to appear in the

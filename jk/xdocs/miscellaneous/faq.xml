@@ -111,7 +111,7 @@ For <b>JK 1.2.x</b>, you should read :
 </ul>
 
 <p> 
-For more detailed information, have a look at the configuration reference pages.
+For more detailed information, have a look at the Reference Guide.
 You could also try searching the mailing list archives for "JK" or look at the source.
 </p>
 </subsection>
@@ -139,7 +139,7 @@ Firewalls use to drop inactive connections and will make your web server and Tom
 <p>
 Starting with JK 1.2.0, a <b>socket_keepalive</b> property as been added to ajp13 settings, and you should take a look at 
 it in <a href="../generic_howto/workers.html">Workers HowTo</a> and
-<a href="../config/workers.html">workers.properties reference</a>.
+<a href="../reference/workers.html">workers.properties reference</a>.
 If nothing else helps, you can try <b>JkOptions +DisableReuse</b>, but this will have strong performance implications.
 </p>
 </subsection>
@@ -156,7 +156,7 @@ even if they are no more used.
 </p>
 <p>
 To close connections after some time of inactivity you can use <b>connection_pool_timeout</b>,
-for more informations refer to <a href="../config/workers.html">workers.properties reference</a>.
+for more informations refer to <a href="../reference/workers.html">workers.properties reference</a>.
 </p>
 </subsection>
 

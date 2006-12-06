@@ -64,18 +64,18 @@
       <param name="project-menu" expression="nomenu"/>
     </style>
 
-    <!-- Configuration Reference -->
-    <style basedir="config"
-           destdir="${build.dir}/${dist.name}/config"
+    <!-- Reference Guide -->
+    <style basedir="reference"
+           destdir="${build.dir}/${dist.name}/reference"
          extension=".html"
              style="style.xsl"
           excludes="project.xml"
           includes="*.xml">
       <param name="relative-path" expression=".."/>
     </style>
-    <mkdir     dir="${build.dir}/${dist.name}/config/printer"/>
-    <style basedir="config"
-           destdir="${build.dir}/${dist.name}/config/printer"
+    <mkdir     dir="${build.dir}/${dist.name}/reference/printer"/>
+    <style basedir="reference"
+           destdir="${build.dir}/${dist.name}/reference/printer"
          extension=".html"
              style="style.xsl"
           excludes="project.xml"

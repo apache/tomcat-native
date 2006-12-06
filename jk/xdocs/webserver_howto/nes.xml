@@ -404,7 +404,7 @@ For example, if we want to submit the <b>/examples</b> context to the worker nam
 
 <p>
 More informations on using and configuring workers in the <a href="../generic_howto/workers.html">Workers HowTo</a>
-and in the <a href="../config/workers.html">worker.properties configuration reference</a>.
+and in the <a href="../reference/workers.html">worker.properties configuration reference</a>.
 
 </p>
 </subsection>

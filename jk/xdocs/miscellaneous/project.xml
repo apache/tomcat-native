@@ -13,11 +13,11 @@
         <item name="Docs Home"                  href="../index.html"/>
     </menu>
 
-    <menu name="Configuration Reference">
-        <item name="Workers.properties"         href="../config/workers.html"/>
-        <item name="Uriworkermap.properties"    href="../config/uriworkermap.html"/>
-        <item name="Apache"                     href="../config/apache.html"/>
-        <item name="IIS"                        href="../config/iis.html"/>
+    <menu name="Reference Guide">
+        <item name="Workers.properties"         href="../reference/workers.html"/>
+        <item name="Uriworkermap.properties"    href="../reference/uriworkermap.html"/>
+        <item name="Apache"                     href="../reference/apache.html"/>
+        <item name="IIS"                        href="../reference/iis.html"/>
     </menu>
 
     <menu name="Generic HowTo">

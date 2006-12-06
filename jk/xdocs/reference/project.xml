@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<project name="Apache Tomcat Connector Documentation - Configuration Reference"
+<project name="Apache Tomcat Connector Documentation - Reference Guide"
         href="http://tomcat.apache.org/">
 
-    <title>The Apache Tomcat Connector - Configuration Reference</title>
+    <title>The Apache Tomcat Connector - Reference Guide</title>
 
     <logo href="/images/tomcat.gif">
-      The Apache Tomcat Connector - Configuration Reference
+      The Apache Tomcat Connector - Reference Guide
     </logo>
 <body>
 
@@ -13,11 +13,11 @@
         <item name="Docs Home"                  href="../index.html"/>
     </menu>
 
-    <menu name="Configuration Reference">
-        <item name="Workers.properties"         href="../config/workers.html"/>
-        <item name="Uriworkermap.properties"    href="../config/uriworkermap.html"/>
-        <item name="Apache"                     href="../config/apache.html"/>
-        <item name="IIS"                        href="../config/iis.html"/>
+    <menu name="Reference Guide">
+        <item name="Workers.properties"         href="../reference/workers.html"/>
+        <item name="Uriworkermap.properties"    href="../reference/uriworkermap.html"/>
+        <item name="Apache"                     href="../reference/apache.html"/>
+        <item name="IIS"                        href="../reference/iis.html"/>
     </menu>
 
     <menu name="Generic HowTo">

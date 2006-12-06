@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Docs: Renaming the config dir to reference and using the title
+      Reference Guide in the docs. (rjung)
+      </update>
+      <update>
       Added retry_on_status for workers directive. (mturk)
       </update>
       <update>

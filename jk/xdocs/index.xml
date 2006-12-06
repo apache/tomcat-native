@@ -52,10 +52,10 @@ of Tomcat Connectors 1.2.19 Stable.
 </ul>
 </section>
 
-<section name="Configuration Reference">
+<section name="Reference Guide">
 <br />
 <ul>
-<li><a href="config/workers.html"><b>workers.properties</b></a>
+<li><a href="reference/workers.html"><b>workers.properties</b></a>
 <p>A Tomcat worker is a Tomcat instance that is waiting to execute servlets
 on behalf of some web server. For example, we can have a web server such as Apache
 forwarding servlet requests to a Tomcat process (the worker) running behind it. 
@@ -65,20 +65,20 @@ directives.
 </p>
 </li>
 
-<li><a href="config/uriworkermap.html"><b>uriworkermap.properties</b></a>
+<li><a href="reference/uriworkermap.html"><b>uriworkermap.properties</b></a>
 <p>
 The forwarding of requests from the web server to tomcat gets configured by defining mapping rules.
 The so-called <b>uriworkermap</b> file is a mechanism of defining those rules.
 </p>
 </li>
 
-<li><a href="config/apache.html"><b>Apache</b></a>
+<li><a href="reference/apache.html"><b>Apache</b></a>
 <p>This page contains detailed description of all directives related to
 Apache web server. 
 </p>
 </li>
 
-<li><a href="config/iis.html"><b>IIS</b></a>
+<li><a href="reference/iis.html"><b>IIS</b></a>
 <p>This page contains detailed description of all IIS directives.
 </p>
 </li>

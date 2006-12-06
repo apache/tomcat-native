@@ -43,10 +43,10 @@ JSP requests to Tomcat (and this way, serve them to clients).
 <p>
 It is recommended that you also read the <a href="workers.html">Workers HowTo</a> document
 to learn how to setup the working entities between your web server and Tomcat Engines.
-For more detailed configuration information consult the reference documentation for
-<a href="../config/worker.html">workers.properties</a>,
-<a href="../config/uriworkermap.html">uriworkermap</a>
-and <a href="../config/iis.html">IIS</a>.
+For more detailed configuration information consult the Reference Guide for
+<a href="../reference/worker.html">workers.properties</a>,
+<a href="../reference/uriworkermap.html">uriworkermap</a>
+and <a href="../reference/iis.html">IIS</a>.
 </p>
 
 
@@ -164,11 +164,11 @@ The Tomcat redirector requires three entities:
 <b>isapi_redirect.dll</b> - The IIS server plugin, either obtain a pre-built DLL or build it yourself (see the build section).
 </li>
 <li>
-<b><a href="../config/workers.html">workers.properties</a></b> - A file that describes the host(s) and port(s) used by the workers (Tomcat processes). 
+<b><a href="../reference/workers.html">workers.properties</a></b> - A file that describes the host(s) and port(s) used by the workers (Tomcat processes). 
 A sample workers.properties can be found under the conf directory.
 </li>
 <li>
-<b><a href="../config/uriworkermap.html">uriworkermap.properties</a></b> - A file that maps URL-Path patterns to workers. 
+<b><a href="../reference/uriworkermap.html">uriworkermap.properties</a></b> - A file that maps URL-Path patterns to workers. 
 A sample uriworkermap.properties can be found under the conf directory as well.
 </li>
 </ul>
@@ -426,7 +426,7 @@ As you can see the <b>examples</b> context is served by <b>worker1</b> while the
 
 <p>
 More informations on using and configuring workers in the <a href="../generic_howto/workers.html">Workers HowTo</a>
-and in the <a href="../config/workers.html">worker.properties configuration reference</a>.
+and in the <a href="../reference/workers.html">worker.properties configuration reference</a>.
 </p>
 
 </subsection>
