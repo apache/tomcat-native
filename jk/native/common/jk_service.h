@@ -225,7 +225,7 @@ struct jk_ws_service
     /*
      * HTTP status sent from container.
      */
-    int http_status;
+    int http_response_status;
 
     /* Uri worker map. Added for virtual host support
      */

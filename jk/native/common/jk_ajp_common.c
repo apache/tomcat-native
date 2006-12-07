@@ -1398,7 +1398,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                               res.num_headers);
             if (r->flush && r->flush_header)
                 r->flush(r);
-            r->http_status = res.status;
+            r->http_response_status = res.status;
         }
         return JK_AJP13_SEND_HEADERS;
 
@@ -1627,7 +1627,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
         }
         else if (JK_AJP13_SEND_HEADERS == rc) {
             if (p->worker->http_status_fail &&
-                (p->worker->http_status_fail == s->http_status)) {
+                (p->worker->http_status_fail == s->http_response_status)) {
                 JK_TRACE_EXIT(l);
                 return JK_STATUS_ERROR;
             }
