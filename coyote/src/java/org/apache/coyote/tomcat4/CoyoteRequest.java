@@ -2077,6 +2077,10 @@ public class CoyoteRequest
                 }
             }
 
+            if (!isAlpha(language) || !isAlpha(country) || !isAlpha(variant)) {
+                continue;
+            }
+
             // Add a new Locale to the list of Locales for this quality level
             Locale locale = new Locale(language, country, variant);
             Double key = new Double(-quality);  // Reverse the order
@@ -2104,5 +2108,13 @@ public class CoyoteRequest
 
     }
 
-
+    protected static final boolean isAlpha(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
