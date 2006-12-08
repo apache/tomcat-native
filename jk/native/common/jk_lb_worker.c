@@ -840,12 +840,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 rec->s->busy++;
                 if (rec->s->busy > rec->s->max_busy)
                     rec->s->max_busy = rec->s->busy;
-                if (p->worker->lbmethod == JK_LB_METHOD_REQUESTS)
-                    rec->s->lb_value += rec->s->lb_mult;
-                else if (p->worker->lbmethod == JK_LB_METHOD_SESSIONS &&
-                         !sessionid)
-                    rec->s->lb_value += rec->s->lb_mult;
-                else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS)
+                if ( (p->worker->lbmethod == JK_LB_METHOD_REQUESTS) ||
+                     (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS) ||
+                     (p->worker->lbmethod == JK_LB_METHOD_SESSIONS &&
+                      !sessionid) )
                     rec->s->lb_value += rec->s->lb_mult;
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_unlock();
