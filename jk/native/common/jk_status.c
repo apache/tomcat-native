@@ -1,4 +1,3 @@
-// &amp; encoding+// versions with show (hide?), hr
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
@@ -222,12 +221,12 @@
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
-                                           "<td>%u</td>" \
-                                           "<td>%u</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%d</td>" \
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
-                                           "<td>%u</td>" \
+                                           "<td>%d</td>" \
                                            "</tr>\n"
 
 typedef struct status_worker status_worker_t;
@@ -444,13 +443,6 @@ static void jk_print_xml_att_int(jk_ws_service_t *s,
     jk_printf(s, "%*s%s=\"%d\"\n", indentation, "", key, value);
 }
 
-static void jk_print_xml_att_uint(jk_ws_service_t *s,
-                                  int indentation,
-                                  const char *key, unsigned value)
-{
-    jk_printf(s, "%*s%s=\"%u\"\n", indentation, "", key, value);
-}
-
 static void jk_print_xml_att_uint32(jk_ws_service_t *s,
                                     int indentation,
                                     const char *key, jk_uint32_t value)
@@ -486,18 +478,6 @@ static void jk_print_prop_att_int(jk_ws_service_t *s, status_worker_t *w,
     }
     else {
         jk_printf(s, "%s.%s=%d\n", w->prefix, key, value);
-    }
-}
-
-static void jk_print_prop_att_uint(jk_ws_service_t *s, status_worker_t *w,
-                                   const char *name,
-                                   const char *key, unsigned value)
-{
-    if (name) {
-        jk_printf(s, "%s.%s.%s=%u\n", w->prefix, name, key, value);
-    }
-    else {
-        jk_printf(s, "%s.%s=%u\n", w->prefix, key, value);
     }
 }
 
@@ -1394,9 +1374,9 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_print_xml_att_uint32(s, 8, "client_errors", wr->s->client_errors);
                 jk_print_xml_att_uint64(s, 8, "transferred", wr->s->transferred);
                 jk_print_xml_att_uint64(s, 8, "read", wr->s->readed);
-                jk_print_xml_att_uint(s, 8, "busy", wr->s->busy);
-                jk_print_xml_att_uint(s, 8, "max_busy", wr->s->max_busy);
-                jk_print_xml_att_uint(s, 8, "time_to_recover", rs < 0 ? 0 : rs);
+                jk_print_xml_att_int(s, 8, "busy", wr->s->busy);
+                jk_print_xml_att_int(s, 8, "max_busy", wr->s->max_busy);
+                jk_print_xml_att_int(s, 8, "time_to_recover", rs < 0 ? 0 : rs);
                 /* Terminate the tag */
                 jk_print_xml_stop_elt(s, 6, 1);
 
@@ -1423,9 +1403,9 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_printf(s, " client_errors=%" JK_UINT32_T_FMT, wr->s->client_errors);
                 jk_printf(s, " transferred=%" JK_UINT64_T_FMT, wr->s->transferred);
                 jk_printf(s, " read=%" JK_UINT64_T_FMT, wr->s->readed);
-                jk_printf(s, " busy=%u", wr->s->busy);
-                jk_printf(s, " max_busy=%u", wr->s->max_busy);
-                jk_printf(s, " time_to_recover=%u", rs < 0 ? 0 : rs);
+                jk_printf(s, " busy=%d", wr->s->busy);
+                jk_printf(s, " max_busy=%d", wr->s->max_busy);
+                jk_printf(s, " time_to_recover=%d", rs < 0 ? 0 : rs);
                 jk_puts(s, "\n");
 
             }
@@ -1450,9 +1430,9 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_print_prop_att_uint32(s, w, wr->s->name, "client_errors", wr->s->client_errors);
                 jk_print_prop_att_uint64(s, w, wr->s->name, "transferred", wr->s->transferred);
                 jk_print_prop_att_uint64(s, w, wr->s->name, "read", wr->s->readed);
-                jk_print_prop_att_uint(s, w, wr->s->name, "busy", wr->s->busy);
-                jk_print_prop_att_uint(s, w, wr->s->name, "max_busy", wr->s->max_busy);
-                jk_print_prop_att_uint(s, w, wr->s->name, "time_to_recover", rs < 0 ? 0 : rs);
+                jk_print_prop_att_int(s, w, wr->s->name, "busy", wr->s->busy);
+                jk_print_prop_att_int(s, w, wr->s->name, "max_busy", wr->s->max_busy);
+                jk_print_prop_att_int(s, w, wr->s->name, "time_to_recover", rs < 0 ? 0 : rs);
 
             }
         }
@@ -2028,10 +2008,10 @@ static int commit_member(jk_ws_service_t *s,
     i = status_get_int(p, JK_STATUS_ARG_LBM_ACTIVATION,
                        wr->s->activation, l);
     if (i != wr->s->activation && i > 0 && i<= JK_LB_ACTIVATION_MAX) {
+        wr->s->activation = i;
         jk_log(l, JK_LOG_INFO,
                "setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
                wr->s->name, lb_name, jk_lb_get_activation(wr, l));
-        wr->s->activation = i;
         rc |= 1;
     }
     i = status_get_int(p, JK_STATUS_ARG_LBM_FACTOR,
@@ -2157,10 +2137,10 @@ static void commit_all_members(jk_ws_service_t *s,
             if (!strcmp(attribute, JK_STATUS_ARG_LBM_ACTIVATION)) {
                 i = status_get_int(p, vname, wr->s->activation, l);
                 if (i != wr->s->activation && i > 0 && i<= JK_LB_ACTIVATION_MAX) {
+                    wr->s->activation = i;
                     jk_log(l, JK_LOG_INFO,
                            "setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
                            wr->s->name, name, jk_lb_get_activation(wr, l));
-                    wr->s->activation = i;
                     rc = 1;
                 }
             }
