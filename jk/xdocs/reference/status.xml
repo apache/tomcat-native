@@ -35,6 +35,9 @@ tries to explain the less obvious features of the status worker. We also will gi
 complete coverage of the various request parameters and their meaning, so that you can
 include the status worker in your automation scripts. 
 </p>
+<p>
+The documentation of the status worker starts with <b>jk 1.2.20</b>
+</p>
 </section>
 
 <section name="Usage Patterns">
@@ -299,6 +302,13 @@ can be found.
 
 <section name="Request Parameters">
 <br/>
+<p>
+This section should help you building automation scripts based on the jk status
+management interface. This interface is still not stable, we expect further
+improvements in the next releases. It is well possible, that the request parameters
+might change in an incompatible way. So be prepared to change you scripts when
+updating to future versions.
+</p>
 <subsection name="Actions">
 <br/>
 <p>
