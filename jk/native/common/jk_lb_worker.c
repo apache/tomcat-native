@@ -44,36 +44,36 @@
 #define JK_WORKER_USABLE_STICKY(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->activation != JK_LB_ACTIVATION_STOPPED)
 
 static const char *lb_locking_type[] = {
-    "unknown",
     JK_LB_LOCK_TEXT_OPTIMISTIC,
     JK_LB_LOCK_TEXT_PESSIMISTIC,
+    "unknown",
     NULL
 };
 
 static const char *lb_method_type[] = {
-    "unknown",
     JK_LB_METHOD_TEXT_REQUESTS,
     JK_LB_METHOD_TEXT_TRAFFIC,
     JK_LB_METHOD_TEXT_BUSYNESS,
     JK_LB_METHOD_TEXT_SESSIONS,
+    "unknown",
     NULL
 };
 
 static const char *lb_state_type[] = {
-    "unknown",
     JK_LB_STATE_TEXT_NA,
     JK_LB_STATE_TEXT_OK,
     JK_LB_STATE_TEXT_RECOVER,
     JK_LB_STATE_TEXT_BUSY,
     JK_LB_STATE_TEXT_ERROR,
+    "unknown",
     NULL
 };
 
 static const char *lb_activation_type[] = {
-    "unknown",
     JK_LB_ACTIVATION_TEXT_ACTIVE,
     JK_LB_ACTIVATION_TEXT_DISABLED,
     JK_LB_ACTIVATION_TEXT_STOPPED,
+    "unknown",
     NULL
 };
 
@@ -115,10 +115,40 @@ const char *jk_lb_get_lock(lb_worker_t *p, jk_logger_t *l)
     return lb_locking_type[p->lblock];
 }
 
+/* Return the int representation of the lb lock type */
+int jk_lb_get_lock_code(const char *v)
+{
+    if (!v)
+        return JK_LB_LOCK_DEF;
+    else if  (*v == 'o' || *v == 'O' || *v == '0')
+        return JK_LB_LOCK_OPTIMISTIC;
+    else if  (*v == 'p' || *v == 'P' || *v == '1')
+        return JK_LB_LOCK_PESSIMISTIC;
+    else
+        return JK_LB_LOCK_DEF;
+}
+
 /* Return the string representation of the lb method type */
 const char *jk_lb_get_method(lb_worker_t *p, jk_logger_t *l)
 {
     return lb_method_type[p->lbmethod];
+}
+
+/* Return the int representation of the lb lock type */
+int jk_lb_get_method_code(const char *v)
+{
+    if (!v)
+        return JK_LB_METHOD_DEF;
+    else if  (*v == 'r' || *v == 'R' || *v == '0')
+        return JK_LB_METHOD_REQUESTS;
+    else if  (*v == 't' || *v == 'T' || *v == '1')
+        return JK_LB_METHOD_TRAFFIC;
+    else if  (*v == 'b' || *v == 'B' || *v == '2')
+        return JK_LB_METHOD_BUSYNESS;
+    else if  (*v == 's' || *v == 'S' || *v == '3')
+        return JK_LB_METHOD_SESSIONS;
+    else
+        return JK_LB_METHOD_DEF;
 }
 
 /* Return the string representation of the balance worker state */
@@ -127,10 +157,43 @@ const char *jk_lb_get_state(worker_record_t *p, jk_logger_t *l)
     return lb_state_type[p->s->state];
 }
 
+/* Return the int representation of the lb lock type */
+int jk_lb_get_state_code(const char *v)
+{
+    if (!v)
+        return JK_LB_STATE_DEF;
+    else if  (*v == 'n' || *v == 'N' || *v == '0')
+        return JK_LB_STATE_NA;
+    else if  (*v == 'o' || *v == 'O' || *v == '1')
+        return JK_LB_STATE_OK;
+    else if  (*v == 'r' || *v == 'R' || *v == '2')
+        return JK_LB_STATE_RECOVER;
+    else if  (*v == 'b' || *v == 'B' || *v == '3')
+        return JK_LB_STATE_BUSY;
+    else if  (*v == 'e' || *v == 'E' || *v == '4')
+        return JK_LB_STATE_ERROR;
+    else
+        return JK_LB_STATE_DEF;
+}
+
 /* Return the string representation of the balance worker activation */
 const char *jk_lb_get_activation(worker_record_t *p, jk_logger_t *l)
 {
     return lb_activation_type[p->s->activation];
+}
+
+int jk_lb_get_activation_code(const char *v)
+{
+    if (!v)
+        return JK_LB_ACTIVATION_DEF;
+    else if (*v == 'a' || *v == 'A' || *v == '0')
+        return JK_LB_ACTIVATION_ACTIVE;
+    else if (*v == 'd' || *v == 'D' || *v == '1')
+        return JK_LB_ACTIVATION_DISABLED;
+    else if (*v == 's' || *v == 'S' || *v == '2')
+        return JK_LB_ACTIVATION_STOPPED;
+    else
+        return JK_LB_ACTIVATION_DEF;
 }
 
 /* Update the load multipliers wrt. lb_factor */

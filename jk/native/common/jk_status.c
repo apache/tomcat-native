@@ -1894,6 +1894,7 @@ static void commit_worker(jk_ws_service_t *s,
 {
     const char *name = NULL;
     lb_worker_t *lb = NULL;
+    const char *arg;
     int i;
 
     JK_TRACE_ENTER(l);
@@ -1952,21 +1953,23 @@ static void commit_worker(jk_ws_service_t *s,
                name, i);
         lb->sticky_session_force = i;
     }
-    i = status_get_int(p, JK_STATUS_ARG_LB_METHOD,
-                       lb->lbmethod, l);
-    if (i != lb->lbmethod && i > 0 && i <= JK_LB_METHOD_MAX) {
-        jk_log(l, JK_LOG_INFO,
-               "setting 'method' for lb worker '%s' to '%i'",
-               name, i);
-        lb->lbmethod = i;
+    if (status_get_string(p, JK_STATUS_ARG_LB_METHOD, NULL, &arg, l) == JK_TRUE) {
+        i = jk_lb_get_method_code(arg);
+        if (i != lb->lbmethod && i >= 0 && i <= JK_LB_METHOD_MAX) {
+            lb->lbmethod = i;
+            jk_log(l, JK_LOG_INFO,
+                   "setting 'method' for lb worker '%s' to '%s'",
+                   name, jk_lb_get_method(lb, l));
+        }
     }
-    i = status_get_int(p, JK_STATUS_ARG_LB_LOCK,
-                       lb->lblock, l);
-    if (i != lb->lblock && i > 0 && i <= JK_LB_LOCK_MAX) {
-        jk_log(l, JK_LOG_INFO,
-               "setting 'lock' for lb worker '%s' to '%i'",
-               name, i);
-        lb->lblock = i;
+    if (status_get_string(p, JK_STATUS_ARG_LB_LOCK, NULL, &arg, l) == JK_TRUE) {
+        i = jk_lb_get_lock_code(arg);
+        if (i != lb->lblock && i >= 0 && i <= JK_LB_LOCK_MAX) {
+            lb->lblock = i;
+            jk_log(l, JK_LOG_INFO,
+                   "setting 'lock' for lb worker '%s' to '%s'",
+                   name, jk_lb_get_lock(lb, l));
+        }
     }
     lb->sequence++;
     jk_lb_push(lb, l);
@@ -1989,14 +1992,15 @@ static int commit_member(jk_ws_service_t *s,
                "committing changes for sub worker '%s' of lb worker '%s'",
                wr->s->name, lb_name);
 
-    i = status_get_int(p, JK_STATUS_ARG_LBM_ACTIVATION,
-                       wr->s->activation, l);
-    if (i != wr->s->activation && i > 0 && i<= JK_LB_ACTIVATION_MAX) {
-        wr->s->activation = i;
-        jk_log(l, JK_LOG_INFO,
-               "setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
-               wr->s->name, lb_name, jk_lb_get_activation(wr, l));
-        rc |= 1;
+    if (status_get_string(p, JK_STATUS_ARG_LBM_ACTIVATION, NULL, &arg, l) == JK_TRUE) {
+        i = jk_lb_get_activation_code(arg);
+        if (i != wr->s->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
+            wr->s->activation = i;
+            jk_log(l, JK_LOG_INFO,
+                   "setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
+                   wr->s->name, lb_name, jk_lb_get_activation(wr, l));
+            rc |= 1;
+        }
     }
     i = status_get_int(p, JK_STATUS_ARG_LBM_FACTOR,
                        wr->s->lb_factor, l);
@@ -2118,17 +2122,7 @@ static void commit_all_members(jk_ws_service_t *s,
             worker_record_t *wr = &(lb->lb_workers[j]);
             snprintf(vname, 32-1, "" JK_STATUS_ARG_MULT_VALUE_BASE "%d", j);
 
-            if (!strcmp(attribute, JK_STATUS_ARG_LBM_ACTIVATION)) {
-                i = status_get_int(p, vname, wr->s->activation, l);
-                if (i != wr->s->activation && i > 0 && i<= JK_LB_ACTIVATION_MAX) {
-                    wr->s->activation = i;
-                    jk_log(l, JK_LOG_INFO,
-                           "setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
-                           wr->s->name, name, jk_lb_get_activation(wr, l));
-                    rc = 1;
-                }
-            }
-            else if (!strcmp(attribute, JK_STATUS_ARG_LBM_FACTOR)) {
+            if (!strcmp(attribute, JK_STATUS_ARG_LBM_FACTOR)) {
                 i = status_get_int(p, vname, wr->s->lb_factor, l);
                 if (i != wr->s->lb_factor && i > 0) {
                     jk_log(l, JK_LOG_INFO,
@@ -2149,7 +2143,19 @@ static void commit_all_members(jk_ws_service_t *s,
             }
             else {
                 int rv = status_get_string(p, vname, NULL, &arg, l);
-                if (!strcmp(attribute, JK_STATUS_ARG_LBM_ROUTE)) {
+                if (!strcmp(attribute, JK_STATUS_ARG_LBM_ACTIVATION)) {
+                    if (rv == JK_TRUE) {
+                        i = jk_lb_get_activation_code(arg);
+                        if (i != wr->s->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
+                            wr->s->activation = i;
+                            jk_log(l, JK_LOG_INFO,
+                                   "setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
+                                   wr->s->name, name, jk_lb_get_activation(wr, l));
+                            rc = 1;
+                        }
+                    }
+                }
+                else if (!strcmp(attribute, JK_STATUS_ARG_LBM_ROUTE)) {
                     if (rv == JK_TRUE) {
                         if (strncmp(wr->s->route, arg, JK_SHM_STR_SIZ)) {
                             jk_log(l, JK_LOG_INFO,

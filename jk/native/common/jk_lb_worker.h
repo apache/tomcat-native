@@ -39,10 +39,10 @@ extern "C"
 #define JK_LB_WORKER_TYPE     (5)
 #define JK_LB_DEF_DOMAIN_NAME ("unknown")
 
-#define JK_LB_METHOD_REQUESTS          (1)
-#define JK_LB_METHOD_TRAFFIC           (2)
-#define JK_LB_METHOD_BUSYNESS          (3)
-#define JK_LB_METHOD_SESSIONS          (4)
+#define JK_LB_METHOD_REQUESTS          (0)
+#define JK_LB_METHOD_TRAFFIC           (1)
+#define JK_LB_METHOD_BUSYNESS          (2)
+#define JK_LB_METHOD_SESSIONS          (3)
 #define JK_LB_METHOD_DEF               (JK_LB_METHOD_REQUESTS)
 #define JK_LB_METHOD_MAX               (JK_LB_METHOD_SESSIONS)
 #define JK_LB_METHOD_TEXT_REQUESTS     ("Request")
@@ -50,30 +50,35 @@ extern "C"
 #define JK_LB_METHOD_TEXT_BUSYNESS     ("Busyness")
 #define JK_LB_METHOD_TEXT_SESSIONS     ("Sessions")
 #define JK_LB_METHOD_TEXT_DEF          (JK_LB_METHOD_TEXT_REQUESTS)
-#define JK_LB_LOCK_OPTIMISTIC          (1)
-#define JK_LB_LOCK_PESSIMISTIC         (2)
+#define JK_LB_LOCK_OPTIMISTIC          (0)
+#define JK_LB_LOCK_PESSIMISTIC         (1)
 #define JK_LB_LOCK_DEF                 (JK_LB_LOCK_OPTIMISTIC)
 #define JK_LB_LOCK_MAX                 (JK_LB_LOCK_PESSIMISTIC)
 #define JK_LB_LOCK_TEXT_OPTIMISTIC     ("Optimistic")
 #define JK_LB_LOCK_TEXT_PESSIMISTIC    ("Pessimistic")
 #define JK_LB_LOCK_TEXT_DEF            (JK_LB_LOCK_TEXT_OPTIMISTIC)
-#define JK_LB_STATE_NA                 (1)
-#define JK_LB_STATE_OK                 (2)
-#define JK_LB_STATE_RECOVER            (3)
-#define JK_LB_STATE_BUSY               (4)
-#define JK_LB_STATE_ERROR              (5)
+#define JK_LB_STATE_NA                 (0)
+#define JK_LB_STATE_OK                 (1)
+#define JK_LB_STATE_RECOVER            (2)
+#define JK_LB_STATE_BUSY               (3)
+#define JK_LB_STATE_ERROR              (4)
+#define JK_LB_STATE_DEF                (JK_LB_STATE_NA)
 #define JK_LB_STATE_TEXT_NA            ("N/A")
 #define JK_LB_STATE_TEXT_OK            ("OK")
 #define JK_LB_STATE_TEXT_RECOVER       ("REC")
 #define JK_LB_STATE_TEXT_BUSY          ("BSY")
 #define JK_LB_STATE_TEXT_ERROR         ("ERR")
-#define JK_LB_ACTIVATION_ACTIVE        (1)
-#define JK_LB_ACTIVATION_DISABLED      (2)
-#define JK_LB_ACTIVATION_STOPPED       (3)
+#define JK_LB_STATE_TEXT_MAX           (JK_LB_STATE_ERROR)
+#define JK_LB_STATE_TEXT_DEF           (JK_LB_STATE_TEXT_NA)
+#define JK_LB_ACTIVATION_ACTIVE        (0)
+#define JK_LB_ACTIVATION_DISABLED      (1)
+#define JK_LB_ACTIVATION_STOPPED       (2)
+#define JK_LB_ACTIVATION_DEF           (JK_LB_ACTIVATION_ACTIVE)
 #define JK_LB_ACTIVATION_MAX           (JK_LB_ACTIVATION_STOPPED)
 #define JK_LB_ACTIVATION_TEXT_ACTIVE   ("ACT")
 #define JK_LB_ACTIVATION_TEXT_DISABLED ("DIS")
 #define JK_LB_ACTIVATION_TEXT_STOPPED  ("STP")
+#define JK_LB_ACTIVATION_TEXT_DEF      (JK_LB_ACTIVATION_TEXT_ACTIVE)
 
 #define JK_LB_UINT64_STR_SZ          (21)
 #define JK_LB_NOTES_COUNT            (9)
@@ -149,9 +154,13 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
                                 const char *name, jk_logger_t *l);
 
 const char *jk_lb_get_lock(lb_worker_t *p, jk_logger_t *l);
+int jk_lb_get_lock_code(const char *v);
 const char *jk_lb_get_method(lb_worker_t *p, jk_logger_t *l);
+int jk_lb_get_method_code(const char *v);
 const char *jk_lb_get_state(worker_record_t *p, jk_logger_t *l);
+int jk_lb_get_state_code(const char *v);
 const char *jk_lb_get_activation(worker_record_t *p, jk_logger_t *l);
+int jk_lb_get_activation_code(const char *v);
 void reset_lb_values(lb_worker_t *p, jk_logger_t *l);
 void jk_lb_pull(lb_worker_t * p, jk_logger_t *l);
 void jk_lb_push(lb_worker_t * p, jk_logger_t *l);

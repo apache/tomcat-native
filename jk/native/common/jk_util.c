@@ -897,21 +897,14 @@ int jk_get_worker_activation(jk_map_t *m, const char *wname)
     MAKE_WORKER_PARAM(ACTIVATION_OF_WORKER);
     v = jk_map_get_string(m, buf, NULL);
     if (v) {
-        if (*v == 'a' || *v == 'A')
-            return JK_LB_ACTIVATION_ACTIVE;
-        else if (*v == 's' || *v == 'S')
-            return JK_LB_ACTIVATION_STOPPED;
-        else if (*v == 'd' || *v == 'D')
-            return JK_LB_ACTIVATION_DISABLED;
-        else
-            return JK_LB_ACTIVATION_ACTIVE;
+        return jk_lb_get_activation_code(v);
     }
     else if (jk_get_is_worker_stopped(m, wname))
         return JK_LB_ACTIVATION_STOPPED;
     else if (jk_get_is_worker_disabled(m, wname))
         return JK_LB_ACTIVATION_DISABLED;
     else
-        return JK_LB_ACTIVATION_ACTIVE;
+        return JK_LB_ACTIVATION_DEF;
 }
 
 int jk_get_lb_factor(jk_map_t *m, const char *wname)
@@ -978,18 +971,7 @@ int jk_get_lb_method(jk_map_t *m, const char *wname)
 
     MAKE_WORKER_PARAM(METHOD_OF_WORKER);
     v = jk_map_get_string(m, buf, NULL);
-    if (!v)
-        return JK_LB_METHOD_DEF;
-    else if  (*v == 'r' || *v == 'R' || *v == '0')
-        return JK_LB_METHOD_REQUESTS;
-    else if  (*v == 't' || *v == 'T' || *v == '1')
-        return JK_LB_METHOD_TRAFFIC;
-    else if  (*v == 'b' || *v == 'B' || *v == '2')
-        return JK_LB_METHOD_BUSYNESS;
-    else if  (*v == 's' || *v == 'S' || *v == '3')
-        return JK_LB_METHOD_SESSIONS;
-    else
-        return JK_LB_METHOD_DEF;
+    return jk_lb_get_method_code(v);
 }
 
 int jk_get_lb_lock(jk_map_t *m, const char *wname)
@@ -1002,14 +984,7 @@ int jk_get_lb_lock(jk_map_t *m, const char *wname)
 
     MAKE_WORKER_PARAM(LOCK_OF_WORKER);
     v = jk_map_get_string(m, buf, NULL);
-    if (!v)
-        return JK_LB_LOCK_DEF;
-    else if  (*v == 'o' || *v == 'O' || *v == '0')
-        return JK_LB_LOCK_OPTIMISTIC;
-    else if  (*v == 'p' || *v == 'P' || *v == '1')
-        return JK_LB_LOCK_PESSIMISTIC;
-    else
-        return JK_LB_LOCK_DEF;
+    return jk_lb_get_lock_code(v);
 }
 
 int jk_get_max_packet_size(jk_map_t *m, const char *wname)
