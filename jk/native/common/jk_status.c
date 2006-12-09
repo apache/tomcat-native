@@ -2433,7 +2433,7 @@ static void list_workers_type(jk_ws_service_t *s,
                 jk_printf(s, "Balancer Workers: count=%d\n", count);
             }
             else if (mime == JK_STATUS_MIME_PROP) {
-                jk_print_prop_att_int(s, w, NULL, "lb_cnt", count);
+                jk_print_prop_att_int(s, w, NULL, "lb_count", count);
             }
             else {
                 jk_printf(s, "<hr/><h2>Listing Load Balancing Worker%s (%d Worker%s) [",
@@ -2465,7 +2465,7 @@ static void list_workers_type(jk_ws_service_t *s,
                 jk_printf(s, "AJP Workers: count=%d\n", count);
             }
             else if (mime == JK_STATUS_MIME_PROP) {
-                jk_print_prop_att_int(s, w, NULL, "ajp_cnt", count);
+                jk_print_prop_att_int(s, w, NULL, "ajp_count", count);
             }
             else {
                 jk_printf(s, "<hr/><h2>Listing AJP Worker%s (%d Worker%s) [",
@@ -3228,18 +3228,18 @@ static int JK_METHOD service(jk_endpoint_t *e,
         else if (mime == JK_STATUS_MIME_XML) {
             jk_print_xml_start_elt(s, w, 2, 0, "result");
             jk_print_xml_att_string(s, 4, "type", "ERROR");
-            jk_print_xml_att_string(s, 4, "msg", err);
+            jk_print_xml_att_string(s, 4, "message", err);
             jk_print_xml_stop_elt(s, 2, 1);
         }
         else if (mime == JK_STATUS_MIME_TXT) {
             jk_puts(s, "Result:");
             jk_printf(s, " type=%s", "ERROR");
-            jk_printf(s, " msg=\"%s\"", err);
+            jk_printf(s, " message=\"%s\"", err);
             jk_puts(s, "\n");
         }
         else {
             jk_print_prop_att_string(s, w, "result", "type", "ERROR");
-            jk_print_prop_att_string(s, w, "result", "msg", err);
+            jk_print_prop_att_string(s, w, "result", "message", err);
         }
     }
     else {
@@ -3249,18 +3249,18 @@ static int JK_METHOD service(jk_endpoint_t *e,
         else if (mime == JK_STATUS_MIME_XML) {
             jk_print_xml_start_elt(s, w, 2, 0, "result");
             jk_print_xml_att_string(s, 4, "type", "OK");
-            jk_print_xml_att_string(s, 4, "msg", "Action finished");
+            jk_print_xml_att_string(s, 4, "message", "Action finished");
             jk_print_xml_stop_elt(s, 2, 1);
         }
         else if (mime == JK_STATUS_MIME_TXT) {
             jk_puts(s, "Result:");
             jk_printf(s, " type=%s", "OK");
-            jk_printf(s, " msg=\"%s\"", "Action finished");
+            jk_printf(s, " message=\"%s\"", "Action finished");
             jk_puts(s, "\n");
         }
         else {
             jk_print_prop_att_string(s, w, "result", "type", "OK");
-            jk_print_prop_att_string(s, w, "result", "msg", "Action finished");
+            jk_print_prop_att_string(s, w, "result", "message", "Action finished");
         }
     }
     if (mime == JK_STATUS_MIME_HTML) {
