@@ -689,14 +689,6 @@ static const char *status_worker_type(int t)
 }
 
 
-static const char *status_val_bool(int v)
-{
-    if (v == 0)
-        return "False";
-    else
-        return "True";
-}
-
 static int status_get_string(status_endpoint_t *p,
                              const char *param,
                              const char *def,
@@ -742,19 +734,11 @@ static int status_get_bool(status_endpoint_t *p,
                            jk_logger_t *l)
 {
     const char *arg;
-    int rv = def;
 
     if (status_get_string(p, param, NULL, &arg, l) == JK_TRUE) {
-        if (strcasecmp(arg, "on") == 0 ||
-            strcasecmp(arg, "true") == 0 ||
-            strcasecmp(arg, "1") == 0)
-            rv = 1;
-        else if (strcasecmp(arg, "off") == 0 ||
-            strcasecmp(arg, "false") == 0 ||
-            strcasecmp(arg, "0") == 0)
-            rv = 0;
+        return jk_get_bool_code(arg, def);
     }
-    return rv;
+    return def;
 }
 
 const char *status_cmd_text(int cmd)
@@ -1213,8 +1197,8 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_puts(s, "<table>" JK_STATUS_SHOW_LB_HEAD);
         jk_printf(s, JK_STATUS_SHOW_LB_ROW,
                   status_worker_type(JK_LB_WORKER_TYPE),
-                  status_val_bool(lb->sticky_session),
-                  status_val_bool(lb->sticky_session_force),
+                  jk_get_bool(lb->sticky_session),
+                  jk_get_bool(lb->sticky_session_force),
                   lb->retries,
                   jk_lb_get_method(lb, l),
                   jk_lb_get_lock(lb, l),
@@ -1237,8 +1221,8 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_print_xml_start_elt(s, w, 2, 0, "balancer");
         jk_print_xml_att_string(s, 4, "name", name);
         jk_print_xml_att_string(s, 4, "type", status_worker_type(JK_LB_WORKER_TYPE));
-        jk_print_xml_att_string(s, 4, "sticky_session", status_val_bool(lb->sticky_session));
-        jk_print_xml_att_string(s, 4, "sticky_session_force", status_val_bool(lb->sticky_session_force));
+        jk_print_xml_att_string(s, 4, "sticky_session", jk_get_bool(lb->sticky_session));
+        jk_print_xml_att_string(s, 4, "sticky_session_force", jk_get_bool(lb->sticky_session_force));
         jk_print_xml_att_int(s, 4, "retries", lb->retries);
         jk_print_xml_att_int(s, 4, "recover_time", lb->recover_wait_time);
         jk_print_xml_att_string(s, 4, "method", jk_lb_get_method(lb, l));
@@ -1257,8 +1241,8 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_puts(s, "Balancer Worker:");
         jk_printf(s, " name=%s", name);
         jk_printf(s, " type=%s", status_worker_type(JK_LB_WORKER_TYPE));
-        jk_printf(s, " sticky_session=%s", status_val_bool(lb->sticky_session));
-        jk_printf(s, " sticky_session_force=%s", status_val_bool(lb->sticky_session_force));
+        jk_printf(s, " sticky_session=%s", jk_get_bool(lb->sticky_session));
+        jk_printf(s, " sticky_session_force=%s", jk_get_bool(lb->sticky_session_force));
         jk_printf(s, " retries=%d", lb->retries);
         jk_printf(s, " recover_time=%d", lb->recover_wait_time);
         jk_printf(s, " method=%s", jk_lb_get_method(lb, l));
@@ -1276,8 +1260,8 @@ static void display_worker_lb(jk_ws_service_t *s,
 
         jk_print_prop_att_string(s, w, NULL, "list", name);
         jk_print_prop_att_string(s, w, name, "type", status_worker_type(JK_LB_WORKER_TYPE));
-        jk_print_prop_att_string(s, w, name, "sticky_session", status_val_bool(lb->sticky_session));
-        jk_print_prop_att_string(s, w, name, "sticky_session_force", status_val_bool(lb->sticky_session_force));
+        jk_print_prop_att_string(s, w, name, "sticky_session", jk_get_bool(lb->sticky_session));
+        jk_print_prop_att_string(s, w, name, "sticky_session_force", jk_get_bool(lb->sticky_session_force));
         jk_print_prop_att_int(s, w, name, "retries", lb->retries);
         jk_print_prop_att_int(s, w, name, "recover_time", lb->recover_wait_time);
         jk_print_prop_att_string(s, w, name, "method", jk_lb_get_method(lb, l));

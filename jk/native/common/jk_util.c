@@ -218,6 +218,34 @@ static const char *jk_level_verbs[] = {
     NULL
 };
 
+const char *jk_get_bool(int v)
+{
+    if (v == 0)
+        return "False";
+    else
+        return "True";
+}
+
+int jk_get_bool_code(const char *v, int def)
+{
+    if (!v) {
+        return def;
+    }
+    else if (!strcasecmp(v, "off") ||
+             *v == 'F' || *v == 'f' ||
+             *v == 'N' || *v == 'n' ||
+             *v == '0') {
+        return 0;
+    }
+    else if (!strcasecmp(v, "on") ||
+             *v == 'T' || *v == 't' ||
+             *v == 'Y' || *v == 'y' ||
+             *v == '1') {
+        return 1;
+    }
+    return def;
+}
+
 /* Sleep for 100ms */
 void jk_sleep(int ms)
 {

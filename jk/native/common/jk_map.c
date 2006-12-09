@@ -234,21 +234,12 @@ double jk_map_get_double(jk_map_t *m, const char *name, double def)
 int jk_map_get_bool(jk_map_t *m, const char *name, int def)
 {
     char buf[100];
-    size_t len;
     const char *rc;
-    int rv = 0;
 
     sprintf(buf, "%d", def);
     rc = jk_map_get_string(m, name, buf);
 
-    len = strlen(rc);
-    if (len) {
-        if (strcasecmp(rc, "true") == 0 ||
-            *rc == 'Y' || *rc == 'y' || *rc == '1') {
-            rv = 1;
-        }
-    }
-    return rv;
+    return jk_get_bool_code(rc, def);
 }
 
 char **jk_map_get_string_list(jk_map_t *m,

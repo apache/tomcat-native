@@ -33,6 +33,10 @@
 
 #define JK_SLEEP_DEF     (100)
 
+const char *jk_get_bool(int v);
+
+int jk_get_bool_code(const char *v, int def);
+
 void jk_sleep(int ms);
 
 int jk_parse_log_level(const char *level);
