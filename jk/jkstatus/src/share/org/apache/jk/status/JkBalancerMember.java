@@ -29,12 +29,15 @@ import java.io.Serializable;
  */
 public class JkBalancerMember implements Serializable {
     
-    int id;
+    int id = -1;
 
     String name;
 
-    /* possible with > 1.2.16 */
+    /* possible with >= 1.2.16 */
     String jvm_route;
+
+    /* possible with >= 1.2.20 */
+    String route;
 
     String type;
 
@@ -82,9 +85,13 @@ public class JkBalancerMember implements Serializable {
     /* possible with > 1.2.16 */
     int distance = -1;
 
+    /* possible with > 1.2.20 */
+    int time_to_recover = -1 ;
+    
     /**
      * @return Returns the jvm_route.
-     * @since mod_jk 1.2.19
+     * @since mod_jk 1.2.16
+     * @deprecated
      */
     public String getJvm_route() {
         return jvm_route;
@@ -92,13 +99,30 @@ public class JkBalancerMember implements Serializable {
 
     /**
      * @param jvm_route The jvm_route to set.
-     * @since mod_jk 1.2.19
+     * @since mod_jk 1.2.16
+     * @deprecated
      */
     public void setJvm_route(String jvm_route) {
         this.jvm_route = jvm_route;
     }
 
     /**
+	 * @return the route
+    * @since mod_jk 1.2.20
+	 */
+	public String getRoute() {
+		return route;
+	}
+
+	/**
+	 * @param route the route to set
+    * @since mod_jk 1.2.20
+	 */
+	public void setRoute(String route) {
+		this.route = route;
+	}
+
+	/**
      * @return Returns the address.
      */
     public String getAddress() {
@@ -133,7 +157,7 @@ public class JkBalancerMember implements Serializable {
      * @return Returns the maxbusy.
      * @since mod_jk 1.2.18
      */
-    public int getMaxbusy() {
+    public int getMax_busy() {
         return maxbusy;
     }
 
@@ -141,7 +165,7 @@ public class JkBalancerMember implements Serializable {
      * @param maxbusy The maxbusy to set.
      * @since mod_jk 1.2.18
      */
-    public void setMaxbusy(int maxbusy) {
+    public void setMax_busy(int maxbusy) {
         this.maxbusy = maxbusy;
     }
 
@@ -164,7 +188,7 @@ public class JkBalancerMember implements Serializable {
      * @return Returns the clienterrors.
      * @since mod_jk 1.2.19
      */
-    public long getClienterrors() {
+    public long getClient_errors() {
         return clienterrors;
     }
 
@@ -172,7 +196,7 @@ public class JkBalancerMember implements Serializable {
      * @param clienterrors The clienterrors to set.
      * @since mod_jk 1.2.19
      */
-    public void setClienterrors(long clienterrors) {
+    public void setClient_errors(long clienterrors) {
         this.clienterrors = clienterrors;
     }
 
@@ -434,6 +458,22 @@ public class JkBalancerMember implements Serializable {
     public void setDistance(int distance) {
         this.distance = distance;
     }
+
+	/**
+	 * @return the time_to_recover
+     * @since mod_jk 1.2.20
+ 	 */
+	public int getTime_to_recover() {
+		return time_to_recover;
+	}
+
+	/**
+	 * @param time_to_recover the time_to_recover to set
+     * @since mod_jk 1.2.20
+ 	 */
+	public void setTime_to_recover(int time_to_recover) {
+		this.time_to_recover = time_to_recover;
+	}
 
 
 }

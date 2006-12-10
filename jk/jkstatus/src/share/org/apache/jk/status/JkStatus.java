@@ -28,8 +28,10 @@ import java.util.List;
 public class JkStatus implements Serializable {
 
     JkServer server ;
+    JkSoftware software ;
+    JkResult result ;
     List balancers = new ArrayList() ;
-    
+   
     /**
      * @return Returns the balancers.
      */
@@ -60,5 +62,29 @@ public class JkStatus implements Serializable {
     public void setServer(JkServer server) {
        this.server = server ;
     }
+	/**
+	 * @return the result
+	 */
+	public JkResult getResult() {
+		return result;
+	}
+	/**
+	 * @param result the result to set
+	 */
+	public void setResult(JkResult result) {
+		this.result = result;
+	}
     
+    /**
+     * @return Returns the software.
+     */
+    public JkSoftware getSoftware() {
+        return software;
+    }
+    /**
+     * @param software The software to set.
+     */
+    public void setSoftware(JkSoftware software) {
+        this.software = software;
+    }
 }

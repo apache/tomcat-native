@@ -20,37 +20,35 @@ import java.io.Serializable;
 
 /**
  * @author Peter Rossbach
- * @version $Revision$ $Date$
+ * @version $Revision:$ $Date:$
  * @see org.apache.jk.status.JkStatusParser
  */
-public class JkServer implements Serializable {
-    String name ;
-    String port;  
-     
-    /**
-     * @return Returns the name.
+public class JkSoftware implements Serializable {
+    String web_server;
+    String jk_version ;
+    
+     /**
+     * @return Returns the software.
      */
-    public String getName() {
-        return name;
+    public String getWeb_server() {
+        return web_server;
     }
     /**
-     * @param name The name to set.
+     * @param software The software to set.
      */
-    public void setName(String name) {
-        this.name = name;
+    public void setWeb_server(String software) {
+        this.web_server = software;
     }
     /**
-     * @return Returns the port.
+     * @return Returns the version.
      */
-    public String getPort() {
-        return port;
+    public String getJk_version() {
+        return jk_version;
     }
     /**
-     * @param port The port to set.
+     * @param version The version to set.
      */
-    public void setPort(String port) {
-        this.port = port;
+    public void setJk_version(String version) {
+        this.jk_version = version;
     }
-
- 
 }

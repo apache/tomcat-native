@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.tomcat.util.digester.Digester;
 
 /**
+ * mod_jk 1.2.19 document:<br/>
  * <code>
  *
  *  &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
@@ -36,6 +37,94 @@ import org.apache.tomcat.util.digester.Digester;
  *    &lt;/jk:balancer&gt;
  *    &lt;/jk:balancers&gt;
  *  &lt;/jk:status&gt;
+ * </code>
+ * <br/>
+ * mod_jk 1.2.20 document:<br/>
+ * <code>
+ * &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+ * &lt;jk:status xmlns:jk="http://tomcat.apache.org"&gt;
+ * &lt;jk:server
+ *  name="127.0.0.1"
+ *  port="2080"
+ *  software="Apache/2.0.59 (Unix) mod_jk/1.2.20-dev"
+ *  version="1.2.20"/&gt;
+ * &lt;jk:balancers&gt;
+ *   &lt;jk:balancer
+ *    name="loadbalancer"
+ *    type="lb"
+ *    sticky="True"
+ *    stickyforce="False"
+ *    retries="2"
+ *    recover="60"
+ *    method="Request"
+ *    lock="Optimistic"
+ *    good="2"
+ *    degraded="0"
+ *    bad="0"
+ *    busy="0"
+ *    max_busy="0"&gt;
+ *      &lt;jk:member
+ *        name="node01"
+ *        type="ajp13"
+ *        host="localhost"
+ *        port="7309"
+ *        address="127.0.0.1:7309"
+ *        activation="ACT"
+ *        lbfactor="1"
+ *        jvm_route="node01"
+ *        redirect=""
+ *        domain=""
+ *        distance="0"
+ *        state="N/A"
+ *        lbmult="1"
+ *        lbvalue="0"
+ *        elected="0"
+ *        errors="0"
+ *        clienterrors="0"
+ *        transferred="0"
+ *        readed="0"
+ *        busy="0"
+ *        maxbusy="0"
+ *        time-to-recover="0"/&gt;
+ *      &lt;jk:member
+ *        name="node02"
+ *        type="ajp13"
+ *        host="localhost"
+ *        port="7409"
+ *        address="127.0.0.1:7409"
+ *        activation="ACT"
+ *        lbfactor="1"
+ *        jvm_route="node02"
+ *        redirect=""
+ *        domain=""
+ *        distance="0"
+ *        state="N/A"
+ *        lbmult="1"
+ *        lbvalue="0"
+ *        elected="0"
+ *        errors="0"
+ *        clienterrors="0"
+ *        transferred="0"
+ *        readed="0"
+ *        busy="0"
+ *        maxbusy="0"
+ *        time-to-recover="0"/&gt;
+ *      &lt;jk:map
+ *        type="Wildchar"
+ *        uri="/ClusterTest*"
+ *        source="JkMount"/&gt;
+ *      &lt;jk:map
+ *        type="Wildchar"
+ *        uri="/myapps*"
+ *        source="JkMount"/&gt;
+ *      &lt;jk:map
+ *        type="Wildchar"
+ *        uri="/last*"
+ *        source="JkMount"/&gt;
+ *  &lt;/jk:balancer&gt;
+ * &lt;/jk:balancers&gt;
+ * &lt;/jk:status&gt;
+ *
  *
  * </code>
  * @author Peter Rossbach
@@ -90,6 +179,18 @@ public class JkStatusParser {
         digester.addSetProperties("jk:status/jk:server");
         digester.addSetNext("jk:status/jk:server", "setServer",
                 "org.apache.jk.status.JkServer");
+
+        digester.addObjectCreate("jk:status/jk:software",
+                "org.apache.jk.status.JkSoftware", "className");
+        digester.addSetProperties("jk:status/jk:software");
+        digester.addSetNext("jk:status/jk:software", "setSoftware",
+                "org.apache.jk.status.JkSoftware");
+
+        digester.addObjectCreate("jk:status/jk:result",
+                "org.apache.jk.status.JkResult", "className");
+        digester.addSetProperties("jk:status/jk:result");
+        digester.addSetNext("jk:status/jk:result", "setResult",
+                "org.apache.jk.status.JkResult");
 
         digester.addObjectCreate("jk:status/jk:balancers/jk:balancer",
                 "org.apache.jk.status.JkBalancer", "className");

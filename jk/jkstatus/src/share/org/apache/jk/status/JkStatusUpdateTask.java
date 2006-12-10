@@ -31,6 +31,7 @@ import org.apache.tools.ant.BuildException;
  * @author Peter Rossbach
  * @version $Revision$
  * @since 5.5.10
+ * @deprecated
  */
 public class JkStatusUpdateTask extends AbstractCatalinaTask {
 

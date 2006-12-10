@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <antlib>
   <typedef
+        name="updateworker"
+        classname="org.apache.jk.status.JkStatusUpdateWorkerTask" />
+  <typedef
+        name="updateloadbalancer"
+        classname="org.apache.jk.status.JkStatusUpdateLoadbalancerTask" />
+  <typedef
         name="update"
         classname="org.apache.jk.status.JkStatusUpdateTask" />
   <typedef

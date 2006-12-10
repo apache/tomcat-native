@@ -27,14 +27,23 @@ import java.util.List;
  */
 public class JkBalancer implements Serializable {
 
-    int id ;
+    int id =-1;
     String name ;
     String type ;
     boolean sticky ;
     boolean stickyforce;
     int retries ;
     int recover ;
-        
+    String method ;
+    String lock ;
+    int good = -1 ;
+    int degraded = -1;
+    int bad = -1 ;
+    int busy = -1;
+    int max_busy = -1 ;
+    int member_count = -1 ;
+    int map_count = -1 ;
+       
     List members = new ArrayList() ;
     List mappings = new ArrayList() ;
      
@@ -101,13 +110,13 @@ public class JkBalancer implements Serializable {
     /**
      * @return Returns the recover.
      */
-    public int getRecover() {
+    public int getRecover_time() {
         return recover;
     }
     /**
      * @param recover The recover to set.
      */
-    public void setRecover(int recover) {
+    public void setRecover_time(int recover) {
         this.recover = recover;
     }
     /**
@@ -125,25 +134,25 @@ public class JkBalancer implements Serializable {
     /**
      * @return Returns the sticky.
      */
-    public boolean isSticky() {
+    public boolean isSticky_session() {
         return sticky;
     }
     /**
      * @param sticky The sticky to set.
      */
-    public void setSticky(boolean sticky) {
+    public void setSticky_session(boolean sticky) {
         this.sticky = sticky;
     }
     /**
      * @return Returns the stickyforce.
      */
-    public boolean isStickyforce() {
+    public boolean isSticky_session_force() {
         return stickyforce;
     }
     /**
      * @param stickyforce The stickyforce to set.
      */
-    public void setStickyforce(boolean stickyforce) {
+    public void setSticky_session_force(boolean stickyforce) {
         this.stickyforce = stickyforce;
     }
     /**
@@ -158,5 +167,135 @@ public class JkBalancer implements Serializable {
     public void setType(String type) {
         this.type = type;
     }
+	/**
+	 * @return the bad
+     * @since mod_jk 1.2.20
+	 */
+	public int getBad() {
+		return bad;
+	}
+	/**
+	 * @param bad the bad to set
+     * @since mod_jk 1.2.20
+	 */
+	public void setBad(int bad) {
+		this.bad = bad;
+	}
+	/**
+	 * @return the busy
+     * @since mod_jk 1.2.20
+	 */
+	public int getBusy() {
+		return busy;
+	}
+	/**
+	 * @param busy the busy to set
+     * @since mod_jk 1.2.20
+	 */
+	public void setBusy(int busy) {
+		this.busy = busy;
+	}
+	/**
+	 * @return the degraded
+     * @since mod_jk 1.2.20
+	 */
+	public int getDegraded() {
+		return degraded;
+	}
+	/**
+	 * @param degraded the degraded to set
+     * @since mod_jk 1.2.20
+	 */
+	public void setDegraded(int degraded) {
+		this.degraded = degraded;
+	}
+	/**
+	 * @return the good
+     * @since mod_jk 1.2.20
+	 */
+	public int getGood() {
+		return good;
+	}
+	/**
+	 * @param good the good to set
+     * @since mod_jk 1.2.20
+	 */
+	public void setGood(int good) {
+		this.good = good;
+	}
+	/**
+	 * @return the lock
+     * @since mod_jk 1.2.20
+	 */
+	public String getLock() {
+		return lock;
+	}
+	/**
+	 * @param lock the lock to set
+     * @since mod_jk 1.2.20
+	 */
+	public void setLock(String lock) {
+		this.lock = lock;
+	}
+	/**
+	 * @return the max_busy
+     * @since mod_jk 1.2.20
+	 */
+	public int getMax_busy() {
+		return max_busy;
+	}
+	/**
+	 * @param max_busy the max_busy to set
+     * @since mod_jk 1.2.20
+	 */
+	public void setMax_busy(int max_busy) {
+		this.max_busy = max_busy;
+	}
+	/**
+	 * @return the method
+     * @since mod_jk 1.2.20
+	 */
+	public String getMethod() {
+		return method;
+	}
+	/**
+	 * @param method the method to set
+     * @since mod_jk 1.2.20
+     */
+	public void setMethod(String method) {
+		this.method = method;
+	}
+	
+	/**
+	 * @return the member_count
+     * @since mod_jk 1.2.20
+ 	 */
+	public int getMember_count() {
+		return member_count;
+	}
+	
+	/**
+	 * @param member_count the member_count to set
+     * @since mod_jk 1.2.20
+ 	 */
+	public void setMember_count(int member_count) {
+		this.member_count = member_count;
+	}
+	
+	/**
+	 * @return the map_count
+     * @since mod_jk 1.2.20
+ 	 */
+	public int getMap_count() {
+		return map_count;
+	}
 
+	/**
+	 * @param map_count the map_count to set
+     * @since mod_jk 1.2.20
+	 */
+	public void setMap_count(int map_count) {
+		this.map_count = map_count;
+	}
+    
 }

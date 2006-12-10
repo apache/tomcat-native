@@ -1,4 +1,6 @@
 # Apache mod_jk jk status tasks
+jkUpdateWorker=org.apache.jk.status.JkStatusUpdateWorkerTask
+jkUpdateLoadbalancer=org.apache.jk.status.JkStatusUpdateLoadbalancerTask
 jkUpdate=org.apache.jk.status.JkStatusUpdateTask
 jkReset=org.apache.jk.status.JkStatusResetTask
 jkStatus=org.apache.jk.status.JkStatusTask

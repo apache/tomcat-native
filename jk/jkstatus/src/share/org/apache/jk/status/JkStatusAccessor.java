@@ -60,7 +60,8 @@ public class JkStatusAccessor {
         JkStatus status = null;
 
         try {
-            hconn = openConnection(url + "?cmd=show&mime=xml", username, password);
+        	// FIXME: use cmd show for older mod_jk versions
+            hconn = openConnection(url + "?cmd=list&mime=xml", username, password);
             Digester digester = JkStatusParser.getDigester();
             synchronized (digester) {
                 status = (JkStatus) digester.parse(hconn.getInputStream());

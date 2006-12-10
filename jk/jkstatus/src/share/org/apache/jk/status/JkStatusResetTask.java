@@ -20,20 +20,25 @@ package org.apache.jk.status;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-import org.apache.catalina.ant.AbstractCatalinaTask;
 import org.apache.tools.ant.BuildException;
 
 /**
  * Ant task that implements the <code>/jkstatus?cmd=reset&amp;w=loadbalancer</code> command, supported by the
- * mod_jk status (1.2.15) application.
+ * mod_jk status (1.2.20) application.
  * 
  * @author Peter Rossbach
  * @version $Revision$
- * @since 5.5.13
+ * @since mod_jk 1.2.20
  */
-public class JkStatusResetTask extends AbstractCatalinaTask {
+public class JkStatusResetTask extends AbstractJkStatusTask {
 
-    private String workerLb;
+	/**
+     * The descriptive information about this implementation.
+     */
+    private static final String info = "org.apache.jk.status.JkStatusResetTask/1.1";
+
+    private String worker;
+    private String loadbalancer;
 
     /**
      *  
@@ -44,52 +49,71 @@ public class JkStatusResetTask extends AbstractCatalinaTask {
     }
 
     /**
-     * @return Returns the workerLb.
+     * Return descriptive information about this implementation and the
+     * corresponding version number, in the format
+     * <code>&lt;description&gt;/&lt;version&gt;</code>.
      */
-    public String getWorkerLb() {
-        return workerLb;
-    }
+    public String getInfo() {
 
-    /**
-     * @param workerLb
-     *            The workerLb to set.
-     */
-    public void setWorkerLb(String workerLb) {
-        this.workerLb = workerLb;
-    }
-
-    /**
-     * Execute the requested operation.
-     * 
-     * @exception BuildException
-     *                if an error occurs
-     */
-    public void execute() throws BuildException {
-
-        super.execute();
-        checkParameter();
-        StringBuffer sb = createLink();
-        execute(sb.toString(), null, null, -1);
+        return (info);
 
     }
-
+    
     /**
+	 * @return the loadbalancer
+	 */
+	public String getLoadbalancer() {
+		return loadbalancer;
+	}
+
+
+	/**
+	 * @param loadbalancer the loadbalancer to set
+	 */
+	public void setLoadbalancer(String loadbalancer) {
+		this.loadbalancer = loadbalancer;
+	}
+
+
+	/**
+	 * @return the worker
+	 */
+	public String getWorker() {
+		return worker;
+	}
+
+
+	/**
+	 * @param worker the worker to set
+	 */
+	public void setWorker(String worker) {
+		this.worker = worker;
+	}
+
+
+	/**
      * Create jkstatus reset link
      * <ul>
-     * <li><b>load balance example:
-     * </b>http://localhost/jkstatus?cmd=reset&w=loadbalancer&mime=txt</li>
+     * <li><b>loadbalancer example:
+     * </b>http://localhost/jkstatus?cmd=reset&mime=txt&w=loadbalancer</li>
+     * <li><b>loadbalancer + sub worker example:
+     * </b>http://localhost/jkstatus?cmd=reset&mime=txt&w=loadbalancer&sw=node01</li>
      * </ul>
      * 
-     * @return create jkstatus link
+     * @return create jkstatus reset link
      */
-    private StringBuffer createLink() {
+    protected StringBuffer createLink() {
         // Building URL
         StringBuffer sb = new StringBuffer();
         try {
             sb.append("?cmd=reset");
-            sb.append("&w=");
-            sb.append(URLEncoder.encode(workerLb, getCharset()));
             sb.append("&mime=txt");
+            sb.append("&w=");
+            sb.append(URLEncoder.encode(loadbalancer, getCharset()));
+            if(worker != null) {
+                sb.append("&sw=");
+            	sb.append(URLEncoder.encode(worker, getCharset()));        	
+        	}
 
         } catch (UnsupportedEncodingException e) {
             throw new BuildException("Invalid 'charset' attribute: "
@@ -99,11 +123,11 @@ public class JkStatusResetTask extends AbstractCatalinaTask {
     }
 
     /**
-     * check correct lb and worker pararmeter
+     * check correct pararmeter
      */
     protected void checkParameter() {
-        if (workerLb == null) {
-            throw new BuildException("Must specify 'workerLb' attribute");
+        if (loadbalancer == null) {
+            throw new BuildException("Must specify 'loadbalanacer' attribute");
         }
     }
 }

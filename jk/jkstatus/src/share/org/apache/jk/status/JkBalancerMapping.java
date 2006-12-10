@@ -24,18 +24,34 @@ import java.io.Serializable;
  * @see org.apache.jk.status.JkStatusParser
  */
 public class JkBalancerMapping implements Serializable {
-    String type ;
+    int id =-1 ;
+	String type ;
     String uri;
     String context ;
+    String source ;
     
     /**
+	 * @return the id
+	 */
+	public int getId() {
+		return id;
+	}
+	/**
+	 * @param id the id to set
+	 */
+	public void setId(int id) {
+		this.id = id;
+	}
+	/**
      * @return Returns the context.
+     * @deprecated mod_jk 1.2.20
      */
     public String getContext() {
         return context;
     }
     /**
      * @param context The context to set.
+     * @deprecated mod_jk 1.2.20
      */
     public void setContext(String context) {
         this.context = context;
@@ -64,4 +80,19 @@ public class JkBalancerMapping implements Serializable {
     public void setUri(String uri) {
         this.uri = uri;
     }
+	/**
+	 * @return the source
+     * @since mod_jk 1.2.20
+ 	 */
+	public String getSource() {
+		return source;
+	}
+	/**
+	 * @param source the source to set
+	 * @since mod_jk 1.2.20
+     */
+	public void setSource(String source) {
+		this.source = source;
+	}
+    
  }

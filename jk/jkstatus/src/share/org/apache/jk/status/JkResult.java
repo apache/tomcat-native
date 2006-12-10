@@ -20,37 +20,35 @@ import java.io.Serializable;
 
 /**
  * @author Peter Rossbach
- * @version $Revision$ $Date$
+ * @version $Revision:$ $Date:$
  * @see org.apache.jk.status.JkStatusParser
  */
-public class JkServer implements Serializable {
-    String name ;
-    String port;  
+public class JkResult implements Serializable {
+    String type ;
+    String message;
+	/**
+	 * @return the message
+	 */
+	public String getMessage() {
+		return message;
+	}
+	/**
+	 * @param message the message to set
+	 */
+	public void setMessage(String message) {
+		this.message = message;
+	}
+	/**
+	 * @return the type
+	 */
+	public String getType() {
+		return type;
+	}
+	/**
+	 * @param type the type to set
+	 */
+	public void setType(String type) {
+		this.type = type;
+	}  
      
-    /**
-     * @return Returns the name.
-     */
-    public String getName() {
-        return name;
-    }
-    /**
-     * @param name The name to set.
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-    /**
-     * @return Returns the port.
-     */
-    public String getPort() {
-        return port;
-    }
-    /**
-     * @param port The port to set.
-     */
-    public void setPort(String port) {
-        this.port = port;
-    }
-
- 
 }
