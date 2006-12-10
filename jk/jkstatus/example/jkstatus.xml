@@ -7,12 +7,11 @@
     <property name="profile" value=""/>
     <property file="jkstatus${profile}.properties"/>
     <property file="jkstatus${profile}.properties.default"/>
-    <property name="catalina.home" location="../../../../build/build"/>
-
+ 
     <path id="jkstatus.path">
       <pathelement location="${catalina.home}/bin/commons-logging-api.jar"/>
       <pathelement location="${catalina.home}/server/lib/catalina-ant.jar"/>
-      <pathelement location="${catalina.home}/server/lib/tomcat-jkstatus-ant.jar"/>
+      <pathelement location="../dist/tomcat-jkstatus-ant.jar"/>
       <pathelement location="${catalina.home}/server/lib/tomcat-util.jar"/>
     </path>
 
@@ -32,53 +31,40 @@
     <target name="reset"
             depends="-status-modjk-reset" 
             description="reset jk status" />
-
-    <!--
+    
+   <!--
        ########################################################################################################
        private
        ########################################################################################################
     -->   
-    
-   <target name="-status-modjk-access">
-      <jkStatus url="${jkstatus.url}" 
-                username="${jkstatus.username}"
-                password="${jkstatus.password}"
-                resultproperty="jkstatus"
-                failOnError="false"/>
-      <echoproperties prefix="jkstatus" />           
-      <jkStatus url="${jkstatus.url}" 
-                username="${jkstatus.username}"
-                password="${jkstatus.password}"
-                loadbalancer="loadbalancer"
-                resultproperty="lb"
-                failOnError="false"/>
-      <echoproperties prefix="lb" />           
-      <jkStatus url="${jkstatus.url}" 
-                username="${jkstatus.username}"
-                password="${jkstatus.password}"
-                worker="node01"
-                resultproperty="worker"
-                failOnError="false"/>
-     <echoproperties prefix="worker" />
-     <jkUpdate url="${jkstatus.url}" 
-               username="${jkstatus.username}"
-               password="${jkstatus.password}"
-               workerLoadFactor="${worker.node01.lbfactor}"
-               workerRedirect="${worker.node01.redirect}"
-               workerClusterDomain="d20"
-               workerDisabled="true"
-               workerStopped="false"
-               workerLb="${worker.node01.lb.name}"
-               worker = "node01"
-               workerType = "worker"/>
-      <jkStatus url="${jkstatus.url}" 
-                username="${jkstatus.username}"
-                password="${jkstatus.password}"
-                worker="node01"
-                resultproperty="workerafter"
-                failOnError="false"/>
-      <echoproperties prefix="workerafter" />
-   </target>     
+	  <target name="-status-modjk-access">
+	      <jkStatus url="${jkstatus.url}" 
+	                username="${jkstatus.username}"
+	                password="${jkstatus.password}"
+	                resultproperty="jkstatus.before"
+	      	        echo="on"
+	                failOnError="off"/>
+	      <echoproperties prefix="jkstatus" />           
+ 	      <jkUpdateWorker url="${jkstatus.url}" 
+	               username="${jkstatus.username}"
+	               password="${jkstatus.password}"
+	               loadbalancer="${jkstatus.testlb}"
+	               worker="${jkstatus.testworker}"
+	               domain="d20"
+	               />
+	      <jkUpdateLoadbalancer url="${jkstatus.url}" 
+	               username="${jkstatus.username}"
+	               password="${jkstatus.password}"
+	               loadbalancer="${jkstatus.testlb}"
+	      		   method="Sessions"
+	               />
+	      <jkStatus url="${jkstatus.url}" 
+	                username="${jkstatus.username}"
+	                password="${jkstatus.password}"
+	                resultproperty="workerafter"
+	                failOnError="false"/>
+	      <echoproperties prefix="jkstatus.after" />
+	   </target>        
 
    <target name="-status-modjk-reset">
       <jkStatus url="${jkstatus.url}" 
@@ -91,7 +77,8 @@
       <jkReset  url="${jkstatus.url}" 
                 username="${jkstatus.username}"
                 password="${jkstatus.password}"
-                workerLb="loadbalancer"
+                loadbalancer="${jkstatus.testlb}"
+		        worker="${jkstatus.testworker}"
        />
 
        <jkStatus url="${jkstatus.url}" 
@@ -102,4 +89,5 @@
       <echoproperties prefix="jkstatus.after" />
    </target>           
 
+	
 </project>

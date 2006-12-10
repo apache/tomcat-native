@@ -1,6 +1,8 @@
 jkstatus.host=localhost
-jkstatus.port=80
+jkstatus.port=2090
 jkstatus.username=manager
 jkstatus.password=tomcat
 jkstatus.url=http://${jkstatus.host}:${jkstatus.port}/jkstatus
-
+jkstatus.testlb=loadbalancer
+jkstatus.testworker=node01
+catalina.home=../../../../build/build

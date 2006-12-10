@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="modjk-status" 
+         xmlns:jk="urn:org-apache-jk-status"
+         default="status" basedir=".">
+
+	<property name="profile" value=""/>
+	<property file="jkstatus${profile}.properties"/>
+	<property file="jkstatus.properties.default"/>
+
+    <path id="jkstatus.classpath">
+      <pathelement location="${catalina.home}/bin/commons-logging-api.jar"/>
+      <pathelement location="${catalina.home}/server/lib/catalina-ant.jar"/>
+      <!--<pathelement location="${catalina.home}/server/lib/tomcat-jkstatus-ant.jar"/>-->
+      <pathelement location="../dist/tomcat-jkstatus-ant.jar"/>
+      <pathelement location="${catalina.home}/server/lib/tomcat-util.jar"/>
+    </path>
+
+    <typedef resource="org/apache/jk/status/antlib.xml"       
+           uri="urn:org-apache-jk-status" classpathref="jkstatus.classpath"/> 
+           
+    <target name="status" >       
+ 	    <jk:status url="${jkstatus.url}" 
+	                username="${jkstatus.username}"
+	                password="${jkstatus.password}"
+	                resultproperty="worker"
+	      	        echo="off"
+	                failOnError="off"/>
+	    <echoproperties prefix="worker" />
+    </target>
+</project>           
