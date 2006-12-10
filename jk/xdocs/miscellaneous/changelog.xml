@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <add>
+      JkStatus Ant Task documentation page. (pero/rjung)
+      </add>
+      <add>
       JkStatus Ant Tasks: Add new tasks for update and reset. (pero)
       </add>
       <update>
@@ -36,9 +39,9 @@
       Allow integer and string values when setting enumeration/boolean
       attributes via status worker update action. (rjung)
       </update>
-      <update>
+      <add>
       Docs: New reference guide page for status worker. (rjung)
-      </update>
+      </add>
       <update>
       Docs: Renaming the config dir to reference and using the title
       Reference Guide in the docs. (rjung)
@@ -76,9 +79,9 @@
       Status Worker: Add directives for customizing the XML
       output (ns, xmlns, doctype). (mturk)
       </update>
-      <update>
+      <add>
       Docs: New page with description of uriworkermap. (rjung)
-      </update>
+      </add>
       <update>
       Docs: Added short description of max_packet_size to worker
       reference. (rjung)
@@ -133,10 +136,9 @@
       <fix>
       Keep normal maps and exclusion maps internally separate. Don't treat them
       as the same when adding a rule. (rjung)
-      version get deleted, before the new ones are being read. (rjung)
       </fix>
       <update>
-      Status Worker: Display mappng rules also for non-lb workers and in global view. (rjung)
+      Status Worker: Display mapping rules also for non-lb workers and in global view. (rjung)
       </update>
       <update>
       Apache VHosts: Use the vhost log files instead of the main log. (rjung)

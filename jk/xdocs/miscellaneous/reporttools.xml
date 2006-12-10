@@ -2,7 +2,7 @@
 <!DOCTYPE document [
   <!ENTITY project SYSTEM "project.xml">
 ]>
-<document url="tools.html">
+<document url="reporttools.html">
  
   &project;
 <copyright>
@@ -22,16 +22,12 @@
    limitations under the License.
 </copyright>
 <properties>
-<title>Tools</title>
+<title>Reporting Tools</title>
 <author>Glenn Nielsen</author>
 <date>$Date$</date>
 </properties>
 <body>
-<section name="Introduction">
-<p>Documentation for additional mod_jk related tools.</p>
-</section>
-
-<section name="Reports">
+<section name="Reporting Tools">
 <p>
 The mod_jk source distribution contains two perl scripts in the
 jk/tools/reports directory which can be used to analyze the mod_jk
