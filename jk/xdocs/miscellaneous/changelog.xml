@@ -26,6 +26,12 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <add>
+      JkStatus Ant Tasks: Add new tasks for update and reset. (pero)
+      </add>
+      <update>
+      JkStatus Ant Tasks: Update for new xml status format. (pero)
+      </update>
       <update>
       Allow integer and string values when setting enumeration/boolean
       attributes via status worker update action. (rjung)
