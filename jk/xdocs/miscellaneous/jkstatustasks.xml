@@ -1,0 +1,214 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="jkstatustasks.html">
+ 
+  &project;
+
+<copyright>
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+ 
+       http://www.apache.org/licenses/LICENSE-2.0
+ 
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+</copyright>
+
+<properties>
+<title>Status Worker Ant Tasks</title>
+<author>Peter Rossbach</author>
+<date>$Date$</date>
+</properties>
+
+<body>
+
+<section name="Introduction">
+<p>Since version 1.2.19 the JK release contains additional ant tasks.
+They can be used to manage the JK web server plugins via the special status worker.
+</p>
+</section>
+
+<section name="Manage JK with remote Ant Tasks">
+
+<subsection name="Simple antlib integration">
+<p>
+<source>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+
+&lt;project name="modjk-status" 
+         xmlns:jk="urn:org-apache-jk-status"
+         default="status" basedir="."&gt;
+
+	&lt;property name="profile" value=""/&gt;
+	&lt;property file="jkstatus${profile}.properties"/&gt;
+	&lt;property file="jkstatus.properties.default"/&gt;
+
+    &lt;path id="jkstatus.classpath"&gt;
+      &lt;pathelement location="${catalina.home}/bin/commons-logging-api.jar"/&gt;
+      &lt;pathelement location="${catalina.home}/server/lib/catalina-ant.jar"/&gt;
+      &lt;pathelement location="../dist/tomcat-jkstatus-ant.jar"/&gt;
+      &lt;pathelement location="${catalina.home}/server/lib/tomcat-util.jar"/&gt;
+    &lt;/path&gt;
+
+    &lt;typedef resource="org/apache/jk/status/antlib.xml"       
+           uri="urn:org-apache-jk-status" classpathref="jkstatus.classpath"/&gt; 
+           
+    &lt;target name="status" &gt;       
+ 	    &lt;jk:status url="${jkstatus.url}" 
+	                username="${jkstatus.username}"
+	                password="${jkstatus.password}"
+	                resultproperty="worker"
+	      	        echo="off"
+	                failOnError="off"/&gt;
+	    &lt;echoproperties prefix="worker" /&gt;
+    &lt;/target&gt;
+&lt;/project&gt;    
+</source>
+</p>
+</subsection>
+
+<subsection name="Test Result">
+<p>
+<source>
+[echoproperties] #Ant properties
+[echoproperties] #Sun Dec 10 20:40:21 CET 2006
+[echoproperties] worker.node01.lbmult=1
+[echoproperties] worker.loadbalancer.lock=Optimistic
+[echoproperties] worker.node02.transferred=0
+[echoproperties] worker.loadbalancer.sticky_session=false
+[echoproperties] worker.node01.distance=0
+[echoproperties] worker.node01.client_errors=0
+[echoproperties] worker.node02.lbmult=1
+[echoproperties] worker.node01.port=7309
+[echoproperties] worker.node01.elected=0
+[echoproperties] worker.loadbalancer.good=2
+[echoproperties] worker.loadbalancer.method=Sessions
+[echoproperties] worker.server.port=2090
+[echoproperties] worker.loadbalancer.map.2.type=Wildchar
+[echoproperties] worker.node02.route=node02
+[echoproperties] worker.node01.route=node01
+[echoproperties] worker.node01.lbvalue=0
+[echoproperties] worker.node01.lbfactor=1
+[echoproperties] worker.node01.max_busy=0
+[echoproperties] worker.node01.busy=0
+[echoproperties] worker.node01.redirect=
+[echoproperties] worker.node02.distance=0
+[echoproperties] worker.loadbalancer.name=loadbalancer
+[echoproperties] worker.loadbalancer.sticky_session_force=false
+[echoproperties] worker.node02.state=N/A
+[echoproperties] worker.node01.state=N/A
+[echoproperties] worker.node01.transferred=0
+[echoproperties] worker.loadbalancer.map.length=2
+[echoproperties] worker.node01.type=ajp13
+[echoproperties] worker.node01.address=127.0.0.1\:7309
+[echoproperties] worker.result.type=OK
+[echoproperties] worker.loadbalancer.member_count=2
+[echoproperties] worker.loadbalancer.map_count=2
+[echoproperties] worker.node02.lbfactor=1
+[echoproperties] worker.node02.max_busy=0
+[echoproperties] worker.jk_version=mod_jk/1.2.20-dev
+[echoproperties] worker.loadbalancer.bad=0
+[echoproperties] worker.node02.redirect=
+[echoproperties] worker.node01.host=localhost
+[echoproperties] worker.node02.activation=ACT
+[echoproperties] worker.loadbalancer.map.1.source=JkMount
+[echoproperties] worker.loadbalancer.retries=2
+[echoproperties] worker.node02.elected=0
+[echoproperties] worker.loadbalancer.map.2.source=JkMount
+[echoproperties] worker.node02.port=7409
+[echoproperties] worker.loadbalancer.length=2
+[echoproperties] worker.node02.lbvalue=0
+[echoproperties] worker.loadbalancer.degraded=0
+[echoproperties] worker.loadbalancer.map.1.type=Wildchar
+[echoproperties] worker.loadbalancer.map.2.uri=/myapps*
+[echoproperties] worker.node02.client_errors=0
+[echoproperties] worker.length=1
+[echoproperties] worker.node01.domain=d20
+[echoproperties] worker.loadbalancer.recover_time=60
+[echoproperties] worker.server.name=localhost
+[echoproperties] worker.node02.domain=
+[echoproperties] worker.result.message=Action finished
+[echoproperties] worker.node02.busy=0
+[echoproperties] worker.node01.readed=0
+[echoproperties] worker.node01.errors=0
+[echoproperties] worker.node02.address=127.0.0.1\:7409
+[echoproperties] worker.node02.readed=0
+[echoproperties] worker.loadbalancer.busy=0
+[echoproperties] worker.web_server=Apache/2.0.59 (Unix) mod_jk/1.2.20-dev
+[echoproperties] worker.node02.errors=0
+[echoproperties] worker.node02.type=ajp13
+[echoproperties] worker.loadbalancer.map.1.uri=/ClusterTest*
+[echoproperties] worker.node01.activation=ACT
+[echoproperties] worker.loadbalancer.max_busy=0
+[echoproperties] worker.loadbalancer.type=lb
+[echoproperties] worker.node02.host=localhost
+</source>
+</p>
+</subsection>
+
+<subsection name="Update Load Balancer">
+<p>
+<source>
+     &lt;target name="updatelb" &gt;       
+ 	    &lt;jk:updateloadbalancer url="${jkstatus.url}" 
+	                username="${jkstatus.username}"
+	                password="${jkstatus.password}"
+	                loadbalancer="loadbalancer"
+	                method="Busyness"
+	                retries="2"
+	                recoverWaitTime="60"
+	                lock="Optimistic"
+	                forceStickySession="false"
+	                stickySession="false"/&gt;
+     &lt;/target&gt;
+</source>
+</p>
+</subsection>
+
+<subsection name="Update Worker">
+<p>
+<source>
+     &lt;target name="updatew" &gt;       
+ 	    &lt;jk:updateworker url="${jkstatus.url}" 
+	                username="${jkstatus.username}"
+	                password="${jkstatus.password}"
+	                loadbalancer="loadbalancer"
+	      	        worker="node01"
+	                lbfactor="2"
+	                activation="Active"
+	                redirect=""
+	                domain=""
+	                route="node01"
+	                distance="0"/&gt;
+     &lt;/target&gt;
+</source>
+</p>
+</subsection>
+
+<subsection name="Reset Worker">
+<p>
+<source>
+     &lt;target name="reset" &gt;       
+ 	    &lt;jk:reset url="${jkstatus.url}" 
+	                username="${jkstatus.username}"
+	                password="${jkstatus.password}"
+	                loadbalancer="loadbalancer"
+	      	        worker="node01"
+	                /&gt;
+     &lt;/target&gt;
+</source>
+</p>
+</subsection>
+
+</section>
+</body>
+</document>
