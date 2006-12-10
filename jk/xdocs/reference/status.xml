@@ -380,22 +380,22 @@ contain the configuration information, you want to change. First the list for lo
 <b>lt</b>: recover_time (seconds)
 </li>
 <li>
-<b>ls</b>: sticky_session (checkbox)
+<b>ls</b>: sticky_session (0/f/n/off=off, 1/t/y/on=on; case insensitive)
 </li>
 <li>
-<b>lf</b>: sticky_session_force (checkbox)
+<b>lf</b>: sticky_session_force (0/f/n/off=off, 1/t/y/on=on; case insensitive)
 </li>
 <li>
-<b>lm</b>: method (1="Requests", 2="Traffic", 3="Busyness", 4="Sessions")
+<b>lm</b>: method (0/r="Requests", 1/t="Traffic", 2/b="Busyness", 3/s="Sessions"; case insensitive, only first character is used)
 </li>
 <li>
-<b>ll</b>: lock (1="Optimistic", 2="Pessimistic")
+<b>ll</b>: lock (0/o="Optimistic", 1/p="Pessimistic"; case insensitive, only first character is used)
 </li>
 </ul>
 And now the list of parameters you can use to change settings for load balancer members:
 <ul>
 <li>
-<b>wa</b>: activation flag (1="active", 2="disabled", 3="stopped")
+<b>wa</b>: activation flag (0/a="active", 1/d="disabled", 2/s="stopped"; case insensitive, only first character is used)
 </li>
 <li>
 <b>wf</b>: load balancing factor (integer weight)
