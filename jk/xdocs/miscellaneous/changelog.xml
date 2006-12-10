@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Allow integer and string values when setting enumeration/boolean
+      attributes via status worker update action. (rjung)
+      </update>
+      <update>
       Docs: New reference guide page for status worker. (rjung)
       </update>
       <update>
