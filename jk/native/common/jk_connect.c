@@ -497,7 +497,7 @@ int jk_shutdown_socket(jk_sock_t s)
     int rc = 0;
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
     int tmout = SECONDS_TO_LINGER * 1000;
-#else
+#elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO)
     struct timeval tv;
 #endif
     if (!IS_VALID_SOCKET(s))
