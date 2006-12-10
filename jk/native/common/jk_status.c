@@ -1104,9 +1104,9 @@ static void display_maps(jk_ws_service_t *s,
             }
             strcpy(off, uwr->uri);
             jk_print_prop_att_string(s, w, worker, "mount", mount);
-            jk_print_prop_item_string(s, w, worker, "maps.map", count, "type", uri_worker_map_get_match(uwr, buf, l));
-            jk_print_prop_item_string(s, w, worker, "maps.map", count, "uri", uwr->uri);
-            jk_print_prop_item_string(s, w, worker, "maps.map", count, "source", uri_worker_map_get_source(uwr, l));
+            jk_print_prop_item_string(s, w, worker, "map", count, "type", uri_worker_map_get_match(uwr, buf, l));
+            jk_print_prop_item_string(s, w, worker, "map", count, "uri", uwr->uri);
+            jk_print_prop_item_string(s, w, worker, "map", count, "source", uri_worker_map_get_source(uwr, l));
         }
     }
     if (count) {
