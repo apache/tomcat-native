@@ -110,10 +110,14 @@ public class JkHandler implements MBeanRegistration, NotificationListener {
     public void destroy() throws IOException {
     }
 
-    public MsgContext createMsgContext() {
-        return new MsgContext();
-    }
-    
+     public MsgContext createMsgContext() {
+         return new MsgContext(8*1024);
+     }
+
+     public MsgContext createMsgContext(int bsize) {
+        return new MsgContext(bsize);
+     }
+ 
     public int invoke(Msg msg, MsgContext mc )  throws IOException {
         return OK;
     }
