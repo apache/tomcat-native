@@ -140,7 +140,7 @@ public class AjpMessage {
     public void appendByte(int val) {
         buf[pos++] = (byte) val;
     }
-	
+
     
     /**
      * Append an int (4 bytes) to the message.
@@ -345,7 +345,7 @@ public class AjpMessage {
             log.error(sm.getString("ajpmessage.read", "" + length));
             return 0;
         }
-	
+
         if ((length == 0xFFFF) || (length == -1)) {
             return 0;
         }

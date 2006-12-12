@@ -90,7 +90,7 @@ public class AjpAprProcessor implements ActionHook {
         requestHeaderMessage = new AjpMessage(packetSize);
         responseHeaderMessage = new AjpMessage(packetSize);
         bodyMessage = new AjpMessage(packetSize);
-        
+
         if (endpoint.getFirstReadTimeout() > 0) {
             readTimeout = endpoint.getFirstReadTimeout() * 1000;
         } else {
@@ -107,19 +107,17 @@ public class AjpAprProcessor implements ActionHook {
 
         // Cause loading of HttpMessages
         HttpMessages.getMessage(200);
-        
+
         // Set the get body message buffer
         AjpMessage getBodyMessage = new AjpMessage(128);
         getBodyMessage.reset();
         getBodyMessage.appendByte(Constants.JK_AJP13_GET_BODY_CHUNK);
-        getBodyMessage.appendInt(packetSize -Constants.H_SIZE - 2);
+        getBodyMessage.appendInt(packetSize - Constants.H_SIZE - 2);
         getBodyMessage.end();
-        getBodyMessageBuffer =
-            ByteBuffer.allocateDirect(getBodyMessage.getLen());
-        getBodyMessageBuffer.put(getBodyMessage.getBuffer(), 0,
-                getBodyMessage.getLen());
-
-
+        getBodyMessageBuffer = ByteBuffer.allocateDirect(getBodyMessage
+                .getLen());
+        getBodyMessageBuffer.put(getBodyMessage.getBuffer(), 0, getBodyMessage
+                .getLen());
     }
 
 
@@ -1253,10 +1251,10 @@ public class AjpAprProcessor implements ActionHook {
     protected class SocketOutputBuffer
         implements OutputBuffer {
 
-        int maxSendPacketSize ;
-        
+        int maxSendPacketSize;
+
         SocketOutputBuffer(int maxSendSize) {
-        	this.maxSendPacketSize = maxSendSize - Constants.H_SIZE - 4 ;
+            this.maxSendPacketSize = maxSendSize - Constants.H_SIZE - 4;
         }
         
         /**
@@ -1277,7 +1275,7 @@ public class AjpAprProcessor implements ActionHook {
 
             int len = chunk.getLength();
             // 4 - hardcoded, byte[] marshalling overhead
-            int chunkSize = maxSendPacketSize ;
+            int chunkSize = maxSendPacketSize;
             int off = 0;
             while (len > 0) {
                 int thisTime = len;

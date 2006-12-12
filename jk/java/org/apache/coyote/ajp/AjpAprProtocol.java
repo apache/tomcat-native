@@ -419,7 +419,7 @@ public class AjpAprProtocol
 
     public void setPacketSize(int packetSize) {
         if(packetSize <Constants.MAX_PACKET_SIZE) {
-        	packetSize = Constants.MAX_PACKET_SIZE;
+            packetSize = Constants.MAX_PACKET_SIZE;
         }
         this.packetSize = packetSize;
     }
