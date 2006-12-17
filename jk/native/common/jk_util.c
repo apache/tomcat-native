@@ -420,7 +420,11 @@ int jk_log(jk_logger_t *l,
 {
     int rc = 0;
     /* Need to reserve space for newline and terminating zero byte. */
+#ifdef WIN32
+    static int usable_size = HUGE_BUFFER_SIZE-3;
+#else
     static int usable_size = HUGE_BUFFER_SIZE-2;
+#endif
     if (!l || !file || !fmt) {
         return -1;
     }
@@ -502,6 +506,9 @@ int jk_log(jk_logger_t *l,
         } else {
             used = usable_size;
         }
+#ifdef WIN32
+        buf[used++] = '\r';
+#endif
         buf[used] = '\n';
         buf[used+1] = 0;
         va_end(args);
