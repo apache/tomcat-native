@@ -1108,7 +1108,7 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t * ae,
 
     if ((len = ajp_read_fully_from_server(r, l, read_buf, len)) < 0) {
         jk_log(l, JK_LOG_INFO,
-               "(%) receiving data from client failed. "
+               "(%s) receiving data from client failed. "
                "Connection aborted or network problems",
                ae->worker->name);
         JK_TRACE_EXIT(l);
