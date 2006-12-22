@@ -150,7 +150,7 @@ have information about the cut and couldn't handle it.
 
 <directive name="retries" default="2" required="false">
 The number of retries that the worker will try in case of error returned from remote
-Tomcat. If the number of retries set is greater then three (the default value), on
+Tomcat. If the number of retries set is greater than two (the default value), on
 each retry after default an extra wait of 100ms will be inserted.
 </directive>
 
