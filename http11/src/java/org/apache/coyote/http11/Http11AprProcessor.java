@@ -1615,7 +1615,20 @@ public class Http11AprProcessor implements ActionHook {
             outputBuffer.addActiveFilter(outputFilters[Constants.GZIP_FILTER]);
             headers.setValue("Content-Encoding").setString("gzip");
             // Make Proxies happy via Vary (from mod_deflate)
-            headers.setValue("Vary").setString("Accept-Encoding");
+            // Bugzilla 39402: http://issues.apache.org/bugzilla/show_bug.cgi?id=39402
+            // Either add a "Vary: Accept-Encoding" header or add Accept-Encoding to
+            // the existing header.
+            String varyHeaderValue = "";
+            MessageBytes varyHeaderValueBytes = headers.getValue("Vary");
+            if (varyHeaderValueBytes!=null && varyHeaderValueBytes.getString()!=null) {
+                varyHeaderValue = varyHeaderValueBytes.getString();
+            }
+            if ("".equals(varyHeaderValue)) {
+                varyHeaderValue="Accept-Encoding";
+            } else {
+                varyHeaderValue=varyHeaderValue+","+"Accept-Encoding";
+            }
+            headers.setValue("Vary").setString(varyHeaderValue);
         }
 
         // Add date header
