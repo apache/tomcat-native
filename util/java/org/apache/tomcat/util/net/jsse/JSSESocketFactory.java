@@ -205,7 +205,11 @@ public abstract class JSSESocketFactory
         }
         String keystorePass = (String)attributes.get("keystorePass");
         if (keystorePass == null) {
-            keystorePass = keyPass;
+            // Bugzilla 38774: http://issues.apache.org/bugzilla/show_bug.cgi?id=38774
+            keystorePass = System.getProperty("javax.net.ssl.keyStorePassword");
+            if (keystorePass == null ) {
+                keystorePass = keyPass;
+            }
         }
         return keystorePass;
     }
