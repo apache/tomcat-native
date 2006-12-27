@@ -290,7 +290,7 @@ extern "C"
     typedef unsigned __int64 jk_uint64_t;
 #define JK_UINT64_T_FMT "I64u"
 #define JK_UINT64_T_HEX_FMT "I64x"
-#elif defined(AS400)
+#elif defined(AS400) || defined(NETWARE)
     typedef unsigned int jk_uint32_t;
 #define JK_UINT32_T_FMT "u"
 #define JK_UINT32_T_HEX_FMT "x"
