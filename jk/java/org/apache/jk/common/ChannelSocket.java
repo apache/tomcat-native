@@ -82,6 +82,7 @@ public class ChannelSocket extends JkHandler
     private int startPort=8009;
     private int maxPort=8019; // 0 for backward compat.
     private int port=startPort;
+    private int backlog = 0;
     private InetAddress inet;
     private int serverTimeout;
     private boolean tcpNoDelay=true; // nodelay to true by default
@@ -263,12 +264,16 @@ public class ChannelSocket extends JkHandler
     }
 
     public int getMaxSpareThreads() {
-        return tp.getMaxSpareThreads();   
+        return tp.getMaxSpareThreads();
     }
 
     public void setBacklog(int i) {
+        this.backlog = i;
     }
-    
+  
+    public int getBacklog() {
+        return backlog;
+    }    
     
     /* ==================== ==================== */
     ServerSocket sSocket;
@@ -367,9 +372,9 @@ public class ChannelSocket extends JkHandler
         for( int i=startPort; i<=maxPort; i++ ) {
             try {
                 if( inet == null ) {
-                    sSocket = new ServerSocket( i, 0 );
+                    sSocket = new ServerSocket( i, backlog );
                 } else {
-                    sSocket=new ServerSocket( i, 0, inet );
+                    sSocket=new ServerSocket( i, backlog, inet );
                 }
                 port=i;
                 break;
