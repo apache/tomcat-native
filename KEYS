@@ -461,8 +461,9 @@ POKL9N3T3MkdexuGv1Fc41aWQRcAn3GUI1TJ4wJDGCPAJMb16IrnxUdt
 =C30m
 -----END PGP PUBLIC KEY BLOCK-----
 
-Type Bits/KeyID    Date       User ID
-pub  1024D/E55B0D0E 2007-01-01 "Guenter Knauf" ("CODE SIGNING KEY") <fuankg@apache.org>
+Type bits /keyID    Date       User ID
+pub  1024D/E55B0D0E 2007/01/01 "Guenter Knauf" ("CODE SIGNING KEY") <fuankg@apache.org>
+     Key fingerprint = 3E6A C004 854F 3A7F 0356  6B59 2FF0 6894 E55B 0D0E
 
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.6 (MingW32)
