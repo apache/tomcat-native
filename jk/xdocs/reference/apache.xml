@@ -148,6 +148,7 @@ It will also work with pipe, by using a value of the form "| ...".
 The default value is logs/mod_jk.log.
 <br/>
 Pipes are supported for Apache 1.3 only since version 1.2.16.
+The default value exists only since version 1.2.20.
 </p></attribute>
 <attribute name="JkLogLevel" required="false"><p>
 The Tomcat Connector module log level, can be debug, info, warn
