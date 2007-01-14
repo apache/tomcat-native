@@ -335,13 +335,12 @@ public class ClassLoaderLogManager extends LogManager {
         }
         ClassLoaderLogInfo info = 
             new ClassLoaderLogInfo(new LogNode(null, localRootLogger));
-        info.loggers.put("", localRootLogger);
         classLoaderLoggers.put(classLoader, info);
         
         if (is != null) {
             readConfiguration(is, classLoader);
         }
-        
+        addLogger(localRootLogger);
     }
     
     
@@ -488,6 +487,9 @@ public class ClassLoaderLogManager extends LogManager {
 
         LogNode findNode(String name) {
             LogNode currentNode = this;
+            if (logger.getName().equals(name)) {
+                return this;
+            }
             while (name != null) {
                 final int dotIndex = name.indexOf('.');
                 final String nextName;
