@@ -1852,8 +1852,8 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                        "(%s) request failed, "
                        "because of response status %d, "
                        "recoverable operation attempt=%d",
-                       p->worker->http_status_fail,
-                       p->worker->name, i);
+                       p->worker->name,
+                       p->worker->http_status_fail, i);
                 JK_TRACE_EXIT(l);
                 if (i >= JK_RETRIES) {
                     jk_sleep(JK_SLEEP_DEF);
