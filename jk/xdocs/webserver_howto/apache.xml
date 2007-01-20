@@ -254,8 +254,10 @@ Note: this file may also be generated as $TOMCAT_HOME/conf/auto/mod_jk.conf
 </p>
 
 <p>
-This will tell Apache to use directives in the <b>mod_jk.conf-auto</b> file in the Apache configuration.
-This file is created by enabling the Apache auto-configuration by adding the listener to the Engine
+This will tell Apache to use directives in the <b>mod_jk.conf-auto</b> file in
+the Apache configuration. This file is created by enabling the Apache
+auto-configuration by creating your workers.properties file at
+$TOMCAT_HOME/conf/jk/workers.properties and adding the listener to the Engine
 element in the server.xml file as per the following example.
 <b>Please note that this example is specific to Tomcat 5.x, unlike other sections of this document
    which also apply to previous Tomcat branches.</b>
