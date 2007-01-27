@@ -1644,6 +1644,11 @@ static void form_worker(jk_ws_service_t *s,
         return;
     }
 
+    jk_shm_lock();
+    if (lb->sequence != lb->s->sequence)
+        jk_lb_pull(lb, l);
+    jk_shm_unlock();
+
     jk_putv(s, "<hr/><h3>Edit load balancer settings for ",
             name, "</h3>\n", NULL);
 

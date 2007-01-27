@@ -62,7 +62,7 @@ struct jk_shm_worker
     /* Sequence counter starting at 0 and increasing
      * every time we change the config
      */
-    unsigned int sequence;
+    volatile unsigned int sequence;
     /* Number of currently busy channels */
     volatile int busy;
     /* Maximum number of busy channels */

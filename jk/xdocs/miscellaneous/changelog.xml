@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      JkStatus: Improve data synchronization between different processes. (rjung)
+      </fix>
+      <fix>
         <bug>41381</bug>: Fix segfault in feature fail_on_status
         (wrong order of log arguments). Patch by Juri Haberland. (rjung)
       </fix>

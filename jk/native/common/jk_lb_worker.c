@@ -395,6 +395,8 @@ static int recover_workers(lb_worker_t *p,
     worker_record_t *w = NULL;
     JK_TRACE_ENTER(l);
 
+    if (p->sequence != p->s->sequence)
+        jk_lb_pull(p, l);
     for (i = 0; i < p->num_of_workers; i++) {
         w = &p->lb_workers[i];
         if (w->s->state == JK_LB_STATE_ERROR) {
