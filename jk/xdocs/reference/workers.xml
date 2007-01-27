@@ -375,7 +375,7 @@ Specifies the url for cascading stylesheet to use.
 <directive name="read_only" default="False" required="false">
 A status worker with read_only=True will not allow any operations,
 that change the runtime state or configuration of the other workers.
-These are edit/update/reset.
+These are edit/update/reset/recover.
 <p>
 This feature has been added in <b>jk 1.2.20</b>.
 </p>

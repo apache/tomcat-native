@@ -27,6 +27,13 @@
   <subsection name="Native">
     <changelog>
       <add>
+      JkStatus: Allow a user of a read/write status worker to switch it
+      to and from read_only mode temporarily. (rjung)
+      </add>
+      <fix>
+      JkStatus: Do not show read/write commands in a read_only status worker. (rjung)
+      </fix>
+      <add>
       JkStatus: Allow lb sub workers in error state to be marked for recovery
       administratively from the status worker. (rjung)
       </add>

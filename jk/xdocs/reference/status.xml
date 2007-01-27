@@ -242,7 +242,7 @@ access to the status worker URLs you have chosen. Nevertheless two configuration
 attributes of status workers are helpful. The attribute "read_only" disables all features of
 the status worker, that can be used to change configurations or runtime status of the other workers.
 A read_only status worker will not allow access to the edit, update, reset or recover actions.
-The default value is "False", ie. read-write. To enable read_only you need to set it to "True".
+The default value is "False", ie. read/write. To enable read_only you need to set it to "True".
 </p>
 <p>
 You could configure two status workers, one has read_only and will be made available to a larger
@@ -369,6 +369,9 @@ by default no options are activated. The following options exist:
 </li>
 <li>
 <b>0x0010</b>: hide ajp workers
+</li>
+<li>
+<b>0x0020</b>: only allow read_only actions for a read/write status worker.
 </li>
 </ul>
 </p>

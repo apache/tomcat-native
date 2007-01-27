@@ -69,6 +69,7 @@
 #define JK_STATUS_ARG_OPTION_NO_LEGEND     0x0004
 #define JK_STATUS_ARG_OPTION_NO_LB         0x0008
 #define JK_STATUS_ARG_OPTION_NO_AJP        0x0010
+#define JK_STATUS_ARG_OPTION_READ_ONLY     0x0020
 
 #define JK_STATUS_ARG_LB_RETRIES           ("lr")
 #define JK_STATUS_ARG_LB_RECOVER_TIME      ("lt")
@@ -1150,6 +1151,7 @@ static void display_worker_lb(jk_ws_service_t *s,
     char buf_wr[32];
     int cmd;
     int mime;
+    int read_only = 0;
     int single = 0;
     unsigned int hide_members;
     const char *arg;
@@ -1169,6 +1171,13 @@ static void display_worker_lb(jk_ws_service_t *s,
     mime = status_mime_int(arg);
     hide_members = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
                                 JK_STATUS_ARG_OPTION_NO_MEMBERS;
+    if (w->read_only) {
+        read_only = 1;
+    }
+    else {
+        read_only = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
+                    JK_STATUS_ARG_OPTION_READ_ONLY;
+    }
     if (cmd == JK_STATUS_CMD_SHOW) {
         single = 1;
     }
@@ -1202,12 +1211,14 @@ static void display_worker_lb(jk_ws_service_t *s,
             status_write_uri(s, p, "S", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
                              name, "", 0, 0, "", l);
         }
-        jk_puts(s, "|");
-        status_write_uri(s, p, "E", JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                         name, "", 0, 0, "", l);
-        jk_puts(s, "|");
-        status_write_uri(s, p, "R", JK_STATUS_CMD_RESET, JK_STATUS_MIME_UNKNOWN,
-                         name, "", 0, 0, "", l);
+        if (!read_only) {
+            jk_puts(s, "|");
+            status_write_uri(s, p, "E", JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
+                             name, "", 0, 0, "", l);
+            jk_puts(s, "|");
+            status_write_uri(s, p, "R", JK_STATUS_CMD_RESET, JK_STATUS_MIME_UNKNOWN,
+                             name, "", 0, 0, "", l);
+        }
         jk_puts(s, "]&nbsp;&nbsp;");
         jk_putv(s, "Worker Status for ", name, "</h3>\n", NULL);
         jk_puts(s, "<table>" JK_STATUS_SHOW_LB_HEAD);
@@ -1324,18 +1335,22 @@ static void display_worker_lb(jk_ws_service_t *s,
 
             if (mime == JK_STATUS_MIME_HTML) {
 
-                jk_puts(s, "<tr>\n<td>[");
-                status_write_uri(s, p, "E", JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                                 name, wr->s->name, 0, 0, "", l);
-                jk_puts(s, "|");
-                status_write_uri(s, p, "R", JK_STATUS_CMD_RESET, JK_STATUS_MIME_UNKNOWN,
-                                 name, wr->s->name, 0, 0, "", l);
-                if (wr->s->state == JK_LB_STATE_ERROR) {
-                    jk_puts(s, "|");
-                    status_write_uri(s, p, "T", JK_STATUS_CMD_RECOVER, JK_STATUS_MIME_UNKNOWN,
+                jk_puts(s, "<tr>\n<td>");
+                if (!read_only) {
+                    jk_puts(s, "[");
+                    status_write_uri(s, p, "E", JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
                                      name, wr->s->name, 0, 0, "", l);
+                    jk_puts(s, "|");
+                    status_write_uri(s, p, "R", JK_STATUS_CMD_RESET, JK_STATUS_MIME_UNKNOWN,
+                                     name, wr->s->name, 0, 0, "", l);
+                    if (wr->s->state == JK_LB_STATE_ERROR) {
+                        jk_puts(s, "|");
+                        status_write_uri(s, p, "T", JK_STATUS_CMD_RECOVER, JK_STATUS_MIME_UNKNOWN,
+                                         name, wr->s->name, 0, 0, "", l);
+                    }
+                    jk_puts(s, "]");
                 }
-                jk_puts(s, "]&nbsp;</td>");
+                jk_puts(s, "&nbsp;</td>");
                 jk_printf(s, JK_STATUS_SHOW_MEMBER_ROW,
                           wr->s->name,
                           status_worker_type(wr->w->type),
@@ -1448,25 +1463,27 @@ static void display_worker_lb(jk_ws_service_t *s,
         if (mime == JK_STATUS_MIME_HTML) {
 
             jk_puts(s, "</table><br/>\n");
-            jk_puts(s, "<b>E</b>dit one attribute for all members: [");
-            status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_ACTIVATION, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                             name, "", 0, 0, JK_STATUS_ARG_LBM_ACTIVATION, l);
-            jk_puts(s, "\n|");
-            status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_FACTOR, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                             name, "", 0, 0, JK_STATUS_ARG_LBM_FACTOR, l);
-            jk_puts(s, "\n|");
-            status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_ROUTE, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                             name, "", 0, 0, JK_STATUS_ARG_LBM_ROUTE, l);
-            jk_puts(s, "\n|");
-            status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_REDIRECT, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                             name, "", 0, 0, JK_STATUS_ARG_LBM_REDIRECT, l);
-            jk_puts(s, "\n|");
-            status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_DOMAIN, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                             name, "", 0, 0, JK_STATUS_ARG_LBM_DOMAIN, l);
-            jk_puts(s, "\n|");
-            status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_DISTANCE, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                             name, "", 0, 0, JK_STATUS_ARG_LBM_DISTANCE, l);
-            jk_puts(s, "\n]<br/>\n");
+            if (!read_only) {
+                jk_puts(s, "<b>E</b>dit one attribute for all members: [");
+                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_ACTIVATION, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
+                                 name, "", 0, 0, JK_STATUS_ARG_LBM_ACTIVATION, l);
+                jk_puts(s, "\n|");
+                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_FACTOR, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
+                                 name, "", 0, 0, JK_STATUS_ARG_LBM_FACTOR, l);
+                jk_puts(s, "\n|");
+                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_ROUTE, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
+                                 name, "", 0, 0, JK_STATUS_ARG_LBM_ROUTE, l);
+                jk_puts(s, "\n|");
+                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_REDIRECT, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
+                                 name, "", 0, 0, JK_STATUS_ARG_LBM_REDIRECT, l);
+                jk_puts(s, "\n|");
+                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_DOMAIN, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
+                                 name, "", 0, 0, JK_STATUS_ARG_LBM_DOMAIN, l);
+                jk_puts(s, "\n|");
+                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_DISTANCE, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
+                                 name, "", 0, 0, JK_STATUS_ARG_LBM_DISTANCE, l);
+                jk_puts(s, "\n]<br/>\n");
+            }
 
         }
 
@@ -2919,6 +2936,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     int cmd;
     int mime;
     int refresh;
+    int read_only = 0;
     const char *arg;
     char *err = NULL;
     status_endpoint_t *p;
@@ -2963,6 +2981,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
     status_get_string(p, JK_STATUS_ARG_MIME, NULL, &arg, l);
     mime = status_mime_int(arg);
     refresh = status_get_int(p, JK_STATUS_ARG_REFRESH, 0, l);
+    if (w->read_only) {
+        read_only = 1;
+    }
+    else {
+        read_only = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
+                    JK_STATUS_ARG_OPTION_READ_ONLY;
+    }
 
     if (mime == JK_STATUS_MIME_HTML) {
         s->start_response(s, 200, "OK", headers_names, headers_vhtml, 3);
@@ -3021,7 +3046,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     }
 
     if (!err) {
-        if (w->read_only &&
+        if (read_only &&
             (cmd == JK_STATUS_CMD_EDIT ||
             cmd == JK_STATUS_CMD_UPDATE ||
             cmd == JK_STATUS_CMD_RESET ||
@@ -3195,6 +3220,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 jk_puts(s, "<h1>JK Status Manager for ");
                 jk_puts(s, s->server_name);
                 jk_printf(s, ":%d", s->server_port);
+                if (read_only) {
+                    jk_puts(s, " (read only)");
+                }
                 jk_puts(s, "</h1>\n\n");
                 if ((cmd == JK_STATUS_CMD_LIST) ||
                     (cmd == JK_STATUS_CMD_SHOW) ||
@@ -3289,12 +3317,26 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_puts(s, "]&nbsp;&nbsp;");
                 }
                 if (cmd == JK_STATUS_CMD_LIST || cmd == JK_STATUS_CMD_SHOW) {
+                    if (!w->read_only) {
+                        jk_puts(s, "[");
+                        if (read_only) {
+                            status_write_uri(s, p, "Read/Write", 0, JK_STATUS_MIME_UNKNOWN,
+                                             NULL, NULL, 0, JK_STATUS_ARG_OPTION_READ_ONLY, NULL, l);
+                        }
+                        else {
+                            status_write_uri(s, p, "Read Only", 0, JK_STATUS_MIME_UNKNOWN,
+                                             NULL, NULL, JK_STATUS_ARG_OPTION_READ_ONLY, 0, NULL, l);
+                        }
+                        jk_puts(s, "]&nbsp;&nbsp;\n");
+                    }
+                }
+                if (cmd == JK_STATUS_CMD_LIST || cmd == JK_STATUS_CMD_SHOW) {
                     jk_puts(s, "[");
                     if (cmd == JK_STATUS_CMD_LIST)
                         jk_puts(s, "<b>S</b>=Show only this worker");
-                    if (!w->read_only && cmd == JK_STATUS_CMD_LIST)
+                    if (!read_only && cmd == JK_STATUS_CMD_LIST)
                         jk_puts(s, ", ");
-                    if (!w->read_only)
+                    if (!read_only)
                         jk_puts(s, "<b>E</b>=Edit worker, <b>R</b>=Reset worker state, <b>T</b>=Try worker recovery");
                     jk_puts(s, "]\n");
                 }
