@@ -105,8 +105,9 @@
 #define JK_STATUS_CMD_UPDATE               (4)
 #define JK_STATUS_CMD_RESET                (5)
 #define JK_STATUS_CMD_VERSION              (6)
+#define JK_STATUS_CMD_RECOVER              (7)
 #define JK_STATUS_CMD_DEF                  (JK_STATUS_CMD_LIST)
-#define JK_STATUS_CMD_MAX                  (JK_STATUS_CMD_VERSION)
+#define JK_STATUS_CMD_MAX                  (JK_STATUS_CMD_RECOVER)
 #define JK_STATUS_CMD_TEXT_UNKNOWN         ("unknown")
 #define JK_STATUS_CMD_TEXT_LIST            ("list")
 #define JK_STATUS_CMD_TEXT_SHOW            ("show")
@@ -114,6 +115,7 @@
 #define JK_STATUS_CMD_TEXT_UPDATE          ("update")
 #define JK_STATUS_CMD_TEXT_RESET           ("reset")
 #define JK_STATUS_CMD_TEXT_VERSION         ("version")
+#define JK_STATUS_CMD_TEXT_RECOVER         ("recover")
 #define JK_STATUS_CMD_TEXT_DEF             (JK_STATUS_CMD_TEXT_LIST)
 
 #define JK_STATUS_MIME_UNKNOWN             (0)
@@ -289,6 +291,7 @@ static const char *cmd_type[] = {
     JK_STATUS_CMD_TEXT_UPDATE,
     JK_STATUS_CMD_TEXT_RESET,
     JK_STATUS_CMD_TEXT_VERSION,
+    JK_STATUS_CMD_TEXT_RECOVER,
     NULL
 };
 
@@ -768,6 +771,8 @@ static int status_cmd_int(const char *cmd)
         return JK_STATUS_CMD_RESET;
     else if (!strcmp(cmd, JK_STATUS_CMD_TEXT_VERSION))
         return JK_STATUS_CMD_VERSION;
+    else if (!strcmp(cmd, JK_STATUS_CMD_TEXT_RECOVER))
+        return JK_STATUS_CMD_RECOVER;
     return JK_STATUS_CMD_UNKNOWN;
 }
 
@@ -848,7 +853,8 @@ static void status_write_uri(jk_ws_service_t *s,
     prev = status_cmd_int(arg);
     if (cmd == JK_STATUS_CMD_UNKNOWN) {
         if (prev == JK_STATUS_CMD_UPDATE ||
-            prev == JK_STATUS_CMD_RESET) {
+            prev == JK_STATUS_CMD_RESET ||
+            prev == JK_STATUS_CMD_RECOVER) {
             cmd = from;
         }
     }
@@ -856,7 +862,8 @@ static void status_write_uri(jk_ws_service_t *s,
         jk_printf(s, "%s%s=%s", started ? "&amp;" : "?",
                   JK_STATUS_ARG_CMD, status_cmd_text(cmd));
         if (cmd == JK_STATUS_CMD_EDIT ||
-            cmd == JK_STATUS_CMD_RESET) {
+            cmd == JK_STATUS_CMD_RESET ||
+            cmd == JK_STATUS_CMD_RECOVER) {
             jk_printf(s, "%s%s=%s", "&amp;",
                       JK_STATUS_ARG_FROM, status_cmd_text(prev));
         }
@@ -1323,6 +1330,11 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_puts(s, "|");
                 status_write_uri(s, p, "R", JK_STATUS_CMD_RESET, JK_STATUS_MIME_UNKNOWN,
                                  name, wr->s->name, 0, 0, "", l);
+                if (wr->s->state == JK_LB_STATE_ERROR) {
+                    jk_puts(s, "|");
+                    status_write_uri(s, p, "T", JK_STATUS_CMD_RECOVER, JK_STATUS_MIME_UNKNOWN,
+                                     name, wr->s->name, 0, 0, "", l);
+                }
                 jk_puts(s, "]&nbsp;</td>");
                 jk_printf(s, JK_STATUS_SHOW_MEMBER_ROW,
                           wr->s->name,
@@ -2827,6 +2839,79 @@ static int reset_worker(jk_ws_service_t *s,
     return JK_FALSE;
 }
 
+static int recover_worker(jk_ws_service_t *s,
+                          status_endpoint_t *p,
+                          jk_logger_t *l)
+{
+    unsigned int i;
+    const char *worker;
+    const char *sub_worker;
+    lb_worker_t *lb;
+    jk_worker_t *jw = NULL;
+    worker_record_t *wr = NULL;
+
+    JK_TRACE_ENTER(l);
+    status_get_string(p, JK_STATUS_ARG_WORKER, "", &worker, l);
+    status_get_string(p, JK_STATUS_ARG_SUB_WORKER, "", &sub_worker, l);
+    jk_log(l, JK_LOG_INFO,
+           "recovering worker '%s' sub worker '%s'",
+           worker ? worker : "(null)", sub_worker ? sub_worker : "(null)");
+    if (!worker || !worker[0]) {
+        jk_log(l, JK_LOG_WARNING,
+               "NULL or EMPTY worker param");
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    jw = wc_get_worker_for_name(worker, l);
+    if (!jw) {
+        jk_log(l, JK_LOG_WARNING,
+               "could not find worker '%s'",
+               worker);
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    if (jw->type != JK_LB_WORKER_TYPE) {
+        jk_log(l, JK_LOG_WARNING,
+               "worker type not implemented");
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    lb = (lb_worker_t *)jw->worker_private;
+    if (!lb) {
+        jk_log(l, JK_LOG_WARNING,
+               "lb structure is (null)");
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+
+    if (!sub_worker || !sub_worker[0]) {
+        jk_log(l, JK_LOG_WARNING,
+               "only lb sub workers can be recovered");
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+
+    for (i = 0; i < (int)lb->num_of_workers; i++) {
+        wr = &(lb->lb_workers[i]);
+        if (strcmp(sub_worker, wr->s->name) == 0)
+            break;
+    }
+    if (!wr || i == (int)lb->num_of_workers) {
+        jk_log(l, JK_LOG_WARNING,
+               "could not find worker '%s'",
+               sub_worker);
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    if (wr->s->state == JK_LB_STATE_ERROR) {
+        wr->s->state = JK_LB_STATE_RECOVER;
+        JK_TRACE_EXIT(l);
+        return JK_TRUE;
+    }
+    JK_TRACE_EXIT(l);
+    return JK_FALSE;
+}
+
 static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l, int *is_error)
@@ -2939,7 +3024,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
         if (w->read_only &&
             (cmd == JK_STATUS_CMD_EDIT ||
             cmd == JK_STATUS_CMD_UPDATE ||
-            cmd == JK_STATUS_CMD_RESET)) {
+            cmd == JK_STATUS_CMD_RESET ||
+            cmd == JK_STATUS_CMD_RECOVER)) {
             err = "This command is not allowed in read only mode.";
         }
     }
@@ -2984,6 +3070,26 @@ static int JK_METHOD service(jk_endpoint_t *e,
             jk_shm_lock();
             if (reset_worker(s, p, l) == JK_FALSE) {
                 err = "Reset failed";
+            }
+            /* unlock the shared memory */
+            jk_shm_unlock();
+            if (mime == JK_STATUS_MIME_HTML) {
+                jk_puts(s, "\n<meta http-equiv=\"Refresh\" content=\""
+                        JK_STATUS_WAIT_AFTER_UPDATE ";url=");
+                status_write_uri(s, p, NULL, JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, 0, NULL, l);
+                jk_puts(s, "\">");
+                if (!err) {
+                    jk_putv(s, "<p><b>Result: OK - You will be redirected in "
+                            JK_STATUS_WAIT_AFTER_UPDATE " seconds.</b><p/>", NULL);
+                }
+            }
+        }
+        else if (cmd == JK_STATUS_CMD_RECOVER) {
+            /* lock shared memory */
+            jk_shm_lock();
+            if (recover_worker(s, p, l) == JK_FALSE) {
+                err = "Marking worker for recovery failed";
             }
             /* unlock the shared memory */
             jk_shm_unlock();
@@ -3189,7 +3295,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     if (!w->read_only && cmd == JK_STATUS_CMD_LIST)
                         jk_puts(s, ", ");
                     if (!w->read_only)
-                        jk_puts(s, "<b>E</b>=Edit worker, <b>R</b>=Reset worker state");
+                        jk_puts(s, "<b>E</b>=Edit worker, <b>R</b>=Reset worker state, <b>T</b>=Try worker recovery");
                     jk_puts(s, "]\n");
                 }
                 if (cmd == JK_STATUS_CMD_LIST) {

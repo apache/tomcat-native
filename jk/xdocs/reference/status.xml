@@ -73,6 +73,9 @@ worker will be applied during runtime without a restart of the web server.
 or one of its members.
 </li>
 <li>
+<b>recover</b>: Mark a member of a load balancer, that is in error state, for recovery.
+</li>
+<li>
 <b>version</b>: only show version information of the web server and the JK software
 </li>
 </ul>
@@ -238,8 +241,8 @@ We urge you to use the builtin access control features of your web server to con
 access to the status worker URLs you have chosen. Nevertheless two configuration
 attributes of status workers are helpful. The attribute "read_only" disables all features of
 the status worker, that can be used to change configurations or runtime status of the other workers.
-A read_only status worker will not allow access to the edit, update and reset acions. The default value
-is "False", ie. read-write. To enable read_only you need to set it to "True".
+A read_only status worker will not allow access to the edit, update, reset or recover actions.
+The default value is "False", ie. read-write. To enable read_only you need to set it to "True".
 </p>
 <p>
 You could configure two status workers, one has read_only and will be made available to a larger
@@ -316,8 +319,9 @@ updating to future versions.
 <br/>
 <p>
 The action is determined by the parameter <b>cmd</b>. It can have the values "list", "show",
-"edit", "update", "reset" and "version". If you omit the "cmd" parameter, the default "list"
-will be used. All actions except for "list" and "refresh" need additional parameters.
+"edit", "update", "reset", "recover" and "version". If you omit the "cmd" parameter,
+the default "list" will be used.
+All actions except for "list" and "refresh" need additional parameters.
 </p>
 </subsection>
 <subsection name="Output Format">

@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <add>
+      JkStatus: Allow lb sub workers in error state to be marked for recovery
+      administratively from the status worker. (rjung)
+      </add>
+      <add>
       Load Balancer: Do not try to recover multiple times in parallel.
       Use additional runtime states "PROBE" and "FORCED". (rjung)
       </add>
