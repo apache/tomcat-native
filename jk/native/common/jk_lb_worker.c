@@ -40,8 +40,8 @@
  * The load balancing code in this
  */
 
-#define JK_WORKER_USABLE(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->state != JK_LB_STATE_BUSY && (w)->activation != JK_LB_ACTIVATION_STOPPED && (w)->activation != JK_LB_ACTIVATION_DISABLED)
-#define JK_WORKER_USABLE_STICKY(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->activation != JK_LB_ACTIVATION_STOPPED)
+#define JK_WORKER_USABLE(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->state != JK_LB_STATE_PROBE && (w)->state != JK_LB_STATE_BUSY && (w)->activation != JK_LB_ACTIVATION_STOPPED && (w)->activation != JK_LB_ACTIVATION_DISABLED)
+#define JK_WORKER_USABLE_STICKY(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->state != JK_LB_STATE_PROBE && (w)->activation != JK_LB_ACTIVATION_STOPPED)
 
 static const char *lb_locking_type[] = {
     JK_LB_LOCK_TEXT_OPTIMISTIC,
@@ -65,6 +65,8 @@ static const char *lb_state_type[] = {
     JK_LB_STATE_TEXT_RECOVER,
     JK_LB_STATE_TEXT_BUSY,
     JK_LB_STATE_TEXT_ERROR,
+    JK_LB_STATE_TEXT_FORCE,
+    JK_LB_STATE_TEXT_PROBE,
     "unknown",
     NULL
 };
@@ -172,6 +174,10 @@ int jk_lb_get_state_code(const char *v)
         return JK_LB_STATE_BUSY;
     else if  (*v == 'e' || *v == 'E' || *v == '4')
         return JK_LB_STATE_ERROR;
+    else if  (*v == 'f' || *v == 'F' || *v == '5')
+        return JK_LB_STATE_FORCE;
+    else if  (*v == 'p' || *v == 'P' || *v == '6')
+        return JK_LB_STATE_PROBE;
     else
         return JK_LB_STATE_DEF;
 }
@@ -446,7 +452,7 @@ static int force_recovery(lb_worker_t *p,
                 jk_log(l, JK_LOG_INFO,
                        "worker %s is marked for recovery",
                        w->s->name);
-            w->s->state = JK_LB_STATE_RECOVER;
+            w->s->state = JK_LB_STATE_FORCE;
             forced++;
         }
     }
@@ -857,6 +863,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
             int retry_wait = JK_LB_MIN_RETRY_WAIT;
             s->route = rec->r;
             prec = rec;
+
+            if (rec->s->state == JK_LB_STATE_RECOVER)
+                rec->s->state = JK_LB_STATE_PROBE;
 
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,

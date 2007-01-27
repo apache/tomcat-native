@@ -26,6 +26,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <add>
+      Load Balancer: Do not try to recover multiple times in parallel.
+      Use additional runtime states "PROBE" and "FORCED". (rjung)
+      </add>
       <fix>
       JkStatus: Improve data synchronization between different processes. (rjung)
       </fix>

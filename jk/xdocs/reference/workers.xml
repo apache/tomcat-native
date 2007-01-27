@@ -399,7 +399,7 @@ of the state of its members. There are three such states,
 <p>
 These states are determined depending on the activation of the members
 (active, disabled, stopped) and their runtime state
-(ok, n/a, busy, recovering, error).
+(ok, n/a, busy, recovering, probing, forced recovery, error).
 By default, members are assumed to be "good", if their activation
 is "active" and their runtime state is not "error".
 </p>
@@ -409,7 +409,9 @@ attribute "good". Each value gives a possible match for the members,
 and one match suffices. Each value is either a single character, or two
 characters combined with a dot ".". The single characters are the
 first characters in the words "active", "disabled", "stopped",
-"ok", "na", "busy", "recovering", "error". If a value consists only
+"ok", "na", "busy", "recovering", "error". The additional states "probing"
+and "forced recovery" are always rated equivalent to "recovering".
+If a value consists only
 of a single character, then all members with this activation or runtime
 state will be assumed good. A combination of an activation and a runtime
 state concatenated with a dot "." does only apply to a member, that has

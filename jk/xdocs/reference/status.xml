@@ -273,7 +273,8 @@ system design and your operating practises your preferred categorization might v
 </p>
 <p>
 The categorization is based on the activation state of the workers (active, disabled or stopped),
-which is a pure configuration state, and the runtime state (OK, N/A, busy, recovering, error)
+which is a pure configuration state, and the runtime state
+(OK, N/A, busy, recovering, probing, forced recovery, error)
 which only depends on the runtime situation.
 </p>
 <p>
@@ -288,7 +289,9 @@ Workers that fit neither of the two groups, are considered to be "degraded".
 You can define other rules for the grouping into good, bad and degraded.
 The two attributes "good" and "bad" can be populated by a comma-separated list ob single characters or
 dot-separated pairs. Each character stands for the first character of one of the possible states "active",
-"disabled", "stopped", "ok", "na", "busy", "recovering" and "error". Comma-separated entries will be combined
+"disabled", "stopped", "ok", "na", "busy", "recovering" and "error". The additional states "probing"
+and "forced recovery" are always rated equivalent to "recovering".
+Comma-separated entries will be combined
 with logical "or", if you combine a configuration and a runtime state with a dot. the are combined with logical
 "and". So the default value for "good" is "a.o,a.n,a.b,a.r", for "bad" it is "e,s".
 </p>

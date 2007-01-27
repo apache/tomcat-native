@@ -595,6 +595,12 @@ static int status_rate(worker_record_t *wr, status_worker_t *w,
     case JK_LB_STATE_RECOVER:
         mask &= JK_STATUS_MASK_RECOVER;
         break;
+    case JK_LB_STATE_FORCE:
+        mask &= JK_STATUS_MASK_RECOVER;
+        break;
+    case JK_LB_STATE_PROBE:
+        mask &= JK_STATUS_MASK_RECOVER;
+        break;
     default:
         jk_log(l, JK_LOG_WARNING,
                "Unknown state type '%d'",
@@ -2260,7 +2266,8 @@ static void display_legend(jk_ws_service_t *s,
             "<tr><th>Act</th><td>Worker activation configuration<br/>\n"
             "ACT=Active, DIS=Disabled, STP=Stopped</td></tr>\n"
             "<tr><th>Stat</th><td>Worker error status<br/>\n"
-            "OK=OK, N/A=Unknown, ERR=Error, REC=Recovering, BSY=Busy</td></tr>\n"
+            "OK=OK, N/A=Unknown, ERR=Error, BSY=Busy<br/>\n"
+            "REC=Recovering, PRB=Probing, FRC=Forced Recovery</td></tr>\n"
             "<tr><th>D</th><td>Worker distance</td></tr>\n"
             "<tr><th>F</th><td>Load Balancer factor</td></tr>\n"
             "<tr><th>M</th><td>Load Balancer multiplicity</td></tr>\n"
