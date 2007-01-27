@@ -113,9 +113,11 @@ They can be used to manage the JK web server plugins via the special status work
 [echoproperties] worker.result.type=OK
 [echoproperties] worker.loadbalancer.member_count=2
 [echoproperties] worker.loadbalancer.map_count=2
+[echoproperties] worker.loadbalancer.mtime_to_maintenance_min=12
+[echoproperties] worker.loadbalancer.mtime_to_maintenance_max=75
 [echoproperties] worker.node02.lbfactor=1
 [echoproperties] worker.node02.max_busy=0
-[echoproperties] worker.jk_version=mod_jk/1.2.20-dev
+[echoproperties] worker.jk_version=mod_jk/1.2.21-dev
 [echoproperties] worker.loadbalancer.bad=0
 [echoproperties] worker.node02.redirect=
 [echoproperties] worker.node01.host=localhost
@@ -143,7 +145,7 @@ They can be used to manage the JK web server plugins via the special status work
 [echoproperties] worker.node02.address=127.0.0.1\:7409
 [echoproperties] worker.node02.readed=0
 [echoproperties] worker.loadbalancer.busy=0
-[echoproperties] worker.web_server=Apache/2.0.59 (Unix) mod_jk/1.2.20-dev
+[echoproperties] worker.web_server=Apache/2.0.59 (Unix) mod_jk/1.2.21-dev
 [echoproperties] worker.node02.errors=0
 [echoproperties] worker.node02.type=ajp13
 [echoproperties] worker.loadbalancer.map.1.uri=/ClusterTest*

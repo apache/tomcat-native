@@ -43,6 +43,8 @@ public class JkBalancer implements Serializable {
     int max_busy = -1 ;
     int member_count = -1 ;
     int map_count = -1 ;
+    int time_to_maintenance_min = -1 ;
+    int time_to_maintenance_max = -1 ;
        
     List members = new ArrayList() ;
     List mappings = new ArrayList() ;
@@ -167,135 +169,167 @@ public class JkBalancer implements Serializable {
     public void setType(String type) {
         this.type = type;
     }
-	/**
-	 * @return the bad
-     * @since mod_jk 1.2.20
-	 */
-	public int getBad() {
-		return bad;
-	}
-	/**
-	 * @param bad the bad to set
-     * @since mod_jk 1.2.20
-	 */
-	public void setBad(int bad) {
-		this.bad = bad;
-	}
-	/**
-	 * @return the busy
-     * @since mod_jk 1.2.20
-	 */
-	public int getBusy() {
-		return busy;
-	}
-	/**
-	 * @param busy the busy to set
-     * @since mod_jk 1.2.20
-	 */
-	public void setBusy(int busy) {
-		this.busy = busy;
-	}
-	/**
-	 * @return the degraded
-     * @since mod_jk 1.2.20
-	 */
-	public int getDegraded() {
-		return degraded;
-	}
-	/**
-	 * @param degraded the degraded to set
-     * @since mod_jk 1.2.20
-	 */
-	public void setDegraded(int degraded) {
-		this.degraded = degraded;
-	}
-	/**
-	 * @return the good
-     * @since mod_jk 1.2.20
-	 */
-	public int getGood() {
-		return good;
-	}
-	/**
-	 * @param good the good to set
-     * @since mod_jk 1.2.20
-	 */
-	public void setGood(int good) {
-		this.good = good;
-	}
-	/**
-	 * @return the lock
-     * @since mod_jk 1.2.20
-	 */
-	public String getLock() {
-		return lock;
-	}
-	/**
-	 * @param lock the lock to set
-     * @since mod_jk 1.2.20
-	 */
-	public void setLock(String lock) {
-		this.lock = lock;
-	}
-	/**
-	 * @return the max_busy
-     * @since mod_jk 1.2.20
-	 */
-	public int getMax_busy() {
-		return max_busy;
-	}
-	/**
-	 * @param max_busy the max_busy to set
-     * @since mod_jk 1.2.20
-	 */
-	public void setMax_busy(int max_busy) {
-		this.max_busy = max_busy;
-	}
-	/**
-	 * @return the method
-     * @since mod_jk 1.2.20
-	 */
-	public String getMethod() {
-		return method;
-	}
-	/**
-	 * @param method the method to set
+    /**
+     * @return the bad
      * @since mod_jk 1.2.20
      */
-	public void setMethod(String method) {
-		this.method = method;
-	}
-	
-	/**
-	 * @return the member_count
+    public int getBad() {
+        return bad;
+    }
+    /**
+     * @param bad the bad to set
      * @since mod_jk 1.2.20
- 	 */
-	public int getMember_count() {
-		return member_count;
-	}
-	
-	/**
-	 * @param member_count the member_count to set
+     */
+    public void setBad(int bad) {
+        this.bad = bad;
+    }
+    /**
+     * @return the busy
      * @since mod_jk 1.2.20
- 	 */
-	public void setMember_count(int member_count) {
-		this.member_count = member_count;
-	}
-	
-	/**
-	 * @return the map_count
+     */
+    public int getBusy() {
+        return busy;
+    }
+    /**
+     * @param busy the busy to set
      * @since mod_jk 1.2.20
- 	 */
-	public int getMap_count() {
-		return map_count;
-	}
+     */
+    public void setBusy(int busy) {
+        this.busy = busy;
+    }
+    /**
+     * @return the degraded
+     * @since mod_jk 1.2.20
+     */
+    public int getDegraded() {
+        return degraded;
+    }
+    /**
+     * @param degraded the degraded to set
+     * @since mod_jk 1.2.20
+     */
+    public void setDegraded(int degraded) {
+        this.degraded = degraded;
+    }
+    /**
+     * @return the good
+     * @since mod_jk 1.2.20
+     */
+    public int getGood() {
+        return good;
+    }
+    /**
+     * @param good the good to set
+     * @since mod_jk 1.2.20
+     */
+    public void setGood(int good) {
+        this.good = good;
+    }
+    /**
+     * @return the lock
+     * @since mod_jk 1.2.20
+     */
+    public String getLock() {
+        return lock;
+    }
+    /**
+     * @param lock the lock to set
+     * @since mod_jk 1.2.20
+     */
+    public void setLock(String lock) {
+        this.lock = lock;
+    }
+    /**
+     * @return the max_busy
+     * @since mod_jk 1.2.20
+     */
+    public int getMax_busy() {
+        return max_busy;
+    }
+    /**
+     * @param max_busy the max_busy to set
+     * @since mod_jk 1.2.20
+     */
+    public void setMax_busy(int max_busy) {
+        this.max_busy = max_busy;
+    }
+    /**
+     * @return the method
+     * @since mod_jk 1.2.20
+     */
+    public String getMethod() {
+        return method;
+    }
+    /**
+     * @param method the method to set
+     * @since mod_jk 1.2.20
+     */
+    public void setMethod(String method) {
+        this.method = method;
+    }
+    
+    /**
+     * @return the member_count
+     * @since mod_jk 1.2.20
+     */
+    public int getMember_count() {
+        return member_count;
+    }
+    
+    /**
+     * @param member_count the member_count to set
+     * @since mod_jk 1.2.20
+     */
+    public void setMember_count(int member_count) {
+        this.member_count = member_count;
+    }
+    
+    /**
+     * @return the map_count
+     * @since mod_jk 1.2.20
+     */
+    public int getMap_count() {
+        return map_count;
+    }
 
-	/**
-	 * @param map_count the map_count to set
+    /**
+     * @param map_count the map_count to set
      * @since mod_jk 1.2.20
-	 */
-	public void setMap_count(int map_count) {
-		this.map_count = map_count;
-	}
+     */
+    public void setMap_count(int map_count) {
+        this.map_count = map_count;
+    }
+    
+    /**
+     * @return the time_to_maintenance_min
+     * @since mod_jk 1.2.21
+     */
+    public int getTime_to_maintenance_min() {
+        return time_to_maintenance_min;
+    }
+
+    /**
+     * @param time_to_maintenance_min the time_to_maintenance_min to set
+     * @since mod_jk 1.2.21
+     */
+    public void setTime_to_maintenance_min(int time_to_maintenance_min) {
+        this.time_to_maintenance_min = time_to_maintenance_min;
+    }
+    
+    /**
+     * @return the time_to_maintenance_max
+     * @since mod_jk 1.2.21
+     */
+    public int getTime_to_maintenance_max() {
+        return time_to_maintenance_max;
+    }
+
+    /**
+     * @param time_to_maintenance_max the time_to_maintenance_max to set
+     * @since mod_jk 1.2.21
+     */
+    public void setTime_to_maintenance_max(int time_to_maintenance_max) {
+        this.time_to_maintenance_max = time_to_maintenance_max;
+    }
     
 }

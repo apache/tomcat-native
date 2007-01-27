@@ -425,6 +425,10 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
                 Integer.toString(balancer.getMember_count()));
         getProject().setNewProperty(prefix + ".max_busy",
                 Integer.toString(balancer.getMax_busy()));
+        getProject().setNewProperty(prefix + ".time_to_maintenance_min",
+                Integer.toString(balancer.getTime_to_maintenance_min()));
+        getProject().setNewProperty(prefix + ".time_to_maintenance_max",
+                Integer.toString(balancer.getTime_to_maintenance_max()));
         getProject().setNewProperty(prefix + ".lock",
                 balancer.getLock());
  
@@ -469,8 +473,14 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
         if(balancer.getMember_count() >=0) {
         	createProperty(balancer, balancerIndex, "member_count");
         }
-        if(balancer.getMember_count() >=0) {
+        if(balancer.getMap_count() >=0) {
         	createProperty(balancer, balancerIndex, "map_count");
+        }
+        if(balancer.getTime_to_maintenance_min() >=0) {
+        	createProperty(balancer, balancerIndex, "time_to_maintenance_min");
+        }
+        if(balancer.getTime_to_maintenance_max() >=0) {
+        	createProperty(balancer, balancerIndex, "time_to_maintenance_max");
         }
    }
 

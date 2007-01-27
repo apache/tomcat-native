@@ -1271,6 +1271,8 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_print_xml_att_int(s, 4, "busy", lb->s->busy);
         jk_print_xml_att_int(s, 4, "max_busy", lb->s->max_busy);
         jk_print_xml_att_int(s, 4, "map_count", map_count);
+        jk_print_xml_att_int(s, 4, "time_to_maintenance_min", ms_min);
+        jk_print_xml_att_int(s, 4, "time_to_maintenance_max", ms_max);
         jk_print_xml_stop_elt(s, 2, 0);
 
     }
@@ -1292,6 +1294,8 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_printf(s, " busy=%d", lb->s->busy);
         jk_printf(s, " max_busy=%d", lb->s->max_busy);
         jk_printf(s, " map_count=%d", map_count);
+        jk_printf(s, " time_to_maintenance_min=%d", ms_min);
+        jk_printf(s, " time_to_maintenance_max=%d", ms_max);
         jk_puts(s, "\n");
 
     }
@@ -1312,6 +1316,8 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_print_prop_att_int(s, w, name, "busy", lb->s->busy);
         jk_print_prop_att_int(s, w, name, "max_busy", lb->s->max_busy);
         jk_print_prop_att_int(s, w, name, "map_count", map_count);
+        jk_print_prop_att_int(s, w, name, "time_to_maintenance_min", ms_min);
+        jk_print_prop_att_int(s, w, name, "time_to_maintenance_max", ms_max);
 
     }
 
