@@ -229,7 +229,7 @@
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
-                                           "<td>%d</td>" \
+                                           "<td>%d/%d</td>" \
                                            "</tr>\n"
 
 typedef struct status_worker status_worker_t;
@@ -1200,6 +1200,15 @@ static void display_worker_lb(jk_ws_service_t *s,
     }
 
     map_count = count_maps(s, name, l);
+    int ms_min = lb->maintain_time - (int)difftime(now, lb->s->last_maintain_time);
+    int ms_max = ms_min + lb->maintain_time;
+    ms_min -= JK_LB_MAINTAIN_TOLERANCE;
+    if (ms_min < 0) {
+        ms_min = 0;
+    }
+    if (ms_max < 0) {
+        ms_max = 0;
+    }
 
     if (mime == JK_STATUS_MIME_HTML) {
 
@@ -1233,13 +1242,14 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_puts(s, "</table>\n<br/>\n");
 
         jk_puts(s, "<table><tr>"
-                "<th>Good</th><th>Degraded</th><th>Bad/Stopped</th><th>Busy</th><th>Max Busy</th>"
+                "<th>Good</th><th>Degraded</th><th>Bad/Stopped</th><th>Busy</th><th>Max Busy</th><th>Next Maintenance</th>"
                 "</tr>\n<tr>");
         jk_printf(s, "<td>%d</td>", good);
         jk_printf(s, "<td>%d</td>", degraded);
         jk_printf(s, "<td>%d</td>", bad);
         jk_printf(s, "<td>%d</td>", lb->s->busy);
         jk_printf(s, "<td>%d</td>", lb->s->max_busy);
+        jk_printf(s, "<td>%d/%d</td>", ms_min, ms_max);
         jk_puts(s, "</tr>\n</table>\n\n");
 
     }
@@ -1326,11 +1336,17 @@ static void display_worker_lb(jk_ws_service_t *s,
         for (j = 0; j < lb->num_of_workers; j++) {
             worker_record_t *wr = &(lb->lb_workers[j]);
             ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
-            int rs = 0;
+            int rs_min = 0;
+            int rs_max = 0;
             if (wr->s->state == JK_LB_STATE_ERROR) {
-                rs = lb->maintain_time - (int)difftime(now, lb->s->last_maintain_time);
-                if (rs < lb->recover_wait_time - (int)difftime(now, wr->s->error_time))
-                    rs += lb->maintain_time;
+                rs_min = lb->recover_wait_time - (int)difftime(now, wr->s->error_time);
+                if (rs_min < 0) {
+                    rs_min = 0;
+                }
+                rs_max = rs_min + lb->maintain_time;
+                if (rs_min < ms_min) {
+                    rs_min = ms_min;
+                }
             }
 
             if (mime == JK_STATUS_MIME_HTML) {
@@ -1372,7 +1388,8 @@ static void display_worker_lb(jk_ws_service_t *s,
                           wr->s->route,
                           wr->s->redirect ? (*wr->s->redirect ? wr->s->redirect : "&nbsp;") : "&nbsp",
                           wr->s->domain ? (*wr->s->domain ? wr->s->domain : "&nbsp;") : "&nbsp",
-                          rs);
+                          rs_min,
+                          rs_max);
 
             }
             else if (mime == JK_STATUS_MIME_XML) {
@@ -1399,7 +1416,8 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_print_xml_att_uint64(s, 8, "read", wr->s->readed);
                 jk_print_xml_att_int(s, 8, "busy", wr->s->busy);
                 jk_print_xml_att_int(s, 8, "max_busy", wr->s->max_busy);
-                jk_print_xml_att_int(s, 8, "time_to_recover", rs < 0 ? 0 : rs);
+                jk_print_xml_att_int(s, 8, "time_to_recover_min", rs_min);
+                jk_print_xml_att_int(s, 8, "time_to_recover_max", rs_max);
                 /* Terminate the tag */
                 jk_print_xml_stop_elt(s, 6, 1);
 
@@ -1428,7 +1446,8 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_printf(s, " read=%" JK_UINT64_T_FMT, wr->s->readed);
                 jk_printf(s, " busy=%d", wr->s->busy);
                 jk_printf(s, " max_busy=%d", wr->s->max_busy);
-                jk_printf(s, " time_to_recover=%d", rs < 0 ? 0 : rs);
+                jk_printf(s, " time_to_recover_min=%d", rs_min);
+                jk_printf(s, " time_to_recover_max=%d", rs_max);
                 jk_puts(s, "\n");
 
             }
@@ -1455,7 +1474,8 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_print_prop_att_uint64(s, w, wr->s->name, "read", wr->s->readed);
                 jk_print_prop_att_int(s, w, wr->s->name, "busy", wr->s->busy);
                 jk_print_prop_att_int(s, w, wr->s->name, "max_busy", wr->s->max_busy);
-                jk_print_prop_att_int(s, w, wr->s->name, "time_to_recover", rs < 0 ? 0 : rs);
+                jk_print_prop_att_int(s, w, wr->s->name, "time_to_recover_min", rs_min);
+                jk_print_prop_att_int(s, w, wr->s->name, "time_to_recover_max", rs_max);
 
             }
         }
@@ -2310,7 +2330,7 @@ static void display_legend(jk_ws_service_t *s,
             "<tr><th>Max</th><td>Maximum number of busy connections</td></tr>\n"
             "<tr><th>RR</th><td>Route redirect</td></tr>\n"
             "<tr><th>Cd</th><td>Cluster domain</td></tr>\n"
-            "<tr><th>Rs</th><td>Recovery scheduled</td></tr>\n"
+            "<tr><th>Rs</th><td>Recovery scheduled in app. min/max seconds</td></tr>\n"
             "</tbody>\n"
             "</table>\n");
     }

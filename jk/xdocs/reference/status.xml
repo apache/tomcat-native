@@ -73,7 +73,7 @@ worker will be applied during runtime without a restart of the web server.
 or one of its members.
 </li>
 <li>
-<b>recover</b>: Mark a member of a load balancer, that is in error state, for recovery.
+<b>recover</b>: Mark a member of a load balancer, that is in error state, for immediate recovery.
 </li>
 <li>
 <b>version</b>: only show version information of the web server and the JK software

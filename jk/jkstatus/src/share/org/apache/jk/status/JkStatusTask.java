@@ -622,6 +622,17 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
             currentProject.setNewProperty(prefix + ".time_to_recover",
                     Integer.toString(member.getTime_to_recover()));
         }
+        if(member.getTime_to_recover_min() >= 0) {
+            currentProject.setNewProperty(prefix + ".time_to_recover_min",
+                    Integer.toString(member.getTime_to_recover_min()));
+        }
+        if(member.getTime_to_recover_max() >= 0) {
+            currentProject.setNewProperty(prefix + ".time_to_recover_max",
+                    Integer.toString(member.getTime_to_recover_max()));
+            currentProject.setNewProperty(prefix + ".time_to_recover",
+                    (Integer.toString(member.getTime_to_recover_min()) +
+                    Integer.toString(member.getTime_to_recover_max()) / 2);
+        }
             
     }
 

@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <add>
+      JkStatus: Show estimated time until next global maintenance.
+      Change displayed time until next recovery to a min/max pair. (rjung)
+      </add>
+      <add>
       JkStatus: Allow a user of a read/write status worker to switch it
       to and from read_only mode temporarily. (rjung)
       </add>

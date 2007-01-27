@@ -88,6 +88,12 @@ public class JkBalancerMember implements Serializable {
     /* possible with > 1.2.20 */
     int time_to_recover = -1 ;
     
+    /* possible with > 1.2.21 */
+    int time_to_recover_max = -1 ;
+    
+    /* possible with > 1.2.21 */
+    int time_to_recover_min = -1 ;
+    
     /**
      * @return Returns the jvm_route.
      * @since mod_jk 1.2.16
@@ -107,22 +113,22 @@ public class JkBalancerMember implements Serializable {
     }
 
     /**
-	 * @return the route
+     * @return the route
     * @since mod_jk 1.2.20
-	 */
-	public String getRoute() {
-		return route;
-	}
+     */
+    public String getRoute() {
+        return route;
+    }
 
-	/**
-	 * @param route the route to set
+    /**
+     * @param route the route to set
     * @since mod_jk 1.2.20
-	 */
-	public void setRoute(String route) {
-		this.route = route;
-	}
+     */
+    public void setRoute(String route) {
+        this.route = route;
+    }
 
-	/**
+    /**
      * @return Returns the address.
      */
     public String getAddress() {
@@ -459,21 +465,52 @@ public class JkBalancerMember implements Serializable {
         this.distance = distance;
     }
 
-	/**
-	 * @return the time_to_recover
+    /**
+     * @return the time_to_recover
      * @since mod_jk 1.2.20
- 	 */
-	public int getTime_to_recover() {
-		return time_to_recover;
-	}
+     */
+    public int getTime_to_recover() {
+        return time_to_recover;
+    }
 
-	/**
-	 * @param time_to_recover the time_to_recover to set
+    /**
+     * @param time_to_recover the time_to_recover to set
      * @since mod_jk 1.2.20
- 	 */
-	public void setTime_to_recover(int time_to_recover) {
-		this.time_to_recover = time_to_recover;
-	}
+     */
+    public void setTime_to_recover(int time_to_recover) {
+        this.time_to_recover = time_to_recover;
+    }
 
+    /**
+     * @return the time_to_recover_min
+     * @since mod_jk 1.2.21
+     */
+    public int getTime_to_recover_min() {
+        return time_to_recover_min;
+    }
+
+    /**
+     * @param time_to_recover_min the time_to_recover_min to set
+     * @since mod_jk 1.2.21
+     */
+    public void setTime_to_recover_min(int time_to_recover_min) {
+        this.time_to_recover_min = time_to_recover_min;
+    }
+
+    /**
+     * @return the time_to_recover_max
+     * @since mod_jk 1.2.21
+     */
+    public int getTime_to_recover_max() {
+        return time_to_recover_max;
+    }
+
+    /**
+     * @param time_to_recover_max the time_to_recover_max to set
+     * @since mod_jk 1.2.21
+     */
+    public void setTime_to_recover_max(int time_to_recover_max) {
+        this.time_to_recover_max = time_to_recover_max;
+    }
 
 }
