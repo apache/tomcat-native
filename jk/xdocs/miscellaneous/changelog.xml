@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <add>
+      JkStatus: Improved logging by adding status worker name to messages.
+      Added messages to the recover worker action. (rjung)
+      </add>
+      <add>
       JkStatus: Refactoring searching for workers and sub workers. (rjung)
       </add>
       <add>

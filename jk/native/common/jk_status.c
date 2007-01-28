@@ -580,8 +580,8 @@ static int status_rate(worker_record_t *wr, status_worker_t *w,
         break;
     default:
         jk_log(l, JK_LOG_WARNING,
-               "Unknown activation type '%d'",
-               activation);
+               "Status worker '%s' unknown activation type '%d'",
+               w->name, activation);
     }
     switch (state)
     {
@@ -608,8 +608,8 @@ static int status_rate(worker_record_t *wr, status_worker_t *w,
         break;
     default:
         jk_log(l, JK_LOG_WARNING,
-               "Unknown state type '%d'",
-               state);
+               "Status worker '%s' unknown state type '%d'",
+               w->name, state);
     }
     if (mask&bad)
         rv = -1;
@@ -619,9 +619,9 @@ static int status_rate(worker_record_t *wr, status_worker_t *w,
         rv = 0;
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "rating of activation '%s' and state '%s' for good '%08" JK_UINT32_T_HEX_FMT
+               "Status worker '%s' rating of activation '%s' and state '%s' for good '%08" JK_UINT32_T_HEX_FMT
                "' and bad '%08" JK_UINT32_T_HEX_FMT "' is %d",
-               jk_lb_get_activation(wr, l), jk_lb_get_state(wr, l),
+               w->name, jk_lb_get_activation(wr, l), jk_lb_get_state(wr, l),
                good, bad, rv);
     return rv;
 }
@@ -942,6 +942,7 @@ static int status_parse_uri(jk_ws_service_t *s,
                             jk_logger_t *l)
 {
     jk_map_t *m;
+    status_worker_t *w = p->worker;
 #if defined(AS400) || defined(_REENTRANT)
     char *lasts;
 #endif
@@ -952,14 +953,16 @@ static int status_parse_uri(jk_ws_service_t *s,
 
     if (!jk_map_alloc(&(p->req_params))) {
         jk_log(l, JK_LOG_ERROR,
-               "could not alloc map for request parameters");
+               "Status worker '%s' could not alloc map for request parameters",
+               w->name);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
     if (!s->query_string) {
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "query string is empty");
+                   "Status worker '%s' query string is empty",
+                   w->name);
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
@@ -967,7 +970,8 @@ static int status_parse_uri(jk_ws_service_t *s,
     query = jk_pool_strdup(s->pool, s->query_string);
     if (!query) {
         jk_log(l, JK_LOG_ERROR,
-               "could not copy string");
+               "Status worker '%s' could not copy string",
+               w->name);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -981,7 +985,8 @@ static int status_parse_uri(jk_ws_service_t *s,
         char *value;
         if (!key) {
             jk_log(l, JK_LOG_ERROR,
-                   "could not copy string");
+                   "Status worker '%s' could not copy string",
+                   w->name);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -998,8 +1003,8 @@ static int status_parse_uri(jk_ws_service_t *s,
             if (strlen(key)) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                           "adding request param '%s' with value '%s'",
-                           key, value);
+                           "Status worker '%s' adding request param '%s' with value '%s'",
+                           w->name, key, value);
                 jk_map_put(m, key, value, NULL);
             }
         }
@@ -1284,8 +1289,8 @@ static void display_maps(jk_ws_service_t *s,
     }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "displayed %d maps for worker '%s'",
-               count, worker);
+               "Status worker '%s' displayed %d maps for worker '%s'",
+               w->name, count, worker);
     JK_TRACE_EXIT(l);
 }
 
@@ -1783,19 +1788,22 @@ static void display_worker(jk_ws_service_t *s,
                            jk_worker_t *jw,
                            jk_logger_t *l)
 {
+    status_worker_t *w = p->worker;
+
     JK_TRACE_ENTER(l);
     if (jw->type == JK_LB_WORKER_TYPE) {
         lb_worker_t *lb = (lb_worker_t *)jw->worker_private;
         if (lb) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                       "%s lb worker '%s'",
-                       "displaying", lb->s->name);
+                       "Status worker '%s' %s lb worker '%s'",
+                       w->name, "displaying", lb->s->name);
             display_worker_lb(s, p, lb, l);
         }
         else {
             jk_log(l, JK_LOG_WARNING,
-                   "lb worker is (null)");
+                   "Status worker '%s' lb worker is (null)",
+                   w->name);
         }
     }
     else if (jw->type == JK_AJP13_WORKER_TYPE ||
@@ -1804,19 +1812,21 @@ static void display_worker(jk_ws_service_t *s,
         if (aw) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                       "%s ajp worker '%s'",
-                       "displaying", aw->name);
+                       "Status worker '%s' %s ajp worker '%s'",
+                       w->name, "displaying", aw->name);
             display_worker_ajp(s, p, aw, l);
         }
         else {
             jk_log(l, JK_LOG_WARNING,
-                   "aw worker is (null)");
+                   "Status worker '%s' aw worker is (null)",
+                   w->name);
         }
     }
     else {
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "worker type not implemented");
+                   "Status worker '%s' worker type not implemented",
+                   w->name);
         JK_TRACE_EXIT(l);
         return;
     }
@@ -1829,6 +1839,7 @@ static void form_worker(jk_ws_service_t *s,
 {
     const char *name = NULL;
     lb_worker_t *lb = NULL;
+    status_worker_t *w = p->worker;
 
     JK_TRACE_ENTER(l);
     if (jw->type == JK_LB_WORKER_TYPE) {
@@ -1836,19 +1847,21 @@ static void form_worker(jk_ws_service_t *s,
         name = lb->s->name;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "producing edit form for lb worker '%s'",
-                   name);
+                   "Status worker '%s' producing edit form for lb worker '%s'",
+                   w->name, name);
     }
     else {
         jk_log(l, JK_LOG_WARNING,
-               "worker type not implemented");
+               "Status worker '%s' worker type not implemented",
+               w->name);
         JK_TRACE_EXIT(l);
         return;
     }
 
     if (!lb) {
         jk_log(l, JK_LOG_WARNING,
-               "lb structure is (null)");
+               "Status worker '%s' lb structure is (null)",
+               w->name);
         JK_TRACE_EXIT(l);
         return;
     }
@@ -1935,11 +1948,13 @@ static void form_member(jk_ws_service_t *s,
                         const char *lb_name,
                         jk_logger_t *l)
 {
+    status_worker_t *w = p->worker;
+
     JK_TRACE_ENTER(l);
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "producing edit form for sub worker '%s' of lb worker '%s'",
-               wr->s->name, lb_name);
+               "Status worker '%s' producing edit form for sub worker '%s' of lb worker '%s'",
+               w->name, wr->s->name, lb_name);
 
     jk_putv(s, "<hr/><h3>Edit worker settings for ",
             wr->s->name, "</h3>\n", NULL);
@@ -2001,14 +2016,15 @@ static void form_all_members(jk_ws_service_t *s,
 {
     const char *name = NULL;
     lb_worker_t *lb = NULL;
+    status_worker_t *w = p->worker;
     const char *aname;
     unsigned int i;
 
     JK_TRACE_ENTER(l);
     if (!attribute) {
         jk_log(l, JK_LOG_WARNING,
-               "missing request parameter '%s'",
-               JK_STATUS_ARG_ATTRIBUTE);
+               "Status worker '%s' missing request parameter '%s'",
+               w->name, JK_STATUS_ARG_ATTRIBUTE);
         JK_TRACE_EXIT(l);
         return;
     }
@@ -2027,8 +2043,8 @@ static void form_all_members(jk_ws_service_t *s,
             aname=JK_STATUS_ARG_LBM_TEXT_DISTANCE;
         else {
             jk_log(l, JK_LOG_WARNING,
-                   "unknown attribute '%s'",
-                   attribute);
+                   "Status worker '%s' unknown attribute '%s'",
+                   w->name, attribute);
             JK_TRACE_EXIT(l);
             return;
         }
@@ -2038,12 +2054,13 @@ static void form_all_members(jk_ws_service_t *s,
         name = lb->s->name;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "producing edit form for attribute '%s' [%s] of all members of lb worker '%s'",
-                   attribute, aname, name);
+                   "Status worker '%s' producing edit form for attribute '%s' [%s] of all members of lb worker '%s'",
+                   w->name, attribute, aname, name);
     }
     else {
         jk_log(l, JK_LOG_WARNING,
-               "worker type not implemented");
+               "Status worker '%s' worker type not implemented",
+               w->name);
         JK_TRACE_EXIT(l);
         return;
     }
@@ -2120,6 +2137,7 @@ static void commit_worker(jk_ws_service_t *s,
 {
     const char *name = NULL;
     lb_worker_t *lb = NULL;
+    status_worker_t *w = p->worker;
     const char *arg;
     int i;
 
@@ -2129,19 +2147,21 @@ static void commit_worker(jk_ws_service_t *s,
         name = lb->s->name;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "committing changes for lb worker '%s'",
-                   name);
+                   "Status worker '%s' committing changes for lb worker '%s'",
+                   w->name, name);
     }
     else {
         jk_log(l, JK_LOG_WARNING,
-               "worker type not implemented");
+               "Status worker '%s' worker type not implemented",
+               w->name);
         JK_TRACE_EXIT(l);
         return;
     }
 
     if (!lb) {
         jk_log(l, JK_LOG_WARNING,
-               "lb structure is (null)");
+               "Status worker '%s' lb structure is (null)",
+               w->name);
         JK_TRACE_EXIT(l);
         return;
     }
@@ -2153,30 +2173,30 @@ static void commit_worker(jk_ws_service_t *s,
                        lb->retries, l);
     if (i != lb->retries && i > 0) {
         jk_log(l, JK_LOG_INFO,
-               "setting 'retries' for lb worker '%s' to '%i'",
-               name, i);
+               "Status worker '%s' setting 'retries' for lb worker '%s' to '%i'",
+               w->name, name, i);
         lb->retries = i;
     }
     i = status_get_int(p, JK_STATUS_ARG_LB_RECOVER_TIME,
                        lb->recover_wait_time, l);
     if (i != lb->recover_wait_time && i > 0) {
         jk_log(l, JK_LOG_INFO,
-               "setting 'recover_time' for lb worker '%s' to '%i'",
-               name, i);
+               "Status worker '%s' setting 'recover_time' for lb worker '%s' to '%i'",
+               w->name, name, i);
         lb->recover_wait_time = i;
     }
     i = status_get_bool(p, JK_STATUS_ARG_LB_STICKY, 0, l);
     if (i != lb->sticky_session) {
         jk_log(l, JK_LOG_INFO,
-               "setting 'sticky_session' for lb worker '%s' to '%i'",
-               name, i);
+               "Status worker '%s' setting 'sticky_session' for lb worker '%s' to '%i'",
+               w->name, name, i);
         lb->sticky_session = i;
     }
     i = status_get_bool(p, JK_STATUS_ARG_LB_STICKY_FORCE, 0, l);
     if (i != lb->sticky_session_force) {
         jk_log(l, JK_LOG_INFO,
-               "setting 'sticky_session_force' for lb worker '%s' to '%i'",
-               name, i);
+               "Status worker '%s' setting 'sticky_session_force' for lb worker '%s' to '%i'",
+               w->name, name, i);
         lb->sticky_session_force = i;
     }
     if (status_get_string(p, JK_STATUS_ARG_LB_METHOD, NULL, &arg, l) == JK_TRUE) {
@@ -2184,8 +2204,8 @@ static void commit_worker(jk_ws_service_t *s,
         if (i != lb->lbmethod && i >= 0 && i <= JK_LB_METHOD_MAX) {
             lb->lbmethod = i;
             jk_log(l, JK_LOG_INFO,
-                   "setting 'method' for lb worker '%s' to '%s'",
-                   name, jk_lb_get_method(lb, l));
+                   "Status worker '%s' setting 'method' for lb worker '%s' to '%s'",
+                   w->name, name, jk_lb_get_method(lb, l));
         }
     }
     if (status_get_string(p, JK_STATUS_ARG_LB_LOCK, NULL, &arg, l) == JK_TRUE) {
@@ -2193,8 +2213,8 @@ static void commit_worker(jk_ws_service_t *s,
         if (i != lb->lblock && i >= 0 && i <= JK_LB_LOCK_MAX) {
             lb->lblock = i;
             jk_log(l, JK_LOG_INFO,
-                   "setting 'lock' for lb worker '%s' to '%s'",
-                   name, jk_lb_get_lock(lb, l));
+                   "Status worker '%s' setting 'lock' for lb worker '%s' to '%s'",
+                   w->name, name, jk_lb_get_lock(lb, l));
         }
     }
     lb->sequence++;
@@ -2208,6 +2228,7 @@ static int commit_member(jk_ws_service_t *s,
                           jk_logger_t *l)
 {
     const char *arg;
+    status_worker_t *w = p->worker;
     int rc = 0;
     int rv;
     int i;
@@ -2215,16 +2236,16 @@ static int commit_member(jk_ws_service_t *s,
     JK_TRACE_ENTER(l);
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "committing changes for sub worker '%s' of lb worker '%s'",
-               wr->s->name, lb_name);
+               "Status worker '%s' committing changes for sub worker '%s' of lb worker '%s'",
+               w->name, wr->s->name, lb_name);
 
     if (status_get_string(p, JK_STATUS_ARG_LBM_ACTIVATION, NULL, &arg, l) == JK_TRUE) {
         i = jk_lb_get_activation_code(arg);
         if (i != wr->s->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
             wr->s->activation = i;
             jk_log(l, JK_LOG_INFO,
-                   "setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
-                   wr->s->name, lb_name, jk_lb_get_activation(wr, l));
+                   "Status worker '%s' setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
+                   w->name, wr->s->name, lb_name, jk_lb_get_activation(wr, l));
             rc |= 1;
         }
     }
@@ -2232,8 +2253,8 @@ static int commit_member(jk_ws_service_t *s,
                        wr->s->lb_factor, l);
     if (i != wr->s->lb_factor && i > 0) {
         jk_log(l, JK_LOG_INFO,
-               "setting 'lbfactor' for sub worker '%s' of lb worker '%s' to '%i'",
-               wr->s->name, lb_name, i);
+               "Status worker '%s' setting 'lbfactor' for sub worker '%s' of lb worker '%s' to '%i'",
+               w->name, wr->s->name, lb_name, i);
         wr->s->lb_factor = i;
         /* Recalculate the load multiplicators wrt. lb_factor */
         rc |= 2;
@@ -2242,8 +2263,8 @@ static int commit_member(jk_ws_service_t *s,
                                 NULL, &arg, l)) == JK_TRUE) {
         if (strncmp(wr->s->route, arg, JK_SHM_STR_SIZ)) {
             jk_log(l, JK_LOG_INFO,
-                   "setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
-                   wr->s->name, lb_name, arg);
+                   "Status worker '%s' setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
+                   w->name, wr->s->name, lb_name, arg);
             strncpy(wr->s->route, arg, JK_SHM_STR_SIZ);
             if (!wr->s->domain[0]) {
                 char * id_domain = strchr(wr->s->route, '.');
@@ -2259,8 +2280,8 @@ static int commit_member(jk_ws_service_t *s,
                                 NULL, &arg, l)) == JK_TRUE) {
         if (strncmp(wr->s->redirect, arg, JK_SHM_STR_SIZ)) {
             jk_log(l, JK_LOG_INFO,
-                   "setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
-                   wr->s->name, lb_name, arg);
+                   "Status worker '%s' setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
+                   w->name, wr->s->name, lb_name, arg);
             strncpy(wr->s->redirect, arg, JK_SHM_STR_SIZ);
         }
     }
@@ -2268,8 +2289,8 @@ static int commit_member(jk_ws_service_t *s,
                                 NULL, &arg, l)) == JK_TRUE) {
         if (strncmp(wr->s->domain, arg, JK_SHM_STR_SIZ)) {
             jk_log(l, JK_LOG_INFO,
-                   "setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
-                   wr->s->name, lb_name, arg);
+                   "Status worker '%s' setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
+                   w->name, wr->s->name, lb_name, arg);
             strncpy(wr->s->domain, arg, JK_SHM_STR_SIZ);
         }
     }
@@ -2277,8 +2298,8 @@ static int commit_member(jk_ws_service_t *s,
                        wr->s->distance, l);
     if (i != wr->s->distance && i > 0) {
         jk_log(l, JK_LOG_INFO,
-               "setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
-               wr->s->name, lb_name, i);
+               "Status worker '%s' setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
+               w->name, wr->s->name, lb_name, i);
         wr->s->distance = i;
     }
     return rc;
@@ -2294,6 +2315,7 @@ static void commit_all_members(jk_ws_service_t *s,
     char vname[32];
     const char *name = NULL;
     lb_worker_t *lb = NULL;
+    status_worker_t *w = p->worker;
     const char *aname;
     int i;
     int rc = 0;
@@ -2302,8 +2324,8 @@ static void commit_all_members(jk_ws_service_t *s,
     JK_TRACE_ENTER(l);
     if (!attribute) {
         jk_log(l, JK_LOG_WARNING,
-               "missing request parameter '%s'",
-               JK_STATUS_ARG_ATTRIBUTE);
+               "Status worker '%s' missing request parameter '%s'",
+               w->name, JK_STATUS_ARG_ATTRIBUTE);
         JK_TRACE_EXIT(l);
         return;
     }
@@ -2322,8 +2344,8 @@ static void commit_all_members(jk_ws_service_t *s,
             aname=JK_STATUS_ARG_LBM_TEXT_DISTANCE;
         else {
             jk_log(l, JK_LOG_WARNING,
-                   "unknown attribute '%s'",
-                   attribute);
+                   "Status worker '%s' unknown attribute '%s'",
+                   w->name, attribute);
             JK_TRACE_EXIT(l);
             return;
         }
@@ -2333,12 +2355,13 @@ static void commit_all_members(jk_ws_service_t *s,
         name = lb->s->name;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "committing changes for attribute '%s' [%s] of all members of lb worker '%s'",
-                   attribute, aname, name);
+                   "Status worker '%s' committing changes for attribute '%s' [%s] of all members of lb worker '%s'",
+                   w->name, attribute, aname, name);
     }
     else {
         jk_log(l, JK_LOG_WARNING,
-               "worker type not implemented");
+               "Status worker '%s' worker type not implemented",
+               w->name);
         JK_TRACE_EXIT(l);
         return;
     }
@@ -2352,8 +2375,8 @@ static void commit_all_members(jk_ws_service_t *s,
                 i = status_get_int(p, vname, wr->s->lb_factor, l);
                 if (i != wr->s->lb_factor && i > 0) {
                     jk_log(l, JK_LOG_INFO,
-                           "setting 'lbfactor' for sub worker '%s' of lb worker '%s' to '%i'",
-                           wr->s->name, name, i);
+                           "Status worker '%s' setting 'lbfactor' for sub worker '%s' of lb worker '%s' to '%i'",
+                           w->name, wr->s->name, name, i);
                     wr->s->lb_factor = i;
                     rc = 2;
                 }
@@ -2362,8 +2385,8 @@ static void commit_all_members(jk_ws_service_t *s,
                 i = status_get_int(p, vname, wr->s->distance, l);
                 if (i != wr->s->distance && i > 0) {
                     jk_log(l, JK_LOG_INFO,
-                           "setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
-                           wr->s->name, name, i);
+                           "Status worker '%s' setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
+                           w->name, wr->s->name, name, i);
                     wr->s->lb_factor = i;
                 }
             }
@@ -2375,8 +2398,8 @@ static void commit_all_members(jk_ws_service_t *s,
                         if (i != wr->s->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
                             wr->s->activation = i;
                             jk_log(l, JK_LOG_INFO,
-                                   "setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
-                                   wr->s->name, name, jk_lb_get_activation(wr, l));
+                                   "Status worker '%s' setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
+                                   w->name, wr->s->name, name, jk_lb_get_activation(wr, l));
                             rc = 1;
                         }
                     }
@@ -2385,8 +2408,8 @@ static void commit_all_members(jk_ws_service_t *s,
                     if (rv == JK_TRUE) {
                         if (strncmp(wr->s->route, arg, JK_SHM_STR_SIZ)) {
                             jk_log(l, JK_LOG_INFO,
-                                   "setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
-                                   wr->s->name, name, arg);
+                                   "Status worker '%s' setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
+                                   w->name, wr->s->name, name, arg);
                             strncpy(wr->s->route, arg, JK_SHM_STR_SIZ);
                             if (!wr->s->domain[0]) {
                                 char * id_domain = strchr(wr->s->route, '.');
@@ -2403,8 +2426,8 @@ static void commit_all_members(jk_ws_service_t *s,
                     if (rv == JK_TRUE) {
                         if (strncmp(wr->s->redirect, arg, JK_SHM_STR_SIZ)) {
                             jk_log(l, JK_LOG_INFO,
-                                   "setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
-                                   wr->s->name, name, arg);
+                                   "Status worker '%s' setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
+                                   w->name, wr->s->name, name, arg);
                             strncpy(wr->s->redirect, arg, JK_SHM_STR_SIZ);
                         }
                     }
@@ -2413,8 +2436,8 @@ static void commit_all_members(jk_ws_service_t *s,
                     if (rv == JK_TRUE) {
                         if (strncmp(wr->s->domain, arg, JK_SHM_STR_SIZ)) {
                             jk_log(l, JK_LOG_INFO,
-                                   "setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
-                                   wr->s->name, name, arg);
+                                   "Status worker '%s' setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
+                                   w->name, wr->s->name, name, arg);
                             strncpy(wr->s->domain, arg, JK_SHM_STR_SIZ);
                         }
                     }
@@ -2514,6 +2537,7 @@ static int check_worker(jk_ws_service_t *s,
             return JK_FALSE;
         }
     }
+
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
@@ -2534,8 +2558,8 @@ static void count_workers(jk_ws_service_t *s,
         jw = wc_get_worker_for_name(w->we->worker_list[i], l);
         if (!jw) {
             jk_log(l, JK_LOG_WARNING,
-                   "could not find worker '%s'",
-                   w->we->worker_list[i]);
+                   "Status worker '%s' could not find worker '%s'",
+                   w->name, w->we->worker_list[i]);
             continue;
         }
         if (jw->type == JK_LB_WORKER_TYPE) {
@@ -2640,8 +2664,8 @@ static void list_workers_type(jk_ws_service_t *s,
         jw = wc_get_worker_for_name(w->we->worker_list[i], l);
         if (!jw) {
             jk_log(l, JK_LOG_WARNING,
-                   "could not find worker '%s'",
-                   w->we->worker_list[i]);
+                   "Status worker '%s' could not find worker '%s'",
+                   w->name, w->we->worker_list[i]);
             continue;
         }
         if ((list_lb && jw->type == JK_LB_WORKER_TYPE) ||
@@ -2750,7 +2774,8 @@ static int edit_worker(jk_ws_service_t *s,
         worker_record_t *wr = NULL;
         if (jw->type != JK_LB_WORKER_TYPE) {
             jk_log(l, JK_LOG_WARNING,
-                   "worker type not implemented");
+                   "Status worker '%s' worker type not implemented",
+                   w->name);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -2886,6 +2911,7 @@ static int recover_worker(jk_ws_service_t *s,
     const char *sub_worker;
     jk_worker_t *jw = NULL;
     worker_record_t *wr = NULL;
+    status_worker_t *w = p->worker;
 
     JK_TRACE_ENTER(l);
     fetch_worker_and_sub_worker(p, "recovering", &worker, &sub_worker, l);
@@ -2901,9 +2927,16 @@ static int recover_worker(jk_ws_service_t *s,
 
     if (wr->s->state == JK_LB_STATE_ERROR) {
         wr->s->state = JK_LB_STATE_RECOVER;
+        jk_log(l, JK_LOG_INFO,
+               "Status worker '%s' marked worker '%s' sub worker '%s' for recovery",
+               w->name, worker ? worker : "(null)", sub_worker ? sub_worker : "(null)");
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
+    jk_log(l, JK_LOG_WARNING,
+           "Status worker '%s' could not mark worker '%s' sub worker '%s' for recovery - state %s is not an error state",
+           w->name, worker ? worker : "(null)", sub_worker ? sub_worker : "(null)",
+           jk_lb_get_state(wr, l));
     JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
@@ -2998,7 +3031,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
     if (denied == 0) {
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "Status worker service allowed for user '%s' [%s] from %s [%s]",
+                   "Status worker '%s' service allowed for user '%s' [%s] from %s [%s]",
+                   w->name,
                    s->remote_user ? s->remote_user : "(null)",
                    s->auth_type ? s->auth_type : "(null)",
                    s->remote_addr ? s->remote_addr : "(null)",
@@ -3007,7 +3041,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
     else if (denied == 1) {
         err = "Access denied.";
         jk_log(l, JK_LOG_WARNING,
-               "Status worker service denied for user '%s' [%s] from %s [%s]",
+               "Status worker '%s' service denied for user '%s' [%s] from %s [%s]",
+               w->name,
                s->remote_user ? s->remote_user : "(null)",
                s->auth_type ? s->auth_type : "(null)",
                s->remote_addr ? s->remote_addr : "(null)",
@@ -3016,7 +3051,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
     else if (denied == 2) {
         err = "Access denied.";
         jk_log(l, JK_LOG_WARNING,
-               "Status worker service denied (no user) [%s] from %s [%s]",
+               "Status worker '%s' service denied (no user) [%s] from %s [%s]",
+               w->name,
                s->remote_user ? s->remote_user : "(null)",
                s->auth_type ? s->auth_type : "(null)",
                s->remote_addr ? s->remote_addr : "(null)",
@@ -3025,7 +3061,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
     else {
         err = "Access denied.";
         jk_log(l, JK_LOG_WARNING,
-               "Status worker service denied (unknown reason) for user '%s' [%s] from %s [%s]",
+               "Status worker '%s' service denied (unknown reason) for user '%s' [%s] from %s [%s]",
+               w->name,
                s->remote_user ? s->remote_user : "(null)",
                s->auth_type ? s->auth_type : "(null)",
                s->remote_addr ? s->remote_addr : "(null)",
@@ -3349,7 +3386,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         }
     }
     if (err) {
-        jk_log(l, JK_LOG_WARNING, "%s", err);
+        jk_log(l, JK_LOG_WARNING, "Status worker '%s': %s", w->name, err);
         if (mime == JK_STATUS_MIME_HTML) {
             jk_putv(s, "<p><b>Result: ERROR - ", err, "</b><br/>", NULL);
             jk_putv(s, "<a href=\"", s->req_uri, "\">JK Status Manager Start Page</a></p>", NULL);
@@ -3492,7 +3529,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
             for (i = 0; i < num_of_good; i++) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                            "rating as good for '%s': '%s'",
+                            "Status worker '%s' rating as good: '%s'",
                             p->name, good_rating[i]);
                 p->good_mask |= status_get_rating(good_rating[i], l);
             }
@@ -3507,7 +3544,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
             for (i = 0; i < num_of_bad; i++) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                            "rating as bad for '%s': '%s'",
+                            "Status worker '%s' rating as bad: '%s'",
                             p->name, bad_rating[i]);
                 p->bad_mask |= status_get_rating(bad_rating[i], l);
             }
