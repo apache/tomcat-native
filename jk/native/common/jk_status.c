@@ -1009,6 +1009,153 @@ static int status_parse_uri(jk_ws_service_t *s,
     return JK_TRUE;
 }
 
+static int fetch_worker_and_sub_worker(status_endpoint_t *p,
+                                       const char *operation,
+                                       const char **worker,
+                                       const char **sub_worker,
+                                       jk_logger_t *l)
+{
+    status_worker_t *w = p->worker;
+
+    JK_TRACE_ENTER(l);
+    status_get_string(p, JK_STATUS_ARG_WORKER, NULL, worker, l);
+    status_get_string(p, JK_STATUS_ARG_SUB_WORKER, NULL, sub_worker, l);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "Status worker '%s' %s worker '%s' sub worker '%s'",
+               w->name, operation,
+               *worker ? *worker : "(null)", *sub_worker ? *sub_worker : "(null)");
+    JK_TRACE_EXIT(l);
+    return JK_TRUE;
+}
+
+static int check_valid_lb(jk_ws_service_t *s,
+                          status_endpoint_t *p,
+                          jk_worker_t *jw,
+                          const char *worker,
+                          lb_worker_t **lbp,
+                          int implemented,
+                          jk_logger_t *l)
+{
+    status_worker_t *w = p->worker;
+
+    JK_TRACE_ENTER(l);
+    if (jw->type != JK_LB_WORKER_TYPE) {
+        if (implemented) {
+            jk_log(l, JK_LOG_WARNING,
+                   "Status worker '%s' worker type of worker '%s' has no sub workers",
+                   w->name, worker);
+            p->msg = "worker type has no sub workers";
+        }
+        else {
+            jk_log(l, JK_LOG_WARNING,
+                   "Status worker '%s' worker type of worker '%s' not implemented",
+                   w->name, worker);
+                   p->msg = "worker type not implemented";
+        }
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    *lbp = (lb_worker_t *)jw->worker_private;
+    if (!*lbp) {
+        jk_log(l, JK_LOG_WARNING,
+               "Status worker '%s' lb structure of worker '%s' is (null)",
+               w->name, worker);
+        p->msg = "lb structure is (null)";
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    p->msg = "OK";
+    JK_TRACE_EXIT(l);
+    return JK_TRUE;
+}
+
+static int search_worker(jk_ws_service_t *s,
+                         status_endpoint_t *p,
+                         jk_worker_t **jwp,
+                         const char *worker,
+                         jk_logger_t *l)
+{
+    status_worker_t *w = p->worker;
+
+    JK_TRACE_ENTER(l);
+    *jwp = NULL;
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "Status worker '%s' searching worker '%s'",
+               w->name, worker ? worker : "(null)");
+    if (!worker || !worker[0]) {
+        jk_log(l, JK_LOG_WARNING,
+               "Status worker '%s' NULL or EMPTY worker param",
+               w->name);
+        p->msg = "NULL or EMPTY worker param";
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    *jwp = wc_get_worker_for_name(worker, l);
+    if (!*jwp) {
+        jk_log(l, JK_LOG_WARNING,
+               "Status worker '%s' could not find worker '%s'",
+               w->name, worker);
+        p->msg = "Could not find given worker";
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    p->msg = "OK";
+    JK_TRACE_EXIT(l);
+    return JK_TRUE;
+}
+
+static int search_sub_worker(jk_ws_service_t *s,
+                             status_endpoint_t *p,
+                             jk_worker_t *jw,
+                             const char *worker,
+                             worker_record_t **wrp,
+                             const char *sub_worker,
+                             jk_logger_t *l)
+{
+    lb_worker_t *lb = NULL;
+    worker_record_t *wr = NULL;
+    status_worker_t *w = p->worker;
+    unsigned int i;
+
+    JK_TRACE_ENTER(l);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "Status worker '%s' searching sub worker '%s' of worker '%s'",
+               w->name, sub_worker ? sub_worker : "(null)",
+               worker ? worker : "(null)");
+    if (!sub_worker || !sub_worker[0]) {
+        jk_log(l, JK_LOG_WARNING,
+               "Status worker '%s' NULL or EMPTY sub_worker param",
+               w->name);
+        p->msg = "NULL or EMPTY sub_worker param";
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    if (check_valid_lb(s, p, jw, worker, &lb, 1, l) == JK_FALSE) {
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    for (i = 0; i < (int)lb->num_of_workers; i++) {
+        wr = &(lb->lb_workers[i]);
+        if (strcmp(sub_worker, wr->s->name) == 0)
+            break;
+    }
+    *wrp = wr;
+    if (!wr || i == (int)lb->num_of_workers) {
+        jk_log(l, JK_LOG_WARNING,
+               "Status worker '%s' could not find sub worker '%s' of worker '%s'",
+               w->name, sub_worker, worker ? worker : "(null)");
+        p->msg = "could not find sub worker";
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    p->msg = "OK";
+    JK_TRACE_EXIT(l);
+    return JK_TRUE;
+}
+
 static int count_maps(jk_ws_service_t *s,
                       const char *worker,
                       jk_logger_t *l)
@@ -2351,61 +2498,18 @@ static int check_worker(jk_ws_service_t *s,
 {
     const char *worker;
     const char *sub_worker;
-    unsigned int i;
     jk_worker_t *jw = NULL;
+    worker_record_t *wr = NULL;
 
     JK_TRACE_ENTER(l);
-    status_get_string(p, JK_STATUS_ARG_WORKER, NULL, &worker, l);
-    status_get_string(p, JK_STATUS_ARG_SUB_WORKER, NULL, &sub_worker, l);
-    if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG,
-               "checking worker '%s' sub worker '%s'",
-               worker ? worker : "(null)", sub_worker ? sub_worker : "(null)");
-    if (!worker || !worker[0]) {
-        jk_log(l, JK_LOG_WARNING,
-               "NULL or EMPTY worker param");
-        p->msg = "NULL or EMPTY worker param";
+    fetch_worker_and_sub_worker(p, "checking", &worker, &sub_worker, l);
+    if (search_worker(s, p, &jw, worker, l) == JK_FALSE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    jw = wc_get_worker_for_name(worker, l);
-    if (!jw) {
-        jk_log(l, JK_LOG_WARNING,
-               "could not find worker '%s'",
-               worker);
-        p->msg = "Could not find given worker";
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
+
     if (sub_worker && sub_worker[0]) {
-        lb_worker_t *lb = NULL;
-        worker_record_t *wr = NULL;
-        if (jw->type != JK_LB_WORKER_TYPE) {
-            jk_log(l, JK_LOG_WARNING,
-                   "worker type of worker '%s' has no sub workers",
-                   worker);
-            p->msg = "worker type has no sub workers";
-            JK_TRACE_EXIT(l);
-            return JK_FALSE;
-        }
-        lb = (lb_worker_t *)jw->worker_private;
-        if (!lb) {
-            jk_log(l, JK_LOG_WARNING,
-                   "lb structure is (null)");
-            p->msg = "lb structure is (null)";
-            JK_TRACE_EXIT(l);
-            return JK_FALSE;
-        }
-        for (i = 0; i < (int)lb->num_of_workers; i++) {
-            wr = &(lb->lb_workers[i]);
-            if (strcmp(sub_worker, wr->s->name) == 0)
-                break;
-        }
-        if (!wr || i == (int)lb->num_of_workers) {
-            jk_log(l, JK_LOG_WARNING,
-                   "could not find sub worker '%s'",
-                   sub_worker);
-            p->msg = "could not find sub worker";
+        if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -2605,23 +2709,8 @@ static int show_worker(jk_ws_service_t *s,
     jk_worker_t *jw = NULL;
 
     JK_TRACE_ENTER(l);
-    status_get_string(p, JK_STATUS_ARG_WORKER, "", &worker, l);
-    status_get_string(p, JK_STATUS_ARG_SUB_WORKER, "", &sub_worker, l);
-    if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG,
-               "showing worker '%s' sub worker '%s'",
-               worker ? worker : "(null)", sub_worker ? sub_worker : "(null)");
-    if (!worker || !worker[0]) {
-        jk_log(l, JK_LOG_WARNING,
-               "NULL or EMPTY worker param");
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
-    jw = wc_get_worker_for_name(worker, l);
-    if (!jw) {
-        jk_log(l, JK_LOG_WARNING,
-               "could not find worker '%s'",
-               worker);
+    fetch_worker_and_sub_worker(p, "showing", &worker, &sub_worker, l);
+    if (search_worker(s, p, &jw, worker, l) == JK_FALSE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -2636,32 +2725,18 @@ static int edit_worker(jk_ws_service_t *s,
                        status_endpoint_t *p,
                        jk_logger_t *l)
 {
-    unsigned int i;
     const char *worker;
     const char *sub_worker;
     jk_worker_t *jw = NULL;
+    status_worker_t *w = p->worker;
 
     JK_TRACE_ENTER(l);
-    status_get_string(p, JK_STATUS_ARG_WORKER, "", &worker, l);
-    status_get_string(p, JK_STATUS_ARG_SUB_WORKER, "", &sub_worker, l);
-    if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG,
-               "editing worker '%s' sub worker '%s'",
-               worker ? worker : "(null)", sub_worker ? sub_worker : "(null)");
-    if (!worker || !worker[0]) {
-        jk_log(l, JK_LOG_WARNING,
-               "NULL or EMPTY worker param");
+    fetch_worker_and_sub_worker(p, "editing", &worker, &sub_worker, l);
+    if (search_worker(s, p, &jw, worker, l) == JK_FALSE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    jw = wc_get_worker_for_name(worker, l);
-    if (!jw) {
-        jk_log(l, JK_LOG_WARNING,
-               "could not find worker '%s'",
-               worker);
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
+
     if (!sub_worker || !sub_worker[0]) {
         const char *arg;
 
@@ -2672,7 +2747,6 @@ static int edit_worker(jk_ws_service_t *s,
             form_worker(s, p, jw, l);
     }
     else  {
-        lb_worker_t *lb = NULL;
         worker_record_t *wr = NULL;
         if (jw->type != JK_LB_WORKER_TYPE) {
             jk_log(l, JK_LOG_WARNING,
@@ -2680,26 +2754,11 @@ static int edit_worker(jk_ws_service_t *s,
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-        lb = (lb_worker_t *)jw->worker_private;
-        if (!lb) {
-            jk_log(l, JK_LOG_WARNING,
-                   "lb structure is (null)");
+        if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-        for (i = 0; i < (int)lb->num_of_workers; i++) {
-            wr = &(lb->lb_workers[i]);
-            if (strcmp(sub_worker, wr->s->name) == 0)
-                break;
-        }
-        if (!wr || i == (int)lb->num_of_workers) {
-            jk_log(l, JK_LOG_WARNING,
-                   "could not find worker '%s'",
-                   sub_worker);
-            JK_TRACE_EXIT(l);
-            return JK_FALSE;
-        }
-        form_member(s, p, wr, lb->s->name, l);
+        form_member(s, p, wr, worker, l);
     }
     JK_TRACE_EXIT(l);
     return JK_TRUE;
@@ -2709,33 +2768,17 @@ static int update_worker(jk_ws_service_t *s,
                          status_endpoint_t *p,
                          jk_logger_t *l)
 {
-    unsigned int i;
     const char *worker;
     const char *sub_worker;
     jk_worker_t *jw = NULL;
 
     JK_TRACE_ENTER(l);
-    status_get_string(p, JK_STATUS_ARG_WORKER, "", &worker, l);
-    status_get_string(p, JK_STATUS_ARG_SUB_WORKER, "", &sub_worker, l);
+    fetch_worker_and_sub_worker(p, "updating", &worker, &sub_worker, l);
+    if (search_worker(s, p, &jw, worker, l) == JK_FALSE) {
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
 
-    if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG,
-               "updating worker '%s' sub worker '%s'",
-               worker ? worker : "(null)", sub_worker ? sub_worker : "(null)");
-    if (!worker || !worker[0]) {
-        jk_log(l, JK_LOG_WARNING,
-               "NULL or EMPTY worker param");
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
-    jw = wc_get_worker_for_name(worker, l);
-    if (!jw) {
-        jk_log(l, JK_LOG_WARNING,
-               "could not find worker '%s'",
-               worker);
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
     if (!sub_worker || !sub_worker[0]) {
         const char *arg;
 
@@ -2749,28 +2792,11 @@ static int update_worker(jk_ws_service_t *s,
         lb_worker_t *lb = NULL;
         worker_record_t *wr = NULL;
         int rc = 0;
-        if (jw->type != JK_LB_WORKER_TYPE) {
-            jk_log(l, JK_LOG_WARNING,
-                   "worker type not implemented");
+        if (check_valid_lb(s, p, jw, worker, &lb, 0, l) == JK_FALSE) {
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-        lb = (lb_worker_t *)jw->worker_private;
-        if (!lb) {
-            jk_log(l, JK_LOG_WARNING,
-                   "lb structure is (null)");
-            JK_TRACE_EXIT(l);
-            return JK_FALSE;
-        }
-        for (i = 0; i < (int)lb->num_of_workers; i++) {
-            wr = &(lb->lb_workers[i]);
-            if (strcmp(sub_worker, wr->s->name) == 0)
-                break;
-        }
-        if (!wr || i == (int)lb->num_of_workers) {
-            jk_log(l, JK_LOG_WARNING,
-                   "could not find worker '%s'",
-                   sub_worker);
+        if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -2792,41 +2818,18 @@ static int reset_worker(jk_ws_service_t *s,
     unsigned int i;
     const char *worker;
     const char *sub_worker;
-    lb_worker_t *lb;
     jk_worker_t *jw = NULL;
+    lb_worker_t *lb = NULL;
     worker_record_t *wr = NULL;
 
     JK_TRACE_ENTER(l);
-    status_get_string(p, JK_STATUS_ARG_WORKER, "", &worker, l);
-    status_get_string(p, JK_STATUS_ARG_SUB_WORKER, "", &sub_worker, l);
-    jk_log(l, JK_LOG_INFO,
-           "resetting worker '%s' sub worker '%s'",
-           worker ? worker : "(null)", sub_worker ? sub_worker : "(null)");
-    if (!worker || !worker[0]) {
-        jk_log(l, JK_LOG_WARNING,
-               "NULL or EMPTY worker param");
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
-    jw = wc_get_worker_for_name(worker, l);
-    if (!jw) {
-        jk_log(l, JK_LOG_WARNING,
-               "could not find worker '%s'",
-               worker);
+    fetch_worker_and_sub_worker(p, "resetting", &worker, &sub_worker, l);
+    if (search_worker(s, p, &jw, worker, l) == JK_FALSE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
     /* XXX Until now, we only have something to reset for lb workers or their members */
-    if (jw->type != JK_LB_WORKER_TYPE) {
-        jk_log(l, JK_LOG_WARNING,
-               "worker type not implemented");
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
-    lb = (lb_worker_t *)jw->worker_private;
-    if (!lb) {
-        jk_log(l, JK_LOG_WARNING,
-               "lb structure is (null)");
+    if (check_valid_lb(s, p, jw, worker, &lb, 0, l) == JK_FALSE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -2852,15 +2855,7 @@ static int reset_worker(jk_ws_service_t *s,
         return JK_TRUE;
     }
     else  {
-        for (i = 0; i < (int)lb->num_of_workers; i++) {
-            wr = &(lb->lb_workers[i]);
-            if (strcmp(sub_worker, wr->s->name) == 0)
-                break;
-        }
-        if (!wr || i == (int)lb->num_of_workers) {
-            jk_log(l, JK_LOG_WARNING,
-                   "could not find worker '%s'",
-                   sub_worker);
+        if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -2887,66 +2882,23 @@ static int recover_worker(jk_ws_service_t *s,
                           status_endpoint_t *p,
                           jk_logger_t *l)
 {
-    unsigned int i;
     const char *worker;
     const char *sub_worker;
-    lb_worker_t *lb;
     jk_worker_t *jw = NULL;
     worker_record_t *wr = NULL;
 
     JK_TRACE_ENTER(l);
-    status_get_string(p, JK_STATUS_ARG_WORKER, "", &worker, l);
-    status_get_string(p, JK_STATUS_ARG_SUB_WORKER, "", &sub_worker, l);
-    jk_log(l, JK_LOG_INFO,
-           "recovering worker '%s' sub worker '%s'",
-           worker ? worker : "(null)", sub_worker ? sub_worker : "(null)");
-    if (!worker || !worker[0]) {
-        jk_log(l, JK_LOG_WARNING,
-               "NULL or EMPTY worker param");
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
-    jw = wc_get_worker_for_name(worker, l);
-    if (!jw) {
-        jk_log(l, JK_LOG_WARNING,
-               "could not find worker '%s'",
-               worker);
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
-    if (jw->type != JK_LB_WORKER_TYPE) {
-        jk_log(l, JK_LOG_WARNING,
-               "worker type not implemented");
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
-    lb = (lb_worker_t *)jw->worker_private;
-    if (!lb) {
-        jk_log(l, JK_LOG_WARNING,
-               "lb structure is (null)");
+    fetch_worker_and_sub_worker(p, "recovering", &worker, &sub_worker, l);
+    if (search_worker(s, p, &jw, worker, l) == JK_FALSE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
-    if (!sub_worker || !sub_worker[0]) {
-        jk_log(l, JK_LOG_WARNING,
-               "only lb sub workers can be recovered");
+    if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
-    for (i = 0; i < (int)lb->num_of_workers; i++) {
-        wr = &(lb->lb_workers[i]);
-        if (strcmp(sub_worker, wr->s->name) == 0)
-            break;
-    }
-    if (!wr || i == (int)lb->num_of_workers) {
-        jk_log(l, JK_LOG_WARNING,
-               "could not find worker '%s'",
-               sub_worker);
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
     if (wr->s->state == JK_LB_STATE_ERROR) {
         wr->s->state = JK_LB_STATE_RECOVER;
         JK_TRACE_EXIT(l);

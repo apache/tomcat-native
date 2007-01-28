@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <add>
+      JkStatus: Refactoring searching for workers and sub workers. (rjung)
+      </add>
+      <add>
         <bug>41318</bug>: Add configuration to make status worker user
         name checks case insensitive. (rjung)
       </add>
