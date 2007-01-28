@@ -56,7 +56,7 @@ int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
     JK_INIT_CS(&worker_lock, rc);
     if (rc == JK_FALSE) {
         jk_log(l, JK_LOG_ERROR,
-                "creating thread lock errno=%d",
+                "creating thread lock (errno=%d)",
                 errno);
         JK_TRACE_EXIT(l);
         return JK_FALSE;

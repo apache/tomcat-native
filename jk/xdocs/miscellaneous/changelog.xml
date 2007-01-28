@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <add>
+        <bug>41332</bug>: Add some more errno logging and unify the format. (rjung)
+      </add>
+      <add>
       JkStatus: Improved logging by adding status worker name to messages.
       Added messages to the recover worker action. (rjung)
       </add>
@@ -66,6 +69,9 @@
       <fix>
         <bug>41381</bug>: Fix segfault in feature fail_on_status
         (wrong order of log arguments). Patch by Juri Haberland. (rjung)
+      </fix>
+      <fix>
+      Use correct windows line endings for log file on WIN32 platform. (rjung)
       </fix>
     </changelog>
   </subsection>

@@ -760,6 +760,7 @@ static int ajp_is_input_event(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
         rc = select((int)ae->sd + 1, &rset, NULL, NULL, &tv);
     } while (rc < 0 && errno == EINTR);
 
+    ae->last_errno = 0;
     if (rc == 0) {
         /* Timeout. Set the errno to timeout */
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
@@ -767,11 +768,13 @@ static int ajp_is_input_event(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
 #else
         errno = ETIMEDOUT;
 #endif
+        ae->last_errno = errno;
         return JK_FALSE;
     }
     else if (rc < 0) {
+        ae->last_errno = errno;
         jk_log(l, JK_LOG_WARNING,
-               "error during select err=%d", errno);
+               "error during select (errno=%d)", ae->last_errno);
         return JK_FALSE;
     }
     else
@@ -871,8 +874,8 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
     ae->last_errno = errno;
 
     jk_log(l, JK_LOG_INFO,
-           "Failed opening socket to (%s) with (errno=%d)",
-           jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), errno);
+           "Failed opening socket to (%s) (errno=%d)",
+           jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), ae->last_errno);
     JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
@@ -913,7 +916,7 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     }
     ae->last_errno = errno;
     jk_log(l, JK_LOG_ERROR,
-           "sendfull returned %d with errno=%d ", rc, ae->last_errno);
+           "sendfull returned %d (errno=%d)", rc, ae->last_errno);
 
     JK_TRACE_EXIT(l);
     return JK_FALSE;
@@ -947,9 +950,9 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
         else {
             jk_log(l, JK_LOG_ERROR,
                    "(%s) can't receive the response message from tomcat, "
-                   "network problems or tomcat is down (%s), err=%d",
-                   ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr,
-                                                   buf), rc);
+                   "network problems or tomcat (%s) is down (errno=%d)",
+                   ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
+                   ae->last_errno);
              JK_TRACE_EXIT(l);
         }
         return JK_FALSE;
@@ -1013,13 +1016,24 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     rc = jk_tcp_socket_recvfull(ae->sd, msg->buf, msglen);
     if (rc < 0) {
         ae->last_errno = errno;
-        jk_log(l, JK_LOG_ERROR,
-               "(%s) can't receive the response message from tomcat, "
-               "network problems or tomcat (%s) is down %d",
-               ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
-                                               rc);
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
+        if (rc == JK_SOCKET_EOF) {
+            jk_log(l, JK_LOG_ERROR,
+                   "(%s) can't receive the response message from tomcat, "
+                   "tomcat (%s) has forced a connection close for socket %d",
+                   ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
+                   ae->sd);
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
+        else {
+            jk_log(l, JK_LOG_ERROR,
+                   "(%s) can't receive the response message from tomcat, "
+                   "network problems or tomcat (%s) is down (errno=%d)",
+                   ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
+                   ae->last_errno);
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
     }
     ae->last_errno = 0;
     ae->endpoint.rd += rc;
@@ -1544,8 +1558,8 @@ static int ajp_get_reply(jk_endpoint_t *e,
                 JK_FALSE) {
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) Timeout with waiting reply from tomcat. "
-                       "Tomcat is down, stopped or network problems.",
-                       p->worker->name);
+                       "Tomcat is down, stopped or network problems (errno=%d)",
+                       p->worker->name, p->last_errno);
                 if (headeratclient == JK_FALSE) {
                     if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
                         op->recoverable = JK_FALSE;
@@ -2012,7 +2026,7 @@ static int ajp_create_endpoint_cache(ajp_worker_t *p, int proto, jk_logger_t *l)
             p->ep_cache[i] = (ajp_endpoint_t *)calloc(1, sizeof(ajp_endpoint_t));
             if (!p->ep_cache[i]) {
                 jk_log(l, JK_LOG_ERROR,
-                        "allocating endpoint slot %d errno=%d",
+                        "allocating endpoint slot %d (errno=%d)",
                         i, errno);
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -2148,7 +2162,7 @@ int ajp_init(jk_worker_t *pThis,
         JK_INIT_CS(&(p->cs), rc);
         if (!rc) {
             jk_log(l, JK_LOG_ERROR,
-                   "creating thread lock errno=%d",
+                   "creating thread lock (errno=%d)",
                    errno);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
@@ -2272,7 +2286,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
         }
 
         jk_log(l, JK_LOG_ERROR,
-               "locking thread with errno=%d", errno);
+               "locking thread (errno=%d)", errno);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -2327,7 +2341,7 @@ int ajp_get_endpoint(jk_worker_t *pThis,
         }
         else {
            jk_log(l, JK_LOG_ERROR,
-                  "locking thread with errno=%d",
+                  "locking thread (errno=%d)",
                   errno);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
@@ -2403,7 +2417,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
         }
         else {
            jk_log(l, JK_LOG_ERROR,
-                  "locking thread with errno=%d",
+                  "locking thread (errno=%d)",
                   errno);
             JK_TRACE_EXIT(l);
             return JK_FALSE;

@@ -317,7 +317,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
     if (!IS_VALID_SOCKET(sock)) {
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
-               "socket() failed with errno=%d", errno);
+               "socket() failed (errno=%d)", errno);
         JK_TRACE_EXIT(l);
         return JK_INVALID_SOCKET;
 ;
@@ -326,7 +326,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
     if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (SET_TYPE)&set,
                    sizeof(set))) {
         jk_log(l, JK_LOG_ERROR,
-                "failed setting TCP_NODELAY with errno=%d", errno);
+                "failed setting TCP_NODELAY (errno=%d)", errno);
         jk_close_socket(sock);
         JK_TRACE_EXIT(l);
         return JK_INVALID_SOCKET;
@@ -339,7 +339,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
         if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (SET_TYPE)&set,
                        sizeof(set))) {
             jk_log(l, JK_LOG_ERROR,
-                   "failed setting SO_KEEPALIVE with errno=%d", errno);
+                   "failed setting SO_KEEPALIVE (errno=%d)", errno);
             jk_close_socket(sock);
             JK_TRACE_EXIT(l);
             return JK_INVALID_SOCKET;
@@ -356,7 +356,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                         sizeof(set))) {
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
-                    "failed setting SO_SNDBUF with errno=%d", errno);
+                    "failed setting SO_SNDBUF (errno=%d)", errno);
             jk_close_socket(sock);
             JK_TRACE_EXIT(l);
             return JK_INVALID_SOCKET;
@@ -367,7 +367,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                                 sizeof(set))) {
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
-                    "failed setting SO_RCVBUF with errno=%d", errno);
+                    "failed setting SO_RCVBUF (errno=%d)", errno);
             jk_close_socket(sock);
             JK_TRACE_EXIT(l);
             return JK_INVALID_SOCKET;
@@ -409,7 +409,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                    sizeof(int))) {
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
-                "failed setting SO_NOSIGPIPE with errno=%d", errno);
+                "failed setting SO_NOSIGPIPE (errno=%d)", errno);
         jk_close_socket(sock);
         JK_TRACE_EXIT(l);
         return JK_INVALID_SOCKET;
@@ -422,7 +422,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                    sizeof(li))) {
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
-                "failed setting SO_LINGER with errno=%d", errno);
+                "failed setting SO_LINGER (errno=%d)", errno);
         jk_close_socket(sock);
         JK_TRACE_EXIT(l);
         return JK_INVALID_SOCKET;
@@ -449,7 +449,7 @@ iSeries when Unix98 is required at compil time */
     /* Check if we are connected */
     if (ret) {
         jk_log(l, JK_LOG_INFO,
-               "connect to %s failed with errno=%d",
+               "connect to %s failed (errno=%d)",
                jk_dump_hinfo(addr, buf), errno);
         jk_close_socket(sock);
         sock = JK_INVALID_SOCKET;

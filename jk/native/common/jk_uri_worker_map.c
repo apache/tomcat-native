@@ -188,7 +188,7 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
         JK_INIT_CS(&((*uw_map)->cs), rc);
         if (rc == JK_FALSE) {
             jk_log(l, JK_LOG_ERROR,
-                   "creating thread lock errno=%d",
+                   "creating thread lock (errno=%d)",
                    errno);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
@@ -703,7 +703,7 @@ int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
         uw_map->checked = now;
         if ((rc = stat(uw_map->fname, &statbuf)) == -1) {
             jk_log(l, JK_LOG_ERROR,
-                   "Unable to stat the %s, errno %d",
+                   "Unable to stat the %s (errno=%d)",
                    uw_map->fname, errno);
             return JK_FALSE;
         }
