@@ -1313,6 +1313,8 @@ static void display_worker_lb(jk_ws_service_t *s,
     unsigned int degraded = 0;
     unsigned int bad = 0;
     int map_count;
+    int ms_min;
+    int ms_max;
     unsigned int j;
     const char *name = lb->s->name;
     status_worker_t *w = p->worker;
@@ -1353,8 +1355,8 @@ static void display_worker_lb(jk_ws_service_t *s,
     }
 
     map_count = count_maps(s, name, l);
-    int ms_min = lb->maintain_time - (int)difftime(now, lb->s->last_maintain_time);
-    int ms_max = ms_min + lb->maintain_time;
+    ms_min = lb->maintain_time - (int)difftime(now, lb->s->last_maintain_time);
+    ms_max = ms_min + lb->maintain_time;
     ms_min -= JK_LB_MAINTAIN_TOLERANCE;
     if (ms_min < 0) {
         ms_min = 0;
