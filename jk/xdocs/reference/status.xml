@@ -256,13 +256,23 @@ worker.list=jk-manage
 worker.jk-manage.type=status
 worker.jk-manage.mount=/admin/status/jk
 </source>
+Starting with version 1.2.21, a read/write status worker can also be switched temporarily
+into read-only mode by the user via a link in the HTML GUI. The user can always switch it
+back to read/write. Only a status worker configured as read-only via the "read_only" attribute
+is completely safe from applying any changes.
+</p>
+<p>
 The other attribute you can use is <b>user</b>. By default this list is empty, which means
 no limit on the users. You can set "user" to a comma separated list of user names. If your
-web server is confiugured such that it sends the user names with the request, the status worker
+web server is configured such that it sends the user names with the request, the status worker
 will check, if the name attached with the request is contained in it's "user" list.
 </p>
 <p>
 The user list can be split over multiple occurences of the "user" attribute.
+</p>
+<p>
+By default, the user names are matched case sensitively. Starting with version 1.2.21 you can set
+the attribute <b>user_case_insensitive</b> to "True". Then the comparison will be made case insensitive.
 </p>
 </subsection>
 

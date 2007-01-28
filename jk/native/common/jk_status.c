@@ -260,6 +260,7 @@ struct status_worker
     int               read_only;
     char              **user_names;
     unsigned int      num_of_users;
+    int               user_case_insensitive;
     jk_uint32_t       good_mask;
     jk_uint32_t       bad_mask;
     jk_worker_t       worker;
@@ -2987,9 +2988,17 @@ static int JK_METHOD service(jk_endpoint_t *e,
             unsigned int i;
             denied = 1;
             for (i = 0; i < w->num_of_users; i++) {
-                if (!strcmp(s->remote_user, w->user_names[i])) {
-                    denied = 0;
-                    break;
+                if (w->user_case_insensitive) {
+                    if (!strcasecmp(s->remote_user, w->user_names[i])) {
+                        denied = 0;
+                        break;
+                    }
+                }
+                else {
+                    if (!strcmp(s->remote_user, w->user_names[i])) {
+                        denied = 0;
+                        break;
+                    }
                 }
             }
         }
@@ -3502,20 +3511,26 @@ static int JK_METHOD init(jk_worker_t *pThis,
         p->xmlns = jk_get_worker_xmlns(props, p->name, JK_STATUS_XMLNS_DEF);
         p->doctype = jk_get_worker_xml_doctype(props, p->name, NULL);
         p->read_only = jk_get_is_read_only(props, p->name);
+        p->user_case_insensitive = jk_get_worker_user_case_insensitive(props, p->name);
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "Status worker '%s' has css '%s' and read_only '%s'",
+                   "Status worker '%s' is %s and has css '%s', prefix '%s', name space '%s', xml name space '%s', document type '%s'",
                    p->name,
+                   p->read_only ? "read-only" : "read/write",
                    p->css ? p->css : "(null)",
-                   p->read_only ? "true" : "false");
+                   p->prefix ? p->prefix : "(null)",
+                   p->ns ? p->ns : "(null)",
+                   p->xmlns ? p->xmlns : "(null)",
+                   p->doctype ? p->doctype : "(null)");
         if (jk_get_worker_user_list(props, p->name,
                                     &(p->user_names),
                                     &(p->num_of_users)) && p->num_of_users) {
             for (i = 0; i < p->num_of_users; i++) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
-                            "restricting access for status worker '%s' to user '%s'",
-                            p->name, p->user_names[i]);
+                            "Status worker '%s' restricting access to user '%s' case %s",
+                            p->name, p->user_names[i],
+                            p->user_case_insensitive ? "insensitive" : "sensitive");
             }
         }
         if (jk_get_worker_good_rating(props, p->name,

@@ -392,6 +392,14 @@ This directive can be used multiple times.
 This feature has been added in <b>jk 1.2.20</b>.
 </p>
 </directive>
+<directive name="user_case_insensitive" default="False" required="false">
+By default, the user names are matched case sensitively. You can set
+user_case_insensitive=True to make the comparison case insensitive.
+This may be especially useful on the Windows platform.
+<p>
+This feature has been added in <b>jk 1.2.21</b>.
+</p>
+</directive>
 <directive name="good" default="a.o,a.n,a.b,a.r" required="false">
 For every load balancer worker, the status worker shows a summary
 of the state of its members. There are three such states,

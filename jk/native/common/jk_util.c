@@ -85,6 +85,7 @@
 
 #define READ_ONLY_OF_WORKER         ("read_only")
 #define USER_OF_WORKER              ("user")
+#define USER_CASE_OF_WORKER         ("user_case_insensitive")
 #define GOOD_RATING_OF_WORKER       ("good")
 #define BAD_RATING_OF_WORKER        ("bad")
 
@@ -182,6 +183,7 @@ static const char *unique_properties[] = {
     XML_DOCTYPE_OF_WORKER,
     PROP_PREFIX_OF_WORKER,
     STATUS_FAIL_OF_WORKER,
+    USER_CASE_OF_WORKER,
     NULL
 };
 
@@ -1027,6 +1029,20 @@ int jk_get_worker_fail_on_status(jk_map_t *m, const char *wname)
 
 }
 
+int jk_get_worker_user_case_insensitive(jk_map_t *m, const char *wname)
+{
+    int rc = JK_FALSE;
+    char buf[1024];
+    if (m && wname) {
+        int value;
+        MAKE_WORKER_PARAM(USER_CASE_OF_WORKER);
+        value = jk_map_get_bool(m, buf, 0);
+        if (value)
+            rc = JK_TRUE;
+    }
+    return rc;
+
+}
 
 const char *jk_get_worker_style_sheet(jk_map_t *m, const char *wname, const char *def)
 {

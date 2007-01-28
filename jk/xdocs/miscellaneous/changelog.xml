@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <add>
+        <bug>41318</bug>: Add configuration to make status worker user
+        name checks case insensitive. (rjung)
+      </add>
+      <add>
       JkStatus: Add estimated time until next global maintenance to other
       mime types and adopt jkstatus ant task. (rjung)
       </add>
