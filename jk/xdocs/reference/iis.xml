@@ -91,7 +91,7 @@ A DWORD value specifying the time in seconds upon which the
 </attribute>
 <attribute name="strip_session" required="false"><p>
 A string value representing a boolean. If it is set to true,
-URL session prefixes of the form ";jsessionid=..." get stripped of URLs,
+URL session suffixes of the form ";jsessionid=..." get stripped of URLs,
 even if the are served locally by the web server.
 A true value can be represented by the string "1" or any string starting
 with the letters "T" or "t". A false value will be assumed for "0"
