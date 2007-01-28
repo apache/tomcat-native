@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <add>
+        <bug>41439</bug>: Allow session IDs to get stripped off URLs of static
+        content in IIS (configurable). (rjung)
+      </add>
+      <add>
         <bug>41333</bug>: Refactoring isapi_plugin configuration reading. (rjung)
       </add>
       <add>

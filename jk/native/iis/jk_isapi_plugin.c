@@ -89,6 +89,7 @@ static char HTTP_WORKER_HEADER_NAME[_MAX_FNAME];
 #define URI_REWRITE_TAG             ("rewrite_rule_file")
 #define SHM_SIZE_TAG                ("shm_size")
 #define WORKER_MOUNT_RELOAD_TAG     ("worker_mount_reload")
+#define STRIP_SESSION_TAG           ("strip_session")
 
 
 #define TRANSLATE_HEADER            ("Translate:")
@@ -165,6 +166,7 @@ static char worker_mount_file[MAX_PATH * 2] = {0};
 static int  worker_mount_reload = JK_URIMAP_DEF_RELOAD;
 static char rewrite_rule_file[MAX_PATH * 2] = {0};
 static int shm_config_size = JK_SHM_DEF_SIZE;
+static int strip_session = 0;
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -1010,6 +1012,17 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 if (JK_IS_DEBUG_LEVEL(logger))
                     jk_log(logger, JK_LOG_DEBUG,
                            "[%s] is not a servlet url", uri);
+                if (strip_session) {
+    				char *jsessionid = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
+                    if (jsessionid) {
+                        if (JK_IS_DEBUG_LEVEL(logger))
+                            jk_log(logger, JK_LOG_DEBUG,
+                                   "removing session identifier [%s] for non servlet url [%s]",
+                                   jsessionid, uri);
+                        *jsessionid = '\0';
+                        SetHeader(pfc, "url", uri);
+                    }
+                }
             }
         }
     }
@@ -1375,6 +1388,7 @@ static int read_registry_init_data(void)
     }
     shm_config_size = get_config_int(src, SHM_SIZE_TAG, JK_SHM_DEF_SIZE);
     worker_mount_reload = get_config_int(src, WORKER_MOUNT_RELOAD_TAG, JK_URIMAP_DEF_RELOAD);
+    strip_session = get_config_bool(src, STRIP_SESSION_TAG, JK_FALSE);
 
     if (using_ini_file) {
         jk_map_free(&map);

@@ -65,15 +65,15 @@ A string value for log level
 (can be debug, info, warn, error or trace).
 </p></attribute>
 <attribute name="worker_file" required="true"><p>
-A string value with the full path to workers.properties file
+A string value which is the full path to workers.properties file
 (for example <b>c:\tomcat\conf\workers.properties</b>)
 </p></attribute>
 <attribute name="worker_mount_file" required="true"><p>
-A string value with is the full path to uriworkermap.properties file
+A string value which is the full path to uriworkermap.properties file
 (for example <b>c:\tomcat\conf\uriworkermap.properties</b>)
 </p></attribute>
 <attribute name="rewrite_rule_file" required="false"><p>
-A string value with is the full path to rewrite.properties file
+A string value which is the full path to rewrite.properties file
 (for example <b>c:\tomcat\conf\rewrite.properties</b>)
 </p></attribute>
 <attribute name="shm_size" required="false"><p>
@@ -88,6 +88,16 @@ A DWORD value specifying the time in seconds upon which the
 <b>worker_mount_file</b> will be reloaded.
 </p>
 <p>This directive has been added in version 1.2.20</p>
+</attribute>
+<attribute name="strip_session" required="false"><p>
+A string value representing a boolean. If it is set to true,
+URL session prefixes of the form ";jsessionid=..." get stripped of URLs,
+even if the are served locally by the web server.
+A true value can be represented by the string "1" or any string starting
+with the letters "T" or "t". A false value will be assumed for "0"
+or any string starting with "F" or "f". The default value is false.
+</p>
+<p>This directive has been added in version 1.2.21</p>
 </attribute>
 
 </attributes>
