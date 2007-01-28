@@ -285,7 +285,6 @@ int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
 
     JK_TRACE_ENTER(l);
 
-    /* Find if duplicate entry */
     for (i = 0; i < uw_map->size; i++) {
         uwr = uw_map->maps[i];
         if (uwr->source_type == source_type) {
@@ -295,6 +294,7 @@ int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
             for (j = i; j < uw_map->size-1; j++)
                 uw_map->maps[j] = uw_map->maps[j+1];
             uw_map->size--;
+            i--;
         }
     }
 
@@ -643,7 +643,7 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
 
     jk_map_alloc(&map);
     if (jk_map_read_properties(map, uw_map->fname,
-                               &uw_map->modified, l)) {
+                               &uw_map->modified, 0, l)) {
         int i;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,

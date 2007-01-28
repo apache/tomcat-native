@@ -27,6 +27,21 @@
   <subsection name="Native">
     <changelog>
       <add>
+      Add warning if duplicate map keys are read and are not allowed,
+      e.g. when parsing uriworkermap.properties. (rjung)
+      </add>
+      <fix>
+      Don't concat worker names, if uriworkermap.properties has a duplicate
+      pattern, instead overwrite the worker. (rjung)
+      </fix>
+      <fix>
+      Log deprecation message even in duplication case. (rjung)
+      </fix>
+      <fix>
+      uriworkermap.properties: Fix off-by-one problem when deleting
+      URL mapping during reloading of uriworkermap.properties. (rjung)
+      </fix>
+      <add>
         <bug>41439</bug>: Allow session IDs to get stripped off URLs of static
         content in IIS (configurable). (rjung)
       </add>

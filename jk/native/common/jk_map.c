@@ -346,7 +346,7 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
     return rc;
 }
 
-int jk_map_read_property(jk_map_t *m, const char *str, jk_logger_t *l)
+int jk_map_read_property(jk_map_t *m, const char *str, int allow_duplicates, jk_logger_t *l)
 {
     int rc = JK_TRUE;
     char buf[LENGTH_OF_LINE + 1];
@@ -365,29 +365,38 @@ int jk_map_read_property(jk_map_t *m, const char *str, jk_logger_t *l)
             trim(v);
             if (strlen(v) && strlen(prp)) {
                 const char *oldv = jk_map_get_string(m, prp, NULL);
+                if (jk_is_deprecated_property(prp)) {
+                    jk_log(l, JK_LOG_WARNING,
+                           "The attribute '%s' is deprecated - please check"
+                           " the documentation for the correct replacement.",
+                           prp);
+                }
                 v = jk_map_replace_properties(m, v);
-                if (oldv && jk_is_unique_property(prp) == JK_FALSE) {
-                    char *tmpv = jk_pool_alloc(&m->p,
-                                       strlen(v) + strlen(oldv) + 3);
-                    if (tmpv) {
-                        char sep = '*';
-                        if (jk_is_path_property(prp))
-                            sep = PATH_SEPERATOR;
-                        else if (jk_is_cmd_line_property(prp))
-                            sep = ' ';
-                        else if (jk_is_list_property(prp))
-                            sep = ',';
-                        sprintf(tmpv, "%s%c%s", oldv, sep, v);
+                if (oldv) {
+                    if (allow_duplicates && jk_is_unique_property(prp) == JK_FALSE) {
+                        char *tmpv = jk_pool_alloc(&m->p,
+                                           strlen(v) + strlen(oldv) + 3);
+                        if (tmpv) {
+                            char sep = '*';
+                            if (jk_is_path_property(prp))
+                                sep = PATH_SEPERATOR;
+                            else if (jk_is_cmd_line_property(prp))
+                                sep = ' ';
+                            else if (jk_is_list_property(prp))
+                                sep = ',';
+                            sprintf(tmpv, "%s%c%s", oldv, sep, v);
+                        }
+                        v = tmpv;
                     }
-                    v = tmpv;
+                    else {
+                        jk_log(l, JK_LOG_WARNING,
+                               "Duplicate key '%s' detected - previous value '%s'"
+                               " will be overwritten with '%s'.",
+                               prp, oldv ? oldv : "(null)", v ? v : "(null)");
+                        v = jk_pool_strdup(&m->p, v);
+                    }
                 }
                 else {
-                    if (jk_is_deprecated_property(prp)) {
-                        jk_log(l, JK_LOG_WARNING,
-                               "The attribute %s is deprecated - please check"
-                               " the documentation for the correct replacement.",
-                               prp);
-                    }
                     v = jk_pool_strdup(&m->p, v);
                 }
                 if (v) {
@@ -403,7 +412,7 @@ int jk_map_read_property(jk_map_t *m, const char *str, jk_logger_t *l)
 }
 
 
-int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified, jk_logger_t *l)
+int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified, int allow_duplicates, jk_logger_t *l)
 {
     int rc = JK_FALSE;
 
@@ -427,7 +436,7 @@ int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified, jk_logg
             while (NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
                 trim_prp_comment(prp);
                 if (*prp) {
-                    if ((rc = jk_map_read_property(m, prp, l)) == JK_FALSE)
+                    if ((rc = jk_map_read_property(m, prp, allow_duplicates, l)) == JK_FALSE)
                         break;
                 }
             }
