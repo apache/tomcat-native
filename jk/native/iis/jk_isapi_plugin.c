@@ -86,9 +86,9 @@ static char HTTP_WORKER_HEADER_NAME[_MAX_FNAME];
 #define URI_SELECT_PARSED_VERB      ("parsed")
 #define URI_SELECT_UNPARSED_VERB    ("unparsed")
 #define URI_SELECT_ESCAPED_VERB     ("escaped")
-#define URI_REWRITE_VERB            ("rewrite_rule_file")
-#define SHM_SIZE_VERB               ("shm_size")
-#define WORKER_MOUNT_RELOAD_VERB    ("worker_mount_reload")
+#define URI_REWRITE_TAG             ("rewrite_rule_file")
+#define SHM_SIZE_TAG                ("shm_size")
+#define WORKER_MOUNT_RELOAD_TAG     ("worker_mount_reload")
 
 
 #define TRANSLATE_HEADER            ("Translate:")
@@ -210,6 +210,13 @@ static int init_jk(char *serverName);
 static int initialize_extension(void);
 
 static int read_registry_init_data(void);
+
+static int get_config_parameter(LPVOID src, const char *tag, 
+                                char *val, DWORD sz);
+
+static int get_config_bool(LPVOID src, const char *tag, int def);
+
+static int get_config_int(LPVOID src, const char *tag, int def);
 
 static int get_registry_config_parameter(HKEY hkey,
                                          const char *tag, char *b, DWORD sz);
@@ -1324,152 +1331,107 @@ int parse_uri_select(const char *uri_select)
 
 static int read_registry_init_data(void)
 {
-    char tmpbuf[INTERNET_MAX_URL_LENGTH];
-    HKEY hkey;
-    long rc;
+    char tmpbuf[MAX_PATH];
     int ok = JK_TRUE;
-    const char *tmp;
-    jk_map_t *map;
+    LPVOID src;
+    HKEY hkey;
+    jk_map_t *map = NULL;
 
     if (jk_map_alloc(&map)) {
         if (jk_map_read_properties(map, ini_file_name, NULL, logger)) {
             using_ini_file = JK_TRUE;
+            src = map;
+        }
+        else {
+            jk_map_free(&map);
         }
     }
-    if (using_ini_file) {
-        tmp = jk_map_get_string(map, JK_LOG_FILE_TAG, NULL);
-        if (tmp) {
-            strcpy(log_file, tmp);
-        }
-        else {
-            ok = JK_FALSE;
-        }
-        tmp = jk_map_get_string(map, JK_LOG_LEVEL_TAG, NULL);
-        if (tmp) {
-            log_level = jk_parse_log_level(tmp);
-        }
-        tmp = jk_map_get_string(map, EXTENSION_URI_TAG, NULL);
-        if (tmp) {
-            strcpy(extension_uri, tmp);
-        }
-        else {
-            ok = JK_FALSE;
-        }
-        tmp = jk_map_get_string(map, JK_WORKER_FILE_TAG, NULL);
-        if (tmp) {
-            strcpy(worker_file, tmp);
-        }
-        else {
-            ok = JK_FALSE;
-        }
-        tmp = jk_map_get_string(map, JK_MOUNT_FILE_TAG, NULL);
-        if (tmp) {
-            strcpy(worker_mount_file, tmp);
-        }
-        else {
-            ok = JK_FALSE;
-        }
-        tmp = jk_map_get_string(map, URI_REWRITE_VERB, NULL);
-        if (tmp) {
-            strcpy(rewrite_rule_file, tmp);
-        }
-        tmp = jk_map_get_string(map, URI_SELECT_TAG, NULL);
-        if (tmp) {
-            int opt = parse_uri_select(tmp);
-            if (opt >= 0) {
-                uri_select_option = opt;
-            }
-            else {
-                ok = JK_FALSE;
-            }
-        }
-        tmp = jk_map_get_string(map, SHM_SIZE_VERB, NULL);
-        if (tmp) {
-            shm_config_size = atoi(tmp);
-        }
-        tmp = jk_map_get_string(map, WORKER_MOUNT_RELOAD_VERB, NULL);
-        if (tmp) {
-            worker_mount_reload = atoi(tmp);
-        }
-
-    }
-    else {
-        rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-                          REGISTRY_LOCATION, (DWORD) 0, KEY_READ, &hkey);
+    if (!using_ini_file) {
+        long rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, REGISTRY_LOCATION, 
+                               (DWORD)0, KEY_READ, &hkey);
         if (ERROR_SUCCESS != rc) {
             return JK_FALSE;
         }
-
-        if (get_registry_config_parameter(hkey,
-                                          JK_LOG_FILE_TAG,
-                                          tmpbuf, sizeof(log_file))) {
-            strcpy(log_file, tmpbuf);
+        else {
+            src = &hkey;
+        }
+    }
+    ok = ok && get_config_parameter(src, JK_LOG_FILE_TAG, log_file, sizeof(log_file));
+    if (get_config_parameter(src, JK_LOG_LEVEL_TAG, tmpbuf, sizeof(tmpbuf))) {
+        log_level = jk_parse_log_level(tmpbuf);
+    }
+    ok = ok && get_config_parameter(src, EXTENSION_URI_TAG, extension_uri, sizeof(extension_uri));
+    ok = ok && get_config_parameter(src, JK_WORKER_FILE_TAG, worker_file, sizeof(worker_file));
+    ok = ok && get_config_parameter(src, JK_MOUNT_FILE_TAG, worker_mount_file, sizeof(worker_mount_file));
+    get_config_parameter(src, URI_REWRITE_TAG, rewrite_rule_file, sizeof(rewrite_rule_file));
+    if (get_config_parameter(src, URI_SELECT_TAG, tmpbuf, sizeof(tmpbuf))) {
+        int opt = parse_uri_select(tmpbuf);
+        if (opt >= 0) {
+            uri_select_option = opt;
         }
         else {
             ok = JK_FALSE;
         }
+    }
+    shm_config_size = get_config_int(src, SHM_SIZE_TAG, JK_SHM_DEF_SIZE);
+    worker_mount_reload = get_config_int(src, WORKER_MOUNT_RELOAD_TAG, JK_URIMAP_DEF_RELOAD);
 
-        if (get_registry_config_parameter(hkey,
-                                          JK_LOG_LEVEL_TAG,
-                                          tmpbuf, sizeof(tmpbuf))) {
-            log_level = jk_parse_log_level(tmpbuf);
-        }
-
-        if (get_registry_config_parameter(hkey,
-                                          EXTENSION_URI_TAG,
-                                          tmpbuf, sizeof(extension_uri))) {
-            strcpy(extension_uri, tmpbuf);
-        }
-        else {
-            ok = JK_FALSE;
-        }
-
-        if (get_registry_config_parameter(hkey,
-                                          JK_WORKER_FILE_TAG,
-                                          tmpbuf, sizeof(worker_file))) {
-            strcpy(worker_file, tmpbuf);
-        }
-        else {
-            ok = JK_FALSE;
-        }
-
-        if (get_registry_config_parameter(hkey,
-                                          JK_MOUNT_FILE_TAG,
-                                          tmpbuf,
-                                          sizeof(worker_mount_file))) {
-            strcpy(worker_mount_file, tmpbuf);
-        }
-        else {
-            ok = JK_FALSE;
-        }
-
-        if (get_registry_config_parameter(hkey,
-                                          URI_REWRITE_VERB,
-                                          tmpbuf,
-                                          sizeof(rewrite_rule_file))) {
-            strcpy(rewrite_rule_file, tmpbuf);
-        }
-
-        if (get_registry_config_parameter(hkey,
-                                          URI_SELECT_TAG,
-                                          tmpbuf, sizeof(tmpbuf))) {
-            int opt = parse_uri_select(tmpbuf);
-            if (opt >= 0) {
-                uri_select_option = opt;
-            }
-            else {
-                ok = JK_FALSE;
-            }
-        }
-        get_registry_config_number(hkey, SHM_SIZE_VERB,
-                                   &shm_config_size);
-
-        get_registry_config_number(hkey, WORKER_MOUNT_RELOAD_VERB,
-                                   &worker_mount_reload);
-
+    if (using_ini_file) {
+        jk_map_free(&map);
+    }
+    else {
         RegCloseKey(hkey);
     }
     return ok;
+}
+
+static int get_config_parameter(LPVOID src, const char *tag, 
+                                char *val, DWORD sz)
+{
+    const char *tmp = NULL;
+    if (using_ini_file) {
+        tmp = jk_map_get_string((jk_map_t*)src, tag, NULL);
+        if (tmp && (strlen(tmp) < sz)) {
+            strcpy(val, tmp);
+            return JK_TRUE;
+        }
+        else {
+            return JK_FALSE;
+        }
+    } else {
+        return get_registry_config_parameter(*((HKEY*)src), tag, val, sz);
+    }
+}
+
+static int get_config_int(LPVOID src, const char *tag, int def)
+{
+    if (using_ini_file) {
+        return jk_map_get_int((jk_map_t*)src, tag, def);
+    } else {
+        int val;
+        if (get_registry_config_number(*((HKEY*)src), tag, &val) ) {
+            return val;
+        }
+        else {
+            return def;
+        }
+    }
+}
+
+static int get_config_bool(LPVOID src, const char *tag, int def)
+{
+    if (using_ini_file) {
+        return jk_map_get_bool((jk_map_t*)src, tag, def);
+    } else {
+        char tmpbuf[128];
+        if (get_registry_config_parameter(*((HKEY*)src), tag, 
+                                          tmpbuf, sizeof(tmpbuf))) {
+            return jk_get_bool_code(tmpbuf, def);
+        }
+        else {
+            return def;
+        }
+    }    
 }
 
 static int get_registry_config_parameter(HKEY hkey,
@@ -1478,12 +1440,13 @@ static int get_registry_config_parameter(HKEY hkey,
     DWORD type = 0;
     LONG lrc;
 
+    sz = sz - 1; /* Reserve space for RegQueryValueEx to add null terminator */
+    b[sz] = '\0'; /* Null terminate in case RegQueryValueEx doesn't */
+
     lrc = RegQueryValueEx(hkey, tag, (LPDWORD) 0, &type, (LPBYTE) b, &sz);
     if ((ERROR_SUCCESS != lrc) || (type != REG_SZ)) {
         return JK_FALSE;
     }
-
-    b[sz] = '\0';
 
     return JK_TRUE;
 }
