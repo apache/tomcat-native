@@ -28,12 +28,11 @@
 
 #include <jni.h>
 
-#if !defined(JNI_VERSION_1_6)
-
 #include "jk_pool.h"
 #include "jk_jni_worker.h"
 #include "jk_util.h"
 
+#if !defined(JNI_VERSION_1_6)
 #if defined LINUX && defined APACHE2_SIGHACK
 #include <pthread.h>
 #include <signal.h>
@@ -1237,5 +1236,13 @@ static void detach_from_jvm(jni_worker_t * p, jk_logger_t *l)
                "cannot detach from JVM.");
     }
     JK_TRACE_EXIT(l);
+}
+#else
+int JK_METHOD jni_worker_factory(jk_worker_t **w,
+                                 const char *name, jk_logger_t *l)
+{
+    if (w)
+        *w = NULL;
+    return 0;
 }
 #endif /* JNI_VERSION_1_6 */
