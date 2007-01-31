@@ -80,6 +80,7 @@ static char HTTP_QUERY_HEADER_NAME[_MAX_FNAME];
 static char HTTP_WORKER_HEADER_NAME[_MAX_FNAME];
 
 #define REGISTRY_LOCATION       ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\1.0")
+#define W3SVC_REGISTRY_KEY      ("SYSTEM\\CurrentControlSet\\Services\\W3SVC\\Parameters")
 #define EXTENSION_URI_TAG       ("extension_uri")
 
 #define URI_SELECT_TAG              ("uri_select")
@@ -90,6 +91,7 @@ static char HTTP_WORKER_HEADER_NAME[_MAX_FNAME];
 #define SHM_SIZE_TAG                ("shm_size")
 #define WORKER_MOUNT_RELOAD_TAG     ("worker_mount_reload")
 #define STRIP_SESSION_TAG           ("strip_session")
+#define AUTH_COMPLETE_TAG           ("auth_complete")
 
 
 #define TRANSLATE_HEADER            ("Translate:")
@@ -146,7 +148,6 @@ static char ini_file_name[MAX_PATH];
 static int using_ini_file = JK_FALSE;
 static int is_inited = JK_FALSE;
 static int is_mapread = JK_FALSE;
-static int iis5 = -1;
 
 static jk_uri_worker_map_t *uw_map = NULL;
 static jk_map_t *workers_map = NULL;
@@ -167,6 +168,8 @@ static int  worker_mount_reload = JK_URIMAP_DEF_RELOAD;
 static char rewrite_rule_file[MAX_PATH * 2] = {0};
 static int shm_config_size = JK_SHM_DEF_SIZE;
 static int strip_session = 0;
+static DWORD auth_notification_flags = 0;
+static int   use_auth_notification_flags = 1;
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -213,7 +216,7 @@ static int initialize_extension(void);
 
 static int read_registry_init_data(void);
 
-static int get_config_parameter(LPVOID src, const char *tag, 
+static int get_config_parameter(LPVOID src, const char *tag,
                                 char *val, DWORD sz);
 
 static int get_config_bool(LPVOID src, const char *tag, int def);
@@ -236,6 +239,7 @@ static int base64_encode_cert_len(int len);
 static int base64_encode_cert(char *encoded,
                               const char *string, int len);
 
+static int get_auth_flags();
 
 static char x2c(const char *what)
 {
@@ -686,6 +690,7 @@ static int JK_METHOD write(jk_ws_service_t *s, const void *b, unsigned int l)
 
 BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
 {
+    BOOL rv = TRUE;
     ULONG http_filter_revision = HTTP_FILTER_REVISION;
 
     pVer->dwFilterVersion = pVer->dwServerFilterVersion;
@@ -693,21 +698,27 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
     if (pVer->dwFilterVersion > http_filter_revision) {
         pVer->dwFilterVersion = http_filter_revision;
     }
-
-    pVer->dwFlags = SF_NOTIFY_ORDER_HIGH |
-                    SF_NOTIFY_SECURE_PORT |
-                    SF_NOTIFY_NONSECURE_PORT |
-                    SF_NOTIFY_PREPROC_HEADERS |
-                    SF_NOTIFY_LOG |
-                    SF_NOTIFY_AUTH_COMPLETE;
-
-    strcpy(pVer->lpszFilterDesc, VERSION_STRING);
-
     if (!is_inited) {
-        return initialize_extension();
+        rv = initialize_extension();
+        auth_notification_flags = get_auth_flags();
+    }
+    if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
+        pVer->dwFlags = SF_NOTIFY_ORDER_HIGH |
+                        SF_NOTIFY_SECURE_PORT |
+                        SF_NOTIFY_NONSECURE_PORT |
+                        SF_NOTIFY_PREPROC_HEADERS |
+                        SF_NOTIFY_LOG |
+                        SF_NOTIFY_AUTH_COMPLETE;
+    }
+    else {
+        pVer->dwFlags = SF_NOTIFY_ORDER_HIGH |
+                        SF_NOTIFY_SECURE_PORT |
+                        SF_NOTIFY_NONSECURE_PORT |
+                        SF_NOTIFY_PREPROC_HEADERS;
     }
 
-    return TRUE;
+    strcpy(pVer->lpszFilterDesc, VERSION_STRING);
+    return rv;
 }
 
 static int simple_rewrite(char *uri)
@@ -746,28 +757,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         if (!is_mapread)
             is_inited = JK_FALSE;
     }
-
-    if (is_inited && (iis5 < 0)) {
-        char serverSoftware[256];
-        DWORD dwLen = sizeof(serverSoftware);
-        iis5 = 0;
-        if (pfc->
-            GetServerVariable(pfc, SERVER_SOFTWARE, serverSoftware, &dwLen)) {
-            iis5 = (atof(serverSoftware + 14) >= 5.0);
-            if (iis5) {
-                jk_log(logger, JK_LOG_DEBUG, "Detected IIS >= 5.0");
-            }
-            else {
-                jk_log(logger, JK_LOG_DEBUG, "Detected IIS < 5.0");
-            }
-        }
-    }
-
-    if (is_inited &&
-        (((SF_NOTIFY_PREPROC_HEADERS == dwNotificationType) && !iis5) ||
-         ((SF_NOTIFY_AUTH_COMPLETE == dwNotificationType) && iis5)
-        )
-        ) {
+    if (auth_notification_flags == dwNotificationType) {
         char uri[INTERNET_MAX_URL_LENGTH];
         char snuri[INTERNET_MAX_URL_LENGTH] = "/";
         char Host[INTERNET_MAX_URL_LENGTH] = "";
@@ -789,7 +779,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         DWORD szPort = sizeof(Port);
         DWORD szTranslate = sizeof(Translate);
 
-        if (iis5) {
+        if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
             GetHeader =
                 ((PHTTP_FILTER_AUTH_COMPLETE_INFO) pvNotification)->GetHeader;
             SetHeader =
@@ -1360,7 +1350,7 @@ static int read_registry_init_data(void)
         }
     }
     if (!using_ini_file) {
-        long rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, REGISTRY_LOCATION, 
+        long rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, REGISTRY_LOCATION,
                                (DWORD)0, KEY_READ, &hkey);
         if (ERROR_SUCCESS != rc) {
             return JK_FALSE;
@@ -1389,7 +1379,7 @@ static int read_registry_init_data(void)
     shm_config_size = get_config_int(src, SHM_SIZE_TAG, JK_SHM_DEF_SIZE);
     worker_mount_reload = get_config_int(src, WORKER_MOUNT_RELOAD_TAG, JK_URIMAP_DEF_RELOAD);
     strip_session = get_config_bool(src, STRIP_SESSION_TAG, JK_FALSE);
-
+    use_auth_notification_flags = get_config_int(src, AUTH_COMPLETE_TAG, 1);
     if (using_ini_file) {
         jk_map_free(&map);
     }
@@ -1399,7 +1389,7 @@ static int read_registry_init_data(void)
     return ok;
 }
 
-static int get_config_parameter(LPVOID src, const char *tag, 
+static int get_config_parameter(LPVOID src, const char *tag,
                                 char *val, DWORD sz)
 {
     const char *tmp = NULL;
@@ -1438,14 +1428,14 @@ static int get_config_bool(LPVOID src, const char *tag, int def)
         return jk_map_get_bool((jk_map_t*)src, tag, def);
     } else {
         char tmpbuf[128];
-        if (get_registry_config_parameter(*((HKEY*)src), tag, 
+        if (get_registry_config_parameter(*((HKEY*)src), tag,
                                           tmpbuf, sizeof(tmpbuf))) {
             return jk_get_bool_code(tmpbuf, def);
         }
         else {
             return def;
         }
-    }    
+    }
 }
 
 static int get_registry_config_parameter(HKEY hkey,
@@ -1831,4 +1821,31 @@ static int base64_encode_cert(char *encoded,
 
     *p++ = '\0';
     return (int)(p - encoded);
+}
+
+static int get_auth_flags()
+{
+    HKEY hkey;
+    long rc;
+    int maj, sz;
+    int rv = SF_NOTIFY_PREPROC_HEADERS;
+    int use_auth = JK_FALSE;
+    /* Retreive the IIS version Major */
+    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+                      W3SVC_REGISTRY_KEY, (DWORD) 0, KEY_READ, &hkey);
+    if (ERROR_SUCCESS != rc) {
+        return rv;
+    }
+    sz = sizeof(int);
+    rc = RegQueryValueEx(hkey, "MajorVersion", NULL, NULL,
+                         (LPBYTE) & maj, &sz);
+    if (ERROR_SUCCESS != rc) {
+        CloseHandle(hkey);
+        return rv;
+    }
+    CloseHandle(hkey);
+    if (use_auth_notification_flags && maj > 4)
+        rv = SF_NOTIFY_AUTH_COMPLETE;
+
+    return rv;
 }
