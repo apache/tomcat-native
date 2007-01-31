@@ -28,6 +28,8 @@
 
 #include <jni.h>
 
+#if !defined(JNI_VERSION_1_6)
+
 #include "jk_pool.h"
 #include "jk_jni_worker.h"
 #include "jk_util.h"
@@ -1236,3 +1238,4 @@ static void detach_from_jvm(jni_worker_t * p, jk_logger_t *l)
     }
     JK_TRACE_EXIT(l);
 }
+#endif /* JNI_VERSION_1_6 */
