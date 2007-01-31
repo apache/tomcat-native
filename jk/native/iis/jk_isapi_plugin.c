@@ -690,12 +690,16 @@ static int JK_METHOD write(jk_ws_service_t *s, const void *b, unsigned int l)
 
 BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
 {
+    BOOL rv = TRUE;
     ULONG http_filter_revision = HTTP_FILTER_REVISION;
 
     pVer->dwFilterVersion = pVer->dwServerFilterVersion;
 
     if (pVer->dwFilterVersion > http_filter_revision) {
         pVer->dwFilterVersion = http_filter_revision;
+    }
+    if (!is_inited) {
+        rv = initialize_extension();
     }
     if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
         pVer->dwFlags = SF_NOTIFY_ORDER_HIGH |
@@ -711,12 +715,9 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
                         SF_NOTIFY_NONSECURE_PORT |
                         SF_NOTIFY_PREPROC_HEADERS;
     }
-    if (!is_inited) {
-        return initialize_extension();
-    }
 
     strcpy(pVer->lpszFilterDesc, VERSION_STRING);
-    return TRUE;
+    return rv;
 }
 
 static int simple_rewrite(char *uri)
