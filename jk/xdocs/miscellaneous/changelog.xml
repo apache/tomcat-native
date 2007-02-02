@@ -26,6 +26,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      Better build support for SunONE (Netscape/iPlanet) webservers. (jim)
+      </fix>
       <add>
       Add warning if duplicate map keys are read and are not allowed,
       e.g. when parsing uriworkermap.properties. (rjung)

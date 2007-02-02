@@ -1,8 +1,19 @@
 # Defines for example NSAPI programs running under SOLARIS
 
+#gcc
+# If you get relocation errors, try:
+#   1. compiling with Sun's cc
+#   2. statically linking with libgcc
+#   3. Adjusting LD_LIBRARY_PATH to grab libgcc_s
 CC_CMD=gcc -DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX \
 	-DMCC_HTTPD -DSPAPI20 \
 	-fPIC
+
+#SunStudio cc compiler
+#CC_CMD=cc -DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX \
+#	-DMCC_HTTPD -DSPAPI20 \
+#	-xcode=pic32
+
 LD_SHAREDCMD=ld -G -fPIC
 
 all:
@@ -15,7 +26,7 @@ JAVA_INCLUDE=$(JAVA_HOME)/include
 JK_DIR=../common
 VPATH=.:$(JK_DIR)
 
-JK_SRCS = $(shell ls $(JK_DIR)/*.c)
+JK_SRCS = $(shell \ls $(JK_DIR)/*.c)
 JK_OBJS = $(patsubst $(JK_DIR)/%.c,%.o,$(JK_SRCS))
 
 PLUGIN_OBJ = jk_nsapi_plugin.o

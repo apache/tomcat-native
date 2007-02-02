@@ -11,3 +11,9 @@ $> cd native
 $> ./configure --with-apxs=/usr/sbin/apxs (or where ever the apxs/apxs2 is)
 $> make
 $> su -c 'make install'
+
+For the impatient SunONE admins:
+$> cd native
+$> ./configure --enable-netscape
+$> cd netscape
+$> make -f Makefile.solaris

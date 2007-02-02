@@ -111,6 +111,16 @@
 
 
 
+  Building for Netscape/iPlanet/SunONE WebServer
+  ----------------------------------------------
+  make clean (to remove all previously compiled modules)
+  use configure and indicate that you will be building the
+  netscape nsapi redirector, then make the redirector plugin
+
+  ./configure --enable-netscape
+  cd netscape
+  make -f Makefile.solaris
+
   Misc notes 
   ----------
 
