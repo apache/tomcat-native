@@ -565,7 +565,11 @@ static int init_ws_service(apache_private_data_t * private_data,
      */
     s->server_port  = ap_get_server_port(r);
 
+#if (MODULE_MAGIC_NUMBER_MAJOR > 20060110)
+    s->server_software = (char *)ap_get_server_banner();
+#else
     s->server_software = (char *)ap_get_server_version();
+#endif
     s->method = (char *)r->method;
     s->content_length = get_content_length(r);
     s->is_chunked = r->read_chunked;
@@ -2605,7 +2609,11 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
        will feed it */
     worker_env.uri_to_worker = conf->uw_map;
     worker_env.virtual = "*";   /* for now */
+#if (MODULE_MAGIC_NUMBER_MAJOR > 20060110)
+    worker_env.server_name = (char *)ap_get_server_banner();
+#else
     worker_env.server_name = (char *)ap_get_server_version();
+#endif
     if (wc_open(init_map, &worker_env, conf->log)) {
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);
     }
