@@ -328,9 +328,25 @@ AC_ARG_WITH(apache,
 [
 	AC_MSG_RESULT(no apache given)
 ])
+
 AC_SUBST(apache_include)
 APACHE_DIR=${apache_dir}
 AC_SUBST(APACHE_DIR)
+
+AC_ARG_ENABLE(netscape,
+[  --enable-netscape=DIR  Build Netscape/iPlanet/SunONE nsapi redirector plugin.],
+[
+    if ${TEST} ! -z "$WEBSERVER" ; then
+        AC_MSG_ERROR([Sorry cannot use --with-apxs=${APXS} or --with-apache=${withval} with --with-netscape, please choose one or the other.])
+    fi
+
+    WEBSERVER="netscape"
+
+    AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
+],
+[
+	AC_MSG_RESULT(no netscape given)
+])
 
 dnl Check for enable-jni
 JK_JNI_WORKER=""
