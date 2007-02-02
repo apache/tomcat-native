@@ -24,6 +24,7 @@
 <properties>
 <title>SunOne -- Netscape/iPlanet HowTo</title>
 <author email="hgomez@apache.org">Henri Gomez</author>
+<author email="jim@apache.org">Jim Jagielski</author>
 <author email="shachor@il.ibm.com">Gal Shachor</author>
 <author email="mturk@apache.org">Mladen Turk</author>
 <date>$Date$</date>
@@ -159,7 +160,7 @@ You can also build a copy locally from the source present in tomcat-connectors d
 The Tomcat redirector requires two entities:
 <ul>
 <li>
-nsapi_redirect.dll - The NSAPI server plugin, either obtain a pre-built DLL or build it yourself 
+nsapi_redirect.dll (Windows) -or- nsapi_redirector.so (Unix) - The NSAPI server plugin, either obtain a pre-built DLL/so or build it yourself 
 (see the build section).
 </li>
 <li>
@@ -383,7 +384,7 @@ Defining workers is done in <b>workers.properties</b>, this file includes two ty
 
 <p>
 The above examples defined two workers, now we can use these workers to serve two different 
-contexts each with it’s own worker. 
+contexts each with it's own worker. 
 Submitting requests to different workers is accomplished by using multiple Service directives 
 in the servlet configuration Object, each with a different path pattern parameter. 
 </p>
@@ -411,7 +412,7 @@ and in the <a href="../reference/workers.html">worker.properties configuration r
 
 </section>
 
-<section name="Building NSAPI redirector">
+<section name="Building NSAPI DLL redirector for Windows">
 <p>
 The redirector was developed using Visual C++ Ver.6.0, so having this environment is a prereq if you want 
 to perform a custom build. You should also have NES developer SDK
@@ -441,6 +442,45 @@ If msdev is not in your path, enter the full path to msdev.exe.
 This will build both release and debug versions of the redirector plugin.
 An alternative will be to open the nsapi workspace file (nsapi.dsw) in msdev and 
 build it using the build menu.
+</p>
+</section>
+<section name="Building NSAPI so plugin redirector for Unix">
+<p>
+The redirector requires either gcc or the native Solaris cc compiler.
+
+The steps that you need to take are:
+<ul>
+<li>
+Change directory to the nsapi plugins source directory (src/native).
+</li>
+<li>
+configure for Netscape/iPlanet/SunONE webserver.
+</li>
+<li>
+Change directory to the nsapi netscape directory (./netstape).
+</li>
+<li>
+Edit <b>Makefile.solaris</b> and update the SUITSPOT_HOME and JAVE_HOME path to reflect your own Netscape server installation.
+</li>
+<li>
+Make the source with gmake.
+</li>
+</ul>
+<screendos>
+<notedos>Change directory to the nsapi plugins source directory</notedos>
+<typedos>cd /usr/local/src/tomcat-connectors-xxx-src/native</typedos>
+<notedos>configure for Netscape/iPlanet/SunONE webserver</notedos>
+<typedos>./configure --enable-netscape</typedos>
+<notedos>Change directory to the nsapi netscape directory</notedos>
+<typedos>cd netscape</typedos>
+<notedos>Edit Makefile.solaris</notedos>
+<typedos>vi Makefile.solaris</typedos>
+<notedos>Make the source with gmake</notedos>
+<typedos>gmake -f Makefile.solaris</typedos>
+</screendos>
+</p>
+<p>
+After the build, you will have the required nsapi_redirector.so plugin.
 </p>
 </section>
 </body>
