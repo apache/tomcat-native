@@ -898,9 +898,10 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 char *forwardURI;
 
                 /* This is a servlet, should redirect ... */
-                jk_log(logger, JK_LOG_DEBUG,
-                       "[%s] is a servlet url - should redirect to %s",
-                       uri, worker);
+                if (JK_IS_DEBUG_LEVEL(logger))
+                    jk_log(logger, JK_LOG_DEBUG,
+                        "[%s] is a servlet url - should redirect to %s",
+                        uri, worker);
 
                 /* get URI we should forward */
                 if (uri_select_option == URI_SELECT_OPT_UNPARSED) {
@@ -1099,8 +1100,9 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                     if (e->service(e, &s, logger, &is_error)) {
                         rc = HSE_STATUS_SUCCESS;
                         lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
-                        jk_log(logger, JK_LOG_DEBUG,
-                               "service() returned OK");
+                        if (JK_IS_DEBUG_LEVEL(logger))
+                            jk_log(logger, JK_LOG_DEBUG,
+                                   "service() returned OK");
                     }
                     else {
                         lpEcb->dwHttpStatusCode = is_error;
@@ -1109,6 +1111,11 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                     }
                     e->done(&e, logger);
                 }
+                else {
+                    jk_log(logger, JK_LOG_ERROR,
+                        "Failed to obtain an endpoint to service request - "
+                        "your connection_pool_size is probably less than the threads in your web server!");
+                }
             }
             else {
                 jk_log(logger, JK_LOG_ERROR,
@@ -1116,6 +1123,10 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                        worker_name);
             }
         }
+        else {
+            jk_log(logger, JK_LOG_ERROR,
+                "failed to init service for request.");
+         }
         jk_close_pool(&private_data.p);
     }
     else {
