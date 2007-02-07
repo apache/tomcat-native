@@ -43,7 +43,6 @@
         <available property="puretls.present" file="${puretls.jar}"/>
         <available property="commons-logging.present" file="${commons-logging.jar}"/>
         <available property="modeler.present" file="${commons-modeler.jar}"/>
-        <available property="tomcat-jni.present" file="${tomcat-jni.jar}"/>
 	<available property="jdk1.4.present" classname="java.lang.CharSequence" />
         <available property="jdk1.5.present" classname="javax.net.ssl.CertPathTrustManagerParameters" />
     </target>
@@ -63,7 +62,6 @@
         <echo message="-- commons-logging = ${commons-logging.present}"/>
         <echo message="-- jmx = ${jmx.present} ${jmx.jar}"/>
         <echo message="-- modeler = ${modeler.present} ${commons-modeler.jar}"/>
-        <echo message="-- jni = ${tomcat-jni.present} ${tomcat-jni.jar}"/>
         <echo message="-- skip.digester = ${skip.digester}" />
         <echo message="-- JDK14 = ${jdk1.4.present}"/>
         <echo message="-- JDK15 = ${jdk1.5.present}" />
@@ -86,7 +84,7 @@
             <exclude name="**/util/net/jsse/JSSE15*" unless="jdk1.5.present" />
             <exclude name="**/util/net/jsse/JSSEKeyManager.java" unless="jdk1.4.present" />
             <exclude name="**/util/digester/*" if="skip.digester" />
-            <exclude name="**/util/net/AprEndpoint.java" unless="tomcat-jni.present" />
+            <exclude name="**/util/net/AprEndpoint.java" unless="jdk1.4.present" />
         </javac>
 
 	<!-- Copy static resource files -->

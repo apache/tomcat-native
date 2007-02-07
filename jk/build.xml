@@ -102,7 +102,6 @@
         <echo message="IIS:       ${iis.detect} ${iis.home}" />
         <echo message="AOLserver: ${aolserver.detect} ${aolserver.home}" />
         <echo message="jmx:       ${jmx.jar} ${jmx.detect} ${commons-modeler.jar} ${modeler.detect}" />
-        <echo message="apr:       ${tomcat-apr.detect} ${tomcat-apr.jar}" />
     </target>
 
     <target name="detect" >
@@ -145,7 +144,6 @@
                    <classpath refid="classpath"/>
                     -->
         </available>
-        <available property="tomcat-apr.detect" file="${tomcat-apr.jar}" />
     </target>
 
     <target name="prepare" depends="detect" >
@@ -206,7 +204,7 @@
                verbose="off" >
             <include name="org/apache/jk/**"/>
             <include name="org/apache/coyote/ajp/**" />
-            <exclude name="org/apache/coyote/ajp/*Apr*" unless="tomcat-apr.detect" />
+            <exclude name="org/apache/coyote/ajp/*Apr*" unless="jdk.1.4.present" />
 	    <exclude name="org/apache/jk/common/ChannelNioSocket.java" unless="jdk.1.4.present"/>
 	    <exclude name="org/apache/jk/common/JkMX.java" unless="jmx.detect"/>
 	    <exclude name="org/apache/jk/common/ModJkMX.java" unless="jmx.detect"/>

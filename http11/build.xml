@@ -119,7 +119,6 @@
     <echo message="-------- ${component.title} ${component.version} --------"/>
     <filter  token="name"                  value="${component.name}"/>
     <filter  token="version"               value="${component.version}"/>
-    <available property="tomcat-jni.detect" file="${tomcat-jni.jar}" />
   </target>
 
 
@@ -168,7 +167,7 @@
              debug="${compile.debug}"
        deprecation="${compile.deprecation}"
           optimize="${compile.optimize}">
-      <exclude name="org\apache\coyote\http11\*Apr*" unless="tomcat-jni.detect" />
+      <exclude name="org\apache\coyote\http11\*Apr*" unless="jdk.1.4.present" />
       <classpath refid="compile.classpath"/>
     </javac>
     <copy    todir="${build.home}/classes" filtering="on">
