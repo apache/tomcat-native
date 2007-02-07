@@ -161,6 +161,7 @@
 
   <target name="compile-only" 
           description="Compile shareable components">
+    <available property="jdk.1.4.present"   classname="java.lang.CharSequence" />
 
     <javac  srcdir="${source.home}"
            destdir="${build.home}/classes"
