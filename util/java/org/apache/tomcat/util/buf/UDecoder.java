@@ -30,6 +30,9 @@ import java.io.IOException;
  */
 public final class UDecoder {
     
+    protected static final boolean ALLOW_ENCODED_SLASH = 
+        Boolean.valueOf(System.getProperty("org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH", "false")).booleanValue();
+    
     public UDecoder() 
     {
     }
@@ -63,6 +66,8 @@ public final class UDecoder {
 	// idx will be the smallest positive inxes ( first % or + )
 	if( idx2 >= 0 && idx2 < idx ) idx=idx2;
 	if( idx < 0 ) idx=idx2;
+    
+	boolean noSlash = !(ALLOW_ENCODED_SLASH || query);
 
 	for( int j=idx; j<end; j++, idx++ ) {
 	    if( buff[ j ] == '+' && query) {
@@ -81,6 +86,9 @@ public final class UDecoder {
 		
 		j+=2;
 		int res=x2c( b1, b2 );
+                if (noSlash && (res == '/')) {
+                    throw new CharConversionException( "noSlash");
+                }
 		buff[idx]=(byte)res;
 	    }
 	}
@@ -122,7 +130,8 @@ public final class UDecoder {
 	
 	if( idx2 >= 0 && idx2 < idx ) idx=idx2; 
 	if( idx < 0 ) idx=idx2;
-
+    
+	boolean noSlash = !(ALLOW_ENCODED_SLASH || query);
 	for( int j=idx; j<cend; j++, idx++ ) {
 	    if( buff[ j ] == '+' && query ) {
 		buff[idx]=( ' ' );
@@ -141,6 +150,9 @@ public final class UDecoder {
 		
 		j+=2;
 		int res=x2c( b1, b2 );
+		if (noSlash && (res == '/')) {
+		    throw new CharConversionException( "noSlash");
+            	}
 		buff[idx]=(char)res;
 	    }
 	}
