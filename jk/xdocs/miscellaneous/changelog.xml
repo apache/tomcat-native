@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        <bug>41610</bug>: Fix incorrect detection of missing Content-Length
+        header leading to duplicate headers. Contributed by Boris Maras. (rjung)
+      </fix>
+      <fix>
       Better build support for SunONE (Netscape/iPlanet) webservers. (jim)
       </fix>
       <add>
