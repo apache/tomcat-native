@@ -702,7 +702,7 @@ static int init_ws_service(apache_private_data_t * private_data,
                 s->headers_values[i] = ap_pstrdup(r->pool, elts[i].val);
                 s->headers_names[i] = hname;
                 if (need_content_length_header &&
-                    !strcasecmp(s->headers_values[i], "content-length")) {
+                    !strcasecmp(s->headers_names[i], "content-length")) {
                     need_content_length_header = JK_FALSE;
                 }
             }
