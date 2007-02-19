@@ -26,6 +26,14 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <add>
+      Change semantics of empty defaults for JkEnvVar variables.
+      Until 1.2.19: not allowed. In 1.2.20: send variables as empty strings, if
+      neither set to non empty in config, nor during runtime.
+      Starting with 1.2.21: If config has no second argument only send
+      variable if set (even when set to empty string) during runtime.
+      Allows good combination with condition attribute in tomcat access log. (rjung)
+      </add>
       <fix>
         <bug>41610</bug>: Fix incorrect detection of missing Content-Length
         header leading to duplicate headers. Contributed by Boris Maras. (rjung)

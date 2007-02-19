@@ -102,6 +102,16 @@ static mode_t xfer_mode = (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 #endif
 
 /*
+ * Environment variable forward object
+ */
+typedef struct
+{
+    int has_default;
+    char *name;
+    char *value;
+} envvar_item;
+
+/*
  * Configuration object for the mod_jk module.
  */
 typedef struct
@@ -169,6 +179,8 @@ typedef struct
      */
     int envvars_in_use;
     table *envvars;
+    table *envvars_def;
+    array_header *envvar_items;
 
     server_rec *s;
 } jk_server_conf_t;
@@ -655,25 +667,33 @@ static int init_ws_service(apache_private_data_t * private_data,
         }
 
         if (conf->envvars_in_use) {
-            array_header *t = ap_table_elts(conf->envvars);
+            const array_header *t = conf->envvar_items;
             if (t && t->nelts) {
                 int i;
-                table_entry *elts = (table_entry *) t->elts;
+                int j = 0;
+                envvar_item *elts = (envvar_item *) t->elts;
                 s->attributes_names =
                     ap_palloc(r->pool, sizeof(char *) * t->nelts);
                 s->attributes_values =
                     ap_palloc(r->pool, sizeof(char *) * t->nelts);
 
                 for (i = 0; i < t->nelts; i++) {
-                    s->attributes_names[i] = elts[i].key;
-                    s->attributes_values[i] =
-                        (char *)ap_table_get(r->subprocess_env, elts[i].key);
-                    if (!s->attributes_values[i]) {
-                        s->attributes_values[i] = elts[i].val;
+                    s->attributes_names[i - j] = elts[i].name;
+                    s->attributes_values[i - j] =
+                        (char *)ap_table_get(r->subprocess_env, elts[i].name);
+                    if (!s->attributes_values[i - j]) {
+                        if (elts[i].has_default) {
+                            s->attributes_values[i - j] = elts[i].value;
+                        }
+                        else {
+                            s->attributes_values[i - j] = "";
+                            s->attributes_names[i - j] = "";
+                            j++;
+                        }
                     }
                 }
 
-                s->num_attributes = t->nelts;
+                s->num_attributes = t->nelts - j;
             }
         }
     }
@@ -1682,9 +1702,10 @@ static const char *jk_add_env_var(cmd_parms * cmd,
 
 
     /* env_name is mandatory, default_value is optional.
-     * No value means set the variable to an empty string.
+     * No value means send the attribute only, if the env var is set during runtime.
      */
     ap_table_setn(conf->envvars, env_name, default_value ? default_value : "");
+    ap_table_setn(conf->envvars_def, env_name, default_value ? "1" : "0");
 
     return NULL;
 }
@@ -2139,6 +2160,8 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
 
     c->envvars_in_use = JK_FALSE;
     c->envvars = ap_make_table(p, 0);
+    c->envvars_def = ap_make_table(p, 0);
+    c->envvar_items = ap_make_array(p, 0, sizeof(envvar_item));
 
     c->s = s;
     jk_map_put(c->worker_properties, "ServerRoot", ap_server_root, NULL);
@@ -2212,6 +2235,16 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
             for (i = 0; i < arr->nelts; ++i) {
                 if (!ap_table_get(overrides->envvars, elts[i].key)) {
                     ap_table_setn(overrides->envvars, elts[i].key, elts[i].val);
+                }
+            }
+        }
+        arr = ap_table_elts(base->envvars_def);
+        if (arr) {
+            overrides->envvars_in_use = JK_TRUE;
+            elts = (const table_entry *)arr->elts;
+            for (i = 0; i < arr->nelts; ++i) {
+                if (!ap_table_get(overrides->envvars_def, elts[i].key)) {
+                    ap_table_setn(overrides->envvars_def, elts[i].key, elts[i].val);
                 }
             }
         }
@@ -2395,6 +2428,34 @@ static void jk_init(server_rec * s, ap_pool * p)
                                  "JkRequestLogFormat format array NULL");
             }
             sconf->options &= ~sconf->exclude_options;
+            if (sconf->envvars_in_use) {
+                int i;
+                const array_header *arr;
+                const table_entry *elts;
+                envvar_item *item;
+                const char *envvar_def;
+
+                arr = ap_table_elts(sconf->envvars);
+                if (arr) {
+                    elts = (const table_entry *)arr->elts;
+                    for (i = 0; i < arr->nelts; ++i) {
+                        item = (envvar_item *)ap_push_array(sconf->envvar_items);
+                        if (!item)
+                            jk_error_exit(APLOG_MARK, APLOG_EMERG, srv,
+                                          p, "Memory error");
+                        item->name = elts[i].key;
+                        envvar_def = ap_table_get(sconf->envvars_def, elts[i].key);
+                        if (envvar_def && !strcmp("1", envvar_def) ) {
+                            item->value = elts[i].val;
+                            item->has_default = 1;
+                        }
+                        else {
+                            item->value = "";
+                            item->has_default = 0;
+                        }
+                    }
+                }
+            }
         }
     }
 

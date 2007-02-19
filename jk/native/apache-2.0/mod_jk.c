@@ -136,6 +136,19 @@
 /* module MODULE_VAR_EXPORT jk_module; */
 AP_MODULE_DECLARE_DATA module jk_module;
 
+/*
+ * Environment variable forward object
+ */
+typedef struct
+{
+    int has_default;
+    char *name;
+    char *value;
+} envvar_item;
+
+/*
+ * Configuration object for the mod_jk module.
+ */
 typedef struct
 {
 
@@ -203,6 +216,8 @@ typedef struct
      */
     int envvars_in_use;
     apr_table_t *envvars;
+    apr_table_t *envvars_def;
+    apr_array_header_t *envvar_items;
 
     server_rec *s;
 } jk_server_conf_t;
@@ -683,25 +698,33 @@ static int init_ws_service(apache_private_data_t * private_data,
         }
 
         if (conf->envvars_in_use) {
-            const apr_array_header_t *t = apr_table_elts(conf->envvars);
+            const apr_array_header_t *t = conf->envvar_items;
             if (t && t->nelts) {
                 int i;
-                apr_table_entry_t *elts = (apr_table_entry_t *) t->elts;
+                int j = 0;
+                envvar_item *elts = (envvar_item *) t->elts;
                 s->attributes_names = apr_palloc(r->pool,
                                                  sizeof(char *) * t->nelts);
                 s->attributes_values = apr_palloc(r->pool,
                                                   sizeof(char *) * t->nelts);
 
                 for (i = 0; i < t->nelts; i++) {
-                    s->attributes_names[i] = elts[i].key;
-                    s->attributes_values[i] =
-                        (char *)apr_table_get(r->subprocess_env, elts[i].key);
-                    if (!s->attributes_values[i]) {
-                        s->attributes_values[i] = elts[i].val;
+                    s->attributes_names[i - j] = elts[i].name;
+                    s->attributes_values[i - j] =
+                        (char *)apr_table_get(r->subprocess_env, elts[i].name);
+                    if (!s->attributes_values[i - j]) {
+                        if (elts[i].has_default) {
+                            s->attributes_values[i - j] = elts[i].value;
+                        }
+                        else {
+                            s->attributes_values[i - j] = "";
+                            s->attributes_names[i - j] = "";
+                            j++;
+                        }
                     }
                 }
 
-                s->num_attributes = t->nelts;
+                s->num_attributes = t->nelts - j;
             }
         }
     }
@@ -1716,9 +1739,10 @@ static const char *jk_add_env_var(cmd_parms * cmd,
     conf->envvars_in_use = JK_TRUE;
 
     /* env_name is mandatory, default_value is optional.
-     * No value means set the variable to an empty string.
+     * No value means send the attribute only, if the env var is set during runtime.
      */
     apr_table_setn(conf->envvars, env_name, default_value ? default_value : "");
+    apr_table_setn(conf->envvars_def, env_name, default_value ? "1" : "0");
 
     return NULL;
 }
@@ -2263,6 +2287,8 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
 
     c->envvars_in_use = JK_FALSE;
     c->envvars = apr_table_make(p, 0);
+    c->envvars_def = apr_table_make(p, 0);
+    c->envvar_items = apr_array_make(p, 0, sizeof(envvar_item));
 
     c->s = s;
     jk_map_put(c->worker_properties, "ServerRoot", ap_server_root, NULL);
@@ -2341,6 +2367,16 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
             for (i = 0; i < arr->nelts; ++i) {
                 if (!apr_table_get(overrides->envvars, elts[i].key)) {
                     apr_table_setn(overrides->envvars, elts[i].key, elts[i].val);
+                }
+            }
+        }
+        arr = apr_table_elts(base->envvars_def);
+        if (arr) {
+            overrides->envvars_in_use = JK_TRUE;
+            elts = (const apr_table_entry_t *)arr->elts;
+            for (i = 0; i < arr->nelts; ++i) {
+                if (!apr_table_get(overrides->envvars_def, elts[i].key)) {
+                    apr_table_setn(overrides->envvars_def, elts[i].key, elts[i].val);
                 }
             }
         }
@@ -2680,6 +2716,33 @@ static int jk_post_config(apr_pool_t * pconf,
                                          "JkRequestLogFormat format array NULL");
                     }
                     sconf->options &= ~sconf->exclude_options;
+                    if (sconf->envvars_in_use) {
+                        int i;
+                        const apr_array_header_t *arr;
+                        const apr_table_entry_t *elts;
+                        envvar_item *item;
+                        const char *envvar_def;
+
+                        arr = apr_table_elts(sconf->envvars);
+                        if (arr) {
+                            elts = (const apr_table_entry_t *)arr->elts;
+                            for (i = 0; i < arr->nelts; ++i) {
+                                item = (envvar_item *)apr_array_push(sconf->envvar_items);
+                                if (!item)
+                                    return HTTP_INTERNAL_SERVER_ERROR;
+                                item->name = elts[i].key;
+                                envvar_def = apr_table_get(sconf->envvars_def, elts[i].key);
+                                if (envvar_def && !strcmp("1", envvar_def) ) {
+                                    item->value = elts[i].val;
+                                    item->has_default = 1;
+                                }
+                                else {
+                                    item->value = "";
+                                    item->has_default = 0;
+                                }
+                            }
+                        }
+                    }
                 }
             }
             init_jk(pconf, conf, s);

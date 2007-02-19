@@ -209,12 +209,16 @@ The default value is "ForwardURICompat".
 <attribute name="JkEnvVar" required="false"><p>
 Adds a name and an optional default value of environment variable
 that should be sent to servlet-engine as a request attribute.
-If the default value is not given explicitely, the empty string
-will be used as a default.
+If the default value is not given explicitely, the variable
+will only be send, if it is set during runtime.
 <br/>
 This directive can be used multiple times per virtual server.
 <br/>
 The default is empty, so no additional variables will be sent.
+<br/>
+Empty default values are supported since version 1.2.20.
+Not sending variables with empty defaults and empty runtime value
+has been introduced in version 1.2.21.
 </p></attribute>
 
 
@@ -239,6 +243,7 @@ Take a look at <a href="workers.html">Workers documentation</a> for detailed des
 <br/>
 <br/>
 </p>
+
 </subsection>
 
 <subsection name="Logging">
@@ -571,8 +576,8 @@ This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
 The directive <b>JkEnvVar</b> allows you to forward environment variables from Apache server to Tomcat engine.
 The variables can be retrieved on the Tomcat side as request attributes.
 You can add a default value as a second parameter to the directive.
-If the default value is not given explicitely, the empty string
-will be used as a default.
+If the default value is not given explicitely, the variable
+will only be send, if it is set during runtime.
 <br/>
 <br/>
 The variables are inherited from the global server to virtual hosts.
@@ -721,6 +726,8 @@ points within 60 second interval.
 <p>
 There is no way to delete entries by dynamic reloading, but you can disable or
 exclude mappings.
+<br/>
+<br/>
 </p>
 
 </subsection>
