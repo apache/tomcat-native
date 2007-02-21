@@ -41,7 +41,7 @@ nsapi_redirector.so: $(JK_OBJS) $(PLUGIN_OBJ)
 	$(LD_SHAREDCMD) $(JK_OBJS) $(PLUGIN_OBJ) -o nsapi_redirector.so $(EXTRA_LDDEFINES)
 
 clean:
-	rm -f *.o nsapi_redirector.so 
+	rm -f *.o nsapi_redirector.so $(JK_OBJS)
 
 %.o : %.c
 	$(CC_CMD) $(INCLUDE_FLAGS) -c $< 
