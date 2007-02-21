@@ -5,7 +5,7 @@
 #   1. compiling with Sun's cc
 #   2. statically linking with libgcc
 #   3. Adjusting LD_LIBRARY_PATH to grab libgcc_s
-CC_CMD=gcc -fpic -DNET_SSL -DLinux -DLINUX -D_REENTRANT \
+CC_CMD=gcc -fpic -DNET_SSL -DLinux -DLINUX -D_REENTRANT -DXP_UNIX
 
 LD_SHAREDCMD=gcc -shared
 
