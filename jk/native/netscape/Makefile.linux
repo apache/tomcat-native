@@ -1,0 +1,38 @@
+# Defines for example NSAPI programs running under Linux
+
+#gcc
+# If you get relocation errors, try:
+#   1. compiling with Sun's cc
+#   2. statically linking with libgcc
+#   3. Adjusting LD_LIBRARY_PATH to grab libgcc_s
+CC_CMD=gcc -fpic -DNET_SSL -DLinux -DLINUX -D_REENTRANT \
+
+LD_SHAREDCMD=gcc -shared
+
+OS_TYPE=linux
+INCLUDEDIR=$(SUITSPOT_HOME)/include
+JAVA_INCLUDE=$(JAVA_HOME)/include
+JK_DIR=../common
+VPATH=.:$(JK_DIR)
+
+JK_SRCS = $(shell \ls $(JK_DIR)/*.c)
+JK_OBJECTS = $(patsubst $(JK_DIR)/%.c,%.o,$(JK_SRCS))
+JK_JNI_OBJECTS = jk_jni_worker.o jk_nwmain.o
+JK_OBJS = $(filter-out $(JK_JNI_OBJECTS),$(JK_OBJECTS))
+
+PLUGIN_OBJ = jk_nsapi_plugin.o
+
+INCLUDE_FLAGS=	-I$(JK_DIR) -I$(INCLUDEDIR) -I$(INCLUDEDIR)/base \
+		-I$(INCLUDEDIR)/frame -I$(JAVA_INCLUDE) -I$(JAVA_INCLUDE)/$(OS_TYPE)
+
+all: nsapi_redirector.so 
+
+
+nsapi_redirector.so: $(PLUGIN_OBJ) $(JK_OBJS)
+	$(LD_SHAREDCMD) $(JK_OBJS) $(PLUGIN_OBJ) -o nsapi_redirector.so $(EXTRA_LDDEFINES)
+
+clean:
+	rm -f *.o nsapi_redirector.so $(JK_OBJS)
+
+%.o : %.c
+	$(CC_CMD) $(INCLUDE_FLAGS) -c $<
