@@ -1003,7 +1003,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     jk_log(logger, JK_LOG_DEBUG,
                            "[%s] is not a servlet url", uri);
                 if (strip_session) {
-    				char *jsessionid = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
+                    char *jsessionid = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
                     if (jsessionid) {
                         if (JK_IS_DEBUG_LEVEL(logger))
                             jk_log(logger, JK_LOG_DEBUG,
