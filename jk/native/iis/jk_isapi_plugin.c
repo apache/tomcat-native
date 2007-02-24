@@ -40,6 +40,8 @@
 #include "jk_uri_worker_map.h"
 #include "jk_shm.h"
 
+#include <strsafe.h>
+
 #define VERSION_STRING "Jakarta/ISAPI/" JK_VERSTRING
 #define SHM_DEF_NAME   "JKISAPISHMEM"
 #define DEFAULT_WORKER_NAME ("ajp13")
@@ -70,14 +72,14 @@
 #define HEADER_TEMPLATE      ("%s%p:")
 #define HTTP_HEADER_TEMPLATE ("HTTP_%s%p")
 
-static char URI_HEADER_NAME[_MAX_FNAME];
-static char QUERY_HEADER_NAME[_MAX_FNAME];
-static char WORKER_HEADER_NAME[_MAX_FNAME];
-static char TOMCAT_TRANSLATE_HEADER_NAME[_MAX_FNAME];
+static char URI_HEADER_NAME[MAX_PATH];
+static char QUERY_HEADER_NAME[MAX_PATH];
+static char WORKER_HEADER_NAME[MAX_PATH];
+static char TOMCAT_TRANSLATE_HEADER_NAME[MAX_PATH];
 
-static char HTTP_URI_HEADER_NAME[_MAX_FNAME];
-static char HTTP_QUERY_HEADER_NAME[_MAX_FNAME];
-static char HTTP_WORKER_HEADER_NAME[_MAX_FNAME];
+static char HTTP_URI_HEADER_NAME[MAX_PATH];
+static char HTTP_QUERY_HEADER_NAME[MAX_PATH];
+static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
 
 #define REGISTRY_LOCATION       ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\1.0")
 #define W3SVC_REGISTRY_KEY      ("SYSTEM\\CurrentControlSet\\Services\\W3SVC\\Parameters")
@@ -528,7 +530,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
         return JK_FALSE;
     }
 
-    if (s && s->ws_private) {        
+    if (s && s->ws_private) {
         int rv = JK_TRUE;
         isapi_private_data_t *p = s->ws_private;
         if (!p->request_started) {
@@ -545,7 +547,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
                 reason = status_reason(status);
             }
             status_str = (char *)malloc((6 + strlen(reason)));
-            sprintf(status_str, "%d %s", status, reason);
+            StringCbPrintf(status_str, 6 + strlen(reason), "%d %s", status, reason);
             hi.pszStatus = status_str;
             hi.cchStatus = strlen(status_str);
 
@@ -565,12 +567,12 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
                 headers_str[0] = '\0';
 
                 for (i = 0; i < num_of_headers; i++) {
-                    strcat(headers_str, header_names[i]);
-                    strcat(headers_str, ": ");
-                    strcat(headers_str, header_values[i]);
-                    strcat(headers_str, crlf);
+                    StringCbCat(headers_str, len_of_headers, header_names[i]);
+                    StringCbCat(headers_str, len_of_headers, ": ");
+                    StringCbCat(headers_str, len_of_headers, header_values[i]);
+                    StringCbCat(headers_str, len_of_headers, crlf);
                 }
-                strcat(headers_str, crlf);
+                StringCbCat(headers_str, len_of_headers, crlf);
                 hi.pszHeader = headers_str;
                 hi.cchHeader = strlen(headers_str);
             }
@@ -578,7 +580,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
                 hi.pszHeader = crlf;
                 hi.cchHeader = 2;
             }
-            hi.fKeepConn = keep_alive;            
+            hi.fKeepConn = keep_alive;
             if (!p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID,
                                                  HSE_REQ_SEND_RESPONSE_HEADER_EX,
                                                  &hi,
@@ -722,7 +724,7 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
                         SF_NOTIFY_PREPROC_HEADERS;
     }
 
-    strcpy(pVer->lpszFilterDesc, VERSION_STRING);
+    StringCbCopy(pVer->lpszFilterDesc, SF_MAX_FILTER_DESC_LEN, VERSION_STRING);
     return rv;
 }
 
@@ -734,9 +736,9 @@ static int simple_rewrite(char *uri)
         for (i = 0; i < jk_map_size(rewrite_map); i++) {
             const char *src = jk_map_name_at(rewrite_map, i);
             if (strncmp(uri, src, strlen(src)) == 0) {
-                strcpy(buf, jk_map_value_at(rewrite_map, i));
-                strcat(buf, uri + strlen(src));
-                strcpy(uri, buf);
+                StringCbCopy(buf, INTERNET_MAX_URL_LENGTH, jk_map_value_at(rewrite_map, i));
+                StringCbCat(buf,  INTERNET_MAX_URL_LENGTH, uri + strlen(src));
+                StringCbCopy(uri, INTERNET_MAX_URL_LENGTH, buf);
                 return 1;
             }
         }
@@ -824,7 +826,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             query = strchr(uri, '?');
             if (query) {
                 *query++ = '\0';
-                strcpy(squery, query);
+                StringCbCopy(squery, INTERNET_MAX_URL_LENGTH, query);
             }
 
             rc = unescape_url(uri);
@@ -862,12 +864,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             }
             szPort = atoi(Port);
             if (szPort != 80 && szPort != 443 && szHost > 0) {
-                strcat(Host, ":");
-                strcat(Host, Port);
+                StringCbCat(Host, INTERNET_MAX_URL_LENGTH, ":");
+                StringCbCat(Host, INTERNET_MAX_URL_LENGTH, Port);
             }
             if (szHost > 0) {
-                strcat(snuri, Host);
-                strcat(snuri, uri);
+                StringCbCat(snuri, INTERNET_MAX_URL_LENGTH, Host);
+                StringCbCat(snuri, INTERNET_MAX_URL_LENGTH, uri);
                 if (JK_IS_DEBUG_LEVEL(logger))
                     jk_log(logger, JK_LOG_DEBUG,
                            "Virtual Host redirection of %s",
@@ -948,7 +950,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                  */
                 if (JK_IS_DEBUG_LEVEL(logger)) {
                     char duri[INTERNET_MAX_URL_LENGTH];
-                    strcpy(duri, forwardURI);
+                    StringCbCopy(duri, INTERNET_MAX_URL_LENGTH, forwardURI);
                     if (simple_rewrite(forwardURI)) {
                         jk_log(logger, JK_LOG_DEBUG,
                                "rewriten URI [%s]->[%s]",
@@ -994,14 +996,14 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                         return SF_STATUS_REQ_ERROR;
                     }
                     memset(ld, 0, sizeof(isapi_log_data_t));
-                    strcpy(ld->uri, forwardURI);
-                    strcpy(ld->query, squery);
+                    StringCbCopy(ld->uri, INTERNET_MAX_URL_LENGTH, forwardURI);
+                    StringCbCopy(ld->query, INTERNET_MAX_URL_LENGTH, squery);
                     pfc->pFilterContext = ld;
                 } else {
                     isapi_log_data_t *ld = (isapi_log_data_t *)pfc->pFilterContext;
                     memset(ld, 0, sizeof(isapi_log_data_t));
-                    strcpy(ld->uri, forwardURI);
-                    strcpy(ld->query, squery);
+                    StringCbCopy(ld->uri, INTERNET_MAX_URL_LENGTH, forwardURI);
+                    StringCbCopy(ld->query, INTERNET_MAX_URL_LENGTH, squery);
                 }
             }
             else {
@@ -1038,7 +1040,7 @@ BOOL WINAPI GetExtensionVersion(HSE_VERSION_INFO * pVer)
 {
     pVer->dwExtensionVersion = MAKELONG(HSE_VERSION_MINOR, HSE_VERSION_MAJOR);
 
-    strcpy(pVer->lpszExtensionDesc, VERSION_STRING);
+    StringCbCopy(pVer->lpszExtensionDesc, HSE_MAX_EXT_DLL_NAME_LEN, VERSION_STRING);
 
 
     if (!is_inited) {
@@ -1183,8 +1185,8 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
     BOOL fReturn = TRUE;
     char drive[_MAX_DRIVE];
     char dir[_MAX_DIR];
-    char fname[_MAX_FNAME];
-    char file_name[_MAX_PATH];
+    char fname[MAX_PATH];
+    char file_name[MAX_PATH];
 
     UNREFERENCED_PARAMETER(lpReserved);
 
@@ -1198,14 +1200,14 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
             fReturn = JK_FALSE;
         }
         /* Construct redirector headers to use for this redirector instance */
-        sprintf(URI_HEADER_NAME, HEADER_TEMPLATE, URI_HEADER_NAME_BASE, hInst);
-        sprintf(QUERY_HEADER_NAME, HEADER_TEMPLATE, QUERY_HEADER_NAME_BASE, hInst);
-        sprintf(WORKER_HEADER_NAME, HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
-        sprintf(TOMCAT_TRANSLATE_HEADER_NAME, HEADER_TEMPLATE, TOMCAT_TRANSLATE_HEADER_NAME_BASE, hInst);
+        StringCbPrintf(URI_HEADER_NAME, MAX_PATH, HEADER_TEMPLATE, URI_HEADER_NAME_BASE, hInst);
+        StringCbPrintf(QUERY_HEADER_NAME, MAX_PATH, HEADER_TEMPLATE, QUERY_HEADER_NAME_BASE, hInst);
+        StringCbPrintf(WORKER_HEADER_NAME, MAX_PATH, HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
+        StringCbPrintf(TOMCAT_TRANSLATE_HEADER_NAME, MAX_PATH, HEADER_TEMPLATE, TOMCAT_TRANSLATE_HEADER_NAME_BASE, hInst);
 
-        sprintf(HTTP_URI_HEADER_NAME, HTTP_HEADER_TEMPLATE, URI_HEADER_NAME_BASE, hInst);
-        sprintf(HTTP_QUERY_HEADER_NAME, HTTP_HEADER_TEMPLATE, QUERY_HEADER_NAME_BASE, hInst);
-        sprintf(HTTP_WORKER_HEADER_NAME, HTTP_HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
+        StringCbPrintf(HTTP_URI_HEADER_NAME, MAX_PATH, HTTP_HEADER_TEMPLATE, URI_HEADER_NAME_BASE, hInst);
+        StringCbPrintf(HTTP_QUERY_HEADER_NAME, MAX_PATH, HTTP_HEADER_TEMPLATE, QUERY_HEADER_NAME_BASE, hInst);
+        StringCbPrintf(HTTP_WORKER_HEADER_NAME, MAX_PATH, HTTP_HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
 
     break;
     case DLL_PROCESS_DETACH:
@@ -1225,17 +1227,17 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
 
 static int init_jk(char *serverName)
 {
-    char shm_name[MAX_SERVERNAME + sizeof(SHM_DEF_NAME) + 1];
+    char shm_name[MAX_PATH];
     int rc = JK_FALSE;
 
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
     }
-    strcpy(shm_name, SHM_DEF_NAME);
+    StringCbCopy(shm_name, MAX_PATH, SHM_DEF_NAME);
     if (*serverName) {
         size_t i;
-        strcat(shm_name, "_");
-        strcpy(shm_name, serverName);
+        StringCbCat(shm_name, MAX_PATH, "_");
+        StringCbCat(shm_name, MAX_PATH, serverName);
         for(i = 0; i < strlen(shm_name); i++) {
             shm_name[i] = toupper(shm_name[i]);
             if (!isalnum(shm_name[i]))
@@ -1413,7 +1415,7 @@ static int get_config_parameter(LPVOID src, const char *tag,
     if (using_ini_file) {
         tmp = jk_map_get_string((jk_map_t*)src, tag, NULL);
         if (tmp && (strlen(tmp) < sz)) {
-            strcpy(val, tmp);
+            StringCbCopy(val, sz, tmp);
             return JK_TRUE;
         }
         else {

@@ -59,7 +59,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\isapi.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib bufferoverflowu.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\isapi_redirect.pdb" /debug /machine:AMD64 /def:".\isapi.def" /out:"$(OUTDIR)\isapi_redirect.dll" /implib:"$(OUTDIR)\isapi_redirect.lib" 
+LINK32_FLAGS=kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib bufferoverflowu.lib strsafe.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\isapi_redirect.pdb" /debug /machine:AMD64 /def:".\isapi.def" /out:"$(OUTDIR)\isapi_redirect.dll" /implib:"$(OUTDIR)\isapi_redirect.lib" 
 DEF_FILE= \
 	".\isapi.def"
 LINK32_OBJS= \
