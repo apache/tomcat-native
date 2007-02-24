@@ -535,7 +535,6 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                               const char *uri, jk_logger_t *l)
 {
     unsigned int i;
-    char *url_rewrite;
     const char *rv = NULL;
     char  url[JK_MAX_URI_LEN+1];
 
@@ -552,28 +551,43 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         JK_TRACE_EXIT(l);
         return NULL;
     }
-    for (i = 0; i < strlen(uri); i++) 
+    if (uw_map->fname) {
+        uri_worker_map_update(uw_map, l);
+        if (!uw_map->size) {
+            jk_log(l, JK_LOG_INFO,
+                   "No worker maps defined for %s.",
+                   uw_map->fname);
+            JK_TRACE_EXIT(l);
+            return NULL;
+        }
+    }
+    /* Make the copy of the provided uri and strip
+     * everything after the first ';' char.
+     */
+    for (i = 0; i < strlen(uri); i++) {
+        if (i == JK_MAX_URI_LEN) {
+            jk_log(l, JK_LOG_WARNING,
+                   "Uri %s is invalid. Uri must be smaller then %d chars",
+                   uri, JK_MAX_URI_LEN);
+            JK_TRACE_EXIT(l);
+            return NULL;
+        }
         if (uri[i] == ';')
             break;
         else
             url[i] = uri[i];
-    url[i] = '\0';
-    
-    url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
-    if (url_rewrite) {
-        size_t len = url_rewrite - url;
-        if (len > JK_MAX_URI_LEN)
-            len = JK_MAX_URI_LEN;
-        url[len] = '\0';
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG, "Removing Session path '%s' URI '%s'",
-                   url_rewrite, url);
     }
-    if (uw_map->fname)
-        uri_worker_map_update(uw_map, l);
+    url[i] = '\0';
+
+    if (JK_IS_DEBUG_LEVEL(l)) {
+        char *url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
+        if (url_rewrite)
+            jk_log(l, JK_LOG_DEBUG, "Removed session id '%s' from '%s'",
+                   url_rewrite, uri);
+    }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s' from %d maps",
-               uri, uw_map->size);
+               url, uw_map->size);
 
     for (i = 0; i < uw_map->size; i++) {
         uri_worker_record_t *uwr = uw_map->maps[i];
