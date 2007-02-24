@@ -174,6 +174,7 @@ typedef struct
     int options;
     int exclude_options;
 
+    int strip_session;
     /*
      * Environment variables support
      */
@@ -1118,6 +1119,25 @@ static const char *jk_set_auto_alias(cmd_parms * cmd,
     return NULL;
 }
 
+/*
+ * JkStripSession directive handling
+ *
+ * JkStripSession On/Off
+ */
+
+static const char *jk_set_strip_session(cmd_parms * cmd, void *dummy, int flag)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+
+    /* Set up our value */
+    conf->strip_session = flag ? JK_TRUE : JK_FALSE;
+
+    return NULL;
+}
+
 /*****************************************************************
  *
  * Actually logging.
@@ -1791,6 +1811,13 @@ static const command_rec jk_cmds[] = {
      "Should the base server mounts be copied to the virtual server"},
 
     /*
+     * JkStripSession specifies if mod_jk should strip the ;jsessionid
+     * from the unmapperd urls
+     */
+    {"JkStripSession", jk_set_strip_session, NULL, RSRC_CONF, FLAG,
+     "Should the base server strip the jsessionid from the url"},
+
+    /*
      * JkLogFile & JkLogLevel specifies to where should the plugin log
      * its information and how much.
      * JkLogStampFormat specify the time-stamp to be used on log
@@ -2128,6 +2155,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
         c->cipher_indicator = NULL;
         c->session_indicator = NULL;
         c->key_size_indicator = NULL;
+        c->strip_session = JK_UNSET;
     } else {
         c->mount_file_reload = JK_URIMAP_DEF_RELOAD;
         c->log_level = JK_LOG_DEF_LEVEL;
@@ -2147,6 +2175,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
         c->cipher_indicator = JK_ENV_CIPHER;
         c->session_indicator = JK_ENV_SESSION;
         c->key_size_indicator = JK_ENV_KEY_SIZE;
+        c->strip_session = JK_FALSE;
     }
 
     if (!jk_map_alloc(&(c->uri_to_context))) {
@@ -2261,6 +2290,8 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
         if (!overrides->alias_dir)
             overrides->alias_dir = base->alias_dir;
     }
+    if (overrides->strip_session == JK_UNSET)
+        overrides->strip_session = base->strip_session;
 
     return overrides;
 }
@@ -2671,6 +2702,16 @@ static int jk_translate(request_rec * r)
                             }
                         }
                     }
+                }
+            }
+            else if (conf->strip_session == JK_TRUE) {
+                char *jsessionid = strstr(r->uri, JK_PATH_SESSION_IDENTIFIER);
+                if (jsessionid) {
+                    if (JK_IS_DEBUG_LEVEL(conf->log))
+                        jk_log(conf->log, JK_LOG_DEBUG,
+                               "removing session identifier [%s] for non servlet url [%s]",
+                               jsessionid, r->uri);
+                    *jsessionid = '\0';
                 }
             }
         }

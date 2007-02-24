@@ -220,7 +220,15 @@ Empty default values are supported since version 1.2.20.
 Not sending variables with empty defaults and empty runtime value
 has been introduced in version 1.2.21.
 </p></attribute>
-
+<attribute name="JkStripSession" required="false"><p>
+If this directive is set to On in some virtual server,
+the session IDs <code>;jsessionid=...</code> will be
+removed for non matched URLs.
+<br/>
+This directive is only allowed inside VirtualHost.
+<br/>
+The default is Off.
+</p></attribute>
 
 </attributes>
 </section>

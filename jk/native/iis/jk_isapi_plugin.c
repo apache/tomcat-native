@@ -528,13 +528,14 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
         return JK_FALSE;
     }
 
-    if (s && s->ws_private) {
+    if (s && s->ws_private) {        
+        int rv = JK_TRUE;
         isapi_private_data_t *p = s->ws_private;
         if (!p->request_started) {
-            size_t len_of_status;
+            HSE_SEND_HEADER_EX_INFO hi;
             char *status_str;
-            char *headers_str;
-
+            char *headers_str = NULL;
+            BOOL keep_alive = FALSE;
             p->request_started = JK_TRUE;
 
             /*
@@ -543,9 +544,10 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
             if (!reason) {
                 reason = status_reason(status);
             }
-            status_str = (char *)_alloca((6 + strlen(reason)) * sizeof(char));
+            status_str = (char *)malloc((6 + strlen(reason)));
             sprintf(status_str, "%d %s", status, reason);
-            len_of_status = strlen(status_str);
+            hi.pszStatus = status_str;
+            hi.cchStatus = strlen(status_str);
 
             /*
              * Create response headers string
@@ -555,11 +557,11 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
                 for (i = 0, len_of_headers = 0; i < num_of_headers; i++) {
                     len_of_headers += strlen(header_names[i]);
                     len_of_headers += strlen(header_values[i]);
-                    len_of_headers += 4;        /* extra for colon, space and crlf */
+                    len_of_headers += 4;   /* extra for colon, space and crlf */
                 }
 
-                len_of_headers += 3;    /* crlf and terminating null char */
-                headers_str = (char *)_alloca(len_of_headers * sizeof(char));
+                len_of_headers += 3;       /* crlf and terminating null char */
+                headers_str = (char *)malloc(len_of_headers);
                 headers_str[0] = '\0';
 
                 for (i = 0; i < num_of_headers; i++) {
@@ -569,25 +571,29 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
                     strcat(headers_str, crlf);
                 }
                 strcat(headers_str, crlf);
+                hi.pszHeader = headers_str;
+                hi.cchHeader = strlen(headers_str);
             }
             else {
-                headers_str = crlf;
+                hi.pszHeader = crlf;
+                hi.cchHeader = 2;
             }
-
+            hi.fKeepConn = keep_alive;            
             if (!p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID,
-                                                 HSE_REQ_SEND_RESPONSE_HEADER,
-                                                 status_str,
-                                                 (LPDWORD) &len_of_status,
-                                                 (LPDWORD) headers_str)) {
+                                                 HSE_REQ_SEND_RESPONSE_HEADER_EX,
+                                                 &hi,
+                                                 NULL, NULL)) {
                 jk_log(logger, JK_LOG_ERROR,
-                       "HSE_REQ_SEND_RESPONSE_HEADER failed");
-                JK_TRACE_EXIT(logger);
-                return JK_FALSE;
+                       "HSE_REQ_SEND_RESPONSE_HEADER_EX failed");
+                rv = JK_FALSE;
             }
+            if (headers_str)
+                free(headers_str);
+            if (status_str)
+                free(status_str);
         }
         JK_TRACE_EXIT(logger);
-        return JK_TRUE;
-
+        return rv;
     }
 
     JK_LOG_NULL_PARAMS(logger);

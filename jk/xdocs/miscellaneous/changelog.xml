@@ -27,6 +27,11 @@
   <subsection name="Native">
     <changelog>
       <add>
+        <bug>41439</bug>: Allow session IDs to get stripped off URLs of static
+        content in Apache by adding JkStripSession
+        directive (configurable per vhost). (mturk)
+      </add>
+      <add>
       Change semantics of empty defaults for JkEnvVar variables.
       Until 1.2.19: not allowed. In 1.2.20: send variables as empty strings, if
       neither set to non empty in config, nor during runtime.
