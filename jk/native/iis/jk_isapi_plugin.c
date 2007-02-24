@@ -488,10 +488,10 @@ static char *stristr(const char *s, const char *find)
 
 static int uri_is_web_inf(const char *uri)
 {
-    if (stristr(uri, "web-inf")) {
+    if (stristr(uri, "/web-inf")) {
         return JK_TRUE;
     }
-    if (stristr(uri, "meta-inf")) {
+    if (stristr(uri, "/meta-inf")) {
         return JK_TRUE;
     }
 
