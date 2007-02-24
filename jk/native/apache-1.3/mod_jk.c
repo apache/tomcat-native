@@ -1744,9 +1744,9 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
-
+ 
     if (jk_map_read_property(conf->worker_properties, line, 1, conf->log) == JK_FALSE)
-        return ap_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line);
+        return ap_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line, NULL);
 
     return NULL;
 }
@@ -2543,8 +2543,9 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
             ap_log_error(APLOG_MARK, APLOG_EMERG, s,
                          "No worker file and no worker options in httpd.conf "
                          "use JkWorkerFile to set workers");
-            return;
         }
+        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL, "Error in reading worker properties");
+        return !OK;
 
     }
 #if MODULE_MAGIC_NUMBER >= 19980527

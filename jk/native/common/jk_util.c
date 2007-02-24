@@ -96,7 +96,9 @@
 
 #define DEFAULT_WORKER              JK_AJP13_WORKER_NAME
 #define WORKER_LIST_PROPERTY_NAME     ("worker.list")
+#define LIST_PROPERTY_NAME            ("list")
 #define WORKER_MAINTAIN_PROPERTY_NAME ("worker.maintain")
+#define MAINTAIN_PROPERTY_NAME        ("maintain")
 #define DEFAULT_MAINTAIN_TIME       (60)
 #define DEFAULT_LB_FACTOR           (1)
 #define DEFAULT_DISTANCE            (0)
@@ -207,6 +209,70 @@ static const char *deprecated_properties[] = {
     IS_WORKER_DISABLED_DEPRECATED,
     IS_WORKER_STOPPED_DEPRECATED,
     NULL
+};
+
+static const char *supported_properties[] = {
+    SYSPROPS_OF_WORKER,
+    STDERR_OF_WORKER,
+    STDOUT_OF_WORKER,
+    SECRET_OF_WORKER,
+    MX_OF_WORKER,
+    MS_OF_WORKER,
+    CP_OF_WORKER,
+    BRIDGE_OF_WORKER,
+    JVM_OF_WORKER,
+    LIBPATH_OF_WORKER,
+    CMD_LINE_OF_WORKER,
+    NATIVE_LIB_OF_WORKER,
+    HOST_OF_WORKER,
+    PORT_OF_WORKER,
+    TYPE_OF_WORKER,
+    CACHE_OF_WORKER_DEPRECATED,
+    CACHE_OF_WORKER,
+    CACHE_OF_WORKER_MIN,
+    CACHE_TIMEOUT_DEPRECATED,
+    CACHE_TIMEOUT_OF_WORKER,
+    RECOVERY_OPTS_OF_WORKER,
+    CONNECT_TIMEOUT_OF_WORKER,
+    PREPOST_TIMEOUT_OF_WORKER,
+    REPLY_TIMEOUT_OF_WORKER,
+    SOCKET_TIMEOUT_OF_WORKER,
+    SOCKET_BUFFER_OF_WORKER,
+    SOCKET_KEEPALIVE_OF_WORKER,
+    RECYCLE_TIMEOUT_DEPRECATED,
+    LOAD_FACTOR_OF_WORKER,
+    DISTANCE_OF_WORKER,
+    BALANCED_WORKERS_DEPRECATED,
+    BALANCE_WORKERS,
+    STICKY_SESSION,
+    STICKY_SESSION_FORCE,
+    JVM_ROUTE_OF_WORKER_DEPRECATED,
+    ROUTE_OF_WORKER,
+    DOMAIN_OF_WORKER,
+    REDIRECT_OF_WORKER,
+    MOUNT_OF_WORKER,
+    METHOD_OF_WORKER,
+    LOCK_OF_WORKER,
+    IS_WORKER_DISABLED_DEPRECATED,
+    IS_WORKER_STOPPED_DEPRECATED,
+    ACTIVATION_OF_WORKER,
+    WORKER_RECOVER_TIME,
+    WORKER_MAX_PACKET_SIZE,
+    STYLE_SHEET_OF_WORKER,
+    NAMESPACE_OF_WORKER,
+    XML_NAMESPACE_OF_WORKER,
+    XML_DOCTYPE_OF_WORKER,
+    PROP_PREFIX_OF_WORKER,
+    READ_ONLY_OF_WORKER,
+    USER_OF_WORKER,
+    USER_CASE_OF_WORKER,
+    GOOD_RATING_OF_WORKER,
+    BAD_RATING_OF_WORKER,
+    SECRET_KEY_OF_WORKER,
+    RETRIES_OF_WORKER,
+    STATUS_FAIL_OF_WORKER,
+    LIST_PROPERTY_NAME,
+    MAINTAIN_PROPERTY_NAME
 };
 
 /* All entries need to have fixed length 8 chars! */
@@ -1447,6 +1513,24 @@ int jk_is_unique_property(const char *prp_name)
 int jk_is_deprecated_property(const char *prp_name)
 {
     const char **props = &deprecated_properties[0];
+    while (*props) {
+        if (jk_is_some_property(prp_name, *props, "."))
+            return JK_TRUE;
+        props++;
+    }
+    return JK_FALSE;
+}
+/*
+ * Check that property is a valid one (to prevent user typos).
+ * Only property starting with worker.
+ */
+int jk_is_valid_property(const char *prp_name)
+{
+    const char **props;
+    if (memcmp(prp_name, "worker.", 7))
+        return JK_TRUE;
+
+    props = &supported_properties[0];
     while (*props) {
         if (jk_is_some_property(prp_name, *props, "."))
             return JK_TRUE;

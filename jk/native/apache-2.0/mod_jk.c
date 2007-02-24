@@ -250,7 +250,7 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
 static int JK_METHOD ws_read(jk_ws_service_t *s,
                              void *b, unsigned len, unsigned *actually_read);
 
-static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
+static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                     server_rec * s);
 
 static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l);
@@ -1788,7 +1788,7 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
     }
 
     if (jk_map_read_property(conf->worker_properties, line, 1, conf->log) == JK_FALSE)
-        return apr_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line);
+        return apr_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line, NULL);
 
     return NULL;
 }
@@ -2608,7 +2608,7 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
     SetHandler and normal apache directives ( but minimal jk-specific
     stuff )
 */
-static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
+static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                     server_rec * s)
 {
     int rc;
@@ -2664,12 +2664,14 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                          0, NULL,
                          "No worker file and no worker options in httpd.conf"
                          "use JkWorkerFile to set workers");
-            return;
         }
+        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL, "Error in reading worker properties");
+        return !OK;
     }
 
     if (jk_map_resolve_references(init_map, "worker.", 1, 1, conf->log) == JK_FALSE) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, pconf, "Error in resolving configuration references");
+        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL, "Error in resolving configuration references");
+        return !OK;
     }
 
     /* we add the URI->WORKER MAP since workers using AJP14
@@ -2684,6 +2686,7 @@ static void init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     if (wc_open(init_map, &worker_env, conf->log)) {
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);
     }
+    return OK;
 }
 
 static int jk_post_config(apr_pool_t * pconf,
@@ -2701,7 +2704,7 @@ static int jk_post_config(apr_pool_t * pconf,
                                       pconf)) != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
                      "mod_jk: could not create jk_log_lock");
-        return HTTP_INTERNAL_SERVER_ERROR;
+        return !OK;
     }
 
 #if JK_NEED_SET_MUTEX_PERMS
@@ -2710,7 +2713,7 @@ static int jk_post_config(apr_pool_t * pconf,
         ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
                      "mod_jk: Could not set permissions on "
                      "jk_log_lock; check User and Group directives");
-        return HTTP_INTERNAL_SERVER_ERROR;
+        return !OK;
     }
 #endif
 
@@ -2728,7 +2731,7 @@ static int jk_post_config(apr_pool_t * pconf,
                 jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                                    &jk_module);
                 if (open_jklog(srv, pconf))
-                    return HTTP_INTERNAL_SERVER_ERROR;
+                    return !OK;
                 if (sconf) {
                     if (!uri_worker_map_alloc(&(sconf->uw_map),
                                               sconf->uri_to_context, sconf->log))
@@ -2776,7 +2779,8 @@ static int jk_post_config(apr_pool_t * pconf,
                     }
                 }
             }
-            init_jk(pconf, conf, s);
+            if (init_jk(pconf, conf, s))
+                return !OK;
         }
     }
 

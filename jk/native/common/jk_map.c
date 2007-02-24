@@ -365,6 +365,14 @@ int jk_map_read_property(jk_map_t *m, const char *str, int allow_duplicates, jk_
             trim(v);
             if (strlen(v) && strlen(prp)) {
                 const char *oldv = jk_map_get_string(m, prp, NULL);
+                /* check the worker properties */
+                if (!jk_is_valid_property(prp)) {
+                    jk_log(l, JK_LOG_ERROR,
+                           "The attribute '%s' is not supported - please check"
+                           " the documentation for the supported attributes.",
+                           prp);
+                    return JK_FALSE;
+                }
                 if (jk_is_deprecated_property(prp)) {
                     jk_log(l, JK_LOG_WARNING,
                            "The attribute '%s' is deprecated - please check"
