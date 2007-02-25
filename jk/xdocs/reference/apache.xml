@@ -228,6 +228,8 @@ removed for non matched URLs.
 This directive is only allowed inside VirtualHost.
 <br/>
 The default is Off.
+<br/>
+This directive has been introduced in version 1.2.21.
 </p></attribute>
 
 </attributes>

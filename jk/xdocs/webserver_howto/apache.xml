@@ -753,6 +753,20 @@ or a Web Archive *.war within the Tomcat Host appBase (webapps) directory will f
   JkMount /*/servlet/ ajp13
 </source>
 
+<p>
+If you encoded all your URLs to contain the session id
+(<code>;jsessionid=...</code>), and you later decide, you want to
+move part of the content to Apache httpd, you can tell
+mod_jk to strip off all session ids from URLs for
+those requests, that do not get forwarded via mod_jk.
+</p>
+
+<p>
+You enable this feature by setting JkStripSession to On.
+It can be enabled individually for virtual servers. The default
+value is Off.
+</p>
+
 </subsection>
 </section>
 
