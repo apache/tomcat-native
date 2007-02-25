@@ -1812,10 +1812,10 @@ static const command_rec jk_cmds[] = {
 
     /*
      * JkStripSession specifies if mod_jk should strip the ;jsessionid
-     * from the unmapperd urls
+     * from the unmapped urls
      */
     {"JkStripSession", jk_set_strip_session, NULL, RSRC_CONF, FLAG,
-     "Should the base server strip the jsessionid from the url"},
+     "Should the server strip the jsessionid from unmapped URLs"},
 
     /*
      * JkLogFile & JkLogLevel specifies to where should the plugin log
