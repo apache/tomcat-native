@@ -549,7 +549,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
             status_str = (char *)malloc((6 + strlen(reason)));
             StringCbPrintf(status_str, 6 + strlen(reason), "%d %s", status, reason);
             hi.pszStatus = status_str;
-            hi.cchStatus = strlen(status_str);
+            hi.cchStatus = (DWORD)strlen(status_str);
 
             /*
              * Create response headers string
@@ -574,7 +574,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
                 }
                 StringCbCat(headers_str, len_of_headers, crlf);
                 hi.pszHeader = headers_str;
-                hi.cchHeader = strlen(headers_str);
+                hi.cchHeader = (DWORD)strlen(headers_str);
             }
             else {
                 hi.pszHeader = crlf;
