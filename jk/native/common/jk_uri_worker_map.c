@@ -582,7 +582,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     if (JK_IS_DEBUG_LEVEL(l)) {
         char *url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
         if (url_rewrite)
-            jk_log(l, JK_LOG_DEBUG, "Removed session id '%s' from '%s'",
+            jk_log(l, JK_LOG_DEBUG, "separating session identifier '%s' from url '%s'",
                    url_rewrite, uri);
     }
     if (JK_IS_DEBUG_LEVEL(l))

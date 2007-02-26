@@ -364,21 +364,25 @@ int jk_map_read_property(jk_map_t *m, const char *str, int allow_duplicates, jk_
             trim(prp);
             trim(v);
             if (strlen(v) && strlen(prp)) {
-                const char *oldv = jk_map_get_string(m, prp, NULL);
+                const char *oldv;
+                int off = strlen(prp) - JK_MAP_REFERENCE_SZ;
                 /* check the worker properties */
-                if (!jk_is_valid_property(prp)) {
-                    jk_log(l, JK_LOG_ERROR,
-                           "The attribute '%s' is not supported - please check"
-                           " the documentation for the supported attributes.",
-                           prp);
-                    return JK_FALSE;
+                if (off <= 0 || strncmp(&prp[off], JK_MAP_REFERENCE, JK_MAP_REFERENCE_SZ) ) {
+                    if (!jk_is_valid_property(prp)) {
+                        jk_log(l, JK_LOG_ERROR,
+                               "The attribute '%s' is not supported - please check"
+                               " the documentation for the supported attributes.",
+                               prp);
+                        return JK_FALSE;
+                    }
+                    if (jk_is_deprecated_property(prp)) {
+                        jk_log(l, JK_LOG_WARNING,
+                               "The attribute '%s' is deprecated - please check"
+                               " the documentation for the correct replacement.",
+                               prp);
+                    }
                 }
-                if (jk_is_deprecated_property(prp)) {
-                    jk_log(l, JK_LOG_WARNING,
-                           "The attribute '%s' is deprecated - please check"
-                           " the documentation for the correct replacement.",
-                           prp);
-                }
+                oldv = jk_map_get_string(m, prp, NULL);
                 v = jk_map_replace_properties(m, v);
                 if (oldv) {
                     if (allow_duplicates && jk_is_unique_property(prp) == JK_FALSE) {
