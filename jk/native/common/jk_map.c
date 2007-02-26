@@ -365,7 +365,7 @@ int jk_map_read_property(jk_map_t *m, const char *str, int allow_duplicates, jk_
             trim(v);
             if (strlen(v) && strlen(prp)) {
                 const char *oldv;
-                int off = strlen(prp) - JK_MAP_REFERENCE_SZ;
+                int off = (int)strlen(prp) - (int)JK_MAP_REFERENCE_SZ;
                 /* check the worker properties */
                 if (off <= 0 || strncmp(&prp[off], JK_MAP_REFERENCE, JK_MAP_REFERENCE_SZ) ) {
                     if (!jk_is_valid_property(prp)) {
