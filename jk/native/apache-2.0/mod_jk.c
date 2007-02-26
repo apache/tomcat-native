@@ -2799,7 +2799,7 @@ static int jk_translate(request_rec * r)
                                                       &jk_module);
 
         if (conf) {
-            const char *worker;
+            const char *worker;            
             if ((r->handler != NULL) && (!strcmp(r->handler, JK_HANDLER))) {
                 /* Somebody already set the handler, probably manual config
                  * or "native" configuration, no need for extra overhead
@@ -2959,16 +2959,6 @@ static int jk_translate(request_rec * r)
                     }
                 }
             }
-            else if (conf->strip_session == JK_TRUE) {
-                char *jsessionid = strstr(r->uri, JK_PATH_SESSION_IDENTIFIER);
-                if (jsessionid) {
-                    if (JK_IS_DEBUG_LEVEL(conf->log))
-                        jk_log(conf->log, JK_LOG_DEBUG,
-                               "removing session identifier [%s] for non servlet url [%s]",
-                               jsessionid, r->uri);
-                    *jsessionid = '\0';
-                }
-            }
         }
     }
 
@@ -3019,14 +3009,23 @@ static int jk_map_to_storage(request_rec * r)
 
             }
             else if (conf->strip_session == JK_TRUE) {
-                char *jsessionid = strstr(r->uri, JK_PATH_SESSION_IDENTIFIER);
-                if (jsessionid) {
-                    if (JK_IS_DEBUG_LEVEL(conf->log))
-                        jk_log(conf->log, JK_LOG_DEBUG,
-                               "removing session identifier [%s] for non servlet url [%s]",
-                               jsessionid, r->uri);
-                    *jsessionid = '\0';
+                char *jsessionid;
+                if (r->uri) {
+                    jsessionid = strstr(r->uri, JK_PATH_SESSION_IDENTIFIER);
+                    if (jsessionid) {
+                        if (JK_IS_DEBUG_LEVEL(conf->log))
+                            jk_log(conf->log, JK_LOG_DEBUG,
+                                   "removing session identifier [%s] for non servlet url [%s]",
+                                   jsessionid, r->uri);
+                        *jsessionid = '\0';
+                    }
                 }
+                if (r->filename) {
+                    jsessionid = strstr(r->filename, JK_PATH_SESSION_IDENTIFIER);
+                    if (jsessionid)
+                        *jsessionid = '\0';
+                }
+                return DECLINED;
             }
         }
     }
