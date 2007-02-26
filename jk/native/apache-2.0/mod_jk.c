@@ -2704,7 +2704,7 @@ static int jk_post_config(apr_pool_t * pconf,
                                       pconf)) != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
                      "mod_jk: could not create jk_log_lock");
-        return !OK;
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
 
 #if JK_NEED_SET_MUTEX_PERMS
@@ -2713,7 +2713,7 @@ static int jk_post_config(apr_pool_t * pconf,
         ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
                      "mod_jk: Could not set permissions on "
                      "jk_log_lock; check User and Group directives");
-        return !OK;
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
 #endif
 
@@ -2731,7 +2731,7 @@ static int jk_post_config(apr_pool_t * pconf,
                 jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                                    &jk_module);
                 if (open_jklog(srv, pconf))
-                    return !OK;
+                    return HTTP_INTERNAL_SERVER_ERROR;
                 if (sconf) {
                     if (!uri_worker_map_alloc(&(sconf->uw_map),
                                               sconf->uri_to_context, sconf->log))
@@ -2780,7 +2780,7 @@ static int jk_post_config(apr_pool_t * pconf,
                 }
             }
             if (init_jk(pconf, conf, s))
-                return !OK;
+                return HTTP_INTERNAL_SERVER_ERROR;
         }
     }
 
