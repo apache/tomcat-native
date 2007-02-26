@@ -27,6 +27,9 @@
   <subsection name="Native">
     <changelog>
       <add>
+      </add>
+      Check the worker. parameters and don't start if the parameter is not a valid one. (jfclere)
+      <add>
         <bug>41439</bug>: Allow session IDs to get stripped off URLs of static
         content in Apache by adding JkStripSession
         directive (configurable per vhost). (mturk)
