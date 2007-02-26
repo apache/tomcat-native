@@ -2544,8 +2544,7 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
                          "No worker file and no worker options in httpd.conf "
                          "use JkWorkerFile to set workers");
         }
-        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, NULL, "Error in reading worker properties");
-        return !OK;
+        jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p, "Error in reading worker properties");
 
     }
 #if MODULE_MAGIC_NUMBER >= 19980527
