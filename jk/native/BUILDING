@@ -115,11 +115,15 @@
   ----------------------------------------------
   make clean (to remove all previously compiled modules)
   use configure and indicate that you will be building the
-  netscape nsapi redirector, then make the redirector plugin
+  netscape nsapi redirector, then make the redirector plugin:
 
   ./configure --enable-netscape
   cd netscape
   make -f Makefile.solaris
+
+  This assumes that SUITSPOT_HOME is defined and points to
+  your SunONE install path (eg: /opt/SUNWwbsvr/plugins)
+  and that JAVA_HOME is defined (eg: /opt/SUNWwbsvr/bin/https/jdk).
 
   Misc notes 
   ----------
