@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <?xml-stylesheet type="text/xsl" href="is.xsl" ?>
 <!DOCTYPE msi [
    <!ELEMENT msi   (summary,table*)>
@@ -52,7 +52,7 @@
 	<summary>
 		<codepage>1252</codepage>
 		<title>Installation Database</title>
-		<subject>Jakarta Isapi Redirector</subject>
+		<subject>##ID_STRING5##</subject>
 		<author>##COMPANY_NAME##</author>
 		<keywords>Installer,MSI,Database</keywords>
 		<comments>Contact:  Your local administrator</comments>
@@ -65,7 +65,7 @@
 		<pagecount>200</pagecount>
 		<wordcount>0</wordcount>
 		<charcount/>
-		<appname>InstallShield Developer</appname>
+		<appname>FLEXnet InstallShield</appname>
 		<security>1</security>
 	</summary>
 	
@@ -313,6 +313,7 @@
 		<col key="yes" def="i2">Order</col>
 		<col def="s64">Value</col>
 		<col def="L64">Text</col>
+		<row><td>IS_SQLSERVER_SERVER</td><td>1</td><td>TestValue</td><td/></row>
 	</table>
 
 	<table name="CompLocator">
@@ -1356,6 +1357,9 @@
 		<row><td>27549</td><td>##IDS_ERROR_27549##</td></row>
 		<row><td>27550</td><td>##IDS_ERROR_27550##</td></row>
 		<row><td>27551</td><td>##IDS_ERROR_27551##</td></row>
+		<row><td>27552</td><td>##IDS_ERROR_27552##</td></row>
+		<row><td>27553</td><td>##IDS_ERROR_27553##</td></row>
+		<row><td>27554</td><td>##IDS_ERROR_27554##</td></row>
 		<row><td>32</td><td>##IDS_ERROR_20##</td></row>
 		<row><td>33</td><td>##IDS_ERROR_21##</td></row>
 		<row><td>4</td><td>##IDS_ERROR_3##</td></row>
@@ -1626,6 +1630,33 @@
 		<row><td>VirtualDirComponent</td><td/><td/><td>_5ACAD922_2F71_4963_BCF2_D05C97252574_FILTER</td><td/><td/><td/><td/></row>
 	</table>
 
+	<table name="ISDIMDependency">
+		<col key="yes" def="s72">ISDIMReference_</col>
+		<col def="s255">RequiredUUID</col>
+		<col def="S255">RequiredMajorVersion</col>
+		<col def="S255">RequiredMinorVersion</col>
+		<col def="S255">RequiredBuildVersion</col>
+		<col def="S255">RequiredRevisionVersion</col>
+	</table>
+
+	<table name="ISDIMReference">
+		<col key="yes" def="s72">ISDIMReference</col>
+		<col def="S0">ISBuildSourcePath</col>
+	</table>
+
+	<table name="ISDIMReferenceDependencies">
+		<col key="yes" def="s72">ISDIMReference_Parent</col>
+		<col key="yes" def="s72">ISDIMDependency_</col>
+	</table>
+
+	<table name="ISDIMVariable">
+		<col key="yes" def="s72">ISDIMVariable</col>
+		<col def="s72">ISDIMReference_</col>
+		<col def="s0">Name</col>
+		<col def="S0">NewValue</col>
+		<col def="I4">Type</col>
+	</table>
+
 	<table name="ISDLLWrapper">
 		<col key="yes" def="s72">EntryPoint</col>
 		<col def="I4">Type</col>
@@ -1679,6 +1710,11 @@
 		<row><td>AllOtherFiles2</td><td>&lt;ISProjectFolder&gt;\log</td><td>4</td><td/><td/><td>0</td></row>
 	</table>
 
+	<table name="ISFeatureDIMReferences">
+		<col key="yes" def="s38">Feature_</col>
+		<col key="yes" def="s72">ISDIMReference_</col>
+	</table>
+
 	<table name="ISFeatureMergeModuleExcludes">
 		<col key="yes" def="s38">Feature_</col>
 		<col key="yes" def="s255">ModuleID</col>
@@ -1689,6 +1725,27 @@
 		<col key="yes" def="s38">Feature_</col>
 		<col key="yes" def="s255">ISMergeModule_</col>
 		<col key="yes" def="i2">Language_</col>
+	</table>
+
+	<table name="ISFileManifests">
+		<col key="yes" def="s72">File_</col>
+		<col key="yes" def="s72">Manifest_</col>
+	</table>
+
+	<table name="ISIISAppPool">
+		<col key="yes" def="s72">AppPool</col>
+		<col def="l72">Name</col>
+		<col def="s72">Component_</col>
+		<col def="I4">Attributes</col>
+		<col def="S72">User</col>
+		<col def="S72">UserPassword</col>
+		<col def="I4">RecycleMinutes</col>
+		<col def="I4">RecycleRequests</col>
+		<col def="S72">RecycleTimes</col>
+		<col def="I4">IdleTimeout</col>
+		<col def="I4">QueueLimit</col>
+		<col def="S72">CPUMon</col>
+		<col def="I4">MaxProc</col>
 	</table>
 
 	<table name="ISIISCommon">
@@ -1705,8 +1762,9 @@
 		<col def="S0">CustomErrors</col>
 		<col def="L255">AppName</col>
 		<col def="S72">SSLCert</col>
-		<row><td>ISIISCommonVRoot</td><td>ISIISCommonWebsite1</td><td>##ID_STRING3##</td><td>BIN</td><td>28069</td><td>Default.asp</td><td>20</td><td>90</td><td/><td/><td/><td/><td/></row>
-		<row><td>ISIISCommonWebsite1</td><td/><td>Default Web Site</td><td>IISROOTFOLDER</td><td>28113</td><td/><td>20</td><td>90</td><td/><td/><td/><td/><td/></row>
+		<col def="L72">AppPool_</col>
+		<row><td>ISIISCommonVRoot</td><td>ISIISCommonWebsite1</td><td>##ID_STRING3##</td><td>BIN</td><td>28069</td><td>Default.asp</td><td>20</td><td>90</td><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISCommonWebsite1</td><td/><td>Default Web Site</td><td>IISROOTFOLDER</td><td>28113</td><td/><td>20</td><td>90</td><td/><td/><td/><td/><td/><td/></row>
 	</table>
 
 	<table name="ISIISMetaData">
@@ -1717,6 +1775,15 @@
 		<col def="i4">MetaDataAttributes</col>
 		<col def="i4">Order</col>
 		<col def="s0">MetaDataValue</col>
+	</table>
+
+	<table name="ISIISWebServiceExtension">
+		<col key="yes" def="s72">WebServiceExtension</col>
+		<col def="s0">Component_</col>
+		<col def="s72">File</col>
+		<col def="l72">Description</col>
+		<col def="s72">Group</col>
+		<col def="i4">Attributes</col>
 	</table>
 
 	<table name="ISInstallScriptAction">
@@ -1955,6 +2022,13 @@
 		<row><td>Msi</td><td>Release</td><td>&lt;ISProjectDataFolder&gt;</td><td>PackageName</td><td>0</td><td>1033</td><td>2</td><td>1</td><td>Intel</td><td/><td>1033</td><td>3</td><td>650</td><td>0</td><td>2048</td><td/><td>0</td><td/><td>MediaLocation</td><td/><td>http://</td><td/><td/><td/><td/><td>8464397</td><td/><td/><td/><td/></row>
 	</table>
 
+	<table name="ISReleaseASPublishInfo">
+		<col key="yes" def="s72">ISRelease_</col>
+		<col key="yes" def="s72">ISProductConfiguration_</col>
+		<col key="yes" def="S0">Property</col>
+		<col def="S0">Value</col>
+	</table>
+
 	<table name="ISReleaseExtended">
 		<col key="yes" def="s72">ISRelease_</col>
 		<col key="yes" def="s72">ISProductConfiguration_</col>
@@ -1986,14 +2060,14 @@
 		<col def="I4">MsiEngineVersion</col>
 		<col def="S255">WinMsi30Url</col>
 		<col def="S255">CertPassword</col>
-		<row><td>Bin</td><td>Release</td><td>0</td><td>http://</td><td>0</td><td>install</td><td>install</td><td>[WindowsFolder]Downloaded Installations</td><td>1</td><td>http://www.installengine.com/Msiengine20</td><td>http://www.installengine.com/Msiengine20</td><td>2</td><td>http://www.installengine.com/cert03/isengine</td><td>2</td><td/><td/><td/><td>3</td><td>http://www.installengine.com/cert03/dotnetfx</td><td>0</td><td>1033</td><td/><td/><td/><td/><td>16</td><td>3</td><td>4</td><td>http://www.installengine.com/Msiengine30</td><td/></row>
-		<row><td>Msi</td><td>Release</td><td>0</td><td>http://</td><td>0</td><td>install</td><td>install</td><td>[WindowsFolder]Downloaded Installations</td><td>2</td><td>http://www.installengine.com/Msiengine20</td><td>http://www.installengine.com/Msiengine20</td><td>2</td><td>http://www.installengine.com/cert03/isengine</td><td/><td/><td/><td/><td>3</td><td>http://www.installengine.com/cert03/dotnetfx</td><td>0</td><td>1033</td><td/><td/><td/><td/><td>16</td><td>3</td><td>4</td><td>http://www.installengine.com/Msiengine30</td><td/></row>
+		<row><td>Bin</td><td>Release</td><td>0</td><td>http://</td><td>0</td><td>install</td><td>install</td><td>[WindowsFolder]Downloaded Installations</td><td>1</td><td>http://www.installengine.com/Msiengine20</td><td>http://www.installengine.com/Msiengine20</td><td>2</td><td>http://www.installengine.com/cert05/isengine</td><td>2</td><td/><td/><td/><td>3</td><td>http://www.installengine.com/cert05/dotnetfx</td><td>0</td><td>1033</td><td/><td/><td/><td/><td>16</td><td>3</td><td>4</td><td>http://www.installengine.com/Msiengine30</td><td/></row>
+		<row><td>Msi</td><td>Release</td><td>0</td><td>http://</td><td>0</td><td>install</td><td>install</td><td>[WindowsFolder]Downloaded Installations</td><td>2</td><td>http://www.installengine.com/Msiengine20</td><td>http://www.installengine.com/Msiengine20</td><td>2</td><td>http://www.installengine.com/cert05/isengine</td><td/><td/><td/><td/><td>3</td><td>http://www.installengine.com/cert05/dotnetfx</td><td>0</td><td>1033</td><td/><td/><td/><td/><td>16</td><td>3</td><td>4</td><td>http://www.installengine.com/Msiengine30</td><td/></row>
 		<row><td>Release 1</td><td>Release</td><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/></row>
 	</table>
 
 	<table name="ISReleasePublishInfo">
 		<col key="yes" def="s72">ISRelease_</col>
-		<col def="s72">ISProductConfiguration_</col>
+		<col key="yes" def="s72">ISProductConfiguration_</col>
 		<col def="S255">Repository</col>
 		<col def="S255">DisplayName</col>
 		<col def="S255">Publisher</col>
@@ -2012,6 +2086,7 @@
 		<col def="i2">Order</col>
 		<col def="S0">Comments</col>
 		<col def="I4">CmdTimeout</col>
+		<col def="S0">BatchSeparator</col>
 	</table>
 
 	<table name="ISSQLConnectionDBServer">
@@ -2044,6 +2119,12 @@
 		<col def="S0">VersionBeginToken</col>
 		<col def="S0">VersionEndToken</col>
 		<col def="S0">LocalInstanceNames</col>
+		<col def="S0">CreateDbCmd</col>
+		<col def="S0">SwitchDbCmd</col>
+		<col def="I4">ISAttributes</col>
+		<col def="S0">TestTableCmd2</col>
+		<col def="S0">WinAuthentUserId</col>
+		<col def="S0">DsnODBCName</col>
 	</table>
 
 	<table name="ISSQLRequirement">
@@ -2120,6 +2201,19 @@
 		<col key="yes" def="s72">ISSetupPrerequisites</col>
 		<col def="S255">ISBuildSourcePath</col>
 		<col def="I2">Order</col>
+	</table>
+
+	<table name="ISSetupType">
+		<col key="yes" def="s38">ISSetupType</col>
+		<col def="L255">Description</col>
+		<col def="L255">Display_Name</col>
+		<col def="i2">Display</col>
+		<col def="S255">Comments</col>
+	</table>
+
+	<table name="ISSetupTypeFeatures">
+		<col key="yes" def="s38">ISSetupType_</col>
+		<col key="yes" def="s38">Feature_</col>
 	</table>
 
 	<table name="ISStorages">
@@ -2338,7 +2432,7 @@
 		<row><td>IDS_ERROR_27</td><td>1033</td><td>Error reading from file [2].  Verify that the file exists and that you can access it.</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_ERROR_27502</td><td>1033</td><td>Could not connect to [2] '[3]'. [4]</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_ERROR_27503</td><td>1033</td><td>Error retrieving version string from [2] '[3]'. [4]</td><td>0</td><td/><td>-1256677244</td></row>
-		<row><td>IDS_ERROR_27504</td><td>1033</td><td>SQL version requirements not met: [3]. This installation requires [4]</td><td>0</td><td/><td>-1256677244</td></row>
+		<row><td>IDS_ERROR_27504</td><td>1033</td><td>SQL version requirements not met: [3]. This installation requires [2] [4] or later.</td><td>0</td><td/><td/></row>
 		<row><td>IDS_ERROR_27505</td><td>1033</td><td>Could not open SQL script file [2].</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_ERROR_27506</td><td>1033</td><td>Error executing SQL script [2]. Line [3]. [4]</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_ERROR_27507</td><td>1033</td><td>Connection or browsing for database servers requires that MDAC be installed.</td><td>0</td><td/><td>-1256677244</td></row>
@@ -2386,6 +2480,9 @@
 		<row><td>IDS_ERROR_27549</td><td>1033</td><td>Error getting the primary domain controller (PDC).</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_ERROR_27550</td><td>1033</td><td>Every field must have a value in order to create a user.</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_ERROR_27551</td><td>1033</td><td>ODBC driver for [2] not found. This is required to connect to [2] database servers.</td><td>0</td><td/><td>-1256677244</td></row>
+		<row><td>IDS_ERROR_27552</td><td>1033</td><td>Error creating database [4]. Server: [2] [3]. [5]</td><td>0</td><td/><td/></row>
+		<row><td>IDS_ERROR_27553</td><td>1033</td><td>Error connecting to database [4]. Server: [2] [3]. [5]</td><td>0</td><td/><td/></row>
+		<row><td>IDS_ERROR_27554</td><td>1033</td><td>Error attempting to open connection [2]. No valid database metadata associated with this connection.</td><td>0</td><td/><td/></row>
 		<row><td>IDS_ERROR_28</td><td>1033</td><td>Another application has exclusive access to the file [2].  Please shut down all other applications, then click Retry.</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_ERROR_29</td><td>1033</td><td>There is not enough disk space to install the file [2].  Free some disk space and click Retry, or click Cancel to exit.</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_ERROR_3</td><td>1033</td><td>Info [1].</td><td>0</td><td/><td>-1256677244</td></row>
@@ -2474,14 +2571,24 @@
 		<row><td>IDS_OK</td><td>1033</td><td>OK</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_PRINT_BUTTON</td><td>1033</td><td>&amp;Print</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_PRODUCTNAME_INSTALLSHIELD</td><td>1033</td><td>[ProductName] - InstallShield Wizard</td><td>0</td><td/><td>-1256677244</td></row>
+		<row><td>IDS_PROGMSG_IIS_CREATEAPPPOOL</td><td>1033</td><td>Creating application pool %s</td><td>0</td><td/><td/></row>
+		<row><td>IDS_PROGMSG_IIS_CREATEAPPPOOLS</td><td>1033</td><td>Creating application Pools...</td><td>0</td><td/><td/></row>
 		<row><td>IDS_PROGMSG_IIS_CREATEVROOT</td><td>1033</td><td>Creating IIS virtual directory %s</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_PROGMSG_IIS_CREATEVROOTS</td><td>1033</td><td>Creating IIS virtual directories...</td><td>0</td><td/><td>-1256677244</td></row>
+		<row><td>IDS_PROGMSG_IIS_CREATEWEBSERVICEEXTENSION</td><td>1033</td><td>Creating web service extension</td><td>0</td><td/><td/></row>
+		<row><td>IDS_PROGMSG_IIS_CREATEWEBSERVICEEXTENSIONS</td><td>1033</td><td>Creating web service extensions...</td><td>0</td><td/><td/></row>
 		<row><td>IDS_PROGMSG_IIS_EXTRACT</td><td>1033</td><td>Extracting information for IIS virtual directories...</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_PROGMSG_IIS_EXTRACTDONE</td><td>1033</td><td>Extracted information for IIS virtual directories...</td><td>0</td><td/><td>-1256677244</td></row>
+		<row><td>IDS_PROGMSG_IIS_REMOVEAPPPOOL</td><td>1033</td><td>Removing application pool</td><td>0</td><td/><td/></row>
+		<row><td>IDS_PROGMSG_IIS_REMOVEAPPPOOLS</td><td>1033</td><td>Removing application pools...</td><td>0</td><td/><td/></row>
 		<row><td>IDS_PROGMSG_IIS_REMOVESITE</td><td>1033</td><td>Removing web site at port %d</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_PROGMSG_IIS_REMOVEVROOT</td><td>1033</td><td>Removing IIS virtual directory %s</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_PROGMSG_IIS_REMOVEVROOTS</td><td>1033</td><td>Removing IIS virtual directories...</td><td>0</td><td/><td>-1256677244</td></row>
+		<row><td>IDS_PROGMSG_IIS_REMOVEWEBSERVICEEXTENSION</td><td>1033</td><td>Removing web service extension</td><td>0</td><td/><td/></row>
+		<row><td>IDS_PROGMSG_IIS_REMOVEWEBSERVICEEXTENSIONS</td><td>1033</td><td>Removing web service extensions...</td><td>0</td><td/><td/></row>
+		<row><td>IDS_PROGMSG_IIS_ROLLBACKAPPPOOLS</td><td>1033</td><td>Rolling back application pools...</td><td>0</td><td/><td/></row>
 		<row><td>IDS_PROGMSG_IIS_ROLLBACKVROOTS</td><td>1033</td><td>Rolling back virtual directory and web site changes...</td><td>0</td><td/><td>-1256677244</td></row>
+		<row><td>IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>1033</td><td>Rolling back web service extensions...</td><td>0</td><td/><td/></row>
 		<row><td>IDS_PROGMSG_XML_COSTING</td><td>1033</td><td>Costing XML files...</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_PROGMSG_XML_CREATE_FILE</td><td>1033</td><td>Creating XML file %s...</td><td>0</td><td/><td>-1256677244</td></row>
 		<row><td>IDS_PROGMSG_XML_FILES</td><td>1033</td><td>Performing XML file changes...</td><td>0</td><td/><td>-1256677244</td></row>
@@ -2772,6 +2879,7 @@
 		<row><td>ID_STRING2</td><td>1033</td><td>DisplayName1</td><td>0</td><td/><td>2115549418</td></row>
 		<row><td>ID_STRING3</td><td>1033</td><td>jakarta</td><td>0</td><td/><td>2115510538</td></row>
 		<row><td>ID_STRING4</td><td>1033</td><td>CoreFiles</td><td>0</td><td/><td>2115544011</td></row>
+		<row><td>ID_STRING5</td><td>1033</td><td>Tomcat Isapi Redirector</td><td>0</td><td/><td>161172904</td></row>
 		<row><td>IIDS_UITEXT_FeatureUninstalled</td><td>1033</td><td>This feature will remain uninstalled.</td><td>0</td><td/><td>-1256677244</td></row>
 	</table>
 
@@ -2835,8 +2943,8 @@
 		<col key="yes" def="s72">ISXmlElement</col>
 		<col def="s72">ISXmlFile_</col>
 		<col def="S72">ISXmlElement_Parent</col>
-		<col def="L255">XPath</col>
-		<col def="L255">Content</col>
+		<col def="L0">XPath</col>
+		<col def="L0">Content</col>
 		<col def="I4">ISAttributes</col>
 	</table>
 
@@ -2844,7 +2952,7 @@
 		<col key="yes" def="s72">ISXmlElementAttrib</col>
 		<col key="yes" def="s72">ISXmlElement_</col>
 		<col def="L255">Name</col>
-		<col def="L255">Value</col>
+		<col def="L0">Value</col>
 		<col def="I4">ISAttributes</col>
 	</table>
 
@@ -2854,6 +2962,7 @@
 		<col def="s72">Component_</col>
 		<col def="s50">Directory</col>
 		<col def="I4">ISAttributes</col>
+		<col def="S0">SelectionNamespaces</col>
 	</table>
 
 	<table name="ISXmlLocator">
@@ -3008,7 +3117,7 @@ QgBpAG4AAQBSAGUAbABlAGEAcwBlAA==
 		<row><td>SaveAsSchema</td><td/></row>
 		<row><td>SccEnabled</td><td>0</td></row>
 		<row><td>SccPath</td><td/></row>
-		<row><td>SchemaVersion</td><td>759</td></row>
+		<row><td>SchemaVersion</td><td>763</td></row>
 		<row><td>Type</td><td>MSI</td></row>
 	</table>
 
@@ -3061,6 +3170,7 @@ QgBpAG4AAQBSAGUAbABlAGEAcwBlAA==
 		<col key="yes" def="i2">Order</col>
 		<col def="s64">Value</col>
 		<col def="L64">Text</col>
+		<row><td>IS_SQLSERVER_LIST</td><td>1</td><td>TestValue</td><td/></row>
 	</table>
 
 	<table name="ListView">
@@ -3276,14 +3386,24 @@ QgBpAG4AAQBSAGUAbABlAGEAcwBlAA==
 		<row><td>InstallChoice</td><td>AR</td><td/></row>
 		<row><td>Manufacturer</td><td>##COMPANY_NAME##</td><td/></row>
 		<row><td>PIDTemplate</td><td>12345&lt;###-%%%%%%%&gt;@@@@@</td><td/></row>
+		<row><td>PROGMSG_IIS_CREATEAPPPOOL</td><td>##IDS_PROGMSG_IIS_CREATEAPPPOOL##</td><td/></row>
+		<row><td>PROGMSG_IIS_CREATEAPPPOOLS</td><td>##IDS_PROGMSG_IIS_CREATEAPPPOOLS##</td><td/></row>
 		<row><td>PROGMSG_IIS_CREATEVROOT</td><td>##IDS_PROGMSG_IIS_CREATEVROOT##</td><td/></row>
 		<row><td>PROGMSG_IIS_CREATEVROOTS</td><td>##IDS_PROGMSG_IIS_CREATEVROOTS##</td><td/></row>
+		<row><td>PROGMSG_IIS_CREATEWEBSERVICEEXTENSION</td><td>##IDS_PROGMSG_IIS_CREATEWEBSERVICEEXTENSION##</td><td/></row>
+		<row><td>PROGMSG_IIS_CREATEWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_CREATEWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>PROGMSG_IIS_EXTRACT</td><td>##IDS_PROGMSG_IIS_EXTRACT##</td><td/></row>
 		<row><td>PROGMSG_IIS_EXTRACTDONE</td><td>##IDS_PROGMSG_IIS_EXTRACTDONE##</td><td/></row>
+		<row><td>PROGMSG_IIS_REMOVEAPPPOOL</td><td>##IDS_PROGMSG_IIS_REMOVEAPPPOOL##</td><td/></row>
+		<row><td>PROGMSG_IIS_REMOVEAPPPOOLS</td><td>##IDS_PROGMSG_IIS_REMOVEAPPPOOLS##</td><td/></row>
 		<row><td>PROGMSG_IIS_REMOVESITE</td><td>##IDS_PROGMSG_IIS_REMOVESITE##</td><td/></row>
 		<row><td>PROGMSG_IIS_REMOVEVROOT</td><td>##IDS_PROGMSG_IIS_REMOVEVROOT##</td><td/></row>
 		<row><td>PROGMSG_IIS_REMOVEVROOTS</td><td>##IDS_PROGMSG_IIS_REMOVEVROOTS##</td><td/></row>
+		<row><td>PROGMSG_IIS_REMOVEWEBSERVICEEXTENSION</td><td>##IDS_PROGMSG_IIS_REMOVEWEBSERVICEEXTENSION##</td><td/></row>
+		<row><td>PROGMSG_IIS_REMOVEWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_REMOVEWEBSERVICEEXTENSIONS##</td><td/></row>
+		<row><td>PROGMSG_IIS_ROLLBACKAPPPOOLS</td><td>##IDS_PROGMSG_IIS_ROLLBACKAPPPOOLS##</td><td/></row>
 		<row><td>PROGMSG_IIS_ROLLBACKVROOTS</td><td>##IDS_PROGMSG_IIS_ROLLBACKVROOTS##</td><td/></row>
+		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{8B799ADD-7E5C-41B9-936B-942F3CAE42A0}</td><td/></row>
 		<row><td>ProductID</td><td>none</td><td/></row>
 		<row><td>ProductLanguage</td><td>1033</td><td/></row>
@@ -3595,30 +3715,22 @@ QgBpAG4AAQBSAGUAbABlAGEAcwBlAA==
 		<row><td>AdminExecuteSequence</td><td>Action</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Name of action to invoke, either in the engine or the handler DLL.</td></row>
 		<row><td>AdminExecuteSequence</td><td>Condition</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Optional expression which skips the action if evaluates to expFalse.If the expression syntax is invalid, the engine will terminate, returning iesBadActionData.</td></row>
 		<row><td>AdminExecuteSequence</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>This is used to store MM Custom Action Types</td></row>
-		<row><td>AdminExecuteSequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td dt:dt="bin.base64" md5="ee654261ffce9c7f08d4789d0f5b202c">
-QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAZQBxAHUAZQBuAGMAZQAuAA==
-			</td></row>
+		<row><td>AdminExecuteSequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Author’s comments on this Sequence.</td></row>
 		<row><td>AdminExecuteSequence</td><td>Sequence</td><td>Y</td><td>-4</td><td>32767</td><td/><td/><td/><td/><td>Number that determines the sort order in which the actions are to be executed.  Leave blank to suppress action.</td></row>
 		<row><td>AdminUISequence</td><td>Action</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Name of action to invoke, either in the engine or the handler DLL.</td></row>
 		<row><td>AdminUISequence</td><td>Condition</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Optional expression which skips the action if evaluates to expFalse.If the expression syntax is invalid, the engine will terminate, returning iesBadActionData.</td></row>
 		<row><td>AdminUISequence</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>This is used to store MM Custom Action Types</td></row>
-		<row><td>AdminUISequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td dt:dt="bin.base64" md5="ee654261ffce9c7f08d4789d0f5b202c">
-QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAZQBxAHUAZQBuAGMAZQAuAA==
-			</td></row>
+		<row><td>AdminUISequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Author’s comments on this Sequence.</td></row>
 		<row><td>AdminUISequence</td><td>Sequence</td><td>Y</td><td>-4</td><td>32767</td><td/><td/><td/><td/><td>Number that determines the sort order in which the actions are to be executed.  Leave blank to suppress action.</td></row>
 		<row><td>AdvtExecuteSequence</td><td>Action</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Name of action to invoke, either in the engine or the handler DLL.</td></row>
 		<row><td>AdvtExecuteSequence</td><td>Condition</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Optional expression which skips the action if evaluates to expFalse.If the expression syntax is invalid, the engine will terminate, returning iesBadActionData.</td></row>
 		<row><td>AdvtExecuteSequence</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>This is used to store MM Custom Action Types</td></row>
-		<row><td>AdvtExecuteSequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td dt:dt="bin.base64" md5="ee654261ffce9c7f08d4789d0f5b202c">
-QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAZQBxAHUAZQBuAGMAZQAuAA==
-			</td></row>
+		<row><td>AdvtExecuteSequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Author’s comments on this Sequence.</td></row>
 		<row><td>AdvtExecuteSequence</td><td>Sequence</td><td>Y</td><td>-4</td><td>32767</td><td/><td/><td/><td/><td>Number that determines the sort order in which the actions are to be executed.  Leave blank to suppress action.</td></row>
 		<row><td>AdvtUISequence</td><td>Action</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Name of action to invoke, either in the engine or the handler DLL.</td></row>
 		<row><td>AdvtUISequence</td><td>Condition</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Optional expression which skips the action if evaluates to expFalse.If the expression syntax is invalid, the engine will terminate, returning iesBadActionData.</td></row>
 		<row><td>AdvtUISequence</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>This is used to store MM Custom Action Types</td></row>
-		<row><td>AdvtUISequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td dt:dt="bin.base64" md5="ee654261ffce9c7f08d4789d0f5b202c">
-QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAZQBxAHUAZQBuAGMAZQAuAA==
-			</td></row>
+		<row><td>AdvtUISequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Author’s comments on this Sequence.</td></row>
 		<row><td>AdvtUISequence</td><td>Sequence</td><td>Y</td><td>-4</td><td>32767</td><td/><td/><td/><td/><td>Number that determines the sort order in which the actions are to be executed.  Leave blank to suppress action.</td></row>
 		<row><td>AppId</td><td>ActivateAtStorage</td><td>Y</td><td>0</td><td>1</td><td/><td/><td/><td/><td/></row>
 		<row><td>AppId</td><td>AppId</td><td>N</td><td/><td/><td/><td/><td>Guid</td><td/><td/></row>
@@ -3718,9 +3830,7 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAZQBxAHUA
 		<row><td>CreateFolder</td><td>Component_</td><td>N</td><td/><td/><td>Component</td><td>1</td><td>Identifier</td><td/><td>Foreign key into the Component table.</td></row>
 		<row><td>CreateFolder</td><td>Directory_</td><td>N</td><td/><td/><td>Directory</td><td>1</td><td>Identifier</td><td/><td>Primary key, could be foreign key into the Directory table.</td></row>
 		<row><td>CustomAction</td><td>Action</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Primary key, name of action, normally appears in sequence table unless private use.</td></row>
-		<row><td>CustomAction</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td dt:dt="bin.base64" md5="32618cf58258b38e853f7a99b6c3518e">
-QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAYwB1AHMAdABvAG0AIABhAGMAdABpAG8AbgAuAA==
-			</td></row>
+		<row><td>CustomAction</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Author’s comments for this custom action.</td></row>
 		<row><td>CustomAction</td><td>Source</td><td>Y</td><td/><td/><td/><td/><td>CustomSource</td><td/><td>The table reference of the source of the code.</td></row>
 		<row><td>CustomAction</td><td>Target</td><td>Y</td><td/><td/><td>ISDLLWrapper;ISInstallScriptAction</td><td>1</td><td>Formatted</td><td/><td>Excecution parameter, depends on the type of custom action</td></row>
 		<row><td>CustomAction</td><td>Type</td><td>N</td><td>1</td><td>32767</td><td/><td/><td/><td/><td>The numeric custom action type, consisting of source location, code type, entry, option flags.</td></row>
@@ -3731,9 +3841,7 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAYwB1AHMA
 		<row><td>Dialog</td><td>Dialog</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Name of the dialog.</td></row>
 		<row><td>Dialog</td><td>HCentering</td><td>N</td><td>0</td><td>100</td><td/><td/><td/><td/><td>Horizontal position of the dialog on a 0-100 scale. 0 means left end, 100 means right end of the screen, 50 center.</td></row>
 		<row><td>Dialog</td><td>Height</td><td>N</td><td>0</td><td>32767</td><td/><td/><td/><td/><td>Height of the bounding rectangle of the dialog.</td></row>
-		<row><td>Dialog</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td dt:dt="bin.base64" md5="99783de6d158fd3d49a9424b04aa1fc1">
-QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEAbABvAGcALgA=
-			</td></row>
+		<row><td>Dialog</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Author’s comments for this dialog.</td></row>
 		<row><td>Dialog</td><td>ISResourceId</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>A Number the Specifies the Dialog ID to be used in Dialog Export</td></row>
 		<row><td>Dialog</td><td>ISWindowStyle</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>A 32-bit word that specifies non-MSI window styles to be applied to this control. This is only used in Script Based Setups.</td></row>
 		<row><td>Dialog</td><td>TextStyle_</td><td>Y</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Foreign Key into TextStyle table, only used in Script Based Projects.</td></row>
@@ -3903,6 +4011,21 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>ISComponentExtended</td><td>Miscellaneous</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Miscellaneous</td></row>
 		<row><td>ISComponentExtended</td><td>OS</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>bitwise addition of OSs</td></row>
 		<row><td>ISComponentExtended</td><td>Platforms</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>bitwise addition of Platforms.</td></row>
+		<row><td>ISDIMDependency</td><td>ISDIMReference_</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>This is the primary key to the ISDIMDependency table</td></row>
+		<row><td>ISDIMDependency</td><td>RequiredBuildVersion</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>the build version identifying the required DIM</td></row>
+		<row><td>ISDIMDependency</td><td>RequiredMajorVersion</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>the major version identifying the required DIM</td></row>
+		<row><td>ISDIMDependency</td><td>RequiredMinorVersion</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>the minor version identifying the required DIM</td></row>
+		<row><td>ISDIMDependency</td><td>RequiredRevisionVersion</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>the revision version identifying the required DIM</td></row>
+		<row><td>ISDIMDependency</td><td>RequiredUUID</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>the UUID identifying the required DIM</td></row>
+		<row><td>ISDIMReference</td><td>ISBuildSourcePath</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Full path, the category is of Text instead of Path because of potential use of path variables.</td></row>
+		<row><td>ISDIMReference</td><td>ISDIMReference</td><td>N</td><td/><td/><td>ISDIMDependency</td><td>1</td><td>Identifier</td><td/><td>This is the primary key to the ISDIMReference table</td></row>
+		<row><td>ISDIMReferenceDependencies</td><td>ISDIMDependency_</td><td>N</td><td/><td/><td>ISDIMDependency</td><td>1</td><td>Identifier</td><td/><td>Foreign key into ISDIMDependency table.</td></row>
+		<row><td>ISDIMReferenceDependencies</td><td>ISDIMReference_Parent</td><td>N</td><td/><td/><td>ISDIMReference</td><td>1</td><td>Identifier</td><td/><td>Foreign key into ISDIMReference table.</td></row>
+		<row><td>ISDIMVariable</td><td>ISDIMReference_</td><td>N</td><td/><td/><td>ISDIMReference</td><td>1</td><td>Identifier</td><td/><td>Foreign key into ISDIMReference table.</td></row>
+		<row><td>ISDIMVariable</td><td>ISDIMVariable</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>This is the primary key to the ISDIMVariable table</td></row>
+		<row><td>ISDIMVariable</td><td>Name</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>Name of a variable defined in the .dim file</td></row>
+		<row><td>ISDIMVariable</td><td>NewValue</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>New value that you want to override with</td></row>
+		<row><td>ISDIMVariable</td><td>Type</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>Type of the variable. 0: Build Variable, 1: Runtime Variable</td></row>
 		<row><td>ISDLLWrapper</td><td>EntryPoint</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>This is a foreign key to the target column in the CustomAction table</td></row>
 		<row><td>ISDLLWrapper</td><td>Source</td><td>N</td><td/><td/><td/><td/><td>Formatted</td><td/><td>This is column points to the source file for the DLLWrapper Custom Action</td></row>
 		<row><td>ISDLLWrapper</td><td>Target</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>The function signature</td></row>
@@ -3932,6 +4055,8 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>ISDynamicFile</td><td>IncludeFiles</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Wildcards for included files.</td></row>
 		<row><td>ISDynamicFile</td><td>IncludeFlags</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>Include flags.</td></row>
 		<row><td>ISDynamicFile</td><td>SourceFolder</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>Full path, the category is of Text instead of Path because of potential use of path variables.</td></row>
+		<row><td>ISFeatureDIMReferences</td><td>Feature_</td><td>N</td><td/><td/><td>Feature</td><td>1</td><td>Identifier</td><td/><td>Foreign key into Feature table.</td></row>
+		<row><td>ISFeatureDIMReferences</td><td>ISDIMReference_</td><td>N</td><td/><td/><td>ISDIMReference</td><td>1</td><td>Identifier</td><td/><td>Foreign key into ISDIMReference table.</td></row>
 		<row><td>ISFeatureMergeModuleExcludes</td><td>Feature_</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Foreign key into Feature table.</td></row>
 		<row><td>ISFeatureMergeModuleExcludes</td><td>Language</td><td>N</td><td/><td/><td/><td/><td/><td/><td>Foreign key into ISMergeModule table.</td></row>
 		<row><td>ISFeatureMergeModuleExcludes</td><td>ModuleID</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Foreign key into ISMergeModule table.
@@ -3940,9 +4065,25 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>ISFeatureMergeModules</td><td>ISMergeModule_</td><td>N</td><td/><td/><td>ISMergeModule</td><td>1</td><td>Text</td><td/><td>Foreign key into ISMergeModule table.
 </td></row>
 		<row><td>ISFeatureMergeModules</td><td>Language_</td><td>N</td><td/><td/><td>ISMergeModule</td><td>2</td><td/><td/><td>Foreign key into ISMergeModule table.</td></row>
+		<row><td>ISFileManifests</td><td>File_</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Foreign key into File table.</td></row>
+		<row><td>ISFileManifests</td><td>Manifest_</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Foreign key into File table.</td></row>
+		<row><td>ISIISAppPool</td><td>AppPool</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISAppPool</td><td>Attributes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISAppPool</td><td>CPUMon</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISAppPool</td><td>Component_</td><td>N</td><td/><td/><td>Component</td><td>1</td><td>Text</td><td/><td>Foreign key into Component table</td></row>
+		<row><td>ISIISAppPool</td><td>IdleTimeout</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISAppPool</td><td>MaxProc</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISAppPool</td><td>Name</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>Localizable Display Name</td></row>
+		<row><td>ISIISAppPool</td><td>QueueLimit</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISAppPool</td><td>RecycleMinutes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISAppPool</td><td>RecycleRequests</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISAppPool</td><td>RecycleTimes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISAppPool</td><td>User</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISAppPool</td><td>UserPassword</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISIISCommon</td><td>AnonyPasswrd</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Password for anonymous access</td></row>
 		<row><td>ISIISCommon</td><td>AnonyUserName</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>User name for anonymous access</td></row>
 		<row><td>ISIISCommon</td><td>AppName</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>AppName of this VRoot</td></row>
+		<row><td>ISIISCommon</td><td>AppPool_</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Localizable Application Pool Name</td></row>
 		<row><td>ISIISCommon</td><td>Attributes</td><td>N</td><td/><td/><td/><td/><td>Number</td><td/><td>Attributes for this IIS node</td></row>
 		<row><td>ISIISCommon</td><td>CustomErrors</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Delimited list of custom errors</td></row>
 		<row><td>ISIISCommon</td><td>DefDoc</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Localizable Defeault Doc</td></row>
@@ -3960,6 +4101,12 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>ISIISMetaData</td><td>MetaDataUserType</td><td>N</td><td/><td/><td/><td/><td/><td/><td>This is the dwMDUserType item in the METADATA_RECORD structure</td></row>
 		<row><td>ISIISMetaData</td><td>MetaDataValue</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>This is the pbMDData  item in the METADATA_RECORD structure</td></row>
 		<row><td>ISIISMetaData</td><td>Order</td><td>N</td><td/><td/><td/><td/><td/><td/><td>Use this column to order the meta data properties.</td></row>
+		<row><td>ISIISWebServiceExtension</td><td>Attributes</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISWebServiceExtension</td><td>Component_</td><td>N</td><td/><td/><td>Component</td><td>1</td><td>Text</td><td/><td>Foreign key into Component table</td></row>
+		<row><td>ISIISWebServiceExtension</td><td>Description</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>Localizable Description</td></row>
+		<row><td>ISIISWebServiceExtension</td><td>File</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISWebServiceExtension</td><td>Group</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISIISWebServiceExtension</td><td>WebServiceExtension</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISInstallScriptAction</td><td>EntryPoint</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>This is a foreign key to the target column in the CustomAction table</td></row>
 		<row><td>ISInstallScriptAction</td><td>Source</td><td>N</td><td/><td/><td/><td/><td>Formatted</td><td/><td>This is column points to the source file for the DLLWrapper Custom Action</td></row>
 		<row><td>ISInstallScriptAction</td><td>Target</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>The function signature</td></row>
@@ -4121,6 +4268,10 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>ISRelease</td><td>Type</td><td>N</td><td>0</td><td>6</td><td/><td/><td/><td/><td>Release type (CDROM, Network, etc.).</td></row>
 		<row><td>ISRelease</td><td>URLLocation</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Media location via URL.</td></row>
 		<row><td>ISRelease</td><td>VersionCopyright</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Version stamp information.</td></row>
+		<row><td>ISReleaseASPublishInfo</td><td>ISProductConfiguration_</td><td>N</td><td/><td/><td>ISProductConfiguration</td><td>1</td><td>Text</td><td/><td>Foreign key into the ISProductConfiguration table.</td></row>
+		<row><td>ISReleaseASPublishInfo</td><td>ISRelease_</td><td>N</td><td/><td/><td>ISRelease</td><td>1</td><td>Text</td><td/><td>Foreign key into the ISRelease table.</td></row>
+		<row><td>ISReleaseASPublishInfo</td><td>Property</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>AS Repository property name</td></row>
+		<row><td>ISReleaseASPublishInfo</td><td>Value</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>AS Repository property value</td></row>
 		<row><td>ISReleaseExtended</td><td>Attributes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>Bitfield holding boolean values for various release attributes.</td></row>
 		<row><td>ISReleaseExtended</td><td>CertPassword</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Digital certificate password</td></row>
 		<row><td>ISReleaseExtended</td><td>DigitalCertificateDBaseNS</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Path to cerificate database for Netscape digital  signature</td></row>
@@ -4132,7 +4283,7 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>ISReleaseExtended</td><td>DotNetLangaugePacks</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>.NET Redist language packs to include</td></row>
 		<row><td>ISReleaseExtended</td><td>DotNetRedistLocation</td><td>Y</td><td>0</td><td>3</td><td/><td/><td/><td/><td>Location of .NET framework Redist (Web, SetupExe, Source, None)</td></row>
 		<row><td>ISReleaseExtended</td><td>DotNetRedistURL</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>URL to .NET framework Redist</td></row>
-		<row><td>ISReleaseExtended</td><td>DotNetVersion</td><td>Y</td><td>0</td><td>1</td><td/><td/><td/><td/><td>Version of .NET framework Redist (1.0, 1.1)</td></row>
+		<row><td>ISReleaseExtended</td><td>DotNetVersion</td><td>Y</td><td>0</td><td>2</td><td/><td/><td/><td/><td>Version of .NET framework Redist (1.0, 1.1)</td></row>
 		<row><td>ISReleaseExtended</td><td>EngineLocation</td><td>Y</td><td>0</td><td>2</td><td/><td/><td/><td/><td>Location of msi engine (Web, SetupExe...)</td></row>
 		<row><td>ISReleaseExtended</td><td>ISEngineLocation</td><td>Y</td><td>0</td><td>2</td><td/><td/><td/><td/><td>Location of ISScript  engine (Web, SetupExe...)</td></row>
 		<row><td>ISReleaseExtended</td><td>ISEngineURL</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>URL to InstallShield scripting engine</td></row>
@@ -4160,6 +4311,7 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>ISReleasePublishInfo</td><td>Repository</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Repository which to  publish the built merge module</td></row>
 		<row><td>ISSQLConnection</td><td>Attributes</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLConnection</td><td>Authentication</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISSQLConnection</td><td>BatchSeparator</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLConnection</td><td>CmdTimeout</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLConnection</td><td>Comments</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLConnection</td><td>Database</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
@@ -4183,14 +4335,20 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>ISSQLDBMetaData</td><td>AdoCxnUserID</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLDBMetaData</td><td>AdoCxnWindowsSecurity</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLDBMetaData</td><td>AdoDriverName</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISSQLDBMetaData</td><td>CreateDbCmd</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLDBMetaData</td><td>DisplayName</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISSQLDBMetaData</td><td>DsnODBCName</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISSQLDBMetaData</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLDBMetaData</td><td>ISSQLDBMetaData</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLDBMetaData</td><td>LocalInstanceNames</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISSQLDBMetaData</td><td>SwitchDbCmd</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLDBMetaData</td><td>TestDatabaseCmd</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLDBMetaData</td><td>TestTableCmd</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISSQLDBMetaData</td><td>TestTableCmd2</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLDBMetaData</td><td>VersionBeginToken</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLDBMetaData</td><td>VersionEndToken</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLDBMetaData</td><td>VersionInfoCmd</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISSQLDBMetaData</td><td>WinAuthentUserId</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLRequirement</td><td>Attributes</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSQLRequirement</td><td>ISSQLConnectionDBServer_</td><td>Y</td><td/><td/><td>ISSQLConnectionDBServer</td><td>1</td><td/><td/><td/></row>
 		<row><td>ISSQLRequirement</td><td>ISSQLConnection_</td><td>N</td><td/><td/><td>ISSQLConnection</td><td>1</td><td/><td/><td/></row>
@@ -4241,6 +4399,13 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>ISSetupPrerequisites</td><td>ISBuildSourcePath</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSetupPrerequisites</td><td>ISSetupPrerequisites</td><td>N</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>ISSetupPrerequisites</td><td>Order</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
+		<row><td>ISSetupType</td><td>Comments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>User Comments.</td></row>
+		<row><td>ISSetupType</td><td>Description</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Longer descriptive text describing a visible feature item.</td></row>
+		<row><td>ISSetupType</td><td>Display</td><td>N</td><td>0</td><td>32767</td><td/><td/><td/><td/><td>Numeric sort order, used to force a specific display ordering.</td></row>
+		<row><td>ISSetupType</td><td>Display_Name</td><td>Y</td><td/><td/><td/><td/><td>Formatted</td><td/><td>A string used to set the initial text contained within a control (if appropriate).</td></row>
+		<row><td>ISSetupType</td><td>ISSetupType</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Primary key used to identify a particular feature record.</td></row>
+		<row><td>ISSetupTypeFeatures</td><td>Feature_</td><td>N</td><td/><td/><td>Feature</td><td>1</td><td>Identifier</td><td/><td>Foreign key into Feature table.</td></row>
+		<row><td>ISSetupTypeFeatures</td><td>ISSetupType_</td><td>N</td><td/><td/><td>ISSetupType</td><td>1</td><td>Identifier</td><td/><td>Foreign key into ISSetupType table.</td></row>
 		<row><td>ISStorages</td><td>ISBuildSourcePath</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>Path to the file to stream into sub-storage</td></row>
 		<row><td>ISStorages</td><td>Name</td><td>N</td><td/><td/><td/><td/><td/><td/><td>Name of the sub-storage key</td></row>
 		<row><td>ISString</td><td>Comment</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Comment</td></row>
@@ -4301,6 +4466,7 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>ISXmlFile</td><td>FileName</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>Localized XML file name</td></row>
 		<row><td>ISXmlFile</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td>Number</td><td/><td>Internal XML file attributes</td></row>
 		<row><td>ISXmlFile</td><td>ISXmlFile</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Primary key, non-localized,internal token for Xml file</td></row>
+		<row><td>ISXmlFile</td><td>SelectionNamespaces</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Selection namespaces</td></row>
 		<row><td>ISXmlLocator</td><td>Attribute</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>The name of an attribute within the XML element.</td></row>
 		<row><td>ISXmlLocator</td><td>Element</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>XPath query that will locate an element in an XML file.</td></row>
 		<row><td>ISXmlLocator</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td/><td>0;1;2</td><td/></row>
@@ -4327,18 +4493,14 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAZgBvAHIAIAB0AGgAaQBzACAAZABpAGEA
 		<row><td>InstallExecuteSequence</td><td>Action</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Name of action to invoke, either in the engine or the handler DLL.</td></row>
 		<row><td>InstallExecuteSequence</td><td>Condition</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Optional expression which skips the action if evaluates to expFalse.If the expression syntax is invalid, the engine will terminate, returning iesBadActionData.</td></row>
 		<row><td>InstallExecuteSequence</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>This is used to store MM Custom Action Types</td></row>
-		<row><td>InstallExecuteSequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td dt:dt="bin.base64" md5="ee654261ffce9c7f08d4789d0f5b202c">
-QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAZQBxAHUAZQBuAGMAZQAuAA==
-			</td></row>
+		<row><td>InstallExecuteSequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Author’s comments on this Sequence.</td></row>
 		<row><td>InstallExecuteSequence</td><td>Sequence</td><td>Y</td><td>-4</td><td>32767</td><td/><td/><td/><td/><td>Number that determines the sort order in which the actions are to be executed.  Leave blank to suppress action.</td></row>
 		<row><td>InstallShield</td><td>Property</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Name of property, uppercase if settable by launcher or loader.</td></row>
 		<row><td>InstallShield</td><td>Value</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>String value for property.</td></row>
 		<row><td>InstallUISequence</td><td>Action</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Name of action to invoke, either in the engine or the handler DLL.</td></row>
 		<row><td>InstallUISequence</td><td>Condition</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Optional expression which skips the action if evaluates to expFalse.If the expression syntax is invalid, the engine will terminate, returning iesBadActionData.</td></row>
 		<row><td>InstallUISequence</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>This is used to store MM Custom Action Types</td></row>
-		<row><td>InstallUISequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td dt:dt="bin.base64" md5="ee654261ffce9c7f08d4789d0f5b202c">
-QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAZQBxAHUAZQBuAGMAZQAuAA==
-			</td></row>
+		<row><td>InstallUISequence</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Author’s comments on this Sequence.</td></row>
 		<row><td>InstallUISequence</td><td>Sequence</td><td>Y</td><td>-4</td><td>32767</td><td/><td/><td/><td/><td>Number that determines the sort order in which the actions are to be executed.  Leave blank to suppress action.</td></row>
 		<row><td>IsolatedComponent</td><td>Component_Application</td><td>N</td><td/><td/><td>Component</td><td>1</td><td>Identifier</td><td/><td>Key to Component table item for application</td></row>
 		<row><td>IsolatedComponent</td><td>Component_Shared</td><td>N</td><td/><td/><td>Component</td><td>1</td><td>Identifier</td><td/><td>Key to Component table item to be isolated</td></row>
@@ -4388,7 +4550,7 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAZQBxAHUA
 		<row><td>MsiDigitalSignature</td><td>Hash</td><td>Y</td><td/><td/><td/><td/><td>Binary</td><td/><td>The encoded hash blob from the digital signature</td></row>
 		<row><td>MsiDigitalSignature</td><td>SignObject</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>Foreign key to Media table</td></row>
 		<row><td>MsiDigitalSignature</td><td>Table</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Reference to another table name (only Media table is supported)</td></row>
-		<row><td>MsiDriverPackages</td><td>Component</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Primary key used to identify a particular component record.</td></row>
+		<row><td>MsiDriverPackages</td><td>Component</td><td>N</td><td/><td/><td>Component</td><td>1</td><td>Identifier</td><td/><td>Primary key used to identify a particular component record.</td></row>
 		<row><td>MsiDriverPackages</td><td>Flags</td><td>N</td><td/><td/><td/><td/><td/><td/><td>Driver package flags</td></row>
 		<row><td>MsiDriverPackages</td><td>ReferenceComponents</td><td>Y</td><td/><td/><td/><td/><td/><td/><td/></row>
 		<row><td>MsiDriverPackages</td><td>Sequence</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>Installation sequence number</td></row>
@@ -4479,7 +4641,7 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAZQBxAHUA
 		<row><td>Registry</td><td>Name</td><td>Y</td><td/><td/><td/><td/><td>Formatted</td><td/><td>The registry value name.</td></row>
 		<row><td>Registry</td><td>Registry</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Primary key, non-localized token.</td></row>
 		<row><td>Registry</td><td>Root</td><td>N</td><td>-1</td><td>3</td><td/><td/><td/><td/><td>The predefined root key for the registry value, one of rrkEnum.</td></row>
-		<row><td>Registry</td><td>Value</td><td>Y</td><td/><td/><td/><td/><td>Formatted</td><td/><td>The registry value.</td></row>
+		<row><td>Registry</td><td>Value</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>The registry value.</td></row>
 		<row><td>RemoveFile</td><td>Component_</td><td>N</td><td/><td/><td>Component</td><td>1</td><td>Identifier</td><td/><td>Foreign key referencing Component that controls the file to be removed.</td></row>
 		<row><td>RemoveFile</td><td>DirProperty</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Name of a property whose value is assumed to resolve to the full pathname to the folder of the file to be removed.</td></row>
 		<row><td>RemoveFile</td><td>FileKey</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Primary key used to identify a particular file entry</td></row>
@@ -4533,9 +4695,7 @@ QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAZQBxAHUA
 		<row><td>Shortcut</td><td>Directory_</td><td>N</td><td/><td/><td>Directory</td><td>1</td><td>Identifier</td><td/><td>Foreign key into the Directory table denoting the directory where the shortcut file is created.</td></row>
 		<row><td>Shortcut</td><td>Hotkey</td><td>Y</td><td>0</td><td>32767</td><td/><td/><td/><td/><td>The hotkey for the shortcut. It has the virtual-key code for the key in the low-order byte, and the modifier flags in the high-order byte. </td></row>
 		<row><td>Shortcut</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td/><td/><td>This is used to store Installshield custom properties of a shortcut.  Mainly used in pro project types.</td></row>
-		<row><td>Shortcut</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td dt:dt="bin.base64" md5="cb9acc27950b903a6080754a56990866">
-QQB1AHQAaABvAHIAGSBzACAAYwBvAG0AbQBlAG4AdABzACAAbwBuACAAdABoAGkAcwAgAFMAaABvAHIAdABjAHUAdAAuAA==
-			</td></row>
+		<row><td>Shortcut</td><td>ISComments</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Author’s comments on this Shortcut.</td></row>
 		<row><td>Shortcut</td><td>ISShortcutName</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>A non-unique name for the shortcut.  Mainly used by pro pro project types.</td></row>
 		<row><td>Shortcut</td><td>IconIndex</td><td>Y</td><td>-32767</td><td>32767</td><td/><td/><td/><td/><td>The icon index for the shortcut.</td></row>
 		<row><td>Shortcut</td><td>Icon_</td><td>Y</td><td/><td/><td>Icon</td><td>1</td><td>Identifier</td><td/><td>Foreign key into the File table denoting the external icon file for the shortcut.</td></row>
