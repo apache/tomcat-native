@@ -55,7 +55,7 @@
 		<subject>##ID_STRING5##</subject>
 		<author>##COMPANY_NAME##</author>
 		<keywords>Installer,MSI,Database</keywords>
-		<comments>Contact:  Your local administrator</comments>
+		<comments>##ID_STRING6##</comments>
 		<template>Intel;1033</template>
 		<lastauthor>Administrator</lastauthor>
 		<revnumber>{C3AC9A0C-8E2C-4998-8FD3-894123CF9D37}</revnumber>
@@ -1129,7 +1129,7 @@
 		<row><td>ISMyProductDir</td><td>ISMyCompanyDir</td><td>MYPROD~1|My Product Name</td><td/><td>0</td><td/></row>
 		<row><td>ISUpdateServiceFolder</td><td>ISCommonFilesFolder</td><td>UPDATE~1|UpdateService</td><td/><td>0</td><td/></row>
 		<row><td>ISYourDataBaseDir</td><td>INSTALLDIR</td><td>Database</td><td/><td>0</td><td/></row>
-		<row><td>JAKARTA_ISAPI_REDIRECTOR</td><td>APACHE_SOFTWARE_FOUNDATION</td><td>JAKART~1|Jakarta Isapi Redirector</td><td/><td>0</td><td/></row>
+		<row><td>JAKARTA_ISAPI_REDIRECTOR</td><td>APACHE_SOFTWARE_FOUNDATION</td><td>JAKART~1|Tomcat Isapi Redirector</td><td/><td>0</td><td/></row>
 		<row><td>JAKARTA_ISAPU_REDIRECTOR</td><td>APACHE_SOFTWARE_FOUNDATION</td><td>JAKART~1|Jakarta Isapu Redirector</td><td/><td>0</td><td/></row>
 		<row><td>JBOSS_EUROPE_SARL</td><td>ProgramFilesFolder</td><td>JBOSSE~1|JBoss Europe SaRL</td><td/><td>0</td><td/></row>
 		<row><td>LOG</td><td>INSTALLDIR</td><td>log</td><td/><td>0</td><td/></row>
@@ -2879,7 +2879,8 @@
 		<row><td>ID_STRING2</td><td>1033</td><td>DisplayName1</td><td>0</td><td/><td>2115549418</td></row>
 		<row><td>ID_STRING3</td><td>1033</td><td>jakarta</td><td>0</td><td/><td>2115510538</td></row>
 		<row><td>ID_STRING4</td><td>1033</td><td>CoreFiles</td><td>0</td><td/><td>2115544011</td></row>
-		<row><td>ID_STRING5</td><td>1033</td><td>Tomcat Isapi Redirector</td><td>0</td><td/><td>161172904</td></row>
+		<row><td>ID_STRING5</td><td>1033</td><td>Tomcat Isapi Redirector</td><td>0</td><td/><td>161207880</td></row>
+		<row><td>ID_STRING6</td><td>1033</td><td>See http://tomcat.apache.org/connectors-doc/</td><td>0</td><td/><td>161197672</td></row>
 		<row><td>IIDS_UITEXT_FeatureUninstalled</td><td>1033</td><td>This feature will remain uninstalled.</td><td>0</td><td/><td>-1256677244</td></row>
 	</table>
 
@@ -3092,8 +3093,8 @@
 		<col def="S0">Value</col>
 		<row><td>ActiveLanguage</td><td>1033</td></row>
 		<row><td>Comments</td><td/></row>
-		<row><td>CurrentMedia</td><td dt:dt="bin.base64" md5="fc57cd997448222cf865e8f31ac4d902">
-QgBpAG4AAQBSAGUAbABlAGEAcwBlAA==
+		<row><td>CurrentMedia</td><td dt:dt="bin.base64" md5="ad56c01706a65016783625b2b7eb1639">
+TQBzAGkAAQBSAGUAbABlAGEAcwBlAA==
 			</td></row>
 		<row><td>ISCompilerOption_CompileBeforeBuild</td><td>1</td></row>
 		<row><td>ISCompilerOption_Debug</td><td>0</td></row>
@@ -3407,7 +3408,7 @@ QgBpAG4AAQBSAGUAbABlAGEAcwBlAA==
 		<row><td>ProductCode</td><td>{8B799ADD-7E5C-41B9-936B-942F3CAE42A0}</td><td/></row>
 		<row><td>ProductID</td><td>none</td><td/></row>
 		<row><td>ProductLanguage</td><td>1033</td><td/></row>
-		<row><td>ProductName</td><td>Jakarta Isapi Redirector</td><td/></row>
+		<row><td>ProductName</td><td>Tomcat Isapi Redirector</td><td/></row>
 		<row><td>ProductVersion</td><td>1.2.21</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
