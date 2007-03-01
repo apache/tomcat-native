@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="20070301.html">
+ 
+  &project;
+ 
+  <properties>
+    <author email="general.AT.tomcat.DOT.apache.DOT.org">Apache Tomcat Connectors Project</author>
+    <title>2007 News and Status</title>
+  </properties>
+
+<body>
+
+<section name="2007 News &amp; Status">
+<br />
+<a name="20070301.1"> 
+<h3>1 March - JK-1.2.21 released</h3>
+<p>The Apache Tomcat team is proud to announce the immediate availability
+of Tomcat Connectors 1.2.21. This is a stable release adding new features
+and a few bug fixes to version 1.2.20.
+</p>
+<p>
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+<p>If you find any bugs while using this release, please fill in the
+<a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
+Bug Report. When entering bug select <b>Native:JK</b> Component.
+</p>
+</a>
+<hr size="1" noshade="noshade" />
+
+</section>
+</body>
+</document>  
