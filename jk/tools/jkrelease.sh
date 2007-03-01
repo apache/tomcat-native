@@ -175,7 +175,8 @@ then
 fi
 
 # Export text docs
-${TOOL} ../docs/news/printer/20060101.html >NEWS
+${TOOL} ../docs/news/printer/20070301.html >NEWS
+${TOOL} ../docs/news/printer/20060101.html >>NEWS
 ${TOOL} ../docs/news/printer/20050101.html >>NEWS
 ${TOOL} ../docs/news/printer/20041100.html >>NEWS
 
