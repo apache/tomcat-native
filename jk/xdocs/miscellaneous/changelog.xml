@@ -29,6 +29,17 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        <a href="http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2007-0774"><b>CVE-2007-0774</b></a>
+        : Fix a buffer overflow in map_uri_to_worker().
+        URL longer that 4095 were crashing mod_jk.
+        This could have allow different kind of attacks. Reported by ZDI.
+        Please note this issue only affected versions 1.2.19 and 1.2.20 of the
+        Apache Tomcat JK Web Server Connector and not previous versions.
+        Tomcat 5.5.20 and Tomcat 4.1.34
+        included a vulnerable version in their source packages.
+        Other versions of Tomcat were not affected.
+      </fix>
       <add>
       Check the worker. parameters and don't start if the parameter is not a valid one. (jfclere)
       </add>
