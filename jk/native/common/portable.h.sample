@@ -93,4 +93,4 @@
 #define USE_SO_SNDTIMEO 1
 
 /* Version number of package */
-#define VERSION "1.2.21"
+#define VERSION "1.2.22"
