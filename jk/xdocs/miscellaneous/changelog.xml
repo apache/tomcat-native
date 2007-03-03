@@ -22,18 +22,15 @@
   new documentation project for JK was started.
   </p>
 </section>
-<section name="Changes between 1.2.21 and 1.2.22">
-  <br />
-</section>
 <section name="Changes between 1.2.20 and 1.2.21">
   <br />
   <subsection name="Native">
     <changelog>
       <fix>
         <a href="http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2007-0774"><b>CVE-2007-0774</b></a>
-        : Fix a buffer overflow in map_uri_to_worker().
-        URL longer that 4095 were crashing mod_jk.
-        This could have allow different kind of attacks. Reported by ZDI.
+        : A denial of service and critical remote code execution vulnerability.
+        Caused by buffer overflow in map_uri_to_worker() when URL were longer that 4095 bytes.
+        Reported by ZDI (www.zerodayintiative.com).
         Please note this issue only affected versions 1.2.19 and 1.2.20 of the
         Apache Tomcat JK Web Server Connector and not previous versions.
         Tomcat 5.5.20 and Tomcat 4.1.34
