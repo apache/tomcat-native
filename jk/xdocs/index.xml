@@ -33,6 +33,28 @@ manual is described in more detail below.</p>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Tomcat Connectors 1.2.21 Stable.
 </p>
+<p>This version addresses the security flaw:
+<br />
+<a href="http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2007-0774"><b>CVE-2007-0774</b></a>
+A Long URL Stack Overflow Vulnerability exists in the URI handler for the mod_jk library.
+When parsing a long URL request, the URI worker map routine performs an
+unsafe memory copy. This results in a stack overflow condition which can
+be leveraged execute arbitrary code.
+</p><p>
+Please note this issue only affected versions 1.2.19 and 1.2.20 of the
+JK Apache Tomcat Connector and not previous versions.
+Tomcat 5.5.20 and Tomcat 4.1.34
+included a vulnerable version in their source packages.
+<strong>No </strong>other source code releases <strong> and no binary packages</strong>
+of Tomcat were affected.
+</p><p>
+The Apache Tomcat project recommends that all users who have built mod_jk from source apply the patch or upgrade to the latest level and rebuild. Providers of mod_jk-based modules in pre-compiled form will be able to determine if this vulnerability applies to their builds. That determination has no bearing on any other builds of mod_jk, and mod_jk users are urged to exercise caution and apply patches or upgrade unless they have specific instructions from the provider of their module.
+</p><p>
+The Tomcat Project thanks an anonymous researcher working with 
+TippingPoint (www.tippingpoint.com) and the Zero Day Initiative 
+(www.zerodayintiative.com) for their responsible reporting of this 
+vulnerability.
+</p>
 <p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.21/tomcat-connectors-1.2.21-src.tar.gz">JK 1.2.21 release sources</a>
  | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.21/tomcat-connectors-1.2.21-src.tar.gz.asc">PGP signature</a>
 </p>
@@ -193,11 +215,11 @@ This page contains information, on some tool scripts contained in the Jk distrib
 </p>
 
 <ul>
-<li><a href="news/2006"><b>2006</b></a>
+<li><a href="news/20060101.html"><b>2006</b></a>
 </li>
-<li><a href="news/2006"><b>2005</b></a>
+<li><a href="news/20050101.html"><b>2005</b></a>
 </li>
-<li><a href="news/2006"><b>2004</b></a>
+<li><a href="news/20041100.html"><b>2004</b></a>
 </li>
 
 </ul>
