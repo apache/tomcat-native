@@ -23,6 +23,7 @@
 -->
 <a name="20051108.1"> 
 <h3>8 November - JK-1.2.15 released</h3>
+</a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.15. This is Stable release and it contains
 few bug fixes found in 1.2.14 version.
@@ -34,11 +35,11 @@ few bug fixes found in 1.2.14 version.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a>
 <hr size="1" noshade="noshade" />
 
 <a name="20050713.1"> 
 <h3>13 July - JK-1.2.14 released</h3>
+</a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.14. This is Stable release and it contains
 few bug fixes found in 1.2.13 version.
@@ -50,10 +51,10 @@ few bug fixes found in 1.2.13 version.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a>
 <hr size="1" noshade="noshade" />
 <a name="20050516.1"> 
 <h3>7 May - JK-1.2.13 released</h3>
+</a>
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.13. This is development release and contains
 few bug fixes found in 1.2.12 version.
@@ -65,10 +66,10 @@ few bug fixes found in 1.2.12 version.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a>
 <hr size="1" noshade="noshade" />
 <a name="20050507.1"> 
 <h3>7 May - JK-1.2.12 released</h3>
+</a> 
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.12 The release contains a significant number
 of bug fixes and new features. 
@@ -84,10 +85,10 @@ in the next week.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a> 
 <hr size="1" noshade="noshade" />
 <a name="20050429.1"> 
 <h3>29 April - JK-1.2.11 released</h3>
+</a> 
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.11 The release contains a significant number
 of bug fixes and new features. 
@@ -102,10 +103,10 @@ This version has not been released.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a> 
 <hr size="1" noshade="noshade" />
 <a name="20050330.1"> 
 <h3>30 March - JK-1.2.10 released</h3>
+</a> 
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.10 The release contains a significant number
 of bug fixes and new features. 
@@ -126,10 +127,10 @@ Load balancer will not work properly if this directive is not present.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a> 
 <hr size="1" noshade="noshade" />
 <a name="20050318.1"> 
 <h3>18 March - JK-1.2.9-beta released</h3>
+</a> 
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.9-beta. The release contains a significant number
 of bug fixes and new features. 
@@ -150,7 +151,6 @@ Load balancer will not work properly if this directive is not present.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a> 
 <hr size="1" noshade="noshade" />
 
 </section>

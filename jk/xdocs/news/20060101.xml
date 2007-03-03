@@ -17,6 +17,7 @@
 <br />
 <a name="20061210.1"> 
 <h3>10 December - JK-1.2.20 released</h3>
+</a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Tomcat Connectors 1.2.20. This is a stable release adding new features
 and a few bug fixes to version 1.2.19.
@@ -29,11 +30,11 @@ Furthermore the documentation has been reorganised.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a>
 <hr size="1" noshade="noshade" />
 
 <a name="20060917.1"> 
 <h3>17 September - JK-1.2.19 released</h3>
+</a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Tomcat Connectors 1.2.19. This is a stable release adding some features
 and a few bug fixes to version 1.2.18.
@@ -46,11 +47,11 @@ Furthermore the non-functional code trees for isapi and domino have been removed
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a>
 <hr size="1" noshade="noshade" />
 
 <a name="20060720.1"> 
 <h3>13 July - JK-1.2.18 released</h3>
+</a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Tomcat Connectors 1.2.18. This is a stable release adding
 a few bug fixes to the not released 1.2.17 version.
@@ -62,22 +63,22 @@ a few bug fixes to the not released 1.2.17 version.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a>
 <hr size="1" noshade="noshade" />
 
 <a name="20060708.1"> 
 <h3>JK-1.2.17 not released</h3>
+</a>
 <p>Version 1.2.17 of Tomcat Connectors 1.2.17 has not been released 
 due to a bug in the types chosen for socket arguments.
 </p>
 <p>
  Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
-</a>
 <hr size="1" noshade="noshade" />
 
 <a name="20060606.1"> 
 <h3>JK-1.2.16 not released</h3>
+</a>
 <p>Version 1.2.16 of Tomcat Connectors 1.2.16 has not been released 
 due to a bug in the jk status worker. This version adds some features
 and a few bug fixes to the 1.2.15 version. Furthermore some worker attributes
@@ -86,7 +87,6 @@ have been <a href="../reference/workers.html">deprecated</a>.
 <p>
  Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
-</a>
 <hr size="1" noshade="noshade" />
 
 </section>

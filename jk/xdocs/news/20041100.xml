@@ -23,6 +23,7 @@
 -->
 <a name="20041224.1"> 
 <h3>17 December - JK-1.2.8 released</h3>
+</a> 
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.8.
 </p>
@@ -33,10 +34,10 @@ of Jakarta Tomcat Connectors 1.2.8.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a> 
 <hr size="1" noshade="noshade" />
 <a name="20041218.1"> 
 <h3>17 December - JK-1.2.8-rc-1 released</h3>
+</a> 
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.8-rc-1 (Relase Canditate 1).
 </p>
@@ -51,10 +52,10 @@ in the next week.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a> 
 <hr size="1" noshade="noshade" />
 <a name="20041213.1"> 
 <h3>13 December - JK-1.2.7-beta-3 released</h3>
+</a> 
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.7-beta-3. The release contains a fix to few configuration
 problems detected with JK-1.2.7-beta-2 version.
@@ -70,10 +71,10 @@ in the next week.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a> 
 <hr size="1" noshade="noshade" />
 <a name="20041207.1"> 
 <h3>7 December - JK-1.2.7-beta-2 released</h3>
+</a> 
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.7-beta-2. The release contains a fix to few compilation
 problems detected with JK-1.2.7-beta version. This release also introduces a new
@@ -90,11 +91,11 @@ in the next two weeks.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a> 
 <hr size="1" noshade="noshade" />
 
 <a name="20041130.1"> 
 <h3>30 November - JK-1.2.7-beta released</h3>
+</a> 
 <p>The Apache Jakarta Tomcat team is proud to announce the immediate availability
 of Jakarta Tomcat Connectors 1.2.7-beta. The release contains a significant number
 of bug fixes and new features. 
@@ -115,12 +116,12 @@ The socket_timeout now sets the real timeout for socket operations.
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a> 
 
 <hr size="1" noshade="noshade" />
 
 <a name="20041115.1"> 
 <h3>15 November - JK2 is officially unsupported</h3>
+</a> 
 <p>JK2 has been put in maintainer mode and no further development will take place.
 The reason for shutting down JK2 development was the lack of developers interest.
 Other reason was lack of users interest in adopting JK2, caused by configuration
@@ -137,7 +138,6 @@ for load balancing http and ajp protocol stacks.
 <p>JK will be fully supported for all other web servers. The next JK release is
 planned for the end of November. Lots of code from JK2 has been ported to JK
 </p>
-</a> 
 <hr size="1" noshade="noshade" />
 
 </section>

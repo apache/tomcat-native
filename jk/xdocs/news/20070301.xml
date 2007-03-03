@@ -17,18 +17,19 @@
 <br />
 <a name="20070301.1"> 
 <h3>1 March - JK-1.2.21 released</h3>
+</a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Tomcat Connectors 1.2.21. This is a stable release adding new features
 and a few bug fixes to version 1.2.20.
-</p>
-<p>
+</p><p>
+It fixes a <a href="../security-jk.html">Critical vulnerability</a> introduced in version 1.2.19
+</p><p>
  Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 <p>If you find any bugs while using this release, please fill in the
 <a href="http://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%205">Bugzilla</a>
 Bug Report. When entering bug select <b>Native:JK</b> Component.
 </p>
-</a>
 <hr size="1" noshade="noshade" />
 
 </section>
