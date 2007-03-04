@@ -19,7 +19,6 @@ had to be updated:
 xdocs/index.xml
 xdocs/news/<THISYEAR0101>.xml
 native/STATUS.txt
-tools/jkrelease.sh (check that all  ../docs/news/printer/*html are in the list).
 
 Update the JK_VERISRELEASE define in jk/native/common/jk_version.h, here is
 a svn diff that shows what I changed:

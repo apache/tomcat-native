@@ -160,6 +160,7 @@ do
         ;;
     esac
     rm -f CHANGES
+    echo "Creating the CHANGES file using '$TOOL' ..."
     ${TOOL} ../docs/miscellaneous/printer/changelog.html > CHANGES 2>/dev/null
     if [ -f CHANGES -a -s CHANGES ]
     then
@@ -175,10 +176,20 @@ then
 fi
 
 # Export text docs
-${TOOL} ../docs/news/printer/20070301.html >NEWS
-${TOOL} ../docs/news/printer/20060101.html >>NEWS
-${TOOL} ../docs/news/printer/20050101.html >>NEWS
-${TOOL} ../docs/news/printer/20041100.html >>NEWS
+echo "Creating the NEWS file using '$TOOL' ..."
+rm -f NEWS
+touch NEWS
+for news in `ls -r ../xdocs/news/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].xml`
+do
+  print=`echo $news | sed -e 's#xdocs/news#docs/news/printer#' -e 's#\.xml#.html#'`
+  echo "Adding $print to NEWS file ..."
+  ${TOOL} $print >>NEWS
+done
+if [ ! -s NEWS ]
+then
+  echo "Can't convert html to text (NEWS)"
+  exit 1
+fi
 
 # Generate configure et. al.
 ./buildconf.sh
