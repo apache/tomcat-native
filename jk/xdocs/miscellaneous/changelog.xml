@@ -22,6 +22,18 @@
   new documentation project for JK was started.
   </p>
 </section>
+<section name="Changes between 1.2.21 and 1.2.22">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <fix>
+        <bug>41770</bug>: Fix the second part of the bug: local_worker and local_worker_only
+        is missing from the list of deprecated attributes (and not supported either), so prevents
+        the web server from startup. (rjung)
+      </fix>
+    </changelog>
+  </subsection>
+</section>
 <section name="Changes between 1.2.20 and 1.2.21">
   <br />
   <subsection name="Native">

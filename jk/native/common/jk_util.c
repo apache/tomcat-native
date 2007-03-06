@@ -65,6 +65,8 @@
 #define BALANCE_WORKERS             ("balance_workers")
 #define STICKY_SESSION              ("sticky_session")
 #define STICKY_SESSION_FORCE        ("sticky_session_force")
+#define LOCAL_WORKER_DEPRECATED     ("local_worker")
+#define LOCAL_WORKER_ONLY_DEPRECATED ("local_worker_only")
 #define JVM_ROUTE_OF_WORKER_DEPRECATED ("jvm_route")
 #define ROUTE_OF_WORKER             ("route")
 #define DOMAIN_OF_WORKER            ("domain")
@@ -165,6 +167,8 @@ static const char *unique_properties[] = {
     LOAD_FACTOR_OF_WORKER,
     STICKY_SESSION,
     STICKY_SESSION_FORCE,
+    LOCAL_WORKER_DEPRECATED,
+    LOCAL_WORKER_ONLY_DEPRECATED,
     JVM_ROUTE_OF_WORKER_DEPRECATED,
     ROUTE_OF_WORKER,
     DOMAIN_OF_WORKER,
@@ -206,6 +210,8 @@ static const char *deprecated_properties[] = {
     RECYCLE_TIMEOUT_DEPRECATED,
     BALANCED_WORKERS_DEPRECATED,
     JVM_ROUTE_OF_WORKER_DEPRECATED,
+    LOCAL_WORKER_DEPRECATED,
+    LOCAL_WORKER_ONLY_DEPRECATED,
     IS_WORKER_DISABLED_DEPRECATED,
     IS_WORKER_STOPPED_DEPRECATED,
     NULL
@@ -246,6 +252,8 @@ static const char *supported_properties[] = {
     BALANCE_WORKERS,
     STICKY_SESSION,
     STICKY_SESSION_FORCE,
+    LOCAL_WORKER_DEPRECATED,
+    LOCAL_WORKER_ONLY_DEPRECATED,
     JVM_ROUTE_OF_WORKER_DEPRECATED,
     ROUTE_OF_WORKER,
     DOMAIN_OF_WORKER,
