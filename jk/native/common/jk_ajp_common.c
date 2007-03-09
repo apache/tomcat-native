@@ -1992,7 +1992,7 @@ int ajp_validate(jk_worker_t *pThis,
                 return JK_TRUE;
             }
             jk_log(l, JK_LOG_ERROR,
-                   "can't resolve tomcat address %s", host);
+                   "can't resolve tomcat address %s", p->host);
         }
         jk_log(l, JK_LOG_ERROR,
                "invalid host and port %s %d",
