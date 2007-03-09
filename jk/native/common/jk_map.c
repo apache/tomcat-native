@@ -352,8 +352,12 @@ int jk_map_read_property(jk_map_t *m, const char *str, int allow_duplicates, jk_
     char buf[LENGTH_OF_LINE + 1];
     char *prp = &buf[0];
 
-    if (strlen(str) > LENGTH_OF_LINE)
+    if (strlen(str) > LENGTH_OF_LINE) {
+        jk_log(l, JK_LOG_WARNING,
+               "Line to long (%d > %d), ignoring entry",
+               strlen(str), LENGTH_OF_LINE);
         return JK_FALSE;
+    }
 
     strcpy(prp, str);
     if (trim(prp)) {
@@ -415,6 +419,7 @@ int jk_map_read_property(jk_map_t *m, const char *str, int allow_duplicates, jk_
                     jk_map_put(m, prp, v, NULL);
                 }
                 else {
+                    JK_LOG_NULL_PARAMS(l);
                     rc = JK_FALSE;
                 }
             }
@@ -636,54 +641,66 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
 
     JK_TRACE_ENTER(l);
 
-    if (m && prefix && depth <= JK_MAP_RECURSION) {
-        size_t prelen = strlen(prefix);
-        unsigned int i;
-        rc = JK_TRUE;
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG,
-                   "Checking for references with prefix %s with%s wildcard (recursion %d)",
-                   prefix, wildcard? "" : "out", depth);
-        for (i = 0; i < m->size; i++) {
-            if (m->values[i] && !strncmp(m->names[i], prefix, prelen)) {
-                size_t remain = strlen(m->names[i]) - prelen;
-                if ((remain == JK_MAP_REFERENCE_SZ ) || (wildcard && remain > JK_MAP_REFERENCE_SZ)) {
-                    remain = strlen(m->names[i]) - JK_MAP_REFERENCE_SZ;
-                    if (!strncmp(m->names[i] + remain, JK_MAP_REFERENCE, JK_MAP_REFERENCE_SZ)) {
-                        char *from = jk_pool_alloc(&m->p,
-                                                   (sizeof(char) *
-                                                   (strlen(m->values[i]) + 2)));
-                        char *to = jk_pool_alloc(&m->p,
-                                                 (sizeof(char) *
-                                                 (remain + 2)));
-                        if (!from || !to) {
-                            rc = JK_FALSE;
-                            break;
+    if (m && prefix) {
+        if (depth <= JK_MAP_RECURSION) {
+            size_t prelen = strlen(prefix);
+            unsigned int i;
+            rc = JK_TRUE;
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Checking for references with prefix %s with%s wildcard (recursion %d)",
+                       prefix, wildcard? "" : "out", depth);
+            for (i = 0; i < m->size; i++) {
+                if (m->values[i] && !strncmp(m->names[i], prefix, prelen)) {
+                    size_t remain = strlen(m->names[i]) - prelen;
+                    if ((remain == JK_MAP_REFERENCE_SZ ) || (wildcard && remain > JK_MAP_REFERENCE_SZ)) {
+                        remain = strlen(m->names[i]) - JK_MAP_REFERENCE_SZ;
+                        if (!strncmp(m->names[i] + remain, JK_MAP_REFERENCE, JK_MAP_REFERENCE_SZ)) {
+                            char *from = jk_pool_alloc(&m->p,
+                                                       (sizeof(char) *
+                                                       (strlen(m->values[i]) + 2)));
+                            char *to = jk_pool_alloc(&m->p,
+                                                     (sizeof(char) *
+                                                     (remain + 2)));
+                            if (!from || !to) {
+                                jk_log(l, JK_LOG_ERROR,
+                                       "Error in string allocation");
+                                rc = JK_FALSE;
+                                break;
+                            }
+                            strcpy(from, m->values[i]);
+                            *(from+strlen(m->values[i]))   = '.';
+                            *(from+strlen(m->values[i])+1) = '\0';
+                            strncpy(to, m->names[i], remain);
+                            *(to+remain)   = '.';
+                            *(to+remain+1) = '\0';
+    
+                            rc = jk_map_resolve_references(m, m->values[i], 0, depth+1, l);
+                            if (rc == JK_FALSE) {
+                                break;
+                            }
+                            if (JK_IS_DEBUG_LEVEL(l))
+                                jk_log(l, JK_LOG_DEBUG,
+                                       "Copying values from %s to %s",
+                                       from, to);
+                            rc = jk_map_inherit_properties(m, from, to, l);
+                            if (rc == JK_FALSE) {
+                                break;
+                            }
+                            m->values[i] = NULL;
                         }
-                        strcpy(from, m->values[i]);
-                        *(from+strlen(m->values[i]))   = '.';
-                        *(from+strlen(m->values[i])+1) = '\0';
-                        strncpy(to, m->names[i], remain);
-                        *(to+remain)   = '.';
-                        *(to+remain+1) = '\0';
-
-                        rc = jk_map_resolve_references(m, m->values[i], 0, depth+1, l);
-                        if (rc == JK_FALSE) {
-                            break;
-                        }
-                        if (JK_IS_DEBUG_LEVEL(l))
-                            jk_log(l, JK_LOG_DEBUG,
-                                   "Copying values from %s to %s",
-                                   from, to);
-                        rc = jk_map_inherit_properties(m, from, to);
-                        if (rc == JK_FALSE) {
-                            break;
-                        }
-                        m->values[i] = NULL;
                     }
                 }
             }
         }
+        else {
+            jk_log(l, JK_LOG_ERROR,
+                   "Recursion limit %d for worker references with prefix '%s' reached",
+                   JK_MAP_RECURSION, prefix);
+        }
+    }
+    else {
+        JK_LOG_NULL_PARAMS(l);
     }
     JK_TRACE_EXIT(l);
     return rc;
@@ -693,21 +710,25 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
  *  Inherit properties
  *
  */
-int jk_map_inherit_properties(jk_map_t *m, const char *from, const char *to)
+int jk_map_inherit_properties(jk_map_t *m, const char *from, const char *to, jk_logger_t *l)
 {
     int rc = JK_FALSE;
 
     if (m && from && to) {
         unsigned int i;
-        rc = JK_TRUE;
         for (i = 0; i < m->size; i++) {
             if (!strncmp(m->names[i], from, strlen(from))) {
+                rc = JK_TRUE;
                 const char *prp = m->names[i] + strlen(from);
                 char *to_prp = jk_pool_alloc(&m->p,
                                              (sizeof(char) *
                                              (strlen(to) +
                                              strlen(prp) + 1)));
                 if (!to_prp) {
+                    jk_log(l, JK_LOG_ERROR,
+                           "Error in string allocation for attribute '%s.%s'",
+                           to, prp);
+                    rc = JK_FALSE;
                     break;
                 }
                 strcpy(to_prp, to);
@@ -715,11 +736,22 @@ int jk_map_inherit_properties(jk_map_t *m, const char *from, const char *to)
                 if (jk_map_get_id(m, to_prp) < 0 ) {
                     rc = jk_map_add(m, to_prp, m->values[i]);
                     if (rc == JK_FALSE) {
+                        jk_log(l, JK_LOG_ERROR,
+                               "Error when adding attribute '%s'",
+                               to_prp);
                         break;
                     }
                 }
             }
         }
+        if ( rc == JK_FALSE) {
+            jk_log(l, JK_LOG_ERROR,
+                   "Reference '%s' not found",
+                   from);
+        }
+    }
+    else {
+        JK_LOG_NULL_PARAMS(l);
     }
     return rc;
 }

@@ -80,7 +80,7 @@ char *jk_map_replace_properties(jk_map_t *m, const char *value);
 
 int jk_map_resolve_references(jk_map_t *m, const char *prefix, int wildcard, int depth, jk_logger_t *l);
 
-int jk_map_inherit_properties(jk_map_t *m, const char *from, const char *to);
+int jk_map_inherit_properties(jk_map_t *m, const char *from, const char *to, jk_logger_t *l);
 
 #ifdef __cplusplus
 }
