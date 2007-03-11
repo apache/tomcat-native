@@ -461,6 +461,9 @@ static void jk_error_exit(const char *file,
     va_end(ap);
 
     ap_log_error(file, line, level, s, res);
+    if ( s ) {
+        ap_log_error(file, line, level, NULL, res);
+    }
 
     /* Exit process */
     exit(1);
@@ -1744,7 +1747,7 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
- 
+
     if (jk_map_read_property(conf->worker_properties, line, 1, conf->log) == JK_FALSE)
         return ap_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line, NULL);
 
@@ -2349,7 +2352,7 @@ static void open_jk_log(server_rec *s, pool *p)
     if (!s->is_virtual && !conf->log_file) {
         conf->log_file = ap_server_root_relative(p, JK_LOG_DEF_FILE);
         if (conf->log_file)
-            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, s,
+            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_NOERRNO, s,
                          "No JkLogFile defined in httpd.conf. "
                          "Using default %s", conf->log_file);
     }
@@ -2498,7 +2501,7 @@ static void jk_init(server_rec * s, ap_pool * p)
 #endif
 
         if (jk_shm_file)
-            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, s,
+            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_NOERRNO, s,
                          "No JkShmFile defined in httpd.conf. "
                          "Using default %s", jk_shm_file);
     }

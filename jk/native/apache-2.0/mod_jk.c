@@ -500,6 +500,9 @@ static void jk_error_exit(const char *file,
     va_end(ap);
 
     ap_log_error(file, line, level, 0, s, res);
+    if ( s ) {
+        ap_log_error(file, line, level, 0, NULL, res);
+    }
 
     /* Exit process */
     exit(1);
@@ -2449,7 +2452,7 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
                 status = apr_file_write(p->jklogfp, what, &wrote);
                 if (status != APR_SUCCESS) {
                     apr_strerror(status, error, 254);
-                    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, NULL,
+                    ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
                                  "mod_jk: jk_log_to_file %s failed: %s",
                                  what, error);
                 }
@@ -2501,7 +2504,7 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
     if (conf->log_file == NULL) {
         conf->log_file = ap_server_root_relative(p, JK_LOG_DEF_FILE);
         if (conf->log_file)
-            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
                          "No JkLogFile defined in httpd.conf. "
                          "Using default %s", conf->log_file);
     }
@@ -2618,7 +2621,7 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     if (!jk_shm_file) {
         jk_shm_file = ap_server_root_relative(pconf, JK_SHM_DEF_FILE);
         if (jk_shm_file)
-            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
                          "No JkShmFile defined in httpd.conf. "
                          "Using default %s", jk_shm_file);
     }
@@ -2638,7 +2641,7 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
         ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0, NULL,
                      "No JkShmFile defined in httpd.conf. "
                      "LoadBalancer will not function properly!");
-        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, NULL,
                      "No JkShmFile defined in httpd.conf. "
                      "LoadBalancer will not function properly!");
     }
@@ -2657,17 +2660,17 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     /*     if(map_alloc(&init_map)) { */
     if (!jk_map_read_properties(init_map, conf->worker_file, NULL, 1, conf->log)) {
         if (jk_map_size(init_map) == 0) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0, s,
                          "No worker file and no worker options in httpd.conf"
                          "use JkWorkerFile to set workers");
         }
-        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
                      "Error in reading worker properties");
         return !OK;
     }
 
     if (jk_map_resolve_references(init_map, "worker.", 1, 1, conf->log) == JK_FALSE) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
                      "Error in resolving configuration references");
         return !OK;
     }
