@@ -2657,13 +2657,13 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
         }
         ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
                      "Error in reading worker properties");
-        return !OK;
+        return JK_FALSE;
     }
 
     if (jk_map_resolve_references(init_map, "worker.", 1, 1, conf->log) == JK_FALSE) {
         ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
                      "Error in resolving configuration references");
-        return !OK;
+        return JK_FALSE;
     }
 
     /* we add the URI->WORKER MAP since workers using AJP14
@@ -2683,9 +2683,9 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
         ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
                      "Error in creating the workers."
                      " Please consult your mod_jk log file '%s'.", conf->log_file);
-        return !OK;
+        return JK_FALSE;
     }
-    return OK;
+    return JK_TRUE;
 }
 
 static int jk_post_config(apr_pool_t * pconf,
@@ -2778,7 +2778,7 @@ static int jk_post_config(apr_pool_t * pconf,
                     }
                 }
             }
-            if (init_jk(pconf, conf, s))
+            if (init_jk(pconf, conf, s) == JK_FALSE)
                 return HTTP_INTERNAL_SERVER_ERROR;
         }
     }
