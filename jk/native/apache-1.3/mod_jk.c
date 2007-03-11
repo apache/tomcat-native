@@ -2534,15 +2534,11 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
 }
 */
 
-    if (!jk_map_read_properties(init_map, conf->worker_file, NULL, 1, conf->log)) {
-
-        if (jk_map_size(init_map) == 0) {
-            ap_log_error(APLOG_MARK, APLOG_EMERG, s,
-                         "No worker file and no worker options in httpd.conf "
-                         "use JkWorkerFile to set workers");
-        }
-        jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p, "Error in reading worker properties");
-
+    if ((conf->worker_file != NULL) &&
+        !jk_map_read_properties(init_map, conf->worker_file, NULL, 1, conf->log)) {
+        jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
+                      "Error in reading worker properties from '%s'",
+                      conf->worker_file);
     }
 
     if (jk_map_resolve_references(init_map, "worker.", 1, 1, conf->log) == JK_FALSE) {

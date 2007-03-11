@@ -2648,15 +2648,11 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
            "Setting default connection pool max size to %d", mpm_threads);
     jk_set_worker_def_cache_size(mpm_threads);
 
-    /*     if(map_alloc(&init_map)) { */
-    if (!jk_map_read_properties(init_map, conf->worker_file, NULL, 1, conf->log)) {
-        if (jk_map_size(init_map) == 0) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0, s,
-                         "No worker file and no worker options in httpd.conf"
-                         "use JkWorkerFile to set workers");
-        }
+    if ((conf->worker_file != NULL) &&
+        !jk_map_read_properties(init_map, conf->worker_file, NULL, 1, conf->log)) {
         ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
-                     "Error in reading worker properties");
+                     "Error in reading worker properties from '%s'",
+                     conf->worker_file);
         return JK_FALSE;
     }
 

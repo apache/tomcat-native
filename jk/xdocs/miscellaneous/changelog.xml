@@ -27,6 +27,19 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Delete unused check for empty init_map during startup. (rjung)
+      </update>
+      <fix>
+        <bug>41770</bug>: Fix startup error if no JkWorkersFile is used. (rjung)
+      </fix>
+      <update>
+      Use JK_TRUE/JK_FALSE instead of OK/!OK as return values in init_jk(). (rjung)
+      </update>
+      <update>
+      Minor adjustments to apache startup log messages (when to use STDERR, remove
+      deprecated NOERRNO flag, shm warning and warnings for usage of default files). (rjung)
+      </update>
+      <update>
       Replace APR precompiler directive by httpd mpm_query to detect MPM threading.
       Add an info log message about auto-detected pool size. (rjung)
       </update>
