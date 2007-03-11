@@ -26,6 +26,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Replace APR precompiler directive by httpd mpm_query to detect MPM threading.
+      Add an info log message about auto-detected pool size. (rjung)
+      </update>
       <fix>
         Make MMN check easier to understand and a little more precise
         (for new ap_get_server_banner()/ap_get_server_description()).

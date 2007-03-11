@@ -2612,6 +2612,7 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                     server_rec * s)
 {
     int rc;
+    int is_threaded;
     int mpm_threads = 1;
 
     /*     jk_map_t *init_map = NULL; */
@@ -2650,11 +2651,14 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     }
 #endif
 
-    /* Set default connection cache size for worker mpm */
-#if APR_HAS_THREADS
-    if (ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_threads) != APR_SUCCESS)
-        mpm_threads = 1;
-#endif
+    /* Set default connection cache size for multi-threaded MPMs */
+    if (ap_mpm_query(AP_MPMQ_IS_THREADED, &is_threaded) == APR_SUCCESS &&
+        is_threaded != AP_MPMQ_NOT_SUPPORTED) {
+        if (ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_threads) != APR_SUCCESS)
+            mpm_threads = 1;
+    }
+    jk_log(conf->log, JK_LOG_INFO,
+           "Setting default connection pool max size to %d", mpm_threads);
     jk_set_worker_def_cache_size(mpm_threads);
 
     /*     if(map_alloc(&init_map)) { */
