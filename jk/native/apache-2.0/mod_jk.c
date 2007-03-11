@@ -349,8 +349,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 #ifdef AS400
             int long rv = OK;
             if (rv = ap_change_request_body_xlate(p->r, 65535, 65535)) {        /* turn off request body translation */
-                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0,
-                             NULL,
+                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0, NULL,
                              "mod_jk: Error on ap_change_request_body_xlate, rc=%d",
                              rv);
                 return JK_FALSE;
@@ -430,8 +429,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned int l)
             /* turn off response body translation */
             rc = ap_change_response_body_xlate(p->r, 65535, 65535);
             if (rc) {
-                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0,
-                             NULL,
+                ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0, NULL,
                              "mod_jk: Error on ap_change_response_body_xlate, rc=%d",
                              rc);
                 return JK_FALSE;
@@ -2451,8 +2449,7 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
                 status = apr_file_write(p->jklogfp, what, &wrote);
                 if (status != APR_SUCCESS) {
                     apr_strerror(status, error, 254);
-                    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0,
-                                 NULL,
+                    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, NULL,
                                  "mod_jk: jk_log_to_file %s failed: %s",
                                  what, error);
                 }
@@ -2504,8 +2501,7 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
     if (conf->log_file == NULL) {
         conf->log_file = ap_server_root_relative(p, JK_LOG_DEF_FILE);
         if (conf->log_file)
-            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO,
-                         0, s,
+            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, s,
                          "No JkLogFile defined in httpd.conf. "
                          "Using default %s", conf->log_file);
     }
@@ -2622,8 +2618,7 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     if (!jk_shm_file) {
         jk_shm_file = ap_server_root_relative(pconf, JK_SHM_DEF_FILE);
         if (jk_shm_file)
-            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO,
-                         0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, NULL,
                          "No JkShmFile defined in httpd.conf. "
                          "Using default %s", jk_shm_file);
     }
@@ -2640,12 +2635,10 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                jk_shm_name(), rc);
 #if !defined(WIN32) && !defined(NETWARE)
     if (!jk_shm_file) {
-        ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT,
-                     0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0, NULL,
                      "No JkShmFile defined in httpd.conf. "
                      "LoadBalancer will not function properly!");
-        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO,
-                     0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL,
                      "No JkShmFile defined in httpd.conf. "
                      "LoadBalancer will not function properly!");
     }
@@ -2664,17 +2657,18 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     /*     if(map_alloc(&init_map)) { */
     if (!jk_map_read_properties(init_map, conf->worker_file, NULL, 1, conf->log)) {
         if (jk_map_size(init_map) == 0) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT,
-                         0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0, NULL,
                          "No worker file and no worker options in httpd.conf"
                          "use JkWorkerFile to set workers");
         }
-        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL, "Error in reading worker properties");
+        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL,
+                     "Error in reading worker properties");
         return !OK;
     }
 
     if (jk_map_resolve_references(init_map, "worker.", 1, 1, conf->log) == JK_FALSE) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL, "Error in resolving configuration references");
+        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, 0, NULL,
+                     "Error in resolving configuration references");
         return !OK;
     }
 
