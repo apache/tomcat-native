@@ -2513,14 +2513,9 @@ static void jk_init(server_rec * s, ap_pool * p)
                    jk_shm_name(), rc);
     }
     else
-        jk_log(conf->log, JK_LOG_ERROR, "Initializing shm:%s errno=%d",
+        jk_log(conf->log, JK_LOG_ERROR,
+               "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
                jk_shm_name(), rc);
-#if !defined(WIN32) && !defined(NETWARE)
-    if (!jk_shm_file)
-        ap_log_error(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s,
-                     "No JkShmFile defined in httpd.conf. "
-                     "LoadBalancer will not function properly!");
-#endif
 
     /* SREVILAK -- register cleanup handler to clear resources on restart,
      * to make sure log file gets closed in the parent process  */
@@ -2549,24 +2544,30 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
         jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p, "Error in reading worker properties");
 
     }
-#if MODULE_MAGIC_NUMBER >= 19980527
-        /* Tell apache we're here */
-    ap_add_version_component(JK_EXPOSED_VERSION);
-#endif
 
     if (jk_map_resolve_references(init_map, "worker.", 1, 1, conf->log) == JK_FALSE) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Error in resolving configuration references");
+        jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
+                      "Error in resolving configuration references");
     }
 
     /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
     worker_env.uri_to_worker = conf->uw_map;
     worker_env.virtual = "*";       /* for now */
     worker_env.server_name = (char *)ap_get_server_version();
-    if (wc_open(init_map, &worker_env, conf->log))
-        return;
 
-    ap_log_error(APLOG_MARK, APLOG_ERR, s,
-                 "Error while opening the workers, jk will not work");
+    if (wc_open(init_map, &worker_env, conf->log)) {
+#if MODULE_MAGIC_NUMBER >= 19980527
+        /* Tell apache we're here */
+        ap_add_version_component(JK_EXPOSED_VERSION);
+#endif
+        return;
+    }
+    else {
+        ap_log_error(APLOG_MARK, APLOG_ERR, s,
+                     "Error in creating the workers."
+                     " Please consult your mod_jk log file '%s'.", conf->log_file);
+    }
+
 }
 
 /*

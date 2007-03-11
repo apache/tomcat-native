@@ -2634,18 +2634,9 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                                       jk_cleanup_shmem);
     }
     else
-        jk_log(conf->log, JK_LOG_ERROR, "Initializing shm:%s errno=%d",
+        jk_log(conf->log, JK_LOG_ERROR,
+               "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
                jk_shm_name(), rc);
-#if !defined(WIN32) && !defined(NETWARE)
-    if (!jk_shm_file) {
-        ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0, NULL,
-                     "No JkShmFile defined in httpd.conf. "
-                     "LoadBalancer will not function properly!");
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, NULL,
-                     "No JkShmFile defined in httpd.conf. "
-                     "LoadBalancer will not function properly!");
-    }
-#endif
 
     /* Set default connection cache size for multi-threaded MPMs */
     if (ap_mpm_query(AP_MPMQ_IS_THREADED, &is_threaded) == APR_SUCCESS &&
@@ -2684,8 +2675,15 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
 #else
     worker_env.server_name = (char *)ap_get_server_version();
 #endif
+
     if (wc_open(init_map, &worker_env, conf->log)) {
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);
+    }
+    else {
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+                     "Error in creating the workers."
+                     " Please consult your mod_jk log file '%s'.", conf->log_file);
+        return !OK;
     }
     return OK;
 }
