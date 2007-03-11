@@ -837,42 +837,56 @@ then make.
 <subsection name="configure arguments">
 <p>
 <table>
-  <tr><th>Apache related parameters</th><th></th></tr>
-  <tr>
+  <tr valign="top"><th>Apache related parameters</th><th></th></tr>
+  <tr valign="top">
   <td>--with-apxs[=FILE]</td>
   <td>FILE is the location of the apxs tool. Default is finding apxs in PATH.
 It builds a shared Apache module. It detects automaticly the Apache version.
 (2.0/2.2 and 1.3)</td>
   </tr>
-  <tr><td>--with-apache=DIR</td>
+  <tr valign="top"><td>--with-apache=DIR</td>
   <td>DIR is the path where apache sources are located.
 The apache sources should have been configured before configuring mod_jk.
 DIR is something like: /home/apache/apache_1.3.19
 It builds a static Apache module.</td>
   </tr>
-  <tr><td>--enable-EAPI</td>
+  <tr valign="top"><td>--enable-EAPI</td>
   <td>This parameter is needed when using Apache-1.3 and mod_ssl, otherwise you will get the error message:
 "this module might crash under EAPI!" when loading mod_jk.so in httpd.
 Not needed when --with-apxs has been used</td>
 </tr>
+  <tr valign="top"><td>--enable-prefork</td>
+  <td>
+In case you build mod_jk for a multi-threaded Apache 2.0/2.2 MPM (Multi-Processing Module),
+some areas of mod_jk code need to be synchronized to make it thread-safe.
+Configure autodetects, whether your are using a multi-threaded MPM.
+For instance, the worker MPM is multi-threaded, the prefork MPM is not.<br/>
+Depending on how you build your Apache httpd, in some cases configure
+detects that it needs to build thread safe, although actually it would not be necessary.
+One such case is, if you build against Apache httpd with prefork MPM,
+and your APR (Apache Portable Runtime) libraries have been build with thread support
+( the output of "apxs -q EXTRA_CPPFLAGS" will contain "-D_REENTRANT").<br/>
+If you are sure, that your MPM is not multi-threaded, you can use "--enable-prefork"
+to force the removal of the synchronization code (thus increasing performance a bit).</td>
+</tr>
 </table>
 <br/>
 <table>
-  <tr><th>JNI related parameters</th><th></th></tr>
-  <tr><td>--enable-jni</td>
+  <tr valign="top"><th>JNI related parameters</th><th></th></tr>
+  <tr valign="top"><td>--enable-jni</td>
   <td>Build the JNI worker and so the build process will require
 some informations about your Java Environment</td>
   </tr>
-  <tr><td>--with-java-home=DIR</td>
+  <tr valign="top"><td>--with-java-home=DIR</td>
   <td>DIR is the  patch to the JDK root directory. Something like: /opt/java/jdk12</td>
   </tr>
-  <tr><td>--with-os-type=SUBDIR</td><td>SUBDIR is the os-type subdirectory,
+  <tr valign="top"><td>--with-os-type=SUBDIR</td><td>SUBDIR is the os-type subdirectory,
   configure should guess it correctly.</td>
   </tr>
-  <tr><td>--with-arch-type=SUBDIR</td><td>SUBDIR is the arch subdirectory,
+  <tr valign="top"><td>--with-arch-type=SUBDIR</td><td>SUBDIR is the arch subdirectory,
   configure should guess it correctly.</td>
   </tr>
-  <tr><td>--with-java-platform=VAL</td><td>VAL is the Java platform 1 is 1.1.x and 2 is for 1.2 anf higher,
+  <tr valign="top"><td>--with-java-platform=VAL</td><td>VAL is the Java platform 1 is 1.1.x and 2 is for 1.2 anf higher,
   configure should guess it correctly.</td>
   </tr>
 </table>

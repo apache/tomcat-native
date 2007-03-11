@@ -26,6 +26,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        <bug>41757</bug>: Document the "--enable-prefork" flag of configure. (rjung)
+      </fix>
       <update>
       Enhance log messages for failures when parsing attribute maps. (rjung)
       </update>
