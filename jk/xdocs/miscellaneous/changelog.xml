@@ -27,6 +27,19 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        Make MMN check easier to understand and a little more precise
+        (for new ap_get_server_banner()/ap_get_server_description()).
+        We use the new API only for Apache httpd 2.3. This way our binaries are not
+        tightly coupled to a minor 2.0 version, and we don't use ap_get_server_banner()
+        any way. (rjung)
+      </fix>
+      <fix>
+        Use the full description string ap_get_server_description() instead of
+        the truncated info from ap_get_server_banner(), because this info gets used internally
+        (status worker display and ajp14 backend communication) and is not send back to the
+        normal user. (rjung)
+      </fix>
+      <fix>
         <bug>41757</bug>: Document the "--enable-prefork" flag of configure. (rjung)
       </fix>
       <update>
