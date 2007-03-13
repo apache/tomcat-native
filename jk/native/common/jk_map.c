@@ -713,17 +713,19 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
 int jk_map_inherit_properties(jk_map_t *m, const char *from, const char *to, jk_logger_t *l)
 {
     int rc = JK_FALSE;
+    const char *prp;
+    char *to_prp;
 
     if (m && from && to) {
         unsigned int i;
         for (i = 0; i < m->size; i++) {
             if (!strncmp(m->names[i], from, strlen(from))) {
                 rc = JK_TRUE;
-                const char *prp = m->names[i] + strlen(from);
-                char *to_prp = jk_pool_alloc(&m->p,
-                                             (sizeof(char) *
-                                             (strlen(to) +
-                                             strlen(prp) + 1)));
+                prp = m->names[i] + strlen(from);
+                to_prp = jk_pool_alloc(&m->p,
+                                       (sizeof(char) *
+                                       (strlen(to) +
+                                       strlen(prp) + 1)));
                 if (!to_prp) {
                     jk_log(l, JK_LOG_ERROR,
                            "Error in string allocation for attribute '%s.%s'",
