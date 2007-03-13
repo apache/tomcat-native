@@ -280,10 +280,8 @@ static int do_shm_open(const char *fname, int attached,
     JK_TRACE_ENTER(l);
     if (jk_shmem.hdr) {
         /* Probably a call from vhost */
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG,
-                    "Shared memory is already open");
-        return 0;
+        if (!attached)
+            attached = 1;
     }
     jk_shmem.filename = fname;
     if (attached)

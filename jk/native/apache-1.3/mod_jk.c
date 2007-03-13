@@ -2787,10 +2787,28 @@ static int jk_fixups(request_rec * r)
     return DECLINED;
 }
 
-static void exit_handler(server_rec * s, ap_pool * p)
+static void child_exit_handler(server_rec * s, ap_pool * p)
 {
     /* srevilak - refactor cleanup body to jk_generic_cleanup() */
     jk_generic_cleanup(s);
+    jk_shm_close();
+}
+
+static void child_init_handler(server_rec * s, ap_pool * p)
+{
+    int rc;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+
+    if ((rc = jk_shm_attach(jk_shm_file, jk_shm_size, conf->log)) == 0) {
+        if (JK_IS_DEBUG_LEVEL(conf->log))
+            jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s",
+                   jk_shm_name());
+    }
+    else
+        jk_log(conf->log, JK_LOG_ERROR, "Attaching shm:%s errno=%d",
+               jk_shm_name(), rc);
 }
 
 
@@ -2855,8 +2873,8 @@ module MODULE_VAR_EXPORT jk_module = {
     jk_fixups,                  /* [8] fixups */
     NULL,                       /* [10] logger */
     NULL,                       /* [3] header parser */
-    NULL,                       /* apache child process initializer */
-    exit_handler,               /* apache child process exit/cleanup */
+    child_init_handler,         /* apache child process initializer */
+    child_exit_handler,         /* apache child process exit/cleanup */
     NULL                        /* [1] post read_request handling */
 #ifdef EAPI
         /*
