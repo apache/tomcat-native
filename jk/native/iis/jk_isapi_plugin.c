@@ -534,8 +534,8 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
         int rv = JK_TRUE;
         isapi_private_data_t *p = s->ws_private;
         if (!p->request_started) {
-            HSE_SEND_HEADER_EX_INFO hi;
             char *status_str;
+            DWORD status_str_len;
             char *headers_str = NULL;
             BOOL keep_alive = FALSE;
             p->request_started = JK_TRUE;
@@ -548,14 +548,13 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
             }
             status_str = (char *)malloc((6 + strlen(reason)));
             StringCbPrintf(status_str, 6 + strlen(reason), "%d %s", status, reason);
-            hi.pszStatus = status_str;
-            hi.cchStatus = (DWORD)strlen(status_str);
+            status_str_len = (DWORD)strlen(status_str);
 
             /*
              * Create response headers string
              */
             if (num_of_headers) {
-                size_t i, len_of_headers;
+                size_t i, len_of_headers = 0;
                 for (i = 0, len_of_headers = 0; i < num_of_headers; i++) {
                     len_of_headers += strlen(header_names[i]);
                     len_of_headers += strlen(header_values[i]);
@@ -573,20 +572,20 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
                     StringCbCat(headers_str, len_of_headers, crlf);
                 }
                 StringCbCat(headers_str, len_of_headers, crlf);
-                hi.pszHeader = headers_str;
-                hi.cchHeader = (DWORD)strlen(headers_str);
             }
             else {
-                hi.pszHeader = crlf;
-                hi.cchHeader = 2;
+                headers_str = crlf;
             }
-            hi.fKeepConn = keep_alive;
+
             if (!p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID,
-                                                 HSE_REQ_SEND_RESPONSE_HEADER_EX,
-                                                 &hi,
-                                                 NULL, NULL)) {
+                                                 HSE_REQ_SEND_RESPONSE_HEADER,
+                                                 status_str,
+                                                 &status_str_len,
+                                                 (LPDWORD)headers_str)) {
+
                 jk_log(logger, JK_LOG_ERROR,
-                       "HSE_REQ_SEND_RESPONSE_HEADER_EX failed");
+                       "HSE_REQ_SEND_RESPONSE_HEADER failed with error=%08x",
+                       GetLastError());
                 rv = JK_FALSE;
             }
             if (headers_str)
@@ -887,23 +886,24 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
              * Check if somebody is feading us with his own TOMCAT data headers.
              * We reject such postings !
              */
-            if (JK_IS_DEBUG_LEVEL(logger))
-                jk_log(logger, JK_LOG_DEBUG,
-                       "check if [%s] is points to the web-inf directory",
-                       uri);
-
-            if (uri_is_web_inf(uri)) {
-                jk_log(logger, JK_LOG_EMERG,
-                       "[%s] points to the web-inf or meta-inf directory.\nSomebody try to hack into the site!!!",
-                       uri);
-
-                write_error_response(pfc, "404 Not Found",
-                                     HTML_ERROR_404);
-                return SF_STATUS_REQ_FINISHED;
-            }
-
             if (worker) {
                 char *forwardURI;
+
+                if (JK_IS_DEBUG_LEVEL(logger))
+                    jk_log(logger, JK_LOG_DEBUG,
+                           "check if [%s] is points to the web-inf directory",
+                        uri);
+
+                if (uri_is_web_inf(uri)) {
+                    jk_log(logger, JK_LOG_EMERG,
+                           "[%s] points to the web-inf or meta-inf directory. "
+                           "Somebody try to hack into the site!!!",
+                           uri);
+
+                    write_error_response(pfc, "404 Not Found",
+                                         HTML_ERROR_404);
+                    return SF_STATUS_REQ_FINISHED;
+                }
 
                 /* This is a servlet, should redirect ... */
                 if (JK_IS_DEBUG_LEVEL(logger))
