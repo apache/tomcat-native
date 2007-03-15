@@ -59,7 +59,7 @@ struct jk_shm
 {
     size_t     size;
     const char *filename;
-    const char *lockname;
+    char       *lockname;
     int        fd;
     int        fd_lock;
     int        attached;
