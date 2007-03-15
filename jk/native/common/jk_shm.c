@@ -237,7 +237,7 @@ static int do_shm_open_lock(int attached, jk_logger_t *l)
     if (!jk_shmem.lockname) {
         int i;
         jk_shmem.fd_lock = -1;
-        for (i = 0; i < 8) {
+        for (i = 0; i < 8; i++) {
             strcpy(flkname, "/tmp/jkshmlock.XXXXXX");
             if (mktemp(flkname)) {
                 jk_shmem.fd_lock = open(flkname, O_RDWR|O_CREAT|O_TRUNC, 0666);
@@ -251,7 +251,6 @@ static int do_shm_open_lock(int attached, jk_logger_t *l)
             return rc;
         }
         jk_shmem.lockname = strdup(flkname);
-        unlink(jk_shmem.lockname);
     }
     else if (attached) {
         jk_shmem.fd_lock = open(jk_shmem.lockname, O_RDWR, 0666);
@@ -460,6 +459,7 @@ void jk_shm_close()
             munmap((void *)jk_shmem.hdr, jk_shmem.size);
             close(jk_shmem.fd);
             if (jk_shmem.lockname) {
+                unlink(jk_shmem.lockname);
                 free(jk_shmem.lockname);
                 jk_shmem.lockname = NULL;
             }
