@@ -237,6 +237,7 @@ static int do_shm_open_lock(int attached, jk_logger_t *l)
     if (!jk_shmem.lockname) {
         int i;
         jk_shmem.fd_lock = -1;
+        mode_t mask = umask(0);
         for (i = 0; i < 8; i++) {
             strcpy(flkname, "/tmp/jkshmlock.XXXXXX");
             if (mktemp(flkname)) {
@@ -245,6 +246,7 @@ static int do_shm_open_lock(int attached, jk_logger_t *l)
                     break;
             }
         }
+        umask(mask);
         if (jk_shmem.fd_lock == -1) {
             rc = errno;
             JK_TRACE_EXIT(l);
