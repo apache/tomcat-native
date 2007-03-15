@@ -383,7 +383,7 @@ static int do_shm_open(const char *fname, int attached,
         unsigned int nchild = jk_shmem.hdr->h.data.childs + 1;
         jk_shmem.attached = (int)getpid();
         if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_INFO,
+            jk_log(l, JK_LOG_DEBUG,
                    "Attached shared memory [%d] size=%u free=%u addr=%#lx",
                    nchild, jk_shmem.hdr->h.data.size,
                    jk_shmem.hdr->h.data.size - jk_shmem.hdr->h.data.pos,
