@@ -228,34 +228,21 @@ void jk_shm_close()
 #define MAP_FILE    (0)
 #endif
 
-static int do_shm_open_lock(int attached, jk_logger_t *l)
+#ifdef JK_SHM_LOCK_REOPEN
+static int shm_lock_reopen = 1;
+#else
+static int shm_lock_reopen = 0;
+#endif
+
+static int do_shm_open_lock(const char *fname, int attached, jk_logger_t *l)
 {
     int rc;
     char flkname[256];
     JK_TRACE_ENTER(l);
 
-    if (!jk_shmem.lockname) {
-        int i;
-        jk_shmem.fd_lock = -1;
-        mode_t mask = umask(0);
-        for (i = 0; i < 8; i++) {
-            strcpy(flkname, "/tmp/jkshmlock.XXXXXX");
-            if (mktemp(flkname)) {
-                jk_shmem.fd_lock = open(flkname, O_RDWR|O_CREAT|O_TRUNC, 0666);
-                if (jk_shmem.fd_lock >= 0)
-                    break;
-            }
-        }
-        umask(mask);
-        if (jk_shmem.fd_lock == -1) {
-            rc = errno;
-            JK_TRACE_EXIT(l);
-            return rc;
-        }
-        jk_shmem.lockname = strdup(flkname);
-    }
-    else if (attached) {
-        jk_shmem.fd_lock = open(jk_shmem.lockname, O_RDWR, 0666);
+    if (attached) {
+        if (shm_lock_reopen)
+            jk_shmem.fd_lock = open(jk_shmem.lockname, O_RDWR, 0666);
         if (jk_shmem.fd_lock == -1) {
             rc = errno;
             JK_TRACE_EXIT(l);
@@ -267,25 +254,51 @@ static int do_shm_open_lock(int attached, jk_logger_t *l)
         JK_TRACE_EXIT(l);
         return 0;
     }
-    else {
-        
-        
-    }
 
-    if (!attached) {
-        if (ftruncate(jk_shmem.fd_lock, 1)) {
-            rc = errno;
-            close(jk_shmem.fd_lock);
+    if (!jk_shmem.lockname) {
+        if (shm_lock_reopen) {
+            int i;
             jk_shmem.fd_lock = -1;
+            mode_t mask = umask(0);
+            for (i = 0; i < 8; i++) {
+                strcpy(flkname, "/tmp/jkshmlock.XXXXXX");
+                if (mktemp(flkname)) {
+                    jk_shmem.fd_lock = open(flkname, O_RDWR|O_CREAT|O_TRUNC, 0666);
+                    if (jk_shmem.fd_lock >= 0)
+                        break;
+                }
+            }
+            umask(mask);
+        }
+        else {
+            strcpy(flkname, fname);
+            strcat(flkname, ".lock");
+            jk_shmem.fd_lock = open(flkname, O_RDWR|O_CREAT|O_TRUNC, 0666);
+        }
+        if (jk_shmem.fd_lock == -1) {
+            rc = errno;
             JK_TRACE_EXIT(l);
             return rc;
-         }
+        }
+        jk_shmem.lockname = strdup(flkname);
+    }
+    else {
+        /* Nothing to do */
+        JK_TRACE_EXIT(l);
+        return 0;
+    }
+
+    if (ftruncate(jk_shmem.fd_lock, 1)) {
+        rc = errno;
+        close(jk_shmem.fd_lock);
+        jk_shmem.fd_lock = -1;
+        JK_TRACE_EXIT(l);
+        return rc;
     }
     if (lseek(jk_shmem.fd_lock, 0, SEEK_SET) != 0) {
         rc = errno;
         close(jk_shmem.fd_lock);
         jk_shmem.fd_lock = -1;
-        JK_TRACE_EXIT(l);
         return rc;
     }
     if (JK_IS_DEBUG_LEVEL(l))
@@ -382,8 +395,10 @@ static int do_shm_open(const char *fname, int attached,
                    jk_shmem.size, jk_shmem.hdr->h.data.size, jk_shmem.hdr);
     }
     else {
-        unsigned int nchild = jk_shmem.hdr->h.data.childs + 1;
+        unsigned int nchild;
+        jk_shmem.hdr->h.data.childs++;
         jk_shmem.attached = (int)getpid();
+        nchild = jk_shmem.hdr->h.data.childs;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Attached shared memory [%d] size=%u free=%u addr=%#lx",
@@ -404,12 +419,11 @@ static int do_shm_open(const char *fname, int attached,
                        nchild);
             }
         }
-        jk_shmem.hdr->h.data.childs  = nchild;
         jk_shmem.hdr->h.data.pos     = 0;
         jk_shmem.hdr->h.data.workers = 0;
     }
     JK_INIT_CS(&(jk_shmem.cs), rc);
-    if ((rc = do_shm_open_lock(attached, l))) {
+    if ((rc = do_shm_open_lock(fname, attached, l))) {
         if (!attached) {
             munmap((void *)jk_shmem.hdr, jk_shmem.size);
             close(jk_shmem.fd);
@@ -440,8 +454,10 @@ void jk_shm_close()
         --jk_shmem.hdr->h.data.childs;
 
         if (jk_shmem.fd_lock >= 0) {
-            close(jk_shmem.fd_lock);
-            jk_shmem.fd_lock = -1;
+            if (shm_lock_reopen) {
+                close(jk_shmem.fd_lock);
+                jk_shmem.fd_lock = -1;
+            }
         }
         JK_DELETE_CS(&(jk_shmem.cs), rc);
         if (jk_shmem.attached) {
@@ -460,16 +476,18 @@ void jk_shm_close()
         if (jk_shmem.fd >= 0) {
             munmap((void *)jk_shmem.hdr, jk_shmem.size);
             close(jk_shmem.fd);
-            if (jk_shmem.lockname) {
-                unlink(jk_shmem.lockname);
-                free(jk_shmem.lockname);
-                jk_shmem.lockname = NULL;
-            }
+        }
+        if (jk_shmem.fd_lock >= 0)
+            close(jk_shmem.fd_lock);
+        if (jk_shmem.lockname) {
+            unlink(jk_shmem.lockname);
+            free(jk_shmem.lockname);
         }
     }
-    jk_shmem.size = 0;
-    jk_shmem.hdr  = NULL;
-    jk_shmem.fd   = -1;
+    jk_shmem.size    = 0;
+    jk_shmem.hdr     = NULL;
+    jk_shmem.fd      = -1;
+    jk_shmem.fd_lock = -1;
 }
 
 
