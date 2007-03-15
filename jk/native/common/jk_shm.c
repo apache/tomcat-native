@@ -59,6 +59,7 @@ struct jk_shm
 {
     size_t     size;
     const char *filename;
+    const char *lockname;
     int        fd;
     int        fd_lock;
     int        attached;
@@ -69,7 +70,7 @@ struct jk_shm
 typedef struct jk_shm jk_shm_t;
 
 static const char shm_signature[] = { JK_SHM_MAGIC };
-static jk_shm_t jk_shmem = { 0, NULL, -1, -1, 0, NULL};
+static jk_shm_t jk_shmem = { 0, NULL, NULL, -1, -1, 0, NULL};
 static time_t jk_workers_modified_time = 0;
 static time_t jk_workers_access_time = 0;
 #if defined (WIN32)
@@ -227,44 +228,68 @@ void jk_shm_close()
 #define MAP_FILE    (0)
 #endif
 
-static int do_shm_open_lock(const char *fname, int attached, jk_logger_t *l)
+static int do_shm_open_lock(int attached, jk_logger_t *l)
 {
     int rc;
-    int fd;
-    int flags = O_RDWR;
     char flkname[256];
     JK_TRACE_ENTER(l);
 
-    jk_shmem.fd_lock = -1;
-    strcpy(flkname, fname);
-    strcat(flkname, ".lock");
-    if (!attached)
-        flags |= (O_CREAT|O_TRUNC);
-    fd = open(flkname, flags, 0666);
-    if (fd == -1) {
+    if (!jk_shmem.lockname) {
+        int i;
+        jk_shmem.fd_lock = -1;
+        for (i = 0; i < 8) {
+            strcpy(flkname, "/tmp/jkshmlock.XXXXXX");
+            if (mktemp(flkname)) {
+                jk_shmem.fd_lock = open(flkname, O_RDWR|O_CREAT|O_TRUNC, 0666);
+                if (jk_shmem.fd_lock >= 0)
+                    break;
+            }
+        }
+        if (jk_shmem.fd_lock == -1) {
+            rc = errno;
+            JK_TRACE_EXIT(l);
+            return rc;
+        }
+        jk_shmem.lockname = strdup(flkname);
+        unlink(jk_shmem.lockname);
+    }
+    else if (attached) {
+        jk_shmem.fd_lock = open(jk_shmem.lockname, O_RDWR, 0666);
+        if (jk_shmem.fd_lock == -1) {
+            rc = errno;
+            JK_TRACE_EXIT(l);
+            return rc;
+        }
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "Duplicated shared memory lock %s", jk_shmem.lockname);
         JK_TRACE_EXIT(l);
-        return errno;
+        return 0;
+    }
+    else {
+        
+        
     }
 
     if (!attached) {
-        if (ftruncate(fd, 1)) {
+        if (ftruncate(jk_shmem.fd_lock, 1)) {
             rc = errno;
-            close(fd);
+            close(jk_shmem.fd_lock);
+            jk_shmem.fd_lock = -1;
             JK_TRACE_EXIT(l);
             return rc;
          }
     }
-    if (lseek(fd, 0, SEEK_SET) != 0) {
+    if (lseek(jk_shmem.fd_lock, 0, SEEK_SET) != 0) {
         rc = errno;
-        close(fd);
+        close(jk_shmem.fd_lock);
+        jk_shmem.fd_lock = -1;
         JK_TRACE_EXIT(l);
         return rc;
     }
-    jk_shmem.fd_lock = fd;
-
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "Opened shared memory lock %s", flkname);
+               "Opened shared memory lock %s", jk_shmem.lockname);
     JK_TRACE_EXIT(l);
     return 0;
 }
@@ -274,7 +299,6 @@ static int do_shm_open(const char *fname, int attached,
 {
     int rc;
     int fd;
-    int flags = O_RDWR;
     void *base;
 
     JK_TRACE_ENTER(l);
@@ -283,12 +307,14 @@ static int do_shm_open(const char *fname, int attached,
         if (!attached)
             attached = 1;
     }
+    else if (attached) {
+        /* We should already have a header
+         * Use memory if we don't
+         */
+        JK_TRACE_EXIT(l);
+        return 0;
+    }
     jk_shmem.filename = fname;
-    if (attached)
-        jk_shmem.attached = (int)getpid();
-    else
-        jk_shmem.attached = 0;
-
     jk_shmem.size = JK_SHM_ALIGN(sizeof(jk_shm_header_t) + sz);
 
     /* Use plain memory in case there is no file name */
@@ -301,17 +327,16 @@ static int do_shm_open(const char *fname, int attached,
         return 0;
     }
 
-    if (!attached)
-        flags |= (O_CREAT|O_TRUNC);
-    fd = open(fname, flags, 0666);
-    if (fd == -1) {
-        jk_shmem.size = 0;
-        JK_TRACE_EXIT(l);
-        return errno;
-    }
-
     if (!attached) {
-        size_t size = lseek(fd, 0, SEEK_END);
+        size_t size;
+        jk_shmem.attached = 0;
+        fd = open(fname, O_RDWR|O_CREAT|O_TRUNC, 0666);
+        if (fd == -1) {
+            jk_shmem.size = 0;
+            JK_TRACE_EXIT(l);
+            return errno;
+        }
+        size = lseek(fd, 0, SEEK_END);
         if (size < jk_shmem.size) {
             size = jk_shmem.size;
             if (ftruncate(fd, jk_shmem.size)) {
@@ -325,31 +350,27 @@ static int do_shm_open(const char *fname, int attached,
                 jk_log(l, JK_LOG_DEBUG,
                        "Truncated shared memory to %u", size);
         }
-    }
-    if (lseek(fd, 0, SEEK_SET) != 0) {
-        rc = errno;
-        close(fd);
-        jk_shmem.size = 0;
-        JK_TRACE_EXIT(l);
-        return rc;
-    }
+        if (lseek(fd, 0, SEEK_SET) != 0) {
+            rc = errno;
+            close(fd);
+            jk_shmem.size = 0;
+            JK_TRACE_EXIT(l);
+            return rc;
+        }
 
-    base = mmap((caddr_t)0, jk_shmem.size,
-                PROT_READ | PROT_WRITE,
-                MAP_FILE | MAP_SHARED,
-                fd, 0);
-    if (base == (caddr_t)MAP_FAILED || base == (caddr_t)0) {
-        rc = errno;
-        close(fd);
-        jk_shmem.size = 0;
-        JK_TRACE_EXIT(l);
-        return rc;
-    }
-    jk_shmem.hdr = base;
-    jk_shmem.fd  = fd;
-
-    /* Clear shared memory */
-    if (!attached) {
+        base = mmap((caddr_t)0, jk_shmem.size,
+                    PROT_READ | PROT_WRITE,
+                    MAP_FILE | MAP_SHARED,
+                    fd, 0);
+        if (base == (caddr_t)MAP_FAILED || base == (caddr_t)0) {
+            rc = errno;
+            close(fd);
+            jk_shmem.size = 0;
+            JK_TRACE_EXIT(l);
+            return rc;
+        }
+        jk_shmem.hdr = base;
+        jk_shmem.fd  = fd;
         memset(jk_shmem.hdr, 0, jk_shmem.size);
         memcpy(jk_shmem.hdr->h.data.magic, shm_signature, JK_SHM_MAGIC_SIZ);
         jk_shmem.hdr->h.data.size = sz;
@@ -360,11 +381,12 @@ static int do_shm_open(const char *fname, int attached,
                    jk_shmem.size, jk_shmem.hdr->h.data.size, jk_shmem.hdr);
     }
     else {
-        jk_shmem.hdr->h.data.childs++;
+        unsigned int nchild = jk_shmem.hdr->h.data.childs + 1;
+        jk_shmem.attached = (int)getpid();
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_INFO,
                    "Attached shared memory [%d] size=%u free=%u addr=%#lx",
-                   jk_shmem.hdr->h.data.childs, jk_shmem.hdr->h.data.size,
+                   nchild, jk_shmem.hdr->h.data.size,
                    jk_shmem.hdr->h.data.size - jk_shmem.hdr->h.data.pos,
                    jk_shmem.hdr);
         /*
@@ -374,20 +396,23 @@ static int do_shm_open(const char *fname, int attached,
          * if the number of workers change between
          * open and attach or between two attach operations.
          */
-        if (jk_shmem.hdr->h.data.childs > 1) {
+        if (nchild > 1) {
             if (JK_IS_DEBUG_LEVEL(l)) {
                 jk_log(l, JK_LOG_DEBUG,
                        "Reseting the shared memory for child %d",
-                       jk_shmem.hdr->h.data.childs);
+                       nchild);
             }
         }
+        jk_shmem.hdr->h.data.childs  = nchild;
         jk_shmem.hdr->h.data.pos     = 0;
         jk_shmem.hdr->h.data.workers = 0;
     }
     JK_INIT_CS(&(jk_shmem.cs), rc);
-    if ((rc = do_shm_open_lock(fname, attached, l))) {
-        munmap((void *)jk_shmem.hdr, jk_shmem.size);
-        close(jk_shmem.fd);
+    if ((rc = do_shm_open_lock(attached, l))) {
+        if (!attached) {
+            munmap((void *)jk_shmem.hdr, jk_shmem.size);
+            close(jk_shmem.fd);
+        }
         jk_shmem.hdr = NULL;
         jk_shmem.fd  = -1;
         JK_TRACE_EXIT(l);
@@ -413,27 +438,32 @@ void jk_shm_close()
     if (jk_shmem.hdr) {
         --jk_shmem.hdr->h.data.childs;
 
+        if (jk_shmem.fd_lock >= 0) {
+            close(jk_shmem.fd_lock);
+            jk_shmem.fd_lock = -1;
+        }
+        JK_DELETE_CS(&(jk_shmem.cs), rc);
         if (jk_shmem.attached) {
             int p = (int)getpid();
-            if (p != jk_shmem.attached) {
+            if (p == jk_shmem.attached) {
                 /* In case this is a forked child
                  * do not close the shared memory.
                  * It will be closed by the parent.
                  */
-                 return;
+                jk_shmem.size = 0;
+                jk_shmem.hdr  = NULL;
+                jk_shmem.fd   = -1;
+                return;
             }
-        }
-        if (jk_shmem.fd_lock >= 0) {
-            close(jk_shmem.fd_lock);
         }
         if (jk_shmem.fd >= 0) {
             munmap((void *)jk_shmem.hdr, jk_shmem.size);
             close(jk_shmem.fd);
+            if (jk_shmem.lockname) {
+                free(jk_shmem.lockname);
+                jk_shmem.lockname = NULL;
+            }
         }
-        jk_shmem.fd_lock = -1;
-    }
-    if (jk_shmem.size) {
-        JK_DELETE_CS(&(jk_shmem.cs), rc);
     }
     jk_shmem.size = 0;
     jk_shmem.hdr  = NULL;
