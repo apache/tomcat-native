@@ -58,7 +58,7 @@ typedef struct jk_shm_header jk_shm_header_t;
 struct jk_shm
 {
     size_t     size;
-    const char *filename;
+    char       *filename;
     char       *lockname;
     int        fd;
     int        fd_lock;
@@ -131,7 +131,12 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
         JK_TRACE_EXIT(l);
         return -1;
     }
-    jk_shmem.filename = "memory";
+    if (!jk_shmem.filename) {
+        if (fname)
+            jk_shmem.filename = strdup(fname);
+        else
+            jk_shmem.filename = strdup("memory");
+    }
     jk_shmem.fd       = 0;
     jk_shmem.attached = attached;
     if (!attached) {
@@ -209,6 +214,10 @@ void jk_shm_close()
         JK_DELETE_CS(&(jk_shmem.cs), rc);
     }
     jk_shmem.hdr = NULL;
+    if (jk_shmem.filename) {
+        free(jk_shmem.filename);
+        jk_shmem.filename = NULL;
+    }
 }
 
 #else
@@ -328,12 +337,12 @@ static int do_shm_open(const char *fname, int attached,
         JK_TRACE_EXIT(l);
         return 0;
     }
-    jk_shmem.filename = fname;
     jk_shmem.size = JK_SHM_ALIGN(sizeof(jk_shm_header_t) + sz);
 
-    /* Use plain memory in case there is no file name */
     if (!fname) {
-        jk_shmem.filename  = "memory";
+        /* Use plain memory in case there is no file name */
+        if (!jk_shmem.filename)
+            jk_shmem.filename  = strdup("memory");
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Using process memory as shared memory");
@@ -341,10 +350,14 @@ static int do_shm_open(const char *fname, int attached,
         return 0;
     }
 
+    if (!jk_shmem.filename) {
+        jk_shmem.filename = (char *)malloc(strlen(fname) + 32);
+        sprintf(jk_shmem.filename, "%s.%d", fname, (int)getpid());
+    }
     if (!attached) {
         size_t size;
         jk_shmem.attached = 0;
-        fd = open(fname, O_RDWR|O_CREAT|O_TRUNC, 0666);
+        fd = open(jk_shmem.filename, O_RDWR|O_CREAT|O_TRUNC, 0666);
         if (fd == -1) {
             jk_shmem.size = 0;
             JK_TRACE_EXIT(l);
@@ -423,7 +436,7 @@ static int do_shm_open(const char *fname, int attached,
         jk_shmem.hdr->h.data.workers = 0;
     }
     JK_INIT_CS(&(jk_shmem.cs), rc);
-    if ((rc = do_shm_open_lock(fname, attached, l))) {
+    if ((rc = do_shm_open_lock(jk_shmem.filename, attached, l))) {
         if (!attached) {
             munmap((void *)jk_shmem.hdr, jk_shmem.size);
             close(jk_shmem.fd);
@@ -482,6 +495,11 @@ void jk_shm_close()
         if (jk_shmem.lockname) {
             unlink(jk_shmem.lockname);
             free(jk_shmem.lockname);
+            jk_shmem.lockname = NULL;
+        }
+        if (jk_shmem.filename) {
+            free(jk_shmem.filename);
+            jk_shmem.filename = NULL;
         }
     }
     jk_shmem.size    = 0;
