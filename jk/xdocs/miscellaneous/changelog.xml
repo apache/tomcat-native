@@ -26,6 +26,18 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        IIS. Do not forbid access to web-inf or meta-inf if there is
+        no mapped worker. This allows to have resource with those names
+        that are outside mapped contexts. (mturk)
+      </fix>
+      <update>
+        Apache. Use process id for creating shared memory name and delete shared
+        memory and shared memory lock files on exit. (mturk)
+      </update>
+      <fix>
+        IIS. Fix Keep-Alive regression introduced in 1.2.21. (mturk)
+      </fix>
       <update>
       Delete unused check for empty init_map during startup. (rjung)
       </update>
