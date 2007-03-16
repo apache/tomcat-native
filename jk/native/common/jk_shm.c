@@ -369,6 +369,7 @@ static int do_shm_open(const char *fname, int attached,
             if (ftruncate(fd, jk_shmem.size)) {
                 rc = errno;
                 close(fd);
+                unlink(jk_shmem.filename);
                 jk_shmem.size = 0;
                 JK_TRACE_EXIT(l);
                 return rc;
@@ -380,6 +381,7 @@ static int do_shm_open(const char *fname, int attached,
         if (lseek(fd, 0, SEEK_SET) != 0) {
             rc = errno;
             close(fd);
+            unlink(jk_shmem.filename);
             jk_shmem.size = 0;
             JK_TRACE_EXIT(l);
             return rc;
@@ -392,6 +394,7 @@ static int do_shm_open(const char *fname, int attached,
         if (base == (caddr_t)MAP_FAILED || base == (caddr_t)0) {
             rc = errno;
             close(fd);
+            unlink(jk_shmem.filename);
             jk_shmem.size = 0;
             JK_TRACE_EXIT(l);
             return rc;
@@ -440,6 +443,7 @@ static int do_shm_open(const char *fname, int attached,
         if (!attached) {
             munmap((void *)jk_shmem.hdr, jk_shmem.size);
             close(jk_shmem.fd);
+            unlink(jk_shmem.filename);
         }
         jk_shmem.hdr = NULL;
         jk_shmem.fd  = -1;
@@ -498,6 +502,7 @@ void jk_shm_close()
             jk_shmem.lockname = NULL;
         }
         if (jk_shmem.filename) {
+            unlink(jk_shmem.filename);
             free(jk_shmem.filename);
             jk_shmem.filename = NULL;
         }
