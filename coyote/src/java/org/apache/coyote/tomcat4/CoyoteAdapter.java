@@ -51,6 +51,10 @@ import org.apache.catalina.util.StringManager;
 final class CoyoteAdapter
     implements Adapter {
 
+    protected static final boolean ALLOW_BACKSLASH = Boolean.valueOf(
+            System.getProperty(
+                    "org.apache.coyote.tomcat4.CoyoteAdapter.ALLOW_BACKSLASH",
+                    "false")).booleanValue();
 
     // -------------------------------------------------------------- Constants
 
@@ -440,8 +444,12 @@ final class CoyoteAdapter
             return "/";
 
         // Normalize the slashes and add leading slash if necessary
-        if (normalized.indexOf('\\') >= 0)
-            normalized = normalized.replace('\\', '/');
+        if (normalized.indexOf('\\') >= 0) {
+            if ( ALLOW_BACKSLASH )
+                normalized = normalized.replace('\\', '/');
+            else 
+                return null;
+        }
         if (!normalized.startsWith("/"))
             normalized = "/" + normalized;
 
@@ -564,8 +572,12 @@ final class CoyoteAdapter
         // Replace '\' with '/'
         // Check for null byte
         for (pos = start; pos < end; pos++) {
-            if (b[pos] == (byte) '\\')
-                b[pos] = (byte) '/';
+            if (b[pos] == (byte) '\\') {
+                if (ALLOW_BACKSLASH)
+                    b[pos] = (byte) '/';
+                else 
+                    return false;
+            }
             if (b[pos] == (byte) 0)
                 return false;
         }
