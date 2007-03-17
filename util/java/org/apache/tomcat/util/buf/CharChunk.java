@@ -31,7 +31,7 @@ import java.io.Serializable;
  * @author Costin Manolache
  * @author Remy Maucherat
  */
-public final class CharChunk implements Cloneable, Serializable {
+public final class CharChunk implements Cloneable, Serializable, CharSequence {
 
     // Input interface, used when the buffer is emptied.
     public static interface CharInputChannel {
@@ -698,7 +698,7 @@ public final class CharChunk implements Cloneable, Serializable {
         return buff[index + start];
     }
     
-    public CharChunk subSequence(int start, int end) {
+    public CharSequence subSequence(int start, int end) {
         try {
             CharChunk result = (CharChunk) this.clone();
             result.setOffset(this.start + start);
