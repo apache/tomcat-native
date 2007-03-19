@@ -2785,7 +2785,22 @@ static int jk_post_config(apr_pool_t * pconf,
             for (; srv; srv = srv->next) {
                 jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                                    &jk_module);
+/***
+ * on iSeries, the web server is 'HTTP Powered by Apache 2', as such it differs from the regular 
+ * implementations found on others boxes.
+ * 
+ * One of this difference is that the life cycle seems different and we discovered that on such platform
+ * we need to initialize the jk log with the plog instead of pconf.
+ * 
+ * We're waiting for more feedback from Rochester iSeries Labs... 
+ * 
+ ***/
+  
+#ifdef AS400
+                if (open_jklog(srv, plog))
+#else
                 if (open_jklog(srv, pconf))
+#endif
                     return HTTP_INTERNAL_SERVER_ERROR;
                 if (sconf) {
                     if (!uri_worker_map_alloc(&(sconf->uw_map),
