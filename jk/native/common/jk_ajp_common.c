@@ -1285,8 +1285,9 @@ static int ajp_send_request(jk_endpoint_t *e,
 
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "request body to send %d - request body to resend %d",
-               ae->left_bytes_to_send, op->reply->len - AJP_HEADER_LEN);
+               "(%s) request body to send %d - request body to resend %d",
+               ae->worker->name, ae->left_bytes_to_send,
+               op->reply->len - AJP_HEADER_LEN);
 
     /*
      * POST recovery job is done here and will work when data to

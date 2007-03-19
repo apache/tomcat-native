@@ -26,6 +26,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        <bug>41562</bug>: Add Debug logging for read from client in ISAPI Redirector.
+         Contributed by Tim Whittington. (mturk)
+      </fix>
       <update>
         Apache. Add ForwardSSLCertChain JkOption.
         Contributed by Patrik Schnellmann. (mturk)

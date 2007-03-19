@@ -610,12 +610,24 @@ static int JK_METHOD read(jk_ws_service_t *s,
     if (s && s->ws_private && b && a) {
         isapi_private_data_t *p = s->ws_private;
 
+        if (JK_IS_DEBUG_LEVEL(logger)) {
+            jk_log(logger, JK_LOG_DEBUG,
+                   "Preparing to read %d bytes. "
+                   "ECB reports %d bytes total, with %d available.",
+                   l, p->lpEcb->cbTotalBytes, p->lpEcb->cbAvailable);
+        }
+
         *a = 0;
         if (l) {
             char *buf = b;
             DWORD already_read = p->lpEcb->cbAvailable - p->bytes_read_so_far;
 
             if (already_read >= l) {
+                if (JK_IS_DEBUG_LEVEL(logger)) {
+                    jk_log(logger, JK_LOG_DEBUG,
+                           "Already read %d bytes - supplying %d bytes from buffer",
+                           already_read, l);
+                }
                 memcpy(buf, p->lpEcb->lpbData + p->bytes_read_so_far, l);
                 p->bytes_read_so_far += l;
                 *a = l;
@@ -625,6 +637,11 @@ static int JK_METHOD read(jk_ws_service_t *s,
                  * Try to copy what we already have
                  */
                 if (already_read > 0) {
+                    if (JK_IS_DEBUG_LEVEL(logger)) {
+                        jk_log(logger, JK_LOG_DEBUG,
+                               "Supplying %d bytes from buffer",
+                               already_read);
+                    }
                     memcpy(buf, p->lpEcb->lpbData + p->bytes_read_so_far,
                            already_read);
                     buf += already_read;
@@ -637,6 +654,10 @@ static int JK_METHOD read(jk_ws_service_t *s,
                 /*
                  * Now try to read from the client ...
                  */
+                if (JK_IS_DEBUG_LEVEL(logger)) {
+                    jk_log(logger, JK_LOG_DEBUG,
+                           "Attempting to read %d bytes from client", l);
+                }
                 if (p->lpEcb->ReadClient(p->lpEcb->ConnID, buf, (LPDWORD)&l)) {
                     *a += l;
                 }
