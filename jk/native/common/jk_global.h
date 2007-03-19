@@ -249,6 +249,7 @@ extern "C"
 #define JK_OPT_FLUSHPACKETS         0x0020
 #define JK_OPT_FLUSHEADER           0x0040
 #define JK_OPT_DISABLEREUSE         0x0080
+#define JK_OPT_FWDCERTCHAIN         0x0100
 
 /* Check for EBCDIC systems */
 

@@ -26,6 +26,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Apache. Add ForwardSSLCertChain JkOption.
+        Contributed by Patrik Schnellmann. (mturk)
+      </update>
       <fix>
         IIS. Do not forbid access to web-inf or meta-inf if there is
         no mapped worker. This allows to have resource with those names

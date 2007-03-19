@@ -278,6 +278,7 @@ public class MsgContext implements ActionHook {
             if( log.isDebugEnabled() ) log.debug("CLIENT_FLUSH " );
             try {
                 source.flush( null, this );
+                jkIS.flushMessage();
             } catch(IOException iex) {
                 // This is logged elsewhere, so debug only here
                 log.debug("Error during flush",iex);

@@ -188,6 +188,12 @@ Name of the Apache environment variable that contains SSL client cipher.
 <br/>
 The default value is "SSL_CIPHER".
 </p></attribute>
+<attribute name="JkCERTCHAINPrefix" required="false"><p>
+Name of the Apache environment (prefix) that contains SSL client chain certificates.
+<br/>
+The default value is "SSL_CLIENT_CERT_CHAIN_".
+</p></attribute>
+</p></attribute>
 <attribute name="JkSESSIONIndicator" required="false"><p>
 Name of the Apache environment variable that contains SSL session.
 <br/>
@@ -576,6 +582,25 @@ This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
 
 <source>  
   JkOptions     +ForwardKeySize
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
+JkOptions <b>ForwardSSLCertChain</b>,  you ask mod_jk, when using ajp13,
+to Forward SSL certificate chain (off by default).
+Mod_jk only passes the <code>SSL_CLIENT_CERT</code> to the AJP connector. This is not a
+problem with self-signed certificates or certificates directly signed by the
+root CA certificate. However, there's a large number of certificates signed by
+an intermediate CA certificate, where this is a significant problem: A servlet
+will not have the possibility to validate the client certificate on its own. The
+bug would be fixed by passing on the <code>SSL_CLIENT_CERT_CHAIN</code> to Tomcat via the AJP connector.
+<br/>
+This directive exists only since version 1.2.22.
+<source>  
+  JkOptions     +ForwardSSLCertChain
 </source>
 
 <br/>

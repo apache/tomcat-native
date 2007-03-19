@@ -128,6 +128,14 @@ public class JkInputStream implements InputBuffer, OutputBuffer {
         mc.getSource().flush(outputMsg, mc);
     }
 
+    public void flushMessage() throws IOException {
+        outputMsg.reset();
+        outputMsg.appendByte(AjpConstants.JK_AJP13_SEND_BODY_CHUNK);
+        outputMsg.appendInt(0);
+        outputMsg.appendByte(0);
+        mc.getSource().send(outputMsg, mc);
+        mc.getSource().flush(outputMsg, mc);
+    }
 
     // -------------------- OutputBuffer implementation --------------------
 

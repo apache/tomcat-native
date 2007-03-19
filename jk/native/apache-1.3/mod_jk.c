@@ -68,6 +68,7 @@
 #define JK_ENV_CIPHER               ("SSL_CIPHER")
 #define JK_ENV_SESSION              ("SSL_SESSION_ID")
 #define JK_ENV_KEY_SIZE             ("SSL_CIPHER_USEKEYSIZE")
+#define JK_ENV_CERTCHAIN_PREFIX     ("SSL_CLIENT_CERT_CHAIN_")
 #define JK_ENV_WORKER_NAME          ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
@@ -167,6 +168,7 @@ typedef struct
     char *cipher_indicator;
     char *session_indicator;
     char *key_size_indicator;
+    char *certchain_prefix;     /* Client certificate chain prefix */
 
     /*
      * Jk Options
@@ -648,8 +650,34 @@ static int init_ws_service(apache_private_data_t * private_data,
                 s->ssl_cert =
                     (char *)ap_table_get(r->subprocess_env,
                                          conf->certs_indicator);
+
+                if (conf->options & JK_OPT_FWDCERTCHAIN) {
+                    array_header *t = ap_table_elts(r->subprocess_env);
+                    if (t && t->nelts) {
+                        int i;
+                        table_entry *elts = (table_entry *) t->elts;
+                        array_header *certs = ap_make_array(r->pool, 1,
+                                                            sizeof(char *));
+                        *(const char **)ap_push_array(certs) = s->ssl_cert;
+                        for (i = 0; i < t->nelts; i++) {
+                            if (!elts[i].key)
+                                continue;
+                            if (!strncasecmp(elts[i].key,
+                                             conf->certchain_prefix,
+                                             strlen(conf->certchain_prefix)))
+                            *(const char **)ap_push_array(certs) = elts[i].val;
+                        }
+                        s->ssl_cert = ap_array_pstrcat(r->pool, certs, '\0');
+                     }
+                }
+
                 if (s->ssl_cert) {
                     s->ssl_cert_len = strlen(s->ssl_cert);
+                    if (JK_IS_DEBUG_LEVEL(conf->log)) {
+                        jk_log(conf->log, JK_LOG_DEBUG,
+                               "SSL client certificate (%d bytes):\n%s",
+                               s->ssl_cert_len, s->ssl_cert);
+                    }
                 }
                 /* Servlet 2.3 API */
                 s->ssl_cipher =
@@ -1586,6 +1614,25 @@ static const char *jk_set_cipher_indicator(cmd_parms * cmd,
 }
 
 /*
+ * JkCERTCHAINPrefix Directive Handling
+ *
+ * JkCERTCHAINPrefix SSL_CLIENT_CERT_CHAIN_
+ */
+
+static const char *jk_set_certchain_prefix(cmd_parms * cmd,
+                                           void *dummy, const char *prefix)
+{
+    server_rec *s = cmd->server;
+    jk_server_conf_t *conf =
+        (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                  &jk_module);
+
+    conf->certchain_prefix = ap_pstrdup(cmd->pool, prefix);
+
+    return NULL;
+}
+
+/*
  * JkSESSIONIndicator Directive Handling
  *
  * JkSESSIONIndicator SSL_SESSION_ID
@@ -1631,6 +1678,8 @@ static const char *jk_set_key_size_indicator(cmd_parms * cmd,
  *  ForwardURICompatUnparsed => Forward URI as unparsed, spec compliant but broke mod_rewrite (old TC)
  *  ForwardURIEscaped        => Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part
  *  ForwardDirectories       => Forward all directory requests with no index files to Tomcat
+ * +ForwardSSLCertChain      => Forward SSL certificate chain
+ * -ForwardSSLCertChain      => Don't forward SSL certificate chain
  */
 
 const char *jk_set_options(cmd_parms * cmd, void *dummy, const char *line)
@@ -1688,6 +1737,9 @@ const char *jk_set_options(cmd_parms * cmd, void *dummy, const char *line)
         }
         else if (!strcasecmp(w, "DisableReuse")) {
             opt = JK_OPT_DISABLEREUSE;
+        }
+        else if (!strcasecmp(w, "ForwardCertChain")) {
+            opt = JK_OPT_FWDCERTCHAIN;
         }
         else
             return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '", w,
@@ -1874,6 +1926,8 @@ static const command_rec jk_cmds[] = {
      "Name of the Apache environment that contains SSL client certificates"},
     {"JkCIPHERIndicator", jk_set_cipher_indicator, NULL, RSRC_CONF, TAKE1,
      "Name of the Apache environment that contains SSL client cipher"},
+    {"JkCERTCHAINPrefix", jk_set_certchain_prefix, NULL, RSRC_CONF, TAKE1,
+     "Name of the Apache environment (prefix) that contains SSL client chain certificates"},
     {"JkSESSIONIndicator", jk_set_session_indicator, NULL, RSRC_CONF, TAKE1,
      "Name of the Apache environment that contains SSL session"},
     {"JkKEYSIZEIndicator", jk_set_key_size_indicator, NULL, RSRC_CONF, TAKE1,
@@ -1889,6 +1943,8 @@ static const command_rec jk_cmds[] = {
      *  ForwardURICompat         => Forward URI normally, less spec compliant but mod_rewrite compatible (old TC)
      *  ForwardURICompatUnparsed => Forward URI as unparsed, spec compliant but broke mod_rewrite (old TC)
      *  ForwardURIEscaped        => Forward URI escaped and Tomcat (3.3 rc2) stuff will do the decoding part
+     * +ForwardSSLCertChain      => Forward SSL certificate chain
+     * -ForwardSSLCertChain      => Don't forward SSL certificate chain
      */
     {"JkOptions", jk_set_options, NULL, RSRC_CONF, RAW_ARGS,
      "Set one of more options to configure the mod_jk module"},
@@ -2156,6 +2212,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
         c->https_indicator = NULL;
         c->certs_indicator = NULL;
         c->cipher_indicator = NULL;
+        c->certchain_prefix = NULL;
         c->session_indicator = NULL;
         c->key_size_indicator = NULL;
         c->strip_session = JK_UNSET;
@@ -2176,6 +2233,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
         c->https_indicator = JK_ENV_HTTPS;
         c->certs_indicator = JK_ENV_CERTS;
         c->cipher_indicator = JK_ENV_CIPHER;
+        c->certchain_prefix = JK_ENV_CERTCHAIN_PREFIX;
         c->session_indicator = JK_ENV_SESSION;
         c->key_size_indicator = JK_ENV_KEY_SIZE;
         c->strip_session = JK_FALSE;
@@ -2245,6 +2303,8 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
         overrides->certs_indicator = base->certs_indicator;
     if (!overrides->cipher_indicator)
         overrides->cipher_indicator = base->cipher_indicator;
+    if (!overrides->certchain_prefix)
+        overrides->certchain_prefix = base->certchain_prefix;
     if (!overrides->session_indicator)
         overrides->session_indicator = base->session_indicator;
     if (!overrides->key_size_indicator)
