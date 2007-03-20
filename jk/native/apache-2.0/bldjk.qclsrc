@@ -229,6 +229,6 @@ CRTSRVPGM SRVPGM(MOD_JK/MOD_JK) +
       SRCMBR(MOD_JK) +
       BNDSRVPGM(QHTTPSVR/QZSRAPR QHTTPSVR/QZSRCORE +
                 QHTTPSVR/QZSRXMLP QHTTPSVR/QZSRSDBM) +
-      TEXT('Apache mod_jk tomcat connector module')
+      TEXT('Apache Tomcat mod_jk connector module')
 
 ENDPGM
