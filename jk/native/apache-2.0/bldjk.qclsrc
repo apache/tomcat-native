@@ -4,8 +4,9 @@ CRTCMOD MODULE(MOD_JK/MOD_JK) +
 	DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' + 
 	       'USE_APACHE_MD5' '_REENTRANT') +
 	TEXT('mod_jk.c') +
-        LOCALETYPE(*LOCALE) +
-        LANGLVL(*EXTENDED) +
+    OPTIMIZE(40) +
+    LOCALETYPE(*LOCALE) +
+    LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
 
 CRTCMOD MODULE(MOD_JK/JK_AJP_COM) +
@@ -13,6 +14,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP_COM) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp_common.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -22,6 +24,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP12_W) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp12_worker.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -31,6 +34,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP13) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +   
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp13.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -40,6 +44,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP13_W) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp13_worker.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -49,6 +54,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp14.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -58,6 +64,7 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14_W) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_ajp14_worker.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -68,6 +75,7 @@ CRTCMOD MODULE(MOD_JK/JK_CONNECT) +
            'USE_APACHE_MD5' '_REENTRANT' 'USE_SO_RCVTIMEO' +
            'USE_SO_SNDTIMEO' ) +
     TEXT('jk_connect.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -77,6 +85,7 @@ CRTCMOD MODULE(MOD_JK/JK_CONTEXT) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_context.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -87,6 +96,7 @@ CRTCMOD MODULE(MOD_JK/JK_JNI_WOR) +
            '_XOPEN_SOURCE=530' +  'USE_APACHE_MD5' +
     '_REENTRANT') +
     TEXT('jk_jni_worker.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -96,6 +106,7 @@ CRTCMOD MODULE(MOD_JK/JK_LB_WORK) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_lb_worker.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -105,6 +116,7 @@ CRTCMOD MODULE(MOD_JK/JK_MAP) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_map.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -114,6 +126,7 @@ CRTCMOD MODULE(MOD_JK/JK_MD5) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_md5.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -123,6 +136,7 @@ CRTCMOD MODULE(MOD_JK/JK_MSG_BUF) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_msg_buff.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -132,6 +146,7 @@ CRTCMOD MODULE(MOD_JK/JK_POOL) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_pool.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -141,6 +156,7 @@ CRTCMOD MODULE(MOD_JK/JK_SOCKBUF) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_sockbuf.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -150,6 +166,7 @@ CRTCMOD MODULE(MOD_JK/JK_URI_W_M) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_uri_worker_map.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -159,6 +176,7 @@ CRTCMOD MODULE(MOD_JK/JK_UTIL) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_util.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -168,6 +186,7 @@ CRTCMOD MODULE(MOD_JK/JK_WORKER) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +  
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_worker.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -177,6 +196,7 @@ CRTCMOD MODULE(MOD_JK/JK_STATUS) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_status.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
@@ -186,6 +206,7 @@ CRTCMOD MODULE(MOD_JK/JK_SHM) +
     DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=530' +
            'USE_APACHE_MD5' '_REENTRANT') +
     TEXT('jk_shm.c') +
+    OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     LANGLVL(*EXTENDED) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
