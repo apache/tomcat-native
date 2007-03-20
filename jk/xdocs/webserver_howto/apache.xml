@@ -869,6 +869,14 @@ and your APR (Apache Portable Runtime) libraries have been build with thread sup
 If you are sure, that your MPM is not multi-threaded, you can use "--enable-prefork"
 to force the removal of the synchronization code (thus increasing performance a bit).</td>
 </tr>
+  <tr valign="top"><td>--enable-flock</td>
+  <td>
+In case the Operating system supports flock system call use this flag to enable this
+faster locks that are implemented as system call instead emulated by GNU C library.<br/>
+However those locks does not work on NFS mounted volumes, so you can use
+"--enable-flock" during compile time to force the flocks() calls.</td>
+</tr>
+
 </table>
 <br/>
 <table>

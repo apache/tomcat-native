@@ -26,6 +26,13 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Apache. Add --enable-flock configure parameter for explicit
+        compilation of faster flock() system calls for OS supporting
+        those calls. By default the fcntl system call for locking will
+        be used that is a little bit slower but it can work on NFS
+        mounted volumes as well. (mturk)
+      </update>
       <fix>
         <bug>41562</bug>: Add Debug logging for read from client in ISAPI Redirector.
          Contributed by Tim Whittington. (mturk)

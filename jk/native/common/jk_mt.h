@@ -96,7 +96,15 @@ typedef void *JK_CRIT_SEC;
 #include <unistd.h>
 #include <fcntl.h>
 
+
+#define USE_FLOCK_LK 0
 #if HAVE_FLOCK
+#ifdef JK_USE_FLOCK
+#define USE_FLOCK_LK 1
+#endif
+#endif
+
+#if USE_FLOCK_LK
 #include <sys/file.h>
 
 #define JK_ENTER_LOCK(x, rc)        \
@@ -111,7 +119,7 @@ typedef void *JK_CRIT_SEC;
       rc = rc == 0 ? JK_TRUE : JK_FALSE; \
     } while (0)
 
-#else
+#else /* !USE_FLOCK_LK */
 
 #define JK_ENTER_LOCK(x, rc)        \
     do {                            \
@@ -136,7 +144,8 @@ typedef void *JK_CRIT_SEC;
       while ((rc = fcntl((x), F_SETLKW, &_fl) < 0) && (errno == EINTR)); \
       rc = rc == 0 ? JK_TRUE : JK_FALSE; \
     } while (0)
-#endif /* HAVE_FLOCK */
+
+#endif /* USE_FLOCK_LK */
 
 #else  /* WIN32 || NETWARE */
 #define JK_ENTER_LOCK(x, rc) rc = JK_TRUE
