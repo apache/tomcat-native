@@ -2616,7 +2616,7 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
         /* Tell apache we're here */
         ap_add_version_component(JK_EXPOSED_VERSION);
         jk_log(conf->log, JK_LOG_INFO,
-               "mod_jk (%s) initialized",
+               "%s initialized",
                JK_EXPOSED_VERSION);
 #endif
         return;

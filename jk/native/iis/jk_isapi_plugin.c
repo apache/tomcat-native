@@ -1341,7 +1341,11 @@ static int init_jk(char *serverName)
             }
         }
     }
-
+    if (rc) {
+        jk_log(logger, JK_LOG_INFO,
+               "isapi_redirect/%s initialized",
+               JK_VERSTRING);
+    }
     return rc;
 }
 

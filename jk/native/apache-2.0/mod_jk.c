@@ -2737,7 +2737,7 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     if (wc_open(init_map, &worker_env, conf->log)) {
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);
         jk_log(conf->log, JK_LOG_INFO,
-               "mod_jk (%s) initialized",
+               "%s initialized",
                JK_EXPOSED_VERSION);
     }
     else {
