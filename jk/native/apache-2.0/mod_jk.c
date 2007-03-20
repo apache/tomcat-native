@@ -2704,8 +2704,10 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
         if (ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_threads) != APR_SUCCESS)
             mpm_threads = 1;
     }
-    jk_log(conf->log, JK_LOG_INFO,
-           "Setting default connection pool max size to %d", mpm_threads);
+    if (JK_IS_DEBUG_LEVEL(conf->log))
+        jk_log(conf->log, JK_LOG_DEBUG,
+               "Setting default connection pool max size to %d",
+               mpm_threads);
     jk_set_worker_def_cache_size(mpm_threads);
 
     if ((conf->worker_file != NULL) &&
@@ -2734,6 +2736,9 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
 
     if (wc_open(init_map, &worker_env, conf->log)) {
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);
+        jk_log(conf->log, JK_LOG_INFO,
+               "mod_jk (%s) initialized",
+               JK_EXPOSED_VERSION);
     }
     else {
         ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
