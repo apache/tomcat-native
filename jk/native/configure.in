@@ -411,7 +411,7 @@ dnl CFLAGS for shared memory lock mode
 dnl it also allows the CFLAGS environment variable.
 CFLAGS="${CFLAGS}"
 AC_ARG_ENABLE(
-prefork,
+flock,
 [  --enable-flock   Turn on flock for shared locking if present],
 [
 case "${enableval}" in
