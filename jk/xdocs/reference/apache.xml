@@ -193,7 +193,6 @@ Name of the Apache environment (prefix) that contains SSL client chain certifica
 <br/>
 The default value is "SSL_CLIENT_CERT_CHAIN_".
 </p></attribute>
-</p></attribute>
 <attribute name="JkSESSIONIndicator" required="false"><p>
 Name of the Apache environment variable that contains SSL session.
 <br/>
