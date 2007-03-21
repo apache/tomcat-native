@@ -92,7 +92,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\jk_util.obj" \
 	"$(INTDIR)\jk_worker.obj" \
 	"$(INTDIR)\isapi_redirect.res" \
-	".\pcre\Release_x86\pcre.lib"
+	".\pcre\Release_amd64\pcre.lib"
 
 "$(OUTDIR)\isapi_redirect.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
