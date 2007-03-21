@@ -6,10 +6,10 @@
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
-OUTDIR=.\Release_x86
-INTDIR=.\Release_x86
+OUTDIR=.\Release_amd64
+INTDIR=.\Release_amd64
 # Begin Custom Macros
-OutDir=.\Release_x86
+OutDir=.\Release_amd64
 # End Custom Macros
 
 !IF "$(RECURSE)" == "0" 
@@ -98,6 +98,8 @@ LINK32_OBJS= \
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
+	IF EXIST $(OUTDIR)\isapi_redirect.manifest \
+		mt -nologo -manifest $(OUTDIR)\isapi_redirect.manifest -outputresource:$(OUTDIR)\isapi_redirect.dll;2
 
 CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\common" /I "pcre" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AMD64_=1" -DWIN64 /D "_WIN64" /Wp64 /FIPRE64PRA.H /D "ISAPI_EXPORTS" /D "HAS_PCRE" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\isapi_redirector_src" /FD /c 
 
