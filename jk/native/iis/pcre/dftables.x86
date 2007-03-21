@@ -1,0 +1,94 @@
+CPP=cl.exe
+RSC=rc.exe
+OUTDIR=.
+INTDIR=.\Release_x86
+# Begin Custom Macros
+OutDir=.
+# End Custom Macros
+
+ALL : "$(OUTDIR)\dftables.exe"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\dftables.idb"
+	-@erase "$(INTDIR)\dftables.obj"
+	-@erase "$(OUTDIR)\dftables.exe"
+
+"$(INTDIR)" :
+    if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
+
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\dftables.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\Release\dftables.pdb" /machine:I386 /out:"$(OUTDIR)\dftables.exe" /opt:ref 
+LINK32_OBJS= \
+	"$(INTDIR)\dftables.obj"
+
+"$(OUTDIR)\dftables.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+CPP_PROJ=/nologo /MD /W3 /O2 /D "_WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\dftables" /FD /wd4996 /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+
+!IF "$(CFG)" == "dftables_x86"
+SOURCE=.\dftables.c
+
+"$(INTDIR)\dftables.obj" : $(SOURCE) "$(INTDIR)" ".\config.h" ".\pcre.h"
+
+
+SOURCE=.\config.hw
+InputPath=.\config.hw
+
+".\config.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	<<tempfile.bat 
+	@echo off 
+	type .\config.hw > .\config.h
+<< 
+	
+SOURCE=.\maketables.c
+SOURCE=.\pcre.hw
+InputPath=.\pcre.hw
+
+".\pcre.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	<<tempfile.bat 
+	@echo off 
+	type .\pcre.hw > .\pcre.h
+<< 
+	
+
+!ENDIF 
+

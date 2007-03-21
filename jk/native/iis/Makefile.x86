@@ -1,8 +1,3 @@
-# Microsoft Developer Studio Generated NMAKE File, Based on isapi.dsp
-# Use Platform SDK:
-# SetEnv.cmd /SRV64 /RETAIL
-# nmake -f Makefile.ia64
-#
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
@@ -18,12 +13,12 @@ ALL : "$(OUTDIR)\isapi_redirect.dll"
 
 !ELSE 
 
-ALL : "pcre_ia64" "$(OUTDIR)\isapi_redirect.dll"
+ALL : "pcre_x86" "$(OUTDIR)\isapi_redirect.dll"
 
 !ENDIF 
 
 !IF "$(RECURSE)" == "1" 
-CLEAN :"pcre_ia64CLEAN" 
+CLEAN :"pcre_x86CLEAN" 
 !ELSE 
 CLEAN :
 !ENDIF 
@@ -65,7 +60,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\isapi.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib strsafe.lib bufferoverflowu.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\isapi_redirect.pdb" /debug /machine:IA64 /def:".\isapi.def" /out:"$(OUTDIR)\isapi_redirect.dll" /implib:"$(OUTDIR)\isapi_redirect.lib" 
+LINK32_FLAGS=kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib strsafe.lib /nologo /base:"0x6A6B0000" /dll /incremental:no /pdb:"$(OUTDIR)\isapi_redirect.pdb" /debug /machine:I386 /def:".\isapi.def" /out:"$(OUTDIR)\isapi_redirect.dll" /implib:"$(OUTDIR)\isapi_redirect.lib" 
 DEF_FILE= \
 	".\isapi.def"
 LINK32_OBJS= \
@@ -99,7 +94,7 @@ LINK32_OBJS= \
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
 
-CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\common" /I "pcre" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_IA64_=1" -DWIN64 /D "_WIN64" /Wp64 /FIPRE64PRA.H /D "ISAPI_EXPORTS" /D "HAS_PCRE" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\isapi_redirector_src" /FD /c 
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\common" /I "pcre" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "ISAPI_EXPORTS" /D "HAS_PCRE" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\isapi_redirector_src" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -271,12 +266,12 @@ SOURCE=..\common\jk_worker.c
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
-"pcre_ia64" : 
+"pcre_x86" : 
    cd ".\pcre"
-   $(MAKE) /$(MAKEFLAGS) /F ".\pcre.ia64"
+   $(MAKE) /$(MAKEFLAGS) /F ".\pcre.x86" CFG="pcre_x86" 
    cd ".."
 
-"pcre_ia64CLEAN" : 
+"pcre_x86CLEAN" : 
    cd ".\pcre"
-   $(MAKE) /$(MAKEFLAGS) /F ".\pcre.ia64" RECURSE=1 CLEAN 
+   $(MAKE) /$(MAKEFLAGS) /F ".\pcre.x86" CFG="pcre_x86" RECURSE=1 CLEAN 
    cd ".."

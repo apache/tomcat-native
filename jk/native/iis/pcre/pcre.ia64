@@ -1,0 +1,132 @@
+# Microsoft Developer Studio Generated NMAKE File, Based on pcre.dsp
+# Use Platform SDK:
+# SetEnv.cmd /SRV64 /RETAIL
+# nmake -f pcre.amd64
+#
+
+CPP=cl.exe
+RSC=rc.exe
+OUTDIR=.\Release_ia64
+INTDIR=.\Release_ia64
+# Begin Custom Macros
+OutDir=.\Release_ia64
+# End Custom Macros
+
+!IF "$(RECURSE)" == "0" 
+
+ALL : "$(OUTDIR)\pcre.lib"
+
+!ELSE 
+
+ALL : "$(OUTDIR)\pcre.lib"
+
+!ENDIF 
+
+CLEAN :
+	-@erase "$(INTDIR)\get.obj"
+	-@erase "$(INTDIR)\maketables.obj"
+	-@erase "$(INTDIR)\pcre.obj"
+	-@erase "$(INTDIR)\pcre_src.idb"
+	-@erase "$(INTDIR)\pcre_src.pdb"
+	-@erase "$(INTDIR)\study.obj"
+	-@erase "$(OUTDIR)\pcre.lib"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\pcre.bsc" 
+BSC32_SBRS= \
+	
+LIB32=link.exe -lib
+LIB32_FLAGS=/nologo /out:"$(OUTDIR)\pcre.lib" 
+LIB32_OBJS= \
+	"$(INTDIR)\get.obj" \
+	"$(INTDIR)\maketables.obj" \
+	"$(INTDIR)\pcre.obj" \
+	"$(INTDIR)\study.obj"
+
+"$(OUTDIR)\pcre.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
+    $(LIB32) @<<
+  $(LIB32_FLAGS) $(DEF_FLAGS) $(LIB32_OBJS)
+<<
+
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /D "_WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_IA64_=1" -DWIN64 /D "_WIN64" /Wp64 /FIPRE64PRA.H /D "PCRE_STATIC" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\pcre_src" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+SOURCE=.\dftables.exe
+InputPath=.\dftables.exe
+
+".\chartables.c" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	<<tempfile.bat 
+	@echo off 
+	.\dftables.exe chartables.c 
+<< 
+	
+SOURCE=.\get.c
+
+"$(INTDIR)\get.obj" : $(SOURCE) "$(INTDIR)" ".\config.h" ".\pcre.h"
+
+
+SOURCE=.\maketables.c
+
+"$(INTDIR)\maketables.obj" : $(SOURCE) "$(INTDIR)" ".\config.h" ".\pcre.h"
+
+
+SOURCE=.\pcre.c
+
+"$(INTDIR)\pcre.obj" : $(SOURCE) "$(INTDIR)" ".\chartables.c" ".\config.h" ".\pcre.h"
+
+
+SOURCE=.\study.c
+
+"$(INTDIR)\study.obj" : $(SOURCE) "$(INTDIR)" ".\config.h" ".\pcre.h"
+
+
+SOURCE=.\config.hw
+InputPath=.\config.hw
+
+".\config.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	<<tempfile.bat 
+	@echo off 
+	type .\config.hw > .\config.h
+<< 
+	
+SOURCE=.\pcre.hw
+InputPath=.\pcre.hw
+
+".\pcre.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	<<tempfile.bat 
+	@echo off 
+	type .\pcre.hw > .\pcre.h
+<< 
+	
