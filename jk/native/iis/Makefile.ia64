@@ -6,10 +6,10 @@
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
-OUTDIR=.\Release_x86
-INTDIR=.\Release_x86
+OUTDIR=.\Release_ia64
+INTDIR=.\Release_ia64
 # Begin Custom Macros
-OutDir=.\Release_x86
+OutDir=.\Release_ia64
 # End Custom Macros
 
 !IF "$(RECURSE)" == "0" 
@@ -92,7 +92,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\jk_util.obj" \
 	"$(INTDIR)\jk_worker.obj" \
 	"$(INTDIR)\isapi_redirect.res" \
-	".\pcre\Release_x86\pcre.lib"
+	".\pcre\Release_ia64\pcre.lib"
 
 "$(OUTDIR)\isapi_redirect.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
