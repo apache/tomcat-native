@@ -864,18 +864,29 @@ static int JK_METHOD service(jk_endpoint_t *e,
             s->route = rec->r;
             prec = rec;
 
-            if (rec->s->state == JK_LB_STATE_RECOVER)
-                rec->s->state = JK_LB_STATE_PROBE;
-
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "service worker=%s route=%s",
                        rec->s->name, s->route);
+
+            if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                jk_shm_lock();
+            if (rec->s->state == JK_LB_STATE_RECOVER)
+                rec->s->state = JK_LB_STATE_PROBE;
+            if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                jk_shm_unlock();
+                       
             while ((!(r=rec->w->get_endpoint(rec->w, &end, l)) || !end) && (retry < p->worker->s->retries)) {
                 retry++;
                 retry_wait *=2;
+
+                if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                    jk_shm_lock();
                 if (retry_wait > JK_LB_MAX_RETRY_WAIT)
                     retry_wait = JK_LB_MAX_RETRY_WAIT;
+                if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                    jk_shm_unlock();
+
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
                            "could not get free endpoint for worker"
@@ -889,8 +900,12 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  * as in error if the retry number is
                  * greater then the number of retries.
                  */
+                if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                    jk_shm_lock();
                 if (rec->s->state != JK_LB_STATE_ERROR)
                     rec->s->state = JK_LB_STATE_BUSY;
+                if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                    jk_shm_unlock();
                 jk_log(l, JK_LOG_INFO,
                        "could not get free endpoint for worker %s (%d retries)",
                        rec->s->name, retry);
@@ -973,8 +988,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if (service_stat == JK_TRUE) {
                     rec->s->state = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
-                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
-                        jk_shm_unlock();
                     rc = JK_TRUE;
                 }
                 else if (service_stat == JK_CLIENT_ERROR) {
@@ -985,8 +998,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rec->s->client_errors++;
                     rec->s->state = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
-                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
-                        jk_shm_unlock();
                     jk_log(l, JK_LOG_INFO,
                            "unrecoverable error %d, request failed."
                            " Client failed in the middle of request,"
@@ -1004,9 +1015,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rec->s->errors++;
                     rec->s->state = JK_LB_STATE_ERROR;
                     rec->s->error_time = time(NULL);
-                    if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
-                        jk_shm_unlock();
-
                     if (is_service_error != JK_HTTP_SERVER_BUSY) {
                         /*
                         * Error is not recoverable - break with an error.
@@ -1024,6 +1032,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                                "service failed, worker %s is in error state",
                                rec->s->name);
                 }
+                if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
+                    jk_shm_unlock();
             }
             if ( rc == -1 ) {
                 /*
