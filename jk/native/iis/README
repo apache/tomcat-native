@@ -37,8 +37,7 @@ The steps that you need to take are:
    1. Change directory to the isapi redirector plugins source directory.
    
    2. Execute the following command:
-      MSDEV isapi.dsp /MAKE ALL
-      If msdev is not in your path, enter the full path to msdev.exe
+      nmake -f Makefile.x86
 
 This will build both release and debug versions of the redirector plugin.
 
