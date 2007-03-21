@@ -26,6 +26,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        <bug>419222</bug>: Apache 1.3. Enable JkEnvVar. (mturk)
+      </fix>
       <update>
         Apache. Add --enable-flock configure parameter for explicit
         compilation of faster flock() system calls for OS supporting

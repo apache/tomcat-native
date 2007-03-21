@@ -1775,6 +1775,7 @@ static const char *jk_add_env_var(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
+    conf->envvars_in_use = JK_TRUE;
 
     /* env_name is mandatory, default_value is optional.
      * No value means send the attribute only, if the env var is set during runtime.
