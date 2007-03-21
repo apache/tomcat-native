@@ -81,7 +81,7 @@ XDEFINES	+= \
 			$(EOLIST)
 
 XLFLAGS		+= \
-		   	$(EOLIST)
+			$(EOLIST)
 endif
 
 ifeq "$(RELEASE)" "noopt"
@@ -95,7 +95,7 @@ XDEFINES	+= \
 			$(EOLIST)
 
 XLFLAGS		+= \
-		   	$(EOLIST)
+			$(EOLIST)
 endif
 
 ifeq "$(RELEASE)" "release"
@@ -117,7 +117,7 @@ endif
 # This is used by the link 'name' directive to name the nlm.  If left blank
 # TARGET_nlm (see below) will be used.
 #
-NLM_NAME		= mod_jk
+NLM_NAME	= mod_jk
 
 #
 # This is used by the link '-desc ' directive.
@@ -167,14 +167,14 @@ NLM_CHECK_SYM	=
 #
 # If these are specified it will be used by the link '-flags' directive
 #
-NLM_FLAGS		=  AUTOUNLOAD, PSEUDOPREEMPTION
+NLM_FLAGS	= AUTOUNLOAD, PSEUDOPREEMPTION
 
 #
 # If this is specified it will be linked in with the XDCData option in the def
 # file instead of the default of $(NWOS)/apache.xdc.  XDCData can be disabled
 # by setting APACHE_UNIPROC in the environment
 #
-XDCDATA         =
+XDCDATA		=
 
 #
 # If there is an NLM target, put it here
@@ -223,7 +223,7 @@ FILES_nlm_objs = \
 # These will be added as a library command in the link.opt file.
 #
 FILES_nlm_libs = \
-   	libcpre.o \
+	libcpre.o \
 	$(EOLIST)
 
 #
