@@ -882,7 +882,7 @@ block of store on the stack, to reduce the use of malloc/free. The threshold is
 in a macro that can be changed at configure time. */
 
 static int ap_regexec(const ap_regex_t *preg, const char *string,
-                      size_t nmatch, ap_regmatch_t pmatch[],
+                      int nmatch, ap_regmatch_t pmatch[],
                       int eflags)
 {
     int rc;
@@ -1065,7 +1065,7 @@ static int rregex_rewrite(char *uri)
                 char *subs = ap_pregsub(src, uri,
                                        AP_MAX_REG_MATCH, regm);
                 if (subs) {
-                    int diffsz = strlen(subs) - (regm[0].rm_eo - regm[0].rm_so);
+                    size_t diffsz = strlen(subs) - (regm[0].rm_eo - regm[0].rm_so);
                     char *buf = malloc(INTERNET_MAX_URL_LENGTH);
                     memcpy(buf, uri, regm[0].rm_so);
                     StringCbCopy(buf + regm[0].rm_so, INTERNET_MAX_URL_LENGTH, subs);
