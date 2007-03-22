@@ -72,9 +72,13 @@ const char *jk_map_name_at(jk_map_t *m, int idex);
 
 void *jk_map_value_at(jk_map_t *m, int idex);
 
+int jk_map_load_property(jk_map_t *m, const char *str, jk_logger_t *l);
+
+int jk_map_load_properties(jk_map_t *m, const char *f, time_t *modified, jk_logger_t *l);
+
 /**
  *  Replace $(property) in value.
- * 
+ *
  */
 char *jk_map_replace_properties(jk_map_t *m, const char *value);
 

@@ -674,7 +674,7 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
                             strncpy(to, m->names[i], remain);
                             *(to+remain)   = '.';
                             *(to+remain+1) = '\0';
-    
+
                             rc = jk_map_resolve_references(m, m->values[i], 0, depth+1, l);
                             if (rc == JK_FALSE) {
                                 break;
@@ -757,3 +757,78 @@ int jk_map_inherit_properties(jk_map_t *m, const char *from, const char *to, jk_
     }
     return rc;
 }
+
+int jk_map_load_property(jk_map_t *m, const char *str, jk_logger_t *l)
+{
+    int rc = JK_TRUE;
+    char buf[LENGTH_OF_LINE + 1];
+    char *prp = &buf[0];
+
+    if (strlen(str) > LENGTH_OF_LINE) {
+        jk_log(l, JK_LOG_WARNING,
+               "Line to long (%d > %d), ignoring entry",
+               strlen(str), LENGTH_OF_LINE);
+        return JK_FALSE;
+    }
+
+    strcpy(prp, str);
+    if (trim(prp)) {
+        char *v = strchr(prp, '=');
+        if (v) {
+            *v = '\0';
+            v++;
+            trim(prp);
+            trim(v);
+            if (strlen(v) && strlen(prp)) {
+                v = jk_pool_strdup(&m->p, v);
+                if (v) {
+                    jk_map_put(m, prp, v, NULL);
+                }
+                else {
+                    JK_LOG_NULL_PARAMS(l);
+                    rc = JK_FALSE;
+                }
+            }
+        }
+    }
+    return rc;
+}
+
+
+int jk_map_load_properties(jk_map_t *m, const char *f, time_t *modified, jk_logger_t *l)
+{
+    int rc = JK_FALSE;
+
+    if (m && f) {
+        struct stat statbuf;
+        FILE *fp;
+        if ((rc = stat(f, &statbuf)) == -1)
+            return JK_FALSE;
+#ifdef AS400
+        fp = fopen(f, "r, o_ccsid=0");
+#else
+        fp = fopen(f, "r");
+#endif
+
+        if (fp) {
+            char buf[LENGTH_OF_LINE + 1];
+            char *prp;
+
+            rc = JK_TRUE;
+
+            while (NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
+                trim_prp_comment(prp);
+                if (*prp) {
+                    if ((rc = jk_map_load_property(m, prp, l)) == JK_FALSE)
+                        break;
+                }
+            }
+            fclose(fp);
+            if (modified)
+                *modified = statbuf.st_mtime;
+        }
+    }
+
+    return rc;
+}
+
