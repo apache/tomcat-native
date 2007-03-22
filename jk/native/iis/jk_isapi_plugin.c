@@ -109,17 +109,30 @@ static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
 #define BAD_PATH        -2
 #define MAX_SERVERNAME  128
 
-#define HTML_ERROR_400          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">"  \
-                                "<HTML><HEAD><TITLE>Bad request!</TITLE></HEAD>"                    \
-                                "<BODY><H1>Bad request!</H1><DL><DD>\n"                             \
-                                "Your browser (or proxy) sent a request that "                      \
-                                "this server could not understand.</DL></DD></BODY></HTML>"
+char HTML_ERROR_400[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n"
+                                "<HTML><HEAD><TITLE>Bad request!</TITLE></HEAD>\n"
+                                "<BODY><H1>Bad request!</H1>\n<P>"
+                                "Your browser (or proxy) sent a request that "
+                                "this server could not understand.</P></BODY></HTML>";
 
-#define HTML_ERROR_404          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">"  \
-                                "<HTML><HEAD><TITLE>Object not found!</TITLE></HEAD>"               \
-                                "<BODY><H1>The requested URL was not found on this server"          \
-                                "</H1><DL><DD>\nIf you entered the URL manually please check your"  \
-                                "spelling and try again.</DL></DD></BODY></HTML>"
+char HTML_ERROR_404[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n"
+                                "<HTML><HEAD><TITLE>Object not found!</TITLE></HEAD>\n"
+                                "<BODY><H1>The requested URL was not found on this server"
+                                "</H1>\n<P>If you entered the URL manually please check your"
+                                "spelling and try again.</P></BODY></HTML>";
+
+char HTML_ERROR_500[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n"
+                                "<HTML><HEAD><TITLE>Server error!</TITLE></HEAD>\n"
+                                "<BODY><H1>Internal server error!</H1>\n<P>"
+                                "The server encountered an internal error and was "
+                                "unable to complete your request.</P></BODY></HTML>";
+
+char HTML_ERROR_503[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n"
+                                "<HTML><HEAD><TITLE>Service unavailable!</TITLE></HEAD>\n"
+                                "<BODY><H1>Service temporary unavailable!</H1>\n<P>"
+                                "The server is temporarily unable to service your "
+                                "request due to maintenance downtime or capacity problems. "
+                                "Please try again later.</P></BODY></HTML>";
 
 
 #define JK_TOLOWER(x)   ((char)tolower((BYTE)(x)))
@@ -517,6 +530,34 @@ static void write_error_response(PHTTP_FILTER_CONTEXT pfc, char *status,
     pfc->WriteClient(pfc, msg, &len, 0);
 }
 
+static void write_error_message(LPEXTENSION_CONTROL_BLOCK lpEcb, int err)
+{
+    DWORD len;
+    if (err = 500) {
+        lpEcb->ServerSupportFunction(lpEcb->ConnID,
+                                     HSE_REQ_SEND_RESPONSE_HEADER,
+                                     "500 Internal Server Error",
+                                     0,
+                                     (LPDWORD)CONTENT_TYPE);
+        len = (DWORD)(sizeof(HTML_ERROR_500) - 1);
+        lpEcb->WriteClient(lpEcb->ConnID,
+                           HTML_ERROR_503, &len, 0);
+    }
+    else if (err == 503) {
+        lpEcb->ServerSupportFunction(lpEcb->ConnID,
+                                     HSE_REQ_SEND_RESPONSE_HEADER,
+                                     "503 Service Unavailable",
+                                     0,
+                                     (LPDWORD)CONTENT_TYPE);
+        len = (DWORD)(sizeof(HTML_ERROR_503) - 1);
+        lpEcb->WriteClient(lpEcb->ConnID,
+                           HTML_ERROR_503, &len, 0);
+    }
+    else {
+        return;
+    }
+}
+
 
 static int JK_METHOD start_response(jk_ws_service_t *s,
                                     int status,
@@ -778,6 +819,8 @@ typedef struct {
     void *re_pcre;
     size_t re_nsub;
     size_t re_erroffset;
+    const char *real;
+    const char *fake;
 } ap_regex_t;
 
 /* The structure in which a captured offset is returned. */
@@ -915,8 +958,8 @@ static int ap_regexec(const ap_regex_t *preg, const char *string,
     if (rc == 0)
         rc = nmatch;    /* All captured slots were filled in */
     if (rc >= 0) {
-        size_t i;
-        for (i = 0; i < (size_t)rc; i++) {
+        int i;
+        for (i = 0; i < rc; i++) {
             pmatch[i].rm_so = ovector[i*2];
             pmatch[i].rm_eo = ovector[i*2+1];
         }
@@ -1058,20 +1101,17 @@ static int rregex_rewrite(char *uri)
     if (rregexp_map) {
         int i;
         for (i = 0; i < jk_map_size(rregexp_map); i++) {
-            const char *src = jk_map_name_at(rregexp_map, i);
             ap_regex_t *regexp = (ap_regex_t *)jk_map_value_at(rregexp_map, i);
-
             if (!ap_regexec(regexp, uri, AP_MAX_REG_MATCH, regm, 0)) {
-                char *subs = ap_pregsub(src, uri,
+                char *subs = ap_pregsub(regexp->fake, uri,
                                        AP_MAX_REG_MATCH, regm);
                 if (subs) {
+                    char buf[INTERNET_MAX_URL_LENGTH];
                     size_t diffsz = strlen(subs) - (regm[0].rm_eo - regm[0].rm_so);
-                    char *buf = malloc(INTERNET_MAX_URL_LENGTH);
-                    memcpy(buf, uri, regm[0].rm_so);
-                    StringCbCopy(buf + regm[0].rm_so, INTERNET_MAX_URL_LENGTH, subs);
-                    StringCbCat(buf, INTERNET_MAX_URL_LENGTH, uri + regm[0].rm_eo);
-                    StringCbCopy(uri, INTERNET_MAX_URL_LENGTH, buf);
-                    free(buf);
+                    memcpy(&buf[0], uri, regm[0].rm_so);
+                    StringCbCopy(&buf[regm[0].rm_so], INTERNET_MAX_URL_LENGTH - regm[0].rm_so, subs);
+                    StringCbCat(&buf[0], INTERNET_MAX_URL_LENGTH, uri + regm[0].rm_eo);
+                    StringCbCopy(uri, INTERNET_MAX_URL_LENGTH, &buf[0]);
                     free(subs);
                     return 1;
                 }
@@ -1456,9 +1496,10 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                                    "service() returned OK");
                     }
                     else {
-                        lpEcb->dwHttpStatusCode = is_error;
                         jk_log(logger, JK_LOG_ERROR,
-                               "service() failed");
+                               "service() failed with http error %d", is_error);
+                        lpEcb->dwHttpStatusCode = is_error;
+                        write_error_message(lpEcb, is_error);
                     }
                     e->done(&e, logger);
                 }
@@ -1509,7 +1550,20 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
         }
         if (workers_map) {
             jk_map_free(&workers_map);
-            workers_map = NULL;
+        }
+        if (rewrite_map) {
+            jk_map_free(&rewrite_map);
+        }
+        if (rregexp_map) {
+            int i;
+            for (i = 0; i < jk_map_size(rregexp_map); i++) {
+                ap_regex_t *regexp = (ap_regex_t *)jk_map_value_at(rregexp_map, i);
+                if (regexp) {
+                    ap_regfree(regexp);
+                    free(regexp);
+                }
+            }
+            jk_map_free(&rregexp_map);
         }
         wc_close(logger);
         if (logger) {
@@ -1616,7 +1670,7 @@ static int init_jk(char *serverName)
     }
 
     if (rewrite_rule_file[0] && jk_map_alloc(&rewrite_map)) {
-        if (jk_map_read_properties(rewrite_map, rewrite_rule_file, NULL, 1, logger)) {
+        if (jk_map_load_properties(rewrite_map, rewrite_rule_file, NULL, logger)) {
             int i;
             if (JK_IS_DEBUG_LEVEL(logger)) {
                 jk_log(logger, JK_LOG_DEBUG, "Loaded rewrite rule file %s.",
@@ -1627,12 +1681,23 @@ static int init_jk(char *serverName)
             for (i = 0; i < jk_map_size(rewrite_map); i++) {
                 const char *src = jk_map_name_at(rewrite_map, i);
                 if (*src == '~') {
-                    ap_regex_t *regexp = malloc(sizeof(ap_regex_t *));
+                    ap_regex_t *regexp = malloc(sizeof(ap_regex_t));
                     const char *val = jk_map_value_at(rewrite_map, i);
-                    if (!ap_regcomp(regexp, val, AP_REG_EXTENDED)) {
-                        jk_map_add(rregexp_map, val, regexp);
+                    /* Skip leading tilde */
+                    regexp->real = src + 1;
+                    regexp->fake = val;
+                    if (!ap_regcomp(regexp, regexp->real, AP_REG_EXTENDED)) {
+                        jk_map_add(rregexp_map, regexp->real, regexp);
+                        if (JK_IS_DEBUG_LEVEL(logger)) {
+                            jk_log(logger, JK_LOG_DEBUG,
+                                   "Added regular expression rule %s -> %s",
+                                   regexp->real, regexp->fake);
+                        }
                     }
                     else {
+                        jk_log(logger, JK_LOG_ERROR,
+                               "Unable to compile regular expression %s",
+                               regexp->real);
                         free(regexp);
                     }
                 }
