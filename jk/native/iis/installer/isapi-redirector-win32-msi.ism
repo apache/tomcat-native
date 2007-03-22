@@ -3473,6 +3473,7 @@ TQBzAGkAAQBSAGUAbABlAGEAcwBlAA==
 		<col def="S0">Value</col>
 		<col def="s72">Component_</col>
 		<col def="I4">ISAttributes</col>
+		<row><td>Registry1</td><td>2</td><td>SOFTWARE\Apache Software Foundation\Jakarta Isapi Redirector\1.0</td><td>rewrite_rule_file</td><td>[INSTALLDIR]conf\rewrite.properties</td><td>ISRegistryComponent1</td><td>0</td></row>
 		<row><td>Registry10</td><td>2</td><td>SOFTWARE\Apache Software Foundation</td><td/><td/><td>ISRegistryComponent1</td><td>0</td></row>
 		<row><td>Registry11</td><td>2</td><td>SOFTWARE\Apache Software Foundation\Jakarta Isapi Redirector</td><td/><td/><td>ISRegistryComponent1</td><td>0</td></row>
 		<row><td>Registry12</td><td>2</td><td>SOFTWARE\Apache Software Foundation\Jakarta Isapi Redirector\1.0</td><td/><td/><td>ISRegistryComponent1</td><td>0</td></row>
