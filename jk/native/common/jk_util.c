@@ -397,18 +397,14 @@ static int JK_METHOD log_to_file(jk_logger_t *l, int level, const char *what)
     if (l &&
         (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
         l->logger_private && what) {
-        size_t sz = strlen(what);
-        if (sz) {
-            file_logger_t *p = l->logger_private;
-            if (fwrite(what, 1, sz, p->logfile)) {
-                /* [V] Flush the dam' thing! */
-                fflush(p->logfile);
-            }
+        file_logger_t *p = l->logger_private;
+        if (p->logfile) {
+            fputs(what, p->logfile);
+            /* [V] Flush the dam' thing! */
+            fflush(p->logfile);
         }
-
         return JK_TRUE;
     }
-
     return JK_FALSE;
 }
 
@@ -444,6 +440,7 @@ int jk_parse_log_level(const char *level)
 int jk_open_file_logger(jk_logger_t **l, const char *file, int level)
 {
     if (l && file) {
+
         jk_logger_t *rc = (jk_logger_t *)malloc(sizeof(jk_logger_t));
         file_logger_t *p = (file_logger_t *) malloc(sizeof(file_logger_t));
         if (rc && p) {
@@ -496,11 +493,7 @@ int jk_log(jk_logger_t *l,
 {
     int rc = 0;
     /* Need to reserve space for newline and terminating zero byte. */
-#ifdef WIN32
-    static int usable_size = HUGE_BUFFER_SIZE-3;
-#else
     static int usable_size = HUGE_BUFFER_SIZE-2;
-#endif
     if (!l || !file || !fmt) {
         return -1;
     }
@@ -577,17 +570,14 @@ int jk_log(jk_logger_t *l,
 #else
         rc = vsnprintf(buf + used, usable_size - used, fmt, args);
 #endif
+        va_end(args);
         if ( rc <= usable_size - used ) {
             used += rc;
         } else {
             used = usable_size;
         }
-#ifdef WIN32
-        buf[used++] = '\r';
-#endif
-        buf[used] = '\n';
-        buf[used+1] = 0;
-        va_end(args);
+        buf[used++] = '\n';
+        buf[used] = 0;
         l->log(l, level, buf);
 #ifdef NETWARE
         free(buf);
