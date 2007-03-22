@@ -26,6 +26,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        IIS. Added pcre like regular expressions for url rewrite rules. (mturk)
+      </update>
       <fix>
         <bug>419222</bug>: Apache 1.3. Enable JkEnvVar. (mturk)
       </fix>
