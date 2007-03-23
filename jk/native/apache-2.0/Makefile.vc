@@ -1,28 +1,18 @@
-# Microsoft Developer Studio Generated NMAKE File, Based on mod_jk.dsp
-!IF "$(CFG)" == ""
-CFG=apache - Win32 Release
-!MESSAGE No configuration specified. Defaulting to apache - Win32 Release.
-!ENDIF 
+!IFDEF APACHE22
+APACHE2_HOME=$(APACHE22_HOME)
+APR_LIB=libapr-1.lib
+APU_LIB=libaprutil-1.lib
+!ELSE
+APR_LIB=libapr.lib
+APU_LIB=libaprutil.lib
+!IFDEF APACHE20_HOME
+APACHE2_HOME=$(APACHE20_HOME)
+!ENDIF
+!ENDIF
 
-!IF "$(CFG)" != "apache - Win32 Release"
-!MESSAGE Invalid configuration "$(CFG)" specified.
-!MESSAGE You can specify a configuration when running NMAKE
-!MESSAGE by defining the macro CFG on the command line. For example:
-!MESSAGE 
-!MESSAGE NMAKE /f "Makefile.vc" CFG="apache - Win32 Release"
-!MESSAGE 
-!MESSAGE Possible choices for configuration are:
-!MESSAGE 
-!MESSAGE "apache - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE 
-!ERROR An invalid configuration is specified.
-!ENDIF 
-
-!IF "$(OS)" == "Windows_NT"
-NULL=
-!ELSE 
-NULL=nul
-!ENDIF 
+!IFNDEF APACHE2_HOME
+!ERROR Missing APACHE2_HOME environment variable.
+!ENDIF
 
 CPP=cl.exe
 MTL=midl.exe
@@ -73,7 +63,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mod_jk.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=libhttpd.lib libapr.lib libaprutil.lib kernel32.lib user32.lib advapi32.lib wsock32.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_jk.pdb" /debug /machine:I386 /out:"$(OUTDIR)\mod_jk.so" /implib:"$(OUTDIR)\mod_jk.lib" /libpath:"$(APACHE2_HOME)\lib" /opt:ref 
+LINK32_FLAGS=libhttpd.lib $(APR_LIB) $(APU_LIB) kernel32.lib user32.lib advapi32.lib wsock32.lib /nologo /base:"0x6A6B0000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_jk.pdb" /debug /machine:I386 /out:"$(OUTDIR)\mod_jk.so" /implib:"$(OUTDIR)\mod_jk.lib" /libpath:"$(APACHE2_HOME)\lib" /opt:ref 
 LINK32_OBJS= \
 	"$(INTDIR)\jk_ajp12_worker.obj" \
 	"$(INTDIR)\jk_ajp13.obj" \
@@ -136,16 +126,6 @@ CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\common" /I "$(JAVA_HOME)\include" /I "$(
 
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
 
-!IF "$(NO_EXTERNAL_DEPS)" != "1"
-!IF EXISTS("mod_jk.dep")
-!INCLUDE "mod_jk.dep"
-!ELSE 
-!MESSAGE Warning: cannot find "mod_jk.dep"
-!ENDIF 
-!ENDIF 
-
-
-!IF "$(CFG)" == "apache - Win32 Release"
 SOURCE=..\common\jk_ajp12_worker.c
 
 "$(INTDIR)\jk_ajp12_worker.obj" : $(SOURCE) "$(INTDIR)"
@@ -269,8 +249,4 @@ SOURCE=..\common\jk_worker.c
 SOURCE=.\mod_jk.c
 
 "$(INTDIR)\mod_jk.obj" : $(SOURCE) "$(INTDIR)"
-
-
-
-!ENDIF 
 
