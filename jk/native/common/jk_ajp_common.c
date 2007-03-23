@@ -1443,7 +1443,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 if (r->flush)
                     r->flush(r);
             }
-            else {            
+            else {
                 if (!r->write(r, msg->buf + msg->pos, len)) {
                     jk_log(l, JK_LOG_INFO,
                            "Writing to client aborted or client network problems");
@@ -1525,6 +1525,17 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
     JK_TRACE_EXIT(l);
     return JK_AJP13_NO_RESPONSE;
 }
+
+static int is_http_status_fail(ajp_worker_t *w, int status)
+{
+    unsigned int i;
+    for (i = 0; i < w->http_status_fail_num; i++) {
+        if (w->http_status_fail[i] == status)
+            return 1;
+    }
+    return 0;
+}
+
 
 /*
  * get replies from Tomcat via Ajp13/Ajp14
@@ -1641,8 +1652,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
             return JK_TRUE;
         }
         else if (JK_AJP13_SEND_HEADERS == rc) {
-            if (p->worker->http_status_fail &&
-                (p->worker->http_status_fail == s->http_response_status)) {
+            if (is_http_status_fail(p->worker, s->http_response_status)) {
                 JK_TRACE_EXIT(l);
                 return JK_STATUS_ERROR;
             }
@@ -1868,7 +1878,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                        "because of response status %d, "
                        "recoverable operation attempt=%d",
                        p->worker->name,
-                       p->worker->http_status_fail, i);
+                       s->http_response_status, i);
                 JK_TRACE_EXIT(l);
                 if (i >= JK_RETRIES) {
                     jk_sleep(JK_SLEEP_DEF);
@@ -2096,7 +2106,10 @@ int ajp_init(jk_worker_t *pThis,
         p->max_packet_size =
             jk_get_max_packet_size(props, p->name);
 
-        p->http_status_fail = jk_get_worker_fail_on_status(props, p->name);
+        p->http_status_fail_num = jk_get_worker_fail_on_status(props, p->name,
+                                     &p->http_status_fail[0],
+                                     JK_MAX_HTTP_STATUS_FAILS);
+
 
         pThis->retries =
             jk_get_worker_retries(props, p->name,
@@ -2237,7 +2250,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
             int i;
             jk_sock_t sock = JK_INVALID_SOCKET;
 
-            /* If we are going to close the connection, then park the socket so 
+            /* If we are going to close the connection, then park the socket so
                we can shut it down nicely rather than letting ajp_reset_endpoint kill it */
             if (IS_VALID_SOCKET(p->sd) && !p->reuse) {
                 if (JK_IS_DEBUG_LEVEL(l))

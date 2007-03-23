@@ -199,7 +199,9 @@ const char *jk_get_worker_xml_doctype(jk_map_t *m, const char *wname, const char
 
 const char *jk_get_worker_prop_prefix(jk_map_t *m, const char *wname, const char *def);
 
-int jk_get_worker_fail_on_status(jk_map_t *m, const char *wname);
+int jk_get_worker_fail_on_status(jk_map_t *m, const char *wname,
+                                 int *list, unsigned int list_size);
+
 
 int jk_get_worker_user_case_insensitive(jk_map_t *m, const char *wname);
 

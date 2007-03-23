@@ -201,7 +201,7 @@ extern "C"
 #define RECOVER_ABORT_IF_TCSENDHEADER    0x0002 /* DONT RECOVER IF TOMCAT FAIL AFTER SENDING HEADERS */
 #define RECOVER_ABORT_IF_CLIENTERROR     0x0004 /* CLOSE THE SOCKET IN CASE OF CLIENT ERROR */
 
-
+#define JK_MAX_HTTP_STATUS_FAILS   32   /* Should be enough for most 400 and 500 statuses */
 
 struct jk_res_data
 {
@@ -291,7 +291,8 @@ struct ajp_worker
     /* 
      * HTTP status that will cause failover (0 means disabled)
      */
-     int http_status_fail;
+     unsigned int http_status_fail_num;
+     int http_status_fail[JK_MAX_HTTP_STATUS_FAILS];
 };
 
 

@@ -1080,17 +1080,21 @@ int jk_get_max_packet_size(jk_map_t *m, const char *wname)
     return sz;
 }
 
-int jk_get_worker_fail_on_status(jk_map_t *m, const char *wname)
+int jk_get_worker_fail_on_status(jk_map_t *m, const char *wname,
+                                 int *list, unsigned int list_size)
 {
     char buf[1024];
-
-    if (!m || !wname) {
+    if (!m || !wname || !list) {
         return 0;
     }
-
     MAKE_WORKER_PARAM(STATUS_FAIL_OF_WORKER);
-    return jk_map_get_int(m, buf, 0);
+    if (list_size) {
+        return jk_map_get_int_list(m, buf,
+                                   list, list_size,
+                                   NULL);
+    }
 
+    return 0;
 }
 
 int jk_get_worker_user_case_insensitive(jk_map_t *m, const char *wname)

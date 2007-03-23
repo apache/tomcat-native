@@ -244,7 +244,7 @@ int jk_map_get_bool(jk_map_t *m, const char *name, int def)
 
 char **jk_map_get_string_list(jk_map_t *m,
                               const char *name,
-                              unsigned *list_len, const char *def)
+                              unsigned int *list_len, const char *def)
 {
     const char *l = jk_map_get_string(m, name, def);
     char **ar = NULL;
@@ -295,6 +295,55 @@ char **jk_map_get_string_list(jk_map_t *m,
     }
 
     return ar;
+}
+
+int jk_map_get_int_list(jk_map_t *m,
+                        const char *name,
+                        int *list,
+                        unsigned int list_len,
+                        const char *def)
+{
+    const char *l = jk_map_get_string(m, name, def);
+
+#if defined(AS400) || defined(_REENTRANT)
+    char *lasts;
+#endif
+    
+    if (!list_len)
+        return 0;
+
+    if (l) {
+        unsigned int capacity = list_len;
+        unsigned int index = 0;
+        char *p;
+        char *v = jk_pool_strdup(&m->p, l);
+
+        if (!v) {
+            return 0;
+        }
+
+        /*
+         * GS, in addition to VG's patch, we now need to
+         * strtok also by a "*"
+         */
+#if defined(AS400) || defined(_REENTRANT)
+        for (p = strtok_r(v, " \t,", &lasts);
+             p; p = strtok_r(NULL, " \t,", &lasts))
+#else
+        for (p = strtok(v, " \t,"); p; p = strtok(NULL, " \t,"))
+#endif
+
+        {
+            if (index < capacity) {
+                list[index] = atoi(p);
+                index++;
+            }
+            else
+                break;                
+        }
+        return index;
+    }
+    return 0;
 }
 
 int jk_map_add(jk_map_t *m, const char *name, const void *value)
