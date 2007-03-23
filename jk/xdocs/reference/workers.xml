@@ -728,6 +728,11 @@ for a short amount of time, e.g during redeployment.
 <p>
 This feature has been added in <b>jk 1.2.20</b>.
 </p>
+<p>
+Starting with <b>jk 1.2.22</b> it is possible to define multiple
+status codes separated by space or coma characters.
+For example: <code>worker.xxx.fail_on_status=500,503</code>
+</p>
 </directive>
 
 
