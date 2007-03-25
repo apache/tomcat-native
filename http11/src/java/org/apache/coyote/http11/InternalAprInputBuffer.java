@@ -20,6 +20,7 @@ package org.apache.coyote.http11;
 
 import java.io.IOException;
 import java.io.EOFException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 
 import org.apache.tomcat.jni.Socket;
@@ -822,7 +823,11 @@ public class InternalAprInputBuffer implements InputBuffer {
                 bbuf.get(buf, 0, nRead);
                 lastValid = nRead;
             } else {
-                throw new IOException(sm.getString("iib.failedread"));
+                if ((-nRead) == Status.ETIMEDOUT || (-nRead) == Status.TIMEUP) {
+                    throw new SocketTimeoutException(sm.getString("iib.failedread"));
+                } else {
+                    throw new IOException(sm.getString("iib.failedread"));
+                }
             }
 
         }
