@@ -42,8 +42,8 @@ struct jk_logger
 
 };
 
-typedef struct file_logger_t file_logger_t;
-struct file_logger_t
+typedef struct jk_file_logger_t jk_file_logger_t;
+struct jk_file_logger_t
 {
     FILE *logfile;
     /* For Apache 2 APR piped logging */

@@ -2500,7 +2500,7 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
         char error[256];
         if (sz) {
             apr_status_t status;
-            file_logger_t *p = l->logger_private;
+            jk_file_logger_t *p = l->logger_private;
             if (p->jklogfp) {
                 apr_status_t rv;
                 rv = apr_global_mutex_lock(jk_log_lock);
@@ -2554,7 +2554,7 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
     apr_file_t *jklogfp;
     piped_log *pl;
     jk_logger_t *jkl;
-    file_logger_t *flp;
+    jk_file_logger_t *flp;
     int jklog_flags = (APR_WRITE | APR_APPEND | APR_CREATE);
     apr_fileperms_t jklog_mode =
         (APR_UREAD | APR_UWRITE | APR_GREAD | APR_WREAD);
@@ -2606,7 +2606,7 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
     }
     conf->jklogfp = jklogfp;
     jkl = (jk_logger_t *)apr_palloc(p, sizeof(jk_logger_t));
-    flp = (file_logger_t *) apr_palloc(p, sizeof(file_logger_t));
+    flp = (jk_file_logger_t *) apr_palloc(p, sizeof(jk_file_logger_t));
     if (jkl && flp) {
         jkl->log = jk_log_to_file;
         jkl->level = conf->log_level;

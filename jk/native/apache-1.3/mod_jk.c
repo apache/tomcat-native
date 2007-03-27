@@ -2366,7 +2366,7 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
     if (l &&
         (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
          l->logger_private && what) {
-        file_logger_t *flp = l->logger_private;
+        jk_file_logger_t *flp = l->logger_private;
         int log_fd = flp->log_fd;
         size_t sz = strlen(what);
         if (log_fd >= 0 && sz) {
@@ -2405,7 +2405,7 @@ static void open_jk_log(server_rec *s, pool *p)
     int jklogfd;
     piped_log *pl;
     jk_logger_t *jkl;
-    file_logger_t *flp;
+    jk_file_logger_t *flp;
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
@@ -2469,7 +2469,7 @@ static void open_jk_log(server_rec *s, pool *p)
     }
     conf->log_fd = jklogfd;
     jkl = (jk_logger_t *)ap_palloc(p, sizeof(jk_logger_t));
-    flp = (file_logger_t *)ap_palloc(p, sizeof(file_logger_t));
+    flp = (jk_file_logger_t *)ap_palloc(p, sizeof(jk_file_logger_t));
     if (jkl && flp) {
         jkl->log = jk_log_to_file;
         jkl->level = conf->log_level;

@@ -397,7 +397,7 @@ static int JK_METHOD log_to_file(jk_logger_t *l, int level, const char *what)
     if (l &&
         (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
         l->logger_private && what) {
-        file_logger_t *p = l->logger_private;
+        jk_file_logger_t *p = l->logger_private;
         if (p->logfile) {
             fputs(what, p->logfile);
             /* [V] Flush the dam' thing! */
@@ -442,7 +442,7 @@ int jk_open_file_logger(jk_logger_t **l, const char *file, int level)
     if (l && file) {
 
         jk_logger_t *rc = (jk_logger_t *)malloc(sizeof(jk_logger_t));
-        file_logger_t *p = (file_logger_t *) malloc(sizeof(file_logger_t));
+        jk_file_logger_t *p = (jk_file_logger_t *) malloc(sizeof(jk_file_logger_t));
         if (rc && p) {
             rc->log = log_to_file;
             rc->level = level;
@@ -473,7 +473,7 @@ int jk_open_file_logger(jk_logger_t **l, const char *file, int level)
 int jk_close_file_logger(jk_logger_t **l)
 {
     if (l && *l) {
-        file_logger_t *p = (*l)->logger_private;
+        jk_file_logger_t *p = (*l)->logger_private;
         if (p) {
             fflush(p->logfile);
             fclose(p->logfile);
