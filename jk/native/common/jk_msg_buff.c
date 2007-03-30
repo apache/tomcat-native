@@ -341,13 +341,20 @@ void jk_dump_buff(jk_logger_t *l,
             if ((i + j) >= len)
                 x = 0;
             if (x > 0x20 && x < 0x7F) {
-                *current++ = x;
+#ifdef USE_CHARSET_EBCDIC        
+               *current = x;
+               jk_xlate_from_ascii(current, 1);
+			   current++;
+#else
+            	*current++ = x;
+#endif
             }
             else {
                 *current++ = '.';
             }
         }
         *current++ = '\0';
+
             jk_log(l, file, line, funcname, level,
                    "%.4x    %s", i, lb);
     }
