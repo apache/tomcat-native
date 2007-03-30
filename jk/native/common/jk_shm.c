@@ -237,21 +237,18 @@ void jk_shm_close()
 #define MAP_FILE    (0)
 #endif
 
-#ifdef JK_SHM_LOCK_REOPEN
-static int shm_lock_reopen = 1;
-#else
-static int shm_lock_reopen = 0;
-#endif
-
 static int do_shm_open_lock(const char *fname, int attached, jk_logger_t *l)
 {
     int rc;
     char flkname[256];
     JK_TRACE_ENTER(l);
 
-    if (attached) {
-        if (shm_lock_reopen)
-            jk_shmem.fd_lock = open(jk_shmem.lockname, O_RDWR, 0666);
+    if (attached && jk_shmem.lockname) {
+#ifdef JK_SHM_LOCK_REOPEN
+        jk_shmem.fd_lock = open(jk_shmem.lockname, O_RDWR, 0666);
+#else
+        errno = EINVAL;
+#endif        
         if (jk_shmem.fd_lock == -1) {
             rc = errno;
             JK_TRACE_EXIT(l);
@@ -265,25 +262,24 @@ static int do_shm_open_lock(const char *fname, int attached, jk_logger_t *l)
     }
 
     if (!jk_shmem.lockname) {
-        if (shm_lock_reopen) {
-            int i;
-            jk_shmem.fd_lock = -1;
-            mode_t mask = umask(0);
-            for (i = 0; i < 8; i++) {
-                strcpy(flkname, "/tmp/jkshmlock.XXXXXX");
-                if (mktemp(flkname)) {
-                    jk_shmem.fd_lock = open(flkname, O_RDWR|O_CREAT|O_TRUNC, 0666);
-                    if (jk_shmem.fd_lock >= 0)
-                        break;
-                }
+#ifdef JK_SHM_LOCK_REOPEN
+        int i;
+        jk_shmem.fd_lock = -1;
+        mode_t mask = umask(0);
+        for (i = 0; i < 8; i++) {
+            strcpy(flkname, "/tmp/jkshmlock.XXXXXX");
+            if (mktemp(flkname)) {
+                jk_shmem.fd_lock = open(flkname, O_RDWR|O_CREAT|O_TRUNC, 0666);
+                if (jk_shmem.fd_lock >= 0)
+                    break;
             }
-            umask(mask);
         }
-        else {
-            strcpy(flkname, fname);
-            strcat(flkname, ".lock");
-            jk_shmem.fd_lock = open(flkname, O_RDWR|O_CREAT|O_TRUNC, 0666);
-        }
+        umask(mask);
+#else
+        strcpy(flkname, fname);
+        strcat(flkname, ".lock");
+        jk_shmem.fd_lock = open(flkname, O_RDWR|O_CREAT|O_TRUNC, 0666);
+#endif
         if (jk_shmem.fd_lock == -1) {
             rc = errno;
             JK_TRACE_EXIT(l);
@@ -470,12 +466,12 @@ void jk_shm_close()
     if (jk_shmem.hdr) {
         --jk_shmem.hdr->h.data.childs;
 
+#ifdef JK_SHM_LOCK_REOPEN
         if (jk_shmem.fd_lock >= 0) {
-            if (shm_lock_reopen) {
-                close(jk_shmem.fd_lock);
-                jk_shmem.fd_lock = -1;
-            }
+            close(jk_shmem.fd_lock);
+            jk_shmem.fd_lock = -1;
         }
+#endif
         JK_DELETE_CS(&(jk_shmem.cs), rc);
         if (jk_shmem.attached) {
             int p = (int)getpid();
