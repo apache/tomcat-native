@@ -2378,7 +2378,7 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
             else {
                 char c;
 #if defined(WIN32)
-                c = '\n';
+                c = '\r';
                 write(log_fd, &c, 1);
 #endif
                 c = '\n';
