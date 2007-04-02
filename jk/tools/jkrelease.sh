@@ -193,8 +193,7 @@ fi
 cd ../../
 
 # Pack and sign
-tar cvf ${JK_DIST}.tar --owner="${JK_OWNER}" --group="${JK_GROUP}" ${JK_DIST}
-gzip ${JK_DIST}.tar
+tar cfz ${JK_DIST}.tar.gz ${JK_DIST}
 perl ${JK_DIST}/tools/lineends.pl --cr ${JK_DIST}
 zip -9 -r ${JK_DIST}.zip ${JK_DIST}
 # Create detatched signature
