@@ -2370,11 +2370,19 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
         int log_fd = flp->log_fd;
         size_t sz = strlen(what);
         if (log_fd >= 0 && sz) {
-            if ( write(log_fd, what, sz) < 0 )
-            {
+            if (write(log_fd, what, sz) < 0 ) {
                 ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, NULL,
                              "mod_jk: jk_log_to_file %s failed",
                              what);
+            }
+            else {
+                char c;
+#if defined(WIN32)
+                c = '\n';
+                write(log_fd, &c, 1);
+#endif
+                c = '\n';
+                write(log_fd, &c, 1);
             }
         }
 

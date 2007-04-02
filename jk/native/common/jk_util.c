@@ -400,6 +400,7 @@ static int JK_METHOD log_to_file(jk_logger_t *l, int level, const char *what)
         jk_file_logger_t *p = l->logger_private;
         if (p->logfile) {
             fputs(what, p->logfile);
+            fputc('\n', p->logfile);
             /* [V] Flush the dam' thing! */
             fflush(p->logfile);
         }
@@ -492,8 +493,8 @@ int jk_log(jk_logger_t *l,
            const char *fmt, ...)
 {
     int rc = 0;
-    /* Need to reserve space for newline and terminating zero byte. */
-    static int usable_size = HUGE_BUFFER_SIZE-2;
+    /* Need to reserve space for terminating zero byte. */
+    static int usable_size = HUGE_BUFFER_SIZE - 1;
     if (!l || !file || !fmt) {
         return -1;
     }
@@ -576,7 +577,6 @@ int jk_log(jk_logger_t *l,
         } else {
             used = usable_size;
         }
-        buf[used++] = '\n';
         buf[used] = 0;
         l->log(l, level, buf);
 #ifdef NETWARE
