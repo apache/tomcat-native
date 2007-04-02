@@ -29,9 +29,6 @@ do
 done
 shift `expr $OPTIND - 1`
 
-export ANT_HOME=/usr/local/ant
-export JAVA_HOME=/usr/local/jdk1.4.2
-
 SVNROOT="http://svn.apache.org/repos/asf"
 SVNPROJ="tomcat/connectors"
 JK_CVST="tomcat-connectors"
