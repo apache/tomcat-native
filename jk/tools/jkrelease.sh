@@ -33,8 +33,8 @@ SVNROOT="http://svn.apache.org/repos/asf"
 SVNPROJ="tomcat/connectors"
 JK_CVST="tomcat-connectors"
 
-JK_OWNER="asf"
-JK_GROUP="asf"
+JK_OWNER="root"
+JK_GROUP="users"
 
 COPY_TOP="KEYS LICENSE NOTICE"
 COPY_JK="BUILD.txt native jkstatus support tools xdocs"
@@ -193,7 +193,7 @@ fi
 cd ../../
 
 # Pack and sign
-tar cfz ${JK_DIST}.tar.gz ${JK_DIST}
+tar cfz ${JK_DIST}.tar.gz --owner="${JK_OWNER}" --group="${JK_GROUP}" ${JK_DIST}
 perl ${JK_DIST}/tools/lineends.pl --cr ${JK_DIST}
 zip -9 -r ${JK_DIST}.zip ${JK_DIST}
 # Create detatched signature
