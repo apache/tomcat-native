@@ -34,7 +34,7 @@ SVNPROJ="tomcat/connectors"
 JK_CVST="tomcat-connectors"
 
 JK_OWNER="root"
-JK_GROUP="users"
+JK_GROUP="bin"
 
 COPY_TOP="KEYS LICENSE NOTICE"
 COPY_JK="BUILD.txt native jkstatus support tools xdocs"
