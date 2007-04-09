@@ -675,7 +675,7 @@ static int init_ws_service(apache_private_data_t * private_data,
                     s->ssl_cert_len = strlen(s->ssl_cert);
                     if (JK_IS_DEBUG_LEVEL(conf->log)) {
                         jk_log(conf->log, JK_LOG_DEBUG,
-                               "SSL client certificate (%d bytes):\n%s",
+                               "SSL client certificate (%d bytes): %s",
                                s->ssl_cert_len, s->ssl_cert);
                     }
                 }
@@ -2624,10 +2624,10 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
 #if MODULE_MAGIC_NUMBER >= 19980527
         /* Tell apache we're here */
         ap_add_version_component(JK_EXPOSED_VERSION);
+#endif
         jk_log(conf->log, JK_LOG_INFO,
                "%s initialized",
                JK_EXPOSED_VERSION);
-#endif
         return;
     }
     else {
@@ -2873,6 +2873,8 @@ static void child_init_handler(server_rec * s, ap_pool * p)
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
+    JK_TRACE_ENTER(conf->log);
+
     if ((rc = jk_shm_attach(jk_shm_file, jk_shm_size, conf->log)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
             jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s",
@@ -2881,6 +2883,9 @@ static void child_init_handler(server_rec * s, ap_pool * p)
     else
         jk_log(conf->log, JK_LOG_ERROR, "Attaching shm:%s errno=%d",
                jk_shm_name(), rc);
+
+    JK_TRACE_EXIT(conf->log);
+
 }
 
 

@@ -702,7 +702,7 @@ static int init_ws_service(apache_private_data_t * private_data,
                     s->ssl_cert_len = strlen(s->ssl_cert);
                     if (JK_IS_DEBUG_LEVEL(conf->log)) {
                         jk_log(conf->log, JK_LOG_DEBUG,
-                               "SSL client certificate (%d bytes):\n%s",
+                               "SSL client certificate (%d bytes): %s",
                                s->ssl_cert_len, s->ssl_cert);
                     }
                 }
