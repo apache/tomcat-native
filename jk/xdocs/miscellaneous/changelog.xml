@@ -26,6 +26,20 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      Docs: Fix a couple of typos, change format of a few tables,
+      fix links to news pages. (rjung)
+      </fix>
+      <fix>
+      Fix correct URL for TC 6 examples in new IIS rewrite.properties
+      configuration example file. (rjung)
+      </fix>
+      <fix>
+      Add svn properties to several files. (rjung)
+      </fix>
+      <update>
+      Add TC 6 examples to uriworkermap.properties in config examples. (rjung)
+      </update>
       <update>
       Allow multiple status codes for fail_on_status directive.
       The status codes can be delimited by space or comma characters. (mturk)
@@ -78,7 +92,7 @@
       </update>
       <update>
       Replace APR precompiler directive by httpd mpm_query to detect MPM threading.
-      Add an info log message about auto-detected pool size. (rjung)
+      Add a debug log message about auto-detected pool size. (rjung)
       </update>
       <fix>
         Make MMN check easier to understand and a little more precise
