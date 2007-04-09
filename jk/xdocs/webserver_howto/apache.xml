@@ -626,7 +626,7 @@ This flag shouldn't be set when servlet engine is Tomcat 3.2.x (off by default).
 
 <p>
 JkOptions <b>ForwardSSLCertChain</b>,  you ask mod_jk, when using ajp13,
-to Forward SSL certificate chain (off by default).
+to forward SSL certificate chain (off by default).
 Mod_jk only passes the <code>SSL_CLIENT_CERT</code> to the AJP connector. This is not a
 problem with self-signed certificates or certificates directly signed by the
 root CA certificate. However, there's a large number of certificates signed by
@@ -884,13 +884,13 @@ Depending on how you build your Apache httpd, in some cases configure
 detects that it needs to build thread safe, although actually it would not be necessary.
 One such case is, if you build against Apache httpd with prefork MPM,
 and your APR (Apache Portable Runtime) libraries have been build with thread support
-( the output of "apxs -q EXTRA_CPPFLAGS" will contain "-D_REENTRANT").<br/>
+(the output of "apxs -q EXTRA_CPPFLAGS" will contain "-D_REENTRANT").<br/>
 If you are sure, that your MPM is not multi-threaded, you can use "--enable-prefork"
 to force the removal of the synchronization code (thus increasing performance a bit).</td>
 </tr>
   <tr valign="top"><td>--enable-flock</td>
   <td>
-In case the Operating system supports flock system call use this flag to enable this
+In case the operating system supports flock system call use this flag to enable this
 faster locks that are implemented as system call instead emulated by GNU C library.<br/>
 However those locks does not work on NFS mounted volumes, so you can use
 "--enable-flock" during compile time to force the flocks() calls.</td>

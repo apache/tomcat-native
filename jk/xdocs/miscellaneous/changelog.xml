@@ -28,7 +28,7 @@
     <changelog>
       <update>
       Allow multiple status codes for fail_on_status directive.
-      The status codes can be delimited by space or coma characters. (mturk)
+      The status codes can be delimited by space or comma characters. (mturk)
       </update>
       <update>
         IIS. Added pcre like regular expressions for url rewrite rules. (mturk)

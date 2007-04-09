@@ -233,7 +233,7 @@ The name of the filter should reflect its task (I use the name tomcat),
 its executable must be our c:\tomcat\bin\win32\i386\isapi_redirect.dll. 
 For PWS, you'll need to use regedit and add/edit the <b>"Filter DLLs"</b> key under 
 <b>HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\W3SVC\Parameters</b>. 
-This key contains a "," separated list of dlls ( full paths ) - 
+This key contains a "," separated list of dlls (full paths) - 
 you need to insert the full path to isapi_redirect.dll.
 </li>
 <li>

@@ -589,7 +589,7 @@ This flag shouldn't be set when servlet engine is Tomcat 3.2.x (on by default).
 
 <p>
 JkOptions <b>ForwardSSLCertChain</b>,  you ask mod_jk, when using ajp13,
-to Forward SSL certificate chain (off by default).
+to forward SSL certificate chain (off by default).
 Mod_jk only passes the <code>SSL_CLIENT_CERT</code> to the AJP connector. This is not a
 problem with self-signed certificates or certificates directly signed by the
 root CA certificate. However, there's a large number of certificates signed by
