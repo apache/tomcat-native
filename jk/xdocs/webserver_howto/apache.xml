@@ -625,6 +625,25 @@ This flag shouldn't be set when servlet engine is Tomcat 3.2.x (off by default).
 </p>
 
 <p>
+JkOptions <b>ForwardSSLCertChain</b>,  you ask mod_jk, when using ajp13,
+to Forward SSL certificate chain (off by default).
+Mod_jk only passes the <code>SSL_CLIENT_CERT</code> to the AJP connector. This is not a
+problem with self-signed certificates or certificates directly signed by the
+root CA certificate. However, there's a large number of certificates signed by
+an intermediate CA certificate, where this is a significant problem: A servlet
+will not have the possibility to validate the client certificate on its own. The
+bug would be fixed by passing on the <code>SSL_CLIENT_CERT_CHAIN</code> to Tomcat via the AJP connector.
+<br/>
+This directive exists only since version 1.2.22.
+<source>
+  JkOptions     +ForwardSSLCertChain
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
 The directive <b>JkEnvVar</b> allows you to forward environment variables from Apache server to Tomcat engine.
 The variables can be retrieved on the Tomcat side as request attributes.
 You can add a default value as a second parameter to the directive.
