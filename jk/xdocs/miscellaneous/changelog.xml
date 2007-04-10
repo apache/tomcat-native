@@ -27,6 +27,16 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      Refactor line endings logging to make it correct for all
+      platforms and webservers. (mturk)
+      </fix>
+      <update>
+      Added command line windows make files. (mturk)
+      </update>
+      <update>
+      Allow fail_on_status directive to be multi line. (mturk)
+      </update>
+      <fix>
         <bug>42076</bug>: Fix name of new option from ForwardCertChain to
         ForwardSSLCertChain as documented. (rjung)
       </fix>
@@ -479,7 +489,7 @@
       LB: Cleanup of Mladens forced recovery. (rjung)
       </fix>
       <fix>
-      LB: Do not change lb_value for recovering workers to max, if 
+      LB: Do not change lb_value for recovering workers to max, if
       we are using BUSYNESS method. (rjung)
       </fix>
       <fix>

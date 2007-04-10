@@ -142,6 +142,7 @@ static const char *list_properties[] = {
     USER_OF_WORKER,
     GOOD_RATING_OF_WORKER,
     BAD_RATING_OF_WORKER,
+    STATUS_FAIL_OF_WORKER,
     "list",
     NULL
 };
@@ -188,7 +189,6 @@ static const char *unique_properties[] = {
     XML_NAMESPACE_OF_WORKER,
     XML_DOCTYPE_OF_WORKER,
     PROP_PREFIX_OF_WORKER,
-    STATUS_FAIL_OF_WORKER,
     USER_CASE_OF_WORKER,
     NULL
 };
