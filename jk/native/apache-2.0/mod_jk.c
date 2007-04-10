@@ -1771,7 +1771,7 @@ static const char *jk_set_options(cmd_parms * cmd, void *dummy,
         else if (!strcasecmp(w, "DisableReuse")) {
             opt = JK_OPT_DISABLEREUSE;
         }
-        else if (!strcasecmp(w, "ForwardCertChain")) {
+        else if (!strcasecmp(w, "ForwardSSLCertChain")) {
             opt = JK_OPT_FWDCERTCHAIN;
         }
         else
