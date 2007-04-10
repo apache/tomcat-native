@@ -27,6 +27,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        <bug>42076</bug>: Fix name of new option from ForwardCertChain to
+        ForwardSSLCertChain as documented. (rjung)
+      </fix>
+      <fix>
       Docs: Fix a couple of typos, change format of a few tables,
       fix links to news pages. (rjung)
       </fix>
