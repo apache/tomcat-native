@@ -2,9 +2,13 @@
 APACHE2_HOME=$(APACHE22_HOME)
 APR_LIB=libapr-1.lib
 APU_LIB=libaprutil-1.lib
+OUTDIR=.\Release22
+INTDIR=.\Release22
 !ELSE
 APR_LIB=libapr.lib
 APU_LIB=libaprutil.lib
+OUTDIR=.\Release20
+INTDIR=.\Release20
 !IFDEF APACHE20_HOME
 APACHE2_HOME=$(APACHE20_HOME)
 !ENDIF
@@ -17,11 +21,6 @@ APACHE2_HOME=$(APACHE20_HOME)
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
-OUTDIR=.\Release
-INTDIR=.\Release
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
 
 ALL : "$(OUTDIR)\mod_jk.so"
 
