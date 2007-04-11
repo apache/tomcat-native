@@ -127,8 +127,8 @@ cd ${JK_DIST}/native
 
 # Check for links, elinks or w3m
 W3MOPTS="-dump -cols 80 -t 4 -S -O iso-8859-1 -T text/html"
-LNKOPTS="-dump"
-ELNKOPTS="--dump --no-numbering --no-home"
+LNKOPTS="-dump -dump-width 80 -dump-charset iso-8859-1 -no-numbering -no-references -no-home"
+ELNKOPTS=$LNKOPTS
 failed=true
 for tool in `echo "w3m elinks links"`
 do
