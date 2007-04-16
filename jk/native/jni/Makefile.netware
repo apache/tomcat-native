@@ -1,6 +1,6 @@
 #
 # Makefile for jk_nsapi_plugin (NetWare version - gnu make)
-# created by Guenter Knauf <eflash@gmx.net>
+# created by Guenter Knauf <fuankg@apache.org>
 #
 
 # Edit the path below to point to the base of your Netscape includes.
@@ -15,12 +15,16 @@ endif
 ifndef NDKBASE
 NDKBASE	= c:/novell
 endif
-INSTDIR = /mnt/sys/novonyx/modules
+
+ifndef INSTDIR
+INSTDIR	= s:/sys/novonyx/modules
+endif
 
 # Edit the vars below to change NLM target settings.
 TARGET  = jni_conn
 VERSION	= $(JK_VERSION)
-COPYR	= Copyright (c) 2000-2004 The Apache Software Foundation. All rights reserved.
+#COPYR	= Copyright (c) 2000-2007 The Apache Software Foundation. All rights reserved.
+COPYR	= Licensed under the Apache License, Version 2.0
 DESCR	= JNI natives for Tomcat $(JK_VERSION_STR)
 MTSAFE	= NO
 STACK	= 64000
@@ -67,15 +71,16 @@ endif
 # CP	= cp -fv
 # if you want to mark the target as MTSAFE you will need a tool for
 # generating the xdc data for the linker; here's a minimal tool:
-# http://www.gknw.com/development/prgtools/mkxdc.zip
+# http://www.gknw.net/development/prgtools/mkxdc.zip
 MPKXDC	= mkxdc
+AWK	= awk
 
 # Global flags for all compilers
 CFLAGS	= $(OPT) -D$(DB) -DNETWARE -DXP_NETWARE -nostdinc
 
 ifeq ($(CC),mwccnlm)
 LD	= mwldnlm
-LDFLAGS	= -nostdlib $(PRELUDE) $(OBJDIR)/*.o -o $(OBJDIR)/$(TARGET).nlm -commandfile
+LDFLAGS	= -nostdlib $(OBJS) $(PRELUDE) $(LDLIBS) -o $@ -commandfile
 CFLAGS	+= -gccinc -inline off -opt nointrinsics
 #CFLAGS	+= -w on
 ifeq ($(LIBARCH),LIBC)
@@ -84,6 +89,7 @@ ifeq ($(LIBARCH),LIBC)
 #	CFLAGS += -D__ANSIC__
 else
 	PRELUDE = "$(METROWERKS)/Novell Support/libraries/runtime/prelude.obj"
+	LDLIBS = "$(METROWERKS)/Novell Support/libraries/runtime/mwcrtl.lib"
 #	CFLAGS += -include "$(METROWERKS)/Novell Support/headers/nlm_prefix.h"
 	CFLAGS += -align 1 -proc 586
 endif
@@ -101,8 +107,6 @@ else
 endif
 endif
 
-LDLIBS	=
-
 NDK_ROOT = $(NDKBASE)/ndk
 SDK_CLIB = $(NDK_ROOT)/nwsdk
 SDK_LIBC = $(NDK_ROOT)/libc
@@ -116,7 +120,7 @@ ifeq ($(LIBARCH),LIBC)
 	INCLUDES += -I$(SDK_LIBC)/include/winsock
 else
 	INCLUDES += -I$(SDK_CLIB)/include/nlm -I$(SDK_CLIB)/include
-	INCLUDES += -I$(SDK_CLIB)/include/nlm/obsolete
+	# INCLUDES += -I$(NDKBASE)/ws295sdk/include
 	CFLAGS += -DNETDB_USE_INTERNET
 endif
 CFLAGS	+= $(INCLUDES)
@@ -131,11 +135,14 @@ DL	= '
 endif
 
 OBJS	= \
+	$(OBJDIR)/jk_jnicb.o \
 	$(OBJDIR)/jk_nwmain.o \
 	$(OBJDIR)/jk_map.o \
 	$(OBJDIR)/jk_pool.o \
 	$(OBJDIR)/jk_util.o \
-	$(OBJDIR)/jk_jnicb.o
+	$(OBJDIR)/ap_snprintf.o
+
+vpath %.c . $(JKCOMMON)
 
 
 all: $(OBJDIR) $(OBJDIR)/version.inc $(OBJDIR)/$(TARGET).nlm 
@@ -144,13 +151,9 @@ $(OBJDIR)/%.o: %.c
 	@echo Compiling $<
 	@$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJDIR)/%.o: $(JKCOMMON)/%.c
-	@echo Compiling $<
-	@$(CC) $(CFLAGS) -c $< -o $@
-
 $(OBJDIR)/version.inc: $(JKCOMMON)/jk_version.h $(OBJDIR)
 	@echo Creating $@
-	@awk -f ../../support/get_ver.awk $< > $@
+	@$(AWK) -f ../../support/get_ver.awk $< > $@
 
 dist: all
 	-$(RM) $(OBJDIR)/*.o $(OBJDIR)/$(TARGET).map $(OBJDIR)/$(TARGET).ncv
@@ -236,6 +239,10 @@ endif
 ifeq ($(LD),nlmconv)
 	@echo $(DL)input $(OBJS)$(DL) >> $@
 	@echo $(DL)input $(PRELUDE)$(DL) >> $@
-	@echo $(DL)output $(TARGET).nlm$(DL) >> $@
+ifdef LDLIBS
+	@echo $(DL)input $(LDLIBS)$(DL) >> $@
 endif
+	@echo $(DL)output $*.nlm$(DL) >> $@
+endif
+
 
