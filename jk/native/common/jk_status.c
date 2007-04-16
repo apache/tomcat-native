@@ -323,28 +323,6 @@ static const char *headers_vtxt[] = {
     HEADERS_NO_CACHE
 };
 
-#if !defined(HAVE_VSNPRINTF) && !defined(HAVE_APR)
-static FILE *f = NULL;
-static int vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
-{
-    int res;
-
-    if (f == NULL)
-        f = fopen("/dev/null", "w");
-    if (f == NULL)
-        return -1;
-
-    setvbuf(f, str, _IOFBF, n);
-
-    res = vfprintf(f, fmt, ap);
-
-    if (res > 0 && res < n) {
-        res = vsprintf(str, fmt, ap);
-    }
-    return res;
-}
-#endif
-
 static void jk_puts(jk_ws_service_t *s, const char *str)
 {
     if (str)
@@ -390,11 +368,7 @@ static int jk_printf(jk_ws_service_t *s, const char *fmt, ...)
         if (NULL == buf)
             return -1;
 #endif
-#ifdef USE_VSPRINTF             /* until we get a vsnprintf function */
-    rc = vsprintf(buf, fmt, args);
-#else
     rc = vsnprintf(buf, HUGE_BUFFER_SIZE, fmt, args);
-#endif
     va_end(args);
     if (rc > 0)
         s->write(s, buf, rc);

@@ -352,46 +352,6 @@ static int set_time_str(char *str, int len, const char *jk_log_fmt)
     return (int)strftime(str, len, JK_TIME_FORMAT, tms);
 }
 
-/* Write at most n characters to the buffer in str, return the
- * number of chars written or -1 if the buffer would have been
- * overflowed.
- *
- * This is portable to any POSIX-compliant system that has /dev/null
- */
-#if !defined(HAVE_VSNPRINTF) && !defined(HAVE_APR)
-static FILE *f = NULL;
-static int vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
-{
-    int res;
-
-    if (f == NULL)
-        f = fopen("/dev/null", "w");
-    if (f == NULL)
-        return -1;
-
-    setvbuf(f, str, _IOFBF, n);
-
-    res = vfprintf(f, fmt, ap);
-
-    if (res > 0 && res < n) {
-        res = vsprintf(str, fmt, ap);
-    }
-    return res;
-}
-#endif
-#if !defined(HAVE_SNPRINTF) && !defined(HAVE_APR)
-static int snprintf(char *str, size_t n, const char *fmt, ...)
-{
-    va_list ap;
-    int res;
-
-    va_start(ap, fmt);
-    res = vsnprintf(str, n, fmt, ap);
-    va_end(ap);
-    return res;
-}
-#endif
-
 static int JK_METHOD log_to_file(jk_logger_t *l, int level, const char *what)
 {
     if (l &&
@@ -530,13 +490,8 @@ int jk_log(jk_logger_t *l,
             /* This information helps to correlate lines from different logs. */
             /* Performance is no issue, because with production log levels */
             /* we only call it often, if we have a lot of errors */
-#ifdef USE_SPRINTF              /* until we get a snprintf function */
-            rc = sprintf(&buf[used], "[%04d:%04d] ", getpid(),
-                            jk_gettid());
-#else
             rc = snprintf(&buf[used], usable_size - used,
                              "[%04d:%04d] ", getpid(), jk_gettid());
-#endif
             used += rc;
             if (rc < 0 || usable_size - used < 8) {
                 return 0;
@@ -553,12 +508,8 @@ int jk_log(jk_logger_t *l,
                 }
             }
 
-#ifdef USE_SPRINTF              /* until we get a snprintf function */
-            rc = sprintf(&buf[used], "%s (%d): ", f, line);
-#else
             rc = snprintf(&buf[used], usable_size - used,
                              "%s (%d): ", f, line);
-#endif
             used += rc;
             if (rc < 0 || usable_size - used < 0) {
                 return 0;           /* [V] not sure what to return... */
@@ -566,11 +517,7 @@ int jk_log(jk_logger_t *l,
         }
 
         va_start(args, fmt);
-#ifdef USE_VSPRINTF             /* until we get a vsnprintf function */
-        rc = vsprintf(buf + used, fmt, args);
-#else
         rc = vsnprintf(buf + used, usable_size - used, fmt, args);
-#endif
         va_end(args);
         if ( rc <= usable_size - used ) {
             used += rc;
