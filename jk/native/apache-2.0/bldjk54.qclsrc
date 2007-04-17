@@ -78,13 +78,14 @@ CRTCMOD MODULE(MOD_JK/JK_AJP14_W) +
 
 CRTCMOD MODULE(MOD_JK/JK_CONNECT) +
     SRCSTMF('/home/apache/jk/native/common/jk_connect.c') +
-    DEFINE('AS400' 'AS400_UTF8' 'HAVE_JNI' 'HAVE_APR' +
+    DEFINE('AS400' 'AS400_UTF8' 'HAVE_JNI' 'HAVE_APR' + '_XOPEN_SOURCE=520' +
            'USE_APACHE_MD5' '_REENTRANT' 'USE_SO_RCVTIMEO' +
            'USE_SO_SNDTIMEO' ) +
     TEXT('jk_connect.c') +
     OPTIMIZE(40) +
     LOCALETYPE(*LOCALEUTF) +
     TERASPACE(*YES) +
+    LANGLVL(*EXTENDED) +
     TGTRLS(*CURRENT) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
 
