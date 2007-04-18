@@ -3409,7 +3409,7 @@ TQBzAGkAAQBSAGUAbABlAGEAcwBlAA==
 		<row><td>ProductID</td><td>none</td><td/></row>
 		<row><td>ProductLanguage</td><td>1033</td><td/></row>
 		<row><td>ProductName</td><td>Tomcat Isapi Redirector</td><td/></row>
-		<row><td>ProductVersion</td><td>1.2.22</td><td/></row>
+		<row><td>ProductVersion</td><td>1.2.23</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
