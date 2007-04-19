@@ -12,6 +12,8 @@ ifndef JAVA_HOME
 JAVA_HOME = c:/projects/sdks/java-nw
 endif
 
+LDLIBS = -l"$(METROWERKS)/Novell Support/libraries/runtime/mwcrtl.lib"
+
 JKCOMMON = ../common
 
 #
@@ -51,6 +53,7 @@ XDEFINES	+= \
 # These flags will be added to the link.opt file
 #
 XLFLAGS		+= \
+			$(LDLIBS) \
 			$(EOLIST)
 
 #
@@ -113,6 +116,12 @@ NLM_NAME	= mod_jk
 NLM_DESCRIPTION	= Apache $(AP_VERSION_STR) plugin for Tomcat $(JK_VERSION_STR)
 
 #
+# This is used by the link '-copy ' directive.
+# If left blank, the ASF copyright defined in NWGNUtail.inc will be used.
+#
+NLM_COPYRIGHT = Licensed under the Apache License Version 2.0
+
+#
 # This is used by the '-threadname' directive.  If left blank,
 # NLM_NAME Thread will be used.
 #
@@ -127,7 +136,7 @@ NLM_VERSION	= $(JK_VERSION)
 #
 # If this is specified, it will override the default of 64K
 #
-NLM_STACK_SIZE	= 49152
+NLM_STACK_SIZE	= 65536
 
 #
 # If this is specified it will be used by the link '-entry' directive
@@ -168,6 +177,7 @@ TARGET_lib = \
 # Paths must all use the '/' character
 #
 FILES_nlm_objs = \
+	$(OBJDIR)/$(NLM_NAME).o \
 	$(OBJDIR)/jk_nwmain.o \
 	$(OBJDIR)/jk_ajp12_worker.o \
 	$(OBJDIR)/jk_ajp13.o \
@@ -189,7 +199,6 @@ FILES_nlm_objs = \
 	$(OBJDIR)/jk_uri_worker_map.o \
 	$(OBJDIR)/jk_util.o \
 	$(OBJDIR)/jk_worker.o \
-	$(OBJDIR)/$(NLM_NAME).o \
 	$(EOLIST)
 
 #
@@ -222,9 +231,7 @@ FILE_nlm_hlp =
 #
 # If this is specified, it will override $(NWOS)\copyright.txt.
 #
-#FILE_nlm_copyright = 'Copyright (c) 2000-2005 The Apache Software Foundation. All rights reserved.'
 FILE_nlm_copyright =
-
 
 #
 # Any additional imports go here
@@ -269,7 +276,7 @@ install :: nlms FORCE
 #
 # Any specialized rules here
 #
-vpath %.c . $(JKCOMMON)
+vpath %.c . $(JKCOMMON) $(SNPRINTF)
 
 $(OBJDIR)/version.inc: $(JKCOMMON)/jk_version.h $(SRC)/include/httpd.h $(OBJDIR)
 	@echo Creating $@
