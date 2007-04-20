@@ -54,16 +54,10 @@
 
 /* deprecated with apr 0.9.3 */
 
-/*
-   The latest Apache 2.0.47 for iSeries didn't export apr_filepath_name_get
-   but apr_filename_of_pathname, even if includes seems right and the APR
-   in use is 0.9.4
-*/
-
 #include "apr_version.h"
 #if (APR_MAJOR_VERSION == 0) && \
     (APR_MINOR_VERSION <= 9) && \
-    (APR_PATCH_VERSION < 3) || defined(AS400)
+    (APR_PATCH_VERSION < 3)
 #define apr_filepath_name_get apr_filename_of_pathname
 #endif
 
