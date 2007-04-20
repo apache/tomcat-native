@@ -42,7 +42,7 @@ RPC details:
   - one parameter  - use a structure for more. The method
     is encoded as part of the request
   - one or no result
-  - 
+  -
 
 
 
@@ -80,7 +80,7 @@ int jk_b_set_buffer_size(jk_msg_buf_t *msg, int buffSize);
 void jk_b_end(jk_msg_buf_t *msg, int protoh);
 
 /*
- * Recycle the buffer - z for a new invocation 
+ * Recycle the buffer - z for a new invocation
  */
 void jk_b_reset(jk_msg_buf_t *msg);
 
@@ -97,7 +97,7 @@ int jk_b_append_long(jk_msg_buf_t *msg, unsigned long val);
 
 int jk_b_append_string(jk_msg_buf_t *msg, const char *param);
 
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
 int jk_b_append_asciistring(jk_msg_buf_t *msg, const char *param);
 #endif
 
@@ -106,7 +106,7 @@ int jk_b_append_bytes(jk_msg_buf_t *msg,
 
 /* -------------------- Decoding -------------------- */
 
-/** Get a byte from the current position 
+/** Get a byte from the current position
  */
 unsigned char jk_b_get_byte(jk_msg_buf_t *msg);
 
@@ -130,11 +130,11 @@ int jk_b_get_bytes(jk_msg_buf_t *msg, unsigned char *buf, int len);
  */
 unsigned char jk_b_pget_byte(jk_msg_buf_t *msg, int pos);
 
-/** Get an int from an arbitrary position 
+/** Get an int from an arbitrary position
  */
 unsigned short jk_b_pget_int(jk_msg_buf_t *msg, int pos);
 
-/** Get a long from an arbitrary position 
+/** Get a long from an arbitrary position
  */
 unsigned long jk_b_pget_long(jk_msg_buf_t *msg, int pos);
 

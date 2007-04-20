@@ -41,7 +41,7 @@
 #include "util_script.h"
 #include "ap_mpm.h"
 
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
 #include "ap_charset.h"
 #include "util_charset.h"       /* ap_hdrs_from_ascii */
 #endif
@@ -294,7 +294,7 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
             ap_set_content_type(r, tmp);
         }
         else if (!strcasecmp(header_names[h], "Location")) {
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
             /* Fix escapes in Location Header URL */
             ap_fixup_escapes((char *)header_values[h],
                              strlen(header_values[h]), ap_hdrs_from_ascii);
@@ -348,7 +348,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
         }
 
         if (p->read_body_started) {
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
             int long rv = OK;
             if (rv = ap_change_request_body_xlate(p->r, 65535, 65535)) {        /* turn off request body translation */
                 ap_log_error(APLOG_MARK, APLOG_STARTUP | APLOG_CRIT, 0, NULL,
@@ -374,7 +374,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 
 static void JK_METHOD ws_flush(jk_ws_service_t *s)
 {
-#ifndef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
     if (s && s->ws_private) {
         apache_private_data_t *p = s->ws_private;
         ap_rflush(p->r);
@@ -400,7 +400,7 @@ static void JK_METHOD ws_flush(jk_ws_service_t *s)
 
 static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned int l)
 {
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
     int rc;
 #endif
 
@@ -422,12 +422,12 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned int l)
                 }
             }
             if (p->r->header_only) {
-#ifndef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
                 ap_rflush(p->r);
 #endif
                 return JK_TRUE;
             }
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
             /* turn off response body translation */
             rc = ap_change_response_body_xlate(p->r, 65535, 65535);
             if (rc) {
@@ -593,7 +593,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->content_length = get_content_length(r);
     s->is_chunked = r->read_chunked;
     s->no_more_chunks = 0;
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
     /* Get the query string that is not translated to EBCDIC  */
     s->query_string = ap_get_original_query_string(r);
 #else
@@ -2795,17 +2795,17 @@ static int jk_post_config(apr_pool_t * pconf,
                 jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                                    &jk_module);
 /***
- * on iSeries, the web server is 'HTTP Powered by Apache 2', as such it differs from the regular 
+ * on iSeries, the web server is 'HTTP Powered by Apache 2', as such it differs from the regular
  * implementations found on others boxes.
- * 
+ *
  * One of this difference is that the life cycle seems different and we discovered that on such platform
  * we need to initialize the jk log with the plog instead of pconf.
- * 
- * We're waiting for more feedback from Rochester iSeries Labs... 
- * 
+ *
+ * We're waiting for more feedback from Rochester iSeries Labs...
+ *
  ***/
-  
-#ifdef AS400
+
+#if defined(AS400) && !defined(AS400_UTF8)
                 if (open_jklog(srv, plog))
 #else
                 if (open_jklog(srv, pconf))

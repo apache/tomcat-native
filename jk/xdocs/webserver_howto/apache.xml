@@ -90,7 +90,7 @@ Cygwin (until you have an apache server and autoconf/automake support tools)
 Netware
 </li>
 <li>
-iSeries V5R1 and V5R2 with Apache 2.0.39. Be sure to have the latest Apache PTF installed.
+i5/OS V5R4 (System I) with Apache 2.0.58. Be sure to have the latest Apache PTF installed.
 </li>
 <li>
 Tomcat 3.2.x, Tomcat 3.3.x, Tomcat 4.0.x, Tomcat 4.1.x, Tomcat 5.0.x, Tomcat 5.5.x and Tomcat 6.
@@ -110,7 +110,7 @@ The ajp12 protocol is only available in Tomcat 3.2.x and 3.3.x.
 </p>
 
 <p>
-The <b>ajp12</b> has been <b>deprecated</b> with Tomcat 3.3.x and you should use instead 
+The <b>ajp12</b> has been <b>deprecated</b> with Tomcat 3.3.x and you should use instead
 <b>ajp13</b> which is the only ajp protocol known by Tomcat 4.x, 5 and 5.5 and Tomcat 6.
 </p>
 
@@ -250,7 +250,7 @@ in Tomcat and put the following include directive at the end of your Apache http
 </source>
 
 <p>
-Note: this file may also be generated as $TOMCAT_HOME/conf/auto/mod_jk.conf 
+Note: this file may also be generated as $TOMCAT_HOME/conf/auto/mod_jk.conf
 </p>
 
 <p>
@@ -1008,28 +1008,41 @@ An alternative will be to open mod_jk.dsp in msdev and build it using the build 
 </p>
 </section>
 
-<section name="Building mod_jk for Apache on iSeries/OS400">
+<section name="Building mod_jk for Apache on System I - i5/OS (OS400)">
 <p>
-Since OS400 V4R5, iSeries (AS/400) has used Apache 2.0 as their primary web server,
+Since OS400 V4R5, System I (AS/400) has used Apache 2.0 as their primary web server,
 replacing the old IBM webserver.
-It's now possible to build mod_jk on iSeries thanks to the help of the IBM
-Rochester Labs which has provided information and patches
-to adapt mod_jk to OS400.
+It's now possible to build mod_jk on System I thanks to the help of the IBM
+Rochester Labs which has provided information and patches to adapt mod_jk to i5/OS.
 </p>
 <p>
-You should have at least Apache 2.0.48 (product 5722DG1), a C Compiler and IFS.
-Apache 2.0.48 is provided with the most recent set of PTFs for the iSeries Apache
+You should have at least Apache 2.0.58 (product 5722DG1), a C Compiler and IFS.
+Apache 2.0.58 is provided with the most recent set of PTFs for the iSeries Apache
 server, which can be found at <a href="http://www.ibm.com/servers/eserver/iseries/software/http/">
 http://www.ibm.com/servers/eserver/iseries/software/http/</a>
 </p>
 <p>
-The all latest Apache 2 for OS400 V5R3 is now 2.0.52 (2005/03/23).
-Be sure to have the latest PTF loaded (SI17402/SI17061) if you want
-to make use of jk 1.2.8 and higher.
+The all latest Apache 2 for i5/OS V5R3 (or V5R4) is now 2.0.58 (as of 2007/04/17).
+Be sure to have the latest PTFs loaded if you want to make use of jk 1.2.15 and higher.
+NB: The latest mod_jk known to work on i5/OS V5R3 was 1.2.19.
 </p>
-
 <p>
-To configure mod_jk on iSeries use the CL source provided with the mod_jk source.
+New in i5/OS V5R4, UTF is required, also for Apache modules, as such Apache modules do not require
+translations to/from EBCDIC but works should be done to port mod_jk 1.2.23 (and higher) to V5R4.
+
+From the V5R4 Infocenter :
+
+As of i5/OS(tm) V5R4, modules must be recompiled with a UTF locale. This creates an environment where locale-dependent C runtime functions assume
+that string data is encoded in UTF-8. Any hardcoded constants can be encoded in UTF-8 by adding a #pragma convert(1208) statement in the module.
+Additionally, input data from the client will no longer be converted to EBCDIC but will be passed as-is.
+Output data sent from the module is not converted either so it must be encoded in ASCII or UTF8 as required.
+APR and HTTP APIs as of V5R4, expect data in UTF-8. Note that several APIs have additional functions that allow a CCSID to be set to
+indicate the encoding of the parameters being passed. Conversion functions between UTF-8 and EBCDIC have been added.
+Be sure to review APIs used by your module to be aware of current changes.
+
+</p>
+<p>
+To configure mod_jk on System I use the CL source provided with the mod_jk source.
 </p>
 <ul>
 <li>
@@ -1039,10 +1052,10 @@ Get the latest mod_jk source and untar it on a Windows or Unix boxes
 Create a directory in IFS, ie /home/apache
 </li>
 <li>
-Send the whole jk source directory to iSeries directory via FTP.
+Send the whole jk source directory to System I directory via FTP.
 </li>
 <li>
-Then go to the iSeries command line :
+Then go to the System I command line :
 </li>
 </ul>
 <screen>
@@ -1082,7 +1095,11 @@ You could start to build all the modules of mod_jk :
 <type5250>CRTDUPOBJ OBJ(MOD_JK) FROMLIB(MOD_JK) OBJTYPE(*SRVPGM) TOLIB(QHTTPSVR) NEWOBJ(MOD_JK)</type5250>
 </screen>
 <p>
-Next, you should restart your Apache 2.0 server and enjoy this piece of OpenSource on iSeries.
+Next, you should restart your Apache 2.0 instance and enjoy this piece of OpenSource on System I.
+<screen>
+<note>ENDTCPSVR SERVER(*HTTP) HTTPSVR(MYSERVER)</note>
+<note>STRTCPSVR SERVER(*HTTP) HTTPSVR(MYSERVER)</note>
+</screen>
 </p>
 </section>
 

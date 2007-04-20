@@ -409,7 +409,7 @@ int jk_open_file_logger(jk_logger_t **l, const char *file, int level)
             rc->level = level;
             rc->log_fmt = NULL;
             rc->logger_private = p;
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
             p->logfile = fopen(file, "a+, o_ccsid=0");
 #else
             p->logfile = fopen(file, "a+");

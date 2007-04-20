@@ -21,7 +21,7 @@
  * Author:      Mladen Turk <mturk@apache.org>                             *
  * Version:     $Revision$                                          *
  ***************************************************************************/
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
 #include "apr_xlate.h"
 #endif
 
@@ -308,7 +308,7 @@ int jk_map_get_int_list(jk_map_t *m,
 #if defined(AS400) || defined(_REENTRANT)
     char *lasts;
 #endif
-    
+
     if (!list_len)
         return 0;
 
@@ -339,7 +339,7 @@ int jk_map_get_int_list(jk_map_t *m,
                 index++;
             }
             else
-                break;                
+                break;
         }
         return index;
     }
@@ -487,7 +487,7 @@ int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified, int all
         FILE *fp;
         if ((rc = stat(f, &statbuf)) == -1)
             return JK_FALSE;
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
         fp = fopen(f, "r, o_ccsid=0");
 #else
         fp = fopen(f, "r");
@@ -545,7 +545,7 @@ void *jk_map_value_at(jk_map_t *m, int idex)
 
 static void trim_prp_comment(char *prp)
 {
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
     char *comment;
     /* lots of lines that translate a '#' realtime deleted   */
     comment = strchr(prp, *APR_NUMBERSIGN);
@@ -853,7 +853,7 @@ int jk_map_load_properties(jk_map_t *m, const char *f, time_t *modified, jk_logg
         FILE *fp;
         if ((rc = stat(f, &statbuf)) == -1)
             return JK_FALSE;
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
         fp = fopen(f, "r, o_ccsid=0");
 #else
         fp = fopen(f, "r");

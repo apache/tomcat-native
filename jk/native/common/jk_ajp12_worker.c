@@ -28,7 +28,7 @@
 #include "jk_connect.h"
 #include "jk_util.h"
 #include "jk_sockbuf.h"
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
 #include "util_ebcdic.h"
 #include <string.h>
 #endif
@@ -61,11 +61,11 @@ typedef struct ajp12_endpoint ajp12_endpoint_t;
 
 static int ajpv12_mark(ajp12_endpoint_t * p, unsigned char type);
 
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
 static int ajpv12_sendasciistring(ajp12_endpoint_t * p, char *buffer);
 #endif
 
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
 static int ajpv12_sendstring(ajp12_endpoint_t * p, char *buffer);
 #else
 static int ajpv12_sendstring(ajp12_endpoint_t * p, const char *buffer);
@@ -96,7 +96,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
      */
 
     JK_TRACE_ENTER(l);
- 
+
     if (is_error)
         *is_error = JK_HTTP_SERVER_ERROR;
     if (!e || !e->endpoint_private || !s || !is_error) {
@@ -301,7 +301,7 @@ static int ajpv12_sendnbytes(ajp12_endpoint_t * p,
     }
 }
 
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
 static int ajpv12_sendasciistring(ajp12_endpoint_t * p, const char *buffer)
 {
     int bufferlen;
@@ -320,7 +320,7 @@ static int ajpv12_sendstring(ajp12_endpoint_t * p, const char *buffer)
     int bufferlen;
 
     if (buffer && (bufferlen = (int)strlen(buffer))) {
-#if defined(AS400) || defined(_OSD_POSIX)
+#if (defined(AS400) && !defined(AS400_UTF8)) || defined(_OSD_POSIX)
         char buf[2048];
         if (bufferlen < 2048) {
             memcpy(buf, buffer, bufferlen);
@@ -377,7 +377,7 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
            ajpv12_sendstring(p, s->server_name) && ajpv12_sendstring(p, 0) &&   /* doc root */
            ajpv12_sendstring(p, 0) &&   /* path info */
            ajpv12_sendstring(p, 0) &&   /* path translated */
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
            ajpv12_sendasciistring(p, s->query_string) &&
 #else
            ajpv12_sendstring(p, s->query_string) &&
@@ -387,14 +387,14 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
            ajpv12_sendstring(p, s->remote_user) &&
            ajpv12_sendstring(p, s->auth_type) &&
            ajpv12_sendint(p, s->server_port) &&
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
            ajpv12_sendasciistring(p, s->method) &&
 #else
            ajpv12_sendstring(p, s->method) &&
 #endif
            ajpv12_sendstring(p, s->req_uri) && ajpv12_sendstring(p, 0) &&       /* */
            ajpv12_sendstring(p, 0) &&   /* SCRIPT_NAME */
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
            ajpv12_sendasciistring(p, s->server_name) &&
 #else
            ajpv12_sendstring(p, s->server_name) &&
@@ -527,7 +527,7 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
                    "ajpv12_handle_response, error reading header line");
             return JK_FALSE;
         }
-#if defined(AS400) || defined(_OSD_POSIX)
+#if (defined(AS400) && !defined(AS400_UTF8)) || defined(_OSD_POSIX)
         jk_xlate_from_ascii(line, strlen(line));
 #endif
 

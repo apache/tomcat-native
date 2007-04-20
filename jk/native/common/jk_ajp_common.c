@@ -29,7 +29,7 @@
 #include "jk_ajp14.h"
 #include "jk_ajp_common.h"
 #include "jk_connect.h"
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
 #include "util_ebcdic.h"
 #endif
 #if defined(NETWARE) && defined(__NOVELL_LIBC__)
@@ -446,7 +446,7 @@ static int ajp_marshal_into_msgb(jk_msg_buf_t *msg,
     }
     if (s->query_string) {
         if (jk_b_append_byte(msg, SC_A_QUERY_STRING) ||
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
             jk_b_append_asciistring(msg, s->query_string)) {
 #else
             jk_b_append_string(msg, s->query_string)) {
@@ -594,7 +594,7 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
 
     d->msg = (char *)jk_b_get_string(msg);
     if (d->msg) {
-#if defined(AS400) || defined(_OSD_POSIX)
+#if (defined(AS400) && !defined(AS400_UTF8)) || defined(_OSD_POSIX)
         jk_xlate_from_ascii(d->msg, strlen(d->msg));
 #endif
     }
@@ -642,7 +642,7 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
                         JK_TRACE_EXIT(l);
                         return JK_FALSE;
                     }
-#if defined(AS400) || defined(_OSD_POSIX)
+#if (defined(AS400) && !defined(AS400_UTF8)) || defined(_OSD_POSIX)
                     jk_xlate_from_ascii(d->header_names[i],
                                         strlen(d->header_names[i]));
 #endif
@@ -657,7 +657,7 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
                     return JK_FALSE;
                 }
 
-#if defined(AS400) || defined(_OSD_POSIX)
+#if (defined(AS400) && !defined(AS400_UTF8)) || defined(_OSD_POSIX)
                 jk_xlate_from_ascii(d->header_values[i],
                                     strlen(d->header_values[i]));
 #endif

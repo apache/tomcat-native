@@ -84,8 +84,8 @@ int jk_b_append_byte(jk_msg_buf_t *msg, unsigned char val)
 
 void jk_b_end(jk_msg_buf_t *msg, int protoh)
 {
-    /* 
-     * Ugly way to set the size in the right position 
+    /*
+     * Ugly way to set the size in the right position
      */
     int hlen = msg->len - 4;
 
@@ -137,7 +137,7 @@ int jk_b_set_buffer_size(jk_msg_buf_t *msg, int buffSize)
     return 0;
 }
 
-#ifdef AS400
+#if defined(AS400) && !defined(AS400_UTF8)
 int jk_b_append_asciistring(jk_msg_buf_t *msg, const char *param)
 {
     int len;
@@ -182,7 +182,7 @@ int jk_b_append_string(jk_msg_buf_t *msg, const char *param)
 
     /* We checked for space !!  */
     strncpy((char *)msg->buf + msg->len, param, len + 1);       /* including \0 */
-#if defined(AS400) || defined(_OSD_POSIX)
+#if (defined(AS400) && !defined(AS400_UTF8)) || defined(_OSD_POSIX)
     /* convert from EBCDIC if needed */
     jk_xlate_to_ascii((char *)msg->buf + msg->len, len + 1);
 #endif
@@ -300,7 +300,7 @@ int jk_b_get_bytes(jk_msg_buf_t *msg, unsigned char *buf, int len)
 
 
 
-/** Helpie dump function 
+/** Helpie dump function
  */
 void jk_dump_buff(jk_logger_t *l,
                   const char *file,
@@ -312,7 +312,7 @@ void jk_dump_buff(jk_logger_t *l,
     char *current;
     int j;
     int len = msg->len;
-    
+
     if (l == NULL)
         return;
     if (l->level != JK_LOG_TRACE_LEVEL && len > 1024)
@@ -341,7 +341,7 @@ void jk_dump_buff(jk_logger_t *l,
             if ((i + j) >= len)
                 x = 0;
             if (x > 0x20 && x < 0x7F) {
-#ifdef USE_CHARSET_EBCDIC        
+#ifdef USE_CHARSET_EBCDIC
                *current = x;
                jk_xlate_from_ascii(current, 1);
 			   current++;

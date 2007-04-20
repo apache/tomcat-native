@@ -204,7 +204,7 @@ static void detach_from_jvm(jni_worker_t * p, jk_logger_t *l);
 
 /*
    Duplicate string and convert it to ASCII on EBDIC based systems
-   Needed for at least AS/400 and BS2000 but what about other EBDIC systems ?
+   Needed for at least AS/400 (before V5R4 ?) and BS2000 but what about other EBDIC systems ?
 */
 static void *strdup_ascii(jk_pool_t *p, char *s)
 {
@@ -281,7 +281,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     /* we are attached now */
 
-    /* 
+    /*
      * When we call the JVM we cannot know what happens
      * So we can not recover !!!
      */
@@ -561,7 +561,7 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    
+
     p = (jni_endpoint_t *) calloc(1, sizeof(jni_endpoint_t));
     if (p) {
         p->attached = JK_FALSE;
@@ -1206,13 +1206,13 @@ static JNIEnv *attach_to_jvm(jni_worker_t *p)
 
 #ifdef LINUX
     linux_signal_hack();
-#endif    
+#endif
 
-    if(0 == (*(p->jvm))->AttachCurrentThread(p->jvm, 
-#ifdef JNI_VERSION_1_2 
+    if(0 == (*(p->jvm))->AttachCurrentThread(p->jvm,
+#ifdef JNI_VERSION_1_2
            (void **)
 #endif
-                                             &rc, 
+                                             &rc,
                                              NULL)) {
         return rc;
     }
