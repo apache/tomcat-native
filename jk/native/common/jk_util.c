@@ -1392,16 +1392,43 @@ int jk_get_worker_cmd_line(jk_map_t *m, const char *wname, const char **cmd_line
 
 int jk_file_exists(const char *f)
 {
+  int   rc;
+  char *ptr;
+
     if (f) {
         struct stat st;
+
 #ifdef AS400
-        if ((0 == stat(f, &st)) && (st.st_mode & _S_IFREG)) {
-#else
-        if ((0 == stat(f, &st)) && (st.st_mode & S_IFREG)) {
-#endif
-            return JK_TRUE;
-        }
+
+/**
+ * i5/OS V5R4 expect filename in ASCII for fopen but required them in EBCDIC for stat()
+ */
+#ifdef AS400_UTF8
+
+		ptr = (char *)malloc(strlen(f) + 1);
+		jk_ascii2ebcdic((char *)f, ptr);
+		rc = stat(ptr, &st);
+		free(ptr);
+
+        if ((0 == rc) && (st.st_mode & _S_IFREG))
+			return JK_TRUE;
+
+#else /* AS400_UTF8 */
+
+        if ((0 == stat(f, &st)) && (st.st_mode & _S_IFREG))
+			return JK_TRUE;
+
+#endif /* AS400_UTF8 */
+
+#else /* AS400 */
+
+        if ((0 == stat(f, &st)) && (st.st_mode & S_IFREG))
+			return JK_TRUE;
+
+#endif /* AS400 */
+
     }
+
     return JK_FALSE;
 }
 
@@ -1755,20 +1782,25 @@ static u_char ascii_to_ebcdic[256] =
   0x90,0xbd,0xb3,0xda,0xea,0xfa,0x40,0x40  /* f8-ff */
 };
 
-void jk_ascii2ebcdic(char *ptr) {
+void jk_ascii2ebcdic(char *src, char *dst) {
     char c;
 
-    while ((c = *ptr) != 0) {
-        *ptr++ = ascii_to_ebcdic[(unsigned int)c];
+    while ((c = *src++) != 0) {
+        *dst++ = ascii_to_ebcdic[(unsigned int)c];
     }
+
+    *dst = 0;
 }
 
-void jk_ebcdic2ascii(char *ptr) {
+void jk_ebcdic2ascii(char *src, char *dst) {
     char c;
 
-    while ((c = *ptr) != 0) {
-        *ptr++ = ebcdic_to_ascii[(unsigned int)c];
+    while ((c = *src++) != 0) {
+        *dst++ = ebcdic_to_ascii[(unsigned int)c];
     }
+
+    *dst = 0;
 }
+
 #endif
 

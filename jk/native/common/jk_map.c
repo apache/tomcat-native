@@ -485,7 +485,7 @@ int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified, int all
     if (m && f) {
         struct stat statbuf;
         FILE *fp;
-        if ((rc = stat(f, &statbuf)) == -1)
+        if (jk_file_exists(f) != JK_TRUE)
             return JK_FALSE;
 #if defined(AS400) && !defined(AS400_UTF8)
         fp = fopen(f, "r, o_ccsid=0");

@@ -212,8 +212,8 @@ int jk_get_worker_user_case_insensitive(jk_map_t *m, const char *wname);
 #define TC50_BRIDGE_TYPE    50
 
 #ifdef AS400_UTF8
-void jk_ascii2ebcdic(char *ptr);
-void jk_ebcdic2ascii(char *ptr);
+void jk_ascii2ebcdic(char *src, char *dst);
+void jk_ebcdic2ascii(char *src, char *dst);
 #endif
 
 #ifdef __cplusplus
