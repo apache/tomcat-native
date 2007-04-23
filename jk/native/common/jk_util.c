@@ -1679,7 +1679,7 @@ int jk_gettid()
  * For now usefull only in i5/OS V5R4 where UTF and EBCDIC mode are mixed
  */
 
-#if defined(AS400) && !defined(AS400_UTF8)
+#ifdef AS400_UTF8
 
 /* EBCDIC to ASCII translation table */
 static u_char ebcdic_to_ascii[256] =

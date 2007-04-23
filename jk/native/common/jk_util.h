@@ -211,7 +211,7 @@ int jk_get_worker_user_case_insensitive(jk_map_t *m, const char *wname);
 #define TC41_BRIDGE_TYPE    41
 #define TC50_BRIDGE_TYPE    50
 
-#if defined(AS400) && !defined(AS400_UTF8)
+#ifdef AS400_UTF8
 void jk_ascii2ebcdic(char *ptr);
 void jk_ebcdic2ascii(char *ptr);
 #endif
