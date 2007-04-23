@@ -297,7 +297,7 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
     else {
 		/* i5/OS V5R4 need EBCDIC for its runtime calls but APR/APACHE works in UTF */
 #ifdef AS400_UTF8
-        jk_ascii2ebcdic(remote_ipaddr);
+        jk_ascii2ebcdic((char *)host);
 #endif
         /* If we found only digits we use inet_addr() */
         laddr.s_addr = inet_addr(host);
