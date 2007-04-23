@@ -354,6 +354,10 @@ typedef int jk_sock_t;
 #define JK_INVALID_SOCKET  (-1)
 #endif
 
+#ifdef AS400_UTF8
+#define strcasecmp(a,b) apr_strnatcasecmp(a,b)
+#endif
+
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
