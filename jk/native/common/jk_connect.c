@@ -270,6 +270,11 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
             return JK_FALSE;
 
         apr_sockaddr_ip_get(&remote_ipaddr, remote_sa);
+
+		/* i5/OS V5R4 need EBCDIC for its runtime calls but APR/APACHE works in UTF */
+#if defined(AS400) && !defined(AS400_UTF8)
+        jk_ascii2ebcdic(remote_ipaddr);
+#endif
         laddr.s_addr = inet_addr(remote_ipaddr);
 
 #else /* HAVE_APR */
@@ -290,6 +295,10 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
 #endif /* HAVE_APR */
     }
     else {
+		/* i5/OS V5R4 need EBCDIC for its runtime calls but APR/APACHE works in UTF */
+#if defined(AS400) && !defined(AS400_UTF8)
+        jk_ascii2ebcdic(remote_ipaddr);
+#endif
         /* If we found only digits we use inet_addr() */
         laddr.s_addr = inet_addr(host);
     }
@@ -635,12 +644,12 @@ int jk_is_socket_connected(jk_sock_t sock)
     /* Wait one microsecond */
     tv.tv_sec  = 0;
     tv.tv_usec = 1;
-    
+
     do {
         rc = select((int)sock + 1, &fd, NULL, NULL, &tv);
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
         errno = WSAGetLastError() - WSABASEERR;
-#endif        
+#endif
     } while (rc == -1 && errno == EINTR);
 
     if (rc == 0) {
@@ -663,7 +672,7 @@ int jk_is_socket_connected(jk_sock_t sock)
         if (ioctl(sock, FIONREAD, (void*)&nr) == 0) {
             return nr == 0 ? 0 : 1;
         }
-#endif        
+#endif
     }
 
     return 0;
