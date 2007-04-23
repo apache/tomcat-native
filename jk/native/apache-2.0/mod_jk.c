@@ -973,12 +973,7 @@ static const char *jk_set_worker_file(cmd_parms * cmd,
     if (conf->worker_file == NULL)
         return "JkWorkersFile file name invalid";
 
-	/* i5/OS need worker_file name in EBCDIC */
-#if defined(AS400_UTF8)
-    jk_ascii2ebcdic(conf->worker_file);
-#endif
-
-    if (stat(conf->worker_file, &statbuf) == -1)
+    if (jk_file_exists(conf->worker_file) != JK_TRUE)
         return "Can't find the workers file specified";
 
     return NULL;
@@ -1006,12 +1001,7 @@ static const char *jk_set_mount_file(cmd_parms * cmd,
     if (conf->mount_file == NULL)
         return "JkMountFile file name invalid";
 
-	/* i5/OS need mount_file name in EBCDIC */
-#if defined(AS400_UTF8)
-    jk_ascii2ebcdic(conf->mount_file);
-#endif
-
-    if (stat(conf->mount_file, &statbuf) == -1)
+    if (jk_file_exists(conf->mount_file) != JK_TRUE)
         return "Can't find the mount file specified";
 
     return NULL;
