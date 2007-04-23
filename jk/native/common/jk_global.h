@@ -108,7 +108,7 @@ extern char *strdup(const char *str);
 #define NOIME
 #endif
 #include <windows.h>
-/* 
+/*
  * Add a _very_few_ declarations missing from the restricted set of headers
  * (If this list becomes extensive, re-enable the required headers above!)
  * winsock headers were excluded by WIN32_LEAN_AND_MEAN, so include them now
@@ -276,6 +276,13 @@ extern "C"
 #endif                          /* CHARSET_EBCDIC */
 
 #endif                          /* APR_CHARSET_EBCDIC */
+
+/* on i5/OS V5R4 HTTP/APR APIs and Datas are in UTF */
+#if defined(AS400_UTF8)
+#undef USE_CHARSET_EBCDIC
+#define jk_xlate_to_ascii(b, l) /* NOOP */
+#define jk_xlate_from_ascii(b, l)       /* NOOP */
+#endif
 
 /* jk_uint32_t defines a four byte word */
 /* jk_uint64_t defines a eight byte word */
