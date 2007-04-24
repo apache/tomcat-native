@@ -249,7 +249,7 @@ char **jk_map_get_string_list(jk_map_t *m,
     const char *l = jk_map_get_string(m, name, def);
     char **ar = NULL;
 
-#if defined(AS400) || defined(_REENTRANT)
+#ifdef _REENTRANT
     char *lasts;
 #endif
 
@@ -269,7 +269,7 @@ char **jk_map_get_string_list(jk_map_t *m,
          * GS, in addition to VG's patch, we now need to
          * strtok also by a "*"
          */
-#if defined(AS400) || defined(_REENTRANT)
+#ifdef _REENTRANT
         for (p = strtok_r(v, " \t,", &lasts);
              p; p = strtok_r(NULL, " \t,", &lasts))
 #else
@@ -305,7 +305,7 @@ int jk_map_get_int_list(jk_map_t *m,
 {
     const char *l = jk_map_get_string(m, name, def);
 
-#if defined(AS400) || defined(_REENTRANT)
+#ifdef _REENTRANT
     char *lasts;
 #endif
 
@@ -326,7 +326,7 @@ int jk_map_get_int_list(jk_map_t *m,
          * GS, in addition to VG's patch, we now need to
          * strtok also by a "*"
          */
-#if defined(AS400) || defined(_REENTRANT)
+#ifdef _REENTRANT
         for (p = strtok_r(v, " \t,", &lasts);
              p; p = strtok_r(NULL, " \t,", &lasts))
 #else
@@ -849,9 +849,8 @@ int jk_map_load_properties(jk_map_t *m, const char *f, time_t *modified, jk_logg
     int rc = JK_FALSE;
 
     if (m && f) {
-        struct stat statbuf;
         FILE *fp;
-        if ((rc = stat(f, &statbuf)) == -1)
+        if (jk_file_exists(f) != JK_TRUE)
             return JK_FALSE;
 #if defined(AS400) && !defined(AS400_UTF8)
         fp = fopen(f, "r, o_ccsid=0");
