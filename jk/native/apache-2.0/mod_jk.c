@@ -2540,7 +2540,7 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
 static apr_status_t jklog_cleanup(void *d)
 {
     /* set the main_log to NULL */
-#idef AS400
+#ifdef AS400
 	main_log = null;
 #endif
 
