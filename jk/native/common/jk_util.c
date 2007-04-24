@@ -525,7 +525,15 @@ int jk_log(jk_logger_t *l,
             used = usable_size;
         }
         buf[used] = 0;
+
+/*
+ * MCH errors encountered on i5/OS (V5R3/V5R4) when using jk_logger, use the JOBLOB QPRINT instead for now
+ */
+#ifdef AS400
+		printf("%s\n", buf);
+#else
         l->log(l, level, buf);
+#endif
 #ifdef NETWARE
         free(buf);
 #endif
@@ -1390,43 +1398,33 @@ int jk_get_worker_cmd_line(jk_map_t *m, const char *wname, const char **cmd_line
 }
 
 
-int jk_file_exists(const char *f)
-{
-  int   rc;
-  char *ptr;
-
-    if (f) {
-        struct stat st;
-
-#ifdef AS400
-
 /**
  * i5/OS V5R4 expect filename in ASCII for fopen but required them in EBCDIC for stat()
  */
 #ifdef AS400_UTF8
 
-		ptr = (char *)malloc(strlen(f) + 1);
-		jk_ascii2ebcdic((char *)f, ptr);
-		rc = stat(ptr, &st);
-		free(ptr);
+int jk_stat(const char *f, struct stat * statbuf)
+{
+	char *ptr;
+	int rc;
 
-        if ((0 == rc) && (st.st_mode & _S_IFREG))
+	ptr = (char *)malloc(strlen(f) + 1);
+	jk_ascii2ebcdic((char *)f, ptr);
+	rc = stat(ptr, statbuf);
+	free(ptr);
+
+	return (rc);
+}
+
+#endif
+
+int jk_file_exists(const char *f)
+{
+    if (f) {
+        struct stat st;
+
+        if ((0 == jk_stat(f, &st)) && (st.st_mode & S_IFREG))
 			return JK_TRUE;
-
-#else /* AS400_UTF8 */
-
-        if ((0 == stat(f, &st)) && (st.st_mode & _S_IFREG))
-			return JK_TRUE;
-
-#endif /* AS400_UTF8 */
-
-#else /* AS400 */
-
-        if ((0 == stat(f, &st)) && (st.st_mode & S_IFREG))
-			return JK_TRUE;
-
-#endif /* AS400 */
-
     }
 
     return JK_FALSE;
@@ -1582,7 +1580,7 @@ int jk_get_worker_libpath(jk_map_t *m, const char *wname, const char **libpath)
 char **jk_parse_sysprops(jk_pool_t *p, const char *sysprops)
 {
     char **rc = NULL;
-#if defined(AS400) || defined(_REENTRANT)
+#ifdef _REENTRANT
     char *lasts;
 #endif
 
@@ -1600,7 +1598,7 @@ char **jk_parse_sysprops(jk_pool_t *p, const char *sysprops)
             rc = jk_pool_alloc(p, (num_of_prps + 1) * sizeof(char *));
             if (rc) {
                 unsigned i = 0;
-#if defined(AS400) || defined(_REENTRANT)
+#ifdef _REENTRANT
                 char *tmp = strtok_r(prps, "*", &lasts);
 #else
                 char *tmp = strtok(prps, "*");
@@ -1608,7 +1606,7 @@ char **jk_parse_sysprops(jk_pool_t *p, const char *sysprops)
 
                 while (tmp && i < num_of_prps) {
                     rc[i] = tmp;
-#if defined(AS400) || defined(_REENTRANT)
+#ifdef _REENTRANT
                     tmp = strtok_r(NULL, "*", &lasts);
 #else
                     tmp = strtok(NULL, "*");

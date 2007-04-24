@@ -211,10 +211,26 @@ int jk_get_worker_user_case_insensitive(jk_map_t *m, const char *wname);
 #define TC41_BRIDGE_TYPE    41
 #define TC50_BRIDGE_TYPE    50
 
+#ifdef AS400
+
+#define S_IFREG _S_IFREG
+
 #ifdef AS400_UTF8
+
 void jk_ascii2ebcdic(char *src, char *dst);
 void jk_ebcdic2ascii(char *src, char *dst);
+
+/* i5/OS V5R4 need ASCII-EBCDIC conversion before stat() call */
+int jk_stat(const char *f, struct stat * statbuf);
+
+#else /* AS400_UTF8 */
+
+#define jk_stat(a, b) stat(a, b)
+
+#endif /* AS400_UTF8 */
+
 #endif
+
 
 #ifdef __cplusplus
 extern "C"
