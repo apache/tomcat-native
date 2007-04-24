@@ -715,7 +715,7 @@ int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
     if (uw_map->reload > 0 && difftime(now, uw_map->checked) > uw_map->reload) {
         struct stat statbuf;
         uw_map->checked = now;
-        if ((rc = stat(uw_map->fname, &statbuf)) == -1) {
+        if ((rc = jk_stat(uw_map->fname, &statbuf)) == -1) {
             jk_log(l, JK_LOG_ERROR,
                    "Unable to stat the %s (errno=%d)",
                    uw_map->fname, errno);
