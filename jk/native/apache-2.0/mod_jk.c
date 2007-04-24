@@ -2545,10 +2545,6 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
 static apr_status_t jklog_cleanup(void *d)
 {
     /* set the main_log to NULL */
-#ifdef AS400
-	main_log = null;
-#endif
-
     d = NULL;
     return APR_SUCCESS;
 }
@@ -2621,9 +2617,11 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
         jkl->logger_private = flp;
         flp->jklogfp = conf->jklogfp;
         conf->log = jkl;
-        if (main_log == NULL)
+        if (main_log == NULL) {
             main_log = conf->log;
-        apr_pool_cleanup_register(p, conf->log, jklog_cleanup, jklog_cleanup);
+        	apr_pool_cleanup_register(p, main_log, jklog_cleanup, jklog_cleanup);
+        }
+
         return 0;
     }
 
