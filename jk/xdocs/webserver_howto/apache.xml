@@ -206,7 +206,7 @@ mod_jk requires two entities:
 <ul>
 <li>
 <b>mod_jk.xxx</b> - The Apache module, depending on your operating system, it will be mod_jk.so, mod_jk.nlm or
-or QZTCJK.SRVPGM (see the build section).
+or MOD_JK.SRVPGM (see the build section).
 </li>
 <li>
 <b>workers.properties</b> - A file that describes the host(s) and port(s) used by the workers (Tomcat processes).
@@ -1060,7 +1060,7 @@ Then go to the System I command line :
 </ul>
 <screen>
 <note>Create mod_jk library</note>
-<type5250>CRTLIB MOD_JK TEXT(‘Apache mod_jk tomcat connector module’)</type5250>
+<type5250>CRTLIB MOD_JK TEXT(‘Apache mod'jk tomcat connector module')</type5250>
 <note>Create service program source file</note>
 <type5250>CRTSRCPF MOD_JK/QSRVSRC TEXT(‘Service program source file’)</type5250>
 <note>Create the CL build program source file</note>
@@ -1081,16 +1081,28 @@ In the edited file, specify that only jk_module should be exported :
 </screen>
 </p>
 <p>
-You could start to build all the modules of mod_jk :
+You could start to build all the modules of mod_jk (cases for V5R4 or previous releases):
 </p>
 <screen>
-<note>Copy the CL build program source from IFS</note>
+<note>Copy the CL build program source for i5/OS before V5R4 from IFS</note>
 <type5250>CPYFRMSTMF FROMSTMF('/home/apache/jk/native/apache-2.0/bldjk.qclsrc') +</type5250>
 <note>TOMBR('/QSYS.LIB/MOD_JK.LIB/QCLSRC.FILE/BLDJK.MBR') MBROPT(*REPLACE)</note>
 <note>Build the CL build program</note>
 <type5250>CRTCLPGM PGM(MOD_JK/BLDJK) SRCFILE(MOD_JK/QCLSRC) TEXT('Apache mod_jk build program')</type5250>
 <note>Launch the build</note>
 <type5250>CALL MOD_JK/BLDJK</type5250><br/>
+<note>If the build if successfull, copy the new mod_jk module</note>
+<type5250>CRTDUPOBJ OBJ(MOD_JK) FROMLIB(MOD_JK) OBJTYPE(*SRVPGM) TOLIB(QHTTPSVR) NEWOBJ(MOD_JK)</type5250>
+</screen>
+<p>
+<screen>
+<note>Copy the CL build program source for i5/OS V5R4 from IFS</note>
+<type5250>CPYFRMSTMF FROMSTMF('/home/apache/jk/native/apache-2.0/bldjk54.qclsrc') +</type5250>
+<note>TOMBR('/QSYS.LIB/MOD_JK.LIB/QCLSRC.FILE/BLDJK54.MBR') MBROPT(*REPLACE)</note>
+<note>Build the CL build program for i5/OS V5R4</note>
+<type5250>CRTCLPGM PGM(MOD_JK/BLDJK54) SRCFILE(MOD_JK/QCLSRC) TEXT('Apache mod_jk build program') TGTRLS(*CURRENT)</type5250>
+<note>Launch the build for i5/OS V5R4</note>
+<type5250>CALL MOD_JK/BLDJK54</type5250><br/>
 <note>If the build if successfull, copy the new mod_jk module</note>
 <type5250>CRTDUPOBJ OBJ(MOD_JK) FROMLIB(MOD_JK) OBJTYPE(*SRVPGM) TOLIB(QHTTPSVR) NEWOBJ(MOD_JK)</type5250>
 </screen>
