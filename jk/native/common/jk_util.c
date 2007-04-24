@@ -525,15 +525,8 @@ int jk_log(jk_logger_t *l,
             used = usable_size;
         }
         buf[used] = 0;
-
-/*
- * MCH errors encountered on i5/OS (V5R3/V5R4) when using jk_logger, use the JOBLOB QPRINT instead for now
- */
-#ifdef AS400
-		printf("%s\n", buf);
-#else
         l->log(l, level, buf);
-#endif
+
 #ifdef NETWARE
         free(buf);
 #endif
