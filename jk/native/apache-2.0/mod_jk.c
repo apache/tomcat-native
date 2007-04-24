@@ -314,6 +314,11 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
         }
     }
 
+	/* under i5/OS this flag is not set correctly */
+#ifdef AS400
+        r->sent_bodyct = 1;
+#endif
+
     /* this NOP function was removed in apache 2.0 alpha14 */
     /* ap_send_http_header(r); */
     p->response_started = JK_TRUE;
