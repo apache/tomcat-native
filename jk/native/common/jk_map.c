@@ -873,9 +873,9 @@ int jk_map_load_properties(jk_map_t *m, const char *f, time_t *modified, jk_logg
             }
             fclose(fp);
             if (modified) {
-            	struct stat statbuf;
-				jk_stat(f, &statbuf);
-                *modified = statbuf.st_mtime;
+                struct stat statbuf;
+                if (jk_stat(f, &statbuf) != -1)
+                	*modified = statbuf.st_mtime;
             }
         }
     }
