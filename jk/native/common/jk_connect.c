@@ -222,6 +222,27 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
 }
 #endif
 
+
+#ifdef AS400_UTF8
+
+/*
+ *  i5/OS V5R4 need EBCDIC for its runtime calls but APR/APACHE works in UTF
+ */
+in_addr_t jk_inet_addr(const char * addrstr)
+{
+	in_addr_t addr;
+	char *ptr;
+
+	ptr = (char *)malloc(strlen(addrstr) + 1);
+	jk_ascii2ebcdic((char *)addrstr, ptr);
+	addr = inet_addr(ptr);
+	free(ptr);
+
+	return(addr);
+}
+
+#endif
+
 /** resolve the host IP */
 
 int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
@@ -271,11 +292,7 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
 
         apr_sockaddr_ip_get(&remote_ipaddr, remote_sa);
 
-		/* i5/OS V5R4 need EBCDIC for its runtime calls but APR/APACHE works in UTF */
-#ifdef AS400_UTF8
-        jk_ascii2ebcdic(remote_ipaddr, remote_ipaddr);
-#endif
-        laddr.s_addr = inet_addr(remote_ipaddr);
+        laddr.s_addr = jk_inet_addr(remote_ipaddr);
 
 #else /* HAVE_APR */
 
@@ -295,12 +312,8 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
 #endif /* HAVE_APR */
     }
     else {
-		/* i5/OS V5R4 need EBCDIC for its runtime calls but APR/APACHE works in UTF */
-#ifdef AS400_UTF8
-        jk_ascii2ebcdic((char *)host, (char *)host);
-#endif
         /* If we found only digits we use inet_addr() */
-        laddr.s_addr = inet_addr(host);
+        laddr.s_addr = jk_inet_addr(host);
     }
     memcpy(&(rc->sin_addr), &laddr, sizeof(laddr));
 

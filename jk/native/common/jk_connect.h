@@ -56,6 +56,17 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf);
 
 int jk_is_socket_connected(jk_sock_t sd);
 
+
+/***
+ * i5/OS V5R4 need ASCII<->EBCDIC translation for inet_addr() call
+ */
+#if !defined(AS400_UTF8)
+
+#define jk_inet_addr inet_addr
+
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
