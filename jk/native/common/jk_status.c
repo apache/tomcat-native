@@ -917,7 +917,7 @@ static int status_parse_uri(jk_ws_service_t *s,
 {
     jk_map_t *m;
     status_worker_t *w = p->worker;
-#if defined(AS400) || defined(_REENTRANT)
+#ifdef _REENTRANT
     char *lasts;
 #endif
     char *param;
@@ -949,7 +949,7 @@ static int status_parse_uri(jk_ws_service_t *s,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-#if defined(AS400) || defined(_REENTRANT)
+#ifdef _REENTRANT
     for (param = strtok_r(query, "&", &lasts);
          param; param = strtok_r(NULL, "&", &lasts)) {
 #else
@@ -2437,7 +2437,7 @@ static void display_legend(jk_ws_service_t *s,
     int mime;
     const char *arg;
     unsigned int hide_legend;
-    
+
     JK_TRACE_ENTER(l);
     status_get_string(p, JK_STATUS_ARG_MIME, NULL, &arg, l);
     mime = status_mime_int(arg);
