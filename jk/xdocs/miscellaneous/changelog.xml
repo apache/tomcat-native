@@ -9,6 +9,7 @@
   <properties>
     <author email="mturk@apache.org">Mladen Turk</author>
     <author email="rjung@apache.org">Rainer Jung</author>
+    <author email="hgomez@apache.org">Henri Gomez</author>
     <title>Changelog</title>
   </properties>
 
@@ -21,6 +22,19 @@
   It should contain fixes made only after November 10th 2004, when the
   new documentation project for JK was started.
   </p>
+</section>
+<section name="Changes between 1.2.22 and 1.2.23">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <update>
+      i5/OS (AS/400) V5R4 port where Apache 2.0 modules should now use UTF8. (hgomez)
+      </update>
+      <update>
+      Docs: Add comments on i5/OS build for V5R4 and previous releases. (hgomez)
+      </update>
+    </changelog>
+  </subsection>
 </section>
 <section name="Changes between 1.2.21 and 1.2.22">
   <br />
