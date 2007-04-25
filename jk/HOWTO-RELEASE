@@ -123,7 +123,7 @@ native/common/jk_version.h: Update variables JK_VERMAJOR, JK_VERMINOR, JK_VERFIX
 native/common/portable.h.sample: Update VERSION define.
 native/iis/isapi_redirect.rc: Update JK_VERSION_STR, FILEVERSION, and PRODUCTVERSION
 native/iis/installer/isapi-redirector-win32-msi.ism: Update ProductVersion.
-xdocs/changelog.xml: Start a new section for the new version.
+xdocs/miscellaneous/changelog.xml: Start a new section for the new version.
 
 Remove old release distributions from www.apache.org
 ----------------------------------------------------
