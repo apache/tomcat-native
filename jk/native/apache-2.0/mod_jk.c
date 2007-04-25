@@ -2544,15 +2544,11 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l,
 
 static apr_status_t jklog_cleanup(void *d)
 {
-    /* On i5/OS, Apache 2.x init stages and exec mode are done in the same thread */
-    /* No fork as on Unixes, we need to cleanup some static variables */
-#ifdef AS400
-    main_log = NULL;
-#endif
-
     /* hgomez@20070425 */
-    /* If we pass a pointer (ie: main_log), shouldn't it be *d = NULL ? */
-    d = NULL;
+    /* Clean up pointer content */
+    if (d != NULL)
+        *(jk_logger_t **)d = NULL;
+
     return APR_SUCCESS;
 }
 
@@ -2630,7 +2626,7 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
             /* hgomez@20070425 */
             /* Shouldn't we clean both conf->log and main_log ?                   */
             /* Also should we pass pointer (ie: main_log) or handle (*main_log) ? */
-            apr_pool_cleanup_register(p, main_log, jklog_cleanup, jklog_cleanup);
+            apr_pool_cleanup_register(p, &main_log, jklog_cleanup, jklog_cleanup);
         }
 
         return 0;
