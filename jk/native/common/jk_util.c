@@ -1391,25 +1391,26 @@ int jk_get_worker_cmd_line(jk_map_t *m, const char *wname, const char **cmd_line
 }
 
 
+int jk_stat(const char *f, struct stat * statbuf)
+{
+  int rc;
 /**
  * i5/OS V5R4 expect filename in ASCII for fopen but required them in EBCDIC for stat()
  */
 #ifdef AS400_UTF8
-
-int jk_stat(const char *f, struct stat * statbuf)
-{
   char *ptr;
-  int rc;
 
   ptr = (char *)malloc(strlen(f) + 1);
   jk_ascii2ebcdic((char *)f, ptr);
   rc = stat(ptr, statbuf);
   free(ptr);
+#else
+  rc = stat(f, statbuf);
+#endif
 
   return (rc);
 }
 
-#endif
 
 int jk_file_exists(const char *f)
 {
