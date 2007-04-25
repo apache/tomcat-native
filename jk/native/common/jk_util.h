@@ -220,10 +220,12 @@ int jk_get_worker_user_case_insensitive(jk_map_t *m, const char *wname);
 void jk_ascii2ebcdic(char *src, char *dst);
 void jk_ebcdic2ascii(char *src, char *dst);
 
-/* i5/OS V5R4 need ASCII-EBCDIC conversion before stat() call */
 #endif /* AS400_UTF8 */
 
 #endif
+
+/* i5/OS V5R4 need ASCII-EBCDIC conversion before stat() call */
+/* added a stat() mapper function, jk_map, for such purpose */
 
 int jk_stat(const char *f, struct stat * statbuf);
 
