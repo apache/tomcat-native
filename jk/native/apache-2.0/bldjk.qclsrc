@@ -1,9 +1,9 @@
 PGM
 CRTCMOD MODULE(MOD_JK/MOD_JK) +
-	SRCSTMF('/home/apache/jk/native/apache-2.0/mod_jk.c') +
-	DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +
-	       'USE_APACHE_MD5' '_REENTRANT') +
-	TEXT('mod_jk.c') +
+    SRCSTMF('/home/apache/jk/native/apache-2.0/mod_jk.c') +
+    DEFINE('AS400' 'HAVE_JNI' 'HAVE_APR' '_XOPEN_SOURCE=520' +
+         'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('mod_jk.c') +
     OPTIMIZE(40) +
     LOCALETYPE(*LOCALE) +
     SYSIFCOPT(*IFSIO) +
