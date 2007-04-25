@@ -230,15 +230,15 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
  */
 in_addr_t jk_inet_addr(const char * addrstr)
 {
-	in_addr_t addr;
-	char *ptr;
+    in_addr_t addr;
+    char *ptr;
 
-	ptr = (char *)malloc(strlen(addrstr) + 1);
-	jk_ascii2ebcdic((char *)addrstr, ptr);
-	addr = inet_addr(ptr);
-	free(ptr);
+    ptr = (char *)malloc(strlen(addrstr) + 1);
+    jk_ascii2ebcdic((char *)addrstr, ptr);
+    addr = inet_addr(ptr);
+    free(ptr);
 
-	return(addr);
+    return(addr);
 }
 
 #endif

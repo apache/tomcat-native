@@ -138,9 +138,9 @@ API_EXPORT(int) ap_vformatter(int (*flush_func)(ap_vformatter_buff *),
  * In no event does ap_snprintf return a negative number.
  */
 API_EXPORT_NONSTD(int) ap_snprintf(char *buf, size_t len, const char *format,...)
-			    __attribute__((format(printf,3,4)));
+          __attribute__((format(printf,3,4)));
 API_EXPORT(int) ap_vsnprintf(char *buf, size_t len, const char *format,
-			     va_list ap);
+           va_list ap);
 
 #ifdef __cplusplus
 }

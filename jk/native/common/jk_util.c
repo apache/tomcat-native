@@ -1398,15 +1398,15 @@ int jk_get_worker_cmd_line(jk_map_t *m, const char *wname, const char **cmd_line
 
 int jk_stat(const char *f, struct stat * statbuf)
 {
-	char *ptr;
-	int rc;
+  char *ptr;
+  int rc;
 
-	ptr = (char *)malloc(strlen(f) + 1);
-	jk_ascii2ebcdic((char *)f, ptr);
-	rc = stat(ptr, statbuf);
-	free(ptr);
+  ptr = (char *)malloc(strlen(f) + 1);
+  jk_ascii2ebcdic((char *)f, ptr);
+  rc = stat(ptr, statbuf);
+  free(ptr);
 
-	return (rc);
+  return (rc);
 }
 
 #endif
@@ -1417,7 +1417,7 @@ int jk_file_exists(const char *f)
         struct stat st;
 
         if ((0 == jk_stat(f, &st)) && (st.st_mode & S_IFREG))
-			return JK_TRUE;
+      return JK_TRUE;
     }
 
     return JK_FALSE;

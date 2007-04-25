@@ -850,7 +850,8 @@ int jk_map_load_properties(jk_map_t *m, const char *f, time_t *modified, jk_logg
 
     if (m && f) {
         FILE *fp;
-        if (jk_file_exists(f) != JK_TRUE)
+        struct stat statbuf;
+        if (jk_stat(f, &statbuf) != -1)
             return JK_FALSE;
 #if defined(AS400) && !defined(AS400_UTF8)
         fp = fopen(f, "r, o_ccsid=0");
@@ -872,11 +873,8 @@ int jk_map_load_properties(jk_map_t *m, const char *f, time_t *modified, jk_logg
                 }
             }
             fclose(fp);
-            if (modified) {
-                struct stat statbuf;
-                if (jk_stat(f, &statbuf) != -1)
-                	*modified = statbuf.st_mtime;
-            }
+            if (modified)
+                *modified = statbuf.st_mtime;
         }
     }
 

@@ -344,9 +344,9 @@ void jk_dump_buff(jk_logger_t *l,
 #ifdef USE_CHARSET_EBCDIC
                *current = x;
                jk_xlate_from_ascii(current, 1);
-			   current++;
+               current++;
 #else
-            	*current++ = x;
+              *current++ = x;
 #endif
             }
             else {
