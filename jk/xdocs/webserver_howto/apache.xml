@@ -1094,7 +1094,6 @@ You could start to build all the modules of mod_jk (cases for V5R4 or previous r
 <note>If the build if successfull, copy the new mod_jk module</note>
 <type5250>CRTDUPOBJ OBJ(MOD_JK) FROMLIB(MOD_JK) OBJTYPE(*SRVPGM) TOLIB(QHTTPSVR) NEWOBJ(MOD_JK)</type5250>
 </screen>
-<p>
 <screen>
 <note>Copy the CL build program source for i5/OS V5R4 from IFS</note>
 <type5250>CPYFRMSTMF FROMSTMF('/home/apache/jk/native/apache-2.0/bldjk54.qclsrc') +</type5250>
@@ -1108,11 +1107,11 @@ You could start to build all the modules of mod_jk (cases for V5R4 or previous r
 </screen>
 <p>
 Next, you should restart your Apache 2.0 instance and enjoy this piece of OpenSource on System I.
+</p>
 <screen>
 <note>ENDTCPSVR SERVER(*HTTP) HTTPSVR(MYSERVER)</note>
 <note>STRTCPSVR SERVER(*HTTP) HTTPSVR(MYSERVER)</note>
 </screen>
-</p>
 </section>
 
 <section name="Building mod_jk for Apache on MacOS/X">
