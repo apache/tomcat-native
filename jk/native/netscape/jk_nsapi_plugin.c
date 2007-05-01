@@ -342,6 +342,7 @@ NSAPI_PUBLIC int jk_service(pblock * pb, Session * sn, Request * rq)
 
         s.ws_private = &private_data;
         s.pool = &private_data.p;
+        s.retries = worker->retries;
 
         wc_maintain(logger);
         if (init_ws_service(&private_data, &s)) {
@@ -371,6 +372,9 @@ static int init_ws_service(nsapi_private_data_t * private_data,
     s->read = ws_read;
     s->write = ws_write;
     s->flush = NULL;
+    s->flush_packets = JK_FALSE;
+    s->flush_header = JK_FALSE;
+    s->disable_reuse = JK_FALSE;
 
     /* Clear RECO status */
     s->reco_status = RECO_NONE;
