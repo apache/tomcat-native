@@ -228,9 +228,6 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
 
     int rc = REQ_ABORTED;
 
-    fprintf(stderr,
-            "In jk_init.\n   Worker file = %s.\n   Log level = %s.\n   Log File = %s\n",
-            worker_prp_file, log_level_str, log_file);
     if (!worker_prp_file) {
         worker_prp_file = JK_WORKER_FILE_DEF;
     }
@@ -238,6 +235,22 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
     if (!log_level_str) {
         log_level_str = JK_LOG_DEF_VERB;
     }
+
+    if (!log_file) {
+        fprintf(stderr,
+                "Missing attribute %s in magnus.conf (jk_init) - aborting!\n", JK_LOG_FILE_TAG);
+        return rc;
+    }
+
+    if (!shm_file) {
+        fprintf(stderr,
+                "Missing attribute %s in magnus.conf (jk_init) - aborting!\n", JK_SHM_FILE_TAG);
+        return rc;
+    }
+
+    fprintf(stderr,
+            "In jk_init.\n   Worker file = %s.\n   Log level = %s.\n   Log File = %s\n   SHM File = %s\n",
+            worker_prp_file, log_level_str, log_file, shm_file);
 
     if (!jk_open_file_logger(&logger, log_file,
                              jk_parse_log_level(log_level_str))) {
