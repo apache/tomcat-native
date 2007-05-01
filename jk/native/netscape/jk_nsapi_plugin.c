@@ -90,11 +90,11 @@ static void init_workers_on_other_threads(void *init_d)
     init_map = (jk_map_t *)init_d;
     /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
     /* but where are they here in Netscape ? */
-    if (wc_open(init_map, &worker_env, logger)) {
-        if (uri_worker_map_alloc(&uw_map, NULL, logger)) {
-            uw_map->fname = "";
-            uw_map->reload = JK_URIMAP_DEF_RELOAD;
-            worker_env.uri_to_worker = uw_map;
+    if (uri_worker_map_alloc(&uw_map, NULL, logger)) {
+        uw_map->fname = "";
+        uw_map->reload = JK_URIMAP_DEF_RELOAD;
+        worker_env.uri_to_worker = uw_map;
+        if (wc_open(init_map, &worker_env, logger)) {
             init_on_other_thread_is_ok = JK_TRUE;
         }
         else {
