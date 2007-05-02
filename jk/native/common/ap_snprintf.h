@@ -24,6 +24,7 @@
 #define APACHE_AP_SNPRINTF_H
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <limits.h>
 
 #ifdef __cplusplus
