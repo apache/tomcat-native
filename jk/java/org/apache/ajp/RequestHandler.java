@@ -428,20 +428,25 @@ public class RequestHandler extends AjpHandler
         // set cookies on request now that we have all headers
         req.cookies().setHeaders(req.headers());
 
-	// Check to see if there should be a body packet coming along
-	// immediately after
-    	if(req.getContentLength() > 0) {
+        // Check to see if there should be a body packet coming along
+        // immediately after
+        if(req.getContentLength() > 0) {
 
-	    /* Read present data */
-	    int err = ch.receive(ch.inBuf);
-            if(err < 0) {
-            	return 500;
-	    }
-	    
-	    ch.blen = ch.inBuf.peekInt();
-	    ch.pos = 0;
-	    ch.inBuf.getBytes(ch.bodyBuff);
-    	}
+            /* Read present data */
+            int bytesRead = ch.receive(ch.inBuf);
+            if(bytesRead < 0) {
+                return 500;
+            }
+
+            // First two bytes are length, rest is real data
+            if (bytesRead < 2) {
+                ch.blen = 0;
+            } else {
+                ch.blen = bytesRead - 2;
+            }
+            ch.pos = 0;
+            ch.inBuf.getBytes(ch.bodyBuff);
+        }
     
         if (debug > 5) {
             log(req.toString());
