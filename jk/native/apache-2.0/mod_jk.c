@@ -456,8 +456,12 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned int l)
                 ll -= r;
                 bb += r;
             }
-            if (p->r->connection->aborted)
+            if (ll && p->r->connection->aborted) {
+                /* Fail if there is something left to send and
+                 * the connection was aborted by the client
+                 */
                 return JK_FALSE;
+            }
         }
 
         return JK_TRUE;
