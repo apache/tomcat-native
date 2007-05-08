@@ -36,8 +36,17 @@ ApacheCon EU 2007 DISCUSSION POINTS:
     * Add persistence to the dynamic configuration
       - Have a way to merge the static configuration with
         modified dynamic configuration via jkstatus
+    * More powerful log framework
+      - Using hierarchical logger names with corresponding
+        log levels to be able to debug or trace only
+        appropriate parts of the code
     * Add management thread for each child
       - APR_HAS_THREADS presence will be mandatory
       - For each child process in web server a management thread
         will be created that will monitor state and dynamic
         configuration.
+    * COMET support
+      - Finding our ways how to drop idle connections between web
+        server and backend
+      - Maybe transporting the backend connector events back to the web
+        server
