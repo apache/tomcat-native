@@ -1,0 +1,43 @@
+APACHE TOMCAT JK3 CONNECTOR ROADMAP                                   -*-text-*-
+
+ApacheCon EU 2007 DISCUSSION POINTS:
+
+    * Lets make next generation connector and software load balancer
+      for application servers.
+    * Lets put JK 1.2 in maintenance mode
+      - Stop adding things to the JK 1.2 and only fix bugs
+      - We'll still need to vote how to maintain this
+    * It should be APR based and supported platforms should be
+      - Apache Httpd 2+
+      - Microsoft IIS 5+ (Windows 2000 and up)
+      - Generic API for standalone based programs
+    * Java code will be Java5 based
+      - Java5 is mandatory
+      - Both server and client reference implementation
+        will be developed
+    * Scripting support for the Load Balancer
+      - Load balancer will have some sort of scripting
+        to be able to make rule based load balancers
+      - We still have to decide if we need a full-blown
+        scripting support, or a simple rule engine will do
+    * Extended AJP 1.3 protocol
+      - Keep AJP 1.3 backward compatible
+      - CPING/CPONG will be mandatory when establishing
+        new connections.
+      - Add connection close notification.
+        Done by extending CPING/CPONG
+      - See how we can have 64K+ headers
+        Idea is to treat them as POST data if the
+        header doesn't fit inside header AJP packet
+    * Make JK3 protocol independent
+      - Although developed with protocol independence in mind
+        JK 1.2 is practically unusable for non AJP 1.3 protocols.
+        JK3 should allow custom protocols like http or fastcgi
+    * Add persistence to the dynamic configuration
+      - Have a way to merge the static configuration with
+        modified dynamic configuration via jkstatus
+    * Add management thread for each child
+      - APR_HAS_THREADS presence will be mandatory
+      - For each child process in web server a management thread
+        will be created that will monitor state and dynamic
+        configuration.
