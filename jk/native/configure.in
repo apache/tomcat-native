@@ -15,17 +15,6 @@ VERSION=1.2.22
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})
 
-AC_PROG_CC
-AC_PROG_LD
-
-dnl Not sure what it does, but the libtool manual seems to require this
-dnl It should use the native platform dlopen ( if available )
-AC_LIBTOOL_DLOPEN
-
-dnl AM_PROG_LIBTOOL often causes problems.
-dnl I have solved them once using aclocal --acdir=/usr/local/share/aclocal/
-AM_PROG_LIBTOOL
-
 AC_PATH_PROG(TEST,test,$PATH)dnl
 AC_SUBST(TEST)
 
@@ -47,7 +36,107 @@ AC_SUBST(CP)
 AC_PATH_PROG(MKDIR,mkdir,$PATH)dnl
 AC_SUBST(MKDIR)
 
-dnl AC_PATH_PROG(LIBTOOL,libtool,$PATH)dnl
+APACHE_CONFIG_VARS=`pwd`/scripts/build/config_vars.mk
+WEBSERVER=""
+apache_dir=""
+apache_include=""
+APXS="apxs"
+AC_ARG_WITH(apxs,
+[  --with-apxs[=FILE]      Build shared Apache module. FILE is the optional
+                        pathname to the apxs tool; defaults to finding
+			apxs in your PATH.],
+[
+    case "${withval}" in
+        y | yes | true) find_apxs=true ;;
+        n | no | false) find_apxs=false ;;
+        *) find_apxs=false ;;
+    esac
+
+    if ${TEST} ${find_apxs} ; then
+        AC_MSG_RESULT([need to check for Perl first, apxs depends on it...])
+        AC_PATH_PROG(PERL,perl,$PATH)dnl
+
+        if ${TEST} ${find_apxs} ; then
+            APXS=${withval}
+        else
+            AC_PATH_PROG(APXS,apxs,$PATH)dnl
+        fi
+
+        if ${TEST} -n "${APXS}" ; then
+            dnl Seems that we have it, but have to check if it is OK first
+            if ${TEST} ! -x "${APXS}" ; then
+                AC_MSG_ERROR(Invalid location for apxs: '${APXS}')
+            fi
+
+            ${APXS} -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
+
+            if ${TEST} "${apxs_support}" = "false" ; then
+                AC_MSG_RESULT(could not find ${APXS})
+                AC_MSG_ERROR(You must specify a valid --with-apxs path)
+            fi
+
+            dnl apache_dir and apache_include are also needed.
+            apache_dir=`$APXS -q PREFIX`
+            apache_include="-I`$APXS -q INCLUDEDIR`"
+
+            dnl test apache version
+            APA=`${GREP} STANDARD20 ${APXS}`
+            if ${TEST} -z "$APA" ; then
+                WEBSERVER="apache-1.3"
+		APXSCC="`$APXS -q CC`"
+		APXSCFLAGS="`$APXS -q CFLAGS` -DJK_PREFORK"
+		APXS_CPPFLAGS=""
+            else
+                WEBSERVER="apache-2.0"
+              	APRINCLUDEDIR=""
+              	INCTEMP="`$APXS -q APR_INCLUDEDIR` `$APXS -q APU_INCLUDEDIR`"
+              	for INC in ${INCTEMP}; do
+              	    APRINCLUDEDIR="${APRINCLUDEDIR} -I${INC}"
+              	done
+                AC_MSG_RESULT([APRINCLUDEDIR is $APRINCLUDEDIR])
+		APXSCC="`$APXS -q CC`"
+              	APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR ${APRINCLUDEDIR}"
+              	APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
+                APACHE_CONFIG_VARS="`${APXS} -q exp_installbuilddir`/config_vars.mk"
+                LIBTOOL=`$APXS -q LIBTOOL`
+            fi
+            AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
+            if ${TEST} -z "${CC}" ; then
+                CC="${APXSCC}"
+            else
+                if ${TEST} "${CC}" != "$APXSCC" ; then
+                    WARN_CC=1
+                fi
+            fi
+
+            AC_SUBST(APXS)
+        fi
+    fi
+],
+[
+	AC_MSG_RESULT(no apxs given)
+])
+
+AC_SUBST(APACHE_CONFIG_VARS)
+
+AC_PROG_CC
+AC_PROG_LD
+
+SAVE_LIBTOOL="$LIBTOOL"
+
+dnl Not sure what it does, but the libtool manual seems to require this
+dnl It should use the native platform dlopen ( if available )
+AC_LIBTOOL_DLOPEN
+
+dnl AM_PROG_LIBTOOL often causes problems.
+dnl I have solved them once using aclocal --acdir=/usr/local/share/aclocal/
+AM_PROG_LIBTOOL
+
+if ${TEST} -n "${SAVE_LIBTOOL}" ; then
+    LIBTOOL="$SAVE_LIBTOOL"
+fi
+AC_MSG_RESULT([LIBTOOL="$LIBTOOL"])
+
 AC_SUBST(LIBTOOL)
 
 dnl ----------------------------- Checks for standard typedefs
@@ -177,79 +266,6 @@ dnl check for SO_RCVTIMEO and SO_SNDTIMEO
 JK_CHECK_SETSOCKOPT(SO_RCVTIMEO)
 JK_CHECK_SETSOCKOPT(SO_SNDTIMEO)
 
-APACHE_CONFIG_VARS=`pwd`/scripts/build/config_vars.mk
-WEBSERVER=""
-apache_dir=""
-apache_include=""
-APXS="apxs"
-AC_ARG_WITH(apxs,
-[  --with-apxs[=FILE]      Build shared Apache module. FILE is the optional
-                        pathname to the apxs tool; defaults to finding
-			apxs in your PATH.],
-[
-    case "${withval}" in
-        y | yes | true) find_apxs=true ;;
-        n | no | false) find_apxs=false ;;
-        *) find_apxs=false ;;
-    esac
-
-    if ${TEST} ${find_apxs} ; then
-        AC_MSG_RESULT([need to check for Perl first, apxs depends on it...])
-        AC_PATH_PROG(PERL,perl,$PATH)dnl
-
-        if ${TEST} ${find_apxs} ; then
-            APXS=${withval}
-        else
-            AC_PATH_PROG(APXS,apxs,$PATH)dnl
-        fi
-
-        if ${TEST} -n "${APXS}" ; then
-            dnl Seems that we have it, but have to check if it is OK first
-            if ${TEST} ! -x "${APXS}" ; then
-                AC_MSG_ERROR(Invalid location for apxs: '${APXS}')
-            fi
-
-            ${APXS} -q PREFIX >/dev/null 2>/dev/null || apxs_support=false
-
-            if ${TEST} "${apxs_support}" = "false" ; then
-                AC_MSG_RESULT(could not find ${APXS})
-                AC_MSG_ERROR(You must specify a valid --with-apxs path)
-            fi
-
-            dnl apache_dir and apache_include are also needed.
-            apache_dir=`$APXS -q PREFIX`
-            apache_include="-I`$APXS -q INCLUDEDIR`"
-
-            dnl test apache version
-            APA=`${GREP} STANDARD20 ${APXS}`
-            if ${TEST} -z "$APA" ; then
-                WEBSERVER="apache-1.3"
-		APXSCFLAGS="`$APXS -q CFLAGS` -DJK_PREFORK"
-		APXS_CPPFLAGS=""
-            else
-                WEBSERVER="apache-2.0"
-              	APRINCLUDEDIR=""
-              	INCTEMP="`$APXS -q APR_INCLUDEDIR` `$APXS -q APU_INCLUDEDIR`"
-              	for INC in ${INCTEMP}; do
-              	    APRINCLUDEDIR="${APRINCLUDEDIR} -I${INC}"
-              	done
-                AC_MSG_RESULT([APRINCLUDEDIR is $APRINCLUDEDIR])
-              	APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR ${APRINCLUDEDIR}"
-              	APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
-                APACHE_CONFIG_VARS="`${APXS} -q exp_installbuilddir`/config_vars.mk"
-                LIBTOOL=`$APXS -q LIBTOOL`
-            fi
-            AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
-
-            AC_SUBST(APXS)
-        fi
-    fi
-],
-[
-	AC_MSG_RESULT(no apxs given)
-])
-AC_SUBST(APACHE_CONFIG_VARS)
-
 dnl Apache-2.0 needs the os subdirectory to include os.h
 dnl this include is copy from os/config.m4
 sinclude(../support/os_apache.m4)
@@ -263,7 +279,7 @@ AC_ARG_WITH(apache,
                         to the Apache source directory.],
 [
     if ${TEST} ! -z "$WEBSERVER" ; then
-        AC_MSG_ERROR([Sorry cannot use --with-apxs=${APXS} and --with-apache=${withval} togother, please choose one of both])
+        AC_MSG_ERROR([Sorry cannot use --with-apxs=${APXS} and --with-apache=${withval} together, please choose one of both])
     fi
 
     AC_MSG_CHECKING([for Apache source directory (assume static build)])
@@ -656,3 +672,15 @@ AC_OUTPUT([
 	common/jk_types.h
 	jni/Makefile
 	])
+
+if ${TEST} -n "${WARN_CC}" ; then
+    AC_MSG_WARN([Using CC from environment:])
+    AC_MSG_WARN([    CC="$CC"])
+    AC_MSG_WARN([instead of CC from apxs:])
+    AC_MSG_WARN([    CC="$APXSCC"])
+    AC_MSG_WARN([If "make" throws an error of the form])
+    AC_MSG_WARN([    "libtool: compile: unable to infer tagged configuration"])
+    AC_MSG_WARN([    "libtool: compile: specify a tag with `--tag'"])
+    AC_MSG_WARN([try running configure without setting CC,])
+    AC_MSG_WARN([or at least CC should start with "$APXSCC"])
+fi
