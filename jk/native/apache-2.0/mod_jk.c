@@ -318,6 +318,12 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
     /* ap_send_http_header(r); */
     p->response_started = JK_TRUE;
 
+	/* hgomez@20070516: under i5/OS this flag is not set correctly */
+	/* We should check with Rochester Labs what could be the problem */
+#ifdef AS400
+        r->sent_bodyct = 1;
+#endif
+
     return JK_TRUE;
 }
 
