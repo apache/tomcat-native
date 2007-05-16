@@ -2226,13 +2226,9 @@ static int jk_handler(request_rec * r)
                 /* If tomcat returned no body and the status is not OK,
                    let apache handle the error code */
 
-/* hgomez@20070425 : under i5/OS sent_bodyct is not set correctly */
+/* hgomez@20070516 : under i5/OS sent_bodyct is not set correctly */
 /*                   check for header_only to see if there was a body */
-#ifdef AS400
-				if (r->header_only && r->status >= HTTP_BAD_REQUEST) {
-#else
                 if (!r->sent_bodyct && r->status >= HTTP_BAD_REQUEST) {
-#endif
                     jk_log(xconf->log, JK_LOG_INFO, "No body with status=%d"
                            " for worker=%s",
                            r->status, worker_name);
