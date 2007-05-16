@@ -1,0 +1,10 @@
+How to use the show example:
+ant -f show.xml
+Configure mod_jk (httpd.conf and workers.properties):
+JkMount /jkstatus jkstatus
+
+worker.list=jkstatus
+worker.jkstatus.type=status
+
+Adjust jkstatus.properties.default:
+jkstatus.port (for example).
