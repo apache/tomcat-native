@@ -11,15 +11,17 @@
 # And any one of: w3m, elinks, links
 
 usage() {
-    echo "Usage:: $0 -t VERSION [-T]"
+    echo "Usage:: $0 -t VERSION [-b BRANCH | -T]"
     echo "        -t: version to package"
+    echo "        -b: package from branch BRANCH"
     echo "        -T: package from trunk"
 }
 
-while getopts :t:T c
+while getopts :t:b:T c
 do
     case $c in
     t)         tag=$OPTARG;;
+    b)         branch=$OPTARG;;
     T)         trunk=trunk;;
     \:)        usage
                exit 2;;
@@ -42,16 +44,38 @@ COPY_CONF="uriworkermap.properties workers.properties workers.properties.minimal
 
 #################### NO CHANGE BELOW THIS LINE ##############
 
-if [ "X$tag" = "X" ]
+if [ -z "$tag" ]
 then
     usage
     exit 2
 fi
-if [ "X$trunk" = "Xtrunk" ]
+if [ -n "$trunk" -a -n "$branch" ]
+then
+    usage
+    echo "Only one of the options '-b' and '-T' allowed."
+    exit 2
+fi
+if [ -n "$trunk" ]
 then
     JK_SVN_URL="${SVNROOT}/${SVNPROJ}/trunk"
     JK_REV=`svn info ${JK_SVN_URL} | awk '$1 == "Revision:" {print $2}'`
+    if [ -z "$JK_REV" ]
+    then
+       echo "No Revision found at '$JK_SVN_URL'"
+       exit 3
+    fi
     JK_DIST=${JK_CVST}-${tag}-dev-${JK_REV}-src
+elif [ -n "$branch" ]
+then
+    JK_BRANCH=`echo $branch | sed -e 's#/#__#g'`
+    JK_SVN_URL="${SVNROOT}/${SVNPROJ}/branches/$branch"
+    JK_REV=`svn info ${JK_SVN_URL} | awk '$1 == "Revision:" {print $2}'`
+    if [ -z "$JK_REV" ]
+    then
+       echo "No Revision found at '$JK_SVN_URL'"
+       exit 3
+    fi
+    JK_DIST=${JK_CVST}-${tag}-dev-${JK_BRANCH}-${JK_REV}-src
 else
     JK_VER=$tag
     JK_TAG=`echo $tag | sed -e 's#^#JK_#' -e 's#\.#_#g'`
