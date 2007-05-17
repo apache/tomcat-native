@@ -204,7 +204,7 @@ Edit your server <b>magnus.conf</b> and add the following lines:
 <source>
   
   Init fn="load-modules" funcs="jk_init,jk_service" shlib="c:/jk/lib/nsapi_redirect.dll" shlib_flags="(global|now)"
-  Init fn="jk_init" worker_file="c:/jk/conf/workers.properties" log_level="debug" log_file="c:/jk/logs/nsapi.log"
+  Init fn="jk_init" worker_file="c:/jk/conf/workers.properties" log_level="debug" log_file="c:/jk/logs/nsapi.log" shm_file="c:/jk/logs/jk_shm"
 </source>
 <ul>
 <li>

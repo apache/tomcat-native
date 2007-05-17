@@ -23,7 +23,7 @@
   new documentation project for JK was started.
   </p>
 </section>
-<section name="Changes between 1.2.22 and 1.2.23">
+<section name="Changes between 1.2.23 and 1.2.24">
   <br />
   <subsection name="Native">
     <changelog>
@@ -32,6 +32,19 @@
       </update>
       <update>
       Docs: Add comments on i5/OS build for V5R4 and previous releases. (hgomez)
+      </update>
+    </changelog>
+  </subsection>
+</section>
+<section name="Changes between 1.2.22 and 1.2.23">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <update>
+      Change the default value of JkOptions to ForwardURICompatUnparsed.
+      The old default value was ForwardURICompat.
+      This should make URL interpretation between Apache httpd and
+      Tomcat consistent (prevent double decoding problems). (rjung)
       </update>
     </changelog>
   </subsection>
