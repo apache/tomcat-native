@@ -8,7 +8,7 @@
 # libtoolize, aclocal, autoheader, automake, autoconf
 # tar, zip, gzip
 # gpg
-# And any one of: w3m, elinks, links
+# And any one of: w3m, elinks, links (links2)
 
 usage() {
     echo "Usage:: $0 -t VERSION [-b BRANCH | -T]"
@@ -151,8 +151,8 @@ cd ${JK_DIST}/native
 
 # Check for links, elinks or w3m
 W3MOPTS="-dump -cols 80 -t 4 -S -O iso-8859-1 -T text/html"
-LNKOPTS="-dump -dump-width 80 -dump-charset iso-8859-1 -no-numbering -no-references -no-home"
-ELNKOPTS=$LNKOPTS
+ELNKOPTS="-dump -dump-width 80 -dump-charset iso-8859-1 -no-numbering -no-references -no-home"
+LNKOPTS="-dump -width 80 -codepage iso-8859-1 -no-g -html-numbered-links 0"
 failed=true
 for tool in `echo "w3m elinks links"`
 do
