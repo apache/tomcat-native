@@ -241,6 +241,7 @@ public class MsgAjp extends Msg {
             return;
         }
         mb.setBytes( buf, pos, length );
+        mb.getCharChunk().recycle();
         pos += length;
         pos++; // Skip the terminating \0
     }
