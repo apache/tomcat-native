@@ -33,18 +33,10 @@
 #define getpid()       ((int)GetThreadGroupID())
 #endif
 
-/*
- * All WIN32 code is MT, UNIX code that uses pthreads is marked by the POSIX
- * _REENTRANT define.
- */
-#if defined (WIN32) || defined(_REENTRANT) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 #ifdef JK_PREFORK 
 #define _MT_CODE 0
 #else
 #define _MT_CODE 1
-#endif
-#else
-#define _MT_CODE 0
 #endif
 
 /*

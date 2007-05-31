@@ -838,25 +838,26 @@ You could set <b>CFLAGS</b> and <b>LDFLAGS</b> to add some platform specifics:
 </screen>
 
 <p>
-If you want to build mod_jk for Apache 1.3 and 2.0/2.2, you should
+If you want to build mod_jk for different version of Apache httpd, like 1.3, 2.0 and 2.2,
+you need to go through the full build process for each of them.
+Please note, that httpd 2.0 and 2.2 modules are <b>not</b> compatible. The mod_jk directory
+used is "apache-2.0" in both cases, but you need to compile separately.
 <ul>
 <li>
-use configure and indicate Apache 1.3 apxs location (--with-apxs)
+use configure and indicate the correct Apache httpd apxs location (--with-apxs)
 </li>
 <li>
 use make
 </li>
 <li>
-copy the mod_jk binary to the apache modules location
+copy the resulting mod_jk.so binary from the apache-1.3 or apache-2.0 subdirectory
+to the Apache httpd modules location.
 </li>
 <li>
-make clean (to remove all previously compiled modules)
+make clean (to remove all previously compiled object files)
 </li>
 <li>
-use configure and indicate Apache 2.0/2.2 apxs location,
-</li>
-<li>
-then make.
+Start over with the apxs location for your next Apache httpd version.
 </li>
 </ul>
 
@@ -886,17 +887,14 @@ Not needed when --with-apxs has been used</td>
 </tr>
   <tr valign="top"><td>--enable-prefork</td>
   <td>
-In case you build mod_jk for a multi-threaded Apache 2.0/2.2 MPM (Multi-Processing Module),
+In case you build mod_jk for a multi-threaded Apache httpd 2.0/2.2 MPM (Multi-Processing Module),
 some areas of mod_jk code need to be synchronized to make it thread-safe.
-Configure autodetects, whether your are using a multi-threaded MPM.
-For instance, the worker MPM is multi-threaded, the prefork MPM is not.<br/>
-Depending on how you build your Apache httpd, in some cases configure
-detects that it needs to build thread safe, although actually it would not be necessary.
-One such case is, if you build against Apache httpd with prefork MPM,
-and your APR (Apache Portable Runtime) libraries have been build with thread support
-(the output of "apxs -q EXTRA_CPPFLAGS" will contain "-D_REENTRANT").<br/>
+Because configure can not easily detect, whether your are using a multi-threaded MPM,
+mod_jk by default is always build thread-safe for Apache httpd 2.0/2.2.
 If you are sure, that your MPM is not multi-threaded, you can use "--enable-prefork"
-to force the removal of the synchronization code (thus increasing performance a bit).</td>
+to force the removal of the synchronization code (thus increasing performance a bit).
+For instance, the prefork MPM is not multi-threaded. For Apache httpd 1.3
+this flag will be set automatically.</td>
 </tr>
   <tr valign="top"><td>--enable-flock</td>
   <td>

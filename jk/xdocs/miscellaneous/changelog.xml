@@ -27,6 +27,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      Always build with thread support, unless flag --enable-prefork
+      is set during for configure. (rjung)
+      </fix>
       <update>
       i5/OS (AS/400) V5R4 port where Apache 2.0 modules should now use UTF8. (hgomez)
       </update>
