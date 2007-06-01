@@ -44,6 +44,11 @@ For more detailed configuration information consult the Reference Guide for
 and <a href="../reference/apache.html">Apache</a>.
 </p>
 
+<p><b>The Apache httpd DocumentRoot should not overlap with a Tomcat Host's
+appBase or the docBase of any Context. Configuring httpd/Tomcat this way is very
+likely to result in JSP source code disclosure and/or other security issues.
+</b></p>
+
 <p>
 This document was originally part of <b>Tomcat: A Minimalistic User's Guide</b> written by Gal Shachor,
 but has been split off for organizational reasons.

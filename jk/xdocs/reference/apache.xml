@@ -13,7 +13,8 @@
 
 <body>
 
-<section name="Configuration Directives"> <p>
+<section name="Configuration Directives">
+<p>
 Most of the directives are allowed once in the global part of the Apache httpd
 configuration and once in every &lt;VirtualHost&gt; elements. Exceptions from this rule are
 explicitely listed in the table below.
@@ -24,6 +25,10 @@ Since version 1.2.20 they can be overwritten in the virtual hosts.
 Exceptions from this rule are
 again explicitely listed in the table below.
 </p>
+<p><b>The Apache httpd DocumentRoot should not overlap with a Tomcat Host's
+appBase or the docBase of any Context. Configuring httpd/Tomcat this way is very
+likely to result in JSP source code disclosure and/or other security issues.
+</b></p>
 <p>
 Here are the all directives supported by Apache:
 </p>
