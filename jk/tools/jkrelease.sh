@@ -11,18 +11,24 @@
 # And any one of: w3m, elinks, links (links2)
 
 usage() {
-    echo "Usage:: $0 -t VERSION [-b BRANCH | -T]"
+    echo "Usage:: $0 -t VERSION [-b BRANCH | -T | -d DIR]"
     echo "        -t: version to package"
     echo "        -b: package from branch BRANCH"
     echo "        -T: package from trunk"
+    echo "        -d: package from local directory"
 }
 
-while getopts :t:b:T c
+conflict=0
+while getopts :t:b:d:T c
 do
     case $c in
     t)         tag=$OPTARG;;
-    b)         branch=$OPTARG;;
-    T)         trunk=trunk;;
+    b)         branch=$OPTARG
+               conflict=$(($conflict+1));;
+    T)         trunk=trunk
+               conflict=$(($conflict+1));;
+    d)         local_dir=$OPTARG
+               conflict=$(($conflict+1));;
     \:)        usage
                exit 2;;
     \?)        usage
@@ -30,6 +36,30 @@ do
     esac
 done
 shift `expr $OPTIND - 1`
+
+if [ $conflict -gt 1 ]
+then
+    usage
+    echo "Only one of the options '-b', '-T'  and '-d' is allowed."
+    exit 2
+fi
+
+if [ -n "$local_dir" ]
+then
+    echo "Caution: Packaging from directory!"
+    echo "Make sure the directory is committed."
+    answer="x"
+    while [ "$answer" != "y" -a "$answer" != "n" ]
+    do
+        echo "Do you want to procede? [y/n]"
+        read answer
+    done
+    if [ "$answer" != "y" ]
+    then
+        echo "Aborting."
+        exit 4
+    fi
+fi
 
 SVNROOT="http://svn.apache.org/repos/asf"
 SVNPROJ="tomcat/connectors"
@@ -47,12 +77,6 @@ COPY_CONF="uriworkermap.properties workers.properties workers.properties.minimal
 if [ -z "$tag" ]
 then
     usage
-    exit 2
-fi
-if [ -n "$trunk" -a -n "$branch" ]
-then
-    usage
-    echo "Only one of the options '-b' and '-T' allowed."
     exit 2
 fi
 if [ -n "$trunk" ]
@@ -76,6 +100,16 @@ then
        exit 3
     fi
     JK_DIST=${JK_CVST}-${tag}-dev-${JK_BRANCH}-${JK_REV}-src
+elif [ -n "$local_dir" ]
+then
+    JK_SVN_URL="$local_dir"
+    JK_REV=`svn info ${JK_SVN_URL} | awk '$1 == "Revision:" {print $2}'`
+    if [ -z "$JK_REV" ]
+    then
+       echo "No Revision found at '$JK_SVN_URL'"
+       exit 3
+    fi
+    JK_DIST=${JK_CVST}-${tag}-dev-local-${JK_REV}-src
 else
     JK_VER=$tag
     JK_TAG=`echo $tag | sed -e 's#^#JK_#' -e 's#\.#_#g'`
