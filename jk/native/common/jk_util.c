@@ -1686,7 +1686,7 @@ int jk_gettid()
     pthread_getunique_np(&t, &tid);
     return ((int)(tid.intId.lo & 0xFFFFFFFF));
 #else
-    int tid = (int)(t & 0xFFFF);
+    int tid = ((int)t) & 0xFFFF;
     return tid;
 #endif /* AS400 */
 }
