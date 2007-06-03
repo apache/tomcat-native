@@ -1212,9 +1212,18 @@ static int ajp_send_request(jk_endpoint_t *e,
         if (err ||
             ((rc = ajp_connection_tcp_send_message(ae, op->request, l)) != JK_TRUE)) {
             if (rc != JK_FATAL_ERROR) {
-                jk_log(l, JK_LOG_INFO,
-                       "(%s) error sending request. Will try another pooled connection",
-                       ae->worker->name);
+                if (err == 1) {                
+                    jk_log(l, JK_LOG_DEBUG,
+                           "(%s) failed sending request. "
+                           "Will try another pooled connection",
+                            ae->worker->name);
+                }
+                else {
+                    jk_log(l, JK_LOG_INFO,
+                           "(%s) error sending request. "
+                           "Will try another pooled connection",
+                            ae->worker->name);                    
+                }
                 ajp_next_connection(ae, l);
             }
             else {
@@ -1236,13 +1245,27 @@ static int ajp_send_request(jk_endpoint_t *e,
      * If we failed to reuse a connection, try to reconnect.
      */
     if (!IS_VALID_SOCKET(ae->sd)) {
-        if (err) {
-            /* XXX: If err is set, the tomcat is either dead or disconnected */
+        if (err == 1) {
+            /* If err is set, the tomcat is disconnected */
             jk_log(l, JK_LOG_INFO,
-                   "(%s) all endpoints are %s",
-                   ae->worker->name, err == 1 ? "disconnected" : "dead");
+                   "(%s) all endpoints are disconnected", ae->worker->name);
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
+        else if (err) {
+            /* If err is set, the tomcat is dead */
             jk_log(l, JK_LOG_INFO,
-                   "(%s) increase the backend idle connection timeout or the connection_pool_minsize",
+                   "(%s) all endpoints are dead", ae->worker->name);
+            /* TODO: What is the purpose of the following log message?
+             *       IMO it is very confusing and does not reflect the
+             *       real reason (CPING/CPONG failed) of the error.
+             *       Further more user might deliberately set the
+             *       connectionTimeout and this is normal operational
+             *       message in that case.
+             */
+            jk_log(l, JK_LOG_INFO,
+                   "(%s) increase the backend idle connection "
+                   "timeout or the connection_pool_minsize",
                    ae->worker->name);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
