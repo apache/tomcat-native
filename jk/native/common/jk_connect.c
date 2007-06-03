@@ -654,15 +654,18 @@ int jk_is_socket_connected(jk_sock_t sock)
     FD_ZERO(&fd);
     FD_SET(sock, &fd);
 
-    /* Wait one microsecond */
+    /* Initially test the socket without any blocking.
+     */
     tv.tv_sec  = 0;
-    tv.tv_usec = 1;
+    tv.tv_usec = 0;
 
     do {
         rc = select((int)sock + 1, &fd, NULL, NULL, &tv);
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
         errno = WSAGetLastError() - WSABASEERR;
 #endif
+        /* Wait one microsecond on next select, if EINTR */
+        tv.tv_usec = 1;
     } while (rc == -1 && errno == EINTR);
 
     if (rc == 0) {

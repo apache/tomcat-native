@@ -28,6 +28,15 @@
   <subsection name="Native">
     <changelog>
       <fix>
+      Use initial zero timeout for jk_is_socket_connected. The resulting
+      detection is the same but offers a huge performance increase
+      with mod_jk. In most cases the Operating System does not favor
+      the 1 microsecond timeout, but it rather rounds that up to much
+      higher value (frequency of interrupt timer which on most systems
+      defaults to 100Hz).
+      Patch provided by David McLaughlin. (mturk)
+      </fix>
+      <fix>
       Always build with thread support, unless flag --enable-prefork
       is set during for configure. (rjung)
       </fix>
