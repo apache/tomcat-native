@@ -36,6 +36,8 @@
 #define JK_STRCMP   strcmp
 #define JK_STRNCMP  strncmp
 #endif
+#define BAD_REQUEST     -1
+#define BAD_PATH        -2
 
 
 static const char *uri_worker_map_source_type[] = {
@@ -46,6 +48,116 @@ static const char *uri_worker_map_source_type[] = {
     SOURCE_TYPE_TEXT_DISCOVER,
     NULL
 };
+
+#define JK_ISXDIGIT(x) isxdigit((int)(unsigned char)((x)))
+
+static char x2c(const char *what)
+{
+    register char digit;
+
+    digit = ((what[0] >= 'A') ?
+             ((what[0] & 0xdf) - 'A') + 10 : (what[0] - '0'));
+    digit *= 16;
+    digit += ((what[1] >= 'A') ?
+              ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
+    return (digit);
+}
+
+static int unescape_url(char *url)
+{
+    register int x, y, badesc, badpath;
+
+    badesc = 0;
+    badpath = 0;
+    for (x = 0, y = 0; url[y]; ++x, ++y) {
+        if (url[y] != '%')
+            url[x] = url[y];
+        else {
+            if (!JK_ISXDIGIT(url[y + 1]) || !JK_ISXDIGIT(url[y + 2])) {
+                badesc = 1;
+                url[x] = '%';
+            }
+            else {
+                url[x] = x2c(&url[y + 1]);
+                y += 2;
+                if (url[x] == '/' || url[x] == '\0')
+                    badpath = 1;
+            }
+        }
+    }
+    url[x] = '\0';
+    if (badesc)
+        return BAD_REQUEST;
+    else if (badpath)
+        return BAD_PATH;
+    else
+        return 0;
+}
+
+static void normalize_url(char *name)
+{
+    int l, w;
+
+    /* Four paseses, as per RFC 1808 */
+    /* 1. remove ./ path segments */
+
+    for (l = 0, w = 0; name[l] != '\0';) {
+        if (name[l] == '.' && name[l + 1] == '/'
+            && (l == 0 || name[l - 1] == '/'))
+            l += 2;
+        else
+            name[w++] = name[l++];
+    }
+
+    /* 2. remove trailing . path, segment */
+    if (w == 1 && name[0] == '.')
+        w--;
+    else if (w > 1 && name[w - 1] == '.' && name[w - 2] == '/')
+        w--;
+    name[w] = '\0';
+
+    /* 3. remove all xx/../ segments. (including leading ../ and /../) */
+    l = 0;
+
+    while (name[l] != '\0') {
+        if (name[l] == '.' && name[l + 1] == '.' && name[l + 2] == '/' &&
+            (l == 0 || name[l - 1] == '/')) {
+            register int m = l + 3, n;
+
+            l = l - 2;
+            if (l >= 0) {
+                while (l >= 0 && name[l] != '/')
+                    l--;
+                l++;
+            }
+            else
+                l = 0;
+            n = l;
+            while ((name[n] = name[m]) != '\0') {
+                n++;
+                m++;
+            }
+        }
+        else
+            ++l;
+    }
+
+    /* 4. remove trailing xx/.. segment. */
+    if (l == 2 && name[0] == '.' && name[1] == '.')
+        name[0] = '\0';
+    else if (l > 2 && name[l - 1] == '.' && name[l - 2] == '.'
+             && name[l - 3] == '/') {
+        l = l - 4;
+        if (l >= 0) {
+            while (l >= 0 && name[l] != '/')
+                l--;
+            l++;
+        }
+        else
+            l = 0;
+        name[l] = '\0';
+    }
+}
 
 
 /* Return the string representation of the uwr source */
@@ -535,6 +647,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                               const char *uri, jk_logger_t *l)
 {
     unsigned int i;
+    int rc;
     const char *rv = NULL;
     char  url[JK_MAX_URI_LEN+1];
 
@@ -578,6 +691,22 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             url[i] = uri[i];
     }
     url[i] = '\0';
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG, "Attempting to map original URI '%s' from %d maps",
+               url, uw_map->size);
+    rc = unescape_url(url);
+    if (rc == BAD_REQUEST) {
+        jk_log(l, JK_LOG_INFO, "Invalid request while unescaping original URI '%s'", url);
+        return NULL;
+    }
+    else if (rc == BAD_PATH) {
+        jk_log(l, JK_LOG_INFO, "Invalid path while unescaping URI '%s'", url);
+        return NULL;
+    }
+    normalize_url(url);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG, "Attempting to map normalized URI '%s' from %d maps",
+               url, uw_map->size);
 
     if (JK_IS_DEBUG_LEVEL(l)) {
         char *url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
@@ -585,10 +714,6 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             jk_log(l, JK_LOG_DEBUG, "separating session identifier '%s' from url '%s'",
                    url_rewrite, uri);
     }
-    if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s' from %d maps",
-               url, uw_map->size);
-
     for (i = 0; i < uw_map->size; i++) {
         uri_worker_record_t *uwr = uw_map->maps[i];
 
