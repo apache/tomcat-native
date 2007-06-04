@@ -44,10 +44,14 @@ For more detailed configuration information consult the Reference Guide for
 and <a href="../reference/apache.html">Apache</a>.
 </p>
 
-<p><b>The Apache httpd DocumentRoot should not overlap with a Tomcat Host's
-appBase or the docBase of any Context. Configuring httpd/Tomcat this way is very
-likely to result in JSP source code disclosure and/or other security issues.
-</b></p>
+<p><b>Waring: If Apache httpd and Tomcat are configured to serve content from
+the same filing system location then care must be taken to ensure that httpd is
+not able to serve inappropriate content such as the contents of the WEB-INF
+directory or JSP source code.</b> This could occur if the httpd DocumentRoot
+overlaps with a Tomcat Host's appBase or the docBase of any Context. It could
+also occur when using the httpd Alias directive with a Tomcat Host's appBase or
+the docBase of any Context.
+</p>
 
 <p>
 This document was originally part of <b>Tomcat: A Minimalistic User's Guide</b> written by Gal Shachor,
@@ -712,8 +716,11 @@ of passing the request to Tomcat.
 </p>
 
 <p>
-Caution: If Apache is configured to serve static pages for a web application it bypasses
-any security contraints you may have configured in your web application web.xml config file.
+Caution: For security reasons is is strongly recommended that JkMount is used to
+pass all requests to Tomcat by default and JkUnMount is used to explicitly
+exclude static content to be served by httpd. It should also be noted that
+content served by httpd will bypass any security constraints defined in the
+applciation's web.xml.
 </p>
 
 <p>Use Apache's <b>Alias</b> directive to map a single web application context directory into Apache's
@@ -723,15 +730,12 @@ document space for a VirtualHost:
 <source>
   # Static files in the examples webapp are served by apache
   Alias /examples /vat/tomcat3/webapps/examples
-  # The following line prohibits users from directly access WEB-INF
-  &lt;Location "/examples/WEB-INF/"&gt;
-      AllowOverride None
-      deny from all
-  &lt;/Location&gt;
-  # All JSP will goes to worker1
-  JkMount /*.jsp worker1
-  # All servlets goes to worker1
-  JkMount /*/servlet/ worker1
+  # All requests go to worker1 by default
+  JkMount /* worker1
+  # Serve html, jpg and gif using httpd
+  JkUnMount /*.html worker1
+  JkUnMount /*.jpg  worker1
+  JkUnMount /*.gif  worker1
 </source>
 
 <p>
@@ -783,8 +787,13 @@ or a Web Archive *.war within the Tomcat Host appBase (webapps) directory will f
 <source>
   # Static files in all Tomcat webapp context directories are served by apache
   JkAutoAlias /var/tomcat3/webapps
-  JkMount /*.jsp ajp13
-  JkMount /*/servlet/ ajp13
+
+  # All requests go to worker1 by default
+  JkMount /* ajp13
+  # Serve html, jpg and gif using httpd
+  JkUnMount /*.html ajp13
+  JkUnMount /*.jpg  ajp13
+  JkUnMount /*.gif  ajp13
 </source>
 
 <p>

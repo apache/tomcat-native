@@ -25,10 +25,14 @@ Since version 1.2.20 they can be overwritten in the virtual hosts.
 Exceptions from this rule are
 again explicitely listed in the table below.
 </p>
-<p><b>The Apache httpd DocumentRoot should not overlap with a Tomcat Host's
-appBase or the docBase of any Context. Configuring httpd/Tomcat this way is very
-likely to result in JSP source code disclosure and/or other security issues.
-</b></p>
+<p><b>Waring: If Apache httpd and Tomcat are configured to serve content from
+the same filing system location then care must be taken to ensure that httpd is
+not able to serve inappropriate content such as the contents of the WEB-INF
+directory or JSP source code.</b> This could occur if the httpd DocumentRoot
+overlaps with a Tomcat Host's appBase or the docBase of any Context. It could
+also occur when using the httpd Alias directive with a Tomcat Host's appBase or
+the docBase of any Context.
+</p>
 <p>
 Here are the all directives supported by Apache:
 </p>
@@ -119,7 +123,11 @@ This directive is available in jk1.2.7 version and later.
 </p></attribute>
 <attribute name="JkAutoAlias" required="false"><p>
 Automatically Alias webapp context directories into the Apache
-document space. 
+document space.
+<br/>
+Care should be taken to ensure that only static content is served via httpd as a
+result of using this directive. Any static content served by httpd will bypass any
+security constraints defined in the application's web.xml.
 <br/>
 For inheritance rules, see: JkMountCopy.
 <br/>
@@ -697,9 +705,12 @@ example will block all .gif files.
 the Apache document space. It enables Apache to serve a static context while Tomcat
 serving dynamic context. This directive is used for convenience so that you don't
 have to put an apache Alias directive for each application directory inside Tomcat's
-webapp directory.
+webapp directory. For security reasons is is strongly recommended that JkMount
+is used to pass all requests to Tomcat by default and JkUnMount is used to
+explicitly exclude static content to be served by httpd. It should also be noted
+that content served by httpd will bypass any security constraints defined in the
+applciation's web.xml.
 </p>
-
 <source>
   # enter the full path to the tomcat webapps directory
   JkAutoAlias /opt/tomtact/webapps
