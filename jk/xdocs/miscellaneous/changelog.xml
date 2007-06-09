@@ -41,6 +41,9 @@
       is set during for configure. (rjung)
       </fix>
       <update>
+      Change the default value of JkOptions to ForwardURICompatUnparsed. The old default value was ForwardURICompat. (jfclere)
+      </update>
+      <update>
       i5/OS (AS/400) V5R4 port where Apache 2.0 modules should now use UTF8. (hgomez)
       </update>
       <update>

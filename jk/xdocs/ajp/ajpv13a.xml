@@ -179,7 +179,9 @@ strings.
   which the servlet container is sending back -- with the terminating \0
   character, the C code can pass around references into a single buffer,
   without copying.  If the \0 was missing, the C code would have to copy
-  things out in order to get its notion of a string.</dd>
+  things out in order to get its notion of a string. Note a size of -1
+  (65535) indicates a null string and no data follow the length in this
+  case.</dd>
 </dl>
 </p>
 
@@ -526,6 +528,8 @@ additional methods, even if they are not in this list.
   <tr><td>?ssl_session</td><td>0x09</td><td></td></tr>
   <tr><td>?req_attribute</td><td>0x0A</td><td>Name (the name of the attribut follows)</td></tr>
   <tr><td>?ssl_key_size</td><td>0x0B</td><td></td></tr>
+  <tr><td>?secret</td><td>0x0C</td><td></td></tr>
+  <tr><td>?stored_method</td><td>0x0D</td><td></td></tr>
   <tr><td>are_done</td><td>0xFF</td><td>request_terminator</td></tr>
 </table>
 
