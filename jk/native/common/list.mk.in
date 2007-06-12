@@ -8,4 +8,5 @@ APACHE_OBJECTS= ${JK}jk_ajp12_worker${OEXT} ${JK}jk_connect${OEXT} \
                 ${JK}jk_ajp14${OEXT} ${JK}jk_ajp14_worker${OEXT} \
                 ${JK}jk_md5${OEXT} ${JK}jk_shm${OEXT} @JK_JNI_WORKER@ \
                 ${JK}jk_ajp_common${OEXT} ${JK}jk_context${OEXT} \
+                ${JK}jk_url${OEXT} \
                 ${JK}jk_status${OEXT}

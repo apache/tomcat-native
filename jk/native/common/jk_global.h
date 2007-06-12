@@ -228,15 +228,16 @@ extern "C"
  * JK options
  */
 
-#define JK_OPT_FWDURIMASK           0x0003
+#define JK_OPT_FWDURIMASK           0x0007
 
 #define JK_OPT_FWDURICOMPAT         0x0001
 #define JK_OPT_FWDURICOMPATUNPARSED 0x0002
 #define JK_OPT_FWDURIESCAPED        0x0003
+#define JK_OPT_FWDURIPROXY          0x0004
 
-#define JK_OPT_FWDURIDEFAULT        JK_OPT_FWDURICOMPAT
+#define JK_OPT_FWDURIDEFAULT        JK_OPT_FWDURIPROXY
 
-#define JK_OPT_FWDKEYSIZE           0x0004
+#define JK_OPT_FWDKEYSIZE           0x0200
 
 #define JK_OPT_FWDDIRS              0x0008
 /* Forward local instead remote address */

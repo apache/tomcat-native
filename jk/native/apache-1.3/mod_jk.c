@@ -60,6 +60,7 @@
 #include "jk_uri_worker_map.h"
 #include "jk_ajp13.h"
 #include "jk_shm.h"
+#include "jk_url.h"
 
 #define JK_LOG_DEF_FILE             ("logs/mod_jk.log")
 #define JK_SHM_DEF_FILE             ("logs/jk-runtime-status")
@@ -519,6 +520,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     request_rec *r = private_data->r;
     char *ssl_temp = NULL;
     s->route = NULL;        /* Used for sticky session routing */
+    int size;
 
     /* Copy in function pointers (which are really methods) */
     s->start_response = ws_start_response;
@@ -625,6 +627,13 @@ static int init_ws_service(apache_private_data_t * private_data,
 
     case JK_OPT_FWDURICOMPAT:
         s->req_uri = r->uri;
+        break;
+
+    case JK_OPT_FWDURIPROXY:
+        size = strlen(r->uri);
+        s->req_uri = ap_palloc(r->pool, size * 3 + 1);
+        jk_canonenc(s->req_uri, r->uri, size, enc_path, 0,
+                    JK_PROXYREQ_REVERSE);
         break;
 
     case JK_OPT_FWDURIESCAPED:
@@ -1725,6 +1734,10 @@ const char *jk_set_options(cmd_parms * cmd, void *dummy, const char *line)
         }
         else if (!strcasecmp(w, "ForwardURIEscaped")) {
             opt = JK_OPT_FWDURIESCAPED;
+            mask = JK_OPT_FWDURIMASK;
+        }
+        else if (!strcasecmp(w, "ForwardURIProxy")) {
+            opt = JK_OPT_FWDURIPROXY;
             mask = JK_OPT_FWDURIMASK;
         }
         else if (!strcasecmp(w, "ForwardDirectories")) {
