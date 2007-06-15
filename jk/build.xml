@@ -205,7 +205,7 @@
             <include name="org/apache/jk/**"/>
             <include name="org/apache/coyote/ajp/**" />
             <exclude name="org/apache/coyote/ajp/*Apr*" unless="jdk.1.4.present" />
-	    <exclude name="org/apache/jk/common/ChannelNioSocket.java" unless="jdk.1.4.present"/>
+	    <exclude name="org/apache/jk/common/ChannelNioSocket.java" unless="jdk14.detect"/>
 	    <exclude name="org/apache/jk/common/JkMX.java" unless="jmx.detect"/>
 	    <exclude name="org/apache/jk/common/ModJkMX.java" unless="jmx.detect"/>
 	    <exclude name="org/apache/jk/common/Shm14.java" unless="jdk14.detect"/>
