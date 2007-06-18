@@ -975,7 +975,6 @@ static const char *jk_set_worker_file(cmd_parms * cmd,
                                       void *dummy, const char *worker_file)
 {
     server_rec *s = cmd->server;
-    struct stat statbuf;
 
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
@@ -1008,7 +1007,6 @@ static const char *jk_set_mount_file(cmd_parms * cmd,
                                      void *dummy, const char *mount_file)
 {
     server_rec *s = cmd->server;
-    struct stat statbuf;
 
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
