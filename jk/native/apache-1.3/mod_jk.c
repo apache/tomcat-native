@@ -517,10 +517,10 @@ static int get_content_length(request_rec * r)
 static int init_ws_service(apache_private_data_t * private_data,
                            jk_ws_service_t *s, jk_server_conf_t * conf)
 {
+    int size;
     request_rec *r = private_data->r;
     char *ssl_temp = NULL;
     s->route = NULL;        /* Used for sticky session routing */
-    int size;
 
     /* Copy in function pointers (which are really methods) */
     s->start_response = ws_start_response;
