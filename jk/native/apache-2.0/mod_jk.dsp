@@ -42,8 +42,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MD /W3 /O2 /Oy- /Zi /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FD /c
-# ADD CPP /nologo /MD /W3 /O2 /Oy- /Zi /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\srclib\apr\include" /I "$(APACHE2_HOME)\srclib\apr-util\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "HAVE_APR" /Fd"Release/mod_jk_src" /FD /c
+# ADD BASE CPP /nologo /MD /W3 /Zi /O2 /Oy- /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FD /c
+# ADD CPP /nologo /MD /W3 /Zi /O2 /Oy- /I "..\common" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /I "$(APACHE2_HOME)\include" /I "$(APACHE2_HOME)\srclib\apr\include" /I "$(APACHE2_HOME)\srclib\apr-util\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "HAVE_APR" /Fd"Release/mod_jk_src" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -164,6 +164,10 @@ SOURCE=..\common\jk_uri_worker_map.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_url.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_util.c
 # End Source File
 # Begin Source File
@@ -269,6 +273,10 @@ SOURCE=..\common\jk_status.h
 # Begin Source File
 
 SOURCE=..\common\jk_uri_worker_map.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_url.h
 # End Source File
 # Begin Source File
 
