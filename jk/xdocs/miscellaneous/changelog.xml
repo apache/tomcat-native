@@ -27,6 +27,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        <bug>42608</bug>: Handle Content-length as unsigned 64Bit
+        to allow for huge up- and downloads. (rjung)
+      </fix>
       <update>
       Apache: Add forwarding uri to debug log. (rjung)
       </update>

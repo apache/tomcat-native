@@ -979,8 +979,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
             }
             else {
                 int service_stat = -1;
-                size_t rd = 0;
-                size_t wr = 0;
+                jk_uint64_t rd = 0;
+                jk_uint64_t wr = 0;
                 /* Reset endpoint read and write sizes for
                  * this request.
                  */

@@ -457,16 +457,19 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
 
     if (s->content_length) {
         char buf[READ_BUF_SIZE];
-        unsigned so_far = 0;
+        jk_uint64_t so_far = 0;
 
         jk_log(l, JK_LOG_DEBUG,
                "ajpv12_handle_request, sending the request body");
 
         while (so_far < s->content_length) {
             unsigned this_time = 0;
-            unsigned to_read = s->content_length - so_far;
-            if (to_read > READ_BUF_SIZE) {
+            unsigned to_read;
+            if (s->content_length > so_far + READ_BUF_SIZE) {
                 to_read = READ_BUF_SIZE;
+            }
+            else {
+                to_read = s->content_length - so_far;
             }
 
             if (!s->read(s, buf, to_read, &this_time)) {
@@ -488,7 +491,7 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
             }
             else if (this_time == 0) {
                 jk_log(l, JK_LOG_ERROR,
-                       "In ajpv12_handle_request, Error: short read. content length is %d, read %d",
+                       "In ajpv12_handle_request, Error: short read. content length is %" JK_UINT64_T_FMT ", read %" JK_UINT64_T_FMT,
                        s->content_length, so_far);
                 return JK_FALSE;
             }

@@ -401,7 +401,7 @@ static int init_ws_service(nsapi_private_data_t * private_data,
                         &tmp, private_data->sn, private_data->rq);
 
     if ((rc != REQ_ABORTED) && tmp) {
-        s->content_length = atoi(tmp);
+        sscanf(tmp, "%" JK_UINT64_T_FMT, &(s->content_length));
     }
 
     s->method = pblock_findval("method", private_data->rq->reqpb);

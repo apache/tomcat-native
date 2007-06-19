@@ -133,11 +133,11 @@ struct jk_ws_service
     const char *server_name;
     unsigned server_port;
     char *server_software;
-    unsigned content_length;        /* integer that represents the content  */
+    jk_uint64_t content_length; /* 64 bit integer that represents the content */
     /* length should be 0 if unknown.        */
     unsigned is_chunked;    /* 1 if content length is unknown (chunked rq) */
     unsigned no_more_chunks;        /* 1 if last chunk has been read */
-    unsigned content_read;  /* number of bytes read */
+    jk_uint64_t content_read;  /* number of bytes read */
 
     /*
      * SSL information
@@ -312,8 +312,8 @@ struct jk_ws_service
  */
 struct jk_endpoint
 {
-    size_t rd;
-    size_t wr;
+    jk_uint64_t rd;
+    jk_uint64_t wr;
 
     /*
      * A 'this' pointer which is used by the subclasses of this class to

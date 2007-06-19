@@ -477,17 +477,17 @@ static void jk_error_exit(const char *file,
 }
 
 /* Return the content length associated with an Apache request structure */
-static int get_content_length(request_rec * r)
+static jk_uint64_t get_content_length(request_rec * r)
 {
     if (r->clength > 0) {
-        return r->clength;
+        return (jk_uint64_t)r->clength;
     }
     else {
         char *lenp = (char *)ap_table_get(r->headers_in, "Content-Length");
 
         if (lenp) {
-            int rc = atoi(lenp);
-            if (rc > 0) {
+            jk_uint64_t rc = 0;
+            if (sscanf(lenp, "%" JK_UINT64_T_FMT, &rc) > 0 && rc > 0) {
                 return rc;
             }
         }

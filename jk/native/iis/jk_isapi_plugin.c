@@ -1966,7 +1966,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
     GET_SERVER_VARIABLE_VALUE_INT("SERVER_PORT_SECURE", s->is_ssl, 0);
 
     s->method = private_data->lpEcb->lpszMethod;
-    s->content_length = private_data->lpEcb->cbTotalBytes;
+    s->content_length = (jk_uint64_t)private_data->lpEcb->cbTotalBytes;
 
     s->ssl_cert = NULL;
     s->ssl_cert_len = 0;

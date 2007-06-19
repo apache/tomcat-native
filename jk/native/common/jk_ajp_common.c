@@ -909,7 +909,7 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
 
     if ((rc = jk_tcp_socket_sendfull(ae->sd, msg->buf,
                                      msg->len)) > 0) {
-        ae->endpoint.wr += msg->len;
+        ae->endpoint.wr += (jk_uint64_t)msg->len;
         JK_TRACE_EXIT(l);
         ae->last_errno = 0;
         return JK_TRUE;
@@ -958,7 +958,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
         return JK_FALSE;
     }
     ae->last_errno = 0;
-    ae->endpoint.rd += rc;
+    ae->endpoint.rd += (jk_uint64_t)rc;
     header = ((unsigned int)head[0] << 8) | head[1];
 
     if (ae->proto == AJP13_PROTO) {
@@ -1036,7 +1036,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
         }
     }
     ae->last_errno = 0;
-    ae->endpoint.rd += rc;
+    ae->endpoint.rd += (jk_uint64_t)rc;
 
     if (ae->proto == AJP13_PROTO) {
         if (JK_IS_DEBUG_LEVEL(l))
@@ -1308,7 +1308,7 @@ static int ajp_send_request(jk_endpoint_t *e,
 
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "(%s) request body to send %d - request body to resend %d",
+               "(%s) request body to send %" JK_UINT64_T_FMT " - request body to resend %d",
                ae->worker->name, ae->left_bytes_to_send,
                op->reply->len - AJP_HEADER_LEN);
 
@@ -1375,9 +1375,9 @@ static int ajp_send_request(jk_endpoint_t *e,
          */
 
         if (ae->left_bytes_to_send > 0) {
-            int len = ae->left_bytes_to_send;
-            if (len > AJP13_MAX_SEND_BODY_SZ) {
-                len = AJP13_MAX_SEND_BODY_SZ;
+            int len = AJP13_MAX_SEND_BODY_SZ;
+            if (ae->left_bytes_to_send < (jk_uint64_t)AJP13_MAX_SEND_BODY_SZ) {
+                len = ae->left_bytes_to_send;
             }
             if ((len = ajp_read_into_msg_buff(ae, s, op->post, len, l)) < 0) {
                 /* the browser stop sending data, no need to recover */
@@ -1392,7 +1392,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                 s->reco_status = RECO_FILLED;
             }
 
-            s->content_read = len;
+            s->content_read = (jk_uint64_t)len;
             if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
                 /* Close the socket if unable to send request */
                 jk_close_socket(ae->sd);
@@ -1489,13 +1489,13 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             if (len > AJP13_MAX_SEND_BODY_SZ) {
                 len = AJP13_MAX_SEND_BODY_SZ;
             }
-            if ((unsigned int)len > ae->left_bytes_to_send) {
-                len = ae->left_bytes_to_send;
+            if ((jk_uint64_t)len > ae->left_bytes_to_send) {
+                len = (int)ae->left_bytes_to_send;
             }
 
             /* the right place to add file storage for upload */
             if ((len = ajp_read_into_msg_buff(ae, r, pmsg, len, l)) >= 0) {
-                r->content_read += len;
+                r->content_read += (jk_uint64_t)len;
                 JK_TRACE_EXIT(l);
                 return JK_AJP13_HAS_RESPONSE;
             }
@@ -1706,7 +1706,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
         else if (JK_AJP13_ERROR == rc) {
             /*
              * Tomcat has send invalid AJP message.
-             * Locadbalancer if present will decide if
+             * Loadbalancer if present will decide if
              * failover is possible.
              */
             JK_TRACE_EXIT(l);
@@ -1740,7 +1740,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
         else if (JK_SERVER_ERROR == rc) {
             /*
              * Tomcat has stop talking to us, so get out.
-             * Locadbalancer if present will decide if
+             * Loadbalancer if present will decide if
              * failover is possible.
              */
             JK_TRACE_EXIT(l);
