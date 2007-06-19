@@ -28,6 +28,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Apache: Add forwarding uri to debug log. (rjung)
+      </update>
+      <update>
       Docs: Clarify relation between worker names and jvmRoute for load balancing. (rjung)
       </update>
       <fix>

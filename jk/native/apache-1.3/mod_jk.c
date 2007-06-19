@@ -578,24 +578,6 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->no_more_chunks = 0;
     s->query_string = r->args;
 
-    /* Dump all connection param so we can trace what's going to
-     * the remote tomcat
-     */
-    if (JK_IS_DEBUG_LEVEL(conf->log)) {
-        jk_log(conf->log, JK_LOG_DEBUG,
-               "Service protocol=%s method=%s host=%s addr=%s name=%s port=%d auth=%s user=%s laddr=%s raddr=%s",
-               STRNULL_FOR_NULL(s->protocol),
-               STRNULL_FOR_NULL(s->method),
-               STRNULL_FOR_NULL(s->remote_host),
-               STRNULL_FOR_NULL(s->remote_addr),
-               STRNULL_FOR_NULL(s->server_name),
-               s->server_port,
-               STRNULL_FOR_NULL(s->auth_type),
-               STRNULL_FOR_NULL(s->remote_user),
-               STRNULL_FOR_NULL(r->connection->local_ip),
-               STRNULL_FOR_NULL(r->connection->remote_ip));
-    }
-
     /*
      * The 2.2 servlet spec errata says the uri from
      * HttpServletRequest.getRequestURI() should remain encoded.
@@ -793,6 +775,26 @@ static int init_ws_service(apache_private_data_t * private_data,
         }
     }
     s->uw_map = conf->uw_map;
+
+    /* Dump all connection param so we can trace what's going to
+     * the remote tomcat
+     */
+    if (JK_IS_DEBUG_LEVEL(conf->log)) {
+        jk_log(conf->log, JK_LOG_DEBUG,
+               "Service protocol=%s method=%s host=%s addr=%s name=%s port=%d auth=%s user=%s laddr=%s raddr=%s uri=%s",
+               STRNULL_FOR_NULL(s->protocol),
+               STRNULL_FOR_NULL(s->method),
+               STRNULL_FOR_NULL(s->remote_host),
+               STRNULL_FOR_NULL(s->remote_addr),
+               STRNULL_FOR_NULL(s->server_name),
+               s->server_port,
+               STRNULL_FOR_NULL(s->auth_type),
+               STRNULL_FOR_NULL(s->remote_user),
+               STRNULL_FOR_NULL(r->connection->local_ip),
+               STRNULL_FOR_NULL(r->connection->remote_ip),
+               STRNULL_FOR_NULL(s->req_uri));
+    }
+
     return JK_TRUE;
 }
 
