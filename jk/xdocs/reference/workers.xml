@@ -52,8 +52,9 @@ explains how to work with it.
 <section name="Directives">
 <br/>
 <p>Each workers.properties directive consists of three words separated by dot. The first word is always
-<b>worker</b>. The second word is the worker name that can be any name. The worker name reflects the
-name of the <b>jvmRoute</b> defined in Tomcat's server.xml configuration file.
+<b>worker</b>. The second word is the worker name that can be any name. In the case of load-balancing,
+the worker name has an additional meaning. Please consult the
+<a href="../generic_howto/loadbalancers.html">Load Balancer HowTo</a>.
 </p>
 <p>
 <warn>
@@ -249,6 +250,17 @@ other workers managed by the lb worker.
 The overall result is that workers managed by the same lb worker are load-balanced
 (based on their lbfactor and current user session) and also fall-backed so a single
 Tomcat process death will not "kill" the entire site.
+</p>
+<warn>
+If you want to use session stickyness, you must set different jvmRoute attributes
+in the Engine element in Tomcat's server.xml. Furthermore the names of the workers
+which are managed by the balancer have to be equal to the jvmRoute of the Tomcat
+instance they connect with.
+</warn>
+<p>
+The restriction on the worker names can be lifted, if you use the route attribute for the workers.
+</p>
+<p>
 The following table specifies properties that the lb worker can accept:
 </p>
 

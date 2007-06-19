@@ -27,6 +27,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Docs: Clarify relation between worker names and jvmRoute for load balancing. (rjung)
+      </update>
       <fix>
       Use initial zero timeout for jk_is_socket_connected. The resulting
       detection is the same but offers a huge performance increase

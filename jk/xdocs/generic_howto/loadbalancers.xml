@@ -66,6 +66,14 @@ other workers managed by the lb worker.
 
 <p>
 The overall result is that workers managed by the same lb worker are load-balanced (based on their lbfactor and current user session) and also fall-backed so a single Tomcat process death will not "kill" the entire site.
+</p>
+<warn>
+If you want to use session stickyness, you must set different jvmRoute attributes
+in the Engine element in Tomcat's server.xml. Furthermore the names of the workers
+which are managed by the balancer have to be equal to the jvmRoute of the Tomcat
+instance they connect with.
+</warn>
+<p>
 The following table specifies some properties that the lb worker can accept:
 <ul>
 <li><b>balance_workers</b> is a comma separated list of workers that the load balancer need to manage. 
