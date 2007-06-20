@@ -53,6 +53,9 @@ typedef unsigned @int64_value@ jk_uint64_t;
 /* And JK_UINT64_T_HEX_FMT */
 @uint64_t_hex_fmt@
 
+/* And JK_PID_T_FMT */
+@pid_t_fmt@
+
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */

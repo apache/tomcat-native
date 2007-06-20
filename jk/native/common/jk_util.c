@@ -491,7 +491,7 @@ int jk_log(jk_logger_t *l,
             /* Performance is no issue, because with production log levels */
             /* we only call it often, if we have a lot of errors */
             rc = snprintf(&buf[used], usable_size - used,
-                             "[%04d:%04d] ", getpid(), jk_gettid());
+                             "[%" JK_PID_T_FMT ":%04d] ", getpid(), jk_gettid());
             used += rc;
             if (rc < 0 || usable_size - used < 8) {
                 return 0;

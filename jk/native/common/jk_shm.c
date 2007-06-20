@@ -348,7 +348,7 @@ static int do_shm_open(const char *fname, int attached,
 
     if (!jk_shmem.filename) {
         jk_shmem.filename = (char *)malloc(strlen(fname) + 32);
-        sprintf(jk_shmem.filename, "%s.%d", fname, (int)getpid());
+        sprintf(jk_shmem.filename, "%s.%" JK_PID_T_FMT, fname, getpid());
     }
     if (!attached) {
         size_t size;
