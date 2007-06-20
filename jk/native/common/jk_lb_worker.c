@@ -347,9 +347,9 @@ static char *get_cookie(jk_ws_service_t *s, const char *name)
                  id_start; id_start = strstr(id_start + 1, name)) {
                 if (id_start == s->headers_values[i] ||
                     id_start[-1] == ';' ||
-                    id_start[-1] == ',' || isspace(id_start[-1])) {
+                    id_start[-1] == ',' || isspace((int)id_start[-1])) {
                     id_start += strlen(name);
-                    while (*id_start && isspace(*id_start))
+                    while (*id_start && isspace((int)(*id_start)))
                         ++id_start;
                     if (*id_start == '=' && id_start[1]) {
                         /*

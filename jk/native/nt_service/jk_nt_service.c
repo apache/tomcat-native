@@ -382,7 +382,7 @@ void install_service(char *name,
         if (dst >= szTrueName + sizeof(szTrueName) - 1) {
             break;
         }
-        if (!isspace(*src) && *src != '/' && *src != '\\') {
+        if (!isspace((int)(*src)) && *src != '/' && *src != '\\') {
             *(dst++) = *src;
         }
     }
