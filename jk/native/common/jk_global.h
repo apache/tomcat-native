@@ -237,8 +237,6 @@ extern "C"
 
 #define JK_OPT_FWDURIDEFAULT        JK_OPT_FWDURIPROXY
 
-#define JK_OPT_FWDKEYSIZE           0x0200
-
 #define JK_OPT_FWDDIRS              0x0008
 /* Forward local instead remote address */
 #define JK_OPT_FWDLOCAL             0x0010
@@ -246,6 +244,7 @@ extern "C"
 #define JK_OPT_FLUSHEADER           0x0040
 #define JK_OPT_DISABLEREUSE         0x0080
 #define JK_OPT_FWDCERTCHAIN         0x0100
+#define JK_OPT_FWDKEYSIZE           0x0200
 
 /* Check for EBCDIC systems */
 
