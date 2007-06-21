@@ -197,6 +197,7 @@ FILES_nlm_objs = \
 	$(OBJDIR)/jk_sockbuf.o \
 	$(OBJDIR)/jk_status.o \
 	$(OBJDIR)/jk_uri_worker_map.o \
+	$(OBJDIR)/jk_url.o \
 	$(OBJDIR)/jk_util.o \
 	$(OBJDIR)/jk_worker.o \
 	$(EOLIST)

@@ -222,6 +222,19 @@ CRTCMOD MODULE(MOD_JK/JK_URI_W_M) +
     TGTRLS(*CURRENT) +
     INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
 
+CRTCMOD MODULE(MOD_JK/JK_URL) +
+    SRCSTMF('/home/apache/jk/native/common/jk_url.c') +
+    DEFINE('AS400' 'AS400_UTF8' 'HAVE_JNI' 'HAVE_APR' +
+           '_XOPEN_SOURCE=520' 'USE_APACHE_MD5' '_REENTRANT') +
+    TEXT('jk_url.c') +
+    OPTIMIZE(40) +
+    LOCALETYPE(*LOCALEUTF) +
+    SYSIFCOPT(*IFSIO) +
+    LANGLVL(*EXTENDED) +
+    TERASPACE(*YES) +
+    TGTRLS(*CURRENT) +
+    INCDIR('/home/apache/jk/native/common' '/QIBM/ProdData/HTTPA/Include')
+
 CRTCMOD MODULE(MOD_JK/JK_UTIL) +
     SRCSTMF('/home/apache/jk/native/common/jk_util.c') +
     DEFINE('AS400' 'AS400_UTF8' 'HAVE_JNI' 'HAVE_APR' +
@@ -284,6 +297,7 @@ CRTSRVPGM SRVPGM(MOD_JK/MOD_JK) +
              MOD_JK/JK_MAP MOD_JK/JK_MD5 +
              MOD_JK/JK_MSG_BUF MOD_JK/JK_POOL +
              MOD_JK/JK_SOCKBUF MOD_JK/JK_URI_W_M +
+             MOD_JK/JK_URL +
              MOD_JK/JK_UTIL MOD_JK/JK_WORKER +
              MOD_JK/JK_STATUS MOD_JK/JK_SHM) +
       EXPORT(*SRCFILE) +
