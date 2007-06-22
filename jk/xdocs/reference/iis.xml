@@ -99,7 +99,50 @@ or any string starting with "F" or "f". The default value is false.
 </p>
 <p>This directive has been added in version 1.2.21</p>
 </attribute>
-
+<attribute name="auth_complete" required="false"><p>
+A DWORD value representing "0" or "1". This is needed because
+of minor incompatibilities with IIS 5.1.
+</p>
+<p>
+By default its value is 1, which means we use the SF_NOTIFY_AUTH_COMPLETE
+event. If you set this to 0, then we use SF_NOTIFY_PREPROC_HEADERS.
+This might be needed for IIS 5.1 when handling requests using the
+PUT HTTP method.
+</p>
+<p>This directive has been added in version 1.2.21</p>
+</attribute>
+<attribute name="uri_select" required="false"><p>
+A string value which influences, how URIs are decoded and reencoded
+between IIS and Tomcat. You should leave this at it's default value,
+unless you have a very good reason to change it.
+</p>
+<p>
+If the value is "parsed", the forwarded URI
+will be decoded and explicit path components like ".." will already
+be resolved. This is less spec compliant and is <b>not safe</b>
+if you are using prefix forwarding rules.
+</p>
+<p>
+If the value is "unparsed", the forwarded URI
+will be the original request URI. It's spec compliant and also
+the safest option. Rewriting the URI and then forwarding the rewritten
+URI will not work.
+</p>
+<p>
+If the value is "escaped", the forwarded URI
+will be the reencoded form of the URI used by "parsed".
+Explicit path components like ".." will already be resolved.
+This will not work in combination with URL encoded session IDs.
+</p>
+<p>
+If the value is "proxy", the forwarded URI
+will be a partially reencoded form of the URI used by "parsed".
+Explicit path components like ".." will already be resolved.
+and problematic are reencoded.
+</p>
+<p>The default value since version 1.2.24 is "proxy". Before it was "parsed".</p>
+</attribute>
+<p>
 </attributes>
 </section> 
 <section name="Using a properties file for configuration">

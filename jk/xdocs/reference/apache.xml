@@ -222,8 +222,9 @@ details about this directive.
 <br/>
 This directive can be used multiple times per virtual server.
 <br/>
-The default value is "ForwardURICompatUnparsed" since version 1.2.23.
-Until version 1.2.22 the default value was "ForwardURICompat".
+The default value is "ForwardURIProxy" since version 1.2.24.
+It was "ForwardURICompatUnparsed" in version 1.2.23 and
+"ForwardURICompat" until version 1.2.22.
 </p></attribute>
 <attribute name="JkEnvVar" required="false"><p>
 Adds a name and an optional default value of environment variable
@@ -429,11 +430,14 @@ or disable (-) following option. Without any leading signs, options will be enab
 </p>
 
 <p>
-The three following options <b>+ForwardURIxxx</b> are mutually exclusive.
+The four following options <b>+ForwardURIxxx</b> are mutually exclusive.
 Exactly one of them is required, a negative sign prefix is not allowed with them.
-The default value is "ForwardURICompatUnparsed" since version 1.2.23.
-Until version 1.2.22 the default value was "ForwardURICompat".
+The default value is "ForwardURIProxy" since version 1.2.24.
+It was "ForwardURICompatUnparsed" in version 1.2.23 and
+"ForwardURICompat" until version 1.2.22.
 You can turn the default off by switching on one of the other two options.
+You should leave this at it's default value, unless you have a very good
+reason to change it.
 <br/>
 <br/>
 </p>
@@ -450,8 +454,22 @@ options(vhost) = plus_options(global) - minus_options(global) + plus_options(vho
 </p>
 
 <p>
+Using JkOptions <b>ForwardURIProxy</b>, the forwarded URI
+will be partially reencoded after processing inside Apache httpd and
+before forwarding to Tomcat. This will be compatible with local
+URL manipulation by mod_rewrite and with URL encoded session ids.
+
+<source>
+  JkOptions     +ForwardURIProxy
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
 Using JkOptions <b>ForwardURICompatUnparsed</b>, the forwarded URI
-will be unparsed. It's spec compliant and also the safest option.
+will be unparsed. It's spec compliant and secure.
 It will always forward the original request URI, so rewriting
 URIs with mod_rewrite and then forwarding the rewritten URI
 will not work.

@@ -28,6 +28,17 @@
   <subsection name="Native">
     <changelog>
       <update>
+      IIS: Document auth_complete and uri_select. (rjung)
+      </update>
+      <update>
+      Apache/IIS/Netscape: Change the default forwarding encoding to the new
+      proxy method. (jfclere, rjung)
+      </update>
+      <update>
+      Common: Optionally reencode URIs before forwarding to the backend.
+      Based on the URI reencoding done bei httpd mod_proxy. (jfclere, rjung)
+      </update>
+      <update>
       Common: auto-detect correct print format for pid_t.
       This fixes at least compiler warnings on Solaris. (rjung)
       </update>
