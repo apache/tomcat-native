@@ -111,6 +111,8 @@ struct jk_uri_worker_map
     /* Dynamic config support */
 
     JK_CRIT_SEC cs;
+    /* should we forward potentially unsafe URLs */
+    int reject_unsafe;    
     /* uriworkermap filename */
     const char *fname;    
     /* uriworkermap reload check interval */

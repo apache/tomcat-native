@@ -514,6 +514,30 @@ but it will allow to rewrite URIs with mod_rewrite before forwarding.
 </p>
 
 <p>
+JkOptions <b>RejectUnsafeURI</b> will block all
+URLs, which contain percent signs '%' or backslashes '\'
+after decoding.
+<br/>
+<br/>
+</p>
+<p>
+Most web apps do not use such URLs. Using the option RejectUnsafeURI, you
+can block several well known URL encoding attacks. By default, this option
+is not set.
+</p>
+<p>
+You can also realize such a check with mod_rewrite, which is more powerful
+but also slightly more complicated.
+
+<source>  
+  JkOptions     +RejectUnsafeURI
+</source>
+
+<br/>
+<br/>
+</p>
+
+<p>
 JkOptions <b>ForwardDirectories</b> is used in conjunction with <b>DirectoryIndex</b>
 directive of Apache web server. As such mod_dir should be available to Apache,
 statically or dynamically (DSO)
@@ -535,7 +559,7 @@ directive Options doesn't specify Indexes for that directory).
 </p>
 
 <p>
-If ForwarDirectories is set to true and Apache doesn't find any files that
+If ForwardDirectories is set to true and Apache doesn't find any files that
 match, the request will be forwarded to Tomcat for resolution. This is used in
 cases when Apache cannot see the index files on the file system for various
 reasons: Tomcat is running on a different machine, the JSP file has been

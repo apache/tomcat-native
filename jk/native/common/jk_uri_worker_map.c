@@ -535,6 +535,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                               const char *uri, jk_logger_t *l)
 {
     unsigned int i;
+    int reject_unsafe;
     const char *rv = NULL;
     char  url[JK_MAX_URI_LEN+1];
 
@@ -564,6 +565,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     /* Make the copy of the provided uri and strip
      * everything after the first ';' char.
      */
+    reject_unsafe = uw_map->reject_unsafe;
     for (i = 0; i < strlen(uri); i++) {
         if (i == JK_MAX_URI_LEN) {
             jk_log(l, JK_LOG_WARNING,
@@ -574,15 +576,21 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         }
         if (uri[i] == ';')
             break;
-        else
+        else {
             url[i] = uri[i];
+            if (reject_unsafe && (url[i] == '%' || url[i] == '\\')) {
+                jk_log(l, JK_LOG_INFO, "Potentially unsafe request url '%s' rejected", uri);
+                JK_TRACE_EXIT(l);
+                return NULL;
+            }
+        }
     }
     url[i] = '\0';
 
     if (JK_IS_DEBUG_LEVEL(l)) {
         char *url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
         if (url_rewrite)
-            jk_log(l, JK_LOG_DEBUG, "separating session identifier '%s' from url '%s'",
+            jk_log(l, JK_LOG_DEBUG, "Found session identifier '%s' in url '%s'",
                    url_rewrite, uri);
     }
     if (JK_IS_DEBUG_LEVEL(l))

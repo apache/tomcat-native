@@ -101,6 +101,7 @@ static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
 #define WORKER_MOUNT_RELOAD_TAG     ("worker_mount_reload")
 #define STRIP_SESSION_TAG           ("strip_session")
 #define AUTH_COMPLETE_TAG           ("auth_complete")
+#define REJECT_UNSAFE_TAG           ("reject_unsafe")
 
 
 #define TRANSLATE_HEADER            ("Translate:")
@@ -194,6 +195,7 @@ static int shm_config_size = JK_SHM_DEF_SIZE;
 static int strip_session = 0;
 static DWORD auth_notification_flags = 0;
 static int   use_auth_notification_flags = 1;
+static int reject_unsafe = 0;
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -1730,6 +1732,10 @@ static int init_jk(char *serverName)
 
     if (uri_worker_map_alloc(&uw_map, NULL, logger)) {
         rc = JK_FALSE;
+        if (reject_unsafe)
+            uw_map->reject_unsafe = 1;
+        else
+            uw_map->reject_unsafe = 0;
         uw_map->fname = worker_mount_file;
         uw_map->reload = worker_mount_reload;
         if (worker_mount_file[0])
@@ -1849,6 +1855,7 @@ static int read_registry_init_data(void)
     worker_mount_reload = get_config_int(src, WORKER_MOUNT_RELOAD_TAG, JK_URIMAP_DEF_RELOAD);
     strip_session = get_config_bool(src, STRIP_SESSION_TAG, JK_FALSE);
     use_auth_notification_flags = get_config_int(src, AUTH_COMPLETE_TAG, 1);
+    reject_unsafe = get_config_bool(src, REJECT_UNSAFE_TAG, JK_FALSE);
     if (using_ini_file) {
         jk_map_free(&map);
     }

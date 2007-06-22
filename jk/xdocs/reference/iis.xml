@@ -93,6 +93,8 @@ A DWORD value specifying the time in seconds upon which the
 A string value representing a boolean. If it is set to true,
 URL session suffixes of the form ";jsessionid=..." get stripped of URLs,
 even if the are served locally by the web server.
+</p>
+<p>
 A true value can be represented by the string "1" or any string starting
 with the letters "T" or "t". A false value will be assumed for "0"
 or any string starting with "F" or "f". The default value is false.
@@ -142,7 +144,22 @@ and problematic are reencoded.
 </p>
 <p>The default value since version 1.2.24 is "proxy". Before it was "parsed".</p>
 </attribute>
+<attribute name="reject_unsafe" required="false"><p>
+A string value representing a boolean. If it is set to true,
+URLs containing percent signs '%' or backslashes '\'
+after decoding will be rejected.
+</p>
 <p>
+Most web apps do not use such URLs. By enabling "reject_unsafe" you
+can block several well known URL encoding attacks.
+</p>
+<p>
+A true value can be represented by the string "1" or any string starting
+with the letters "T" or "t". A false value will be assumed for "0"
+or any string starting with "F" or "f". The default value is false.
+</p>
+<p>This directive has been added in version 1.2.24</p>
+</attribute>
 </attributes>
 </section> 
 <section name="Using a properties file for configuration">

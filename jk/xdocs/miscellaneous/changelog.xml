@@ -28,6 +28,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Common/Apache/IIS/Netscape: Add an option to check decoded URLs for
+      potentially malicious constructions. (rjung)
+      </update>
+      <update>
       IIS: Document auth_complete and uri_select. (rjung)
       </update>
       <update>

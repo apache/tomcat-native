@@ -1759,6 +1759,9 @@ const char *jk_set_options(cmd_parms * cmd, void *dummy, const char *line)
         else if (!strcasecmp(w, "ForwardKeySize")) {
             opt = JK_OPT_FWDKEYSIZE;
         }
+        else if (!strcasecmp(w, "RejectUnsafeURI")) {
+            opt = JK_OPT_REJECTUNSAFE;
+        }
         else
             return ap_pstrcat(cmd->pool, "JkOptions: Illegal option '", w,
                               "'", NULL);
@@ -1856,7 +1859,6 @@ static const command_rec jk_cmds[] = {
      "the reload check interval of the mount file"},
 
     /*
-     * JkAutoMount specifies that the list of handled URLs must be
      * JkAutoMount specifies that the list of handled URLs must be
      * asked to the servlet engine (autoconf feature)
      */
@@ -2531,10 +2533,15 @@ static void jk_init(server_rec * s, ap_pool * p)
                                                                            &jk_module);
         open_jk_log(srv, p);
         if (sconf) {
+            sconf->options &= ~sconf->exclude_options;
             if (!uri_worker_map_alloc(&(sconf->uw_map),
                                       sconf->uri_to_context, sconf->log))
                 jk_error_exit(APLOG_MARK, APLOG_EMERG, srv,
                               p, "Memory error");
+            if (sconf->options & JK_OPT_REJECTUNSAFE)
+                sconf->uw_map->reject_unsafe = 1;
+            else
+                sconf->uw_map->reject_unsafe = 0;
             if (sconf->mount_file) {
                 sconf->uw_map->fname = sconf->mount_file;
                 sconf->uw_map->reload = sconf->mount_file_reload;
@@ -2547,7 +2554,6 @@ static void jk_init(server_rec * s, ap_pool * p)
                     ap_log_error(APLOG_MARK, APLOG_ERR, srv,
                                  "JkRequestLogFormat format array NULL");
             }
-            sconf->options &= ~sconf->exclude_options;
             if (sconf->envvars_in_use) {
                 int i;
                 const array_header *arr;

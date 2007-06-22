@@ -33,6 +33,7 @@
 
 #define URI_PATTERN "path"
 #define DEFAULT_WORKER_NAME ("ajp13")
+#define REJECT_UNSAFE_TAG   ("reject_unsafe")
 
 #define STRNULL_FOR_NULL(x) ((x) ? (x) : "(null)")
 
@@ -95,6 +96,7 @@ static void init_workers_on_other_threads(void *init_d)
     if (uri_worker_map_alloc(&uw_map, NULL, logger)) {
         uw_map->fname = "";
         uw_map->reload = JK_URIMAP_DEF_RELOAD;
+        uw_map->reject_unsafe = jk_map_get_bool(init_map, "worker." REJECT_UNSAFE_TAG, JK_FALSE);
         worker_env.uri_to_worker = uw_map;
         if (wc_open(init_map, &worker_env, logger)) {
             init_on_other_thread_is_ok = JK_TRUE;
@@ -227,6 +229,7 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
     char *log_level_str = pblock_findval(JK_LOG_LEVEL_TAG, pb);
     char *log_file = pblock_findval(JK_LOG_FILE_TAG, pb);
     char *shm_file = pblock_findval(JK_SHM_FILE_TAG, pb);
+    char *reject_unsafe = pblock_findval(JK_REJECT_UNSAFE_TAG, pb);
 
     int rc = REQ_ABORTED;
 
@@ -269,6 +272,7 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
                 jk_log(logger, JK_LOG_ERROR, "Error in resolving configuration references");
             }
 
+            jk_map_add(init_map, "worker." REJECT_UNSAFE_TAG, reject_unsafe); 
             s = systhread_start(SYSTHREAD_DEFAULT_PRIORITY,
                                 0, init_workers_on_other_threads, init_map);
             for (sleep_cnt = 0; sleep_cnt < 60; sleep_cnt++) {

@@ -245,6 +245,7 @@ extern "C"
 #define JK_OPT_DISABLEREUSE         0x0080
 #define JK_OPT_FWDCERTCHAIN         0x0100
 #define JK_OPT_FWDKEYSIZE           0x0200
+#define JK_OPT_REJECTUNSAFE         0x0400
 
 /* Check for EBCDIC systems */
 
