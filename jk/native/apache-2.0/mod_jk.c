@@ -1754,10 +1754,7 @@ static const char *jk_set_options(cmd_parms * cmd, void *dummy,
             return apr_pstrcat(cmd->pool, "JkOptions: Illegal option '-", w,
                                "': ForwardURI* options can not be disabled", NULL);
 
-        if (!strcasecmp(w, "ForwardKeySize")) {
-            opt = JK_OPT_FWDKEYSIZE;
-        }
-        else if (!strcasecmp(w, "ForwardURICompat")) {
+        if (!strcasecmp(w, "ForwardURICompat")) {
             opt = JK_OPT_FWDURICOMPAT;
             mask = JK_OPT_FWDURIMASK;
         }
@@ -1790,6 +1787,9 @@ static const char *jk_set_options(cmd_parms * cmd, void *dummy,
         }
         else if (!strcasecmp(w, "ForwardSSLCertChain")) {
             opt = JK_OPT_FWDCERTCHAIN;
+        }
+        else if (!strcasecmp(w, "ForwardKeySize")) {
+            opt = JK_OPT_FWDKEYSIZE;
         }
         else
             return apr_pstrcat(cmd->pool, "JkOptions: Illegal option '", w,
