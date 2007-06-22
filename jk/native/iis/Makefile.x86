@@ -45,6 +45,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jk_sockbuf.obj"
 	-@erase "$(INTDIR)\jk_status.obj"
 	-@erase "$(INTDIR)\jk_uri_worker_map.obj"
+	-@erase "$(INTDIR)\jk_url.obj"
 	-@erase "$(INTDIR)\jk_util.obj"
 	-@erase "$(INTDIR)\jk_worker.obj"
 	-@erase "$(OUTDIR)\isapi_redirect.dll"
@@ -84,6 +85,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\jk_sockbuf.obj" \
 	"$(INTDIR)\jk_status.obj" \
 	"$(INTDIR)\jk_uri_worker_map.obj" \
+	"$(INTDIR)\jk_url.obj" \
 	"$(INTDIR)\jk_util.obj" \
 	"$(INTDIR)\jk_worker.obj" \
 	"$(INTDIR)\isapi_redirect.res" \
@@ -251,6 +253,12 @@ SOURCE=..\common\jk_status.c
 SOURCE=..\common\jk_uri_worker_map.c
 
 "$(INTDIR)\jk_uri_worker_map.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\common\jk_url.c
+
+"$(INTDIR)\jk_url.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 

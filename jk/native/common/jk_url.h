@@ -16,7 +16,7 @@
  */
 
 /***************************************************************************
- * Description: URL manupilation subroutines header file. (mod_proxy)      *
+ * Description: URL manipulation subroutines header file. (mod_proxy)      *
  * Version:     $Revision: 500534 $                                        *
  ***************************************************************************/
 #ifndef _JK_URL_H
@@ -31,22 +31,12 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-/* for proxy_canonenc() */
-enum enctype {
-    enc_path, enc_search, enc_user, enc_fpath, enc_parm
-};
-
-#define JK_PROXYREQ_NONE 0         /**< No proxy */
-#define JK_PROXYREQ_PROXY 1        /**< Standard proxy */
-#define JK_PROXYREQ_REVERSE 2      /**< Reverse proxy */
-#define JK_PROXYREQ_RESPONSE 3     /**< Origin response */
-
 /*
- * Do a canonical encoding of the x url y contains the result
- * and should have a size of at least 3 * len + 1 bytes.
+ * Do a canonical encoding of the url x.
+ * String y contains the result and is pre-allocated
+ * for at least maxlen bytes, including a '\0' terminator.
  */
-char * jk_canonenc(char *y, const char *x, int len,
-                   enum enctype t, int forcedec, int proxyreq);
+int jk_canonenc(const char *x, char *y, int maxlen);
 
 #ifdef __cplusplus
 }

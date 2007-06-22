@@ -32,6 +32,7 @@
 #include <wininet.h>
 
 #include "jk_global.h"
+#include "jk_url.h"
 #include "jk_util.h"
 #include "jk_map.h"
 #include "jk_pool.h"
@@ -94,6 +95,7 @@ static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
 #define URI_SELECT_PARSED_VERB      ("parsed")
 #define URI_SELECT_UNPARSED_VERB    ("unparsed")
 #define URI_SELECT_ESCAPED_VERB     ("escaped")
+#define URI_SELECT_PROXY_VERB       ("proxy")
 #define URI_REWRITE_TAG             ("rewrite_rule_file")
 #define SHM_SIZE_TAG                ("shm_size")
 #define WORKER_MOUNT_RELOAD_TAG     ("worker_mount_reload")
@@ -135,6 +137,7 @@ char HTML_ERROR_503[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Tr
                                 "Please try again later.</P></BODY></HTML>";
 
 
+#define STRNULL_FOR_NULL(x) ((x) ? (x) : "(null)")
 #define JK_TOLOWER(x)   ((char)tolower((BYTE)(x)))
 
 #define GET_SERVER_VARIABLE_VALUE(name, place)          \
@@ -195,8 +198,9 @@ static int   use_auth_notification_flags = 1;
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
 #define URI_SELECT_OPT_ESCAPED      2
+#define URI_SELECT_OPT_PROXY        3
 
-static int uri_select_option = URI_SELECT_OPT_PARSED;
+static int uri_select_option = URI_SELECT_OPT_PROXY;
 
 static jk_worker_env_t worker_env;
 
@@ -1316,6 +1320,21 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                                snuri);
                     forwardURI = snuri;
                 }
+                else if (uri_select_option == URI_SELECT_OPT_PROXY) {
+                    if (!jk_canonenc(uri, snuri, INTERNET_MAX_URL_LENGTH)) {
+                        jk_log(logger, JK_LOG_ERROR,
+                               "[%s] re-encoding request exceeds maximum buffer size.",
+                               uri);
+                        write_error_response(pfc, "400 Bad Request",
+                                             HTML_ERROR_400);
+                        return SF_STATUS_REQ_FINISHED;
+                    }
+                    if (JK_IS_DEBUG_LEVEL(logger))
+                        jk_log(logger, JK_LOG_DEBUG,
+                               "fowarding escaped URI [%s]",
+                               snuri);
+                    forwardURI = snuri;
+                }
                 else {
                     forwardURI = uri;
                 }
@@ -1775,6 +1794,10 @@ int parse_uri_select(const char *uri_select)
         return URI_SELECT_OPT_ESCAPED;
     }
 
+    if (0 == strcasecmp(uri_select, URI_SELECT_PROXY_VERB)) {
+        return URI_SELECT_OPT_PROXY;
+    }
+
     return -1;
 }
 
@@ -2180,6 +2203,23 @@ static int init_ws_service(isapi_private_data_t * private_data,
     }
     else {
         return JK_FALSE;
+    }
+
+    /* Dump all connection param so we can trace what's going to
+     * the remote tomcat
+     */
+    if (JK_IS_DEBUG_LEVEL(logger)) {
+        jk_log(logger, JK_LOG_DEBUG,
+               "Service protocol=%s method=%s host=%s addr=%s name=%s port=%d auth=%s user=%s uri=%s",
+               STRNULL_FOR_NULL(s->protocol),
+               STRNULL_FOR_NULL(s->method),
+               STRNULL_FOR_NULL(s->remote_host),
+               STRNULL_FOR_NULL(s->remote_addr),
+               STRNULL_FOR_NULL(s->server_name),
+               s->server_port,
+               STRNULL_FOR_NULL(s->auth_type),
+               STRNULL_FOR_NULL(s->remote_user),
+               STRNULL_FOR_NULL(s->req_uri));
     }
 
     return JK_TRUE;

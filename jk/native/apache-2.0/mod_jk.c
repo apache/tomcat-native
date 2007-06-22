@@ -640,10 +640,9 @@ static int init_ws_service(apache_private_data_t * private_data,
         break;
 
     case JK_OPT_FWDURIPROXY:
-        size = strlen(r->uri);
-        s->req_uri = apr_palloc(r->pool, size * 3 + 1);
-        jk_canonenc(s->req_uri, r->uri, size, enc_path, 0, 
-                    JK_PROXYREQ_REVERSE);
+        size = 3 * strlen(r->uri) + 1;
+        s->req_uri = apr_palloc(r->pool, size);
+        jk_canonenc(r->uri, s->req_uri, size);
         break;
 
     case JK_OPT_FWDURIESCAPED:

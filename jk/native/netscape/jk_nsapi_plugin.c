@@ -34,6 +34,8 @@
 #define URI_PATTERN "path"
 #define DEFAULT_WORKER_NAME ("ajp13")
 
+#define STRNULL_FOR_NULL(x) ((x) ? (x) : "(null)")
+
 struct nsapi_private_data
 {
     jk_pool_t p;
@@ -410,7 +412,11 @@ static int init_ws_service(nsapi_private_data_t * private_data,
     s->remote_host = session_dns(private_data->sn);
     s->remote_addr = pblock_findval("ip", private_data->sn->client);
 
-    s->req_uri = pblock_findval("uri", private_data->rq->reqpb);
+    tmp = pblock_findval("uri", private_data->rq->reqpb);
+    size = 3 * strlen(tmp) + 1;
+    s->req_uri = jk_pool_alloc(s->pool, size);
+    jk_canonenc(tmp, s->req_uri, size);
+
     s->query_string = pblock_findval("query", private_data->rq->reqpb);
 
     s->server_name = server_hostname;
@@ -466,7 +472,27 @@ static int init_ws_service(nsapi_private_data_t * private_data,
         s->ssl_session = NULL;
     }
 
-    return setup_http_headers(private_data, s);
+    rc = setup_http_headers(private_data, s);
+
+    /* Dump all connection param so we can trace what's going to
+     * the remote tomcat
+     */
+    if (JK_IS_DEBUG_LEVEL(logger)) {
+        jk_log(logger, JK_LOG_DEBUG,
+               "Service protocol=%s method=%s host=%s addr=%s name=%s port=%d auth=%s user=%s uri=%s",
+               STRNULL_FOR_NULL(s->protocol),
+               STRNULL_FOR_NULL(s->method),
+               STRNULL_FOR_NULL(s->remote_host),
+               STRNULL_FOR_NULL(s->remote_addr),
+               STRNULL_FOR_NULL(s->server_name),
+               s->server_port,
+               STRNULL_FOR_NULL(s->auth_type),
+               STRNULL_FOR_NULL(s->remote_user),
+               STRNULL_FOR_NULL(s->req_uri));
+    }
+
+    return rc;
+
 }
 
 static int setup_http_headers(nsapi_private_data_t * private_data,
