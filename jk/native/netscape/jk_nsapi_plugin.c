@@ -30,10 +30,11 @@
 #include "jk_service.h"
 #include "jk_worker.h"
 #include "jk_shm.h"
+#include "jk_url.h"
 
 #define URI_PATTERN "path"
 #define DEFAULT_WORKER_NAME ("ajp13")
-#define REJECT_UNSAFE_TAG   ("reject_unsafe")
+#define REJECT_UNSAFE_TAG   "reject_unsafe"
 
 #define STRNULL_FOR_NULL(x) ((x) ? (x) : "(null)")
 
@@ -229,7 +230,7 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
     char *log_level_str = pblock_findval(JK_LOG_LEVEL_TAG, pb);
     char *log_file = pblock_findval(JK_LOG_FILE_TAG, pb);
     char *shm_file = pblock_findval(JK_SHM_FILE_TAG, pb);
-    char *reject_unsafe = pblock_findval(JK_REJECT_UNSAFE_TAG, pb);
+    char *reject_unsafe = pblock_findval(REJECT_UNSAFE_TAG, pb);
 
     int rc = REQ_ABORTED;
 
@@ -384,6 +385,7 @@ static int init_ws_service(nsapi_private_data_t * private_data,
                            jk_ws_service_t *s)
 {
     char *tmp;
+    int size;
     int rc;
 
     s->route = NULL;
