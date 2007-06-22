@@ -1377,7 +1377,7 @@ static int ajp_send_request(jk_endpoint_t *e,
         if (ae->left_bytes_to_send > 0) {
             int len = AJP13_MAX_SEND_BODY_SZ;
             if (ae->left_bytes_to_send < (jk_uint64_t)AJP13_MAX_SEND_BODY_SZ) {
-                len = ae->left_bytes_to_send;
+                len = (int)ae->left_bytes_to_send;
             }
             if ((len = ajp_read_into_msg_buff(ae, s, op->post, len, l)) < 0) {
                 /* the browser stop sending data, no need to recover */
