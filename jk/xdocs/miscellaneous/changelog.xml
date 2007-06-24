@@ -28,6 +28,13 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Status worker: Renamed runtime states. All states have a major
+      state (OK or ERR) and a substate. Changed the name N/A to OK/IDLE.
+      Added docs about the meaning of the states to the status worker
+      page in the reference guide.
+      No new states have been added to code. (rjung)
+      </update>
+      <update>
       Common: Add recovery options for recovering idempotent http methods
       HEAD and GET. (rjung)
       </update>

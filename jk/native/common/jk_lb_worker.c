@@ -60,7 +60,7 @@ static const char *lb_method_type[] = {
 };
 
 static const char *lb_state_type[] = {
-    JK_LB_STATE_TEXT_NA,
+    JK_LB_STATE_TEXT_IDLE,
     JK_LB_STATE_TEXT_OK,
     JK_LB_STATE_TEXT_RECOVER,
     JK_LB_STATE_TEXT_BUSY,
@@ -190,8 +190,8 @@ int jk_lb_get_state_code(const char *v)
 {
     if (!v)
         return JK_LB_STATE_DEF;
-    else if  (*v == 'n' || *v == 'N' || *v == '0')
-        return JK_LB_STATE_NA;
+    else if  (*v == 'i' || *v == 'I' || *v == 'n' || *v == 'N' || *v == '0')
+        return JK_LB_STATE_IDLE;
     else if  (*v == 'o' || *v == 'O' || *v == '1')
         return JK_LB_STATE_OK;
     else if  (*v == 'r' || *v == 'R' || *v == '2')
@@ -454,7 +454,7 @@ static int recover_workers(lb_worker_t *p,
             non_error++;
             if (w->s->state == JK_LB_STATE_OK &&
                 w->s->elected == w->s->elected_snapshot)
-                w->s->state = JK_LB_STATE_NA;
+                w->s->state = JK_LB_STATE_IDLE;
         }
         w->s->elected_snapshot = w->s->elected;
     }
@@ -1258,7 +1258,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                     strncpy(p->lb_workers[i].s->redirect, s, JK_SHM_STR_SIZ);
 
                 p->lb_workers[i].s->lb_value = 0;
-                p->lb_workers[i].s->state = JK_LB_STATE_NA;
+                p->lb_workers[i].s->state = JK_LB_STATE_IDLE;
                 p->lb_workers[i].s->error_time = 0;
                 p->lb_workers[i].s->activation =
                     jk_get_worker_activation(props, worker_names[i]);

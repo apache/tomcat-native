@@ -137,7 +137,7 @@
 #define JK_STATUS_MASK_DISABLED            0x0000FF00
 #define JK_STATUS_MASK_STOPPED             0x00FF0000
 #define JK_STATUS_MASK_OK                  0x00010101
-#define JK_STATUS_MASK_NA                  0x00020202
+#define JK_STATUS_MASK_IDLE                0x00020202
 #define JK_STATUS_MASK_BUSY                0x00040404
 #define JK_STATUS_MASK_RECOVER             0x00080808
 #define JK_STATUS_MASK_ERROR               0x00101010
@@ -201,7 +201,7 @@
 #define JK_STATUS_SHOW_MEMBER_HEAD         "<tr>" \
                                            "<th>&nbsp;</th><th>Name</th><th>Type</th>" \
                                            "<th>Host</th><th>Addr</th>" \
-                                           "<th>Act</th><th>Stat</th>" \
+                                           "<th>Act</th><th>State</th>" \
                                            "<th>D</th><th>F</th><th>M</th>" \
                                            "<th>V</th><th>Acc</th>" \
                                            "<th>Err</th><th>CE</th>" \
@@ -562,8 +562,8 @@ static int status_rate(worker_record_t *wr, status_worker_t *w,
     case JK_LB_STATE_OK:
         mask &= JK_STATUS_MASK_OK;
         break;
-    case JK_LB_STATE_NA:
-        mask &= JK_STATUS_MASK_NA;
+    case JK_LB_STATE_IDLE:
+        mask &= JK_STATUS_MASK_IDLE;
         break;
     case JK_LB_STATE_BUSY:
         mask &= JK_STATUS_MASK_BUSY;
@@ -620,9 +620,11 @@ static jk_uint32_t status_get_single_rating(const char rating, jk_logger_t *l)
     case 'O':
     case 'o':
         return JK_STATUS_MASK_OK;
+    case 'I':
+    case 'i':
     case 'N':
     case 'n':
-        return JK_STATUS_MASK_NA;
+        return JK_STATUS_MASK_IDLE;
     case 'B':
     case 'b':
         return JK_STATUS_MASK_BUSY;
@@ -2467,8 +2469,9 @@ static void display_legend(jk_ws_service_t *s,
             "<tr><th>Addr</th><td>Backend Address info</td></tr>\n"
             "<tr><th>Act</th><td>Worker activation configuration<br/>\n"
             "ACT=Active, DIS=Disabled, STP=Stopped</td></tr>\n"
-            "<tr><th>Stat</th><td>Worker error status<br/>\n"
-            "OK=OK, N/A=Unknown, ERR=Error, BSY=Busy<br/>\n"
+            "<tr><th>State</th><td>Worker error status<br/>\n"
+            "OK=OK, ERR=Error with substates<br/>\n"
+            "IDLE=No requests handled, BUSY=All connections busy,<br/>\n"
             "REC=Recovering, PRB=Probing, FRC=Forced Recovery</td></tr>\n"
             "<tr><th>D</th><td>Worker distance</td></tr>\n"
             "<tr><th>F</th><td>Load Balancer factor</td></tr>\n"
@@ -2850,7 +2853,7 @@ static int reset_worker(jk_ws_service_t *s,
             wr->s->recovery_errors  = 0;
             wr->s->readed           = 0;
             wr->s->transferred      = 0;
-            wr->s->state            = JK_LB_STATE_NA;
+            wr->s->state            = JK_LB_STATE_IDLE;
         }
         JK_TRACE_EXIT(l);
         return JK_TRUE;
@@ -2871,7 +2874,7 @@ static int reset_worker(jk_ws_service_t *s,
         wr->s->recovery_errors  = 0;
         wr->s->readed           = 0;
         wr->s->transferred      = 0;
-        wr->s->state            = JK_LB_STATE_NA;
+        wr->s->state            = JK_LB_STATE_IDLE;
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }

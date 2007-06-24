@@ -287,13 +287,40 @@ system design and your operating practises your preferred categorization might v
 <p>
 The categorization is based on the activation state of the workers (active, disabled or stopped),
 which is a pure configuration state, and the runtime state
-(OK, N/A, busy, recovering, probing, forced recovery, error)
+(OK or ERR with possible substates idle, busy, recovering, probing, and forced recovery)
 which only depends on the runtime situation.
 </p>
 <p>
+The runtime substates have the following meaning:
+<ul>
+<li>
+<b>OK (idle)</b>: This worker didn't receive any request since the last balancer
+maintenance. By default balancer maintenance runs every 60 seconds. The
+worker should be OK, but since we didn't have to use it for some time, we
+can't be sure. This state has been called N/A before version 1.2.24.
+</li>
+<li>
+<b>OK (busy)</b>: All connections for this worker are in use for requests.
+</li>
+<li>
+<b>ERROR (recovering)</b>: The worker was in error state for some time and is now
+marked for recovery. The next request suitable for thi worker will use it.
+</li>
+<li>
+<b>ERROR (probing)</b>: After setting the worker to recovering, we received a request
+suitable for this worker. This request is now using the worker.
+</li>
+<li>
+<b>ERROR (forced recovery)</b>: The worker is in error, but we don't have an alternative
+worker, so we keep using it.
+</li>
+</ul>
+</p>
+<p>
 By default the status worker groups into "good" all members, that have activation "active" and
-runtime state not equal to "error". The "bad" group consists of the members, that have either activation
-"stopped", or are in runtime state "error".
+runtime state not equal to "error" with empty substate.
+The "bad" group consists of the members, that have either activation
+"stopped", or are in runtime state "error" with empty substate.
 </p>
 <p>
 Workers that fit neither of the two groups, are considered to be "degraded".
@@ -302,11 +329,11 @@ Workers that fit neither of the two groups, are considered to be "degraded".
 You can define other rules for the grouping into good, bad and degraded.
 The two attributes "good" and "bad" can be populated by a comma-separated list ob single characters or
 dot-separated pairs. Each character stands for the first character of one of the possible states "active",
-"disabled", "stopped", "ok", "na", "busy", "recovering" and "error". The additional states "probing"
+"disabled", "stopped", "ok", "idle", "busy", "recovering" and "error". The additional states "probing"
 and "forced recovery" are always rated equivalent to "recovering".
 Comma-separated entries will be combined
 with logical "or", if you combine a configuration and a runtime state with a dot. the are combined with logical
-"and". So the default value for "good" is "a.o,a.n,a.b,a.r", for "bad" it is "e,s".
+"and". So the default value for "good" is "a.o,a.i,a.b,a.r", for "bad" it is "e,s".
 </p>
 <p>
 The status worker first tries to match against the "bad" definitions, if this doesn't succeed
