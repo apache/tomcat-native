@@ -418,7 +418,7 @@ static int jk_map_validate_property(char *prp, jk_logger_t *l)
     return JK_TRUE;
 }
 
-static int jk_map_handle_duplicates(jk_map_t *m, const char *prp, char *v,
+static int jk_map_handle_duplicates(jk_map_t *m, const char *prp, char **v,
                                     int treatment, jk_logger_t *l)
 {
     const char *oldv = jk_map_get_string(m, prp, NULL);
@@ -426,7 +426,7 @@ static int jk_map_handle_duplicates(jk_map_t *m, const char *prp, char *v,
         if ((treatment == JK_MAP_HANDLE_DUPLICATES)
             && jk_is_unique_property(prp) == JK_FALSE) {
             char *tmpv = jk_pool_alloc(&m->p,
-                                       strlen(v) + strlen(oldv) + 3);
+                                       strlen(*v) + strlen(oldv) + 3);
             if (tmpv) {
                 char sep = '*';
                 if (jk_is_path_property(prp))
@@ -435,16 +435,20 @@ static int jk_map_handle_duplicates(jk_map_t *m, const char *prp, char *v,
                     sep = ' ';
                 else if (jk_is_list_property(prp))
                     sep = ',';
-                sprintf(tmpv, "%s%c%s", oldv, sep, v);
+                sprintf(tmpv, "%s%c%s", oldv, sep, *v);
             }
-            v = tmpv;
+            *v = tmpv;
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Concatenated value is: %s -> %s",
+                       prp, *v);
             return JK_FALSE;
         }
         else {
             jk_log(l, JK_LOG_WARNING,
                    "Duplicate key '%s' detected - previous value '%s'"
                    " will be overwritten with '%s'.",
-                   prp, oldv ? oldv : "(null)", v ? v : "(null)");
+                   prp, oldv ? oldv : "(null)", v ? *v : "(null)");
             return JK_TRUE;
         }
     }
@@ -483,10 +487,14 @@ int jk_map_read_property(jk_map_t *m, const char *str,
                     if (jk_map_validate_property(prp, l) == JK_FALSE)
                         return JK_FALSE;
                     v = jk_map_replace_properties(m, v);
-                    if (jk_map_handle_duplicates(m, prp, v, treatment, l) == JK_TRUE)
+                    if (jk_map_handle_duplicates(m, prp, &v, treatment, l) == JK_TRUE)
                         v = jk_pool_strdup(&m->p, v);
                 }
                 if (v) {
+                    if (JK_IS_DEBUG_LEVEL(l))
+                        jk_log(l, JK_LOG_DEBUG,
+                               "Adding property '%s' with value '%s' to map.",
+                               prp, v);
                     jk_map_put(m, prp, v, NULL);
                 }
                 else {
@@ -564,6 +572,21 @@ void *jk_map_value_at(jk_map_t *m, int idex)
     }
 
     return NULL;
+}
+
+void jk_map_dump(jk_map_t *m, jk_logger_t *l)
+{
+    if (m) {
+        if (JK_IS_DEBUG_LEVEL(l)) {
+            int s = jk_map_size(m);
+            int i;
+            for (i=0;i<s;i++) {
+                jk_log(l, JK_LOG_DEBUG,
+                       "Dump of map: '%s' -> '%s'",
+                       jk_map_name_at(m, i), jk_map_value_at(m, i));
+            }
+        }
+    }
 }
 
 static void trim_prp_comment(char *prp)

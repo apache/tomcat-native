@@ -80,6 +80,8 @@ const char *jk_map_name_at(jk_map_t *m, int idex);
 
 void *jk_map_value_at(jk_map_t *m, int idex);
 
+void jk_map_dump(jk_map_t *m, jk_logger_t *l);
+
 /**
  *  Replace $(property) in value.
  *
