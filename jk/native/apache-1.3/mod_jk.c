@@ -2381,29 +2381,23 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
     return overrides;
 }
 
-static int JK_METHOD jk_log_to_file(jk_logger_t *l,
-                                    int level, const char *what)
+static int JK_METHOD jk_log_to_file(jk_logger_t *l, int level,
+                                    int used, char *what)
 {
     if (l &&
         (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
-         l->logger_private && what) {
+         l->logger_private && what && used > 0) {
         jk_file_logger_t *flp = l->logger_private;
         int log_fd = flp->log_fd;
-        size_t sz = strlen(what);
-        if (log_fd >= 0 && sz) {
-            if (write(log_fd, what, sz) < 0 ) {
+        if (log_fd >= 0) {
+#if defined(WIN32)
+            what[used++] = '\r';
+#endif
+            what[used++] = '\n';
+            if (write(log_fd, what, used) < 0 ) {
                 ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, NULL,
                              "mod_jk: jk_log_to_file %s failed",
                              what);
-            }
-            else {
-                char c;
-#if defined(WIN32)
-                c = '\r';
-                write(log_fd, &c, 1);
-#endif
-                c = '\n';
-                write(log_fd, &c, 1);
             }
         }
 

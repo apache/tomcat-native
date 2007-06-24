@@ -27,6 +27,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      Make writing log lines and line endings more atomic. (rjung)
+      </fix>
       <update>
       Common: Refactored and unified jk_map_read_prop* and jk_map_load_prop*
       for all use cases. (rjung)

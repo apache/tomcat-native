@@ -352,15 +352,16 @@ static int set_time_str(char *str, int len, const char *jk_log_fmt)
     return (int)strftime(str, len, JK_TIME_FORMAT, tms);
 }
 
-static int JK_METHOD log_to_file(jk_logger_t *l, int level, const char *what)
+static int JK_METHOD log_to_file(jk_logger_t *l, int level, int used, char *what)
 {
     if (l &&
         (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
         l->logger_private && what) {
         jk_file_logger_t *p = l->logger_private;
         if (p->logfile) {
+            what[used++] = '\n';
+            what[used] = '\0';
             fputs(what, p->logfile);
-            fputc('\n', p->logfile);
             /* [V] Flush the dam' thing! */
             fflush(p->logfile);
         }
@@ -453,8 +454,12 @@ int jk_log(jk_logger_t *l,
            const char *fmt, ...)
 {
     int rc = 0;
-    /* Need to reserve space for terminating zero byte. */
-    static int usable_size = HUGE_BUFFER_SIZE - 1;
+    /*
+     * Need to reserve space for terminating zero byte
+     * and platform specific line endings added during the call
+     * to the output routing.
+     */
+    static int usable_size = HUGE_BUFFER_SIZE - 3;
     if (!l || !file || !fmt) {
         return -1;
     }
@@ -524,8 +529,7 @@ int jk_log(jk_logger_t *l,
         } else {
             used = usable_size;
         }
-        buf[used] = 0;
-        l->log(l, level, buf);
+        l->log(l, level, used, buf);
 
 #ifdef NETWARE
         free(buf);

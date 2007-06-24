@@ -2512,43 +2512,40 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
     return overrides;
 }
 
-static int JK_METHOD jk_log_to_file(jk_logger_t *l,
-                                    int level, const char *what)
+static int JK_METHOD jk_log_to_file(jk_logger_t *l, int level,
+                                    int used, char *what)
 {
     if (l &&
         (l->level <= level || level == JK_LOG_REQUEST_LEVEL) &&
-        l->logger_private && what) {
-        unsigned sz = strlen(what);
-        apr_size_t wrote = sz;
-        char error[256];
-        if (sz) {
-            apr_status_t status;
-            jk_file_logger_t *p = l->logger_private;
-            if (p->jklogfp) {
-                apr_status_t rv;
-                rv = apr_global_mutex_lock(jk_log_lock);
-                if (rv != APR_SUCCESS) {
-                    ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL,
-                                 "apr_global_mutex_lock(jk_log_lock) failed");
-                    /* XXX: Maybe this should be fatal? */
-                }
-                status = apr_file_write(p->jklogfp, what, &wrote);
-                if (status != APR_SUCCESS) {
-                    apr_strerror(status, error, 254);
-                    ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
-                                 "mod_jk: jk_log_to_file %s failed: %s",
-                                 what, error);
-                }
+        l->logger_private && what && used > 0) {
+        jk_file_logger_t *p = l->logger_private;
+        if (p->jklogfp) {
+            apr_status_t rv;
+            apr_size_t wrote;
+            rv = apr_global_mutex_lock(jk_log_lock);
+            if (rv != APR_SUCCESS) {
+                ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL,
+                             "apr_global_mutex_lock(jk_log_lock) failed");
+                /* XXX: Maybe this should be fatal? */
+            }
 #if defined(WIN32)
-                apr_file_putc('\r', p->jklogfp);
+            what[used++] = '\r';
 #endif
-                apr_file_putc('\n', p->jklogfp);
-                rv = apr_global_mutex_unlock(jk_log_lock);
-                if (rv != APR_SUCCESS) {
-                    ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL,
-                                 "apr_global_mutex_unlock(jk_log_lock) failed");
-                    /* XXX: Maybe this should be fatal? */
-                }
+            what[used++] = '\n';
+            wrote = used;
+            rv = apr_file_write(p->jklogfp, what, &wrote);
+            if (rv != APR_SUCCESS) {
+                char error[256];
+                apr_strerror(rv, error, 254);
+                ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
+                             "mod_jk: jk_log_to_file %s failed: %s",
+                             what, error);
+            }
+            rv = apr_global_mutex_unlock(jk_log_lock);
+            if (rv != APR_SUCCESS) {
+                ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL,
+                             "apr_global_mutex_unlock(jk_log_lock) failed");
+                /* XXX: Maybe this should be fatal? */
             }
         }
 
