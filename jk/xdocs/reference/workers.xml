@@ -149,12 +149,6 @@ have information about the cut and couldn't handle it.
 </p>
 </directive>
 
-<directive name="retries" default="2" required="false">
-The number of retries that the worker will try in case of error returned from remote
-Tomcat. If the number of retries set is greater than two (the default value), on
-each retry after default an extra wait of 100ms will be inserted.
-</directive>
-
 <directive name="connection_pool_size" default="see text" required="false">
 This defines the number of connections made to the AJP backend that
 are maintained as a connection pool.
@@ -283,7 +277,7 @@ Specifies whether requests with SESSION ID's should be routed back to the same
 Tomcat worker. If sticky_session is set to <b>True</b> or <b>1</b> sessions are sticky, otherwise
 sticky_session is set to <b>False</b>. Set sticky_session to <b>False</b> when Tomcat
 is using a Session Manager which can persist session data across multiple
-instances of Tomcat. By default sticky_session is set to True.
+instances of Tomcat.
 </directive>
 
 <directive name="sticky_session_force" default="False" required="false">
@@ -358,6 +352,18 @@ shared memory lock. The balancer will work more accurately in case of
 Pessimistic locking, but can slow down the average response time.
 <p>
 This feature has been added in <b>jk 1.2.13</b>.
+</p>
+</directive>
+
+<directive name="retries" default="2" required="false">
+<warn>This directive also exists for normal workers.
+For those it has a <a href="#Advanced worker directives">different meaning</a>.</warn>
+If the load balancer can not get a free connection for a member worker
+from the pool, it will try again a number of times given by <b>retries</b>.
+Before each retry, it will make a small pause, starting with 50 milliseconds
+and doubling before each retry until a maximum of 100 milliseconds.
+<p>
+Until version <b>1.2.16</b> the default value was 3.
 </p>
 </directive>
 
@@ -571,27 +577,40 @@ This feature has been added in <b>jk 1.2.19</b>.
 </p>
 </directive>
 
+<directive name="retries" default="2" required="false">
+<warn>This directive also exists for load balancer workers.
+For those it has a <a href="#Load balancing directives">different meaning</a>.</warn>
+The maximum number of times that the worker will send a request to Tomcat
+in case of a communication error. Each retry will be done over another
+connection. The first time already gets counted, so retries=2 means
+one retry after error. If the value is greater than the default value, on
+each additional retry an extra wait of 100ms will be inserted.
+<p>
+See also the attribute <b>recovery_options</b> for a more fine-grained control
+of retries.
+</p>
+<p>
+Until version <b>1.2.16</b> the default value was 3.
+</p>
+</directive>
+
 <directive name="recovery_options" default="0" required="false">
-Only used for a member worker of a load balancer.
+Recovery options influence, how we should handle retries,
+in case we detect a problem with Tomcat.
+How often we will retry is controlled by the attribute <b>retries</b>.
 <p>
-Recovery options property told webserver how to handle recovery when
-it detect that tomcat failed.
-By default, webserver will forward the request to another tomcat in LB mode
-(or to another ajp thread in ajp13 mode).
-values are : 0 (full recovery), 1 (don't recover if tomcat failed after getting the request),
-2 (don't recover if tomcat failed after sending the headers to client), 3 (don't recover if tomcat failed
-getting the request or after sending the headers to client).
+This attribute is a bit mask. The following bits are allowed:<br/>
+1: don't recover if tomcat failed after getting the request<br/>
+2: don't recover if tomcat failed after sending the headers to client<br/>
+4: close the connection to tomcat, if we detect an error when writing back
+the answer to the client (browser)<br/>
+8: always recover requests for HTTP method HEAD (even if Bits 1 or 2 are set)<br/>
+16: always recover requests for HTTP method GET (even if Bits 1 or 2 are set)<br/>
 </p>
 <p>
-This features has been added in <b>jk 1.2.6</b> to avoid problem with hung/broken tomcat's
-and works on all servlet engines supporting ajp13.
-Full recovery by default.
-</p>
-<p>If the value 4 is added to the recovery options, the connection
-between the webserver and tomcat will be closed if the client connection
-to the webserver is terminated during the request/response cycle. This allows
-to inform the servlet engine about broken client connections during lengthy operations.
-This feature has been added in <b>jk 1.2.16</b>
+This features has been added in <b>jk 1.2.6</b>.
+Option 4 has been added in version <b>1.2.16</b>,
+options 8 and 16 in version <b>1.2.24</b>.
 </p>
 </directive>
 

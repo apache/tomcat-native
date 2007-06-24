@@ -27,6 +27,14 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+      Common: Add recovery options for recovering idempotent http methods
+      HEAD and GET. (rjung)
+      </update>
+      <fix>
+      Correct documentation for worker attributes retries and
+      recovery_options. (rjung)
+      </fix>
       <fix>
       Make writing log lines and line endings more atomic. (rjung)
       </fix>

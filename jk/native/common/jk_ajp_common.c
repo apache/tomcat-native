@@ -1604,6 +1604,20 @@ static int ajp_get_reply(jk_endpoint_t *e,
                         op->recoverable = JK_FALSE;
                 }
 
+                /*
+                 * We revert back to recoverable, if recovery_opts allow it for GET or HEAD
+                 */
+                if (op->recoverable == JK_FALSE) {
+                    if (p->worker->recovery_opts & RECOVER_ALWAYS_HTTP_HEAD) {
+                        if (!strcmp(s->method, "HEAD"))
+                            op->recoverable = JK_TRUE;
+                    }
+                    else if (p->worker->recovery_opts & RECOVER_ALWAYS_HTTP_GET) {
+                        if (!strcmp(s->method, "GET"))
+                            op->recoverable = JK_TRUE;
+                    }
+                }
+
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
@@ -1630,6 +1644,21 @@ static int ajp_get_reply(jk_endpoint_t *e,
                  */
                 if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
                     op->recoverable = JK_FALSE;
+
+                /*
+                 * We revert back to recoverable, if recovery_opts allow it for GET or HEAD
+                 */
+                if (op->recoverable == JK_FALSE) {
+                    if (p->worker->recovery_opts & RECOVER_ALWAYS_HTTP_HEAD) {
+                        if (!strcmp(s->method, "HEAD"))
+                            op->recoverable = JK_TRUE;
+                    }
+                    else if (p->worker->recovery_opts & RECOVER_ALWAYS_HTTP_GET) {
+                        if (!strcmp(s->method, "GET"))
+                            op->recoverable = JK_TRUE;
+                    }
+                }
+
                 /*
                  * we want to display the webservers error page, therefore
                  * we return JK_FALSE
@@ -1661,6 +1690,20 @@ static int ajp_get_reply(jk_endpoint_t *e,
                  */
                 if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCSENDHEADER)
                     op->recoverable = JK_FALSE;
+
+                /*
+                 * We revert back to recoverable, if recovery_opts allow it for GET or HEAD
+                 */
+                if (op->recoverable == JK_FALSE) {
+                    if (p->worker->recovery_opts & RECOVER_ALWAYS_HTTP_HEAD) {
+                        if (!strcmp(s->method, "HEAD"))
+                            op->recoverable = JK_TRUE;
+                    }
+                    else if (p->worker->recovery_opts & RECOVER_ALWAYS_HTTP_GET) {
+                        if (!strcmp(s->method, "GET"))
+                            op->recoverable = JK_TRUE;
+                    }
+                }
 
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -1832,7 +1875,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
         err = ajp_send_request(e, s, l, p, op);
         if (err == JK_TRUE) {
 
-            /* If we have the no recoverable error, it's probably because
+            /* If we have an unrecoverable error, it's probably because
              * the sender (browser) stopped sending data before the end
              * (certainly in a big post)
              */
@@ -1908,7 +1951,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 }
             }
             else {
-                /* if we can't get reply, check if no recover flag was set
+                /* if we can't get reply, check if unrecoverable flag was set
                  * if is_recoverable_error is cleared, we have started
                  * receiving upload data and we must consider that
                  * operation is no more recoverable
