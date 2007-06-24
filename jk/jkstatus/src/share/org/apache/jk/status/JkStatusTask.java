@@ -258,7 +258,10 @@ public class JkStatusTask extends BaseRedirectorHelperTask {
                                         + " status=" + member.getStatus()
                                         + " host=" + member.getAddress());
                             }
-                            if (member.getState() != null && !("OK".equals(member.getState()) || "N/A".equals(member.getState())) ){
+                            if (member.getState() != null &&
+                                !("OK".equals(member.getState()) ||
+                                  "N/A".equals(member.getState()) ||
+                                  "OK/IDLE".equals(member.getState())) ){
                                 error.append(" worker name=" + member.getName()
                                         + " state=" + member.getState()
                                         + " host=" + member.getAddress());

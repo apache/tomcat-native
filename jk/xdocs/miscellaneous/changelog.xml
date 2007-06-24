@@ -28,6 +28,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      JkStatus: Added OK/IDLE as the successor of N/A. (rjung)
+      </update>
+      <update>
       Status worker: Renamed runtime states. All states have a major
       state (OK or ERR) and a substate. Changed the name N/A to OK/IDLE.
       Added docs about the meaning of the states to the status worker

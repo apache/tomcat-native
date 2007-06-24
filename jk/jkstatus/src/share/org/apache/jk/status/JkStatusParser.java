@@ -127,6 +127,11 @@ import org.apache.tomcat.util.digester.Digester;
  *
  *
  * </code>
+ * <br/>
+ * mod_jk 1.2.24 runtime state N/A changed to OK/IDLE:<br/>
+ * <code>
+ *        state="OK/IDLE"
+ * </code>
  * @author Peter Rossbach
  * @version $Revision$ $Date$
  * @since 5.5.10
