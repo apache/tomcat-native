@@ -28,6 +28,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      JkStatus: Added manipulation of max_reply_timeouts. (rjung)
+      </update>
+      <update>
       LB, Status: Add feature max_reply_timeouts, to make lb tolerant against
       occasional long running requests. (rjung)
       </update>

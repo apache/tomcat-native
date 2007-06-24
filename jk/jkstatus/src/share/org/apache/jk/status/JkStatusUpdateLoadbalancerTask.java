@@ -28,7 +28,7 @@ import org.apache.tools.ant.BuildException;
  * 
  * 
  * @author Peter Rossbach
- * @version $Revision:$
+ * @version $Revision$
  * @since mod_jk 1.2.20
  */
 public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
@@ -51,6 +51,7 @@ public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
    
     protected int lockCode = -1;
     protected String lock;
+    protected int maxReplyTimeouts = -1;
 
     /**
      * Return descriptive information about this implementation and the
@@ -199,9 +200,23 @@ public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
 	}
 
 	/**
+	 * @return the maxReplyTimeouts
+	 */
+	public int getMaxReplyTimeouts() {
+		return maxReplyTimeouts;
+	}
+
+	/**
+	 * @param maxReplyTimeouts the maxReplyTimeouts to set
+	 */
+	public void setMaxReplyTimeouts(int maxReplyTimeouts) {
+		this.maxReplyTimeouts = maxReplyTimeouts;
+	}
+
+	/**
      * Create JkStatus worker update link
      * <ul>
-     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=loadbalancer&lm=1&ll=1&lr=2&lt=60&ls=true&lf=false
+     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=loadbalancer&lm=1&ll=1&lr=2&lt=60&ls=true&lf=false&lx=0
      * <br/>
      *
      * 
@@ -215,6 +230,7 @@ public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
      * <li><b>lt:<b/> recover wait timeout</li>
      * <li><b>ls:<b/> sticky session</li>
      * <li><b>lf:<b/> force sticky session</li>
+     * <li><b>lx:<b/> max reply timeouts</li>
      * </ul>
      * <ul>
      * <li>lm=1 or Requests</li>
@@ -268,6 +284,10 @@ public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
  				sb.append("&ll=");
  				sb.append(lock);
  			}
+			if (maxReplyTimeouts >= 0) {
+				sb.append("&lx=");
+				sb.append(maxReplyTimeouts);
+			}
             
         } catch (UnsupportedEncodingException e) {
             throw new BuildException("Invalid 'charset' attribute: "
