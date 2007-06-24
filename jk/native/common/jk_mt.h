@@ -28,7 +28,7 @@
 
 
 #if defined(WIN32)
-#define jk_gettid()    ((int)GetCurrentThreadId())
+#define jk_gettid()    ((jk_uint32_t)GetCurrentThreadId())
 #elif defined(NETWARE) && !defined(__NOVELL_LIBC__)
 #define getpid()       ((int)GetThreadGroupID())
 #endif
@@ -71,7 +71,7 @@ typedef pthread_mutex_t JK_CRIT_SEC;
 #define JK_LEAVE_CS(x, rc)\
             if(pthread_mutex_unlock(x))     rc = JK_FALSE; else rc = JK_TRUE
 
-int jk_gettid(void);
+jk_uint32_t jk_gettid(void);
 #endif /* WIN32 */
 
 #else /* !_MT_CODE */

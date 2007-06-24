@@ -499,7 +499,7 @@ int jk_log(jk_logger_t *l,
             /* Performance is no issue, because with production log levels */
             /* we only call it often, if we have a lot of errors */
             rc = snprintf(&buf[used], usable_size - used,
-                             "[%" JK_PID_T_FMT ":%04d] ", getpid(), jk_gettid());
+                             "[%" JK_PID_T_FMT ":%" JK_UINT32_T_FMT "] ", getpid(), jk_gettid());
             used += rc;
             if (rc < 0 || usable_size - used < 8) {
                 return 0;
@@ -1697,17 +1697,27 @@ void jk_init_ws_service(jk_ws_service_t *s)
 }
 
 #ifdef _MT_CODE_PTHREAD
-int jk_gettid()
+jk_uint32_t jk_gettid()
 {
-    pthread_t t = pthread_self();
+    union {
+        pthread_t tid;
+        jk_uint64_t alignme;
+    } u;
+    u.tid = pthread_self();
 #ifdef AS400
     /* OS400 use 64 bits ThreadId, get only low 32 bits for now */
     pthread_id_np_t       tid;
-    pthread_getunique_np(&t, &tid);
-    return ((int)(tid.intId.lo & 0xFFFFFFFF));
+    pthread_getunique_np(&(u.tid), &tid);
+    return ((jk_uint32_t)(tid.intId.lo & 0xFFFFFFFF));
 #else
-    int tid = ((int)t) & 0xFFFF;
-    return tid;
+    switch(sizeof(pthread_t)) {
+    case sizeof(jk_uint32_t):
+        return *(jk_uint32_t *)&u.tid;
+    case sizeof(jk_uint64_t):
+        return (*(jk_uint64_t *)&u.tid) & 0xFFFFFFFF;
+    default:
+        return 0;
+    }
 #endif /* AS400 */
 }
 #endif
@@ -1815,4 +1825,3 @@ void jk_ebcdic2ascii(char *src, char *dst) {
 }
 
 #endif
-

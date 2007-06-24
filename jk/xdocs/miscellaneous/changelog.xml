@@ -28,6 +28,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Logging: handle LWP IDs as 32 Bit unsigned. Try to make
+      it work, although pthread IDs are opaque. (rjung)
+      </update>
+      <update>
       JkStatus: Added manipulation of max_reply_timeouts. (rjung)
       </update>
       <update>
