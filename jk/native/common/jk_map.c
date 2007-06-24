@@ -395,7 +395,66 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
     return rc;
 }
 
-int jk_map_read_property(jk_map_t *m, const char *str, int allow_duplicates, jk_logger_t *l)
+
+static int jk_map_validate_property(char *prp, jk_logger_t *l)
+{
+    int off = (int)strlen(prp) - (int)JK_MAP_REFERENCE_SZ;
+    /* check the worker properties */
+    if (off <= 0 || strncmp(&prp[off], JK_MAP_REFERENCE, JK_MAP_REFERENCE_SZ) ) {
+        if (!jk_is_valid_property(prp)) {
+            jk_log(l, JK_LOG_ERROR,
+                   "The attribute '%s' is not supported - please check"
+                   " the documentation for the supported attributes.",
+                   prp);
+            return JK_FALSE;
+        }
+        if (jk_is_deprecated_property(prp)) {
+            jk_log(l, JK_LOG_WARNING,
+                   "The attribute '%s' is deprecated - please check"
+                   " the documentation for the correct replacement.",
+                   prp);
+        }
+    }
+    return JK_TRUE;
+}
+
+static int jk_map_handle_duplicates(jk_map_t *m, const char *prp, char *v,
+                                    int treatment, jk_logger_t *l)
+{
+    const char *oldv = jk_map_get_string(m, prp, NULL);
+    if (oldv) {
+        if ((treatment == JK_MAP_HANDLE_DUPLICATES)
+            && jk_is_unique_property(prp) == JK_FALSE) {
+            char *tmpv = jk_pool_alloc(&m->p,
+                                       strlen(v) + strlen(oldv) + 3);
+            if (tmpv) {
+                char sep = '*';
+                if (jk_is_path_property(prp))
+                    sep = PATH_SEPERATOR;
+                else if (jk_is_cmd_line_property(prp))
+                    sep = ' ';
+                else if (jk_is_list_property(prp))
+                    sep = ',';
+                sprintf(tmpv, "%s%c%s", oldv, sep, v);
+            }
+            v = tmpv;
+            return JK_FALSE;
+        }
+        else {
+            jk_log(l, JK_LOG_WARNING,
+                   "Duplicate key '%s' detected - previous value '%s'"
+                   " will be overwritten with '%s'.",
+                   prp, oldv ? oldv : "(null)", v ? v : "(null)");
+            return JK_TRUE;
+        }
+    }
+    else {
+        return JK_TRUE;
+    }
+}
+
+int jk_map_read_property(jk_map_t *m, const char *str,
+                         int treatment, jk_logger_t *l)
 {
     int rc = JK_TRUE;
     char buf[LENGTH_OF_LINE + 1];
@@ -417,52 +476,15 @@ int jk_map_read_property(jk_map_t *m, const char *str, int allow_duplicates, jk_
             trim(prp);
             trim(v);
             if (strlen(v) && strlen(prp)) {
-                const char *oldv;
-                int off = (int)strlen(prp) - (int)JK_MAP_REFERENCE_SZ;
-                /* check the worker properties */
-                if (off <= 0 || strncmp(&prp[off], JK_MAP_REFERENCE, JK_MAP_REFERENCE_SZ) ) {
-                    if (!jk_is_valid_property(prp)) {
-                        jk_log(l, JK_LOG_ERROR,
-                               "The attribute '%s' is not supported - please check"
-                               " the documentation for the supported attributes.",
-                               prp);
-                        return JK_FALSE;
-                    }
-                    if (jk_is_deprecated_property(prp)) {
-                        jk_log(l, JK_LOG_WARNING,
-                               "The attribute '%s' is deprecated - please check"
-                               " the documentation for the correct replacement.",
-                               prp);
-                    }
-                }
-                oldv = jk_map_get_string(m, prp, NULL);
-                v = jk_map_replace_properties(m, v);
-                if (oldv) {
-                    if (allow_duplicates && jk_is_unique_property(prp) == JK_FALSE) {
-                        char *tmpv = jk_pool_alloc(&m->p,
-                                           strlen(v) + strlen(oldv) + 3);
-                        if (tmpv) {
-                            char sep = '*';
-                            if (jk_is_path_property(prp))
-                                sep = PATH_SEPERATOR;
-                            else if (jk_is_cmd_line_property(prp))
-                                sep = ' ';
-                            else if (jk_is_list_property(prp))
-                                sep = ',';
-                            sprintf(tmpv, "%s%c%s", oldv, sep, v);
-                        }
-                        v = tmpv;
-                    }
-                    else {
-                        jk_log(l, JK_LOG_WARNING,
-                               "Duplicate key '%s' detected - previous value '%s'"
-                               " will be overwritten with '%s'.",
-                               prp, oldv ? oldv : "(null)", v ? v : "(null)");
-                        v = jk_pool_strdup(&m->p, v);
-                    }
+                if (treatment == JK_MAP_HANDLE_RAW) {
+                    v = jk_pool_strdup(&m->p, v);
                 }
                 else {
-                    v = jk_pool_strdup(&m->p, v);
+                    if (jk_map_validate_property(prp, l) == JK_FALSE)
+                        return JK_FALSE;
+                    v = jk_map_replace_properties(m, v);
+                    if (jk_map_handle_duplicates(m, prp, v, treatment, l) == JK_TRUE)
+                        v = jk_pool_strdup(&m->p, v);
                 }
                 if (v) {
                     jk_map_put(m, prp, v, NULL);
@@ -478,7 +500,8 @@ int jk_map_read_property(jk_map_t *m, const char *str, int allow_duplicates, jk_
 }
 
 
-int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified, int allow_duplicates, jk_logger_t *l)
+int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified,
+                           int treatment, jk_logger_t *l)
 {
     int rc = JK_FALSE;
 
@@ -502,7 +525,7 @@ int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified, int all
             while (NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
                 trim_prp_comment(prp);
                 if (*prp) {
-                    if ((rc = jk_map_read_property(m, prp, allow_duplicates, l)) == JK_FALSE)
+                    if ((rc = jk_map_read_property(m, prp, treatment, l)) == JK_FALSE)
                         break;
                 }
             }
@@ -806,78 +829,3 @@ int jk_map_inherit_properties(jk_map_t *m, const char *from, const char *to, jk_
     }
     return rc;
 }
-
-int jk_map_load_property(jk_map_t *m, const char *str, jk_logger_t *l)
-{
-    int rc = JK_TRUE;
-    char buf[LENGTH_OF_LINE + 1];
-    char *prp = &buf[0];
-
-    if (strlen(str) > LENGTH_OF_LINE) {
-        jk_log(l, JK_LOG_WARNING,
-               "Line to long (%d > %d), ignoring entry",
-               strlen(str), LENGTH_OF_LINE);
-        return JK_FALSE;
-    }
-
-    strcpy(prp, str);
-    if (trim(prp)) {
-        char *v = strchr(prp, '=');
-        if (v) {
-            *v = '\0';
-            v++;
-            trim(prp);
-            trim(v);
-            if (strlen(v) && strlen(prp)) {
-                v = jk_pool_strdup(&m->p, v);
-                if (v) {
-                    jk_map_put(m, prp, v, NULL);
-                }
-                else {
-                    JK_LOG_NULL_PARAMS(l);
-                    rc = JK_FALSE;
-                }
-            }
-        }
-    }
-    return rc;
-}
-
-
-int jk_map_load_properties(jk_map_t *m, const char *f, time_t *modified, jk_logger_t *l)
-{
-    int rc = JK_FALSE;
-
-    if (m && f) {
-        FILE *fp;
-        struct stat statbuf;
-        if (jk_stat(f, &statbuf) == -1)
-            return JK_FALSE;
-#if defined(AS400) && !defined(AS400_UTF8)
-        fp = fopen(f, "r, o_ccsid=0");
-#else
-        fp = fopen(f, "r");
-#endif
-
-        if (fp) {
-            char buf[LENGTH_OF_LINE + 1];
-            char *prp;
-
-            rc = JK_TRUE;
-
-            while (NULL != (prp = fgets(buf, LENGTH_OF_LINE, fp))) {
-                trim_prp_comment(prp);
-                if (*prp) {
-                    if ((rc = jk_map_load_property(m, prp, l)) == JK_FALSE)
-                        break;
-                }
-            }
-            fclose(fp);
-            if (modified)
-                *modified = statbuf.st_mtime;
-        }
-    }
-
-    return rc;
-}
-

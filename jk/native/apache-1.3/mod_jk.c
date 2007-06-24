@@ -1822,7 +1822,8 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    if (jk_map_read_property(conf->worker_properties, line, 1, conf->log) == JK_FALSE)
+    if (jk_map_read_property(conf->worker_properties, line,
+                             JK_MAP_HANDLE_DUPLICATES, conf->log) == JK_FALSE)
         return ap_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line, NULL);
 
     return NULL;
@@ -2628,7 +2629,8 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
 */
 
     if ((conf->worker_file != NULL) &&
-        !jk_map_read_properties(init_map, conf->worker_file, NULL, 1, conf->log)) {
+        !jk_map_read_properties(init_map, conf->worker_file, NULL,
+                                JK_MAP_HANDLE_DUPLICATES, conf->log)) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
                       "Error in reading worker properties from '%s'",
                       conf->worker_file);

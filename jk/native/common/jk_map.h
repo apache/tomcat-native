@@ -30,6 +30,9 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
+#define JK_MAP_HANDLE_NORMAL     0
+#define JK_MAP_HANDLE_DUPLICATES 1
+#define JK_MAP_HANDLE_RAW        2
 
 struct jk_map;
 typedef struct jk_map jk_map_t;
@@ -67,19 +70,15 @@ int jk_map_add(jk_map_t *m, const char *name, const void *value);
 
 int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old);
 
-int jk_map_read_property(jk_map_t *m, const char *str, int allow_duplicates, jk_logger_t *l);
+int jk_map_read_property(jk_map_t *m, const char *str, int treatment, jk_logger_t *l);
 
-int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified, int allow_duplicates, jk_logger_t *l);
+int jk_map_read_properties(jk_map_t *m, const char *f, time_t *modified, int treatment, jk_logger_t *l);
 
 int jk_map_size(jk_map_t *m);
 
 const char *jk_map_name_at(jk_map_t *m, int idex);
 
 void *jk_map_value_at(jk_map_t *m, int idex);
-
-int jk_map_load_property(jk_map_t *m, const char *str, jk_logger_t *l);
-
-int jk_map_load_properties(jk_map_t *m, const char *f, time_t *modified, jk_logger_t *l);
 
 /**
  *  Replace $(property) in value.

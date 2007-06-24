@@ -28,6 +28,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Common: Refactored and unified jk_map_read_prop* and jk_map_load_prop*
+      for all use cases. (rjung)
+      </update>
+      <update>
       Common/Apache/IIS/Netscape: Add an option to check decoded URLs for
       potentially malicious constructions. (rjung)
       </update>

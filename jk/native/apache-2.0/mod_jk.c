@@ -1859,7 +1859,8 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
         return err_string;
     }
 
-    if (jk_map_read_property(conf->worker_properties, line, 1, conf->log) == JK_FALSE)
+    if (jk_map_read_property(conf->worker_properties, line,
+                             JK_MAP_HANDLE_DUPLICATES, conf->log) == JK_FALSE)
         return apr_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line, NULL);
 
     return NULL;
@@ -2746,7 +2747,8 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     jk_set_worker_def_cache_size(mpm_threads);
 
     if ((conf->worker_file != NULL) &&
-        !jk_map_read_properties(init_map, conf->worker_file, NULL, 1, conf->log)) {
+        !jk_map_read_properties(init_map, conf->worker_file, NULL,
+                                JK_MAP_HANDLE_DUPLICATES, conf->log)) {
         ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
                      "Error in reading worker properties from '%s'",
                      conf->worker_file);
