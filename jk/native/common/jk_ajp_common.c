@@ -1587,7 +1587,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
     while (1) {
         int rc = 0;
 
-        /* If we set a reply timeout, check it something is available */
+        /* If we set a reply timeout, check if something is available */
         if (p->worker->reply_timeout > 0) {
             if (ajp_is_input_event(p, p->worker->reply_timeout, l) ==
                 JK_FALSE) {
@@ -1619,7 +1619,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
                 }
 
                 JK_TRACE_EXIT(l);
-                return JK_FALSE;
+                return JK_REPLY_TIMEOUT;
             }
         }
 
@@ -1810,7 +1810,8 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                                  jk_ws_service_t *s,
                                  jk_logger_t *l, int *is_error)
 {
-    int i, err;
+    int i;
+    int err = JK_TRUE;
     ajp_operation_t oper;
     ajp_operation_t *op = &oper;
     ajp_endpoint_t *p;
@@ -1963,6 +1964,10 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                            "without recovery in send loop attempt=%d",
                            p->worker->name, i);
                     JK_TRACE_EXIT(l);
+                    if (err == JK_REPLY_TIMEOUT) {
+                        *is_error = JK_HTTP_GATEWAY_TIME_OUT;
+                        return JK_REPLY_TIMEOUT;
+                    }
                     return JK_FALSE;
                 }
                 jk_log(l, JK_LOG_INFO,
@@ -2022,6 +2027,10 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
            p->worker->name);
 
     JK_TRACE_EXIT(l);
+    if (err == JK_REPLY_TIMEOUT) {
+        *is_error = JK_HTTP_GATEWAY_TIME_OUT;
+        return JK_REPLY_TIMEOUT;
+    }
     return JK_FALSE;
 }
 

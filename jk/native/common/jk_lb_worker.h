@@ -136,6 +136,7 @@ struct lb_worker
     int          sticky_session;
     int          sticky_session_force;
     int          recover_wait_time;
+    int          max_reply_timeouts;
     int          retries;
     int          lbmethod;
     int          lblock;

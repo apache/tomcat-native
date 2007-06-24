@@ -73,6 +73,7 @@
 
 #define JK_STATUS_ARG_LB_RETRIES           ("lr")
 #define JK_STATUS_ARG_LB_RECOVER_TIME      ("lt")
+#define JK_STATUS_ARG_LB_MAX_REPLY_TIMEOUTS ("lx")
 #define JK_STATUS_ARG_LB_STICKY            ("ls")
 #define JK_STATUS_ARG_LB_STICKY_FORCE      ("lf")
 #define JK_STATUS_ARG_LB_METHOD            ("lm")
@@ -80,6 +81,7 @@
 
 #define JK_STATUS_ARG_LB_TEXT_RETRIES      "Retries"
 #define JK_STATUS_ARG_LB_TEXT_RECOVER_TIME "Recover Wait Time"
+#define JK_STATUS_ARG_LB_TEXT_MAX_REPLY_TIMEOUTS "Max Reply Timeouts"
 #define JK_STATUS_ARG_LB_TEXT_STICKY       "Sticky Sessions"
 #define JK_STATUS_ARG_LB_TEXT_STICKY_FORCE "Force Sticky Sessions"
 #define JK_STATUS_ARG_LB_TEXT_METHOD       "LB Method"
@@ -188,6 +190,7 @@
                                            "<th>" JK_STATUS_ARG_LB_TEXT_METHOD "</th>" \
                                            "<th>" JK_STATUS_ARG_LB_TEXT_LOCK "</th>" \
                                            "<th>" JK_STATUS_ARG_LB_TEXT_RECOVER_TIME "</th>" \
+                                           "<th>" JK_STATUS_ARG_LB_TEXT_MAX_REPLY_TIMEOUTS "</th>" \
                                            "</tr>\n"
 #define JK_STATUS_SHOW_LB_ROW              "<tr>" \
                                            "<td>%s</td>" \
@@ -197,6 +200,7 @@
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
                                            "<td>%d</td>" \
+                                           "<td>%d</td>" \
                                            "</tr>\n"
 #define JK_STATUS_SHOW_MEMBER_HEAD         "<tr>" \
                                            "<th>&nbsp;</th><th>Name</th><th>Type</th>" \
@@ -204,7 +208,7 @@
                                            "<th>Act</th><th>State</th>" \
                                            "<th>D</th><th>F</th><th>M</th>" \
                                            "<th>V</th><th>Acc</th>" \
-                                           "<th>Err</th><th>CE</th>" \
+                                           "<th>Err</th><th>CE</th><th>RE</th>" \
                                            "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th>" \
                                            "<th>" JK_STATUS_ARG_LBM_TEXT_ROUTE "</th>" \
                                            "<th>RR</th><th>Cd</th><th>Rs</th>" \
@@ -220,6 +224,7 @@
                                            "<td>%" JK_UINT64_T_FMT "</td>" \
                                            "<td>%" JK_UINT64_T_FMT "</td>" \
                                            "<td>%" JK_UINT64_T_FMT "</td>" \
+                                           "<td>%" JK_UINT32_T_FMT "</td>" \
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
                                            "<td>%s</td>" \
@@ -1369,7 +1374,8 @@ static void display_worker_lb(jk_ws_service_t *s,
                   lb->retries,
                   jk_lb_get_method(lb, l),
                   jk_lb_get_lock(lb, l),
-                  lb->recover_wait_time);
+                  lb->recover_wait_time,
+                  lb->max_reply_timeouts);
         jk_puts(s, "</table>\n<br/>\n");
 
         jk_puts(s, "<table><tr>"
@@ -1393,6 +1399,7 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_print_xml_att_string(s, 4, "sticky_session_force", jk_get_bool(lb->sticky_session_force));
         jk_print_xml_att_int(s, 4, "retries", lb->retries);
         jk_print_xml_att_int(s, 4, "recover_time", lb->recover_wait_time);
+        jk_print_xml_att_int(s, 4, "max_reply_timeouts", lb->max_reply_timeouts);
         jk_print_xml_att_string(s, 4, "method", jk_lb_get_method(lb, l));
         jk_print_xml_att_string(s, 4, "lock", jk_lb_get_lock(lb, l));
         jk_print_xml_att_int(s, 4, "member_count", lb->num_of_workers);
@@ -1416,6 +1423,7 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_printf(s, " sticky_session_force=%s", jk_get_bool(lb->sticky_session_force));
         jk_printf(s, " retries=%d", lb->retries);
         jk_printf(s, " recover_time=%d", lb->recover_wait_time);
+        jk_printf(s, " max_reply_timeouts=%d", lb->max_reply_timeouts);
         jk_printf(s, " method=%s", jk_lb_get_method(lb, l));
         jk_printf(s, " lock=%s", jk_lb_get_lock(lb, l));
         jk_printf(s, " member_count=%d", lb->num_of_workers);
@@ -1438,6 +1446,7 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_print_prop_att_string(s, w, name, "sticky_session_force", jk_get_bool(lb->sticky_session_force));
         jk_print_prop_att_int(s, w, name, "retries", lb->retries);
         jk_print_prop_att_int(s, w, name, "recover_time", lb->recover_wait_time);
+        jk_print_prop_att_int(s, w, name, "max_reply_timeouts", lb->max_reply_timeouts);
         jk_print_prop_att_string(s, w, name, "method", jk_lb_get_method(lb, l));
         jk_print_prop_att_string(s, w, name, "lock", jk_lb_get_lock(lb, l));
         jk_print_prop_att_int(s, w, name, "member_count", lb->num_of_workers);
@@ -1518,6 +1527,7 @@ static void display_worker_lb(jk_ws_service_t *s,
                           wr->s->elected,
                           wr->s->errors,
                           wr->s->client_errors,
+                          wr->s->reply_timeouts,
                           status_strfsize(wr->s->transferred, buf_wr),
                           status_strfsize(wr->s->readed, buf_rd),
                           wr->s->busy,
@@ -1549,6 +1559,7 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_print_xml_att_uint64(s, 8, "elected", wr->s->elected);
                 jk_print_xml_att_uint32(s, 8, "errors", wr->s->errors);
                 jk_print_xml_att_uint32(s, 8, "client_errors", wr->s->client_errors);
+                jk_print_xml_att_uint32(s, 8, "reply_timeouts", wr->s->reply_timeouts);
                 jk_print_xml_att_uint64(s, 8, "transferred", wr->s->transferred);
                 jk_print_xml_att_uint64(s, 8, "read", wr->s->readed);
                 jk_print_xml_att_int(s, 8, "busy", wr->s->busy);
@@ -1579,6 +1590,7 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_printf(s, " elected=%" JK_UINT64_T_FMT, wr->s->elected);
                 jk_printf(s, " errors=%" JK_UINT32_T_FMT, wr->s->errors);
                 jk_printf(s, " client_errors=%" JK_UINT32_T_FMT, wr->s->client_errors);
+                jk_printf(s, " reply_timeouts=%" JK_UINT32_T_FMT, wr->s->reply_timeouts);
                 jk_printf(s, " transferred=%" JK_UINT64_T_FMT, wr->s->transferred);
                 jk_printf(s, " read=%" JK_UINT64_T_FMT, wr->s->readed);
                 jk_printf(s, " busy=%d", wr->s->busy);
@@ -1607,6 +1619,7 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_print_prop_att_uint64(s, w, wr->s->name, "elected", wr->s->elected);
                 jk_print_prop_att_uint32(s, w, wr->s->name, "errors", wr->s->errors);
                 jk_print_prop_att_uint32(s, w, wr->s->name, "client_errors", wr->s->client_errors);
+                jk_print_prop_att_uint32(s, w, wr->s->name, "reply_timeouts", wr->s->reply_timeouts);
                 jk_print_prop_att_uint64(s, w, wr->s->name, "transferred", wr->s->transferred);
                 jk_print_prop_att_uint64(s, w, wr->s->name, "read", wr->s->readed);
                 jk_print_prop_att_int(s, w, wr->s->name, "busy", wr->s->busy);
@@ -1862,6 +1875,10 @@ static void form_worker(jk_ws_service_t *s,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LB_RECOVER_TIME, "\" type=\"text\" ", NULL);
     jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->recover_wait_time);
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_LB_TEXT_MAX_REPLY_TIMEOUTS,
+            ":</td><td><input name=\"",
+            JK_STATUS_ARG_LB_MAX_REPLY_TIMEOUTS, "\" type=\"text\" ", NULL);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->max_reply_timeouts);
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LB_TEXT_STICKY,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LB_STICKY, "\" type=\"checkbox\"", NULL);
@@ -2162,6 +2179,14 @@ static void commit_worker(jk_ws_service_t *s,
                "Status worker '%s' setting 'recover_time' for lb worker '%s' to '%i'",
                w->name, name, i);
         lb->recover_wait_time = i;
+    }
+    i = status_get_int(p, JK_STATUS_ARG_LB_MAX_REPLY_TIMEOUTS,
+                       lb->max_reply_timeouts, l);
+    if (i != lb->max_reply_timeouts && i >= 0) {
+        jk_log(l, JK_LOG_INFO,
+               "Status worker '%s' setting 'max_reply_timeouts' for lb worker '%s' to '%i'",
+               w->name, name, i);
+        lb->max_reply_timeouts = i;
     }
     i = status_get_bool(p, JK_STATUS_ARG_LB_STICKY, 0, l);
     if (i != lb->sticky_session) {
@@ -2480,6 +2505,7 @@ static void display_legend(jk_ws_service_t *s,
             "<tr><th>Acc</th><td>Number of requests</td></tr>\n"
             "<tr><th>Err</th><td>Number of failed requests</td></tr>\n"
             "<tr><th>CE</th><td>Number of client errors</td></tr>\n"
+            "<tr><th>RE</th><td>Number of reply timeouts (decayed)</td></tr>\n"
             "<tr><th>Wr</th><td>Number of bytes transferred/min</td></tr>\n"
             "<tr><th>Rd</th><td>Number of bytes read/min</td></tr>\n"
             "<tr><th>Busy</th><td>Current number of busy connections</td></tr>\n"
@@ -2843,6 +2869,7 @@ static int reset_worker(jk_ws_service_t *s,
         for (i = 0; i < lb->num_of_workers; i++) {
             wr = &(lb->lb_workers[i]);
             wr->s->client_errors    = 0;
+            wr->s->reply_timeouts   = 0;
             wr->s->elected          = 0;
             wr->s->elected_snapshot = 0;
             wr->s->error_time       = 0;
@@ -2864,6 +2891,7 @@ static int reset_worker(jk_ws_service_t *s,
             return JK_FALSE;
         }
         wr->s->client_errors    = 0;
+        wr->s->reply_timeouts   = 0;
         wr->s->elected          = 0;
         wr->s->elected_snapshot = 0;
         wr->s->error_time       = 0;
@@ -2905,6 +2933,27 @@ static int recover_worker(jk_ws_service_t *s,
     }
 
     if (wr->s->state == JK_LB_STATE_ERROR) {
+        lb_worker_t *lb = NULL;
+
+        /* We need an lb to correct the lb_value */
+        if (check_valid_lb(s, p, jw, worker, &lb, 0, l) == JK_FALSE) {
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
+
+        if (lb->lbmethod != JK_LB_METHOD_BUSYNESS) {
+            unsigned int i;
+            jk_uint64_t curmax = 0;
+
+            for (i = 0; i < lb->num_of_workers; i++) {
+                if (lb->lb_workers[i].s->lb_value > curmax) {
+                    curmax = lb->lb_workers[i].s->lb_value;
+                }
+            }
+            wr->s->lb_value = curmax;
+        }
+
+        wr->s->reply_timeouts = 0;
         wr->s->state = JK_LB_STATE_RECOVER;
         jk_log(l, JK_LOG_INFO,
                "Status worker '%s' marked worker '%s' sub worker '%s' for recovery",

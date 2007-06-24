@@ -427,6 +427,9 @@ contain the configuration information, you want to change. First the list for lo
 <b>lt</b>: recover_time (seconds)
 </li>
 <li>
+<b>lx</b>: max_reply_timeouts (number)
+</li>
+<li>
 <b>ls</b>: sticky_session (0/f/n/off=off, 1/t/y/on=on; case insensitive)
 </li>
 <li>

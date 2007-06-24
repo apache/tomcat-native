@@ -28,6 +28,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      LB, Status: Add feature max_reply_timeouts, to make lb tolerant against
+      occasional long running requests. (rjung)
+      </update>
+      <update>
       JkStatus: Added OK/IDLE as the successor of N/A. (rjung)
       </update>
       <update>

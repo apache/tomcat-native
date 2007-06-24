@@ -78,6 +78,7 @@
 #define IS_WORKER_STOPPED_DEPRECATED  ("stopped")
 #define ACTIVATION_OF_WORKER        ("activation")
 #define WORKER_RECOVER_TIME         ("recover_time")
+#define MAX_REPLY_TIMEOUTS_OF_WORKER ("max_reply_timeouts")
 #define WORKER_MAX_PACKET_SIZE      ("max_packet_size")
 #define STYLE_SHEET_OF_WORKER       ("css")
 #define NAMESPACE_OF_WORKER         ("ns")
@@ -180,6 +181,7 @@ static const char *unique_properties[] = {
     IS_WORKER_STOPPED_DEPRECATED,
     ACTIVATION_OF_WORKER,
     WORKER_RECOVER_TIME,
+    MAX_REPLY_TIMEOUTS_OF_WORKER,
     WORKER_MAX_PACKET_SIZE,
     STYLE_SHEET_OF_WORKER,
     READ_ONLY_OF_WORKER,
@@ -265,6 +267,7 @@ static const char *supported_properties[] = {
     IS_WORKER_STOPPED_DEPRECATED,
     ACTIVATION_OF_WORKER,
     WORKER_RECOVER_TIME,
+    MAX_REPLY_TIMEOUTS_OF_WORKER,
     WORKER_MAX_PACKET_SIZE,
     STYLE_SHEET_OF_WORKER,
     NAMESPACE_OF_WORKER,
@@ -729,6 +732,19 @@ int jk_get_worker_recover_timeout(jk_map_t *m, const char *wname, int def)
     }
 
     MAKE_WORKER_PARAM(WORKER_RECOVER_TIME);
+
+    return jk_map_get_int(m, buf, def);
+}
+
+int jk_get_worker_max_reply_timeouts(jk_map_t *m, const char *wname, int def)
+{
+    char buf[1024];
+
+    if (!m || !wname) {
+        return -1;
+    }
+
+    MAKE_WORKER_PARAM(MAX_REPLY_TIMEOUTS_OF_WORKER);
 
     return jk_map_get_int(m, buf, def);
 }

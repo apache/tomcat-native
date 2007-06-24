@@ -530,15 +530,46 @@ Disabled by default.
 </directive>
 
 <directive name="reply_timeout" default="0" required="false">
-Reply_timeout property told webserver to wait some time for reply to a forwarded request
-before considering the remote tomcat is dead and eventually switch to another tomcat in a cluster
-group. By default (value zero) the webserver will wait forever which could be an issue for you.
-The parameter is the number of milliseconds to wait for reply, so adjust it carefully if you
-have long running servlets.
+The parameter is the number of milliseconds to wait for success during a read event.
+So this is not a timeout for the complete answer time of a request, but only
+for the maximum time between two packets received from Tomcat. Usually the longest
+pause is between sending the request and getting the first packet of the response.
+<p>
+If the timeout passes without any data received from Tomcat, the webserver will
+no longer wait for the rest of the response and send an error to the client (browser).
+Usually this does not mean, that the request is also aborted on the Tomcat backend.
+If the worker is a member of a load balancer, the load balancer might place the
+worker into an error state and retry the request on another member.
+See also <b>max_reply_timeouts</b>, <b>retries</b> and <b>recovery_options</b>.
+</p>
+<p>
+By default (value zero) the webserver will wait forever which could be an issue for you.
+If you set a reply_timeout, adjust it carefully if you have long running servlets.
+</p>
 <p>
 This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and works on all
 servlet engines supporting ajp13.
-Disabled by default.
+</p>
+</directive>
+
+<directive name="max_reply_timeouts" default="0" required="false">
+Only used for load balancer workers.
+<p>
+If you use a <b>reply_timeout</b> for the members of a load balancer worker,
+and you want to tolerate a few requests taking longer than reply_timeout,
+you can set this attribute to some positive value.
+</p>
+<p>
+Long running requests will still time out after reply_timeout milliseconds waiting for
+data, but the corresponding member worker will only be put into an error state,
+if more than <b>max_reply_timeouts</b> requests have timed out.
+More precisely, the counter for those bad requests will be divided by two,
+whenever the load balancer does its internal maintenance (by default every 60
+seconds).
+</p>
+<p>
+This features has been added in <b>jk 1.2.24</b> to make <b>reply_timeout</b> less
+sensitive for sporadic long running requests.
 </p>
 </directive>
 

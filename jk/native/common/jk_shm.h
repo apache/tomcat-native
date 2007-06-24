@@ -92,6 +92,7 @@ struct jk_shm_worker
     int     sticky_session;
     int     sticky_session_force;
     int     recover_wait_time;
+    int     max_reply_timeouts;
     int     retries;
     int     lbmethod;
     int     lblock;
@@ -114,6 +115,8 @@ struct jk_shm_worker
     volatile jk_uint32_t  recoveries;
     /* Number of recovery failures */
     volatile jk_uint32_t  recovery_errors;
+    /* Decayed number of reply_timeout errors */
+    volatile jk_uint32_t  reply_timeouts;
     /* Number of client errors */
     volatile jk_uint32_t  client_errors;
 };

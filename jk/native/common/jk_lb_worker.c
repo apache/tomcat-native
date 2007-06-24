@@ -273,6 +273,7 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l) {
     p->sticky_session = p->s->sticky_session;
     p->sticky_session_force = p->s->sticky_session_force;
     p->recover_wait_time = p->s->recover_wait_time;
+    p->max_reply_timeouts = p->s->max_reply_timeouts;
     p->retries = p->s->retries;
     p->lbmethod = p->s->lbmethod;
     p->lblock = p->s->lblock;
@@ -290,6 +291,7 @@ void jk_lb_push(lb_worker_t * p, jk_logger_t *l) {
     p->s->sticky_session = p->sticky_session;
     p->s->sticky_session_force = p->sticky_session_force;
     p->s->recover_wait_time = p->recover_wait_time;
+    p->s->max_reply_timeouts = p->max_reply_timeouts;
     p->s->retries = p->retries;
     p->s->lbmethod = p->lbmethod;
     p->s->lblock = p->lblock;
@@ -446,6 +448,7 @@ static int recover_workers(lb_worker_t *p,
                            w->s->name);
                 if (p->lbmethod != JK_LB_METHOD_BUSYNESS)
                     w->s->lb_value = curmax;
+                w->s->reply_timeouts = 0;
                 w->s->state = JK_LB_STATE_RECOVER;
                 non_error++;
             }
@@ -505,6 +508,7 @@ static jk_uint64_t decay_load(lb_worker_t *p,
             if (p->lb_workers[i].s->lb_value > curmax) {
                 curmax = p->lb_workers[i].s->lb_value;
             }
+            p->lb_workers[i].s->reply_timeouts >>= exponent;
         }
     }
     JK_TRACE_EXIT(l);
@@ -1074,14 +1078,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rc = JK_CLIENT_ERROR;
                 }
                 else {
-                    /*
-                    * Service failed !!!
-                    * Time for fault tolerance (if possible)...
-                    */
-
-                    rec->s->errors++;
-                    rec->s->state = JK_LB_STATE_ERROR;
-                    rec->s->error_time = time(NULL);
                     if (is_service_error != JK_HTTP_SERVER_BUSY) {
                         /*
                         * Error is not recoverable - break with an error.
@@ -1094,10 +1090,24 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         *is_error = is_service_error;
                         rc = JK_FALSE;
                     }
-                    else
+                    if (service_stat == JK_REPLY_TIMEOUT) {
+                        rec->s->reply_timeouts++;
+                    }
+                    if (service_stat != JK_REPLY_TIMEOUT ||
+                        rec->s->reply_timeouts > p->worker->s->max_reply_timeouts) {
+
+                        /*
+                        * Service failed !!!
+                        * Time for fault tolerance (if possible)...
+                        */
+
+                        rec->s->errors++;
+                        rec->s->state = JK_LB_STATE_ERROR;
+                        rec->s->error_time = time(NULL);
                         jk_log(l, JK_LOG_INFO,
                                "service failed, worker %s is in error state",
                                rec->s->name);
+                    }
                 }
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_unlock();
@@ -1346,6 +1356,8 @@ static int JK_METHOD init(jk_worker_t *pThis,
                                                             WAIT_BEFORE_RECOVER);
     if (p->recover_wait_time < 1)
         p->recover_wait_time = 1;
+    p->max_reply_timeouts = jk_get_worker_max_reply_timeouts(props, p->s->name,
+                                                             0);
     p->maintain_time = jk_get_worker_maintain_time(props);
     if(p->maintain_time < 0)
         p->maintain_time = 0;
@@ -1449,6 +1461,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->worker.maintain = maintain_workers;
         private_data->worker.retries = JK_RETRIES;
         private_data->recover_wait_time = WAIT_BEFORE_RECOVER;
+        private_data->max_reply_timeouts = 0;
         private_data->sequence = 0;
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);
