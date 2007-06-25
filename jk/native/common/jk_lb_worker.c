@@ -1094,7 +1094,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         rec->s->reply_timeouts++;
                     }
                     if (service_stat != JK_REPLY_TIMEOUT ||
-                        rec->s->reply_timeouts > p->worker->s->max_reply_timeouts) {
+                        rec->s->reply_timeouts > (unsigned)p->worker->s->max_reply_timeouts) {
 
                         /*
                         * Service failed !!!
