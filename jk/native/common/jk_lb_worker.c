@@ -390,12 +390,21 @@ static char *get_cookie(jk_ws_service_t *s, const char *name)
 /* Retrieve session id from the cookie or the parameter
  * (parameter first)
  */
-static char *get_sessionid(jk_ws_service_t *s)
+static char *get_sessionid(jk_ws_service_t *s, jk_logger_t *l)
 {
     char *val;
     val = get_path_param(s, JK_PATH_SESSION_IDENTIFIER);
     if (!val) {
         val = get_cookie(s, JK_SESSION_IDENTIFIER);
+    }
+    if (val && !*val) {
+        /* TODO: For now only log the empty sessions.
+         *       However we should probably return 400
+         *       (BAD_REQUEST) in this case
+         */
+        jk_log(l, JK_LOG_INFO,
+               "Detected empty session identifier.");
+        return NULL;
     }
     return val;
 }
@@ -913,7 +922,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         /* Use sessionid only if sticky_session is
          * defined for this load balancer
          */
-        sessionid = get_sessionid(s);
+        sessionid = get_sessionid(s, l);
     }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
