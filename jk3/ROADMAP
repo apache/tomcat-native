@@ -50,3 +50,31 @@ ApacheCon EU 2007 DISCUSSION POINTS:
         server and backend
       - Maybe transporting the backend connector events back to the web
         server
+
+HOW TO REACH THE GOALS: ROADMAP.
+Here are the steps to reach the goals.
+1 - Branch at a tagged version of mod_jk.
+2 - Put APR in the code (specially in place where there are #ifdef).
+    As first step support only httpd-2.0 and IIS.
+3 - Test and port back the patches from the mod_jk branch.
+    Here we should have support for:
+      - Apache Httpd 2+
+      - Microsoft IIS 5+ (Windows 2000 and up)
+      - Generic API for standalone based programs
+    No changes in the JAVA part.
+
+    Decide if we want to support netscape too.
+4 - Wait for a release cycle to see if the mod_jk branch could go to maintenance mode only.
+
+5 - Branch again to separate configuration from the rest of the code.
+6 - Test and port back the patches from the other branche.
+    Here we should have support for:
+    Persistence of the dynamic configuration.
+    A way to merge the static configuration with a dynamic one.
+    A dynamic configuration via an extented jkstatus
+7 - Test and port back the patches from the old mod_jk branch.
+8 - Write the JAVA part so that contexts and nodes could be added/remoted automaticly.
+9 - Wait for a release cycle to see if the previous mod_jk branch could go to maintenance mode only.
+
+n - Branch and process the protocol part of the proposal. 
+    ...
