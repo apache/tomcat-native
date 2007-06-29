@@ -241,6 +241,10 @@ static int do_shm_open_lock(const char *fname, int attached, jk_logger_t *l)
 {
     int rc;
     char flkname[256];
+#ifdef AS400_UTF8
+    char *wptr;
+#endif
+
     JK_TRACE_ENTER(l);
 
     if (attached && jk_shmem.lockname) {
@@ -248,7 +252,7 @@ static int do_shm_open_lock(const char *fname, int attached, jk_logger_t *l)
         jk_shmem.fd_lock = open(jk_shmem.lockname, O_RDWR, 0666);
 #else
         errno = EINVAL;
-#endif        
+#endif
         if (jk_shmem.fd_lock == -1) {
             rc = errno;
             JK_TRACE_EXIT(l);
@@ -278,7 +282,14 @@ static int do_shm_open_lock(const char *fname, int attached, jk_logger_t *l)
 #else
         strcpy(flkname, fname);
         strcat(flkname, ".lock");
+#ifdef AS400_UTF8
+        wptr = (char *)malloc(strlen(flkname) + 1);
+        jk_ascii2ebcdic((char *)flkname, wptr);
+        jk_shmem.fd_lock = open(wptr, O_RDWR|O_CREAT|O_TRUNC, 0666);
+        free(wptr);
+#else
         jk_shmem.fd_lock = open(flkname, O_RDWR|O_CREAT|O_TRUNC, 0666);
+#endif
 #endif
         if (jk_shmem.fd_lock == -1) {
             rc = errno;
@@ -319,6 +330,9 @@ static int do_shm_open(const char *fname, int attached,
     int rc;
     int fd;
     void *base;
+#ifdef AS400_UTF8
+    char *wptr;
+#endif
 
     JK_TRACE_ENTER(l);
     if (jk_shmem.hdr) {
@@ -353,7 +367,14 @@ static int do_shm_open(const char *fname, int attached,
     if (!attached) {
         size_t size;
         jk_shmem.attached = 0;
+#ifdef AS400_UTF8
+        wptr = (char *)malloc(strlen(jk_shmem.filename) + 1);
+        jk_ascii2ebcdic((char *)jk_shmem.filename, wptr);
+        fd = open(wptr, O_RDWR|O_CREAT|O_TRUNC, 0666);
+        free(wptr);
+#else
         fd = open(jk_shmem.filename, O_RDWR|O_CREAT|O_TRUNC, 0666);
+#endif
         if (fd == -1) {
             jk_shmem.size = 0;
             JK_TRACE_EXIT(l);
@@ -365,7 +386,14 @@ static int do_shm_open(const char *fname, int attached,
             if (ftruncate(fd, jk_shmem.size)) {
                 rc = errno;
                 close(fd);
+#ifdef  AS400_UTF8
+                wptr = (char *)malloc(strlen(jk_shmem.filename) + 1);
+                jk_ascii2ebcdic((char *)jk_shmem.filename, wptr);
+                unlink(wptr);
+                free(wptr);
+#else
                 unlink(jk_shmem.filename);
+#endif
                 jk_shmem.size = 0;
                 JK_TRACE_EXIT(l);
                 return rc;
@@ -377,7 +405,14 @@ static int do_shm_open(const char *fname, int attached,
         if (lseek(fd, 0, SEEK_SET) != 0) {
             rc = errno;
             close(fd);
+#ifdef  AS400_UTF8
+            wptr = (char *)malloc(strlen(jk_shmem.filename) + 1);
+            jk_ascii2ebcdic((char *)jk_shmem.filename, wptr);
+            unlink(wptr);
+            free(wptr);
+#else
             unlink(jk_shmem.filename);
+#endif
             jk_shmem.size = 0;
             JK_TRACE_EXIT(l);
             return rc;
@@ -390,7 +425,14 @@ static int do_shm_open(const char *fname, int attached,
         if (base == (caddr_t)MAP_FAILED || base == (caddr_t)0) {
             rc = errno;
             close(fd);
+#ifdef  AS400_UTF8
+            wptr = (char *)malloc(strlen(jk_shmem.filename) + 1);
+            jk_ascii2ebcdic((char *)jk_shmem.filename, wptr);
+            unlink(wptr);
+            free(wptr);
+#else
             unlink(jk_shmem.filename);
+#endif
             jk_shmem.size = 0;
             JK_TRACE_EXIT(l);
             return rc;
@@ -439,7 +481,14 @@ static int do_shm_open(const char *fname, int attached,
         if (!attached) {
             munmap((void *)jk_shmem.hdr, jk_shmem.size);
             close(jk_shmem.fd);
+#ifdef  AS400_UTF8
+            wptr = (char *)malloc(strlen(jk_shmem.filename) + 1);
+            jk_ascii2ebcdic((char *)jk_shmem.filename, wptr);
+            unlink(wptr);
+            free(wptr);
+#else
             unlink(jk_shmem.filename);
+#endif
         }
         jk_shmem.hdr = NULL;
         jk_shmem.fd  = -1;
@@ -463,6 +512,10 @@ int jk_shm_attach(const char *fname, size_t sz, jk_logger_t *l)
 void jk_shm_close()
 {
     int rc;
+#ifdef AS400_UTF8
+    char *wptr;
+#endif
+
     if (jk_shmem.hdr) {
         --jk_shmem.hdr->h.data.childs;
 
@@ -493,12 +546,26 @@ void jk_shm_close()
         if (jk_shmem.fd_lock >= 0)
             close(jk_shmem.fd_lock);
         if (jk_shmem.lockname) {
+#ifdef  AS400_UTF8
+            wptr = (char *)malloc(strlen(jk_shmem.lockname) + 1);
+            jk_ascii2ebcdic((char *)jk_shmem.lockname, wptr);
+            unlink(wptr);
+            free(wptr);
+#else
             unlink(jk_shmem.lockname);
+#endif
             free(jk_shmem.lockname);
             jk_shmem.lockname = NULL;
         }
         if (jk_shmem.filename) {
+#ifdef  AS400_UTF8
+            wptr = (char *)malloc(strlen(jk_shmem.filename) + 1);
+            jk_ascii2ebcdic((char *)jk_shmem.filename, wptr);
+            unlink(wptr);
+            free(wptr);
+#else
             unlink(jk_shmem.filename);
+#endif
             free(jk_shmem.filename);
             jk_shmem.filename = NULL;
         }
