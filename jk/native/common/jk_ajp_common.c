@@ -792,7 +792,18 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
 
     JK_TRACE_ENTER(l);
     msg = jk_b_new(&ae->pool);
-    jk_b_set_buffer_size(msg, 16);      /* 16 is way too large but I'm lazy :-) */
+    if (!msg) {
+        jk_log(l, JK_LOG_ERROR,
+               "Failed allocating AJP message");
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    if (jk_b_set_buffer_size(msg, 16)) {
+        jk_log(l, JK_LOG_ERROR,
+               "Failed allocating AJP message buffer");
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
     jk_b_reset(msg);
     jk_b_append_byte(msg, AJP13_CPING_REQUEST);
 
@@ -1212,7 +1223,7 @@ static int ajp_send_request(jk_endpoint_t *e,
         if (err ||
             ((rc = ajp_connection_tcp_send_message(ae, op->request, l)) != JK_TRUE)) {
             if (rc != JK_FATAL_ERROR) {
-                if (err == 1) {                
+                if (err == 1) {
                     jk_log(l, JK_LOG_DEBUG,
                            "(%s) failed sending request. "
                            "Will try another pooled connection",
@@ -1222,7 +1233,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                     jk_log(l, JK_LOG_INFO,
                            "(%s) error sending request. "
                            "Will try another pooled connection",
-                            ae->worker->name);                    
+                            ae->worker->name);
                 }
                 ajp_next_connection(ae, l);
             }
@@ -1828,15 +1839,54 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
 
     p = e->endpoint_private;
     op->request = jk_b_new(&(p->pool));
-    jk_b_set_buffer_size(op->request, p->worker->max_packet_size);
+    if (!op->request) {
+        *is_error = JK_HTTP_SERVER_ERROR;
+        jk_log(l, JK_LOG_ERROR,
+               "Failed allocating AJP message");
+        JK_TRACE_EXIT(l);
+        return JK_SERVER_ERROR;
+    }
+    if (jk_b_set_buffer_size(op->request, p->worker->max_packet_size)) {
+        *is_error = JK_HTTP_SERVER_ERROR;
+        jk_log(l, JK_LOG_ERROR,
+               "Failed allocating AJP message buffer");
+        JK_TRACE_EXIT(l);
+        return JK_SERVER_ERROR;
+    }
     jk_b_reset(op->request);
 
     op->reply = jk_b_new(&(p->pool));
-    jk_b_set_buffer_size(op->reply, p->worker->max_packet_size);
+    if (!op->reply) {
+        *is_error = JK_HTTP_SERVER_ERROR;
+        jk_log(l, JK_LOG_ERROR,
+               "Failed allocating AJP message");
+        JK_TRACE_EXIT(l);
+        return JK_SERVER_ERROR;
+    }
+    if (jk_b_set_buffer_size(op->reply, p->worker->max_packet_size)) {
+        *is_error = JK_HTTP_SERVER_ERROR;
+        jk_log(l, JK_LOG_ERROR,
+               "Failed allocating AJP message buffer");
+        JK_TRACE_EXIT(l);
+        return JK_SERVER_ERROR;
+    }
     jk_b_reset(op->reply);
 
     op->post = jk_b_new(&(p->pool));
-    jk_b_set_buffer_size(op->post, p->worker->max_packet_size);
+    if (!op->post) {
+        *is_error = JK_HTTP_SERVER_ERROR;
+        jk_log(l, JK_LOG_ERROR,
+               "Failed allocating AJP message");
+        JK_TRACE_EXIT(l);
+        return JK_SERVER_ERROR;
+    }
+    if (jk_b_set_buffer_size(op->post, p->worker->max_packet_size)) {
+        *is_error = JK_HTTP_SERVER_ERROR;
+        jk_log(l, JK_LOG_ERROR,
+               "Failed allocating AJP message buffer");
+        JK_TRACE_EXIT(l);
+        return JK_SERVER_ERROR;
+    }
     jk_b_reset(op->post);
 
     op->recoverable = JK_TRUE;

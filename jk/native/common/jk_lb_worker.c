@@ -909,7 +909,20 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     /* set the recovery post, for LB mode */
     s->reco_buf = jk_b_new(s->pool);
-    jk_b_set_buffer_size(s->reco_buf, p->worker->max_packet_size);
+    if (!s->reco_buf) {
+        *is_error = JK_HTTP_SERVER_ERROR;
+        jk_log(l, JK_LOG_ERROR,
+               "Failed allocating AJP message");
+        JK_TRACE_EXIT(l);
+        return JK_SERVER_ERROR;        
+    }
+    if (jk_b_set_buffer_size(s->reco_buf, p->worker->max_packet_size)) {
+        *is_error = JK_HTTP_SERVER_ERROR;
+        jk_log(l, JK_LOG_ERROR,
+               "Failed allocating AJP message buffer");
+        JK_TRACE_EXIT(l);
+        return JK_SERVER_ERROR;        
+    }
     jk_b_reset(s->reco_buf);
     s->reco_status = RECO_INITED;
 
