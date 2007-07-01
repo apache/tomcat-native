@@ -766,8 +766,6 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
        jk_log(l, JK_LOG_ERROR,
               "locking failed (errno=%d)",
               errno);
-        JK_TRACE_EXIT(l);
-        return NULL;
     }
     if (sessionid) {
         char *session = sessionid;

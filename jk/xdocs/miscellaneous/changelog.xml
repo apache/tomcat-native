@@ -27,6 +27,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+      Load Balancer: Fix a deadlock in lb worker, which was exposed on Solaris
+      for threaded Apache MPMs. (rjung)
+      </fix>
       <update>
       Logging: handle LWP IDs as 32 Bit unsigned. Try to make
       it work, although pthread IDs are opaque. (rjung)
