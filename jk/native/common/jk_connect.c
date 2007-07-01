@@ -495,14 +495,13 @@ int jk_close_socket(jk_sock_t s)
 #else
         return close(s);
 #endif
-
     return -1;
 }
 
 #ifndef MAX_SECS_TO_LINGER
-#define MAX_SECS_TO_LINGER 16
+#define MAX_SECS_TO_LINGER 30
 #endif
-#define SECONDS_TO_LINGER  1
+#define SECONDS_TO_LINGER  2
 
 #ifndef SHUT_WR
 #ifdef SD_SEND
@@ -513,15 +512,12 @@ int jk_close_socket(jk_sock_t s)
 #endif
 int jk_shutdown_socket(jk_sock_t s)
 {
-    unsigned char dummy[512];
-    int nbytes;
-    int ttl = 0;
+    char dummy[512];
     int rc = 0;
-#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-    int tmout = SECONDS_TO_LINGER * 1000;
-#elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO)
+    fd_set rs;
     struct timeval tv;
-#endif
+    time_t start = time(NULL);
+
     if (!IS_VALID_SOCKET(s))
         return -1;
 
@@ -531,29 +527,41 @@ int jk_shutdown_socket(jk_sock_t s)
     if (shutdown(s, SHUT_WR)) {
         return jk_close_socket(s);
     }
-#if defined(WIN32)  || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
-                   (const char *) &tmout, sizeof(int)) == 0)
-        rc = 1;
-#elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO)
-    tv.tv_sec  = SECONDS_TO_LINGER;
-    tv.tv_usec = 0;
-    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
-                   (const void *) &tv, sizeof(tv)))
-        rc = 1;
+
+    /* Set up to wait for readable data on socket... */
+    FD_ZERO(&rs);
+
+    do {
+        /* Read all data from the peer until we reach "end-of-file"
+         * (FIN from peer) or we've exceeded our overall timeout. If the
+         * backend does not send us bytes within 2 seconds
+         * (a value pulled from Apache 1.3 which seems to work well),
+         * close the connection.
+         */
+        FD_SET(s, &rs);
+        tv.tv_sec  = SECONDS_TO_LINGER;
+        tv.tv_usec = 0;
+
+        if (select((int)s + 1, &rs, NULL, NULL, &tv) > 0) {
+            do {
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+                rc = recv(s, &dummy[0], sizeof(dummy), 0);
+                /* Assuming SOCKET_ERROR is -1 on NETWARE too */
+                if (rc == SOCKET_ERROR)
+                    errno = WSAGetLastError() - WSABASEERR;
+#else
+                rc = read(s, &dummy[0], sizeof(dummy));
 #endif
-    /* Read all data from the peer until we reach "end-of-file" (FIN
-     * from peer) or we've exceeded our overall timeout. If the client does
-     * not send us bytes within 16 second, close the connection.
-     */
-    while (rc) {
-        nbytes = jk_tcp_socket_recvfull(s, dummy, sizeof(dummy));
-        if (nbytes <= 0)
+            } while (rc == -1 && (errno == EINTR || errno == EAGAIN));
+
+            if (rc <= 0)
+                break;
+        }
+        else
             break;
-        ttl += SECONDS_TO_LINGER;
-        if (ttl > MAX_SECS_TO_LINGER)
-            break;
-    }
+
+    } while (difftime(time(NULL), start) < MAX_SECS_TO_LINGER);
+
     return jk_close_socket(s);
 }
 
