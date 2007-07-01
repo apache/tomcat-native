@@ -2522,17 +2522,17 @@ static int JK_METHOD jk_log_to_file(jk_logger_t *l, int level,
         if (p->jklogfp) {
             apr_status_t rv;
             apr_size_t wrote;
+#if defined(WIN32)
+            what[used++] = '\r';
+#endif
+            what[used++] = '\n';
+            wrote = used;
             rv = apr_global_mutex_lock(jk_log_lock);
             if (rv != APR_SUCCESS) {
                 ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL,
                              "apr_global_mutex_lock(jk_log_lock) failed");
                 /* XXX: Maybe this should be fatal? */
             }
-#if defined(WIN32)
-            what[used++] = '\r';
-#endif
-            what[used++] = '\n';
-            wrote = used;
             rv = apr_file_write(p->jklogfp, what, &wrote);
             if (rv != APR_SUCCESS) {
                 char error[256];
