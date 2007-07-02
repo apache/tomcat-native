@@ -141,7 +141,7 @@ static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
     if (e && *e && (*e)->endpoint_private) {
         ajp12_endpoint_t *p = (*e)->endpoint_private;
         if (IS_VALID_SOCKET(p->sd)) {
-            jk_close_socket(p->sd);
+            jk_shutdown_socket(p->sd);
         }
         free(p);
         *e = NULL;
