@@ -723,11 +723,11 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
     jk_sock_t sock;
 
     JK_ENTER_CS(&aw->cs, rc);
-    sock = ae->sd;
-    /* Mark existing endpoint socket as closed */
-    ae->sd = JK_INVALID_SOCKET;
     if (rc) {
         unsigned int i;
+        sock = ae->sd;
+        /* Mark existing endpoint socket as closed */
+        ae->sd = JK_INVALID_SOCKET;
         for (i = 0; i < aw->ep_cache_sz; i++) {
             /* Find cache slot with usable socket */
             if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
