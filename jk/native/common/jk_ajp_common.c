@@ -252,8 +252,11 @@ static int sc_for_req_header(const char *header_name)
     if (len < 4 || len > 15)
         return UNKNOWN_METHOD;
 
-    while (*p)
-        header[i++] = toupper((unsigned char)*p++);
+    while (*p) {
+        header[i++] = toupper((unsigned char)*p);
+        p++;
+    }
+
     header[i] = '\0';
     p = &header[1];
 
