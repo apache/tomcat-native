@@ -673,6 +673,7 @@ int jk_is_socket_connected(jk_sock_t sock)
         errno = WSAGetLastError() - WSABASEERR;
 #endif
         /* Wait one microsecond on next select, if EINTR */
+        tv.tv_sec  = 0;
         tv.tv_usec = 1;
     } while (rc == -1 && errno == EINTR);
 
