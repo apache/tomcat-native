@@ -185,7 +185,8 @@ int wc_create_worker(const char *name, int use_map,
                                        name, SOURCE_TYPE_WORKERDEF, l) == JK_FALSE) {
                     w->destroy(&w, l);
                     jk_log(l, JK_LOG_ERROR,
-                           "validate failed for %s", name);
+                           "mounting %s failed for %s",
+                           map_names[i], name);
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
                 }
