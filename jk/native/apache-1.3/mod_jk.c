@@ -2651,9 +2651,9 @@ for (i = 0; i < jk_map_size(conf->automount); i++)
         return;
     }
     else {
-        ap_log_error(APLOG_MARK, APLOG_ERR, s,
-                     "Error in creating the workers."
-                     " Please consult your mod_jk log file '%s'.", conf->log_file);
+        jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
+                      "Error in creating the workers."
+                      " Please consult your mod_jk log file '%s'.", conf->log_file);
     }
 
 }
