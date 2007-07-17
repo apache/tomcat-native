@@ -1127,6 +1127,7 @@ static int rregex_rewrite(char *uri)
     return 0;
 }
 
+static int init_error = 0;
 
 DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                             DWORD dwNotificationType, LPVOID pvNotification)
@@ -1145,6 +1146,14 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         /* If we can't read the map we become dormant */
         if (!is_mapread)
             is_inited = JK_FALSE;
+    }
+    if (!is_inited && !is_mapread) {
+        /* In case the initialization failed
+         * return error. This will make entire IIS
+         * unusable like with Apache servers
+         */
+         SetLastError(ERROR_INVALID_FUNCTION);
+         return SF_STATUS_REQ_ERROR;
     }
     if (auth_notification_flags == dwNotificationType) {
         char uri[INTERNET_MAX_URL_LENGTH];
@@ -1372,6 +1381,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     !SetHeader(pfc, "url", extension_uri)) {
                     jk_log(logger, JK_LOG_ERROR,
                            "error while adding request headers");
+                    SetLastError(ERROR_INVALID_PARAMETER);
                     return SF_STATUS_REQ_ERROR;
                 }
 

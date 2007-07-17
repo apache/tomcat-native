@@ -28,6 +28,13 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        <bug>42849</bug>: Refuse to operate with IIS in case the
+        initialization failed. Instead requesting isapi_redirect.dll
+        500 will be returned to the user. This is as closest as it
+        can get to Apache Httpd wher we refuse to start the server
+        in case of fatal initialization errors. (mturk)
+      </fix>
+      <fix>
       Load Balancer: Fix a deadlock in lb worker, which was exposed on Solaris
       for threaded Apache MPMs. (rjung)
       </fix>
