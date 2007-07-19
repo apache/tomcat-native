@@ -130,6 +130,7 @@ public class ServerCookie implements Serializable {
     //
     // private static final String tspecials = "()<>@,;:\\\"/[]?={} \t";
     private static final String tspecials = ",; ";
+    private static final String tspecials2 = ",; \"";
 
     /*
      * Tests a string and returns true if the string counts as a
@@ -153,6 +154,20 @@ public class ServerCookie implements Serializable {
         }
         return true;
     }
+
+    public static boolean isToken2(String value) {
+        if( value==null) return true;
+        int len = value.length();
+
+        for (int i = 0; i < len; i++) {
+            char c = value.charAt(i);
+
+            if (c < 0x20 || c >= 0x7f || tspecials2.indexOf(c) != -1)
+                return false;
+        }
+        return true;
+    }
+
 
     public static boolean checkName( String name ) {
         if (!isToken(name)
@@ -214,7 +229,7 @@ public class ServerCookie implements Serializable {
         // this part is the same for all cookies
         buf.append( name );
         buf.append("=");
-        maybeQuote(version, buf, value);
+        maybeQuote2(version, buf, value);
 
         // XXX Netscape cookie: "; "
          // add version 1 specific information
@@ -285,6 +300,20 @@ public class ServerCookie implements Serializable {
         }
     }
 
+    
+    public static void maybeQuote2 (int version, StringBuffer buf,
+            String value) {
+        // special case - a \n or \r  shouldn't happen in any case
+        if (isToken2(value)) {
+            buf.append(value);
+        } else {
+            buf.append('"');
+            buf.append(escapeDoubleQuotes(value));
+            buf.append('"');
+        }
+    }
+    
+    
     // log
     static final int dbg=1;
     public static void log(String s ) {
@@ -307,12 +336,14 @@ public class ServerCookie implements Serializable {
         }
 
         StringBuffer b = new StringBuffer();
+        char p = s.charAt(0);
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c == '"')
+            if (c == '"' && p != '\\')
                 b.append('\\').append('"');
             else
                 b.append(c);
+            p = c;
         }
 
         return b.toString();
