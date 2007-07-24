@@ -113,12 +113,13 @@ INCLUDES = -I$(AP_HOME)/src/include -I$(AP_HOME)/src/os/netware
 INCLUDES += -I$(JKCOMMON) -I$(NW_JDK)/include -I$(NW_JDK)/include/netware 
 
 ifeq ($(LIBARCH),LIBC)
-	INCLUDES += -I$(SDK_LIBC)/include -I$(SDK_LIBC)/include/nks
+	INCLUDES += -I$(SDK_LIBC)/include
 	INCLUDES += -I$(SDK_LIBC)/include/winsock
 else
-	INCLUDES += -I$(SDK_CLIB)/include/nlm -I$(SDK_CLIB)/include
-	INCLUDES += -I$(NDKBASE)/ws295sdk/include
+	INCLUDES += -I$(SDK_CLIB)/include/nlm
+	# INCLUDES += -I$(NDKBASE)/ws295sdk/include
 	CFLAGS += -DNETDB_USE_INTERNET
+	CFLAGS += -DJK_PREFORK
 endif
 CFLAGS	+= $(INCLUDES)
 

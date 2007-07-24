@@ -21,17 +21,24 @@ INSTDIR	= s:/sys/novonyx/modules
 endif
 
 # Edit the vars below to change NLM target settings.
-TARGET  = nsapi_rd
+TARGET  = jni_conn
 VERSION	= $(JK_VERSION)
 #COPYR	= Copyright (c) 2000-2007 The Apache Software Foundation. All rights reserved.
 COPYR	= Licensed under the Apache License, Version 2.0
-DESCR	= Netscape plugin for Tomcat $(JK_VERSION_STR)
+DESCR	= JNI natives for Tomcat $(JK_VERSION_STR)
 MTSAFE	= NO
-STACK	= 65536
+STACK	= 64000
 #SCREEN	= System Console
-MODULES	= nshttpd
-EXPORTS	= jk_init jk_service
-IMPORTS	= __nsapi30_table
+MODULES	= nsapi
+EXPORTS	= \
+	Java_org_apache_tomcat_modules_server_JNIConnectionHandler_write \
+	Java_org_apache_tomcat_modules_server_JNIConnectionHandler_startReasponse \
+	Java_org_apache_tomcat_modules_server_JNIConnectionHandler_readHeaders \
+	Java_org_apache_tomcat_modules_server_JNIConnectionHandler_readEnvironment \
+	Java_org_apache_tomcat_modules_server_JNIConnectionHandler_read \
+	Java_org_apache_tomcat_modules_server_JNIConnectionHandler_getNumberOfHeaders
+
+#IMPORTS	= __nsapi30_table
 
 # Edit the var below to point to your lib architecture.
 ifndef LIBARCH
@@ -109,12 +116,13 @@ INCLUDES = -I$(NS_HOME)/include -I$(NS_HOME)/include/base
 INCLUDES += -I$(JKCOMMON) -I$(NW_JDK)/include -I$(NW_JDK)/include/netware 
 
 ifeq ($(LIBARCH),LIBC)
-	INCLUDES += -I$(SDK_LIBC)/include -I$(SDK_LIBC)/include/nks
+	INCLUDES += -I$(SDK_LIBC)/include
 	INCLUDES += -I$(SDK_LIBC)/include/winsock
 else
-	INCLUDES += -I$(SDK_CLIB)/include/nlm -I$(SDK_CLIB)/include
+	INCLUDES += -I$(SDK_CLIB)/include/nlm
 	# INCLUDES += -I$(NDKBASE)/ws295sdk/include
 	CFLAGS += -DNETDB_USE_INTERNET
+	CFLAGS += -DJK_PREFORK
 endif
 CFLAGS	+= $(INCLUDES)
 
@@ -128,28 +136,11 @@ DL	= '
 endif
 
 OBJS	= \
-	$(OBJDIR)/jk_nsapi_plugin.o \
+	$(OBJDIR)/jk_jnicb.o \
 	$(OBJDIR)/jk_nwmain.o \
-	$(OBJDIR)/jk_ajp12_worker.o \
-	$(OBJDIR)/jk_ajp13.o \
-	$(OBJDIR)/jk_ajp13_worker.o \
-	$(OBJDIR)/jk_ajp14.o \
-	$(OBJDIR)/jk_ajp14_worker.o \
-	$(OBJDIR)/jk_ajp_common.o \
-	$(OBJDIR)/jk_connect.o \
-	$(OBJDIR)/jk_context.o \
-	$(OBJDIR)/jk_jni_worker.o \
-	$(OBJDIR)/jk_lb_worker.o \
 	$(OBJDIR)/jk_map.o \
-	$(OBJDIR)/jk_md5.o \
-	$(OBJDIR)/jk_msg_buff.o \
 	$(OBJDIR)/jk_pool.o \
-	$(OBJDIR)/jk_shm.o \
-	$(OBJDIR)/jk_sockbuf.o \
-	$(OBJDIR)/jk_status.o \
-	$(OBJDIR)/jk_uri_worker_map.o \
 	$(OBJDIR)/jk_util.o \
-	$(OBJDIR)/jk_worker.o \
 	$(OBJDIR)/ap_snprintf.o
 
 vpath %.c . $(JKCOMMON)

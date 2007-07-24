@@ -41,6 +41,7 @@ XINCDIRS	+= \
 # These flags will come after CFLAGS
 #
 XCFLAGS		+= \
+			-DJK_PREFORK \
 			$(EOLIST)
 
 #
