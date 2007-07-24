@@ -2496,12 +2496,14 @@ static void open_jk_log(server_rec *s, pool *p)
     if (jkl && flp) {
         jkl->log = jk_log_to_file;
         jkl->level = conf->log_level;
-        jkl->log_fmt = conf->stamp_format_string;
+        jk_set_time_fmt(jkl, conf->stamp_format_string);
         jkl->logger_private = flp;
         flp->log_fd = conf->log_fd;
         conf->log = jkl;
         if (main_log == NULL)
             main_log = conf->log;
+        jk_log(conf->log, JK_LOG_DEBUG, "log time stamp format is '%s'",
+               conf->log->log_fmt);
         return;
     }
 

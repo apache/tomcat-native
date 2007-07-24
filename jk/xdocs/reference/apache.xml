@@ -170,10 +170,17 @@ error or trace.
 The default value is info.
 </p></attribute>
 <attribute name="JkLogStampFormat" required="false"><p>
-The Tomcat Connector module <b>date</b> log format, follow strftime syntax.
+The Tomcat Connector module <b>date</b> log format, follow an
+extended strftime syntax.
 This format will be used for the time stamps in the JkLogFile.
+Besides the usual strftime conversion specifications,
+you can also use %Q for adding milliseconds to the log and
+%q for microseconds. This will only work with mod_jk minimum
+version 1.2.24 on platforms with a gettimeofday() function.
 <br/>
-The default value is "[%a %b %d %H:%M:%S %Y] ".
+The default value is "[%a %b %d %H:%M:%S %Y] " and beginning
+with version 1.2.24 on platforms with a gettimeofday()
+function it is "[%a %b %d %H:%M:%S.%Q %Y] ".
 </p></attribute>
 <attribute name="JkRequestLogFormat" required="false"><p>
 Request log format string. See detailed description below.

@@ -39,6 +39,8 @@ int jk_get_bool_code(const char *v, int def);
 
 void jk_sleep(int ms);
 
+void jk_set_time_fmt(jk_logger_t *l, const char *jk_log_fmt);
+
 int jk_parse_log_level(const char *level);
 
 int jk_open_file_logger(jk_logger_t **l, const char *file, int level);

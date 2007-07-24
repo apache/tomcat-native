@@ -28,6 +28,15 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Logging: add milliseconds to the default timestamp format,
+      if we have gettimeofday(). (rjung)
+      </update>
+      <update>
+      Apache: add milliseconds (%Q) and microseconds (%q) as possible
+      JkLogStampFormat conversion specifiers. This does not use strftime(),
+      but needs gettimeofday(). (rjung)
+      </update>
+      <update>
       IIS &amp; Sun: Log service failures also, if return code is negative. (rjung)
       </update>
       <fix>
