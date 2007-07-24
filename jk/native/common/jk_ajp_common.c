@@ -740,10 +740,10 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
             }
         }
         JK_LEAVE_CS(&aw->cs, rc);
+        /* Close previous socket */
+        if (IS_VALID_SOCKET(sock))
+            jk_shutdown_socket(sock);
     }
-    /* Close previous socket */
-    if (IS_VALID_SOCKET(sock))
-        jk_shutdown_socket(sock);
 }
 
 /*
