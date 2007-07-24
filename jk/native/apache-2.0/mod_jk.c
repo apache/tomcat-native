@@ -1949,7 +1949,7 @@ static const command_rec jk_cmds[] = {
                   "The Tomcat module log level, can be debug, "
                   "info, error or emerg"),
     AP_INIT_TAKE1("JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF,
-                  "The Tomcat module log format, follow strftime synthax"),
+                  "The Tomcat module log format, follow strftime syntax"),
     AP_INIT_TAKE1("JkRequestLogFormat", jk_set_request_log_format, NULL,
                   RSRC_CONF,
                   "The mod_jk module request log format string"),

@@ -1908,7 +1908,7 @@ static const command_rec jk_cmds[] = {
     {"JkLogLevel", jk_set_log_level, NULL, RSRC_CONF, TAKE1,
      "The mod_jk module log level, can be debug, info, request, error, or emerg"},
     {"JkLogStampFormat", jk_set_log_fmt, NULL, RSRC_CONF, TAKE1,
-     "The mod_jk module log format, follow strftime synthax"},
+     "The mod_jk module log format, follow strftime syntax"},
     {"JkRequestLogFormat", jk_set_request_log_format, NULL, RSRC_CONF, TAKE1,
      "The mod_jk module request log format string"},
 
