@@ -1833,15 +1833,19 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
 
     JK_TRACE_ENTER(l);
 
-    if (is_error)
-        *is_error = JK_HTTP_SERVER_ERROR;
     if (!e || !e->endpoint_private || !s || !is_error) {
         JK_LOG_NULL_PARAMS(l);
+        if (is_error)
+            *is_error = JK_HTTP_SERVER_ERROR;
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     p = e->endpoint_private;
+
+    /* Set returned error to OK */
+    *is_error = JK_HTTP_OK;
+
     op->request = jk_b_new(&(p->pool));
     if (!op->request) {
         *is_error = JK_HTTP_SERVER_ERROR;
@@ -2017,11 +2021,12 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                            "(%s) receiving reply from tomcat failed "
                            "without recovery in send loop attempt=%d",
                            p->worker->name, i);
-                    JK_TRACE_EXIT(l);
                     if (err == JK_REPLY_TIMEOUT) {
                         *is_error = JK_HTTP_GATEWAY_TIME_OUT;
+                        JK_TRACE_EXIT(l);
                         return JK_REPLY_TIMEOUT;
                     }
+                    JK_TRACE_EXIT(l);
                     return JK_FALSE;
                 }
                 jk_log(l, JK_LOG_INFO,
@@ -2080,11 +2085,13 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
            "or is listening on the wrong port",
            p->worker->name);
 
-    JK_TRACE_EXIT(l);
     if (err == JK_REPLY_TIMEOUT) {
         *is_error = JK_HTTP_GATEWAY_TIME_OUT;
+        JK_TRACE_EXIT(l);
         return JK_REPLY_TIMEOUT;
     }
+
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
 

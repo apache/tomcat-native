@@ -88,7 +88,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l, int *is_error)
 {
-    ajp12_endpoint_t *p = e->endpoint_private;
+    ajp12_endpoint_t *p;
     unsigned int attempt;
     int rc = -1;
     /*
@@ -97,13 +97,18 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     JK_TRACE_ENTER(l);
 
-    if (is_error)
-        *is_error = JK_HTTP_SERVER_ERROR;
     if (!e || !e->endpoint_private || !s || !is_error) {
         JK_LOG_NULL_PARAMS(l);
+        if (is_error)
+            *is_error = JK_HTTP_SERVER_ERROR;
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
+
+    p = e->endpoint_private;
+
+    /* Set returned error to OK */
+    *is_error = JK_HTTP_OK;
 
     for (attempt = 0; attempt < p->worker->connect_retry_attempts;
          attempt++) {
@@ -130,6 +135,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     }
     jk_log(l, JK_LOG_ERROR, "In jk_endpoint_t::service, Error sd = %d",
            p->sd);
+    *is_error = JK_HTTP_SERVER_ERROR;
 
     JK_TRACE_EXIT(l);
     return JK_FALSE;

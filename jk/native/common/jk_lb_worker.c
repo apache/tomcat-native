@@ -891,10 +891,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     JK_TRACE_ENTER(l);
 
-    if (is_error)
-        *is_error = JK_HTTP_SERVER_ERROR;
     if (!e || !e->endpoint_private || !s || !is_error) {
         JK_LOG_NULL_PARAMS(l);
+        if (is_error)
+            *is_error = JK_HTTP_SERVER_ERROR;
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }

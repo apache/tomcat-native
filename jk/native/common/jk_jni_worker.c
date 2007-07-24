@@ -250,29 +250,31 @@ static void print_signals(sigset_t * sset)
 
 static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
-                             jk_logger_t *l, int *is_recoverable_error)
+                             jk_logger_t *l, int *is_error)
 {
     jni_endpoint_t *p;
     jint rc;
 
     JK_TRACE_ENTER(l);
 
-    if (is_recoverable_error)
-        *is_recoverable_error = JK_FALSE;
-    if (!e || !e->endpoint_private || !s || !is_recoverable_error) {
+    if (!e || !e->endpoint_private || !s || !is_error) {
         JK_LOG_NULL_PARAMS(l);
+        if (is_error)
+            *is_error = JK_HTTP_SERVER_ERROR;
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
 
     p = e->endpoint_private;
 
+    /* Set returned error to OK */
+    *is_error = JK_HTTP_OK;
+
     if (!p->attached) {
         /* Try to attach */
         if (!(p->env = attach_to_jvm(p->worker, l))) {
             jk_log(l, JK_LOG_EMERG, "Attach failed");
-            /*   Is it recoverable ?? */
-            *is_recoverable_error = JK_TRUE;
+            *is_error = JK_HTTP_SERVER_ERROR;
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -307,6 +309,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     }
     else {
         jk_log(l, JK_LOG_ERROR, "Tomcat FAILED!");
+        *is_error = JK_HTTP_SERVER_ERROR;
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
