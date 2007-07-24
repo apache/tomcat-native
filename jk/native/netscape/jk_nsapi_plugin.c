@@ -24,13 +24,14 @@
 
 #include "nsapi.h"
 #include "jk_global.h"
+#include "jk_url.h"
 #include "jk_util.h"
 #include "jk_map.h"
 #include "jk_pool.h"
 #include "jk_service.h"
 #include "jk_worker.h"
 #include "jk_shm.h"
-#include "jk_url.h"
+#include "jk_ajp13.h"
 
 #define URI_PATTERN "path"
 #define DEFAULT_WORKER_NAME ("ajp13")
@@ -370,9 +371,24 @@ NSAPI_PUBLIC int jk_service(pblock * pb, Session * sn, Request * rq)
             jk_endpoint_t *e = NULL;
             if (worker->get_endpoint(worker, &e, logger)) {
                 int recover = JK_FALSE;
-                if (e->service(e, &s, logger, &recover)) {
+                int result;
+                if ((result = e->service(e, &s, logger, &recover)) > 0) {
                     rc = REQ_PROCEED;
+                    if (JK_IS_DEBUG_LEVEL(logger))
+                        jk_log(logger, JK_LOG_DEBUG,
+                               "service() returned OK");
                 }
+                else {
+                    if ((result == JK_CLIENT_ERROR) && (is_error == JK_HTTP_OK)) {
+                        jk_log(logger, JK_LOG_INFO,
+                               "service() failed because client aborted connection");
+                    }
+                    else {
+                        jk_log(logger, JK_LOG_ERROR,
+                               "service() failed with http error %d", is_error);
+                    }
+                }
+
                 e->done(&e, logger);
             }
         }

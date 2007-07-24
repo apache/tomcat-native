@@ -40,6 +40,7 @@
 #include "jk_worker.h"
 #include "jk_uri_worker_map.h"
 #include "jk_shm.h"
+#include "jk_ajp13.h"
 #include "pcre.h"
 
 #ifndef POSIX_MALLOC_THRESHOLD
@@ -1519,7 +1520,8 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                 s.retries = worker->retries;
                 if (worker->get_endpoint(worker, &e, logger)) {
                     int is_error = JK_HTTP_SERVER_ERROR;
-                    if (e->service(e, &s, logger, &is_error)) {
+                    int result;
+                    if ((result = e->service(e, &s, logger, &is_error)) > 0) {
                         rc = HSE_STATUS_SUCCESS;
                         lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
                         if (JK_IS_DEBUG_LEVEL(logger))
@@ -1527,8 +1529,14 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                                    "service() returned OK");
                     }
                     else {
-                        jk_log(logger, JK_LOG_ERROR,
-                               "service() failed with http error %d", is_error);
+                        if ((result == JK_CLIENT_ERROR) && (is_error == JK_HTTP_OK)) {
+                            jk_log(logger, JK_LOG_INFO,
+                                   "service() failed because client aborted connection");
+                        }
+                        else {
+                            jk_log(logger, JK_LOG_ERROR,
+                                   "service() failed with http error %d", is_error);
+                        }
                         lpEcb->dwHttpStatusCode = is_error;
                         write_error_message(lpEcb, is_error);
                     }
