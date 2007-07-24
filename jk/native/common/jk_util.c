@@ -286,12 +286,11 @@ static const char *supported_properties[] = {
     MAINTAIN_PROPERTY_NAME
 };
 
-/* All entries need to have fixed length 8 chars! */
 static const char *jk_level_verbs[] = {
     "[" JK_LOG_TRACE_VERB "] ",
     "[" JK_LOG_DEBUG_VERB "] ",
-    "[" JK_LOG_INFO_VERB "]  ",
-    "[" JK_LOG_WARN_VERB "]  ",
+    "[" JK_LOG_INFO_VERB "] ",
+    "[" JK_LOG_WARN_VERB "] ",
     "[" JK_LOG_ERROR_VERB "] ",
     "[" JK_LOG_EMERG_VERB "] ",
     NULL
@@ -493,31 +492,51 @@ int jk_log(jk_logger_t *l,
 #endif
         used = set_time_str(buf, usable_size, l->log_fmt);
 
-        if (line) {
+        if (line) { /* line==0 only used for request log item */
             /* Log [pid:threadid] for all levels except REQUEST. */
             /* This information helps to correlate lines from different logs. */
             /* Performance is no issue, because with production log levels */
             /* we only call it often, if we have a lot of errors */
-            rc = snprintf(&buf[used], usable_size - used,
-                             "[%" JK_PID_T_FMT ":%" JK_UINT32_T_FMT "] ", getpid(), jk_gettid());
+            rc = snprintf(buf + used, usable_size - used,
+                          "[%" JK_PID_T_FMT ":%" JK_UINT32_T_FMT "] ", getpid(), jk_gettid());
             used += rc;
-            if (rc < 0 || usable_size - used < 8) {
+            if (rc < 0 ) {
                 return 0;
             }
-            strcat(buf, jk_level_verbs[level]);
-            used += 8;
+
+            rc = (int)strlen(jk_level_verbs[level]);
+            if (usable_size - used >= rc) {
+                strncpy(buf + used, jk_level_verbs[level], rc);
+                used += rc;
+            }
+            else {
+                return 0;           /* [V] not sure what to return... */
+            }
 
             if (funcname) {
-                rc = (int)strlen(funcname) + 2;
-                if (usable_size - used >= rc) {
-                    strcat(buf, funcname);
-                    strcat(buf, "::");
+                rc = (int)strlen(funcname);
+                if (usable_size - used >= rc + 2) {
+                    strncpy(buf + used, funcname, rc);
                     used += rc;
+                    strncpy(buf + used, "::", 2);
+                    used += 2;
+                }
+                else {
+                    return 0;           /* [V] not sure what to return... */
                 }
             }
 
-            rc = snprintf(&buf[used], usable_size - used,
-                             "%s (%d): ", f, line);
+            rc = (int)strlen(f);
+            if (usable_size - used >= rc) {
+                strncpy(buf + used, f, rc);
+                used += rc;
+            }
+            else {
+                return 0;           /* [V] not sure what to return... */
+            }
+
+            rc = snprintf(buf + used, usable_size - used,
+                          " (%d): ", line);
             used += rc;
             if (rc < 0 || usable_size - used < 0) {
                 return 0;           /* [V] not sure what to return... */
