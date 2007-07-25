@@ -41,6 +41,7 @@ XINCDIRS	+= \
 # These flags will come after CFLAGS
 #
 XCFLAGS		+= \
+			-DNO_GETTIMEOFDAY \
 			-DJK_PREFORK \
 			$(EOLIST)
 
