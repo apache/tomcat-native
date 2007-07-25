@@ -50,6 +50,22 @@ ApacheCon EU 2007 DISCUSSION POINTS:
         server and backend
       - Maybe transporting the backend connector events back to the web
         server
+    * Load Balancer methods
+      - Round-Robin
+        Standard basic requests count method
+      - Least Connections
+        Number of active sessions
+      - Response Time
+        Request/reply response time
+      - Transferred Data
+        Data read/transferred over the channel. Total or within
+        a measured interval.
+      - All methods have weighted distribution
+      - Methods can be combined with different weight for each method
+        e.g. 75% Response Time and 25% Transferred Data
+      - Load threshold
+        Make a load treshold for high load. When node reaches the desired
+        treshold (eg. 90%) update the load factors. 
 
 HOW TO REACH THE GOALS: ROADMAP.
 Here are the steps to reach the goals.

@@ -475,7 +475,7 @@ static int ajpv12_handle_request(ajp12_endpoint_t * p,
                 to_read = READ_BUF_SIZE;
             }
             else {
-                to_read = s->content_length - so_far;
+                to_read = (unsigned int)(s->content_length - so_far);
             }
 
             if (!s->read(s, buf, to_read, &this_time)) {
