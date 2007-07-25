@@ -229,7 +229,7 @@ void jk_ebcdic2ascii(char *src, char *dst);
 #endif
 
 /* i5/OS V5R4 need ASCII-EBCDIC conversion before stat() call */
-/* added a stat() mapper function, jk_map, for such purpose */
+/* added a stat() mapper function, jk_stat, for such purpose */
 
 int jk_stat(const char *f, struct stat * statbuf);
 
