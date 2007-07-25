@@ -137,6 +137,20 @@
       is set during for configure. (rjung)
       </fix>
       <update>
+      Use snprintf/vsnprintf from ap_snprintf.c for platforms other
+      than Windows, which might lack snprintf/vsnprintf implementations
+      when NOT build for Apache httpd 2.x/APR (e.g. Sub Web Server)
+      or without using configure. (fuankg)
+      </update>
+      <update>
+      Imported ap_snprintf() from Apache 1.3. (fuankg)
+      </update>
+      <update>
+      Add jk_stat() and jk_file_exists() as wrapper functions.
+      i5/OS V5R4 expects filename in ASCII for fopen but requires them
+      in EBCDIC for stat(). (hgomez)
+      </update>
+      <update>
       i5/OS (AS/400) V5R4 port where Apache 2.0 modules should now use UTF8. (hgomez)
       </update>
       <update>
