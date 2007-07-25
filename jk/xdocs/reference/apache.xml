@@ -170,13 +170,17 @@ error or trace.
 The default value is info.
 </p></attribute>
 <attribute name="JkLogStampFormat" required="false"><p>
-The Tomcat Connector module <b>date</b> log format, follow an
+The Tomcat Connector module <b>date</b> log format, using an
 extended strftime syntax.
 This format will be used for the time stamps in the JkLogFile.
-Besides the usual strftime conversion specifications,
-you can also use %Q for adding milliseconds to the log and
-%q for microseconds. This will only work with mod_jk minimum
-version 1.2.24 on platforms with a gettimeofday() function.
+The maximum length of the format is 63 characters.
+<br/>
+Starting with version 1.2.24 of mod_jk you can also use %Q
+for adding milliseconds to the log and %q for microseconds. 
+These conversion specifiers are an extension to strftime.
+They will only work on platforms with a gettimeofday() function.
+You can use %Q and %q only once in the pattern and also not both
+together in the same pattern.
 <br/>
 The default value is "[%a %b %d %H:%M:%S %Y] " and beginning
 with version 1.2.24 on platforms with a gettimeofday()
