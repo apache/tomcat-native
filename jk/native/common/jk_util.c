@@ -350,7 +350,7 @@ void jk_sleep(int ms)
 #endif
 }
 
-void jk_set_time_fmt(jk_logger_t *l, char *jk_log_fmt)
+void jk_set_time_fmt(jk_logger_t *l, const char *jk_log_fmt)
 {
     if (l) {
         char *s;
@@ -365,7 +365,8 @@ void jk_set_time_fmt(jk_logger_t *l, char *jk_log_fmt)
 #endif
         }
         l->log_fmt_type = JK_TIME_SUBSEC_NONE;
-        l->log_fmt_offset = NULL;
+        l->log_fmt_offset = 0;
+        l->log_fmt_size = 0;
         l->log_fmt_subsec = jk_log_fmt;
         l->log_fmt = jk_log_fmt;
 
@@ -377,7 +378,7 @@ void jk_set_time_fmt(jk_logger_t *l, char *jk_log_fmt)
                 int len = strlen(JK_TIME_PATTERN_MILLI);
 
                 l->log_fmt_type = JK_TIME_SUBSEC_MILLI;
-                l->log_fmt_offset = fmt + offset;
+                l->log_fmt_offset = offset;
                 strncpy(fmt, log_fmt_safe, offset);
                 strncpy(fmt + offset, JK_TIME_PATTERN_MILLI, len);
                 strncpy(fmt + offset + len,
@@ -385,13 +386,14 @@ void jk_set_time_fmt(jk_logger_t *l, char *jk_log_fmt)
                         JK_TIME_MAX_SIZE - offset - len);
                 fmt[JK_TIME_MAX_SIZE-1] = '\0';
                 l->log_fmt_subsec = fmt;
+                l->log_fmt_size = strlen(fmt);
             }
             else if ( (s = strstr(log_fmt_safe, JK_TIME_CONV_MICRO)) ) {
                 int offset = s - log_fmt_safe;
                 int len = strlen(JK_TIME_PATTERN_MICRO);
 
                 l->log_fmt_type = JK_TIME_SUBSEC_MICRO;
-                l->log_fmt_offset = fmt + offset;
+                l->log_fmt_offset = offset;
                 strncpy(fmt, log_fmt_safe, offset);
                 strncpy(fmt + offset, JK_TIME_PATTERN_MICRO, len);
                 strncpy(fmt + offset + len,
@@ -399,6 +401,7 @@ void jk_set_time_fmt(jk_logger_t *l, char *jk_log_fmt)
                         JK_TIME_MAX_SIZE - offset - len);
                 fmt[JK_TIME_MAX_SIZE-1] = '\0';
                 l->log_fmt_subsec = fmt;
+                l->log_fmt_size = strlen(fmt);
             }
         }
     }
@@ -409,10 +412,13 @@ static int set_time_str(char *str, int len, jk_logger_t *l)
     time_t t;
     struct tm *tms;
     int done;
+    char log_fmt[JK_TIME_MAX_SIZE];
 
     if ( !l || !l->log_fmt ) {
         return 0;
     }
+
+    log_fmt[0] = '\0';
 
 #ifndef NO_GETTIMEOFDAY
     if ( l->log_fmt_type != JK_TIME_SUBSEC_NONE ) {
@@ -421,13 +427,14 @@ static int set_time_str(char *str, int len, jk_logger_t *l)
         if ( rc == 0 ) {
             char subsec[7];
             t = tv.tv_sec;
+            strncpy(log_fmt, l->log_fmt_subsec, l->log_fmt_size + 1);
             if ( l->log_fmt_type == JK_TIME_SUBSEC_MILLI ) {
                 sprintf(subsec, "%03d", (int)(tv.tv_usec/1000));
-                strncpy(l->log_fmt_offset, subsec, 3);
+                strncpy(log_fmt + l->log_fmt_offset, subsec, 3);
             }
             else if ( l->log_fmt_type == JK_TIME_SUBSEC_MICRO ) {
                 sprintf(subsec, "%06d", (int)(tv.tv_usec));
-                strncpy(l->log_fmt_offset, subsec, 6);
+                strncpy(log_fmt + l->log_fmt_offset, subsec, 6);
             }
         }
         else {
@@ -441,15 +448,10 @@ static int set_time_str(char *str, int len, jk_logger_t *l)
     t = time(NULL);
 #endif
     tms = localtime(&t);
-    done = (int)strftime(str, len, l->log_fmt_subsec, tms);
-#ifndef NO_GETTIMEOFDAY
-    if ( l->log_fmt_type == JK_TIME_SUBSEC_MILLI ) {
-        strncpy(l->log_fmt_offset, JK_TIME_PATTERN_MILLI, 3);
-    }
-    else if ( l->log_fmt_type == JK_TIME_SUBSEC_MICRO ) {
-        strncpy(l->log_fmt_offset, JK_TIME_PATTERN_MICRO, 6);
-    }
-#endif
+    if (log_fmt[0])
+        done = (int)strftime(str, len, log_fmt, tms);
+    else
+        done = (int)strftime(str, len, l->log_fmt, tms);
     return done;
 
 }
