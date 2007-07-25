@@ -1825,10 +1825,13 @@ jk_uint32_t jk_gettid()
         pthread_t tid;
         jk_uint64_t alignme;
     } u;
+#ifdef AS400
+    /* OS400 use 64 bits ThreadId */
+    pthread_id_np_t       tid;
+#endif /* AS400 */
     u.tid = pthread_self();
 #ifdef AS400
-    /* OS400 use 64 bits ThreadId, get only low 32 bits for now */
-    pthread_id_np_t       tid;
+    /* Get only low 32 bits for now */
     pthread_getunique_np(&(u.tid), &tid);
     return ((jk_uint32_t)(tid.intId.lo & 0xFFFFFFFF));
 #else
