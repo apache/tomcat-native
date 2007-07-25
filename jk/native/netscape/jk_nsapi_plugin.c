@@ -370,9 +370,9 @@ NSAPI_PUBLIC int jk_service(pblock * pb, Session * sn, Request * rq)
         if (init_ws_service(&private_data, &s)) {
             jk_endpoint_t *e = NULL;
             if (worker->get_endpoint(worker, &e, logger)) {
-                int recover = JK_FALSE;
+                int is_error = JK_HTTP_SERVER_ERROR;
                 int result;
-                if ((result = e->service(e, &s, logger, &recover)) > 0) {
+                if ((result = e->service(e, &s, logger, &is_error)) > 0) {
                     rc = REQ_PROCEED;
                     if (JK_IS_DEBUG_LEVEL(logger))
                         jk_log(logger, JK_LOG_DEBUG,
