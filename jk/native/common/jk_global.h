@@ -57,8 +57,8 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
 #pragma warning(disable: 4996)
-#endif
-#endif
+#endif /* defined(_MSC_VER) && _MSC_VER >= 1400 */
+#endif /* defined(WIN32) */
 
 #include "jk_version.h"
 
@@ -116,10 +116,10 @@ extern char *strdup(const char *str);
 #include <winsock2.h>
 #include <mswsock.h>
 #include <ws2tcpip.h>
-#endif
+#endif /* _WINDOWS_ */
 #include <sys/timeb.h>
 #include <process.h>
-#else
+#else /* WIN32 */
 #include <unistd.h>
 #if defined(NETWARE) && defined(__NOVELL_LIBC__)
 #include "novsock2.h"
@@ -143,11 +143,11 @@ extern char *strdup(const char *str);
 #if !defined(HPUX11) && !defined(AS400)
 #include <sys/select.h>
 #endif
-#endif
+#endif /* NETWARE */
 
 #include <sys/time.h>
 #include <sys/ioctl.h>
-#endif
+#endif /* WIN32 */
 
 #ifdef __cplusplus
 extern "C"
@@ -192,7 +192,7 @@ extern "C"
 #ifndef strcasecmp
 #define strcasecmp stricmp
 #endif
-#else
+#else /* defined(WIN32) || defined(NETWARE) */
 #define JK_METHOD
 #define C_LEVEL_TRY_START
 #define C_LEVEL_TRY_END
@@ -201,7 +201,7 @@ extern "C"
 #define PATH_SEPERATOR          (':')
 #define FILE_SEPERATOR          ('/')
 #define PATH_ENV_VARIABLE       ("LD_LIBRARY_PATH")
-#endif
+#endif /* defined(WIN32) || defined(NETWARE) */
 
 /* HTTP Error codes
  */
@@ -325,7 +325,7 @@ extern "C"
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
 #endif
-#endif
+#endif /* WIN32" */
 
 /* Use apr snprintf() and vsnprintf() when needed */
 #if defined(HAVE_APR)
