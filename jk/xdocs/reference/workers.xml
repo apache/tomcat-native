@@ -160,7 +160,8 @@ web servers such as Apache 2.0 (worker), IIS and Netscape. The connection_pool_s
 should reflect the number of threads per child process. JK will discover
 the number of threads per child process on Apache 2 web server with worker-mpm and set
 its default value to match the ThreadsPerChild Apache directive. For IIS the default
-value is 10. For other web servers than Apache or IIS this value has to be set manually.
+value is 250. For other web servers than Apache or IIS the default value is 1
+and you should adjust it manually.
 </p>
 <warn>Do not use connection_pool_size with values higher then 1 on <b>Apache 2.x prefork</b> or <b>Apache 1.3.x</b>!</warn>
 </directive>
