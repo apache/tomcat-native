@@ -24,6 +24,7 @@
     <menu name="Generic HowTo">
         <item name="For the impatient"          href="../generic_howto/quick.html"/>
         <item name="All about workers"          href="../generic_howto/workers.html"/>
+        <item name="Timeouts"                   href="../generic_howto/timeouts.html"/>
         <item name="Load Balancing"             href="../generic_howto/loadbalancers.html"/>
     </menu>
 

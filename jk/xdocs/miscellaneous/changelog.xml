@@ -28,6 +28,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Documentation: Add a HowTo about the various timeouts. rjung)
+      </update>
+      <update>
       Logging: add milliseconds to the default timestamp format,
       if we have gettimeofday(). (rjung)
       </update>

@@ -176,6 +176,10 @@ Web Server side for the 'impatients'.
 and using workers.
 </p>
 </li>
+<li><a href="generic_howto/timeouts.html"><b>Timeouts</b></a>
+<p>This page describes the possible timeouts settings you can use.
+</p>
+</li>
 <li><a href="generic_howto/loadbalancers.html"><b>Load Balancing</b></a>
 <p>This page contains an introduction on load balancing with JK.
 </p>

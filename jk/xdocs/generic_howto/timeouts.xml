@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="timeouts.html">
+
+  &project;
+<copyright>
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+ 
+       http://www.apache.org/licenses/LICENSE-2.0
+ 
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+</copyright>
+<properties>
+<title>Timeouts HowTo</title>
+<author email="rjung@apache.org">Rainer Jung</author>
+<date>$Date$</date>
+</properties>
+<body>
+<section name="Introduction"> 
+<br/>
+<p>Setting communication timeouts is very important to improve the
+communication process. They help to detect problems and stabilize
+a distributed system. JK uses several different timeout values, which
+can be individually configured. This HowTo explains their use and gives
+hints how to find appropriate values.
+</p>
+<p>All timeouts are configured in the workers.properties file.
+For a complete reference of all worker configuration
+items, please consult the worker <a href="../reference/workers.html">reference</a>.
+This page assumes, that you are using at least version 1.2.16 of JK.
+Dependencies on newer versions will be mentioned where necessary.
+</p>
+<warn>
+Do not set timeouts to extreme values. Very small timeouts will likely
+be counterproductive.
+</warn>
+<warn>
+Long Garbage Collection pauses on the backend do not make a good
+fit with some timeouts. Try to optimize your Java memory and GC settings.
+</warn>
+</section>
+
+<section name="JK timeout attributes">
+<br/>
+<subsection name="CPing/CPong">
+<p>
+CPing/CPong is our notion for using small test packets to check the
+status of backend connections. JK can use such test packets directly after establishing
+a new backend connection and also directly before each request gets send to a backend.
+The waiting time for a CPong answer to a CPing can be configured.
+</p>
+<p>
+The test packets will be answered by the backend very fast with a minimal amount of
+needed processing resources. A positive answer tells us, that the backend can be reached
+and is actively processing requests. It does not detect, if some context is deployed
+and working. The benefit of CPing/CPong is a very fast detection of a communication
+problem with the backend. The downside is an additional roundtrip time before requests.
+</p>
+<p>
+The worker attribute <b>connect_timeout</b> sets the wait timeout for CPong during
+connection establishment. By default the value is "0", which disables CPing/CPong during
+connection establishment. Since JK usually uses persistent connections, opening new connections
+is a rare event. We therefore recommend using <b>connect_timeout</b>. Its value is given
+in milliseconds. Depending on your network latency and stability, good values often
+are between 5000 and 15000 milliseconds. Remember: don't use extremely small values.
+</p>
+<p>
+The worker attribute <b>prepost_timeout</b> sets the wait timeout for CPong before
+request forwarding. By default the value is "0", which disables CPing/CPong before
+request forwarding. Activating this type of CPing/CPong adds a small latency to each
+request. Usually this is small enough and the benefit of CPing/CPong is more important.
+In general we also recommend using <b>prepost_timeout</b>. Its value is given
+in milliseconds. Depending on your network latency and stability, good values often
+are between 5000 and 10000 milliseconds. Remember: don't use extremely small values.
+</p>
+</subsection>
+
+<subsection name="Low-Level TCP Timeouts">
+<p>
+Some platforms allow to set timeouts for all operations on TCP sockets.
+This is available for Linux and Windows, other patforms do not support this,
+e.g. Solaris. If your platform support TCP send and receive timeouts,
+you can set them using the worker attribute <b>socket_timeout</b>.
+</p>
+<p>
+JK will accept this attribute even if your platform does not support
+socket timeouts. In this case setting the attribute will have no effect.
+By default the value is "0" and the timeout is disabled.
+You can set the attribute to some second value (not: milliseconds).
+JK will then set the send and the receive timeouts of the backend
+connections to this value. The timeout is low-level, it is
+used for each read and write operation on the socket individually.
+</p>
+<p>
+Using this attribute will JK react faster to some types of network problems.
+Unfortunately socket timeouts have negative side effects, because for most
+platforms, there is no good way to recover from such a timeout, once it fired.
+</p>
+</subsection>
+
+<subsection name="Connection Pools and Idle Timeouts">
+<p>
+JK handles backend connections in a connection pool per web server process.
+The connections are used in a persistent mode. After a request completed
+successfully we keep the connection open and wait for the next
+request to forward. The connection pool is able to grow according
+to the number of threads that want to forward requests in parallel.
+</p>
+<p>
+Most applications have a varying load depending on the hour of the day
+or the day of the month. Other reasons for a growing connection pool
+would be temporary slowness of backends, leading to an increasing
+congestion of the frontends like web servers. Many backends use a dedicated
+thread for each incoming connection they handle. So usually one wants the
+connection pool to shrink, if the load diminishes.
+</p>
+<p>
+JK allows connections in the pool to get closed after some idle time.
+This maximum idle time can be configured with the attribute
+<b>connection_pool_timeout</b> which is given in units of seconds.
+The default value is "0", which disables closing idle connections.
+</p>
+<p>
+We generally recommend values around 10 minutes, so setting
+<b>connection_pool_timeout</b> to 600 (seconds). If you use this attribute,
+please also set the attribute <b>connectionTimeout</b> in the AJP
+Connector element of your Tomcat server.xml configuration file to
+an analogous value. <b>Caution</b>: connectionTimeout is in milliseconds.
+So if you set JK connection_pool_timeout to 600, you should set Tomcat
+connectionTimeout to 600000.
+</p>
+<p>
+Connections do not get closed immediately after the timeout passed.
+Instead there is an automatic internal maintenance task
+running every 60 seconds, that checks the idle status of all connections.
+The 60 seconds interval
+can be adjusted with the global attribute worker.maintain. We do not
+recommend to change this value, because it has a lot of side effects.
+The maintenance task only runs, if requests get processed. So if your web
+server has processes that do not receive any requests for a long
+time, there is no way to close the idle connections in its pool.
+</p>
+<p>
+The maximum connection pool size can be configured with the
+attribute <b>connection_pool_size</b>. We generally do not recommend
+to use this attribute in combination with Apache httpd. For
+Apache httpd we automaticaly detcet the number of threads per
+process and set the maximum pool size to this value. For IIS we use
+a default value of 250, for the Sun Web Server the default is "1".
+We recommend adjusting this value for IIS and the Sun Web Server
+to the number of requests one web server process should
+be able to send to a backend in parallel.
+</p>
+<p>
+The JK attribute <b>connection_pool_minsize</b> defines,
+how many idle connections remain when the pool gets shrinked.
+By default this is half of the maximum pool size.
+</p>
+</subsection>
+
+<subsection name="Firewall Connection Dropping">
+<p>
+One particular problem with idle connections comes from firewalls, that
+are often deployed between the web server layer and the backend.
+Depending on their configuration, they will silently drop
+connections from their status table if they are idle for to long.
+</p>
+<p>
+From the point of view of JK and of the web server, the other side
+simply doesn't answer any traffic. Since TCP is a reliable protocol
+it detects the missing TCP ACKs and tries to resend the packets for
+a relatively long tim, typically several minutes.
+</p>
+<p>
+Many firewalls will allow connection closing, even if they dropped
+the connection for normal traffic. Therefore you should always use
+<a href="#Connection Pools and Idle Timeouts">connection_pool_timeout and
+connection_pool_minsize</a> on the JK side
+and connectionTimeout on the Tomcat side.
+</p>
+<p>
+Furthermore using the boolean attribute <b>socket_keepalive</b> you can
+set a standard socket option, that automatically sends TCP keepalive packets
+after some idle time on each connection. By default this is set to "False".
+If you suspect idle connection drops by firewalls you should set this to
+"True".
+</p>
+<p>
+Unfortunately the default intervals and algorithms for these packets
+are platform specific. You might need to inspect TCP tuning options for
+your platform on how to control TCP keepalive.
+Often the default intervals are much longer than the firewall timeouts
+for idle connections. Nevertheless we recommend talking to your firewall
+administration and your platform administration in order to make them agree
+on good configuration values for the firewall and the platform TCP tuning.
+</p>
+</subsection>
+
+<subsection name="Reply Timeout">
+<p>
+JK can also use a timeout on request replies. This timeout does not
+measure the full processing time of the response. Instead it controls,
+how much time between consecutive response packets is allowed.
+</p>
+<p>
+In most cases, this is what one actually wants. Consider for example
+long running downloads. You would not be able to set an effective global
+reply timeout, because downloads could last for many minutes.
+Most applications though have limited processing time before starting
+to return the response. For those applications you could set an explicit
+reply timeout. Applications that do not harmonize with reply timeouts
+are batch type applications, data warehouse and reporting applications
+which are expected to observe long processing times.
+</p>
+<warn>
+If JK aborts waiting for a response, because a reply timeout fired,
+there is no way to stop processing on the backend. Although you free
+processing ressources in your web server, the request
+will continue to run on the backend - without any way to send back a
+result once the reply timout fired.
+</warn>
+<p>
+JK uses the worker attribute <b>reply_timeout</b> to set reply timeouts.
+The default value is "0" (timeout disabled) and you can set it to any
+millisecond value.
+</p>
+<p>
+In combination with a load balancing worker, JK will disable a member
+worker of the load balancer if a reply timeout fires. The worker will then
+no longer be used until it gets recovered during the next automatic
+maintenance task. Starting with JK 1.2.24 you can relax this behaviour using
+<b><a href="../reference/workers.html">max_reply_timeouts</a></b>.
+</p>
+</subsection>
+
+</section>
+
+</body>
+</document>
