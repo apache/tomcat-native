@@ -423,11 +423,13 @@ static int set_time_str(char *str, int len, jk_logger_t *l)
 #ifndef NO_GETTIMEOFDAY
     if ( l->log_fmt_type != JK_TIME_SUBSEC_NONE ) {
         struct timeval tv;
-        int rc;
+        int rc = 0;
 
-        /* Don't concat the next line with the previous one, */
-        /* because gettimeofday() is a macro for WIN32 */
+#ifdef WIN32
+        gettimeofday(&tv, NULL);
+#else
         rc = gettimeofday(&tv, NULL);
+#endif
         if ( rc == 0 ) {
             char subsec[7];
             t = tv.tv_sec;
