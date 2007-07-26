@@ -154,7 +154,7 @@
                                            "DTD HTML 3.2 Final//EN\">\n"      \
                                            "<html><head><title>JK Status Manager</title>"
 
-#define JK_STATUS_COPYRIGHT                "Copyright &#169; 1999-2006, The Apache Software Foundation<br />" \
+#define JK_STATUS_COPYRIGHT                "Copyright &#169; 1999-2007, The Apache Software Foundation<br />" \
                                            "Licensed under the <a href=\"http://www.apache.org/licenses/LICENSE-2.0\">" \
                                            "Apache License, Version 2.0</a>."
 
