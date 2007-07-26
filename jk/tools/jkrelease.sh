@@ -10,6 +10,22 @@
 # gpg
 # And any one of: w3m, elinks, links (links2)
 
+SVNROOT="http://svn.apache.org/repos/asf"
+SVNPROJ="tomcat/connectors"
+JK_CVST="tomcat-connectors"
+
+JK_OWNER="root"
+JK_GROUP="bin"
+
+COPY_TOP="KEYS LICENSE NOTICE"
+COPY_JK="BUILD.txt native jkstatus support tools xdocs"
+COPY_BUILD="docs"
+COPY_CONF="uriworkermap.properties workers.properties workers.properties.minimal"
+
+#################### NO CHANGE BELOW THIS LINE ##############
+
+#################### FUNCTIONS ##############
+
 usage() {
     echo "Usage:: $0 -t VERSION [-b BRANCH | -T | -d DIR]"
     echo "        -t: version to package"
@@ -17,6 +33,29 @@ usage() {
     echo "        -T: package from trunk"
     echo "        -d: package from local directory"
 }
+
+copy_files() {
+    src=$1
+    target=$2
+    list="$3"
+
+    mkdir -p $target
+    for item in $list
+    do
+        echo "Copying $item from $src ..."
+        cp -pr $src/$item $target/
+    done
+}
+
+sign_and_verify() {
+    item=$1
+    echo "Signing $item..."
+    gpg -ba $item
+    echo "Verifying signature for $item..."
+    gpg --verify $item.asc
+}
+
+#################### MAIN ##############
 
 conflict=0
 while getopts :t:b:d:T c
@@ -61,19 +100,6 @@ then
     fi
 fi
 
-SVNROOT="http://svn.apache.org/repos/asf"
-SVNPROJ="tomcat/connectors"
-JK_CVST="tomcat-connectors"
-
-JK_OWNER="root"
-JK_GROUP="bin"
-
-COPY_TOP="KEYS LICENSE NOTICE"
-COPY_JK="BUILD.txt native jkstatus support tools xdocs"
-COPY_CONF="uriworkermap.properties workers.properties workers.properties.minimal"
-
-#################### NO CHANGE BELOW THIS LINE ##############
-
 if [ -z "$tag" ]
 then
     usage
@@ -109,7 +135,7 @@ then
        echo "No Revision found at '$JK_SVN_URL'"
        exit 3
     fi
-    JK_DIST=${JK_CVST}-${tag}-dev-local-${JK_REV}-src
+    JK_DIST=${JK_CVST}-${tag}-dev-local-`date +%y%m%d%H%M%S`-${JK_REV}-src
 else
     JK_VER=$tag
     JK_TAG=`echo $tag | sed -e 's#^#JK_#' -e 's#\.#_#g'`
@@ -135,42 +161,11 @@ cd ${JK_DIST}.tmp/jk/xdocs
 ant
 cd ../../..
 
-# Copying things into source distribution
-srcdir=${JK_DIST}.tmp
-targetdir=${JK_DIST}
-mkdir -p ${targetdir}
-for item in ${COPY_TOP}
-do
-    echo "Copying $item from ${srcdir} ..."
-    cp -pr ${srcdir}/$item ${targetdir}/
-done
-
-srcdir=${JK_DIST}.tmp/jk
-targetdir=${JK_DIST}
-mkdir -p ${targetdir}
-for item in ${COPY_JK}
-do
-    echo "Copying $item from ${srcdir} ..."
-    cp -pr ${srcdir}/$item ${targetdir}/
-done
-
-srcdir=${JK_DIST}.tmp/jk/build
-targetdir=${JK_DIST}
-mkdir -p ${targetdir}
-for item in docs
-do
-    echo "Copying $item from ${srcdir} ..."
-    cp -pr ${srcdir}/$item ${targetdir}/
-done
-
-srcdir=${JK_DIST}.tmp/jk/conf
-targetdir=${JK_DIST}/conf
-mkdir -p ${targetdir}
-for item in ${COPY_CONF}
-do
-    echo "Copying $item from ${srcdir} ..."
-    cp -pr ${srcdir}/$item ${targetdir}/
-done
+# Copying things into source the distribution
+copy_files ${JK_DIST}.tmp $JK_DIST "$COPY_TOP"
+copy_files ${JK_DIST}.tmp/jk $JK_DIST "$COPY_JK"
+copy_files ${JK_DIST}.tmp/jk/build $JK_DIST "$COPY_BUILD"
+copy_files ${JK_DIST}.tmp/jk/conf $JK_DIST/conf "$COPY_CONF"
 
 # Remove extra directories and files
 targetdir=${JK_DIST}
@@ -250,10 +245,13 @@ fi
 ./buildconf.sh
 cd ../../
 
-# Pack and sign
+# Pack
 tar cfz ${JK_DIST}.tar.gz --owner="${JK_OWNER}" --group="${JK_GROUP}" ${JK_DIST}
 perl ${JK_DIST}/tools/lineends.pl --cr ${JK_DIST}
 zip -9 -r ${JK_DIST}.zip ${JK_DIST}
-# Create detatched signature
-gpg -ba ${JK_DIST}.tar.gz
-gpg -ba ${JK_DIST}.zip
+
+# Create detached signature and verify it
+archive=${JK_DIST}.tar.gz
+sign_and_verify $archive
+archive=${JK_DIST}.zip
+sign_and_verify $archive
