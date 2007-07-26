@@ -371,9 +371,9 @@ void jk_set_time_fmt(jk_logger_t *l, const char *jk_log_fmt)
         l->log_fmt = jk_log_fmt;
 
         fmt = (char *)malloc(JK_TIME_MAX_SIZE + strlen(JK_TIME_PATTERN_MICRO));
-        if ( fmt ) {
+        if (fmt) {
             strncpy(log_fmt_safe, jk_log_fmt, JK_TIME_MAX_SIZE);
-            if ( (s = strstr(log_fmt_safe, JK_TIME_CONV_MILLI)) ) {
+            if ((s = strstr(log_fmt_safe, JK_TIME_CONV_MILLI))) {
                 size_t offset = s - log_fmt_safe;
                 size_t len = strlen(JK_TIME_PATTERN_MILLI);
 
@@ -414,7 +414,7 @@ static int set_time_str(char *str, int len, jk_logger_t *l)
     int done;
     char log_fmt[JK_TIME_MAX_SIZE];
 
-    if ( !l || !l->log_fmt ) {
+    if (!l || !l->log_fmt) {
         return 0;
     }
 
@@ -430,15 +430,15 @@ static int set_time_str(char *str, int len, jk_logger_t *l)
 #else
         rc = gettimeofday(&tv, NULL);
 #endif
-        if ( rc == 0 ) {
+        if (rc == 0) {
             char subsec[7];
             t = tv.tv_sec;
             strncpy(log_fmt, l->log_fmt_subsec, l->log_fmt_size + 1);
-            if ( l->log_fmt_type == JK_TIME_SUBSEC_MILLI ) {
+            if (l->log_fmt_type == JK_TIME_SUBSEC_MILLI) {
                 sprintf(subsec, "%03d", (int)(tv.tv_usec/1000));
                 strncpy(log_fmt + l->log_fmt_offset, subsec, 3);
             }
-            else if ( l->log_fmt_type == JK_TIME_SUBSEC_MICRO ) {
+            else if (l->log_fmt_type == JK_TIME_SUBSEC_MICRO) {
                 sprintf(subsec, "%06d", (int)(tv.tv_usec));
                 strncpy(log_fmt + l->log_fmt_offset, subsec, 6);
             }
