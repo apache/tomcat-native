@@ -161,7 +161,7 @@ cd ${JK_DIST}.tmp/jk/xdocs
 ant
 cd ../../..
 
-# Copying things into source the distribution
+# Copying things into source distribution
 copy_files ${JK_DIST}.tmp $JK_DIST "$COPY_TOP"
 copy_files ${JK_DIST}.tmp/jk $JK_DIST "$COPY_JK"
 copy_files ${JK_DIST}.tmp/jk/build $JK_DIST "$COPY_BUILD"
