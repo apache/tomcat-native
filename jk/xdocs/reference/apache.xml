@@ -762,7 +762,7 @@ webapp directory. For security reasons is is strongly recommended that JkMount
 is used to pass all requests to Tomcat by default and JkUnMount is used to
 explicitly exclude static content to be served by httpd. It should also be noted
 that content served by httpd will bypass any security constraints defined in the
-applciation's web.xml.
+application's web.xml.
 </p>
 <source>
   # enter the full path to the tomcat webapps directory
