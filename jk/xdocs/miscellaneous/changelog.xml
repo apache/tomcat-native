@@ -132,6 +132,21 @@
       defaults to 100Hz).
       Patch provided by David McLaughlin. (mturk)
       </fix>
+      <update>
+      NSAPI: Check correct log file and shm file configuration during startup. (rjung)
+      </update>
+      <fix>
+      NSAPI: Add support for the general options concerning retries, flushing
+      and connection persistance. (rjung)
+      </fix>
+      <fix>
+      NSAPI: fix crashes due to use of mount attribute in workers.properties.
+      Changed initialization order. (rjung)
+      </fix>
+      <fix>
+      Improved handling of libtool and discrepancies between CC env variable and
+      CC used during apache build by configure script. (rjung)
+      </fix>
       <fix>
       Always build with thread support, unless flag --enable-prefork
       is set during for configure. (rjung)
@@ -145,6 +160,10 @@
       <update>
       Imported ap_snprintf() from Apache 1.3. (fuankg)
       </update>
+      <fix>
+      Fix incorrect log object cleanup during statup,
+      leading to crashes at least on iSeries. (rjung)
+      </fix>
       <update>
       Add jk_stat() and jk_file_exists() as wrapper functions.
       i5/OS V5R4 expects filename in ASCII for fopen but requires them
