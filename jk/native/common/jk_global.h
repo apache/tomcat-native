@@ -314,7 +314,9 @@ extern "C"
 
 #ifdef WIN32
 /* For WIN32, emulate gettimeofday() using _ftime() */
-#define gettimeofday(tv,tz) { struct _timeb tb; _ftime(&tb); (tv)->tv_sec = tb.time; (tv)->tv_usec = tb.millitm * 1000; }
+#define gettimeofday(tv, tz) { struct _timeb tb; _ftime(&tb); \
+                               (tv)->tv_sec = (long)tb.time;  \
+                               (tv)->tv_usec = tb.millitm * 1000; }
 #define HAVE_VSNPRINTF
 #define HAVE_SNPRINTF
 #ifdef HAVE_APR
