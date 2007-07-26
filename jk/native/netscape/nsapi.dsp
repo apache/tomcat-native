@@ -168,6 +168,10 @@ SOURCE=..\common\jk_uri_worker_map.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\jk_url.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\common\jk_util.c
 # End Source File
 # Begin Source File
@@ -257,6 +261,10 @@ SOURCE=..\common\jk_status.h
 # Begin Source File
 
 SOURCE=..\common\jk_uri_worker_map.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\jk_url.h
 # End Source File
 # Begin Source File
 
