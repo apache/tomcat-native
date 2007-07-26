@@ -374,8 +374,8 @@ void jk_set_time_fmt(jk_logger_t *l, const char *jk_log_fmt)
         if ( fmt ) {
             strncpy(log_fmt_safe, jk_log_fmt, JK_TIME_MAX_SIZE);
             if ( (s = strstr(log_fmt_safe, JK_TIME_CONV_MILLI)) ) {
-                int offset = s - log_fmt_safe;
-                int len = strlen(JK_TIME_PATTERN_MILLI);
+                size_t offset = s - log_fmt_safe;
+                size_t len = strlen(JK_TIME_PATTERN_MILLI);
 
                 l->log_fmt_type = JK_TIME_SUBSEC_MILLI;
                 l->log_fmt_offset = offset;
@@ -388,9 +388,9 @@ void jk_set_time_fmt(jk_logger_t *l, const char *jk_log_fmt)
                 l->log_fmt_subsec = fmt;
                 l->log_fmt_size = strlen(fmt);
             }
-            else if ( (s = strstr(log_fmt_safe, JK_TIME_CONV_MICRO)) ) {
-                int offset = s - log_fmt_safe;
-                int len = strlen(JK_TIME_PATTERN_MICRO);
+            else if ((s = strstr(log_fmt_safe, JK_TIME_CONV_MICRO))) {
+                size_t offset = s - log_fmt_safe;
+                size_t len = strlen(JK_TIME_PATTERN_MICRO);
 
                 l->log_fmt_type = JK_TIME_SUBSEC_MICRO;
                 l->log_fmt_offset = offset;

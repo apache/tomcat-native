@@ -39,9 +39,9 @@ struct jk_logger
     const char *log_fmt;        /* the configured timestamp format for logging */
     const char *log_fmt_subsec; /* like log_fmt, but milli/micro seconds
                                    marker replaced, because strftime() doesn't handle those */
-    int log_fmt_offset;         /* at which position should we insert */
-    int log_fmt_type;           /* do we want milli or microseconds */
-    int log_fmt_size;           /* how long is this format string */
+    int    log_fmt_type;        /* do we want milli or microseconds */
+    size_t log_fmt_offset;      /* at which position should we insert */
+    size_t log_fmt_size;        /* how long is this format string */
 
     int (JK_METHOD * log) (jk_logger_t *l, int level, int used, char *what);
 
