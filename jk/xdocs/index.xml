@@ -177,7 +177,7 @@ and using workers.
 </p>
 </li>
 <li><a href="generic_howto/timeouts.html"><b>Timeouts</b></a>
-<p>This page describes the possible timeouts settings you can use.
+<p>This page describes the possible timeout settings you can use.
 </p>
 </li>
 <li><a href="generic_howto/loadbalancers.html"><b>Load Balancing</b></a>
