@@ -232,6 +232,23 @@ Edit your server <b>obj.conf</b> and add the following lines:
 
 <ul>
 <li>
+Edit your worker definition file <b>workers.properties</b>. You should at least choose a connection pool size:
+</li>
+</ul>
+
+<source>
+  #An entry that lists all the workers defined. For example:
+  worker.list=worker1
+  
+  # Entries that define the host and port associated with these workers.
+  worker.worker1.host=localhost
+  worker.worker1.port=8009
+  worker.worker1.type=ajp13
+  worker.worker1.connection_pool_size=50
+</source>
+
+<ul>
+<li>
 Restart Web Server (stop and start the server)
 </li>
 </ul>
