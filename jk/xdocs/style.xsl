@@ -279,7 +279,7 @@
     </table>
   </xsl:template>
 
-  <!-- Process an directives list with nested directive elements -->
+  <!-- Process a directives list with nested directive elements -->
   <xsl:template match="directives">
     <table border="1" cellpadding="5">
       <tr>
@@ -323,7 +323,66 @@
     </table>
   </xsl:template>
 
-  <!-- Process an directives list with nested directive elements -->
+  <!-- Process an advanced directives list with nested directive elements -->
+  <xsl:template match="advanceddirectives">
+    <table border="1" cellpadding="5">
+      <tr>
+        <th width="10%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Directive</font>
+        </th>
+        <th width="10%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Worker Type</font>
+        </th>
+        <th width="8%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Default</font>
+        </th>
+        <th width="72%" bgcolor="{$attributes-color}">
+          <font color="#ffffff">Description</font>
+        </th>
+      </tr>
+      <xsl:for-each select="directive">
+        <tr>
+          <td align="left" valign="center">
+            <xsl:if test="@required = 'true'">
+              <strong><code><xsl:value-of select="@name"/></code></strong>
+            </xsl:if>
+            <xsl:if test="@required != 'true'">
+              <code><xsl:value-of select="@name"/></code>
+            </xsl:if>
+          </td>
+     	  <xsl:choose>
+            <xsl:when test="@workers != ''">
+               <td align="left" valign="center">          
+               <code><xsl:value-of select="@workers"/></code>
+              </td>
+            </xsl:when>
+            <xsl:otherwise>
+              <td align="left" valign="center">          
+              <code>?</code>
+              </td>
+            </xsl:otherwise>
+          </xsl:choose>          
+     	  <xsl:choose>
+            <xsl:when test="@default != ''">
+               <td align="center" valign="center">          
+               <code><xsl:value-of select="@default"/></code>
+              </td>
+            </xsl:when>
+            <xsl:otherwise>
+              <td align="center" valign="center">          
+              <code>-</code>
+              </td>
+            </xsl:otherwise>
+          </xsl:choose>          
+          <td align="left" valign="center">
+            <xsl:apply-templates/>
+          </td>
+        </tr>
+      </xsl:for-each>
+    </table>
+  </xsl:template>
+
+  <!-- Process a deprecations list with nested directive elements -->
   <xsl:template match="deprecations">
     <table border="1" cellpadding="5">
       <tr>
