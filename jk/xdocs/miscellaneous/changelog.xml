@@ -28,6 +28,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+      Documentation: Improved workers.properties description in the
+      reference guide. (rjung)
+      </update>
+      <update>
       Documentation: Add a HowTo about the various timeouts. rjung)
       </update>
       <update>

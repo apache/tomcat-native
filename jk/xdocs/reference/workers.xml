@@ -44,30 +44,49 @@ machine of its own and distribute the requests between them.
 
 <p>
 There are probably more reasons for having multiple workers but I guess that this list is enough...
+</p>
+<p>
 Tomcat workers are defined in a properties file dubbed <b>workers.properties</b> and this tutorial
 explains how to work with it.
 </p>
 </section>
 
-<section name="Directives">
+<section name="Configuration File Basics">
 <br/>
-<p>Each workers.properties directive consists of three words separated by dot. The first word is always
-<b>worker</b>. The second word is the worker name that can be any name. In the case of load-balancing,
-the worker name has an additional meaning. Please consult the
-<a href="../generic_howto/loadbalancers.html">Load Balancer HowTo</a>.
-</p>
-<p>
-<warn>
-The name of the worker can contain only the alphanumeric characters <b>[a-z][A-Z][0-9][_\-]</b> and is case sensitive.
-</warn>
-</p>
-
-<subsection name="Defining workers">
-<br/>
-<p>The generic workers.properties directive is in the form:</p>
-<p><strong>worker.&lt;worker name&gt;.&lt;directive&gt;=&lt;value&gt;</strong></p>
 <p>Defining workers to the Tomcat web server plugin can be done using a properties file
 (a sample file named workers.properties is available in the conf/ directory).
+</p>
+
+<subsection name="Format, Comments, Whitespace">
+<br/>
+<p>
+The lines in the file define properties. The general format is
+</p>
+<p><strong>&lt;name&gt;=&lt;value&gt;</strong></p>
+<p>
+</p>
+Dots are used as part of the name to represent a configuration hierarchie.
+<p>
+Invalid directives will be logged during web server startup and prevent the web server
+from working properly. Some directives have been deprecated. Although they will
+still work, you should replace them by their
+<a href="#Deprecated Worker Directives">successors</a>.
+</p>
+<p>
+Some directives are allowed multiple times. This will be explicitely
+noted in the tables below.
+</p>
+<p>
+Whitespace at the beginning and the end of a property name or value gets ignored.
+Comments can be placed in any line and start with a hash sign '#'.
+Any line contents behind the hash sign get ignored.
+</p>
+</subsection>
+
+<subsection name="Global Properties">
+<br/>
+<p>
+These directives have global scope.
 </p>
 <directives>
 <directive name="worker.list" default="ajp13" required="true">
@@ -94,10 +113,85 @@ This feature has been added in <b>jk 1.2.13</b>.
 </directives>
 </subsection>
 
-<subsection name="Mandatory directives">
+<subsection name="Worker Properties">
+<br/>
+<p>
+Each worker configuration directive consists of three words separated by a dot:
+</p>
+<p><strong>worker.&lt;worker name&gt;.&lt;directive&gt;=&lt;value&gt;</strong></p>
+<p>
+The first word is always <b>worker</b>. 
+The second word is the worker name you can choose. In the case of load-balancing,
+the worker name has an additional meaning. Please consult the
+<a href="../generic_howto/loadbalancers.html">Load Balancer HowTo</a>.
+</p>
+<warn>
+The name of the worker can contain only the alphanumeric characters
+<b>[a-z][A-Z][0-9][_\-]</b> and is case sensitive.
+</warn>
+</subsection>
+
+<subsection name="Variables, Environment Variables">
+<br/>
+<p>
+You can define and use variables in the workers.properties file.
+To define a variable you use the syntax:
+</p>
+<p><strong>&lt;variable_name&gt;=&lt;value&gt;</strong></p>
+<p>
+Dots are allowed in the variable name, but you have to be careful
+not to use variable names, that clash with standard directives.
+Therefore variable names should never start with "worker.".
+</p>
+<p>
+To use a variable, you can insert "$(variable_name)" at any place
+on the value side of a property line. If a variable has not been
+defined before its use, we will search the process environment for
+a variable with the same name and use their value.
+</p>
+</subsection>
+
+<subsection name="Property Inheritance">
+<br/>
+<p>Often one wants to use the same property values for various workers.
+To reduce duplication of configuration lines and to ease the maintenance of
+the file, you can inherit properties from one worker to another, or even
+from a template to real workers.
+</p>
+<p>
+The directive "reference" allows to copy configurations between workers
+in a hierarchical way. If worker castor sets <b>worker.castor.reference=worker.pollux</b>
+then it inherits all properties of <b>pollux</b>, except for the ones that
+are explicitely set for <b>castor</b>.
+</p>
+<p>
+Please note, that the value of the directive is not only the name of the referred worker,
+but the complete prefix including "worker.".
+</p>
+<p>
+To use a template worker simply define it like a real worker, but do not add it
+to the "worker.list" or as a member to any load balancer. Such a template worker
+does not have to contain mandatory directives. This approach is especially useful,
+if one has a lot of balanced workers in a load balancer
+and these workers share most of their properties. You can set all of these properties
+in a template worker, e.g. using the prefix "worker.template1", and then simply
+reference those common properties in all balanced workers.
+</p>
+<p>
+References can be used to inherit properties over multiple hops in a hierarchical way.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.19</b>.
+</p>
+</subsection>
+</section>
+
+<section name="List of All Worker Directives">
+<br/>
+<subsection name="Mandatory Directives">
 <br/>
 <p>Mandatory directives are the one that each worker <b>must</b> contain. Without them the worker will
-be unavailable or will misbehave.
+be unavailable or will misbehave. Those directives will be marked with a <strong>strong</strong> font in the following tables.
 </p>
 <directives>
 <directive name="type" default="ajp13" required="true">
@@ -112,7 +206,8 @@ channel. For detailed description of the AJP13 protocol stack browse to
 </directives>
 </subsection>
 
-<subsection name="Connection directives">
+<subsection name="Connection Directives">
+<br/>
 <p>Connection directives defines the parameters needed to connect and maintain
 the connections pool of persistent connections between JK and remote Tomcat.
 </p>
@@ -144,7 +239,7 @@ to send <code>KEEP_ALIVE</code> message on inactive connections (interval depend
 generally 120 minutes), and thus prevent the firewall to cut the connection.
 To enable keepalive set this property value to the <b>True</b>.
 <p>
-The problem with Firewall cutting inactive connections is that sometimes, neither webserver or tomcat
+The problem with Firewall cutting inactive connections is that sometimes, neither webserver or Tomcat
 have information about the cut and couldn't handle it.
 </p>
 </directive>
@@ -208,7 +303,7 @@ other worker, then it will receive five times more requests.
 
 </subsection>
 
-<subsection name="Load balancing directives">
+<subsection name="Load Balancing Directives">
 <br/>
 <p>Load balancer is a virtual worker that does not really communicate with Tomcat workers.
 Instead it is responsible for the management of several "real" workers.
@@ -358,7 +453,7 @@ This feature has been added in <b>jk 1.2.13</b>.
 
 <directive name="retries" default="2" required="false">
 <warn>This directive also exists for normal workers.
-For those it has a <a href="#Advanced worker directives">different meaning</a>.</warn>
+For those it has a <a href="#Advanced Worker Directives">different meaning</a>.</warn>
 If the load balancer can not get a free connection for a member worker
 from the pool, it will try again a number of times given by <b>retries</b>.
 Before each retry, it will make a small pause, starting with 50 milliseconds
@@ -368,19 +463,11 @@ Until version <b>1.2.16</b> the default value was 3.
 </p>
 </directive>
 
-<directive name="secret" default="" required="false">
-Set a default secret word for all defined workers.
-See worker secret attribute description for more info.
-<p>
-This feature has been added in <b>jk 1.2.12</b>.
-</p>
-</directive>
-
 </directives>
 
 </subsection>
 
-<subsection name="Status Worker directives">
+<subsection name="Status Worker Directives">
 <br />
 <p>
 The status worker does not communicate with Tomcat.
@@ -505,32 +592,39 @@ This feature has been added in <b>jk 1.2.20</b>.
 </directives>
 </subsection>
 
-<subsection name="Advanced worker directives">
+<subsection name="Advanced Worker Directives">
 <br />
-<directives>
-<directive name="connect_timeout" default="0" required="false">
+<p>
+This table lists more advanced configuration options. Most of them only apply to
+some types of workers. We use the abbreviations <b>AJP</b> for ajp13/ajp14 workers
+used directly via the workers.list, <b>LB</b> for load balancer workers,
+and <b>SUB</b> for the workers used indirectly in a load balancer worker
+as a sub worker or member.
+</p>
+<advanceddirectives>
+<directive name="connect_timeout" workers="AJP,SUB" default="0" required="false">
 Connect timeout property told webserver to send a PING request on ajp13 connection after
 connection is established. The parameter is the delay in milliseconds to wait for the PONG reply.
 The default value zero disables the timeout (infinite timeout).
 <p>
-This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung Tomcat's and require ajp13
 ping/pong support which has been implemented on Tomcat <b>3.3.2+, 4.1.28+ and 5.0.13+</b>.
 Disabled by default.
 </p>
 </directive>
 
-<directive name="prepost_timeout" default="0" required="false">
+<directive name="prepost_timeout" workers="AJP,SUB" default="0" required="false">
 Prepost timeout property told webserver to send a PING request on ajp13 connection before
 forwarding to it a request. The parameter is the delay in milliseconds to wait for the PONG reply.
 The default value zero disables the timeout (infinite timeout).
 <p>
-This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and require ajp13
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung Tomcat's and require ajp13
 ping/pong support which has been implemented on <b>Tomcat 3.3.2+, 4.1.28+ and 5.0.13+</b>.
 Disabled by default.
 </p>
 </directive>
 
-<directive name="reply_timeout" default="0" required="false">
+<directive name="reply_timeout" workers="AJP,SUB" default="0" required="false">
 The parameter is the number of milliseconds to wait for success during a read event.
 So this is not a timeout for the complete answer time of a request, but only
 for the maximum time between two packets received from Tomcat. Usually the longest
@@ -548,70 +642,14 @@ By default (value zero) the webserver will wait forever which could be an issue 
 If you set a reply_timeout, adjust it carefully if you have long running servlets.
 </p>
 <p>
-This features has been added in <b>jk 1.2.6</b> to avoid problem with hung tomcat's and works on all
+This features has been added in <b>jk 1.2.6</b> to avoid problem with hung Tomcat's and works on all
 servlet engines supporting ajp13.
 </p>
 </directive>
 
-<directive name="max_reply_timeouts" default="0" required="false">
-Only used for load balancer workers.
-<p>
-If you use a <b>reply_timeout</b> for the members of a load balancer worker,
-and you want to tolerate a few requests taking longer than reply_timeout,
-you can set this attribute to some positive value.
-</p>
-<p>
-Long running requests will still time out after reply_timeout milliseconds waiting for
-data, but the corresponding member worker will only be put into an error state,
-if more than <b>max_reply_timeouts</b> requests have timed out.
-More precisely, the counter for those bad requests will be divided by two,
-whenever the load balancer does its internal maintenance (by default every 60
-seconds).
-</p>
-<p>
-This features has been added in <b>jk 1.2.24</b> to make <b>reply_timeout</b> less
-sensitive for sporadic long running requests.
-</p>
-</directive>
-
-<directive name="recover_time" default="60" required="false">
-Only used for load balancer workers.
-<p>
-The recover time is the time in seconds the load balancer will not try
-to use a worker, after it went into error state. Only after this time has passed,
-a worker in error state will be marked as in recovering, so that it will be
-tried for new requests.
-</p>
-<p>
-This interval is not checked every time a request is being processed.
-Instead it is being checked during global maintenance. The time between two
-runs of global maintenance is controlled by worker.maintain.
-</p>
-<p>
-Do not set recover_time to a very short time unless you understand the implications.
-Every recovery attempt for a worker in error is done by a real request!
-</p>
-</directive>
-
-<directive name="max_packet_size" default="8192" required="false">
-This attribute sets the maximal AJP packet size in Bytes.
-The maximum value is 65536. If you change it from the default,
-you <b>must</b> also change the packetSize attribute of your AJP
-connector on the tomcat side! The attribute packetSize is only available
-in Tomcat 5.5.20+ and 6.0.2+.
-<p>
-Normally it is not necessary to change the maximum packet size. Problems
-with the default value have been reported when sending certificates or
-certificate chains.
-</p>
-<p>
-This feature has been added in <b>jk 1.2.19</b>.
-</p>
-</directive>
-
-<directive name="retries" default="2" required="false">
+<directive name="retries" workers="AJP,SUB" default="2" required="false">
 <warn>This directive also exists for load balancer workers.
-For those it has a <a href="#Load balancing directives">different meaning</a>.</warn>
+For those it has a <a href="#Load Balancing Directives">different meaning</a>.</warn>
 The maximum number of times that the worker will send a request to Tomcat
 in case of a communication error. Each retry will be done over another
 connection. The first time already gets counted, so retries=2 means
@@ -626,15 +664,15 @@ Until version <b>1.2.16</b> the default value was 3.
 </p>
 </directive>
 
-<directive name="recovery_options" default="0" required="false">
+<directive name="recovery_options" workers="AJP,SUB" default="0" required="false">
 Recovery options influence, how we should handle retries,
 in case we detect a problem with Tomcat.
 How often we will retry is controlled by the attribute <b>retries</b>.
 <p>
 This attribute is a bit mask. The following bits are allowed:<br/>
-1: don't recover if tomcat failed after getting the request<br/>
-2: don't recover if tomcat failed after sending the headers to client<br/>
-4: close the connection to tomcat, if we detect an error when writing back
+1: don't recover if Tomcat failed after getting the request<br/>
+2: don't recover if Tomcat failed after sending the headers to client<br/>
+4: close the connection to Tomcat, if we detect an error when writing back
 the answer to the client (browser)<br/>
 8: always recover requests for HTTP method HEAD (even if Bits 1 or 2 are set)<br/>
 16: always recover requests for HTTP method GET (even if Bits 1 or 2 are set)<br/>
@@ -646,61 +684,100 @@ options 8 and 16 in version <b>1.2.24</b>.
 </p>
 </directive>
 
-<directive name="distance" default="0" required="false">
-Only used for a member worker of a load balancer.
+<directive name="fail_on_status" workers="AJP,SUB" default="0" required="false">
+Set this value to the HTTP status code that will cause a worker to fail
+if returned from Servlet contatiner. Use this directive to deal with
+cases when the servlet container can temporary return non-200 responses
+for a short amount of time, e.g during redeployment.
 <p>
-An integer number to express preferences between
-the balanced workers of an lb worker.
-A load balancer will never choose some balanced worker 
-in case there is another usable worker with lower distance.
+This feature has been added in <b>jk 1.2.20</b>.
 </p>
 <p>
-Only in case all workers below a given distance are in error, disabled or stopped,
-workers of a larger distance are eligible for balancing.
-</p>
-<p>
-This feature has been added in <b>jk 1.2.16</b>.
+Starting with <b>jk 1.2.22</b> it is possible to define multiple
+status codes separated by space or comma characters.
+For example: <code>worker.xxx.fail_on_status=500,503</code>
 </p>
 </directive>
 
-<directive name="domain" default="" required="false">
-Only used for a member worker of a load balancer.
+<directive name="max_packet_size" workers="AJP,SUB" default="8192" required="false">
+This attribute sets the maximal AJP packet size in Bytes.
+The maximum value is 65536. If you change it from the default,
+you <b>must</b> also change the packetSize attribute of your AJP
+connector on the Tomcat side! The attribute packetSize is only available
+in Tomcat 5.5.20+ and 6.0.2+.
 <p>
-Domain directive can be used only when the worker is a member of the load balancer.
-Workers that share the same domain name are treated as single worker. If sticky_session
-is used, then the domain name is used as session route.
+Normally it is not necessary to change the maximum packet size. Problems
+with the default value have been reported when sending certificates or
+certificate chains.
 </p>
 <p>
-This directive is used for large system with more then 6 Tomcats, to be able
-to cluster the Tomcats in two groups and thus lowering the session replication
-transfer between them.
-</p>
-<p>
-This feature has been added in <b>jk 1.2.8</b>.
-</p>
-</directive>
-
-<directive name="redirect" default="" required="false">
-Only used for a member worker of a load balancer.
-<p>
-Set to the preferred failover worker. If worker matching SESSION ID is in
-error state then the redirect worker will be used instead. It will be used
-even if being disabled, thus offering hot standby.
-</p>
-<p>
-This feature has been added in <b>jk 1.2.9</b>.
+This feature has been added in <b>jk 1.2.19</b>.
 </p>
 </directive>
 
-<directive name="activation" default="Active" required="false">
-Only used for a member worker of a load balancer.
+<directive name="mount" workers="AJP,LB" default="" required="false">
+Space delimited list of uri maps the worker should handle. It is only used,
+if the worker is included in worker.list.
 <p>
+This directive can be used multiple times for the same worker.
+</p>
+</directive>
+
+<directive name="secret" workers="AJP,LB,SUB" default="" required="false">
+You can set a secret keyword on the Tomcat AJP Connector. Then only requests
+from workers with the same secret keyword will be accepted.
+<p>
+Use <b>request.useSecret="true"</b> and <b>request.secret="secret key word"</b>
+in your Tomcat AJP Connector configuration.
+</p>
+<p>
+If you set a secret on a load balancer, all its members will inherit this secret.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.12</b>.
+</p>
+</directive>
+
+<directive name="max_reply_timeouts" workers="LB" default="0" required="false">
+If you use a <b>reply_timeout</b> for the members of a load balancer worker,
+and you want to tolerate a few requests taking longer than reply_timeout,
+you can set this attribute to some positive value.
+<p>
+Long running requests will still time out after reply_timeout milliseconds waiting for
+data, but the corresponding member worker will only be put into an error state,
+if more than <b>max_reply_timeouts</b> requests have timed out.
+More precisely, the counter for those bad requests will be divided by two,
+whenever the load balancer does its internal maintenance (by default every 60
+seconds).
+</p>
+<p>
+This features has been added in <b>jk 1.2.24</b> to make <b>reply_timeout</b> less
+sensitive for sporadic long running requests.
+</p>
+</directive>
+
+<directive name="recover_time" workers="LB" default="60" required="false">
+The recover time is the time in seconds the load balancer will not try
+to use a worker, after it went into error state. Only after this time has passed,
+a worker in error state will be marked as in recovering, so that it will be
+tried for new requests.
+<p>
+This interval is not checked every time a request is being processed.
+Instead it is being checked during global maintenance. The time between two
+runs of global maintenance is controlled by worker.maintain.
+</p>
+<p>
+Do not set recover_time to a very short time unless you understand the implications.
+Every recovery attempt for a worker in error is done by a real request!
+</p>
+</directive>
+
+<directive name="activation" workers="SUB" default="Active" required="false">
 Using this directive, a balanced worker of a load balancer
 can be configured as disabled or stopped. A disabled worker only gets
 requests, which belong to sessions for that worker. A stopped
 worker does not get any requests. Users will loose their sessions,
 unless session replication via clustering is used.
-</p>
 <p>
 Use <b>d</b> or <b>D</b> to disable and <b>s</b> or <b>S</b> to stop.
 If this directive is not present the deprecated directives
@@ -714,7 +791,7 @@ This feature has been added in <b>jk 1.2.19</b>.
 </p>
 </directive>
 
-<directive name="route" default="worker name" required="false">
+<directive name="route" workers="SUB" default="worker name" required="false">
 Normally the name of a balanced worker in a load balancer is equal to the jvmRoute
 of the corresponding Tomcat instance. If you want to include a worker corresponding
 to a Tomcat instance into several load balancers with different balancing configuration
@@ -740,69 +817,47 @@ The attribute has been renamed from jvm_route to route in <b>jk 1.2.20</b>.
 </p>
 </directive>
 
-<directive name="reference" default="" required="false">
-This attribute can be used for normal workers and for load balancer workers.
+<directive name="distance" workers="SUB" default="0" required="false">
+An integer number to express preferences between
+the balanced workers of an lb worker.
+A load balancer will never choose some balanced worker 
+in case there is another usable worker with lower distance.
 <p>
-This directive allows to copy configurations between workers
-in a hierarchical way. If worker castor sets <b>worker.castor.reference=worker.pollux</b>
-then it inherits all properties of <b>pollux</b>, except for the ones that
-are explicitely set for <b>castor</b>.
+Only in case all workers below a given distance are in error, disabled or stopped,
+workers of a larger distance are eligible for balancing.
 </p>
 <p>
-Please note, that the value of the directive is not only the name of the referred worker,
-but the complete prefix including "worker.".
-</p>
-<p>
-This directive is especially useful, if one has a lot of balanced workers in a load balancer
-and these workers share most of their properties. You can set all of these properties
-in a phantom worker, e.g. using the prefix "worker.template1", and then simply
-reference those common properties in all balanced workers.
-</p>
-<p>
-This feature has been added in <b>jk 1.2.19</b>.
+This feature has been added in <b>jk 1.2.16</b>.
 </p>
 </directive>
 
-<directive name="secret" default="" required="false">
-This attribute can be used for normal workers and for load balancer workers.
+<directive name="domain" workers="SUB" default="" required="false">
+Domain directive can be used only when the worker is a member of the load balancer.
+Workers that share the same domain name are treated as single worker. If sticky_session
+is used, then the domain name is used as session route.
 <p>
-If set to AJP Connector secret keyword, only request with this keyword are successfull responding.
-Use <b>request.useSecret="true"</b> and <b>request.secret="secret key word"</b> at your tomcat ajp
-Connector configuration.
+This directive is used for large system with more then 6 Tomcats, to be able
+to cluster the Tomcats in two groups and thus lowering the session replication
+transfer between them.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.8</b>.
 </p>
 </directive>
 
-<directive name="mount" default="" required="false">
-This attribute can be used for normal workers and for load balancer workers.
+<directive name="redirect" workers="SUB" default="" required="false">
+Set to the preferred failover worker. If worker matching SESSION ID is in
+error state then the redirect worker will be used instead. It will be used
+even if being disabled, thus offering hot standby.
 <p>
-Space delimited list of uri maps the worker should handle. It is only used,
-if the worker is included in worker.list.
-</p>
-<p>
-This directive can be used multiple times for the same worker.
+This feature has been added in <b>jk 1.2.9</b>.
 </p>
 </directive>
 
-<directive name="fail_on_status" default="0" required="false">
-Set this value to the HTTP status code that will cause a worker to fail
-if returned from Servlet contatiner. Use this directive to deal with
-cases when the servlet container can temporary return non-200 responses
-for a short amount of time, e.g during redeployment.
-<p>
-This feature has been added in <b>jk 1.2.20</b>.
-</p>
-<p>
-Starting with <b>jk 1.2.22</b> it is possible to define multiple
-status codes separated by space or comma characters.
-For example: <code>worker.xxx.fail_on_status=500,503</code>
-</p>
-</directive>
-
-
-</directives>
+</advanceddirectives>
 </subsection>
 
-<subsection name="Deprecated worker directives">
+<subsection name="Deprecated Worker Directives">
 <br/>
 <p>The following directives have been deprecated in the past. We include their documentation
 in case you need to use an older version of mod_jk. We urge you to update and not use
