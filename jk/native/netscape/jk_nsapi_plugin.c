@@ -275,7 +275,9 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
                 jk_log(logger, JK_LOG_ERROR, "Error in resolving configuration references");
             }
 
-            jk_map_add(init_map, "worker." REJECT_UNSAFE_TAG, reject_unsafe); 
+            if (reject_unsafe) {
+                jk_map_add(init_map, "worker." REJECT_UNSAFE_TAG, reject_unsafe); 
+            }
             s = systhread_start(SYSTHREAD_DEFAULT_PRIORITY,
                                 0, init_workers_on_other_threads, init_map);
             for (sleep_cnt = 0; sleep_cnt < 60; sleep_cnt++) {
