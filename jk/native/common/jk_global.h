@@ -179,11 +179,19 @@ extern "C"
 #define JK_PATH_SESSION_IDENTIFIER ";jsessionid"
 
 #if defined(WIN32) || defined(NETWARE)
+#ifdef __GNUC__
+#define JK_METHOD
+#define C_LEVEL_TRY_START
+#define C_LEVEL_TRY_END
+#define C_LEVEL_FINALLY_START
+#define C_LEVEL_FINALLY_END
+#else
 #define JK_METHOD __stdcall
 #define C_LEVEL_TRY_START       __try {
 #define C_LEVEL_TRY_END         }
 #define C_LEVEL_FINALLY_START   __finally {
 #define C_LEVEL_FINALLY_END     }
+#endif
 #define PATH_SEPERATOR          (';')
 #define FILE_SEPERATOR          ('\\')
 #define PATH_ENV_VARIABLE       ("PATH")
