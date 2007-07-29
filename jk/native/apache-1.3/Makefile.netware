@@ -116,8 +116,8 @@ ifeq ($(LIBARCH),LIBC)
 	INCLUDES += -I$(SDK_LIBC)/include
 	INCLUDES += -I$(SDK_LIBC)/include/winsock
 else
-	INCLUDES += -I$(SDK_CLIB)/include/nlm
-	# INCLUDES += -I$(NDKBASE)/ws295sdk/include
+	INCLUDES += -I$(SDK_CLIB)/include/nlm -I$(SDK_CLIB)/include
+	INCLUDES += -I$(NDKBASE)/ws295sdk/include
 	CFLAGS += -DNETDB_USE_INTERNET
 	CFLAGS += -DNO_GETTIMEOFDAY
 	CFLAGS += -DJK_PREFORK
