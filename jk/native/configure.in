@@ -232,7 +232,9 @@ fi
 # you can override our decision below.
 case $host in
    *-solaris*)
-       pid_t_fmt='#define JK_PID_T_FMT "ld"'
+       if test "$ac_cv_sizeof_pid_t" = "$ac_cv_sizeof_long"; then
+           pid_t_fmt='#define JK_PID_T_FMT "ld"'
+       fi
        ;;
 esac
 
