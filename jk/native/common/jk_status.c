@@ -733,7 +733,7 @@ static int status_get_bool(status_endpoint_t *p,
     return def;
 }
 
-const char *status_cmd_text(int cmd)
+static const char *status_cmd_text(int cmd)
 {
     return cmd_type[cmd];
 }
@@ -759,7 +759,7 @@ static int status_cmd_int(const char *cmd)
     return JK_STATUS_CMD_UNKNOWN;
 }
 
-const char *status_mime_text(int mime)
+static const char *status_mime_text(int mime)
 {
     return mime_type[mime];
 }

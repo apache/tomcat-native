@@ -276,7 +276,7 @@ static int uri_worker_map_realloc(jk_uri_worker_map_t *uw_map)
  * Delete all entries of a given source type
  */
 
-int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
+static int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
                          unsigned int source_type, jk_logger_t *l)
 {
     uri_worker_record_t *uwr = NULL;
