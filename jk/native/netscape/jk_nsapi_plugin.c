@@ -297,6 +297,8 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
             if (init_on_other_thread_is_done && init_on_other_thread_is_ok) {
                 magnus_atrestart(jk_term, NULL);
                 rc = REQ_PROCEED;
+                jk_log(logger, JK_LOG_INFO, "nsapi_redirector/%s initialized",
+                       JK_VERSTRING);
             }
 
 /*            if(wc_open(init_map, NULL, logger)) {
