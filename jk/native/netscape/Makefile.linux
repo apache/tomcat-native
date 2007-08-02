@@ -7,7 +7,7 @@
 #   3. Adjusting LD_LIBRARY_PATH to grab libgcc_s
 CC=gcc
 # For 64 Bit builds, add "-m64" to CFLAGS
-CFLAGS="-fPIC"
+CFLAGS=-fPIC
 LD_SHAREDCMD=$(CC) -shared -lthread
 
 CC_CMD=$(CC) $(CFLAGS) -DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX \
