@@ -8,18 +8,20 @@
 #   2. statically linking with libgcc
 #   3. Adjusting LD_LIBRARY_PATH to grab libgcc_s
 CC=gcc
-# For 64 Bit builds, add "-m64" to CFLAGS and LD_SHAREDCMD
-CFLAGS=-fPIC
-LD_SHAREDCMD=$(CC) -shared -lthread
+# For 64 Bit builds, add "-m64" to EXTRA_CFLAGS
+EXTRA_CFLAGS=-fPIC -pthread
+LDFLAGS=-shared
 
 # Sun Studio cc compiler
 #CC=cc
-# For 64 Bit builds, add "-xtarget=generic64" to CFLAGS and LD_SHAREDCMD
-#CFLAGS=-xcode=pic32
-#LD_SHAREDCMD=$(CC) -G -lthread
+# For 64 Bit builds, add "-xtarget=generic64" to EXTRA_CFLAGS
+#EXTRA_CFLAGS=-xcode=pic32 -mt
+#LDFLAGS=-G
 
-CC_CMD=$(CC) $(CFLAGS) -DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX \
-	-DMCC_HTTPD -DSPAPI20
+CC_CMD=$(CC) $(CFLAGS) $(EXTRA_CFLAGS) \
+	-DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX -DMCC_HTTPD -DSPAPI20
+
+LD_SHAREDCMD=$(CC) $(LDFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
 
 all:
 
