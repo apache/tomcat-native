@@ -28,6 +28,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        General: fail_on_status used in a load balancer can optionally
+        do fail over without putting the failed worker in error state. (rjung)
+      </update>
+      <update>
         NSAPI: Add initialization startup message containing JK version. (rjung)
       </update>
       <fix>

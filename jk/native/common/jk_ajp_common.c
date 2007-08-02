@@ -1427,9 +1427,12 @@ static int ajp_send_request(jk_endpoint_t *e,
 static int is_http_status_fail(ajp_worker_t *w, int status)
 {
     unsigned int i;
+    int soft_status = -1 * status;
     for (i = 0; i < w->http_status_fail_num; i++) {
         if (w->http_status_fail[i] == status)
             return 1;
+        else if (w->http_status_fail[i] == soft_status)
+            return -1;
     }
     return 0;
 }
@@ -1450,6 +1453,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
     switch (code) {
     case JK_AJP13_SEND_HEADERS:
         {
+            int rc;
             jk_res_data_t res;
             if (!ajp_unmarshal_response(msg, &res, ae, l)) {
                 jk_log(l, JK_LOG_ERROR,
@@ -1458,7 +1462,12 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 return JK_AJP13_ERROR;
             }
             r->http_response_status = res.status;
-            if (is_http_status_fail(ae->worker, res.status)) {
+            rc  = is_http_status_fail(ae->worker, res.status);
+            if (rc > 0) {
+                JK_TRACE_EXIT(l);
+                return JK_STATUS_FATAL_ERROR;
+            }
+            else if (rc < 0) {
                 JK_TRACE_EXIT(l);
                 return JK_STATUS_ERROR;
             }
@@ -1740,9 +1749,9 @@ static int ajp_get_reply(jk_endpoint_t *e,
         else if (JK_AJP13_SEND_HEADERS == rc) {
             headeratclient = JK_TRUE;
         }
-        else if (JK_STATUS_ERROR == rc) {
+        else if (JK_STATUS_ERROR == rc || JK_STATUS_FATAL_ERROR == rc) {
             JK_TRACE_EXIT(l);
-            return JK_STATUS_ERROR;
+            return rc;
         }
         else if (JK_AJP13_HAS_RESPONSE == rc) {
             /*
@@ -2002,14 +2011,14 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 JK_TRACE_EXIT(l);
                 return JK_SERVER_ERROR;
             }
-            else if (err == JK_STATUS_ERROR) {
+            else if (err == JK_STATUS_ERROR || err == JK_STATUS_FATAL_ERROR) {
                 jk_log(l, JK_LOG_INFO,
-                       "(%s) request failed, "
+                       "(%s) request failed%s, "
                        "because of response status %d, "
                        "recoverable operation attempt=%d",
                        p->worker->name,
+                       err == JK_STATUS_FATAL_ERROR ? "" : " (soft)",
                        s->http_response_status, i);
-                JK_TRACE_EXIT(l);
                 if (i >= JK_RETRIES) {
                     jk_sleep(JK_SLEEP_DEF);
                 }
@@ -2089,6 +2098,11 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
            "(%s) Connecting to tomcat failed. Tomcat is probably not started "
            "or is listening on the wrong port",
            p->worker->name);
+
+    if (err == JK_STATUS_ERROR) {
+        JK_TRACE_EXIT(l);
+        return JK_STATUS_ERROR;
+    }
 
     if (err == JK_REPLY_TIMEOUT) {
         *is_error = JK_HTTP_GATEWAY_TIME_OUT;

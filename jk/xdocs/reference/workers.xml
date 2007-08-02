@@ -704,6 +704,14 @@ Starting with <b>jk 1.2.22</b> it is possible to define multiple
 status codes separated by space or comma characters.
 For example: <code>worker.xxx.fail_on_status=500,503</code>
 </p>
+<p>
+Starting with <b>jk 1.2.25</b> you can also tell the load
+balancer to not put a member into an error state, if a
+response returned with one of the status codes in
+fail_on_status. This feature gets enabled, by putting a minus sign in
+front of those status codes.
+For example: <code>worker.xxx.fail_on_status=-404,-500,503</code>
+</p>
 </directive>
 
 <directive name="max_packet_size" workers="AJP,SUB" default="8192" required="false">
