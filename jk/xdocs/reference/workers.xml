@@ -686,9 +686,16 @@ options 8 and 16 in version <b>1.2.24</b>.
 
 <directive name="fail_on_status" workers="AJP,SUB" default="0" required="false">
 Set this value to the HTTP status code that will cause a worker to fail
-if returned from Servlet contatiner. Use this directive to deal with
+if returned from Servlet container. Use this directive to deal with
 cases when the servlet container can temporary return non-200 responses
 for a short amount of time, e.g during redeployment.
+<p>
+The error page, headers and status codes of the original response will not be send back
+to the client. Instead the request will result in a 503 response.
+If the worker is a member of a load balancer, the member will
+be put into an error state. Request failover and worker recovery will be handled
+with the usual load balancer procedures.
+</p>
 <p>
 This feature has been added in <b>jk 1.2.20</b>.
 </p>
