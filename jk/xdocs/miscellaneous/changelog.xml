@@ -35,6 +35,9 @@
         do fail over without putting the failed worker in error state. (rjung)
       </update>
       <update>
+        NSAPI: Improve build description for Unix. (rjung)
+      </update>
+      <update>
         NSAPI: Add initialization startup message containing JK version. (rjung)
       </update>
       <fix>

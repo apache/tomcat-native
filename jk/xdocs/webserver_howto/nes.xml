@@ -463,7 +463,7 @@ build it using the build menu.
 </section>
 <section name="Building NSAPI so plugin redirector for Unix">
 <p>
-The redirector requires either gcc or the native Solaris cc compiler.
+The redirector requires either gcc (Linux) or gcc or the Sun cc compiler (Solaris).
 
 The steps that you need to take are:
 <ul>
@@ -477,7 +477,15 @@ configure for Netscape/iPlanet/SunONE webserver.
 Change directory to the nsapi netscape directory (./netstape).
 </li>
 <li>
-Edit <b>Makefile.solaris</b> and update the SUITSPOT_HOME and JAVE_HOME path to reflect your own Netscape server installation.
+Set environment variables JAVA_HOME resp. SUITSPOT_HOME to the location of your Java installation
+resp. Netscape server installation. Depending on the web server version, you must add the subdirectory
+&quot;plugins&quot; to SUITSPOT_HOME.
+The variable is correct, if the file $SUITSPOT_HOME/include/nsapi.h exists.
+</li>
+<li>
+Edit <b>Makefile.solaris</b> resp. <b>Makefile.linux</b> and update the variables according to your needs.
+In the Solaris Makefile, you need to switch the commented lines in order to use the Sun compiler cc
+instead of GNU gcc.
 </li>
 <li>
 Make the source with gmake.
@@ -490,7 +498,11 @@ Make the source with gmake.
 <typedos>./configure --enable-netscape</typedos>
 <notedos>Change directory to the nsapi netscape directory</notedos>
 <typedos>cd netscape</typedos>
-<notedos>Edit Makefile.solaris</notedos>
+<notedos>Set JAVA_HOME (ksh example)</notedos>
+<typedos>export JAVA_HOME=/path/to/my/java</typedos>
+<notedos>Set SUITSPOT_HOME (ksh example)</notedos>
+<typedos>export SUITSPOT_HOME=/path/to/my/netscape/server</typedos>
+<notedos>Edit the Makefile</notedos>
 <typedos>vi Makefile.solaris</typedos>
 <notedos>Make the source with gmake</notedos>
 <typedos>gmake -f Makefile.solaris</typedos>
