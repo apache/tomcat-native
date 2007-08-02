@@ -1423,6 +1423,18 @@ static int ajp_send_request(jk_endpoint_t *e,
     return (JK_TRUE);
 }
 
+
+static int is_http_status_fail(ajp_worker_t *w, int status)
+{
+    unsigned int i;
+    for (i = 0; i < w->http_status_fail_num; i++) {
+        if (w->http_status_fail[i] == status)
+            return 1;
+    }
+    return 0;
+}
+
+
 /*
  * What to do with incoming data (dispatcher)
  */
@@ -1445,13 +1457,17 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 JK_TRACE_EXIT(l);
                 return JK_AJP13_ERROR;
             }
+            r->http_response_status = res.status;
+            if (is_http_status_fail(ae->worker, res.status)) {
+                JK_TRACE_EXIT(l);
+                return JK_STATUS_ERROR;
+            }
             r->start_response(r, res.status, res.msg,
                               (const char *const *)res.header_names,
                               (const char *const *)res.header_values,
                               res.num_headers);
             if (r->flush && r->flush_header)
                 r->flush(r);
-            r->http_response_status = res.status;
         }
         return JK_AJP13_SEND_HEADERS;
 
@@ -1563,17 +1579,6 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
     JK_TRACE_EXIT(l);
     return JK_AJP13_NO_RESPONSE;
 }
-
-static int is_http_status_fail(ajp_worker_t *w, int status)
-{
-    unsigned int i;
-    for (i = 0; i < w->http_status_fail_num; i++) {
-        if (w->http_status_fail[i] == status)
-            return 1;
-    }
-    return 0;
-}
-
 
 /*
  * get replies from Tomcat via Ajp13/Ajp14
@@ -1733,11 +1738,11 @@ static int ajp_get_reply(jk_endpoint_t *e,
             return JK_TRUE;
         }
         else if (JK_AJP13_SEND_HEADERS == rc) {
-            if (is_http_status_fail(p->worker, s->http_response_status)) {
-                JK_TRACE_EXIT(l);
-                return JK_STATUS_ERROR;
-            }
             headeratclient = JK_TRUE;
+        }
+        else if (JK_STATUS_ERROR == rc) {
+            JK_TRACE_EXIT(l);
+            return JK_STATUS_ERROR;
         }
         else if (JK_AJP13_HAS_RESPONSE == rc) {
             /*
