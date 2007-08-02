@@ -375,7 +375,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 
 static void JK_METHOD ws_flush(jk_ws_service_t *s)
 {
-#if defined(AS400) && !defined(AS400_UTF8)
+#ifndef AS400
     if (s && s->ws_private) {
         apache_private_data_t *p = s->ws_private;
         ap_rflush(p->r);
@@ -423,7 +423,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned int l)
                 }
             }
             if (p->r->header_only) {
-#if defined(AS400) && !defined(AS400_UTF8)
+#ifndef AS400
                 ap_rflush(p->r);
 #endif
                 return JK_TRUE;
