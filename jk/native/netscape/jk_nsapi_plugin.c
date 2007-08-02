@@ -231,6 +231,7 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
     char *log_level_str = pblock_findval(JK_LOG_LEVEL_TAG, pb);
     char *log_file = pblock_findval(JK_LOG_FILE_TAG, pb);
     char *shm_file = pblock_findval(JK_SHM_FILE_TAG, pb);
+    char *shm_file_safe = "";
     char *reject_unsafe = pblock_findval(REJECT_UNSAFE_TAG, pb);
 
     int rc = REQ_ABORTED;
@@ -249,11 +250,16 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
         return rc;
     }
 
-    if (!shm_file) {
+    if (shm_file) {
+        shm_file_safe = shm_file;
+    }
+#if !defined(WIN32) && !defined(NETWARE)
+    else {
         fprintf(stderr,
                 "Missing attribute %s in magnus.conf (jk_init) - aborting!\n", JK_SHM_FILE_TAG);
         return rc;
     }
+#endif
 
     fprintf(stderr,
             "In jk_init.\n   Worker file = %s.\n   Log level = %s.\n   Log File = %s\n   SHM File = %s\n",
