@@ -1604,6 +1604,7 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
             }
             jk_map_free(&rregexp_map);
         }
+        jk_shm_close();
         wc_close(logger);
         if (logger) {
             jk_close_file_logger(&logger);
