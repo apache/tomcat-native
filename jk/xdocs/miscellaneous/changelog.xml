@@ -23,6 +23,16 @@
   new documentation project for JK was started.
   </p>
 </section>
+<section name="Changes between 1.2.24 and 1.2.25">
+  <br />
+  <subsection name="Native">
+    <changelog>
+      <fix>
+        Pass the 401 as OK instead sending 401 for authentication. (mturk)
+      </fix>
+    </changelog>
+  </subsection>
+</section>
 <section name="Changes between 1.2.23 and 1.2.24">
   <br />
   <subsection name="Native">

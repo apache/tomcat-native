@@ -2250,7 +2250,8 @@ static int jk_handler(request_rec * r)
 
 /* hgomez@20070516 : under i5/OS sent_bodyct is not set correctly */
 /*                   check for header_only to see if there was a body */
-                if (!r->sent_bodyct && r->status >= HTTP_BAD_REQUEST) {
+                if (!r->sent_bodyct && r->status >= HTTP_BAD_REQUEST &&
+                     r->status != HTTP_UNAUTHORIZED) {
                     jk_log(xconf->log, JK_LOG_INFO, "No body with status=%d"
                            " for worker=%s",
                            r->status, worker_name);
