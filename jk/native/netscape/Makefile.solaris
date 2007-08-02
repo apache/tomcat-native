@@ -1,20 +1,25 @@
 # Defines for example NSAPI programs running under SOLARIS
 
-#gcc
+# Choose between the settings for gcc or Sun Studio compiler
+
+# gcc
 # If you get relocation errors, try:
 #   1. compiling with Sun's cc
 #   2. statically linking with libgcc
 #   3. Adjusting LD_LIBRARY_PATH to grab libgcc_s
-CC_CMD=gcc -DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX \
-	-DMCC_HTTPD -DSPAPI20 \
-	-fPIC
+CC=gcc
+# For 64 Bit builds, add "-m64" to CFLAGS
+CFLAGS=-fPIC
+LD_SHAREDCMD=$(CC) -shared -lthread
 
-#SunStudio cc compiler
-#CC_CMD=cc -DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX \
-#	-DMCC_HTTPD -DSPAPI20 \
-#	-xcode=pic32
+# Sun Studio cc compiler
+#CC=cc
+# For 64 Bit builds, add "-xtarget=generic64" to CFLAGS and #LD_SHAREDCMD
+#CFLAGS=-xcode=pic32
+#LD_SHAREDCMD=$(CC) -G -lthread
 
-LD_SHAREDCMD=ld -G -fPIC
+CC_CMD=$(CC) $(CFLAGS) -DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX \
+	-DMCC_HTTPD -DSPAPI20
 
 all:
 
@@ -44,4 +49,4 @@ clean:
 	rm -f *.o nsapi_redirector.so $(JK_OBJS)
 
 %.o : %.c
-	$(CC_CMD) $(INCLUDE_FLAGS) -c $< 
+	$(CC_CMD) $(INCLUDE_FLAGS) -c $<

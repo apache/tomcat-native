@@ -1,13 +1,17 @@
 # Defines for example NSAPI programs running under Linux
 
-#gcc
+# gcc
 # If you get relocation errors, try:
 #   1. compiling with Sun's cc
 #   2. statically linking with libgcc
 #   3. Adjusting LD_LIBRARY_PATH to grab libgcc_s
-CC_CMD=gcc -fpic -DNET_SSL -DLinux -DLINUX -D_REENTRANT -DXP_UNIX
+CC=gcc
+# For 64 Bit builds, add "-m64" to CFLAGS
+CFLAGS="-fPIC"
+LD_SHAREDCMD=$(CC) -shared -lthread
 
-LD_SHAREDCMD=gcc -shared
+CC_CMD=$(CC) $(CFLAGS) -DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX \
+	-DMCC_HTTPD -DSPAPI20
 
 OS_TYPE=linux
 INCLUDEDIR=$(SUITSPOT_HOME)/include
@@ -28,7 +32,7 @@ INCLUDE_FLAGS=	-I$(JK_DIR) -I$(INCLUDEDIR) -I$(INCLUDEDIR)/base \
 all: nsapi_redirector.so 
 
 
-nsapi_redirector.so: $(PLUGIN_OBJ) $(JK_OBJS)
+nsapi_redirector.so: $(JK_OBJS) $(PLUGIN_OBJ)
 	$(LD_SHAREDCMD) $(JK_OBJS) $(PLUGIN_OBJ) -o nsapi_redirector.so $(EXTRA_LDDEFINES)
 
 clean:
