@@ -27,8 +27,44 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        NSAPI: Add initialization startup message containing JK version. (rjung)
+      </update>
       <fix>
-        Pass the 401 as OK instead sending 401 for authentication. (mturk)
+        General: Declare static functions as static. (jim)
+      </fix>
+      <update>
+        Documentation: Clarify fail_on_status behaviour. (rjung)
+      </update>
+      <fix>
+        General: Do fail_on_status before returning the response headers. (rjung)
+      </fix>
+      <update>
+        NSAPI: Fix shm shutdown behaviour. (rjung)
+      </update>
+      <update>
+        NSAPI: Set return status even if request ended with an error. (rjung)
+      </update>
+      <update>
+        NSAPI: Allow using without shm_file on WIN32 and Netware. (rjung)
+      </update>
+      <fix>
+        NSAPI: Fix Crash of nsapi for log level debug and unset refect_unsafe. (rjung)
+      </fix>
+      <update>
+        NSAPI: Improve Solaris and Linux Makefiles for nsapi build. (rjung)
+      </update>
+      <fix>
+        Build: Improve pid_t type detection during configure on Solaris. (rjung)
+      </fix>
+      <update>
+        Build: Experimental build support for gcc on WIN32 and Netware. (fuankg)
+      </update>
+      <update>
+        Build: Makefile optimizations for Apache httpd 1.3/Netware . (fuankg)
+      </update>
+      <fix>
+        General: Fix missing flush bug introduced in 1.2.24. (rjung)
       </fix>
     </changelog>
   </subsection>
