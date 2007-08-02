@@ -387,11 +387,14 @@ NSAPI_PUBLIC int jk_service(pblock * pb, Session * sn, Request * rq)
                                "service() returned OK");
                 }
                 else {
+                    protocol_status(sn, rq, is_error, NULL);
                     if ((result == JK_CLIENT_ERROR) && (is_error == JK_HTTP_OK)) {
+                        rc = REQ_EXIT;
                         jk_log(logger, JK_LOG_INFO,
                                "service() failed because client aborted connection");
                     }
                     else {
+                        rc = REQ_ABORTED;
                         jk_log(logger, JK_LOG_ERROR,
                                "service() failed with http error %d", is_error);
                     }
