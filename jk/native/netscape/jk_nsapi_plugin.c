@@ -326,13 +326,14 @@ NSAPI_PUBLIC void jk_term(void *p)
         uri_worker_map_free(&uw_map, logger);
     }
 
+    if (init_map) {
+        jk_map_free(&init_map);
+    }
+
+    jk_shm_close();
     wc_close(logger);
     if (logger) {
         jk_close_file_logger(&logger);
-    }
-
-    if (init_map) {
-    jk_map_free(&init_map);
     }
 }
 
