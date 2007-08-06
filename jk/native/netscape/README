@@ -5,9 +5,9 @@ The redirector was originally developed using Visual C++ Ver.6.0,
 so having this environment is a prerequisite if you want to perform 
 a custom build on Windows systems
 
-On Unix system, a Makefile.solaris is provided and should be 
-adapted to tailor to your own configuration. Be sure to read
-the BUILDING file, one directory up.
+On Unix system, a Makefile.solaris and Makefile.linux are provided
+and should be adapted to tailor to your own configuration.
+Be sure to read the BUILDING file, one directory up.
 
 
 REQUIREMENT for Windows build
