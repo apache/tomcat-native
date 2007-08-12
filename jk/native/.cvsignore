@@ -1,9 +1,0 @@
-Makefile.in
-aclocal.m4
-configure
-config.log
-Makefile
-config.cache
-libtool
-config.status
-build.properties
