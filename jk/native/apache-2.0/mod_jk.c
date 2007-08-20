@@ -319,12 +319,6 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
     /* ap_send_http_header(r); */
     p->response_started = JK_TRUE;
 
-	/* hgomez@20070516: under i5/OS this flag is not set correctly */
-	/* We should check with Rochester Labs what could be the problem */
-#ifdef AS400
-        r->sent_bodyct = 1;
-#endif
-
     return JK_TRUE;
 }
 
@@ -375,7 +369,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 
 static void JK_METHOD ws_flush(jk_ws_service_t *s)
 {
-#ifndef AS400
+#if ! (defined(AS400) && !defined(AS400_UTF8))
     if (s && s->ws_private) {
         apache_private_data_t *p = s->ws_private;
         ap_rflush(p->r);
@@ -423,7 +417,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned int l)
                 }
             }
             if (p->r->header_only) {
-#ifndef AS400
+#if ! (defined(AS400) && !defined(AS400_UTF8))
                 ap_rflush(p->r);
 #endif
                 return JK_TRUE;
@@ -2248,8 +2242,6 @@ static int jk_handler(request_rec * r)
                 /* If tomcat returned no body and the status is not OK,
                    let apache handle the error code */
 
-/* hgomez@20070516 : under i5/OS sent_bodyct is not set correctly */
-/*                   check for header_only to see if there was a body */
                 if (!r->sent_bodyct && r->status >= HTTP_BAD_REQUEST) {
                     jk_log(xconf->log, JK_LOG_INFO, "No body with status=%d"
                            " for worker=%s",
