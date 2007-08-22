@@ -82,7 +82,7 @@ public class B2CConverter {
     {
         try {
             // read from the reader
-            while( true ) { // conv.ready() ) {
+            while( iis.available()>0 ) { // conv.ready() ) {
                 int cnt=conv.read( result, 0, BUFFER_SIZE );
                 if( cnt <= 0 ) {
                     // End of stream ! - we may be in a bad state
@@ -251,6 +251,11 @@ final class IntermediateInputStream extends InputStream {
     public  final int read() throws IOException {
         return (pos < end ) ? (buf[pos++] & 0xff) : -1;
     }
+    
+    public int available() throws IOException {
+        return end-pos;
+    }
+
 
     // -------------------- Internal methods --------------------
 
