@@ -293,12 +293,15 @@ public final class CharChunk implements Cloneable, Serializable, CharSequence {
             System.arraycopy(src, off+avail, buff, end, len - avail);
             end+= len - avail;
             
-        } else {        // len > buf.length + avail
+        } else if(optimizedWrite) { // len > buf.length + avail & we have a real sink
             // long write - flush the buffer and write the rest
             // directly from source
             flushBuffer();
             
             out.realWriteChars( src, off, len );
+        } else { // ugly but it works for fake sinks if they reset us
+            flushBuffer();
+            append(src, off, len);
         }
     }
 

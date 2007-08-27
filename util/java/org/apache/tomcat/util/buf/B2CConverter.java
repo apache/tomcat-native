@@ -72,18 +72,28 @@ public class B2CConverter {
     public  void convert( ByteChunk bb, CharChunk cb )
         throws IOException
     {
-        // Set the ByteChunk as input to the Intermediate reader
-        iis.setByteChunk( bb );
-        convert(cb);
+        convert(bb, cb, cb.getBuff().length - cb.getEnd());
     }
 
-    private void convert(CharChunk cb)
+    /** Convert a buffer of bytes into a chars
+     */
+    public  void convert( ByteChunk bb, CharChunk cb, int limit)
+        throws IOException
+    {
+        // Set the ByteChunk as input to the Intermediate reader
+        iis.setByteChunk( bb );
+        convert(cb, limit);
+    }
+
+    private void convert(CharChunk cb, int limit)
         throws IOException
     {
         try {
             // read from the reader
-            while( iis.available()>0 ) { // conv.ready() ) {
-                int cnt=conv.read( result, 0, BUFFER_SIZE );
+            int count = 0;
+            while( limit > 0 ) { 
+                int size = limit < BUFFER_SIZE ? limit : BUFFER_SIZE; 
+                int cnt=conv.read( result, 0, size );
                 if( cnt <= 0 ) {
                     // End of stream ! - we may be in a bad state
                     if( debug>0)
@@ -96,6 +106,7 @@ public class B2CConverter {
 
                 // XXX go directly
                 cb.append( result, 0, cnt );
+                limit -= cnt;
             }
         } catch( IOException ex) {
             if( debug>0)
@@ -222,10 +233,7 @@ final class  ReadConvertor extends InputStreamReader {
     not be called if recycling the converter and if data was not flushed.
 */
 final class IntermediateInputStream extends InputStream {
-    byte buf[];
-    int pos;
-    int len;
-    int end;
+    ByteChunk bc = null;
     
     public IntermediateInputStream() {
     }
@@ -236,41 +244,24 @@ final class IntermediateInputStream extends InputStream {
     }
     
     public  final  int read(byte cbuf[], int off, int len) throws IOException {
-        if( pos >= end ) return -1;
-        if (pos + len > end) {
-            len = end - pos;
-        }
-        if (len <= 0) {
-            return 0;
-        }
-        System.arraycopy(buf, pos, cbuf, off, len);
-        pos += len;
-        return len;
+        int nread = bc.substract(cbuf, off, len);
+        return nread;
     }
     
     public  final int read() throws IOException {
-        return (pos < end ) ? (buf[pos++] & 0xff) : -1;
+        return bc.substract();
     }
     
     public int available() throws IOException {
-        return end-pos;
+        return bc.getLength();
     }
 
 
     // -------------------- Internal methods --------------------
 
-    void setBuffer( byte b[], int p, int l ) {
-        buf=b;
-        pos=p;
-        len=l;
-        end=pos+len;
-    }
 
     void setByteChunk( ByteChunk mb ) {
-        buf=mb.getBytes();
-        pos=mb.getStart();
-        len=mb.getLength();
-        end=pos+len;
+        bc = mb;
     }
 
 }
