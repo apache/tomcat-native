@@ -72,7 +72,7 @@ public class B2CConverter {
     public  void convert( ByteChunk bb, CharChunk cb )
         throws IOException
     {
-        convert(bb, cb, cb.getBuff().length - cb.getEnd());
+        convert(bb, cb, cb.getBuffer().length - cb.getEnd());
     }
 
     /** Convert a buffer of bytes into a chars
