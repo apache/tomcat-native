@@ -27,6 +27,11 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        AJP13: Match header names exactly against pre defined constants. Avoid
+        possible confusion with custom header names using a standard header name
+        as a prefix. (rjung)
+      </fix>
     </changelog>
   </subsection>
 </section>
