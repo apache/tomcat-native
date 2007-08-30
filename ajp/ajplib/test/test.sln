@@ -1,0 +1,94 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testajp", "testajp.vcproj", "{398AC1EA-8B86-4746-B4F3-D174440703E0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A58AA747-485E-42FE-880F-15B9A498B75D} = {A58AA747-485E-42FE-880F-15B9A498B75D}
+		{54D9CF8D-ED01-4E87-89C4-F06F9D757EED} = {54D9CF8D-ED01-4E87-89C4-F06F9D757EED}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "apr", "..\srclib\apr\apr.vcproj", "{54C317DF-BBE3-4F62-96CF-A6D7344EB615}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libapr", "..\srclib\apr\libapr.vcproj", "{54D9CF8D-ED01-4E87-89C4-F06F9D757EED}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aprutil", "..\srclib\apr-util\aprutil.vcproj", "{CA59109B-88A7-4547-BDCE-9568AB08DD53}"
+	ProjectSection(ProjectDependencies) = postProject
+		{315E11BD-4452-48FE-AF47-A39BF4EDD608} = {315E11BD-4452-48FE-AF47-A39BF4EDD608}
+		{EF7D84CE-5F76-47C8-A198-B3EF72870920} = {EF7D84CE-5F76-47C8-A198-B3EF72870920}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libaprutil", "..\srclib\apr-util\libaprutil.vcproj", "{A58AA747-485E-42FE-880F-15B9A498B75D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{54D9CF8D-ED01-4E87-89C4-F06F9D757EED} = {54D9CF8D-ED01-4E87-89C4-F06F9D757EED}
+		{315E11BD-4452-48FE-AF47-A39BF4EDD608} = {315E11BD-4452-48FE-AF47-A39BF4EDD608}
+		{EF7D84CE-5F76-47C8-A198-B3EF72870920} = {EF7D84CE-5F76-47C8-A198-B3EF72870920}
+		{DDCAEED8-D4D0-4C34-A961-FCA7D8EC26B7} = {DDCAEED8-D4D0-4C34-A961-FCA7D8EC26B7}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gen_uri_delims", "..\srclib\apr-util\uri\gen_uri_delims.vcproj", "{315E11BD-4452-48FE-AF47-A39BF4EDD608}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xml", "..\srclib\apr-util\xml\expat\lib\xml.vcproj", "{EF7D84CE-5F76-47C8-A198-B3EF72870920}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "apriconv", "..\srclib\apr-iconv\apriconv.vcproj", "{DF70B25A-203A-47BB-857F-026F4F625A7D}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libapriconv", "..\srclib\apr-iconv\libapriconv.vcproj", "{DDCAEED8-D4D0-4C34-A961-FCA7D8EC26B7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{54D9CF8D-ED01-4E87-89C4-F06F9D757EED} = {54D9CF8D-ED01-4E87-89C4-F06F9D757EED}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{398AC1EA-8B86-4746-B4F3-D174440703E0}.Debug.ActiveCfg = Debug|Win32
+		{398AC1EA-8B86-4746-B4F3-D174440703E0}.Debug.Build.0 = Debug|Win32
+		{398AC1EA-8B86-4746-B4F3-D174440703E0}.Release.ActiveCfg = Release|Win32
+		{398AC1EA-8B86-4746-B4F3-D174440703E0}.Release.Build.0 = Release|Win32
+		{54C317DF-BBE3-4F62-96CF-A6D7344EB615}.Debug.ActiveCfg = Debug|Win32
+		{54C317DF-BBE3-4F62-96CF-A6D7344EB615}.Debug.Build.0 = Debug|Win32
+		{54C317DF-BBE3-4F62-96CF-A6D7344EB615}.Release.ActiveCfg = Release|Win32
+		{54C317DF-BBE3-4F62-96CF-A6D7344EB615}.Release.Build.0 = Release|Win32
+		{54D9CF8D-ED01-4E87-89C4-F06F9D757EED}.Debug.ActiveCfg = Debug|Win32
+		{54D9CF8D-ED01-4E87-89C4-F06F9D757EED}.Debug.Build.0 = Debug|Win32
+		{54D9CF8D-ED01-4E87-89C4-F06F9D757EED}.Release.ActiveCfg = Release|Win32
+		{54D9CF8D-ED01-4E87-89C4-F06F9D757EED}.Release.Build.0 = Release|Win32
+		{CA59109B-88A7-4547-BDCE-9568AB08DD53}.Debug.ActiveCfg = Debug|Win32
+		{CA59109B-88A7-4547-BDCE-9568AB08DD53}.Debug.Build.0 = Debug|Win32
+		{CA59109B-88A7-4547-BDCE-9568AB08DD53}.Release.ActiveCfg = Release|Win32
+		{CA59109B-88A7-4547-BDCE-9568AB08DD53}.Release.Build.0 = Release|Win32
+		{A58AA747-485E-42FE-880F-15B9A498B75D}.Debug.ActiveCfg = Debug|Win32
+		{A58AA747-485E-42FE-880F-15B9A498B75D}.Debug.Build.0 = Debug|Win32
+		{A58AA747-485E-42FE-880F-15B9A498B75D}.Release.ActiveCfg = Release|Win32
+		{A58AA747-485E-42FE-880F-15B9A498B75D}.Release.Build.0 = Release|Win32
+		{315E11BD-4452-48FE-AF47-A39BF4EDD608}.Debug.ActiveCfg = Debug|Win32
+		{315E11BD-4452-48FE-AF47-A39BF4EDD608}.Debug.Build.0 = Debug|Win32
+		{315E11BD-4452-48FE-AF47-A39BF4EDD608}.Release.ActiveCfg = Release|Win32
+		{315E11BD-4452-48FE-AF47-A39BF4EDD608}.Release.Build.0 = Release|Win32
+		{EF7D84CE-5F76-47C8-A198-B3EF72870920}.Debug.ActiveCfg = Debug|Win32
+		{EF7D84CE-5F76-47C8-A198-B3EF72870920}.Debug.Build.0 = Debug|Win32
+		{EF7D84CE-5F76-47C8-A198-B3EF72870920}.Release.ActiveCfg = Release|Win32
+		{EF7D84CE-5F76-47C8-A198-B3EF72870920}.Release.Build.0 = Release|Win32
+		{DF70B25A-203A-47BB-857F-026F4F625A7D}.Debug.ActiveCfg = Debug|Win32
+		{DF70B25A-203A-47BB-857F-026F4F625A7D}.Debug.Build.0 = Debug|Win32
+		{DF70B25A-203A-47BB-857F-026F4F625A7D}.Release.ActiveCfg = Release|Win32
+		{DF70B25A-203A-47BB-857F-026F4F625A7D}.Release.Build.0 = Release|Win32
+		{DDCAEED8-D4D0-4C34-A961-FCA7D8EC26B7}.Debug.ActiveCfg = Debug|Win32
+		{DDCAEED8-D4D0-4C34-A961-FCA7D8EC26B7}.Debug.Build.0 = Debug|Win32
+		{DDCAEED8-D4D0-4C34-A961-FCA7D8EC26B7}.Release.ActiveCfg = Release|Win32
+		{DDCAEED8-D4D0-4C34-A961-FCA7D8EC26B7}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
