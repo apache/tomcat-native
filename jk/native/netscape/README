@@ -7,7 +7,7 @@ a custom build on Windows systems
 
 On Unix system, a Makefile.solaris and Makefile.linux are provided
 and should be adapted to tailor to your own configuration.
-Be sure to read the BUILDING file, one directory up.
+Be sure to read the BUILDING.txt file, one directory up.
 
 
 REQUIREMENT for Windows build

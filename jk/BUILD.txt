@@ -3,7 +3,7 @@ Tomcat. Only the web server connector source is included.  The Tomcat
 side of the connector is available with the normal Tomcat distribution.
 
 Documentation for how to build mod_jk 1.2 from source and configure
-it for your webserver is located in the native/BUILDING file in this
+it for your webserver is located in the native/BUILDING.txt file in this
 source distribution.
 
 For the impatient Apache admins:
