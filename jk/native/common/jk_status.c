@@ -2969,6 +2969,12 @@ static int recover_worker(jk_ws_service_t *s,
     return JK_FALSE;
 }
 
+/*
+ * Return values of service() method for status worker:
+ * return value  is_error              reason
+ * JK_FALSE      JK_HTTP_SERVER_ERROR  Invalid parameters (null values)
+ * JK_TRUE       JK_HTTP_OK            All other cases
+ */
 static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l, int *is_error)

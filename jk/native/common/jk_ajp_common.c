@@ -1178,6 +1178,19 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t * ae,
  *
  * nb: reqmsg is the original request msg buffer
  *     repmsg is the reply msg buffer which could be scratched
+ *
+ * Return values of ajp_send_request() function:
+ * return value        op->recoverable   reason
+ * JK_FALSE            JK_FALSE/JK_TRUE  ajp_connection_tcp_send_message() returns JK_FATAL_ERROR
+ *           Endpoint belongs to unknown protocol.
+ * XXX: The recoverability handling of JK_FATAL_ERROR returning from
+ * ajp_connection_tcp_send_message() seems to be inconsistent.
+ * JK_FALSE            JK_TRUE           ajp_connection_tcp_send_message() returns JK_FALSE
+ *           Sending data in jk_tcp_socket_sendfull() returns with error.
+ * JK_FALSE            JK_TRUE           Could not connect to backend
+ * JK_SERVER_ERROR     JK_TRUE           Error during sending parts of POST body to backend
+ * JK_CLIENT_RD_ERROR  JK_FALSE          Error during reading parts of POST body from client
+ * JK_TRUE             JK_TRUE           All other cases
  */
 static int ajp_send_request(jk_endpoint_t *e,
                             jk_ws_service_t *s,
@@ -1464,7 +1477,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 return JK_AJP13_ERROR;
             }
             r->http_response_status = res.status;
-            rc  = is_http_status_fail(ae->worker, res.status);
+            rc = is_http_status_fail(ae->worker, res.status);
             if (rc > 0) {
                 JK_TRACE_EXIT(l);
                 return JK_STATUS_FATAL_ERROR;
@@ -1543,7 +1556,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             }
 
             jk_log(l, JK_LOG_INFO,
-                   "Reding from client aborted or client network problems");
+                   "Reading from client aborted or client network problems");
 
             JK_TRACE_EXIT(l);
             return JK_CLIENT_RD_ERROR;
@@ -1603,6 +1616,26 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
  * ajp13/ajp14 is async but handling read/send this way prevent nice recovery
  * In fact if tomcat link is broken during upload (browser -> apache -> tomcat)
  * we'll loose data and we'll have to abort the whole request.
+ *
+ * Return values of ajp_get_reply() function:
+ * return value           op->recoverable    reason
+ * JK_REPLY_TIMEOUT       ?recovery_options  Reply timeout while waiting for response packet
+ * JK_FALSE               ?recovery_options  Error during ajp_connection_tcp_get_message()
+ *           Communication error or wrong packet content while reading from backend.
+ * JK_STATUS_ERROR        mostly JK_TRUE     ajp_process_callback() returns JK_STATUS_ERROR
+ *           Recoverable, if callback didn't return with a JK_HAS_RESPONSE before.
+ *           JK_HAS_RESPONSE: parts of the post buffer are consumed.
+ * JK_STATUS_FATAL_ERROR  mostly JK_TRUE     ajp_process_callback() returns JK_STATUS_FATAL_ERROR
+ *           Recoverable, if callback didn't return with a JK_HAS_RESPONSE before.
+ *           JK_HAS_RESPONSE: parts of the post buffer are consumed.
+ * JK_SERVER_ERROR        ?                  ajp_process_callback() returns JK_AJP13_ERROR
+ *           JK_AJP13_ERROR: protocol error.
+ * JK_CLIENT_RD_ERROR     ?                  ajp_process_callback() returns JK_CLIENT_RD_ERROR
+ *           JK_CLIENT_RD_ERROR: could not read post from client.
+ * JK_CLIENT_WR_ERROR     ?                  ajp_process_callback() returns JK_CLIENT_WR_ERROR
+ *           JK_CLIENT_WR_ERROR: could not write back result to client
+ * JK_TRUE                ?                  ajp_process_callback() returns JK_AJP13_END_RESPONSE
+ * JK_FALSE               ?                  Other unhandled cases (unknown return codes)
  */
 static int ajp_get_reply(jk_endpoint_t *e,
                          jk_ws_service_t *s,
@@ -1629,24 +1662,23 @@ static int ajp_get_reply(jk_endpoint_t *e,
                 if (headeratclient == JK_FALSE) {
                     if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
                         op->recoverable = JK_FALSE;
+                    /*
+                     * We revert back to recoverable, if recovery_opts allow it for GET or HEAD
+                     */
+                    if (op->recoverable == JK_FALSE) {
+                        if (p->worker->recovery_opts & RECOVER_ALWAYS_HTTP_HEAD) {
+                            if (!strcmp(s->method, "HEAD"))
+                                op->recoverable = JK_TRUE;
+                        }
+                        else if (p->worker->recovery_opts & RECOVER_ALWAYS_HTTP_GET) {
+                            if (!strcmp(s->method, "GET"))
+                                op->recoverable = JK_TRUE;
+                        }
+                    }
                 }
                 else {
                     if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCSENDHEADER)
                         op->recoverable = JK_FALSE;
-                }
-
-                /*
-                 * We revert back to recoverable, if recovery_opts allow it for GET or HEAD
-                 */
-                if (op->recoverable == JK_FALSE) {
-                    if (p->worker->recovery_opts & RECOVER_ALWAYS_HTTP_HEAD) {
-                        if (!strcmp(s->method, "HEAD"))
-                            op->recoverable = JK_TRUE;
-                    }
-                    else if (p->worker->recovery_opts & RECOVER_ALWAYS_HTTP_GET) {
-                        if (!strcmp(s->method, "GET"))
-                            op->recoverable = JK_TRUE;
-                    }
                 }
 
                 JK_TRACE_EXIT(l);
@@ -1786,15 +1818,6 @@ static int ajp_get_reply(jk_endpoint_t *e,
             JK_TRACE_EXIT(l);
             return JK_SERVER_ERROR;
         }
-        else if (JK_FATAL_ERROR == rc) {
-            /*
-             * we won't be able to gracefully recover from this so
-             * set recoverable to false and get out.
-             */
-            op->recoverable = JK_FALSE;
-            JK_TRACE_EXIT(l);
-            return JK_FALSE;
-        }
         else if (JK_CLIENT_RD_ERROR == rc) {
             /*
              * Client has stop sending to us, so get out.
@@ -1811,18 +1834,29 @@ static int ajp_get_reply(jk_endpoint_t *e,
             JK_TRACE_EXIT(l);
             return JK_CLIENT_WR_ERROR;
         }
-        else if (JK_SERVER_ERROR == rc) {
+        else if (JK_INTERNAL_ERROR == rc) {
             /*
-             * Tomcat has stop talking to us, so get out.
-             * Loadbalancer if present will decide if
-             * failover is possible.
+             * Internal error, like memory allocation or invalid packet lengths.
              */
             JK_TRACE_EXIT(l);
             return JK_SERVER_ERROR;
         }
+        else if (JK_AJP13_NO_RESPONSE == rc) {
+            /*
+             * This is fine, loop again, more data to send.
+             */
+        }
         else if (rc < 0) {
+            /*
+             * XXX: We should disable reuse in this case to.
+             * Maybe use another return value and let service() do the disable reuse.
+             */
+            op->recoverable = JK_FALSE;
+            jk_log(l, JK_LOG_ERROR,
+                   "(%s) Callback returns with unknown value %d",
+                    p->worker->name, rc);
             JK_TRACE_EXIT(l);
-            return (JK_FALSE);  /* XXX error */
+            return JK_FALSE;
         }
     }
     /* XXX: Not reached? */
@@ -1836,6 +1870,28 @@ static int ajp_get_reply(jk_endpoint_t *e,
  *
  * We serve here the request, using AJP13/AJP14 (e->proto)
  *
+ * Return values of service() method for ajp13/ajp14 worker:
+ * return value      is_error              op->recoverable    reason
+ * JK_FALSE          JK_HTTP_SERVER_ERROR  UNDEF              Invalid Parameters (null values)
+ * JK_SERVER_ERROR   JK_HTTP_OK            UNDEF              Error during initializing empty request, response or post body objects
+ * JK_CLIENT_ERROR   JK_REQUEST_TOO_LARGE  JK_TRUE            Request doesn't fit into buffer (error during ajp_marshal_into_msgb())
+ * JK_CLIENT_ERROR   JK_HTTP_BAD_REQUEST   JK_FALSE           Error during reading parts of POST body from client
+ * JK_SERVER_ERROR   JK_HTTP_SERVER_ERROR  JK_FALSE           If ajp_send_request() returns JK_TRUE but !op->recoverable.
+ *           This should never happen.
+ * JK_CLIENT_ERROR   JK_HTTP_BAD_REQUEST   ?                  ajp_get_reply() returns JK_CLIENT_RD_ERROR
+ * JK_CLIENT_ERROR   JK_HTTP_OK            ?                  ajp_get_reply() returns JK_CLIENT_WR_ERROR
+ * JK_SERVER_ERROR   JK_HTTP_SERVER_ERROR  ?                  ajp_get_reply() returns JK_SERVER_ERROR
+ *           JK_SERVER_ERROR: protocol error or internal error
+ * JK_REPLY_TIMEOUT  JK_HTTP_GATEWAY_TIME_OUT  JK_FALSE       ajp_get_reply() returns JK_REPLY_TIMEOUT
+ *           Only if !op->recoverable
+ * JK_FALSE          JK_HTTP_GATEWAY_TIME_OUT  JK_FALSE       ajp_get_reply() returns something else
+ *           Only if !op->recoverable
+ * JK_REPLY_TIMEOUT  JK_HTTP_GATEWAY_TIME_OUT  JK_TRUE        ajp_get_reply() returns JK_REPLY_TIMEOUT
+ *           Only if op->recoverable and no more ajp13/ajp14 direct retries
+ * JK_STATUS_ERROR   JK_STATUS_ERROR           JK_TRUE        ajp_get_reply() returns JK_STATUS_ERROR
+ *           Only if op->recoverable and no more ajp13/ajp14 direct retries
+ * JK_FALSE          JK_HTTP_SERVER_BUSY       JK_TRUE        ajp_get_reply() returns JK_FALSE or JK_STATUS_FATAL_ERROR
+ *           Only if op->recoverable and no more ajp13/ajp14 direct retries
  */
 static int JK_METHOD ajp_service(jk_endpoint_t *e,
                                  jk_ws_service_t *s,
@@ -1948,20 +2004,39 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
          * to next valid tomcat.
          */
         err = ajp_send_request(e, s, l, p, op);
-        if (err == JK_TRUE) {
-
-            /* If we have an unrecoverable error, it's probably because
-             * the sender (browser) stopped sending data before the end
-             * (certainly in a big post)
+        if (err == JK_CLIENT_RD_ERROR) {
+            *is_error = JK_HTTP_BAD_REQUEST;
+            if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+                /* Mark the endpoint for shutdown */
+                p->reuse = JK_FALSE;
+            }
+            jk_log(l, JK_LOG_INFO,
+                   "(%s) sending request to tomcat failed, "
+                   "because of client read error "
+                   "without recovery in send loop attempt=%d",
+                   p->worker->name, i);
+            JK_TRACE_EXIT(l);
+            return JK_CLIENT_ERROR;
+        }
+        else if (err == JK_FALSE) {
+            jk_log(l, JK_LOG_INFO,
+                   "(%s) sending request to tomcat failed,  "
+                   "recoverable operation attempt=%d",
+                   p->worker->name, i);
+        }
+        else if (err == JK_TRUE) {
+            /* XXX: this should never happen:
+             *      ajp_send_request() never returns JK_TRUE if !op->recoverable.
              */
             if (!op->recoverable) {
                 *is_error = JK_HTTP_SERVER_ERROR;
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) sending request to tomcat failed "
+                       "because of an unknown reason "
                        "without recovery in send loop %d",
                        p->worker->name, i);
                 JK_TRACE_EXIT(l);
-                return JK_FALSE;
+                return JK_SERVER_ERROR;
             }
 
             /* Up to there we can recover */
@@ -2032,7 +2107,6 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                  * operation is no more recoverable
                  */
                 if (!op->recoverable) {
-                    *is_error = JK_HTTP_BAD_GATEWAY;
                     jk_log(l, JK_LOG_ERROR,
                            "(%s) receiving reply from tomcat failed "
                            "without recovery in send loop attempt=%d",
@@ -2042,6 +2116,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                         JK_TRACE_EXIT(l);
                         return JK_REPLY_TIMEOUT;
                     }
+                    *is_error = JK_HTTP_BAD_GATEWAY;
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
                 }
@@ -2055,39 +2130,19 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 }
             }
         }
-        if (err == JK_CLIENT_RD_ERROR) {
-            *is_error = JK_HTTP_BAD_REQUEST;
-            if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
-                /* Mark the endpoint for shutdown */
-                p->reuse = JK_FALSE;
-            }
-            jk_log(l, JK_LOG_INFO,
-                   "(%s) sending request to tomcat failed, "
-                   "because of client read error "
-                   "without recovery in send loop attempt=%d",
-                   p->worker->name, i);
-            JK_TRACE_EXIT(l);
-            return JK_CLIENT_ERROR;
-        }
-        else if (err == JK_CLIENT_WR_ERROR) {
-            *is_error = JK_HTTP_OK;
-            if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
-                /* Mark the endpoint for shutdown */
-                p->reuse = JK_FALSE;
-            }
-            jk_log(l, JK_LOG_INFO,
-                   "(%s) sending request to tomcat failed, "
-                   "because of client write error "
-                   "without recovery in send loop attempt=%d",
-                   p->worker->name, i);
-            JK_TRACE_EXIT(l);
-            return JK_CLIENT_ERROR;
-        }
         else {
-            jk_log(l, JK_LOG_INFO,
-                   "(%s) sending request to tomcat failed,  "
-                   "recoverable operation attempt=%d",
-                   p->worker->name, i + 1);
+            /*
+             * This should never happen.
+             * XXX: What is a good return value?
+             * XXX: What is a good is_error value?
+             * XXX: Do we need to set recoverable and/or reuse to false?
+             */
+            op->recoverable = JK_FALSE;
+            jk_log(l, JK_LOG_ERROR,
+                   "(%s) sending request to tomcat failed with unknown value %d",
+                    p->worker->name, err);
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
         }
         /* Get another connection from the pool and try again.
          * Note: All sockets are probably closed already.

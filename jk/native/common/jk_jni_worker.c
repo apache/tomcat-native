@@ -248,6 +248,14 @@ static void print_signals(sigset_t * sset)
 }
 #endif
 
+/*
+ * Return values of service() method for jni worker:
+ * return value  is_error              reason
+ * JK_FALSE      JK_HTTP_SERVER_ERROR  Invalid parameters (null values)
+ *                                     Error during attach to the JNI backend
+ *                                     Error during JNI call
+ * JK_TRUE       JK_HTTP_OK            All other cases
+ */
 static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l, int *is_error)

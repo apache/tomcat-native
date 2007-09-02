@@ -84,6 +84,19 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
 static int ajpv12_handle_request(ajp12_endpoint_t * p,
                                  jk_ws_service_t *s, jk_logger_t *l);
 
+/*
+ * Return values of service() method for ajp12 worker:
+ * return value  is_error              reason
+ * JK_FALSE      JK_HTTP_SERVER_ERROR  Invalid parameters (null values)
+ *                                     Error during connect to the backend
+ *                                     ajpv12_handle_request() returns false:
+ *           Any error during reading a request body from the client or
+ *           sending the request to the backend
+ * JK_FALSE      JK_HTTP_OK            ajpv12_handle_response() returns false:
+ *           Any error during reading parts of response from backend or
+ *           sending to client
+ * JK_TRUE       JK_HTTP_OK            All other cases
+ */
 static int JK_METHOD service(jk_endpoint_t *e,
                              jk_ws_service_t *s,
                              jk_logger_t *l, int *is_error)
