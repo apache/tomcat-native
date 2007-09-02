@@ -756,7 +756,8 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
                        "Checking for references with prefix %s with%s wildcard (recursion %d)",
                        prefix, wildcard? "" : "out", depth);
             for (i = 0; i < m->size; i++) {
-                if (m->values[i] && !strncmp(m->names[i], prefix, prelen)) {
+                if (m->values[i] && *(m->values[i]) &&
+                    !strncmp(m->names[i], prefix, prelen)) {
                     size_t remain = strlen(m->names[i]) - prelen;
                     if ((remain == JK_MAP_REFERENCE_SZ ) || (wildcard && remain > JK_MAP_REFERENCE_SZ)) {
                         remain = strlen(m->names[i]) - JK_MAP_REFERENCE_SZ;
@@ -792,7 +793,7 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
                             if (rc == JK_FALSE) {
                                 break;
                             }
-                            m->values[i] = NULL;
+                            *(m->values[i]) = '\0';
                         }
                     }
                 }
