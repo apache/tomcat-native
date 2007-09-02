@@ -355,6 +355,13 @@ References can be nested. Be careful to avoid loops!
 </p>
 
 <p>
+Attributes which are allowed multiple times for a single worker
+can not be merged from a worker and a reference. An attribute
+is only inherited from a reference, if it is not already set
+for the referring worker.
+</p>
+
+<p>
 References are especially useful, when configuring load balancers.
 Try to understand the following two stage references:
 </p>
