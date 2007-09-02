@@ -398,22 +398,19 @@ int jk_map_put(jk_map_t *m, const char *name, const void *value, void **old)
 
 static int jk_map_validate_property(char *prp, jk_logger_t *l)
 {
-    int off = (int)strlen(prp) - (int)JK_MAP_REFERENCE_SZ;
     /* check the worker properties */
-    if (off <= 0 || strncmp(&prp[off], JK_MAP_REFERENCE, JK_MAP_REFERENCE_SZ) ) {
-        if (!jk_is_valid_property(prp)) {
-            jk_log(l, JK_LOG_ERROR,
-                   "The attribute '%s' is not supported - please check"
-                   " the documentation for the supported attributes.",
-                   prp);
-            return JK_FALSE;
-        }
-        if (jk_is_deprecated_property(prp)) {
-            jk_log(l, JK_LOG_WARNING,
-                   "The attribute '%s' is deprecated - please check"
-                   " the documentation for the correct replacement.",
-                   prp);
-        }
+    if (!jk_is_valid_property(prp)) {
+        jk_log(l, JK_LOG_ERROR,
+               "The attribute '%s' is not supported - please check"
+               " the documentation for the supported attributes.",
+               prp);
+        return JK_FALSE;
+    }
+    if (jk_is_deprecated_property(prp)) {
+        jk_log(l, JK_LOG_WARNING,
+               "The attribute '%s' is deprecated - please check"
+               " the documentation for the correct replacement.",
+               prp);
     }
     return JK_TRUE;
 }

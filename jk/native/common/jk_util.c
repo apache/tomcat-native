@@ -43,6 +43,7 @@
 #define LIBPATH_OF_WORKER           ("ld_path")
 #define CMD_LINE_OF_WORKER          ("cmd_line")
 #define NATIVE_LIB_OF_WORKER        ("native_lib")
+#define REFERENCE_OF_WORKER         ("reference")
 #define HOST_OF_WORKER              ("host")
 #define PORT_OF_WORKER              ("port")
 #define TYPE_OF_WORKER              ("type")
@@ -157,6 +158,7 @@ static const char *list_properties[] = {
 
 static const char *unique_properties[] = {
     SECRET_OF_WORKER,
+    REFERENCE_OF_WORKER,
     HOST_OF_WORKER,
     PORT_OF_WORKER,
     TYPE_OF_WORKER,
@@ -239,6 +241,7 @@ static const char *supported_properties[] = {
     LIBPATH_OF_WORKER,
     CMD_LINE_OF_WORKER,
     NATIVE_LIB_OF_WORKER,
+    REFERENCE_OF_WORKER,
     HOST_OF_WORKER,
     PORT_OF_WORKER,
     TYPE_OF_WORKER,
