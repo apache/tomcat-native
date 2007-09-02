@@ -577,13 +577,23 @@ void *jk_map_value_at(jk_map_t *m, int idex)
 void jk_map_dump(jk_map_t *m, jk_logger_t *l)
 {
     if (m) {
-        if (JK_IS_DEBUG_LEVEL(l)) {
-            int s = jk_map_size(m);
-            int i;
-            for (i=0;i<s;i++) {
+        int s = jk_map_size(m);
+        int i;
+        for (i=0;i<s;i++) {
+            if (!jk_map_name_at(m, i)) {
+                jk_log(l, JK_LOG_WARNING,
+                       "Map contains empty name at index %d\n", i);
+            }
+            if (!jk_map_value_at(m, i)) {
+                jk_log(l, JK_LOG_WARNING,
+                       "Map contains empty value for name '%s' at index %d\n",
+                       jk_map_name_at(m, i), i);
+            }
+            if (JK_IS_DEBUG_LEVEL(l)) {
                 jk_log(l, JK_LOG_DEBUG,
                        "Dump of map: '%s' -> '%s'",
-                       jk_map_name_at(m, i), jk_map_value_at(m, i));
+                       jk_map_name_at(m, i) ? jk_map_name_at(m, i) : "(null)",
+                       jk_map_value_at(m, i) ? jk_map_value_at(m, i) : "(null)");
             }
         }
     }

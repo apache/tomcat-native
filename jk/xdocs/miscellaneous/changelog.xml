@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        Fix crash during startup when using worker configuration inheritance
+        (attribute "reference") and log level debug. (rjung)
+      </fix>
+      <fix>
         AJP13: Match header names exactly against pre defined constants. Avoid
         possible confusion with custom header names using a standard header name
         as a prefix. (rjung)
