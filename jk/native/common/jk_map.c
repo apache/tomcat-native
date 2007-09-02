@@ -756,7 +756,8 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
                        "Checking for references with prefix %s with%s wildcard (recursion %d)",
                        prefix, wildcard? "" : "out", depth);
             for (i = 0; i < m->size; i++) {
-                if (m->values[i] && *(m->values[i]) &&
+                char *v = (char *)m->values[i];
+                if (v && *v &&
                     !strncmp(m->names[i], prefix, prelen)) {
                     size_t remain = strlen(m->names[i]) - prelen;
                     if ((remain == JK_MAP_REFERENCE_SZ ) || (wildcard && remain > JK_MAP_REFERENCE_SZ)) {
@@ -764,7 +765,7 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
                         if (!strncmp(m->names[i] + remain, JK_MAP_REFERENCE, JK_MAP_REFERENCE_SZ)) {
                             char *from = jk_pool_alloc(&m->p,
                                                        (sizeof(char) *
-                                                       (strlen(m->values[i]) + 2)));
+                                                       (strlen(v) + 2)));
                             char *to = jk_pool_alloc(&m->p,
                                                      (sizeof(char) *
                                                      (remain + 2)));
@@ -774,14 +775,14 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
                                 rc = JK_FALSE;
                                 break;
                             }
-                            strcpy(from, m->values[i]);
-                            *(from+strlen(m->values[i]))   = '.';
-                            *(from+strlen(m->values[i])+1) = '\0';
+                            strcpy(from, v);
+                            *(from+strlen(v))   = '.';
+                            *(from+strlen(v)+1) = '\0';
                             strncpy(to, m->names[i], remain);
                             *(to+remain)   = '.';
                             *(to+remain+1) = '\0';
 
-                            rc = jk_map_resolve_references(m, m->values[i], 0, depth+1, l);
+                            rc = jk_map_resolve_references(m, v, 0, depth+1, l);
                             if (rc == JK_FALSE) {
                                 break;
                             }
@@ -793,7 +794,7 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
                             if (rc == JK_FALSE) {
                                 break;
                             }
-                            *(m->values[i]) = '\0';
+                            *v = '\0';
                         }
                     }
                 }
