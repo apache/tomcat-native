@@ -1845,6 +1845,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
             /*
              * This is fine, loop again, more data to send.
              */
+            continue;
         }
         else if (rc < 0) {
             /*
