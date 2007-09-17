@@ -877,9 +877,13 @@ This feature has been added in <b>jk 1.2.8</b>.
 </directive>
 
 <directive name="redirect" workers="SUB" default="" required="false">
-Set to the preferred failover worker. If worker matching SESSION ID is in
-error state then the redirect worker will be used instead. It will be used
-even if being disabled, thus offering hot standby.
+Set to the name of the preferred failover worker. If worker matching
+SESSION ID is in error state then the redirect worker will be used instead.
+It will be used even if being disabled, thus offering hot standby.
+<p>
+If you explicitely set a route via the "route" attribute, you must set "redirect"
+to this route of the preferred failover worker and not to its name.
+</p>
 <p>
 This feature has been added in <b>jk 1.2.9</b>.
 </p>
