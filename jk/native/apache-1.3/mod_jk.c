@@ -2599,8 +2599,8 @@ static void jk_init(server_rec * s, ap_pool * p)
 
     if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
-            jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s",
-                   jk_shm_name(), rc);
+            jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s (%d bytes)",
+                   jk_shm_name(), (int) jk_shm_size, rc);
     }
     else
         jk_log(conf->log, JK_LOG_ERROR,
@@ -2899,8 +2899,8 @@ static void child_init_handler(server_rec * s, ap_pool * p)
 
     if ((rc = jk_shm_attach(jk_shm_file, jk_shm_size, conf->log)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
-            jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s",
-                   jk_shm_name());
+            jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s (%d bytes)",
+                   jk_shm_name(), (int) jk_shm_size);
     }
     else
         jk_log(conf->log, JK_LOG_ERROR, "Attaching shm:%s errno=%d",

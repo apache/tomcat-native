@@ -2671,8 +2671,8 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 
     if ((rc = jk_shm_attach(jk_shm_file, jk_shm_size, conf->log)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
-            jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s",
-                   jk_shm_name());
+            jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s (%d bytes)",
+                   jk_shm_name(), (int) jk_shm_size);
             apr_pool_cleanup_register(pconf, conf->log, jk_cleanup_shmem,
                                      jk_cleanup_shmem);
     }
@@ -2715,8 +2715,8 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
 #endif
     if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) == 0) {
         if (JK_IS_DEBUG_LEVEL(conf->log))
-            jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s",
-                   jk_shm_name(), rc);
+            jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s (%d bytes)",
+                   jk_shm_name(), (int) jk_shm_size, rc);
             apr_pool_cleanup_register(pconf, conf->log, jk_cleanup_shmem,
                                       jk_cleanup_shmem);
     }
