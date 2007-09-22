@@ -242,18 +242,18 @@ The default value depends on the worker type. For AJP13 workers the default port
 </directive>
 
 <directive name="socket_timeout" default="0" required="false">
-Socket timeout in seconds used for communication channel between JK and remote host.
-If remote host does not respond inside that timeout the JK will generate an error,
-and retry again. If set to value zero (default) the JK will wait for infinite
+Socket timeout in seconds used for the communication channel between JK and remote host.
+If the remote host does not respond inside the timeout specified, JK will generate an error,
+and retry again. If set to zero (default) JK will wait for an infinite amount of time
 on all socket operations.
 </directive>
 
 <directive name="socket_keepalive" default="False" required="false">
 This directive should be used when you have a firewall between your webserver
-and the Tomcat engine, who tend to drop inactive connections. This flag will told Operating System
-to send <code>KEEP_ALIVE</code> message on inactive connections (interval depend on global OS settings,
-generally 120 minutes), and thus prevent the firewall to cut the connection.
-To enable keepalive set this property value to the <b>True</b>.
+and the Tomcat engine, who tend to drop inactive connections. This flag will tell the Operating System
+to send <code>KEEP_ALIVE</code> messages on inactive connections (interval depend on global OS settings,
+generally 120 minutes), and thus prevent the firewall to cut inactive connections.
+To enable keepalive set this property value to <b>True</b>.
 <p>
 The problem with Firewall cutting inactive connections is that sometimes, neither webserver or Tomcat
 have information about the cut and couldn't handle it.
@@ -266,7 +266,7 @@ are maintained as a connection pool.
 It will limit the number of those connection that each web server child
 process can made.
 <p>
-Connection pool size property is used only for multi threaded
+Connection pool size property is only used for multi threaded
 web servers such as Apache 2.0 (worker), IIS and Netscape. The connection_pool_size property
 should reflect the number of threads per child process. JK will discover
 the number of threads per child process on Apache 2 web server with worker-mpm and set
