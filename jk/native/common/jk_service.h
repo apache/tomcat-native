@@ -223,6 +223,11 @@ struct jk_ws_service
     int flush_header;
 
     /*
+     * JK_TRUE if response headers have been sent back
+     */
+    int response_started;
+
+    /*
      * HTTP status sent from container.
      */
     int http_response_status;

@@ -224,7 +224,6 @@ struct apache_private_data
 {
     jk_pool_t p;
 
-    int response_started;
     int read_body_started;
     request_rec *r;
 };
@@ -317,7 +316,7 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
 
     /* this NOP function was removed in apache 2.0 alpha14 */
     /* ap_send_http_header(r); */
-    p->response_started = JK_TRUE;
+    s->response_started = JK_TRUE;
 
     return JK_TRUE;
 }
@@ -408,7 +407,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned int l)
             int ll = l;
             const char *bb = (const char *)b;
 
-            if (!p->response_started) {
+            if (!s->response_started) {
                 if (main_log)
                     jk_log(main_log, JK_LOG_INFO,
                            "Write without start, starting with defaults");
@@ -2156,7 +2155,6 @@ static int jk_handler(request_rec * r)
             jk_pool_atom_t buf[SMALL_POOL_SIZE];
             jk_open_pool(&private_data.p, buf, sizeof(buf));
 
-            private_data.response_started = JK_FALSE;
             private_data.read_body_started = JK_FALSE;
             private_data.r = r;
 

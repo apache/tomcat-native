@@ -204,9 +204,6 @@ struct apache_private_data
      */
     jk_pool_t p;
 
-    /* True iff response headers have been returned to client */
-    int response_started;
-
     /* True iff request body data has been read from Apache */
     int read_body_started;
 
@@ -314,7 +311,7 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
         }
 
         ap_send_http_header(r);
-        p->response_started = JK_TRUE;
+        s->response_started = JK_TRUE;
 
         return JK_TRUE;
     }
@@ -359,6 +356,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 
 static void JK_METHOD ws_flush(jk_ws_service_t *s)
 {
+    }
     if (s && s->ws_private) {
         apache_private_data_t *p = s->ws_private;
         BUFF *bf = p->r->connection->client;
@@ -387,7 +385,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned len)
             int w = (int)len;
             int r = 0;
 
-            if (!p->response_started) {
+            if (!s->response_started) {
                 if (main_log)
                     jk_log(main_log, JK_LOG_INFO,
                            "Write without start, starting with defaults");
@@ -2084,7 +2082,6 @@ static int jk_handler(request_rec * r)
             jk_pool_atom_t buf[SMALL_POOL_SIZE];
             jk_open_pool(&private_data.p, buf, sizeof(buf));
 
-            private_data.response_started = JK_FALSE;
             private_data.read_body_started = JK_FALSE;
             private_data.r = r;
 

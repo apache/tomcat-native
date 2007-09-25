@@ -44,6 +44,9 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        AJP13: Ignore flush packets before we received the response headers. (rjung)
+      </fix>
+      <fix>
         Fix crash during startup when using worker configuration inheritance
         (attribute "reference") and log level debug. (rjung)
       </fix>

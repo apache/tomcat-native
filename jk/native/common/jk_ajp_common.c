@@ -1518,8 +1518,15 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 /* AJP13_SEND_BODY_CHUNK with length 0 is
                  * explicit flush packet message.
                  */
-                if (r->flush)
-                    r->flush(r);
+                if (r->response_started) {
+                    if (r->flush) {
+                        r->flush(r);
+                    }
+                }
+                else {
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Ignoring flush message received before headers");
+                }
             }
             else {
                 if (!r->write(r, msg->buf + msg->pos, len)) {

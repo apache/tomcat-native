@@ -43,8 +43,6 @@ struct nsapi_private_data
 {
     jk_pool_t p;
 
-    int response_started;
-
     pblock *pb;
     Session *sn;
     Request *rq;
@@ -125,10 +123,10 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
 {
     if (s && s->ws_private) {
         nsapi_private_data_t *p = s->ws_private;
-        if (!p->response_started) {
+        if (!s->response_started) {
             unsigned i;
 
-            p->response_started = JK_TRUE;
+            s->response_started = JK_TRUE;
 
             /* Remove "old" content type */
             param_free(pblock_remove("content-type", p->rq->srvhdrs));
@@ -210,7 +208,7 @@ static int JK_METHOD ws_write(jk_ws_service_t *s, const void *b, unsigned l)
         nsapi_private_data_t *p = s->ws_private;
 
         if (l) {
-            if (!p->response_started) {
+            if (!s->response_started) {
                 start_response(s, 200, NULL, NULL, NULL, 0);
             }
 
@@ -366,7 +364,6 @@ NSAPI_PUBLIC int jk_service(pblock * pb, Session * sn, Request * rq)
 
         jk_open_pool(&private_data.p, buf, sizeof(buf));
 
-        private_data.response_started = JK_FALSE;
         private_data.pb = pb;
         private_data.sn = sn;
         private_data.rq = rq;

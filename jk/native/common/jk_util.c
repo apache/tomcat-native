@@ -1824,6 +1824,7 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->num_attributes = 0;
     s->route = NULL;
     s->retries = JK_RETRIES;
+    s->response_started = JK_FALSE;
     s->add_log_items = NULL;
 }
 
