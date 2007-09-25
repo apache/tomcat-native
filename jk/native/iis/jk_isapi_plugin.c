@@ -212,7 +212,7 @@ struct isapi_private_data_t
 {
     jk_pool_t p;
 
-    int request_started;
+    int response_started;
     unsigned int bytes_read_so_far;
     LPEXTENSION_CONTROL_BLOCK lpEcb;
 };
@@ -587,12 +587,12 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
     if (s && s->ws_private) {
         int rv = JK_TRUE;
         isapi_private_data_t *p = s->ws_private;
-        if (!p->request_started) {
+        if (!p->response_started) {
             char *status_str;
             DWORD status_str_len;
             char *headers_str = NULL;
             BOOL keep_alive = FALSE;
-            p->request_started = JK_TRUE;
+            p->response_started = JK_TRUE;
 
             /*
              * Create the status line
@@ -743,7 +743,7 @@ static int JK_METHOD write(jk_ws_service_t *s, const void *b, unsigned int l)
             unsigned int written = 0;
             char *buf = (char *)b;
 
-            if (!p->request_started) {
+            if (!p->response_started) {
                 start_response(s, 200, NULL, NULL, NULL, 0);
             }
 
@@ -1499,7 +1499,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
         jk_init_ws_service(&s);
         jk_open_pool(&private_data.p, buf, sizeof(buf));
 
-        private_data.request_started = JK_FALSE;
+        private_data.response_started = JK_FALSE;
         private_data.bytes_read_so_far = 0;
         private_data.lpEcb = lpEcb;
 
