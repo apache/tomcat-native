@@ -356,7 +356,6 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 
 static void JK_METHOD ws_flush(jk_ws_service_t *s)
 {
-    }
     if (s && s->ws_private) {
         apache_private_data_t *p = s->ws_private;
         BUFF *bf = p->r->connection->client;
