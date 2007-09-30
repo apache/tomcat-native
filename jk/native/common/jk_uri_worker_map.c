@@ -193,6 +193,13 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
+
+        jk_open_pool(&((*uw_map)->p),
+                     (*uw_map)->buf, sizeof(jk_pool_atom_t) * BIG_POOL_SIZE);
+        (*uw_map)->size = 0;
+        (*uw_map)->capacity = 0;
+        (*uw_map)->maps = NULL;
+
         if (init_data)
             rc = uri_worker_map_open(*uw_map, init_data, l);
         JK_TRACE_EXIT(l);
@@ -406,19 +413,8 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
 
     JK_TRACE_ENTER(l);
 
-    uw_map->size = 0;
-    uw_map->capacity = 0;
-
     if (uw_map) {
-        int sz;
-
-        rc = JK_TRUE;
-        jk_open_pool(&uw_map->p,
-                     uw_map->buf, sizeof(jk_pool_atom_t) * BIG_POOL_SIZE);
-        uw_map->size = 0;
-        uw_map->maps = NULL;
-
-        sz = jk_map_size(init_data);
+        int sz = jk_map_size(init_data);
 
         jk_log(l, JK_LOG_DEBUG,
                "rule map size is %d",
