@@ -2243,6 +2243,31 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
 }
 
 
+/*
+ *  Clone jk config.
+ */
+static void *clone_jk_config(ap_pool * p, server_rec *s)
+{
+    jk_server_conf_t *src =
+        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
+    jk_server_conf_t *dst =
+        (jk_server_conf_t *) ap_pcalloc(p, sizeof(jk_server_conf_t));
+
+    memcpy(dst, src, sizeof(jk_server_conf_t));
+    dst->was_initialized = JK_TRUE;
+    dst->s = s;
+    dst->mountcopy = 0;
+    dst->mount_file = NULL;
+    dst->alias_dir = NULL;
+    dst->uri_to_context = NULL;
+    if (!uri_worker_map_alloc(&(dst->uw_map), NULL, dst->log)) {
+        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
+    }
+
+    return dst;
+}
+
+
 static void copy_jk_map(ap_pool * p, server_rec * s, jk_map_t *src,
                         jk_map_t *dst)
 {
@@ -2486,7 +2511,11 @@ static void jk_init(server_rec * s, ap_pool * p)
     for (; srv; srv = srv->next) {
         jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                            &jk_module);
-        if (sconf && sconf->was_initialized == JK_FALSE) {
+        if (sconf && sconf->was_initialized == JK_TRUE) {
+            ap_set_module_config(srv->module_config, &jk_module,
+                                 clone_jk_config(p, srv));
+        }
+        else if (sconf && sconf->was_initialized == JK_FALSE) {
             sconf->was_initialized = JK_TRUE;
             open_jk_log(srv, p);
             sconf->options &= ~sconf->exclude_options;
