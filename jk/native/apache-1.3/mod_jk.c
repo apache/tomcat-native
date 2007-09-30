@@ -128,10 +128,8 @@ typedef struct
     jk_logger_t *log;
 
     /*
-     * Worker stuff
+     * Mount stuff
      */
-    jk_map_t *worker_properties;
-    char *worker_file;
     char *mount_file;
     int mount_file_reload;
     jk_map_t *uri_to_context;
@@ -156,7 +154,7 @@ typedef struct
     /*
      * Setting target worker via environment
      */
-   char *worker_indicator;
+    char *worker_indicator;
 
     /*
      * SSL Support
@@ -220,6 +218,11 @@ static table *jk_log_fds = NULL;
 static jk_worker_env_t worker_env;
 static char *jk_shm_file = NULL;
 static size_t jk_shm_size = JK_SHM_DEF_SIZE;
+/*
+ * Worker stuff
+*/
+static jk_map_t *jk_worker_properties = NULL;
+static char *jk_worker_file = NULL;
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -915,27 +918,25 @@ static const char *jk_unmount_context(cmd_parms * cmd,
 static const char *jk_set_worker_file(cmd_parms * cmd,
                                       void *dummy, char *worker_file)
 {
-    server_rec *s = cmd->server;
     struct stat statbuf;
 
-    jk_server_conf_t *conf =
-        (jk_server_conf_t *) ap_get_module_config(s->module_config,
-                                                  &jk_module);
+    if (jk_worker_file != NULL)
+        return "JkWorkersFile only allowed once";
 
     /* we need an absolute path */
-    conf->worker_file = ap_server_root_relative(cmd->pool, worker_file);
+    jk_worker_file = ap_server_root_relative(cmd->pool, worker_file);
 
 #ifdef CHROOTED_APACHE
-    ap_server_strip_chroot(conf->worker_file, 0);
+    ap_server_strip_chroot(jk_worker_file, 0);
 #endif
 
-    if (conf->worker_file == worker_file)
-        conf->worker_file = ap_pstrdup(cmd->pool, worker_file);
+    if (jk_worker_file == worker_file)
+        jk_worker_file = ap_pstrdup(cmd->pool, worker_file);
 
-    if (conf->worker_file == NULL)
+    if (jk_worker_file == NULL)
         return "JkWorkersFile file name invalid";
 
-    if (stat(conf->worker_file, &statbuf) == -1)
+    if (stat(jk_worker_file, &statbuf) == -1)
         return "Can't find the workers file specified";
 
     return NULL;
@@ -1795,7 +1796,7 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    if (jk_map_read_property(conf->worker_properties, line,
+    if (jk_map_read_property(jk_worker_properties, line,
                              JK_MAP_HANDLE_DUPLICATES, conf->log) == JK_FALSE)
         return ap_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line, NULL);
 
@@ -2176,9 +2177,6 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     jk_server_conf_t *c =
         (jk_server_conf_t *) ap_pcalloc(p, sizeof(jk_server_conf_t));
 
-    c->worker_properties = NULL;
-    jk_map_alloc(&c->worker_properties);
-    c->worker_file = NULL;
     c->mount_file = NULL;
     c->log_file = NULL;
     c->log_fd = -1;
@@ -2237,7 +2235,6 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->envvar_items = ap_make_array(p, 0, sizeof(envvar_item));
 
     c->s = s;
-    jk_map_put(c->worker_properties, "ServerRoot", ap_server_root, NULL);
 
     return c;
 }
@@ -2475,7 +2472,8 @@ static void jk_init(server_rec * s, ap_pool * p)
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
-    jk_map_t *init_map = conf->worker_properties;
+    jk_map_alloc(&jk_worker_properties);
+    jk_map_put(jk_worker_properties, "ServerRoot", ap_server_root, NULL);
 
     jk_log_fds = ap_make_table(p, 0);
 
@@ -2568,15 +2566,16 @@ static void jk_init(server_rec * s, ap_pool * p)
      * to make sure log file gets closed in the parent process  */
     ap_register_cleanup(p, s, jk_server_cleanup, ap_null_cleanup);
 
-    if ((conf->worker_file != NULL) &&
-        !jk_map_read_properties(init_map, conf->worker_file, NULL,
+    if ((jk_worker_file != NULL) &&
+        !jk_map_read_properties(jk_worker_properties, jk_worker_file, NULL,
                                 JK_MAP_HANDLE_DUPLICATES, conf->log)) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
                       "Error in reading worker properties from '%s'",
-                      conf->worker_file);
+                      jk_worker_file);
     }
 
-    if (jk_map_resolve_references(init_map, "worker.", 1, 1, conf->log) == JK_FALSE) {
+    if (jk_map_resolve_references(jk_worker_properties, "worker.",
+                                  1, 1, conf->log) == JK_FALSE) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
                       "Error in resolving configuration references");
     }
@@ -2586,7 +2585,7 @@ static void jk_init(server_rec * s, ap_pool * p)
     worker_env.virtual = "*";       /* for now */
     worker_env.server_name = (char *)ap_get_server_version();
 
-    if (wc_open(init_map, &worker_env, conf->log)) {
+    if (wc_open(jk_worker_properties, &worker_env, conf->log)) {
 #if MODULE_MAGIC_NUMBER >= 19980527
         /* Tell apache we're here */
         ap_add_version_component(JK_EXPOSED_VERSION);
@@ -2871,6 +2870,12 @@ static void jk_generic_cleanup(server_rec * s)
 
     server_rec *tmp = s;
 
+    if (jk_worker_properties) {
+        jk_map_free(&jk_worker_properties);
+        jk_worker_properties = NULL;
+        jk_worker_file = NULL;
+    }
+
     /* loop through all available servers to clean up all configuration
      * records we've created
      */
@@ -2883,7 +2888,6 @@ static void jk_generic_cleanup(server_rec * s)
             wc_close(NULL);
             uri_worker_map_free(&(conf->uw_map), NULL);
             jk_map_free(&(conf->uri_to_context));
-            jk_map_free(&(conf->worker_properties));
         }
         tmp = tmp->next;
     }

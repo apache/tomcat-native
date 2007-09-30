@@ -157,10 +157,8 @@ typedef struct
     apr_file_t *jklogfp;
 
     /*
-     * Worker stuff
+     * Mount stuff
      */
-    jk_map_t *worker_properties;
-    char *worker_file;
     char *mount_file;
     int mount_file_reload;
     jk_map_t *uri_to_context;
@@ -233,6 +231,11 @@ static jk_worker_env_t worker_env;
 static apr_global_mutex_t *jk_log_lock = NULL;
 static char *jk_shm_file = NULL;
 static size_t jk_shm_size = JK_SHM_DEF_SIZE;
+/*
+ * Worker stuff
+*/
+static jk_map_t *jk_worker_properties = NULL;
+static char *jk_worker_file = NULL;
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -943,24 +946,21 @@ static const char *jk_unmount_context(cmd_parms * cmd,
 static const char *jk_set_worker_file(cmd_parms * cmd,
                                       void *dummy, const char *worker_file)
 {
-    server_rec *s = cmd->server;
-
-    jk_server_conf_t *conf =
-        (jk_server_conf_t *) ap_get_module_config(s->module_config,
-                                                  &jk_module);
-
     const char *err_string = ap_check_cmd_context(cmd, GLOBAL_ONLY);
     if (err_string != NULL) {
         return err_string;
     }
 
-    /* we need an absolute path (ap_server_root_relative does the ap_pstrdup) */
-    conf->worker_file = ap_server_root_relative(cmd->pool, worker_file);
+    if (jk_worker_file != NULL)
+        return "JkWorkersFile only allowed once";
 
-    if (conf->worker_file == NULL)
+    /* we need an absolute path (ap_server_root_relative does the ap_pstrdup) */
+    jk_worker_file = ap_server_root_relative(cmd->pool, worker_file);
+
+    if (jk_worker_file == NULL)
         return "JkWorkersFile file name invalid";
 
-    if (jk_file_exists(conf->worker_file) != JK_TRUE)
+    if (jk_file_exists(jk_worker_file) != JK_TRUE)
         return "Can't find the workers file specified";
 
     return NULL;
@@ -1827,7 +1827,7 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
         return err_string;
     }
 
-    if (jk_map_read_property(conf->worker_properties, line,
+    if (jk_map_read_property(jk_worker_properties, line,
                              JK_MAP_HANDLE_DUPLICATES, conf->log) == JK_FALSE)
         return apr_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line, NULL);
 
@@ -2258,26 +2258,29 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
 {
     server_rec *s = data;
 
+    if (jk_worker_properties) {
+        jk_map_free(&jk_worker_properties);
+        jk_worker_properties = NULL;
+        jk_worker_file = NULL;
+    }
+
     while (NULL != s) {
         jk_server_conf_t *conf =
             (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                       &jk_module);
 
-        if (conf && conf->worker_properties) {
+        if (conf && conf->uw_map) {
             /* On pool cleanup pass NULL for the jk_logger to
                prevent segmentation faults on Windows because
                we can't guarantee what order pools get cleaned
                up between APR implementations. */
             if (conf->was_initialized)
                 wc_close(NULL);
-            if (conf->worker_properties)
-                jk_map_free(&conf->worker_properties);
             if (conf->uri_to_context)
                 jk_map_free(&conf->uri_to_context);
             if (conf->uw_map)
                 uri_worker_map_free(&conf->uw_map, NULL);
             conf->was_initialized   = JK_FALSE;
-            conf->worker_properties = NULL;
         }
         s = s->next;
     }
@@ -2292,9 +2295,6 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     jk_server_conf_t *c =
         (jk_server_conf_t *) apr_pcalloc(p, sizeof(jk_server_conf_t));
 
-    c->worker_properties = NULL;
-    jk_map_alloc(&c->worker_properties);
-    c->worker_file = NULL;
     c->mount_file = NULL;
     c->log_file = NULL;
     c->log = NULL;
@@ -2354,7 +2354,6 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->envvar_items = apr_array_make(p, 0, sizeof(envvar_item));
 
     c->s = s;
-    jk_map_put(c->worker_properties, "ServerRoot", ap_server_root, NULL);
     apr_pool_cleanup_register(p, s, jk_apr_pool_cleanup, jk_apr_pool_cleanup);
     return c;
 }
@@ -2657,8 +2656,8 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     int is_threaded;
     int mpm_threads = 1;
 
-    /*     jk_map_t *init_map = NULL; */
-    jk_map_t *init_map = conf->worker_properties;
+    jk_map_alloc(&jk_worker_properties);
+    jk_map_put(jk_worker_properties, "ServerRoot", ap_server_root, NULL);
 
 #if !defined(WIN32) && !defined(NETWARE)
     if (!jk_shm_file) {
@@ -2693,16 +2692,17 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                mpm_threads);
     jk_set_worker_def_cache_size(mpm_threads);
 
-    if ((conf->worker_file != NULL) &&
-        !jk_map_read_properties(init_map, conf->worker_file, NULL,
+    if ((jk_worker_file != NULL) &&
+        !jk_map_read_properties(jk_worker_properties, jk_worker_file, NULL,
                                 JK_MAP_HANDLE_DUPLICATES, conf->log)) {
         ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
                      "Error in reading worker properties from '%s'",
-                     conf->worker_file);
+                     jk_worker_file);
         return JK_FALSE;
     }
 
-    if (jk_map_resolve_references(init_map, "worker.", 1, 1, conf->log) == JK_FALSE) {
+    if (jk_map_resolve_references(jk_worker_properties, "worker.",
+                                  1, 1, conf->log) == JK_FALSE) {
         ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
                      "Error in resolving configuration references");
         return JK_FALSE;
@@ -2718,7 +2718,7 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     worker_env.server_name = (char *)ap_get_server_version();
 #endif
 
-    if (wc_open(init_map, &worker_env, conf->log)) {
+    if (wc_open(jk_worker_properties, &worker_env, conf->log)) {
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);
         jk_log(conf->log, JK_LOG_INFO,
                "%s initialized",
