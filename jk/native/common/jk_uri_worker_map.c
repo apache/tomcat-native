@@ -414,7 +414,7 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
 
         rc = JK_TRUE;
         jk_open_pool(&uw_map->p,
-                     uw_map->buf, sizeof(jk_pool_atom_t) * SMALL_POOL_SIZE);
+                     uw_map->buf, sizeof(jk_pool_atom_t) * BIG_POOL_SIZE);
         uw_map->size = 0;
         uw_map->maps = NULL;
 
