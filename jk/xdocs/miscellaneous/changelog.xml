@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Documentation: Small additions to JkShmFile documentation.
+        Contributed by Gerhardus Geldenhuis. (rjung)
+      </update>
       <fix>
         AJP13: Ignore flush packets before we received the response headers. (rjung)
       </fix>

@@ -80,12 +80,26 @@ This directive is available in jk1.2.7 version and later.
 </p></attribute>
 <attribute name="JkShmFile" required="false"><p>
 Shared memory file name. Used only on unix platforms.
+The shm file is used by balancer and status workers.
 <br/>
 This directive is only allowed once. It must be put into
  the global part of the configuration.
 <br/>
 The default value is logs/jk-runtime-status.
-</p></attribute>
+It is highly recommended that the shm file be placed on a local
+drive and not an NFS share.
+</p>
+<p>
+The shared memory contains configuration and runtime information for load balancer
+workers and their members. It is need in order that all apache children
+<ul>
+<li>share the same status information for load balancing members (OK, ERROR, ...),</li>
+<li>share the information about load taken by the individual workers,</li>
+<li>share the information for the parts of the configuration, which are changeable
+during runtime by status workers.</li>
+</ul>
+</p>
+</attribute>
 <attribute name="JkShmSize" required="false"><p>
 Size of the shared memory file name.
 <br/>
