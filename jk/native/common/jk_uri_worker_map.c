@@ -176,16 +176,18 @@ static int wildchar_match(const char *str, const char *exp, int icase)
     return (str[x] != '\0');
 }
 
-int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
+int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map_p,
                          jk_map_t *init_data, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
 
-    if (uw_map) {
+    if (uw_map_p) {
         int rc;
-        *uw_map = (jk_uri_worker_map_t *)calloc(1, sizeof(jk_uri_worker_map_t));
+        jk_uri_worker_map_t *uw_map;
+        *uw_map_p = (jk_uri_worker_map_t *)calloc(1, sizeof(jk_uri_worker_map_t));
+        uw_map = *uw_map_p;
 
-        JK_INIT_CS(&((*uw_map)->cs), rc);
+        JK_INIT_CS(&(uw_map->cs), rc);
         if (rc == JK_FALSE) {
             jk_log(l, JK_LOG_ERROR,
                    "creating thread lock (errno=%d)",
@@ -194,14 +196,20 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map,
             return JK_FALSE;
         }
 
-        jk_open_pool(&((*uw_map)->p),
-                     (*uw_map)->buf, sizeof(jk_pool_atom_t) * BIG_POOL_SIZE);
-        (*uw_map)->size = 0;
-        (*uw_map)->capacity = 0;
-        (*uw_map)->maps = NULL;
+        jk_open_pool(&(uw_map->p),
+                     uw_map->buf, sizeof(jk_pool_atom_t) * BIG_POOL_SIZE);
+        uw_map->size = 0;
+        uw_map->nosize = 0;
+        uw_map->capacity = 0;
+        uw_map->maps = NULL;
+        uw_map->fname = NULL;
+        uw_map->reject_unsafe = 0;
+        uw_map->reload = JK_URIMAP_DEF_RELOAD;
+        uw_map->modified = 0;
+        uw_map->checked = 0;
 
         if (init_data)
-            rc = uri_worker_map_open(*uw_map, init_data, l);
+            rc = uri_worker_map_open(uw_map, init_data, l);
         JK_TRACE_EXIT(l);
         return rc;
     }
