@@ -1982,8 +1982,8 @@ static const command_rec jk_cmds[] = {
      * Servlet Engine
      */
     AP_INIT_TAKE12("JkEnvVar", jk_add_env_var, NULL, RSRC_CONF,
-                  "Adds a name of environment variable and an optional value "
-                  "that should be sent to servlet-engine"),
+                   "Adds a name of environment variable and an optional value "
+                   "that should be sent to servlet-engine"),
 
     AP_INIT_RAW_ARGS("JkWorkerProperty", jk_set_worker_property,
                      NULL, RSRC_CONF,
