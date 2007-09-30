@@ -236,6 +236,7 @@ static size_t jk_shm_size = JK_SHM_DEF_SIZE;
 */
 static jk_map_t *jk_worker_properties = NULL;
 static char *jk_worker_file = NULL;
+static int jk_mount_copy_all = JK_FALSE;
 
 static int JK_METHOD ws_start_response(jk_ws_service_t *s,
                                        int status,
@@ -834,18 +835,30 @@ static int init_ws_service(apache_private_data_t * private_data,
 /*
  * JkMountCopy directive handling
  *
- * JkMountCopy On/Off
+ * JkMountCopy On/Off/All
  */
 
-static const char *jk_set_mountcopy(cmd_parms * cmd, void *dummy, int flag)
+static const char *jk_set_mountcopy(cmd_parms * cmd,
+                                    void *dummy, const char *mount_copy)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    /* Set up our value */
-    conf->mountcopy = flag ? JK_TRUE : JK_FALSE;
+    if (! strcasecmp(mount_copy, "all")) {
+        const char *err_string = ap_check_cmd_context(cmd, GLOBAL_ONLY);
+        if (err_string != NULL) {
+            return err_string;
+        }
+        jk_mount_copy_all = JK_TRUE;
+    }
+    else if (strcasecmp(mount_copy, "on") && strcasecmp(mount_copy, "off")) {
+        return "JkMountCopy must be All, On or Off";
+    }
+    else {
+        conf->mountcopy = strcasecmp(mount_copy, "off") ? JK_TRUE : JK_FALSE;
+    }
 
     return NULL;
 }
@@ -1882,8 +1895,8 @@ static const command_rec jk_cmds[] = {
      * JkMountCopy specifies if mod_jk should copy the mount points
      * from the main server to the virtual servers.
      */
-    AP_INIT_FLAG("JkMountCopy", jk_set_mountcopy, NULL, RSRC_CONF,
-                 "Should the base server mounts be copied to the virtual server"),
+    AP_INIT_TAKE1("JkMountCopy", jk_set_mountcopy, NULL, RSRC_CONF,
+                  "Should the base server mounts be copied to the virtual server"),
 
     /*
      * JkStripSession specifies if mod_jk should strip the ;jsessionid
@@ -2262,6 +2275,7 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
         jk_map_free(&jk_worker_properties);
         jk_worker_properties = NULL;
         jk_worker_file = NULL;
+        jk_mount_copy_all = JK_FALSE;
     }
 
     while (NULL != s) {
@@ -2301,11 +2315,11 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->stamp_format_string = NULL;
     c->format_string = NULL;
     c->format = NULL;
-    c->mountcopy = JK_FALSE;
     c->exclude_options = 0;
     c->was_initialized = JK_FALSE;
 
     if (s->is_virtual) {
+        c->mountcopy = JK_UNSET;
         c->mount_file_reload = JK_UNSET;
         c->log_level = JK_UNSET;
         c->options = 0;
@@ -2319,6 +2333,7 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
         c->key_size_indicator = NULL;
         c->strip_session = JK_UNSET;
     } else {
+        c->mountcopy = JK_FALSE;
         c->mount_file_reload = JK_URIMAP_DEF_RELOAD;
         c->log_level = JK_LOG_DEF_LEVEL;
         c->options = JK_OPT_FWDURIDEFAULT;
@@ -2469,7 +2484,8 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
 
     if (overrides->mount_file_reload == JK_UNSET)
         overrides->mount_file_reload = base->mount_file_reload;
-    if (overrides->mountcopy) {
+    if (overrides->mountcopy == JK_TRUE ||
+        (overrides->mountcopy == JK_UNSET && jk_mount_copy_all == JK_TRUE)) {
         copy_jk_map(p, overrides->s, base->uri_to_context,
                     overrides->uri_to_context);
         if (!overrides->mount_file)
@@ -2798,7 +2814,7 @@ static int jk_post_config(apr_pool_t * pconf,
             for (; srv; srv = srv->next) {
                 jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                                    &jk_module);
-                if (sconf && sconf->was_initialized == JK_TRUE) {
+                if (sconf && sconf->was_initialized == JK_TRUE && jk_mount_copy_all == JK_FALSE) {
                     ap_set_module_config(srv->module_config, &jk_module,
                                          clone_jk_config(pconf, srv));
                 }

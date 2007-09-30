@@ -164,7 +164,7 @@ For inheritance rules, see: JkMountCopy.
 There is no default value.
 </p></attribute>
 <attribute name="JkMountCopy" required="false"><p>
-If this directive is set to On in some virtual server,
+If this directive is set to "On" in some virtual server,
 the mounts from the global server will be copied to the
 virtual server, more precisely all mounts defined by JkMount
 or JkUnMount. The Mounts defined by JkMountFile and JkAutoAlias
@@ -174,6 +174,9 @@ it's own JkMountFile or JkAutoAlias.
 This directive is only allowed inside VirtualHost.
 <br/>
 The default is Off.
+<br/>
+Starting with version 1.2.26 you can also set it to "All" in the
+global virtual server. This will switch the default to On.
 </p></attribute>
 <attribute name="JkWorkerIndicator" required="false"><p>
 Name of the Apache environment variable that can be used to set worker names

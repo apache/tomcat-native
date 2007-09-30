@@ -44,6 +44,28 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Apache: Add new value "All" for JkMountCopy. (rjung)
+      </update>
+      <fix>
+        <bug>43516</bug>: Memory leak for Apache httpd module
+        of size 8KB for every virtual host without JK directive
+        after each restart. (rjung)
+      </fix>
+      <update>
+        Apache: Cleanup init and destroy of server configuration. (rjung)
+      </update>
+      <update>
+        Apache: Remove global configuration items from per server
+        configuration. (rjung)
+      </update>
+      <update>
+        Apache: Remove unused attributes secret_key and
+        automount/JkAutoMount. (rjung)
+      </update>
+      <update>
+        Cleanup of jk_uri_worker_map. (rjung)
+      </update>
+      <update>
         Documentation: Small additions to JkShmFile documentation.
         Contributed by Gerhardus Geldenhuis. (rjung)
       </update>
