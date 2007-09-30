@@ -138,6 +138,8 @@ typedef struct
 
     jk_uri_worker_map_t *uw_map;
 
+    int was_initialized;
+
     /*
      * Automatic context path apache alias
      */
@@ -2187,6 +2189,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->format = NULL;
     c->mountcopy = JK_FALSE;
     c->exclude_options = 0;
+    c->was_initialized = JK_FALSE;
 
     if (s->is_virtual) {
         c->mount_file_reload = JK_UNSET;
@@ -2483,8 +2486,9 @@ static void jk_init(server_rec * s, ap_pool * p)
     for (; srv; srv = srv->next) {
         jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                            &jk_module);
-        open_jk_log(srv, p);
-        if (sconf) {
+        if (sconf && sconf->was_initialized == JK_FALSE) {
+            sconf->was_initialized = JK_TRUE;
+            open_jk_log(srv, p);
             sconf->options &= ~sconf->exclude_options;
             if (!uri_worker_map_alloc(&(sconf->uw_map),
                                       sconf->uri_to_context, sconf->log))
@@ -2865,10 +2869,8 @@ static void jk_server_cleanup(void *data)
 /** BEGIN SREVILAK
  * body taken from exit_handler()
  */
-static void jk_generic_cleanup(server_rec * s)
+static void jk_generic_cleanup(server_rec *s)
 {
-
-    server_rec *tmp = s;
 
     if (jk_worker_properties) {
         jk_map_free(&jk_worker_properties);
@@ -2879,17 +2881,24 @@ static void jk_generic_cleanup(server_rec * s)
     /* loop through all available servers to clean up all configuration
      * records we've created
      */
-    while (NULL != tmp) {
+    while (NULL != s) {
         jk_server_conf_t *conf =
-            (jk_server_conf_t *) ap_get_module_config(tmp->module_config,
+            (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                       &jk_module);
 
-        if (conf) {
+        if (conf && conf->was_initialized == JK_TRUE) {
+            /* On pool cleanup pass NULL for the jk_logger to
+               prevent segmentation faults on Windows because
+               we can't guarantee what order pools get cleaned
+               up between APR implementations. */
             wc_close(NULL);
-            uri_worker_map_free(&(conf->uw_map), NULL);
-            jk_map_free(&(conf->uri_to_context));
+            if (conf->uri_to_context)
+                jk_map_free(&conf->uri_to_context);
+            if (conf->uw_map)
+                uri_worker_map_free(&conf->uw_map, NULL);
+            conf->was_initialized = JK_FALSE;
         }
-        tmp = tmp->next;
+        s = s->next;
     }
 }
 

@@ -2269,18 +2269,17 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
             (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                       &jk_module);
 
-        if (conf && conf->uw_map) {
+        if (conf && conf->was_initialized == JK_TRUE) {
             /* On pool cleanup pass NULL for the jk_logger to
                prevent segmentation faults on Windows because
                we can't guarantee what order pools get cleaned
                up between APR implementations. */
-            if (conf->was_initialized)
-                wc_close(NULL);
+            wc_close(NULL);
             if (conf->uri_to_context)
                 jk_map_free(&conf->uri_to_context);
             if (conf->uw_map)
                 uri_worker_map_free(&conf->uw_map, NULL);
-            conf->was_initialized   = JK_FALSE;
+            conf->was_initialized = JK_FALSE;
         }
         s = s->next;
     }
@@ -2766,7 +2765,7 @@ static int jk_post_config(apr_pool_t * pconf,
     if (!s->is_virtual) {
         conf = (jk_server_conf_t *)ap_get_module_config(s->module_config,
                                                         &jk_module);
-        if (!conf->was_initialized) {
+        if (conf->was_initialized == JK_FALSE) {
             conf->was_initialized = JK_TRUE;
             /* step through the servers and open each jk logfile
              * and do additional post config initialization.
@@ -2774,9 +2773,10 @@ static int jk_post_config(apr_pool_t * pconf,
             for (; srv; srv = srv->next) {
                 jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                                    &jk_module);
-                if (open_jklog(srv, pconf))
-                    return HTTP_INTERNAL_SERVER_ERROR;
-                if (sconf) {
+                if (sconf && sconf->was_initialized == JK_FALSE) {
+                    sconf->was_initialized = JK_TRUE;
+                    if (open_jklog(srv, pconf))
+                        return HTTP_INTERNAL_SERVER_ERROR;
                     sconf->options &= ~sconf->exclude_options;
                     if (!uri_worker_map_alloc(&(sconf->uw_map),
                                               sconf->uri_to_context, sconf->log))
