@@ -137,8 +137,6 @@ typedef struct
     jk_map_t *uri_to_context;
 
     int mountcopy;
-    char *secret_key;
-    jk_map_t *automount;
 
     jk_uri_worker_map_t *uw_map;
 
@@ -905,28 +903,6 @@ static const char *jk_unmount_context(cmd_parms * cmd,
      * Add the new worker to the alias map.
      */
     jk_map_put(conf->uri_to_context, uri, w, NULL);
-    return NULL;
-}
-
-/*
- * JkAutoMount directive handling
- *
- * JkAutoMount worker [virtualhost]
- */
-
-static const char *jk_automount_context(cmd_parms * cmd,
-                                        void *dummy,
-                                        char *worker, char *virtualhost)
-{
-    server_rec *s = cmd->server;
-    jk_server_conf_t *conf =
-        (jk_server_conf_t *) ap_get_module_config(s->module_config,
-                                                  &jk_module);
-
-    /*
-     * Add the new automount to the auto map.
-     */
-    jk_map_put(conf->automount, worker, virtualhost, NULL);
     return NULL;
 }
 
@@ -1857,13 +1833,6 @@ static const command_rec jk_cmds[] = {
      "the reload check interval of the mount file"},
 
     /*
-     * JkAutoMount specifies that the list of handled URLs must be
-     * asked to the servlet engine (autoconf feature)
-     */
-    {"JkAutoMount", jk_automount_context, NULL, RSRC_CONF, TAKE12,
-     "automatic mount points to a servlet-engine worker"},
-
-    /*
      * JkMount mounts a url prefix to a worker (the worker need to be
      * defined in the worker properties file.
      */
@@ -2260,11 +2229,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     if (!jk_map_alloc(&(c->uri_to_context))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
-    if (!jk_map_alloc(&(c->automount))) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
-    }
     c->uw_map = NULL;
-    c->secret_key = NULL;
 
     c->envvars_in_use = JK_FALSE;
     c->envvars = ap_make_table(p, 0);
@@ -2328,9 +2293,6 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
     if (!overrides->key_size_indicator)
         overrides->key_size_indicator = base->key_size_indicator;
 
-    if (!overrides->secret_key)
-        overrides->secret_key = base->secret_key;
-
     overrides->options |= (base->options & ~base->exclude_options);
 
     if (base->envvars_in_use) {
@@ -2365,7 +2327,6 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
     if (overrides->mountcopy) {
         copy_jk_map(p, overrides->s, base->uri_to_context,
                     overrides->uri_to_context);
-        copy_jk_map(p, overrides->s, base->automount, overrides->automount);
         if (!overrides->mount_file)
             overrides->mount_file = base->mount_file;
         if (!overrides->alias_dir)
@@ -2606,19 +2567,6 @@ static void jk_init(server_rec * s, ap_pool * p)
     /* SREVILAK -- register cleanup handler to clear resources on restart,
      * to make sure log file gets closed in the parent process  */
     ap_register_cleanup(p, s, jk_server_cleanup, ap_null_cleanup);
-
-/*
-{ int i;
-if (JK_IS_DEBUG_LEVEL(conf->log))
-    jk_log(conf->log, JK_LOG_DEBUG, "default secret key = %s", conf->secret_key);
-for (i = 0; i < jk_map_size(conf->automount); i++)
-{
-            char *name = jk_map_name_at(conf->automount, i);
-            if (JK_IS_DEBUG_LEVEL(conf->log))
-                jk_log(conf->log, JK_LOG_DEBUG, "worker = %s and virtualhost = %s", name, map_get_string(conf->automount, name, NULL));
-}
-}
-*/
 
     if ((conf->worker_file != NULL) &&
         !jk_map_read_properties(init_map, conf->worker_file, NULL,
@@ -2936,7 +2884,6 @@ static void jk_generic_cleanup(server_rec * s)
             uri_worker_map_free(&(conf->uw_map), NULL);
             jk_map_free(&(conf->uri_to_context));
             jk_map_free(&(conf->worker_properties));
-            jk_map_free(&(conf->automount));
         }
         tmp = tmp->next;
     }

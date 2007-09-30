@@ -166,8 +166,6 @@ typedef struct
     jk_map_t *uri_to_context;
 
     int mountcopy;
-    char *secret_key;
-    jk_map_t *automount;
 
     jk_uri_worker_map_t *uw_map;
 
@@ -935,29 +933,6 @@ static const char *jk_unmount_context(cmd_parms * cmd,
     return NULL;
 }
 
-
-/*
- * JkAutoMount directive handling
- *
- * JkAutoMount worker [virtualhost]
- * This is an experimental and undocumented extension made in j-t-c/jk.
- */
-static const char *jk_automount_context(cmd_parms * cmd,
-                                        void *dummy,
-                                        const char *worker,
-                                        const char *virtualhost)
-{
-    server_rec *s = cmd->server;
-    jk_server_conf_t *conf =
-        (jk_server_conf_t *) ap_get_module_config(s->module_config,
-                                                  &jk_module);
-
-    /*
-     * Add the new automount to the auto map.
-     */
-    jk_map_put(conf->automount, worker, virtualhost, NULL);
-    return NULL;
-}
 
 /*
  * JkWorkersFile Directive Handling
@@ -1890,13 +1865,6 @@ static const command_rec jk_cmds[] = {
                   "the reload check interval of the mount file"),
 
     /*
-     * JkAutoMount specifies that the list of handled URLs must be
-     * asked to the servlet engine (autoconf feature)
-     */
-    AP_INIT_TAKE12("JkAutoMount", jk_automount_context, NULL, RSRC_CONF,
-                   "automatic mount points to a Tomcat worker"),
-
-    /*
      * JkMount mounts a url prefix to a worker (the worker need to be
      * defined in the worker properties file.
      */
@@ -2306,8 +2274,6 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
                 jk_map_free(&conf->worker_properties);
             if (conf->uri_to_context)
                 jk_map_free(&conf->uri_to_context);
-            if (conf->automount)
-                jk_map_free(&conf->automount);
             if (conf->uw_map)
                 uri_worker_map_free(&conf->uw_map, NULL);
             conf->was_initialized   = JK_FALSE;
@@ -2379,12 +2345,8 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     if (!jk_map_alloc(&(c->uri_to_context))) {
         jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
     }
-    if (!jk_map_alloc(&(c->automount))) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
-    }
 
     c->uw_map = NULL;
-    c->secret_key = NULL;
 
     c->envvars_in_use = JK_FALSE;
     c->envvars = apr_table_make(p, 0);
@@ -2453,9 +2415,6 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
     if (!overrides->key_size_indicator)
         overrides->key_size_indicator = base->key_size_indicator;
 
-    if (!overrides->secret_key)
-        overrides->secret_key = base->secret_key;
-
     overrides->options |= (base->options & ~base->exclude_options);
 
     if (base->envvars_in_use) {
@@ -2490,7 +2449,6 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
     if (overrides->mountcopy) {
         copy_jk_map(p, overrides->s, base->uri_to_context,
                     overrides->uri_to_context);
-        copy_jk_map(p, overrides->s, base->automount, overrides->automount);
         if (!overrides->mount_file)
             overrides->mount_file = base->mount_file;
         if (!overrides->alias_dir)
