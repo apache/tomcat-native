@@ -233,14 +233,14 @@ public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
      * <li><b>lx:<b/> max reply timeouts</li>
      * </ul>
      * <ul>
-     * <li>lm=1 or Requests</li>
-     * <li>lm=2 or Traffic</li>
-     * <li>lm=3 or Busyness</li>
-     * <li>lm=4 or Sessions</li>
+     * <li>lm=0 or Requests</li>
+     * <li>lm=1 or Traffic</li>
+     * <li>lm=2 or Busyness</li>
+     * <li>lm=3 or Sessions</li>
      * </ul>
      * <ul>
-     * <li>ll=1 or Optimistic</li>
-     * <li>ll=2 or Pessimistic</li>
+     * <li>ll=0 or Optimistic</li>
+     * <li>ll=1 or Pessimistic</li>
      * </ul>
      * 
      * @return create jkstatus update worker link
@@ -268,7 +268,7 @@ public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
 				sb.append("&lt=");
 				sb.append(recoverWaitTime);
 			}
-			if (method == null && methodCode > 0 && methodCode < 5) {
+			if (method == null && methodCode >= 0 && methodCode < 4) {
 				sb.append("&lm=");
 				sb.append(methodCode);
 			}
@@ -276,7 +276,7 @@ public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
  				sb.append("&lm=");
  				sb.append(method);
  			}
-			if (lock == null && lockCode > 0 && lockCode < 3) {
+			if (lock == null && lockCode >= 0 && lockCode < 2) {
 				sb.append("&ll=");
 				sb.append(lockCode);
 			}

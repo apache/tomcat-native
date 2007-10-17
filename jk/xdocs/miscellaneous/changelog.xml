@@ -81,6 +81,10 @@
         possible confusion with custom header names using a standard header name
         as a prefix. (rjung)
       </fix>
+      <fix>
+        jkstatus: Fix correct parameter validation at JkStatusUpdateTask and 
+        JkStatusUpdateLoadbalancerTask ant tasks. Reported by Christian Mittendorf. (pero)
+      </fix>
     </changelog>
   </subsection>
 </section>

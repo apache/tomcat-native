@@ -282,9 +282,9 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
     
     /**
      * <ul>
-     * <li>1 active</li>
-     * <li>2 disabled</li>
-     * <li>3 stopped</li>
+     * <li>0 active</li>
+     * <li>1 disabled</li>
+     * <li>2 stopped</li>
      * </ul>
      * @param workerActivation The workerActivation to set.
      * 
@@ -358,12 +358,12 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
      * <li><b>load balance example:
      * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=lb&lf=false&ls=true</li>
      * <li><b>worker example:
-     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=node1&wn=node01&l=lb&wf=1&wa=1&wx=0
+     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=node1&wn=node01&l=lb&wf=1&wa=2&wx=0
      * <br/>
      * <ul>
-     * <li>wa=1 active</li>
-     * <li>wa=2 disabled</li>
-     * <li>wa=3 stopped</li>
+     * <li>wa=0 active</li>
+     * <li>wa=1 disabled</li>
+     * <li>wa=2 stopped</li>
      * </ul>
      * </li>
      * </ul>
@@ -443,7 +443,7 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
                     sb.append("&ws=");
                     sb.append(workerStopped);
                 }
-                if (workerActivation > 0 && workerActivation < 4) {
+                if (workerActivation >= 0 && workerActivation < 3) {
                     sb.append("&wa=");
                     sb.append(workerActivation);
                 } 
