@@ -2807,7 +2807,6 @@ static int jk_post_config(apr_pool_t * pconf,
         conf = (jk_server_conf_t *)ap_get_module_config(s->module_config,
                                                         &jk_module);
         if (conf->was_initialized == JK_FALSE) {
-            conf->was_initialized = JK_TRUE;
             /* step through the servers and open each jk logfile
              * and do additional post config initialization.
              */
@@ -2872,6 +2871,7 @@ static int jk_post_config(apr_pool_t * pconf,
                     }
                 }
             }
+            conf->was_initialized = JK_TRUE;
             if (init_jk(pconf, conf, s) == JK_FALSE)
                 return HTTP_INTERNAL_SERVER_ERROR;
         }
