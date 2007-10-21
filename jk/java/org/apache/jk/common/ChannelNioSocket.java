@@ -36,6 +36,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanNotificationInfo;
@@ -882,6 +883,8 @@ public class ChannelNioSocket extends JkHandler
 
         synchronized void  process(SelectionKey sk) {
             if(!sk.isValid()) {
+                SocketInputStream sis = (SocketInputStream)ep.getNote(isNote);
+                sis.closeIt();
                 return;
             }
             if(sk.isReadable()) {
@@ -959,15 +962,11 @@ public class ChannelNioSocket extends JkHandler
                         Iterator it = sels.iterator();
                         while(it.hasNext()) {
                             SelectionKey sk = (SelectionKey)it.next();
-                            if(sk.isValid()) {
-                                if(sk.isAcceptable()) {
-                                    acceptConnections();
-                                } else {
-                                    SocketConnection sc = (SocketConnection)sk.attachment();
-                                    sc.process(sk);
-                                }
+                            if(sk.isAcceptable()) {
+                                acceptConnections();
                             } else {
-                                sk.cancel();
+                                SocketConnection sc = (SocketConnection)sk.attachment();
+                                sc.process(sk);
                             }
                             it.remove();
                         }
@@ -1081,8 +1080,7 @@ public class ChannelNioSocket extends JkHandler
                     nr = -1; // Can't handle this yet
                 }
                 if(nr < 0) {
-                    isClosed = true;
-                    notify();
+                    closeIt();
                     return false;
                 } else if(nr == 0) {
                     if(!nioIsBroken) {
@@ -1091,6 +1089,12 @@ public class ChannelNioSocket extends JkHandler
                 }
             }
             return true;
+        }
+
+        synchronized void closeIt() {
+            isClosed = true;
+            if(blocking)
+                notify();
         }
 
         public int read(byte [] data) throws IOException {
@@ -1132,7 +1136,9 @@ public class ChannelNioSocket extends JkHandler
                 if(fill(len) < 0) {
                     isClosed = true;
                 } 
-            }
+            } else if(!isClosed) {
+		throw new SocketTimeoutException("Read request timed out");
+	    }
         }
     }
 
