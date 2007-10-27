@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        <bug>43684</bug>: Replace JkMountFile by JkMountFileReload in
+        uriworkermap.properties docs. (rjung)
+      </fix>
       <update>
         Apache: Add new value "All" for JkMountCopy. (rjung)
       </update>
