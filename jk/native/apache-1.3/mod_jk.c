@@ -867,8 +867,8 @@ static const char *jk_mount_context(cmd_parms * cmd,
             return "JkMount can not have a path when defined in a location";
     }
 
-    if (c[0] != '/')
-        return "JkMount context should start with /";
+    if (c[0] != '/' && c[0] != '?' && c[0] != '*')
+        return "JkMount context should start with '/', '*' or '?'.";
 
     /*
      * Add the new worker to the alias map.
@@ -909,8 +909,8 @@ static const char *jk_unmount_context(cmd_parms * cmd,
         else
             return "JkUnMount can not have a path when defined in a location";
     }
-    if (c[0] != '/')
-        return "JkUnMount context should start with /";
+    if (c[0] != '/' && c[0] != '?' && c[0] != '*')
+        return "JkUnMount context should start with '/', '*' or '?'.";
     uri = ap_pstrcat(cmd->temp_pool, "!", c, NULL);
     /*
      * Add the new worker to the alias map.

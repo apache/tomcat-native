@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Apache: Allow JkMount and JkUnMount patterns to start with '*' and '?'
+        in addition to '/'. (rjung)
+      </update>
       <fix>
         <bug>43684</bug>: Replace JkMountFile by JkMountFileReload in
         uriworkermap.properties docs. (rjung)
