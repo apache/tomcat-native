@@ -2257,7 +2257,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
  * Utility - copy items from apr table src to dst,
  * for keys that exist in src but not in dst.
  */
-static void merge_apr_table(apr_table_t *src, apr_table_t *dst)
+static void merge_apr_table(table *src, table *dst)
 {
     int i;
     const array_header *arr;
