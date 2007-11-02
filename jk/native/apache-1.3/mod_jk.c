@@ -2254,31 +2254,6 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
 
 
 /*
- *  Clone jk config.
- */
-static void *clone_jk_config(ap_pool * p, server_rec *s)
-{
-    jk_server_conf_t *src =
-        (jk_server_conf_t *)ap_get_module_config(s->module_config, &jk_module);
-    jk_server_conf_t *dst =
-        (jk_server_conf_t *) ap_pcalloc(p, sizeof(jk_server_conf_t));
-
-    memcpy(dst, src, sizeof(jk_server_conf_t));
-    dst->was_initialized = JK_TRUE;
-    dst->s = s;
-    dst->mountcopy = 0;
-    dst->mount_file = NULL;
-    dst->alias_dir = NULL;
-    dst->uri_to_context = NULL;
-    if (!uri_worker_map_alloc(&(dst->uw_map), NULL, dst->log)) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
-    }
-
-    return dst;
-}
-
-
-/*
  * Utility - copy items from apr table src to dst,
  * for keys that exist in src but not in dst.
  */
@@ -2511,11 +2486,21 @@ static void jk_init(server_rec * s, ap_pool * p)
     for (; srv; srv = srv->next) {
         jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                            &jk_module);
-        if (sconf && sconf->was_initialized == JK_TRUE && jk_mount_copy_all == JK_FALSE) {
-            ap_set_module_config(srv->module_config, &jk_module,
-                                 clone_jk_config(p, srv));
+
+/*
+ * If a virtual server contains no JK directive, httpd shares
+ * the config structure. But we don't want to share some settings
+ * by default, especially the JkMount rules.
+ * Therefore we check, if this config structure really belongs to this
+ * vhost, otherwise we create a new one and merge.
+ */
+        if (sconf && sconf->s != srv && jk_mount_copy_all == JK_FALSE) {
+            jk_server_conf_t *srvconf = (jk_server_conf_t *)create_jk_config(p, srv);
+            srvconf = (jk_server_conf_t *)merge_jk_config(p, sconf, srvconf);
+            ap_set_module_config(srv->module_config, &jk_module, srvconf);
         }
-        else if (sconf && sconf->was_initialized == JK_FALSE) {
+
+        if (sconf && sconf->was_initialized == JK_FALSE) {
             sconf->was_initialized = JK_TRUE;
             open_jk_log(srv, p);
             sconf->options &= ~sconf->exclude_options;
