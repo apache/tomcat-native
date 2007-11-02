@@ -2278,23 +2278,6 @@ static void *clone_jk_config(ap_pool * p, server_rec *s)
 }
 
 
-static void copy_jk_map(ap_pool * p, server_rec * s, jk_map_t *src,
-                        jk_map_t *dst)
-{
-    int sz = jk_map_size(src);
-    int i;
-    for (i = 0; i < sz; i++) {
-        const char *name = jk_map_name_at(src, i);
-        if (jk_map_get(dst, name, NULL) == NULL) {
-            if (!jk_map_put (dst, name,
-                 ap_pstrdup(p, jk_map_get_string(src, name, NULL)),
-                            NULL)) {
-                jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
-            }
-        }
-    }
-}
-
 static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
 {
     jk_server_conf_t *base = (jk_server_conf_t *) basev;
@@ -2361,8 +2344,9 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
         overrides->mount_file_reload = base->mount_file_reload;
     if (overrides->mountcopy == JK_TRUE ||
         (overrides->mountcopy == JK_UNSET && jk_mount_copy_all == JK_TRUE)) {
-        copy_jk_map(p, overrides->s, base->uri_to_context,
-                    overrides->uri_to_context);
+        if (jk_map_copy(base->uri_to_context, overrides->uri_to_context) == JK_FALSE) {
+                jk_error_exit(APLOG_MARK, APLOG_EMERG, overrides->s, p, "Memory error");
+        }
         if (!overrides->mount_file)
             overrides->mount_file = base->mount_file;
         if (!overrides->alias_dir)
