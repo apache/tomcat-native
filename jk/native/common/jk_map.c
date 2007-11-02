@@ -596,6 +596,24 @@ void jk_map_dump(jk_map_t *m, jk_logger_t *l)
     }
 }
 
+int jk_map_copy(jk_map_t *src, jk_map_t *dst)
+{
+    int sz = jk_map_size(src);
+    int i;
+    for (i = 0; i < sz; i++) {
+        const char *name = jk_map_name_at(src, i);
+        if (jk_map_get(dst, name, NULL) == NULL) {
+            if (!jk_map_put(dst, name,
+                            jk_pool_strdup(&dst->p, jk_map_get_string(src, name, NULL)),
+                            NULL)) {
+                return JK_FALSE;
+            }
+        }
+    }
+    return JK_TRUE;
+}
+
+
 static void trim_prp_comment(char *prp)
 {
 #if defined(AS400) && !defined(AS400_UTF8)
