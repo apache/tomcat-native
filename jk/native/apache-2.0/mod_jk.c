@@ -2398,6 +2398,26 @@ static void *clone_jk_config(apr_pool_t * p, server_rec *s)
 }
 
 
+/*
+ * Utility - copy items from apr table src to dst,
+ * for keys that exist in src but not in dst.
+ */
+static void merge_apr_table(apr_table_t *src, apr_table_t *dst)
+{
+    int i;
+    const apr_array_header_t *arr;
+    const apr_table_entry_t *elts;
+
+    arr = apr_table_elts(src);
+    elts = (const apr_table_entry_t *)arr->elts;
+    for (i = 0; i < arr->nelts; ++i) {
+        if (!apr_table_get(dst, elts[i].key)) {
+            apr_table_setn(dst, elts[i].key, elts[i].val);
+        }
+    }
+}
+
+
 /** Standard apache callback, merge jk options specified in <Directory>
     context or <Host>.
  */
@@ -2437,29 +2457,13 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
     overrides->options |= (base->options & ~base->exclude_options);
 
     if (base->envvars_in_use) {
-        int i;
-        const apr_array_header_t *arr;
-        const apr_table_entry_t *elts;
-
-        arr = apr_table_elts(base->envvars);
-        if (arr) {
+        if (apr_table_elts(base->envvars)) {
             overrides->envvars_in_use = JK_TRUE;
-            elts = (const apr_table_entry_t *)arr->elts;
-            for (i = 0; i < arr->nelts; ++i) {
-                if (!apr_table_get(overrides->envvars, elts[i].key)) {
-                    apr_table_setn(overrides->envvars, elts[i].key, elts[i].val);
-                }
-            }
+            merge_apr_table(base->envvars, overrides->envvars);
         }
-        arr = apr_table_elts(base->envvars_def);
-        if (arr) {
+        if (apr_table_elts(base->envvars_def)) {
             overrides->envvars_in_use = JK_TRUE;
-            elts = (const apr_table_entry_t *)arr->elts;
-            for (i = 0; i < arr->nelts; ++i) {
-                if (!apr_table_get(overrides->envvars_def, elts[i].key)) {
-                    apr_table_setn(overrides->envvars_def, elts[i].key, elts[i].val);
-                }
-            }
+            merge_apr_table(base->envvars_def, overrides->envvars_def);
         }
     }
 

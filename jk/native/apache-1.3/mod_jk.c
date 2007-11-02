@@ -2278,6 +2278,26 @@ static void *clone_jk_config(ap_pool * p, server_rec *s)
 }
 
 
+/*
+ * Utility - copy items from apr table src to dst,
+ * for keys that exist in src but not in dst.
+ */
+static void merge_apr_table(apr_table_t *src, apr_table_t *dst)
+{
+    int i;
+    const array_header *arr;
+    const table_entry *elts;
+
+    arr = ap_table_elts(src);
+    elts = (const table_entry *)arr->elts;
+    for (i = 0; i < arr->nelts; ++i) {
+        if (!ap_table_get(dst, elts[i].key)) {
+            ap_table_setn(dst, elts[i].key, elts[i].val);
+        }
+    }
+}
+
+
 static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
 {
     jk_server_conf_t *base = (jk_server_conf_t *) basev;
@@ -2314,29 +2334,14 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
     overrides->options |= (base->options & ~base->exclude_options);
 
     if (base->envvars_in_use) {
-        int i;
-        const array_header *arr;
-        const table_entry *elts;
 
-        arr = ap_table_elts(base->envvars);
-        if (arr) {
+        if (ap_table_elts(base->envvars)) {
             overrides->envvars_in_use = JK_TRUE;
-            elts = (const table_entry *)arr->elts;
-            for (i = 0; i < arr->nelts; ++i) {
-                if (!ap_table_get(overrides->envvars, elts[i].key)) {
-                    ap_table_setn(overrides->envvars, elts[i].key, elts[i].val);
-                }
-            }
+            merge_apr_table(base->envvars, overrides->envvars);
         }
-        arr = ap_table_elts(base->envvars_def);
-        if (arr) {
+        if (ap_table_elts(base->envvars_def)) {
             overrides->envvars_in_use = JK_TRUE;
-            elts = (const table_entry *)arr->elts;
-            for (i = 0; i < arr->nelts; ++i) {
-                if (!ap_table_get(overrides->envvars_def, elts[i].key)) {
-                    ap_table_setn(overrides->envvars_def, elts[i].key, elts[i].val);
-                }
-            }
+            merge_apr_table(base->envvars_def, overrides->envvars_def);
         }
     }
 
