@@ -2784,8 +2784,8 @@ static int jk_post_config(apr_pool_t * pconf,
  */
                 if (sconf && sconf->s != srv && jk_mount_copy_all == JK_FALSE) {
                     jk_server_conf_t *srvconf = (jk_server_conf_t *)create_jk_config(pconf, srv);
-                    srvconf = (jk_server_conf_t *)merge_jk_config(pconf, sconf, srvconf);
-                    ap_set_module_config(srv->module_config, &jk_module, srvconf);
+                    sconf = (jk_server_conf_t *)merge_jk_config(pconf, sconf, srvconf);
+                    ap_set_module_config(srv->module_config, &jk_module, sconf);
                 }
 
                 if (sconf && sconf->was_initialized == JK_FALSE) {

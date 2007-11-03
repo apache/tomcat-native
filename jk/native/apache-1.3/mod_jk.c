@@ -2496,8 +2496,8 @@ static void jk_init(server_rec * s, ap_pool * p)
  */
         if (sconf && sconf->s != srv && jk_mount_copy_all == JK_FALSE) {
             jk_server_conf_t *srvconf = (jk_server_conf_t *)create_jk_config(p, srv);
-            srvconf = (jk_server_conf_t *)merge_jk_config(p, sconf, srvconf);
-            ap_set_module_config(srv->module_config, &jk_module, srvconf);
+            sconf = (jk_server_conf_t *)merge_jk_config(p, sconf, srvconf);
+            ap_set_module_config(srv->module_config, &jk_module, sconf);
         }
 
         if (sconf && sconf->was_initialized == JK_FALSE) {
