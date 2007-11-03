@@ -43,8 +43,9 @@ COPY_CONF="uriworkermap.properties workers.properties workers.properties.minimal
 #################### FUNCTIONS ##############
 
 usage() {
-    echo "Usage:: $0 -t VERSION [-b BRANCH | -T | -d DIR]"
+    echo "Usage:: $0 -t VERSION [-r revision] [-b BRANCH | -T | -d DIR]"
     echo "        -t: version to package"
+    echo "        -r: revision to package"
     echo "        -b: package from branch BRANCH"
     echo "        -T: package from trunk"
     echo "        -d: package from local directory"
@@ -74,10 +75,11 @@ sign_and_verify() {
 #################### MAIN ##############
 
 conflict=0
-while getopts :t:b:d:T c
+while getopts :t:r:b:d:T c
 do
     case $c in
     t)         tag=$OPTARG;;
+    r)         revision=$OPTARG;;
     b)         branch=$OPTARG
                conflict=$(($conflict+1));;
     T)         trunk=trunk
@@ -121,10 +123,14 @@ then
     usage
     exit 2
 fi
+if [ -n "$revision" ]
+then
+    revision="-r $revision"
+fi
 if [ -n "$trunk" ]
 then
     JK_SVN_URL="${SVNROOT}/${SVNPROJ}/trunk"
-    JK_REV=`svn info ${JK_SVN_URL} | awk '$1 == "Revision:" {print $2}'`
+    JK_REV=`svn info $revision ${JK_SVN_URL} | awk '$1 == "Revision:" {print $2}'`
     if [ -z "$JK_REV" ]
     then
        echo "No Revision found at '$JK_SVN_URL'"
@@ -135,7 +141,7 @@ elif [ -n "$branch" ]
 then
     JK_BRANCH=`echo $branch | sed -e 's#/#__#g'`
     JK_SVN_URL="${SVNROOT}/${SVNPROJ}/branches/$branch"
-    JK_REV=`svn info ${JK_SVN_URL} | awk '$1 == "Revision:" {print $2}'`
+    JK_REV=`svn info $revision ${JK_SVN_URL} | awk '$1 == "Revision:" {print $2}'`
     if [ -z "$JK_REV" ]
     then
        echo "No Revision found at '$JK_SVN_URL'"
@@ -145,13 +151,13 @@ then
 elif [ -n "$local_dir" ]
 then
     JK_SVN_URL="$local_dir"
-    JK_REV=`svn info ${JK_SVN_URL} | awk '$1 == "Revision:" {print $2}'`
+    JK_REV=`svn info $revision ${JK_SVN_URL} | awk '$1 == "Revision:" {print $2}'`
     if [ -z "$JK_REV" ]
     then
        echo "No Revision found at '$JK_SVN_URL'"
        exit 3
     fi
-    JK_DIST=${JK_CVST}-${tag}-dev-local-`date +%y%m%d%H%M%S`-${JK_REV}-src
+    JK_DIST=${JK_CVST}-${tag}-dev-local-`date +%Y%m%d%H%M%S`-${JK_REV}-src
 else
     JK_VER=$tag
     JK_TAG=`echo $tag | sed -e 's#^#JK_#' -e 's#\.#_#g'`
@@ -166,10 +172,10 @@ rm -rf ${JK_DIST}
 rm -rf ${JK_DIST}.tmp
 
 mkdir -p ${JK_DIST}.tmp
-svn export "${JK_SVN_URL}/jk" ${JK_DIST}.tmp/jk
+svn export $revision "${JK_SVN_URL}/jk" ${JK_DIST}.tmp/jk
 for item in ${COPY_TOP}
 do
-    svn export "${JK_SVN_URL}/${item}" ${JK_DIST}.tmp/${item}
+    svn export $revision "${JK_SVN_URL}/${item}" ${JK_DIST}.tmp/${item}
 done
 
 # Build documentation.
@@ -177,7 +183,7 @@ cd ${JK_DIST}.tmp/jk/xdocs
 ant
 cd ../../..
 
-# Copying things into source distribution
+# Copying things into the source distribution
 copy_files ${JK_DIST}.tmp $JK_DIST "$COPY_TOP"
 copy_files ${JK_DIST}.tmp/jk $JK_DIST "$COPY_JK"
 copy_files ${JK_DIST}.tmp/jk/build $JK_DIST "$COPY_BUILD"
