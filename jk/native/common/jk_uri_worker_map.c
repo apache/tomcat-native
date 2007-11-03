@@ -363,7 +363,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         return JK_FALSE;
     }
 
-    if (*uri == '/') {
+    if (*uri == '/' || *uri == '*' || *uri == '?') {
         uwr->uri = uri;
         uwr->context = uri;
         uwr->worker_name = jk_pool_strdup(&uw_map->p, worker);
@@ -397,7 +397,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
          * not arrive here when using Apache.
          */
         jk_log(l, JK_LOG_ERROR,
-               "invalid context '%s': does not begin with '/'",
+               "invalid context '%s': does not begin with '/', '*' or '?'",
                uri);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
