@@ -219,7 +219,7 @@ or MOD_JK.SRVPGM (see the build section).
 </li>
 <li>
 <b>workers.properties</b> - A file that describes the host(s) and port(s) used by the workers (Tomcat processes).
-A sample workers.properties can be found under the conf directory.
+A sample workers.properties can be found under the conf directory in the source download.
 </li>
 </ul>
 </p>
