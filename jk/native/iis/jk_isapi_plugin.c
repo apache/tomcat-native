@@ -1283,13 +1283,13 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 
                 if (JK_IS_DEBUG_LEVEL(logger))
                     jk_log(logger, JK_LOG_DEBUG,
-                           "check if [%s] is points to the web-inf directory",
+                           "check if [%s] points to the web-inf directory",
                         uri);
 
                 if (uri_is_web_inf(uri)) {
                     jk_log(logger, JK_LOG_EMERG,
                            "[%s] points to the web-inf or meta-inf directory. "
-                           "Somebody try to hack into the site!!!",
+                           "Somebody tries to hack into the site!!!",
                            uri);
 
                     write_error_response(pfc, "404 Not Found",
@@ -1312,7 +1312,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                         *(query - 1) = '\0';
                     if (JK_IS_DEBUG_LEVEL(logger))
                         jk_log(logger, JK_LOG_DEBUG,
-                               "fowarding original URI [%s]",
+                               "forwarding original URI [%s]",
                                uri);
                     forwardURI = uri;
                 }
@@ -1360,12 +1360,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                     StringCbCopy(duri, INTERNET_MAX_URL_LENGTH, forwardURI);
                     if (simple_rewrite(forwardURI)) {
                         jk_log(logger, JK_LOG_DEBUG,
-                               "rewriten URI [%s]->[%s]",
+                               "rewritten URI [%s]->[%s]",
                                duri, forwardURI);
                     }
                     else if (rregex_rewrite(forwardURI)) {
                         jk_log(logger, JK_LOG_DEBUG,
-                               "rewriten URI [%s]->[%s]",
+                               "rewritten URI [%s]->[%s]",
                                duri, forwardURI);
                     }
                 }
