@@ -552,7 +552,7 @@ static int is_nomatch(jk_uri_worker_map_t *uw_map,
             (uwr->match_type & MATCH_TYPE_DISABLED))
             continue;
         /* Check only matching workers */
-        if (strcmp(uwr->worker_name, worker))
+        if (*uwr->worker_name != '*' && strcmp(uwr->worker_name, worker))
             continue;
         if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {
             /* Map is already sorted by context_len */

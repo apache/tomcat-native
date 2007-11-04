@@ -762,7 +762,7 @@ In general the structure of a JkMount directive is:
 You can use the JkMount directive at the top level or inside &lt;VirtualHost&gt;
 sections of your httpd.conf file.
 </p>
-<p><b>JkUnmount</b> directive acts as an opposite to JkMount and blocks access
+<p><b>JkUnMount</b> directive acts as an opposite to JkMount and blocks access
 to a particular URL. The purpose is to be able to filter out the particular content
 types from mounted context. The following example mounts /servlet/*
 context, but all .gif files that belongs to that context are not served.
@@ -775,8 +775,12 @@ context, but all .gif files that belongs to that context are not served.
 </source>
 <p>
 JkUnMount takes precedence over JkMount directives, meaning that the JK
-will first look for unmount and then for mount directives. The following
-example will block all .gif files.
+will first try to mount and then checks, if there is an exclusiond defined by a
+JkUnMount. A JkUnMount overrides a JkMount only, if the worker names in the
+JkMount and in the JkUnMount are the same.
+</p>
+<p>
+The following example will block all .gif files although there is a JkMount for them:
 </p>
 <source>
   # do not send requests ending with .gif to worker1
@@ -785,7 +789,20 @@ example will block all .gif files.
   # precedence over JkMount directive
   JkMount /servlet/*.gif worker1
 </source>
-
+<p>
+Starting with version 1.2.26 of JK you can apply a JkUnMount to any worker,
+by using the star character '*' as the worker name in the JkUnMount.
+More complex patterns in JkUnMount worker names are not allowed.
+</p>
+<source>
+  # Mapping the webapps myapp1 and myapp2:
+  /myapp1/*=worker1
+  /myapp2/*=worker2
+  # Exclude the all subdirectories static for all workers:
+  !/*/static/*=*
+  # Exclude some suffixes for all workers:
+  !*.html=*
+</source>
 <p>
 <b>JkAutoAlias</b> directive automatically <b>Alias</b> webapp context directories into
 the Apache document space. It enables Apache to serve a static context while Tomcat
@@ -825,7 +842,7 @@ host inside your httpd.conf
 <p>
 <b>JkWorkerProperty</b> is a new directive available from JK 1.2.7
 version. It is a convenient method for setting directives that are
-usually set inside <b>workers.propeties</b>file. The parameter for
+usually set inside <b>workers.propeties</b> file. The parameter for
 that directive is raw line from workers.properties file.
 </p>
 <source>
@@ -849,7 +866,7 @@ When the mount file is changed, JK will reload it's content.
   JkMountFile conf/uriworkermap.properties
 </source>
 <p>If the mount point uri starts with an exclamation mark '!'
-it defines an exclusion in the same way JkUnmount does.
+it defines an exclusion in the same way JkUnMount does.
 If the mount point uri starts with minus sign '-'
 the mount point will only be disabled. A disabled mount can be reenabled
 by deleting the minus sign and waiting for the JkMountFile to reload.

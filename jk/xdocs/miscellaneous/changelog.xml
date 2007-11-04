@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Common: Allow '*' for the worker name in exclusion rules (resp. JkUnMount)
+        which will override all workers. (rjung)
+      </update>
       <fix>
         <bug>42038</bug>: Correct overlay of mounts and unmounts for IIS. (rjung)
       </fix>

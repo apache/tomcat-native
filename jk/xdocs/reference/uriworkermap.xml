@@ -142,7 +142,7 @@ The pattern 'X|Y' is exactly equivalent to the two maps 'X' and 'XY'.
 Exclusion rules allows to define exclusions from URI rules, which would forward
 requests to tomcat. If the exclusion rule matches, the request will not be forwarded.
 This is usually used to serve static content by the web server.
-An rule is an exclusion rule, if it is suffixed with '!':
+A rule is an exclusion rule, if it is suffixed with '!':
 <source>
   # Mapping the URI /myapp and everything under /myapp/:
   /myapp|/*=myworker
@@ -150,6 +150,20 @@ An rule is an exclusion rule, if it is suffixed with '!':
   !/myapp/static|/*=myworker
   # Exclude some suffixes:
   !*.html=myworker
+</source>
+An exclusion rule overrides a normal mapping rule only, if the worker names in the
+normal rule and in the exclusion rule are the same. Starting with version 1.2.26 of JK
+you can apply an exclusion rule to any worker, by using the star character '*' as
+the worker name in the exclusion rule.
+More complex patterns in exclusion worker names are not allowed.
+<source>
+  # Mapping the webapps /myapp1 and /myapp2:
+  /myapp1|/*=myworker1
+  /myapp2|/*=myworker2
+  # Exclude the all subdirectories static for all workers:
+  !/*/static|/*=*
+  # Exclude some suffixes for all workers:
+  !*.html=*
 </source>
 </p>
 <p>
