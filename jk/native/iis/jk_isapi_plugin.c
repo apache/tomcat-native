@@ -1260,19 +1260,10 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             }
             if (szHost > 0) {
                 StringCbCat(snuri, INTERNET_MAX_URL_LENGTH, Host);
-                StringCbCat(snuri, INTERNET_MAX_URL_LENGTH, uri);
-                if (JK_IS_DEBUG_LEVEL(logger))
-                    jk_log(logger, JK_LOG_DEBUG,
-                           "Virtual Host redirection of %s",
-                           snuri);
-                worker = map_uri_to_worker(uw_map, snuri, logger);
+                worker = map_uri_to_worker(uw_map, uri, snuri, logger);
             }
-            if (!worker) {
-                if (JK_IS_DEBUG_LEVEL(logger))
-                    jk_log(logger, JK_LOG_DEBUG,
-                           "Default redirection of %s",
-                           uri);
-                worker = map_uri_to_worker(uw_map, uri, logger);
+            else {
+                worker = map_uri_to_worker(uw_map, uri, NULL, logger);
             }
             /*
              * Check if somebody is feading us with his own TOMCAT data headers.

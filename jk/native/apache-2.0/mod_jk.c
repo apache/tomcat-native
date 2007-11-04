@@ -2088,7 +2088,7 @@ static int jk_handler(request_rec * r)
                        worker_name, r->uri);
         }
         else {
-            worker_name = map_uri_to_worker(xconf->uw_map, r->uri, xconf->log);
+            worker_name = map_uri_to_worker(xconf->uw_map, r->uri, NULL, xconf->log);
             if (worker_name == NULL && worker_env.num_of_workers) {
                 worker_name = worker_env.worker_list[0];
                 if (JK_IS_DEBUG_LEVEL(xconf->log))
@@ -2919,7 +2919,7 @@ static int jk_translate(request_rec * r)
                 }
             }
 
-            worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
+            worker = map_uri_to_worker(conf->uw_map, r->uri, NULL, conf->log);
 
             if (worker) {
                 r->handler = apr_pstrdup(r->pool, JK_HANDLER);
@@ -3061,7 +3061,7 @@ static int jk_map_to_storage(request_rec * r)
                 return DECLINED;
             }
 
-            worker = map_uri_to_worker(conf->uw_map, r->uri, conf->log);
+            worker = map_uri_to_worker(conf->uw_map, r->uri, NULL, conf->log);
 
             if (worker) {
                 r->handler = apr_pstrdup(r->pool, JK_HANDLER);

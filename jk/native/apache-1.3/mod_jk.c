@@ -2647,7 +2647,7 @@ static int jk_translate(request_rec * r)
             }
 
             ap_no2slash(clean_uri);
-            worker = map_uri_to_worker(conf->uw_map, clean_uri, conf->log);
+            worker = map_uri_to_worker(conf->uw_map, clean_uri, NULL, conf->log);
 
             /* Don't know the worker, ForwardDirectories is set, there is a
              * previous request for which the handler is JK_HANDLER (as set by

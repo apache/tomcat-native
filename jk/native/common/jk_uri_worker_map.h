@@ -141,7 +141,8 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                        unsigned int source_type, jk_logger_t *l);
 
 const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
-                              const char *uri, jk_logger_t *l);
+                              const char *uri, const char *vhost,
+                              jk_logger_t *l);
 
 int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
                         jk_logger_t *l);

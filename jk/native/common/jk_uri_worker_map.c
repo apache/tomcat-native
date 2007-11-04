@@ -484,9 +484,61 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
     return rc;
 }
 
-static int is_nomap_match(jk_uri_worker_map_t *uw_map,
-                          const char *uri, const char* worker,
-                          jk_logger_t *l)
+static const char *find_match(jk_uri_worker_map_t *uw_map,
+                        const char *url, jk_logger_t *l)
+{
+    unsigned int i;
+
+    JK_TRACE_ENTER(l);
+
+    for (i = 0; i < uw_map->size; i++) {
+        uri_worker_record_t *uwr = uw_map->maps[i];
+
+        /* Check for match types */
+        if ((uwr->match_type & MATCH_TYPE_DISABLED) ||
+            (uwr->match_type & MATCH_TYPE_NO_MATCH))
+            continue;
+
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG, "Attempting to map context URI '%s=%s' source '%s'",
+                   uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
+
+        if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {
+            /* Map is already sorted by context_len */
+            if (wildchar_match(url, uwr->context,
+#ifdef WIN32
+                               0
+#else
+                               0
+#endif
+                               ) == 0) {
+                    if (JK_IS_DEBUG_LEVEL(l))
+                        jk_log(l, JK_LOG_DEBUG,
+                               "Found a wildchar match '%s=%s'",
+                               uwr->context, uwr->worker_name);
+                    JK_TRACE_EXIT(l);
+                    return uwr->worker_name;
+             }
+        }
+        else if (JK_STRNCMP(uwr->context, url, uwr->context_len) == 0) {
+            if (strlen(url) == uwr->context_len) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Found an exact match '%s=%s'",
+                           uwr->context, uwr->worker_name);
+                JK_TRACE_EXIT(l);
+                return uwr->worker_name;
+            }
+        }
+    }
+
+    JK_TRACE_EXIT(l);
+    return NULL;
+}
+
+static int is_nomatch(jk_uri_worker_map_t *uw_map,
+                      const char *uri, const char* worker,
+                      jk_logger_t *l)
 {
     unsigned int i;
 
@@ -536,9 +588,11 @@ static int is_nomap_match(jk_uri_worker_map_t *uw_map,
 
 
 const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
-                              const char *uri, jk_logger_t *l)
+                              const char *uri, const char *vhost,
+                              jk_logger_t *l)
 {
     unsigned int i;
+    unsigned int vhost_len;
     int reject_unsafe;
     const char *rv = NULL;
     char  url[JK_MAX_URI_LEN+1];
@@ -570,10 +624,31 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
      * everything after the first ';' char.
      */
     reject_unsafe = uw_map->reject_unsafe;
+    vhost_len = 0;
+/*
+ * In case we got a vhost, we prepend a slash
+ * and the vhost to the url in order to enable
+ * vhost mapping rules especially for IIS.
+ */
+    if (vhost) {
+/* Size including leading slash. */
+        vhost_len = strlen(vhost) + 1;
+        if (vhost_len >= JK_MAX_URI_LEN) {
+            vhost_len = 0;
+            jk_log(l, JK_LOG_WARNING,
+                   "Host prefix %s for URI %s is invalid and will be ignored."
+                   " It must be smaller than %d chars",
+                   vhost, JK_MAX_URI_LEN-1);
+        }
+        else {
+            url[0] = '/';
+            strncpy(&url[1], vhost, vhost_len);
+        }
+    }
     for (i = 0; i < strlen(uri); i++) {
         if (i == JK_MAX_URI_LEN) {
             jk_log(l, JK_LOG_WARNING,
-                   "Uri %s is invalid. Uri must be smaller then %d chars",
+                   "URI %s is invalid. URI must be smaller than %d chars",
                    uri, JK_MAX_URI_LEN);
             JK_TRACE_EXIT(l);
             return NULL;
@@ -581,15 +656,15 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         if (uri[i] == ';')
             break;
         else {
-            url[i] = uri[i];
-            if (reject_unsafe && (url[i] == '%' || url[i] == '\\')) {
+            url[i + vhost_len] = uri[i];
+            if (reject_unsafe && (uri[i] == '%' || uri[i] == '\\')) {
                 jk_log(l, JK_LOG_INFO, "Potentially unsafe request url '%s' rejected", uri);
                 JK_TRACE_EXIT(l);
                 return NULL;
             }
         }
     }
-    url[i] = '\0';
+    url[i + vhost_len] = '\0';
 
     if (JK_IS_DEBUG_LEVEL(l)) {
         char *url_rewrite = strstr(uri, JK_PATH_SESSION_IDENTIFIER);
@@ -600,64 +675,30 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s' from %d maps",
                url, uw_map->size);
-
-    for (i = 0; i < uw_map->size; i++) {
-        uri_worker_record_t *uwr = uw_map->maps[i];
-
-        /* Check for match types */
-        if ((uwr->match_type & MATCH_TYPE_DISABLED) ||
-            (uwr->match_type & MATCH_TYPE_NO_MATCH))
-            continue;
-
-        if (JK_IS_DEBUG_LEVEL(l))
-            jk_log(l, JK_LOG_DEBUG, "Attempting to map context URI '%s=%s' source '%s'",
-                   uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
-
-        if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {
-            const char *wname;
-            /* Map is already sorted by context_len */
-            if (wildchar_match(url, uwr->context,
-#ifdef WIN32
-                               0
-#else
-                               0
-#endif
-                               ) == 0) {
-                    wname = uwr->worker_name;
-                    if (JK_IS_DEBUG_LEVEL(l))
-                        jk_log(l, JK_LOG_DEBUG,
-                               "Found a wildchar match '%s=%s'",
-                               uwr->context, uwr->worker_name);
-                    JK_TRACE_EXIT(l);
-                    rv = wname;
-                    goto cleanup;
-             }
-        }
-        else if (JK_STRNCMP(uwr->context, url, uwr->context_len) == 0) {
-            if (strlen(url) == uwr->context_len) {
-                if (JK_IS_DEBUG_LEVEL(l))
-                    jk_log(l, JK_LOG_DEBUG,
-                           "Found an exact match '%s=%s'",
-                           uwr->context, uwr->worker_name);
-                JK_TRACE_EXIT(l);
-                rv = uwr->worker_name;
-                goto cleanup;
-            }
-        }
+    rv = find_match(uw_map, url, l);
+/* If this doesn't find a match, try without the vhost. */
+    if (! rv && vhost_len) {
+        rv = find_match(uw_map, &url[vhost_len], l);
     }
-    /* No matches found */
-    JK_TRACE_EXIT(l);
 
-cleanup:
+/* In case we found a match, check for the unmounts. */
     if (rv && uw_map->nosize) {
-        if (is_nomap_match(uw_map, url, rv, l)) {
-            if (JK_IS_DEBUG_LEVEL(l))
-                jk_log(l, JK_LOG_DEBUG,
-                       "Denying matching for worker %s by nomatch rule",
-                       rv);
+/* Again first including vhost. */
+        if (is_nomatch(uw_map, url, rv, l)) {
             rv = NULL;
         }
+/* If no unmount was find, try without vhost. */
+        else if (vhost_len && is_nomatch(uw_map, &url[vhost_len], rv, l)) {
+            rv = NULL;
+        }
+        if (rv == NULL && JK_IS_DEBUG_LEVEL(l)) {
+                jk_log(l, JK_LOG_DEBUG,
+                       "Denying match for worker %s by nomatch rule",
+                       rv);
+        }
     }
+
+    JK_TRACE_EXIT(l);
     return rv;
 }
 
