@@ -684,17 +684,17 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 /* In case we found a match, check for the unmounts. */
     if (rv && uw_map->nosize) {
 /* Again first including vhost. */
-        if (is_nomatch(uw_map, url, rv, l)) {
-            rv = NULL;
-        }
+        int rc = is_nomatch(uw_map, url, rv, l);
 /* If no unmount was find, try without vhost. */
-        else if (vhost_len && is_nomatch(uw_map, &url[vhost_len], rv, l)) {
-            rv = NULL;
-        }
-        if (rv == NULL && JK_IS_DEBUG_LEVEL(l)) {
+        if (!rc && vhost_len)
+            rc = is_nomatch(uw_map, &url[vhost_len], rv, l);
+        if (rc) {
+            if (JK_IS_DEBUG_LEVEL(l)) {
                 jk_log(l, JK_LOG_DEBUG,
                        "Denying match for worker %s by nomatch rule",
                        rv);
+            }
+            rv = NULL;
         }
     }
 
