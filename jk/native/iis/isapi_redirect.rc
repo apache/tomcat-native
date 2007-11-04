@@ -1,7 +1,7 @@
 #define JK_COPYRIGHT "Licensed to the Apache Software Foundation " \
                      "(ASF) under one or more contributor license " \
                      "agreements.  See the NOTICE file distributed " \
-                     "with this work for additional information " 
+                     "with this work for additional information " \
                      "regarding copyright ownership."
 
 #define JK_LICENSE "The ASF licenses this file to You under the " \
