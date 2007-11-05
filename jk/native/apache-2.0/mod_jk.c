@@ -901,7 +901,7 @@ static const char *jk_mount_context(cmd_parms * cmd,
     if (!conf->uri_to_context) {
         if (!jk_map_alloc(&(conf->uri_to_context))) {
             return "JkMount Memory error";
-        }        
+        }
     }
     /*
      * Add the new worker to the alias map.
@@ -951,7 +951,7 @@ static const char *jk_unmount_context(cmd_parms * cmd,
     if (!conf->uri_to_context) {
         if (!jk_map_alloc(&(conf->uri_to_context))) {
             return "JkUnMount Memory error";
-        }        
+        }
     }
     /*
      * Add the new worker to the alias map.
@@ -1825,7 +1825,7 @@ static const char *jk_add_env_var(cmd_parms * cmd,
         conf->envvars      = apr_table_make(cmd->pool, 0);
         conf->envvars_def  = apr_table_make(cmd->pool, 0);
         conf->envvar_items = apr_array_make(cmd->pool, 0,
-                                            sizeof(envvar_item));        
+                                            sizeof(envvar_item));
     }
 
     /* env_name is mandatory, default_value is optional.
@@ -2946,7 +2946,7 @@ static int jk_translate(request_rec * r)
                            "Into translate empty uri map for uri=%s",
                            r->uri);
 
-                return DECLINED;                                
+                return DECLINED;
             }
             else
                 worker = map_uri_to_worker(conf->uw_map, r->uri,
@@ -3097,7 +3097,7 @@ static int jk_map_to_storage(request_rec * r)
                            "Into map_to_storage empty uri map for uri=%s",
                            r->uri);
 
-                return DECLINED;                                
+                return DECLINED;
             }
             else
                 worker = map_uri_to_worker(conf->uw_map, r->uri,
