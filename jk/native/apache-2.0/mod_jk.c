@@ -2384,11 +2384,9 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
     c->uw_map = NULL;
 
     c->envvars_in_use = JK_FALSE;
-    if (!s->is_virtual) {
-        c->envvars = apr_table_make(p, 0);
-        c->envvars_def = apr_table_make(p, 0);
-        c->envvar_items = apr_array_make(p, 0, sizeof(envvar_item));
-    }
+    c->envvars = NULL;
+    c->envvars_def = NULL;
+    c->envvar_items = NULL;
 
     c->s = s;
     apr_pool_cleanup_register(p, s, jk_apr_pool_cleanup, jk_apr_pool_cleanup);
