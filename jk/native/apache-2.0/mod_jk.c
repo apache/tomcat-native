@@ -2918,8 +2918,17 @@ static int jk_translate(request_rec * r)
                     return DECLINED;
                 }
             }
+            if (!conf->uw_map) {
+                if (JK_IS_DEBUG_LEVEL(conf->log))
+                    jk_log(conf->log, JK_LOG_DEBUG,
+                           "Into translate empty uri map for uri=%s",
+                           r->uri);
 
-            worker = map_uri_to_worker(conf->uw_map, r->uri, NULL, conf->log);
+                return DECLINED;                                
+            }
+            else
+                worker = map_uri_to_worker(conf->uw_map, r->uri,
+                                           NULL, conf->log);
 
             if (worker) {
                 r->handler = apr_pstrdup(r->pool, JK_HANDLER);
@@ -3060,8 +3069,17 @@ static int jk_map_to_storage(request_rec * r)
 
                 return DECLINED;
             }
+            if (!conf->uw_map) {
+                if (JK_IS_DEBUG_LEVEL(conf->log))
+                    jk_log(conf->log, JK_LOG_DEBUG,
+                           "Into map_to_storage empty uri map for uri=%s",
+                           r->uri);
 
-            worker = map_uri_to_worker(conf->uw_map, r->uri, NULL, conf->log);
+                return DECLINED;                                
+            }
+            else
+                worker = map_uri_to_worker(conf->uw_map, r->uri,
+                                           NULL, conf->log);
 
             if (worker) {
                 r->handler = apr_pstrdup(r->pool, JK_HANDLER);
