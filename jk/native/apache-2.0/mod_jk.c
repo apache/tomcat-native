@@ -19,7 +19,7 @@
  * Description: Apache 2 plugin for Tomcat                                 *
  * Author:      Gal Shachor <shachor@il.ibm.com>                           *
  *              Henri Gomez <hgomez@apache.org>                            *
- * Version:     $Revision$                                          *
+ * Version:     $Revision$                                        *
  ***************************************************************************/
 
 /*
@@ -2930,9 +2930,9 @@ static int jk_translate(request_rec * r)
             if (!conf->uw_map) {
                 if (JK_IS_DEBUG_LEVEL(conf->log))
                     jk_log(conf->log, JK_LOG_DEBUG,
-                           "Into translate empty uri map for uri=%s",
+                           "missing uri map for %s:%s",
+                           conf->s->server_hostname ? conf->s->server_hostname : "_default_",
                            r->uri);
-
                 return DECLINED;
             }
             else
@@ -3041,6 +3041,12 @@ static int jk_translate(request_rec * r)
                     }
                 }
             }
+            else {
+                if (JK_IS_DEBUG_LEVEL(conf->log))
+                    jk_log(conf->log, JK_LOG_DEBUG,
+                           "no match for %s found",
+                           r->uri);
+            }
         }
     }
 
@@ -3081,9 +3087,9 @@ static int jk_map_to_storage(request_rec * r)
             if (!conf->uw_map) {
                 if (JK_IS_DEBUG_LEVEL(conf->log))
                     jk_log(conf->log, JK_LOG_DEBUG,
-                           "Into map_to_storage empty uri map for uri=%s",
+                           "missing uri map for %s:%s",
+                           conf->s->server_hostname ? conf->s->server_hostname : "_default_",
                            r->uri);
-
                 return DECLINED;
             }
             else
@@ -3117,6 +3123,12 @@ static int jk_map_to_storage(request_rec * r)
                         *jsessionid = '\0';
                 }
                 return DECLINED;
+            }
+            else {
+                if (JK_IS_DEBUG_LEVEL(conf->log))
+                    jk_log(conf->log, JK_LOG_DEBUG,
+                           "no match for %s found",
+                           r->uri);
             }
         }
     }
