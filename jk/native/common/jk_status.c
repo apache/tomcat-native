@@ -3491,6 +3491,7 @@ static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
     if (e && *e && (*e)->endpoint_private) {
         status_endpoint_t *p = (*e)->endpoint_private;
 
+        jk_map_free(&(p->req_params));
         free(p);
         *e = NULL;
         JK_TRACE_EXIT(l);
