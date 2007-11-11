@@ -2322,14 +2322,8 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
                we can't guarantee what order pools get cleaned
                up between APR implementations. */
             wc_close(NULL);
-            if (conf->uri_to_context) {
-                jk_map_free(&conf->uri_to_context);
-                /* We cannot have allocated uw_map
-                 * unless we've allocated uri_to_context
-                 */
-                if (conf->uw_map)
-                    uri_worker_map_free(&conf->uw_map, NULL);
-            }
+            if (conf->uw_map)
+                uri_worker_map_free(&conf->uw_map, NULL);
             conf->was_initialized = JK_FALSE;
         }
         s = s->next;
@@ -2818,6 +2812,7 @@ static int jk_post_config(apr_pool_t * pconf,
                                                   sconf->uri_to_context, sconf->log))
                             jk_error_exit(APLOG_MARK, APLOG_EMERG, srv,
                                           srv->process->pool, "Memory error");
+                        jk_map_free(&sconf->uri_to_context);
                         if (sconf->options & JK_OPT_REJECTUNSAFE)
                             sconf->uw_map->reject_unsafe = 1;
                         else
