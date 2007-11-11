@@ -208,7 +208,7 @@ typedef struct
     /*
      * Environment variables support
      */
-    int envvars_in_use;
+    int envvars_has_own;
     apr_table_t *envvars;
     apr_table_t *envvars_def;
     apr_array_header_t *envvar_items;
@@ -1826,7 +1826,7 @@ static const char *jk_add_env_var(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    conf->envvars_in_use = JK_TRUE;
+    conf->envvars_has_own = JK_TRUE;
     if (!conf->envvars) {
         conf->envvars      = apr_table_make(cmd->pool, 0);
         conf->envvars_def  = apr_table_make(cmd->pool, 0);
@@ -2366,7 +2366,7 @@ static void *create_jk_config(apr_pool_t * p, server_rec * s)
         c->key_size_indicator = JK_ENV_KEY_SIZE;
         c->strip_session = JK_FALSE;
     }
-    c->envvars_in_use = JK_FALSE;
+    c->envvars_has_own = JK_FALSE;
 
     c->s = s;
     apr_pool_cleanup_register(p, s, jk_apr_pool_cleanup, jk_apr_pool_cleanup);
@@ -2433,7 +2433,7 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
     overrides->options |= (base->options & ~base->exclude_options);
 
     if (base->envvars) {
-        if (overrides->envvars && overrides->envvars_in_use) {
+        if (overrides->envvars && overrides->envvars_has_own) {
             merge_apr_table(base->envvars, overrides->envvars);
             merge_apr_table(base->envvars_def, overrides->envvars_def);
         }
@@ -2822,7 +2822,7 @@ static int jk_post_config(apr_pool_t * pconf,
                             ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                                          "JkRequestLogFormat format array NULL");
                     }
-                    if (sconf->envvars && sconf->envvars_in_use) {
+                    if (sconf->envvars && sconf->envvars_has_own) {
                         int i;
                         const apr_array_header_t *arr;
                         const apr_table_entry_t *elts;
