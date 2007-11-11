@@ -2458,6 +2458,9 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
         }
     }
 
+   if (overrides->mountcopy == JK_UNSET && jk_mount_copy_all == JK_TRUE) {        
+       overrides->mountcopy == JK_TRUE;
+   }
    if (overrides->uri_to_context) {        
 /* jk_map_copy() preserves existing entries in overrides map */
         if (jk_map_copy(base->uri_to_context, overrides->uri_to_context) == JK_FALSE) {
@@ -2826,7 +2829,7 @@ static int jk_post_config(apr_pool_t * pconf,
                         }
                     }
                     else {
-                        if (sconf->mountcopy == JK_TRUE || jk_mount_copy_all == JK_TRUE) {
+                        if (sconf->mountcopy == JK_TRUE) {
                             sconf->uw_map = conf->uw_map;
                         }
                     }
