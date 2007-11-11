@@ -2111,7 +2111,17 @@ static int jk_handler(request_rec * r)
                        worker_name, r->uri);
         }
         else {
-            worker_name = map_uri_to_worker(xconf->uw_map, r->uri, NULL, xconf->log);
+            if (!xconf->uw_map) {
+                if (JK_IS_DEBUG_LEVEL(xconf->log))
+                    jk_log(xconf->log, JK_LOG_DEBUG,
+                           "missing uri map for %s:%s",
+                           xconf->s->server_hostname ? xconf->s->server_hostname : "_default_",
+                           r->uri);
+            }
+            else
+                worker_name = map_uri_to_worker(xconf->uw_map, r->uri,
+                                                NULL, xconf->log);
+
             if (worker_name == NULL && worker_env.num_of_workers) {
                 worker_name = worker_env.worker_list[0];
                 if (JK_IS_DEBUG_LEVEL(xconf->log))
