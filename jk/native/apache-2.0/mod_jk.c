@@ -2137,13 +2137,13 @@ static int jk_handler(request_rec * r)
     if (JK_IS_DEBUG_LEVEL(xconf->log))
        jk_log(xconf->log, JK_LOG_DEBUG, "Into handler %s worker=%s"
               " r->proxyreq=%d",
-              r->handler, worker_name, r->proxyreq);
+              r->handler, STRNULL_FOR_NULL(worker_name), r->proxyreq);
 
     /* If this is a proxy request, we'll notify an error */
     if (r->proxyreq) {
         jk_log(xconf->log, JK_LOG_INFO, "Proxy request for worker=%s"
               " is not allowed",
-              worker_name);
+              STRNULL_FOR_NULL(worker_name));
         JK_TRACE_EXIT(xconf->log);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
