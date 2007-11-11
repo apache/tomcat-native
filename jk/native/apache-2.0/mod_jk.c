@@ -2459,7 +2459,7 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
     }
 
    if (overrides->mountcopy == JK_UNSET && jk_mount_copy_all == JK_TRUE) {        
-       overrides->mountcopy == JK_TRUE;
+       overrides->mountcopy = JK_TRUE;
    }
    if (overrides->uri_to_context && overrides->mountcopy == JK_TRUE) {
 /* jk_map_copy() preserves existing entries in overrides map */
