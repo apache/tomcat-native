@@ -112,6 +112,7 @@ static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
 #define BAD_REQUEST     -1
 #define BAD_PATH        -2
 #define MAX_SERVERNAME  128
+#define MAX_PACKET_SIZE 65536
 
 char HTML_ERROR_400[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n"
                                 "<HTML><HEAD><TITLE>Bad request!</TITLE></HEAD>\n"
@@ -145,7 +146,7 @@ char HTML_ERROR_503[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Tr
 #define GET_SERVER_VARIABLE_VALUE(name, place)          \
   do {                                                  \
     (place) = NULL;                                     \
-    huge_buf_sz = sizeof(huge_buf);                     \
+    huge_buf_sz = MAX_PACKET_SIZE;                      \
     if (get_server_value(private_data->lpEcb,           \
                         (name),                         \
                         huge_buf,                       \
@@ -156,7 +157,7 @@ char HTML_ERROR_503[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Tr
 
 #define GET_SERVER_VARIABLE_VALUE_INT(name, place, def)     \
   do {                                                      \
-    huge_buf_sz = sizeof(huge_buf);                         \
+    huge_buf_sz = MAX_PACKET_SIZE;                          \
     if (get_server_value(private_data->lpEcb,               \
                         (name),                             \
                         huge_buf,                           \
@@ -1963,7 +1964,7 @@ static int get_registry_config_number(HKEY hkey,
 static int init_ws_service(isapi_private_data_t * private_data,
                            jk_ws_service_t *s, char **worker_name)
 {
-    char huge_buf[16 * 1024];   /* should be enough for all */
+    char *huge_buf = NULL;   /* should be enough for all */
 
     DWORD huge_buf_sz;
 
@@ -1983,6 +1984,11 @@ static int init_ws_service(isapi_private_data_t * private_data,
     /* Clear RECO status */
     s->reco_status = RECO_NONE;
 
+    if (!(huge_buf = jk_pool_alloc(&private_data->p, MAX_PACKET_SIZE))) {
+
+        return JK_FALSE;    
+    }
+    huge_buf_sz = MAX_PACKET_SIZE;
     GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, (*worker_name));
     GET_SERVER_VARIABLE_VALUE(HTTP_URI_HEADER_NAME, s->req_uri);
     GET_SERVER_VARIABLE_VALUE(HTTP_QUERY_HEADER_NAME, s->query_string);
@@ -2073,7 +2079,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
             s->num_attributes = num_of_vars;
             if (ssl_env_values[4] && ssl_env_values[4][0] == '1') {
                 CERT_CONTEXT_EX cc;
-                cc.cbAllocated = sizeof(huge_buf);
+                cc.cbAllocated = MAX_PACKET_SIZE;
                 cc.CertContext.pbCertEncoded = (BYTE *) huge_buf;
                 cc.CertContext.cbCertEncoded = 0;
 
@@ -2102,7 +2108,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
         }
     }
 
-    huge_buf_sz = sizeof(huge_buf);
+    huge_buf_sz = MAX_PACKET_SIZE;
     if (get_server_value(private_data->lpEcb,
                          "ALL_HTTP", huge_buf, huge_buf_sz)) {
         unsigned int cnt = 0;
@@ -2115,7 +2121,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
         }
 
         if (cnt) {
-            char *headers_buf = jk_pool_strdup(&private_data->p, huge_buf);
+            char *headers_buf = huge_buf;
             unsigned int i;
             size_t len_of_http_prefix = strlen("HTTP_");
             BOOL need_content_length_header = (s->content_length == 0);
