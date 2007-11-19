@@ -2260,11 +2260,9 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->uw_map = NULL;
 
     c->envvars_in_use = JK_FALSE;
-    if (!s->is_virtual) {
-        c->envvars = ap_make_table(p, 0);
-        c->envvars_def = ap_make_table(p, 0);
-        c->envvar_items = ap_make_array(p, 0, sizeof(envvar_item));
-    }
+    c->envvars = NULL;
+    c->envvars_def = NULL;
+    c->envvar_items = NULL;
 
     c->s = s;
 
