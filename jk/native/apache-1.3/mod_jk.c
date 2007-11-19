@@ -2210,31 +2210,15 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     jk_server_conf_t *c =
         (jk_server_conf_t *) ap_pcalloc(p, sizeof(jk_server_conf_t));
 
-    c->mount_file = NULL;
-    c->log_file = NULL;
     c->log_fd = -1;
-    c->log = NULL;
-    c->alias_dir = NULL;
-    c->stamp_format_string = NULL;
-    c->format_string = NULL;
-    c->format = NULL;
     c->mountcopy = JK_FALSE;
-    c->exclude_options = 0;
     c->was_initialized = JK_FALSE;
 
     if (s->is_virtual) {
         c->mountcopy = JK_UNSET;
         c->mount_file_reload = JK_UNSET;
         c->log_level = JK_UNSET;
-        c->options = 0;
-        c->worker_indicator = NULL;
         c->ssl_enable = JK_UNSET;
-        c->https_indicator = NULL;
-        c->certs_indicator = NULL;
-        c->cipher_indicator = NULL;
-        c->certchain_prefix = NULL;
-        c->session_indicator = NULL;
-        c->key_size_indicator = NULL;
         c->strip_session = JK_UNSET;
     } else {
         c->mountcopy = JK_FALSE;
@@ -2259,14 +2243,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
         c->key_size_indicator = JK_ENV_KEY_SIZE;
         c->strip_session = JK_FALSE;
     }
-
-    c->uri_to_context = NULL;
-    c->uw_map = NULL;
-
     c->envvars_in_use = JK_FALSE;
-    c->envvars = NULL;
-    c->envvars_def = NULL;
-    c->envvar_items = NULL;
 
     c->s = s;
 
