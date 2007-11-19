@@ -3123,30 +3123,30 @@ static int jk_map_to_storage(request_rec * r)
                     apr_table_setn(r->main->notes, JK_NOTE_WORKER_NAME, worker);
 
             }
-            else if (conf->strip_session == JK_TRUE) {
-                char *jsessionid;
-                if (r->uri) {
-                    jsessionid = strstr(r->uri, JK_PATH_SESSION_IDENTIFIER);
-                    if (jsessionid) {
-                        if (JK_IS_DEBUG_LEVEL(conf->log))
-                            jk_log(conf->log, JK_LOG_DEBUG,
-                                   "removing session identifier [%s] for non servlet url [%s]",
-                                   jsessionid, r->uri);
-                        *jsessionid = '\0';
-                    }
-                }
-                if (r->filename) {
-                    jsessionid = strstr(r->filename, JK_PATH_SESSION_IDENTIFIER);
-                    if (jsessionid)
-                        *jsessionid = '\0';
-                }
-                return DECLINED;
-            }
             else {
                 if (JK_IS_DEBUG_LEVEL(conf->log))
                     jk_log(conf->log, JK_LOG_DEBUG,
                            "no match for %s found",
                            r->uri);
+                if (conf->strip_session == JK_TRUE) {
+                    char *jsessionid;
+                    if (r->uri) {
+                        jsessionid = strstr(r->uri, JK_PATH_SESSION_IDENTIFIER);
+                        if (jsessionid) {
+                            if (JK_IS_DEBUG_LEVEL(conf->log))
+                                jk_log(conf->log, JK_LOG_DEBUG,
+                                       "removing session identifier [%s] for non servlet url [%s]",
+                                       jsessionid, r->uri);
+                            *jsessionid = '\0';
+                        }
+                    }
+                    if (r->filename) {
+                        jsessionid = strstr(r->filename, JK_PATH_SESSION_IDENTIFIER);
+                        if (jsessionid)
+                            *jsessionid = '\0';
+                    }
+                    return DECLINED;
+                }
             }
         }
     }
