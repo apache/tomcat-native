@@ -870,6 +870,11 @@ static const char *jk_mount_context(cmd_parms * cmd,
     if (c[0] != '/')
         return "JkMount context should start with /";
 
+    if (!conf->uri_to_context) {
+        if (!jk_map_alloc(&(conf->uri_to_context))) {
+            return "JkMount Memory error";
+        }        
+    }
     /*
      * Add the new worker to the alias map.
      */
@@ -912,6 +917,12 @@ static const char *jk_unmount_context(cmd_parms * cmd,
     if (c[0] != '/')
         return "JkUnMount context should start with /";
     uri = ap_pstrcat(cmd->temp_pool, "!", c, NULL);
+
+    if (!conf->uri_to_context) {
+        if (!jk_map_alloc(&(conf->uri_to_context))) {
+            return "JkUnMount Memory error";
+        }        
+    }
     /*
      * Add the new worker to the alias map.
      */
