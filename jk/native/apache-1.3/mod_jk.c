@@ -992,6 +992,12 @@ static const char *jk_set_mount_file(cmd_parms * cmd,
     if (stat(conf->mount_file, &statbuf) == -1)
         return "Can't find the mount file specified";
 
+    if (!conf->uri_to_context) {
+        if (!jk_map_alloc(&(conf->uri_to_context))) {
+            return "JkMountFile Memory error";
+        }
+    }
+
     return NULL;
 }
 
@@ -2254,9 +2260,7 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
         c->strip_session = JK_FALSE;
     }
 
-    if (!jk_map_alloc(&(c->uri_to_context))) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG, s, p, "Memory error");
-    }
+    c->uri_to_context = NULL;
     c->uw_map = NULL;
 
     c->envvars_in_use = JK_FALSE;
@@ -2337,13 +2341,12 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
         }
     }
 
-    if (overrides->mount_file_reload == JK_UNSET)
-        overrides->mount_file_reload = base->mount_file_reload;
-    if (overrides->mountcopy == JK_TRUE ||
-        (overrides->mountcopy == JK_UNSET && jk_mount_copy_all == JK_TRUE)) {
+   if (overrides->uri_to_context) {
         if (jk_map_copy(base->uri_to_context, overrides->uri_to_context) == JK_FALSE) {
                 jk_error_exit(APLOG_MARK, APLOG_EMERG, overrides->s, p, "Memory error");
         }
+        if (overrides->mount_file_reload == JK_UNSET)
+            overrides->mount_file_reload = base->mount_file_reload;
         if (!overrides->mount_file)
             overrides->mount_file = base->mount_file;
         if (!overrides->alias_dir)
@@ -2511,28 +2514,36 @@ static void jk_init(server_rec * s, ap_pool * p)
  * Therefore we check, if this config structure really belongs to this
  * vhost, otherwise we create a new one and merge.
  */
-        if (sconf && sconf->s != srv && jk_mount_copy_all == JK_FALSE) {
+        if (sconf && sconf->s != srv) {
             jk_server_conf_t *srvconf = (jk_server_conf_t *)create_jk_config(p, srv);
             sconf = (jk_server_conf_t *)merge_jk_config(p, sconf, srvconf);
             ap_set_module_config(srv->module_config, &jk_module, sconf);
+
         }
 
         if (sconf && sconf->was_initialized == JK_FALSE) {
             sconf->was_initialized = JK_TRUE;
             open_jk_log(srv, p);
             sconf->options &= ~sconf->exclude_options;
-            if (!uri_worker_map_alloc(&(sconf->uw_map),
-                                      sconf->uri_to_context, sconf->log))
-                jk_error_exit(APLOG_MARK, APLOG_EMERG, srv,
-                              p, "Memory error");
-            if (sconf->options & JK_OPT_REJECTUNSAFE)
-                sconf->uw_map->reject_unsafe = 1;
-            else
-                sconf->uw_map->reject_unsafe = 0;
-            if (sconf->mount_file) {
-                sconf->uw_map->fname = sconf->mount_file;
-                sconf->uw_map->reload = sconf->mount_file_reload;
-                uri_worker_map_load(sconf->uw_map, sconf->log);
+            if (sconf->uri_to_context) {
+                if (!uri_worker_map_alloc(&(sconf->uw_map),
+                                          sconf->uri_to_context, sconf->log))
+                    jk_error_exit(APLOG_MARK, APLOG_EMERG, srv,
+                                  p, "Memory error");
+                if (sconf->options & JK_OPT_REJECTUNSAFE)
+                    sconf->uw_map->reject_unsafe = 1;
+                else
+                    sconf->uw_map->reject_unsafe = 0;
+                if (sconf->mount_file) {
+                    sconf->uw_map->fname = sconf->mount_file;
+                    sconf->uw_map->reload = sconf->mount_file_reload;
+                    uri_worker_map_load(sconf->uw_map, sconf->log);
+                }
+            }
+            else {
+                if (sconf->mountcopy == JK_TRUE || jk_mount_copy_all == JK_TRUE) {
+                    sconf->uw_map = conf->uw_map;
+                }
             }
             if (sconf->format_string) {
                 sconf->format =
