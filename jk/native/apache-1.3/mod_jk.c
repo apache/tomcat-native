@@ -2308,6 +2308,7 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
 
     if (base->envvars) {
         if (overrides->envvars && overrides->envvars_has_own) {
+/* merge_apr_table() preserves existing entries in overrides table */
             merge_apr_table(base->envvars, overrides->envvars);
             merge_apr_table(base->envvars_def, overrides->envvars_def);
         }
@@ -2319,6 +2320,7 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
     }
 
    if (overrides->uri_to_context) {
+/* jk_map_copy() preserves existing entries in overrides map */
         if (jk_map_copy(base->uri_to_context, overrides->uri_to_context) == JK_FALSE) {
                 jk_error_exit(APLOG_MARK, APLOG_EMERG, overrides->s, p, "Memory error");
         }
