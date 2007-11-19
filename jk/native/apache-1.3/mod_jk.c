@@ -2221,6 +2221,9 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
         c->ssl_enable = JK_UNSET;
         c->strip_session = JK_UNSET;
     } else {
+        if (!jk_map_alloc(&(c->uri_to_context))) {
+            ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, NULL, "Memory error");
+        }
         c->mountcopy = JK_FALSE;
         c->mount_file_reload = JK_URIMAP_DEF_RELOAD;
         c->log_level = JK_LOG_DEF_LEVEL;
