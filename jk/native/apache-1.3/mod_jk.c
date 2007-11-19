@@ -633,7 +633,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->ssl_session = NULL;
     s->ssl_key_size = -1;       /* required by Servlet 2.3 Api, added in jtc */
 
-    if (conf->ssl_enable || conf->envvars_in_use) {
+    if (conf->ssl_enable || conf->envvars) {
         ap_add_common_vars(r);
 
         if (conf->ssl_enable) {
@@ -693,7 +693,7 @@ static int init_ws_service(apache_private_data_t * private_data,
             }
         }
 
-        if (conf->envvars_in_use) {
+        if (conf->envvars) {
             const array_header *t = conf->envvar_items;
             if (t && t->nelts) {
                 int i;
@@ -1781,6 +1781,12 @@ static const char *jk_add_env_var(cmd_parms * cmd,
                                                   &jk_module);
 
     conf->envvars_in_use = JK_TRUE;
+    if (!conf->envvars) {
+        conf->envvars      = ap_make_table(cmd->pool, 0);
+        conf->envvars_def  = ap_make_table(cmd->pool, 0);
+        conf->envvar_items = ap_make_array(cmd->pool, 0,
+                                           sizeof(envvar_item));
+    }
 
     /* env_name is mandatory, default_value is optional.
      * No value means send the attribute only, if the env var is set during runtime.
@@ -2243,9 +2249,11 @@ static void *create_jk_config(ap_pool * p, server_rec * s)
     c->uw_map = NULL;
 
     c->envvars_in_use = JK_FALSE;
-    c->envvars = ap_make_table(p, 0);
-    c->envvars_def = ap_make_table(p, 0);
-    c->envvar_items = ap_make_array(p, 0, sizeof(envvar_item));
+    if (!s->is_virtual) {
+        c->envvars = ap_make_table(p, 0);
+        c->envvars_def = ap_make_table(p, 0);
+        c->envvar_items = ap_make_array(p, 0, sizeof(envvar_item));
+    }
 
     c->s = s;
 
@@ -2308,15 +2316,15 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
 
     overrides->options |= (base->options & ~base->exclude_options);
 
-    if (base->envvars_in_use) {
-
-        if (ap_table_elts(base->envvars)) {
-            overrides->envvars_in_use = JK_TRUE;
+    if (base->envvars) {
+        if (overrides->envvars && overrides->envvars_in_use) {
             merge_apr_table(base->envvars, overrides->envvars);
-        }
-        if (ap_table_elts(base->envvars_def)) {
-            overrides->envvars_in_use = JK_TRUE;
             merge_apr_table(base->envvars_def, overrides->envvars_def);
+        }
+        else {
+            overrides->envvars = base->envvars;
+            overrides->envvars_def = base->envvars_def;
+            overrides->envvar_items = base->envvar_items;
         }
     }
 
@@ -2524,7 +2532,7 @@ static void jk_init(server_rec * s, ap_pool * p)
                     ap_log_error(APLOG_MARK, APLOG_ERR, srv,
                                  "JkRequestLogFormat format array NULL");
             }
-            if (sconf->envvars_in_use) {
+            if (sconf->envvars && sconf->envvars_in_use) {
                 int i;
                 const array_header *arr;
                 const table_entry *elts;
@@ -2917,10 +2925,14 @@ static void jk_generic_cleanup(server_rec *s)
                we can't guarantee what order pools get cleaned
                up between APR implementations. */
             wc_close(NULL);
-            if (conf->uri_to_context)
+            if (conf->uri_to_context) {
                 jk_map_free(&conf->uri_to_context);
-            if (conf->uw_map)
-                uri_worker_map_free(&conf->uw_map, NULL);
+                /* We cannot have allocated uw_map
+                 * unless we've allocated uri_to_context
+                 */
+                if (conf->uw_map)
+                    uri_worker_map_free(&conf->uw_map, NULL);
+            }
             conf->was_initialized = JK_FALSE;
         }
         s = s->next;
