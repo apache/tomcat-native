@@ -873,7 +873,7 @@ static const char *jk_mount_context(cmd_parms * cmd,
     if (!conf->uri_to_context) {
         if (!jk_map_alloc(&(conf->uri_to_context))) {
             return "JkMount Memory error";
-        }        
+        }
     }
     /*
      * Add the new worker to the alias map.
@@ -921,7 +921,7 @@ static const char *jk_unmount_context(cmd_parms * cmd,
     if (!conf->uri_to_context) {
         if (!jk_map_alloc(&(conf->uri_to_context))) {
             return "JkUnMount Memory error";
-        }        
+        }
     }
     /*
      * Add the new worker to the alias map.
