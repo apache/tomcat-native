@@ -2330,7 +2330,6 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
                 if (conf->uw_map)
                     uri_worker_map_free(&conf->uw_map, NULL);
             }
-            jk_free_time_fmt(conf->log);
             conf->was_initialized = JK_FALSE;
         }
         s = s->next;
@@ -2535,11 +2534,8 @@ static apr_status_t jklog_cleanup(void *d)
 {
     /* hgomez@20070425 */
     /* Clean up pointer content */
-    if (d != NULL) {
-        jk_logger_t *l = *(jk_logger_t **)d;
-        jk_free_time_fmt(l);
-        l = NULL;
-    }
+    if (d != NULL)
+        *(jk_logger_t **)d = NULL;
 
     return APR_SUCCESS;
 }
@@ -2608,10 +2604,10 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
     if (jkl && flp) {
         jkl->log = jk_log_to_file;
         jkl->level = conf->log_level;
-        jk_set_time_fmt(jkl, conf->stamp_format_string);
         jkl->logger_private = flp;
         flp->jklogfp = conf->jklogfp;
         conf->log = jkl;
+        jk_set_time_fmt(conf->log, conf->stamp_format_string);
         if (main_log == NULL) {
             main_log = conf->log;
 
@@ -2620,8 +2616,6 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
             /* Also should we pass pointer (ie: main_log) or handle (*main_log) ? */
             apr_pool_cleanup_register(p, &main_log, jklog_cleanup, jklog_cleanup);
         }
-        jk_log(conf->log, JK_LOG_DEBUG, "log time stamp format is '%s'",
-               conf->log->log_fmt);
 
         return 0;
     }

@@ -2458,14 +2458,12 @@ static void open_jk_log(server_rec *s, pool *p)
     if (jkl && flp) {
         jkl->log = jk_log_to_file;
         jkl->level = conf->log_level;
-        jk_set_time_fmt(jkl, conf->stamp_format_string);
         jkl->logger_private = flp;
         flp->log_fd = conf->log_fd;
         conf->log = jkl;
+        jk_set_time_fmt(conf->log, conf->stamp_format_string);
         if (main_log == NULL)
             main_log = conf->log;
-        jk_log(conf->log, JK_LOG_DEBUG, "log time stamp format is '%s'",
-               conf->log->log_fmt);
         return;
     }
 
@@ -2944,7 +2942,6 @@ static void jk_generic_cleanup(server_rec *s)
                 if (conf->uw_map)
                     uri_worker_map_free(&conf->uw_map, NULL);
             }
-            jk_free_time_fmt(conf->log);
             conf->was_initialized = JK_FALSE;
         }
         s = s->next;
