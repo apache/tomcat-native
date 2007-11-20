@@ -124,7 +124,7 @@
 /*
  * define the log format, we're using by default the one from error.log
  *
- * [Mon Mar 26 19:44:48 2001] [jk_uri_worker_map.c (155)]: Into jk_uri_worker_map_t::uri_worker_map_alloc
+ * [Mon Mar 26 19:44:48.123 2001] [jk_uri_worker_map.c (155)]: Into jk_uri_worker_map_t::uri_worker_map_alloc
  * log format used by apache in error.log
  */
 #define JK_TIME_CONV_MILLI    "%Q"
@@ -137,7 +137,17 @@
 #define JK_TIME_SUBSEC_NONE   (0)
 #define JK_TIME_SUBSEC_MILLI  (1)
 #define JK_TIME_SUBSEC_MICRO  (2)
-#define JK_TIME_MAX_SIZE      (64)
+/* The size of the longest format string we can handle,
+ * including the terminating '\0'.
+ */
+#define JK_TIME_MAX_FMT_SIZE  (64)
+/* We increase the maximum format string size by the biggest
+ * size increment, that happens during replacement of a
+ * sub second format character by it's zero digit string.
+ * At the moment, this is
+ * strlen(JK_TIME_PATTERN_MICRO)-strlen(JK_TIME_CONV_MICRO) = 6-2 = 4.
+ */
+#define JK_TIME_MAX_SIZE      (JK_TIME_MAX_FMT_SIZE + 4)
 
 /* Visual C++ Toolkit 2003 support */
 #if defined (_MSC_VER) && (_MSC_VER == 1310)
@@ -353,11 +363,21 @@ void jk_sleep(int ms)
 #endif
 }
 
+/* Replace the first occurence of a sub second time format character
+ * by a series of zero digits with the right precision.
+ * We format our timestamp with strftime, but this can not handle
+ * sub second timestamps.
+ * So we first patch the milliseconds or microseconds literally into
+ * the format string, and then pass it on the strftime.
+ * In order to do that efficiently, we prepare a format string, that
+ * already has placeholder digits for the sub second time stamp
+ * and we save the position and resultion of this placeholder.
+ */
 void jk_set_time_fmt(jk_logger_t *l, const char *jk_log_fmt)
 {
     if (l) {
         char *s;
-        char log_fmt_safe[JK_TIME_MAX_SIZE];
+        char log_fmt_safe[JK_TIME_MAX_FMT_SIZE];
         char *fmt;
 
         if (!jk_log_fmt) {
@@ -373,35 +393,57 @@ void jk_set_time_fmt(jk_logger_t *l, const char *jk_log_fmt)
         l->log_fmt_subsec = jk_log_fmt;
         l->log_fmt = jk_log_fmt;
 
-        fmt = (char *)malloc(JK_TIME_MAX_SIZE + strlen(JK_TIME_PATTERN_MICRO));
+/* This has enough space for JK_TIME_MAX_FMT_SIZE chars plus the longest
+ * sub second replacement we might do in the format string.
+ */
+        fmt = (char *)malloc(JK_TIME_MAX_SIZE);
         if (fmt) {
-            strncpy(log_fmt_safe, jk_log_fmt, JK_TIME_MAX_SIZE);
+/* Ignore all chars in format string after position JK_TIME_MAX_FMT_SIZE.
+ * This is simply for truncating the jk_log_fmt input param without
+ * destroying the original.
+ */
+            strncpy(log_fmt_safe, jk_log_fmt, JK_TIME_MAX_FMT_SIZE);
+            log_fmt_safe[JK_TIME_MAX_FMT_SIZE-1] = '\0';
             if ((s = strstr(log_fmt_safe, JK_TIME_CONV_MILLI))) {
+/* We will replace the first occurence of JK_TIME_CONV_MILLI by JK_TIME_PATTERN_MILLI. */
                 size_t offset = s - log_fmt_safe;
                 size_t len = strlen(JK_TIME_PATTERN_MILLI);
 
                 l->log_fmt_type = JK_TIME_SUBSEC_MILLI;
                 l->log_fmt_offset = offset;
+/* fmt has enough space for the truncated original format string plus
+ * replacement of JK_TIME_CONV_MILLI by JK_TIME_PATTERN_MILLI. */
                 strncpy(fmt, log_fmt_safe, offset);
                 strncpy(fmt + offset, JK_TIME_PATTERN_MILLI, len);
                 strncpy(fmt + offset + len,
                         s + strlen(JK_TIME_CONV_MILLI),
                         JK_TIME_MAX_SIZE - offset - len);
+/* Now we put a stop mark into fmt to make it's length at most JK_TIME_MAX_SIZE-1
+ * plus terminating '\0'. This should not be necessary, because we already terminated
+ * log_fmt_safe, but it makes the code more robust.
+ */
                 fmt[JK_TIME_MAX_SIZE-1] = '\0';
                 l->log_fmt_subsec = fmt;
                 l->log_fmt_size = strlen(fmt);
             }
             else if ((s = strstr(log_fmt_safe, JK_TIME_CONV_MICRO))) {
+/* We will replace the first occurence of JK_TIME_CONV_MICRO by JK_TIME_PATTERN_MICRO. */
                 size_t offset = s - log_fmt_safe;
                 size_t len = strlen(JK_TIME_PATTERN_MICRO);
 
                 l->log_fmt_type = JK_TIME_SUBSEC_MICRO;
                 l->log_fmt_offset = offset;
+/* fmt has enough space for the truncated original format string plus
+ * replacement of JK_TIME_CONV_MICRO by JK_TIME_PATTERN_MICRO. */
                 strncpy(fmt, log_fmt_safe, offset);
                 strncpy(fmt + offset, JK_TIME_PATTERN_MICRO, len);
                 strncpy(fmt + offset + len,
                         s + strlen(JK_TIME_CONV_MICRO),
                         JK_TIME_MAX_SIZE - offset - len);
+/* Now we put a stop mark into fmt to make it's length at most JK_TIME_MAX_SIZE-1
+ * plus terminating '\0'. This should not be necessary, because we already terminated
+ * log_fmt_safe, but it makes the code more robust.
+ */
                 fmt[JK_TIME_MAX_SIZE-1] = '\0';
                 l->log_fmt_subsec = fmt;
                 l->log_fmt_size = strlen(fmt);
