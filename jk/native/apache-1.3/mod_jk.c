@@ -2944,6 +2944,7 @@ static void jk_generic_cleanup(server_rec *s)
                 if (conf->uw_map)
                     uri_worker_map_free(&conf->uw_map, NULL);
             }
+            jk_free_time_fmt(conf->log);
             conf->was_initialized = JK_FALSE;
         }
         s = s->next;

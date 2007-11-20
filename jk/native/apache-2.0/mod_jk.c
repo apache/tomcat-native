@@ -2330,6 +2330,7 @@ static apr_status_t jk_apr_pool_cleanup(void *data)
                 if (conf->uw_map)
                     uri_worker_map_free(&conf->uw_map, NULL);
             }
+            jk_free_time_fmt(conf->log);
             conf->was_initialized = JK_FALSE;
         }
         s = s->next;
@@ -2534,8 +2535,11 @@ static apr_status_t jklog_cleanup(void *d)
 {
     /* hgomez@20070425 */
     /* Clean up pointer content */
-    if (d != NULL)
-        *(jk_logger_t **)d = NULL;
+    if (d != NULL) {
+        jk_logger_t *l = *(jk_logger_t **)d;
+        jk_free_time_fmt(l);
+        l = NULL;
+    }
 
     return APR_SUCCESS;
 }

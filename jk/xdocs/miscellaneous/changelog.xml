@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        <bug>43873</bug>: Fix small memory leak occuring during httpd restart. (rjung)
+      </fix>
       <update>
         Common: Allow '*' for the worker name in exclusion rules (resp. JkUnMount)
         which will override all workers. (rjung)

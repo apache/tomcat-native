@@ -410,6 +410,15 @@ void jk_set_time_fmt(jk_logger_t *l, const char *jk_log_fmt)
     }
 }
 
+void jk_free_time_fmt(jk_logger_t *l)
+{
+    if (l && l->log_fmt_subsec &&
+        l->log_fmt != l->log_fmt_subsec) {
+            free((void *)l->log_fmt_subsec);
+            l->log_fmt_subsec = l->log_fmt;
+    }
+}
+
 static int set_time_str(char *str, int len, jk_logger_t *l)
 {
     time_t t;
