@@ -926,7 +926,7 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
 
     if ((rc = jk_tcp_socket_sendfull(ae->sd, msg->buf,
                                      msg->len)) > 0) {
-        ae->endpoint.wr += (jk_uint64_t)msg->len;
+        ae->endpoint.wr += (jk_uint64_t)rc;
         JK_TRACE_EXIT(l);
         ae->last_errno = 0;
         return JK_TRUE;
