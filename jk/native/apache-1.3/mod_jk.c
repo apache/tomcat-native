@@ -215,6 +215,7 @@ typedef struct dir_config_struct
     array_header *index_names;
 } dir_config_rec;
 
+static server_rec *main_server = NULL;
 static jk_logger_t *main_log = NULL;
 static table *jk_log_fds = NULL;
 static jk_worker_env_t worker_env;
@@ -243,6 +244,12 @@ static void JK_METHOD ws_add_log_items(jk_ws_service_t *s,
                                        const char *const *log_names,
                                        const char *const *log_values,
                                        unsigned num_of_log_items);
+
+static void * JK_METHOD ws_next_vhost(void *d);
+
+static void JK_METHOD ws_vhost_to_text(void *d, char *buf, int len);
+
+static jk_uri_worker_map_t * JK_METHOD ws_vhost_to_uw_map(void *d);
 
 /* srevilak - new function prototypes */
 static void jk_server_cleanup(void *data);
@@ -450,6 +457,78 @@ static void JK_METHOD ws_add_log_items(jk_ws_service_t *s,
     }
 }
 
+static void * JK_METHOD ws_next_vhost(void *d)
+{
+    server_rec *s = (server_rec *)d;
+    if (s == NULL)
+        return main_server;
+    return s->next;
+}
+
+static void JK_METHOD ws_vhost_to_text(void *d, char *buf, int len)
+{
+    server_rec *s = (server_rec *)d;
+    int used = 0;
+
+    if (s->server_hostname)
+        used += strlen(s->server_hostname);
+    if (!s->is_virtual) {
+        if (s->port)
+            used += strlen(":XXXXX");
+    }
+    else if (s->addrs) {
+        used += strlen(" [");
+        if (s->addrs->virthost)
+            used += strlen(s->addrs->virthost);
+        if (s->addrs->host_port)
+            used += strlen(":XXXXX");
+        used += strlen("]");
+    }
+
+    if (len < used && len > strlen("XXX")) {
+        strcpy(buf, "XXX");
+        return;
+    }
+
+    used = 0;
+
+    if (s->server_hostname) {
+        strcpy(buf + used, s->server_hostname);
+        used += strlen(s->server_hostname);
+    }
+    if (!s->is_virtual) {
+        if (s->port) {
+            sprintf(buf + used, ":%hu", s->port);
+            used = strlen(buf);
+        }
+    }
+    else if (s->addrs) {
+        strcpy(buf + used, " [");
+        used += strlen(" [");
+        if (s->addrs->virthost) {
+            strcpy(buf + used, s->addrs->virthost);
+            used += strlen(s->addrs->virthost);
+        }
+        if (s->addrs->host_port) {
+            sprintf(buf + used, ":%hu", s->addrs->host_port);
+            used = strlen(buf);
+        }
+        strcpy(buf + used, "]");
+        used += strlen("]");
+    }
+}
+
+static jk_uri_worker_map_t * JK_METHOD ws_vhost_to_uw_map(void *d)
+{
+    server_rec *s = (server_rec *)d;
+    jk_server_conf_t *conf = NULL;
+    if (s == NULL)
+        return NULL;
+    conf = (jk_server_conf_t *) ap_get_module_config(s->module_config,
+                                                     &jk_module);
+    return conf->uw_map;
+}
+
 /* ====================================================================== */
 /* Utility functions                                                      */
 /* ====================================================================== */
@@ -529,6 +608,9 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->write = ws_write;
     s->flush = ws_flush;
     s->add_log_items = ws_add_log_items;
+    s->next_vhost = ws_next_vhost;
+    s->vhost_to_text = ws_vhost_to_text;
+    s->vhost_to_uw_map = ws_vhost_to_uw_map;
 
     /* Clear RECO status */
     s->reco_status = RECO_NONE;
@@ -2488,6 +2570,7 @@ static void jk_init(server_rec * s, ap_pool * p)
     jk_map_alloc(&jk_worker_properties);
     jk_map_put(jk_worker_properties, "ServerRoot", ap_server_root, NULL);
 
+    main_server = s;
     jk_log_fds = ap_make_table(p, 0);
 
     /* step through the servers and open each jk logfile
