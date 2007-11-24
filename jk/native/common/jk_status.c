@@ -172,6 +172,8 @@
 #define JK_STATUS_FORM_HIDDEN_STRING       "<input type=\"hidden\" name=\"%s\" value=\"%s\"/>\n"
 #define JK_STATUS_URI_MAP_TABLE_HEAD       "<tr><th>%s</th><th>%s</th><th>%s</th></tr>\n"
 #define JK_STATUS_URI_MAP_TABLE_ROW        "<tr><td>%s%s</td><td>%s</td><td>%s</td></tr>\n"
+#define JK_STATUS_URI_MAP_TABLE_HEAD2      "<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>\n"
+#define JK_STATUS_URI_MAP_TABLE_ROW2       "<tr><td>%s</td><td>%s%s</td><td>%s</td><td>%s</td></tr>\n"
 #define JK_STATUS_SHOW_AJP_HEAD            "<tr>" \
                                            "<th>Type</th>" \
                                            "<th>Host</th>" \
@@ -1166,37 +1168,59 @@ static int search_sub_worker(jk_ws_service_t *s,
     return JK_TRUE;
 }
 
-static int count_maps(jk_ws_service_t *s,
+static int count_map(jk_uri_worker_map_t *uw_map,
                       const char *worker,
                       jk_logger_t *l)
 {
     unsigned int i;
     int count=0;
-    jk_uri_worker_map_t *uw_map = s->uw_map;
 
     JK_TRACE_ENTER(l);
-    for (i = 0; i < uw_map->size; i++) {
-        uri_worker_record_t *uwr = uw_map->maps[i];
-        if (strcmp(uwr->worker_name, worker)) {
-            continue;
+    if (uw_map) {
+        for (i = 0; i < uw_map->size; i++) {
+            uri_worker_record_t *uwr = uw_map->maps[i];
+            if (strcmp(uwr->worker_name, worker)) {
+                continue;
+            }
+            count++;
         }
-        count++;
     }
+    JK_TRACE_EXIT(l);
+    return count;
+}
+
+static int count_maps(jk_ws_service_t *s,
+                      const char *worker,
+                      jk_logger_t *l)
+{
+    int count=0;
+
+    JK_TRACE_ENTER(l);
+    if (s->next_vhost) {
+        void *srv;
+        for (srv = s->next_vhost(NULL); srv; srv = s->next_vhost(srv)) {
+            count += count_map(s->vhost_to_uw_map(srv), worker, l);
+        }
+    }
+    else if (s->uw_map)
+        count = count_map(s->uw_map, worker, l);
     JK_TRACE_EXIT(l);
     return count;
 }
 
 static void display_map(jk_ws_service_t *s,
                         status_endpoint_t *p,
+                        jk_uri_worker_map_t *uw_map,
                         const char *worker,
+                        const char *server_name,
+                        int *count_ptr,
                         int mime,
                         jk_logger_t *l)
 {
     char buf[64];
     unsigned int i;
-    int count=0;
+    int count;
     status_worker_t *w = p->worker;
-    jk_uri_worker_map_t *uw_map = s->uw_map;
 
     JK_TRACE_ENTER(l);
 
@@ -1211,7 +1235,9 @@ static void display_map(jk_ws_service_t *s,
         if (strcmp(uwr->worker_name, worker)) {
             continue;
         }
-        count++;
+        (*count_ptr)++;
+        count = *count_ptr;
+
         if (uwr->match_type & MATCH_TYPE_DISABLED) {
             match_type[off] = '-';
             off++;
@@ -1222,14 +1248,23 @@ static void display_map(jk_ws_service_t *s,
         }
         match_type[off] = '\0';
         if (mime == JK_STATUS_MIME_HTML) {
-            jk_printf(s, JK_STATUS_URI_MAP_TABLE_ROW,
-                      match_type, uwr->uri,
-                      uri_worker_map_get_match(uwr, buf, l),
-                      uri_worker_map_get_source(uwr, l));
+            if (server_name)
+                jk_printf(s, JK_STATUS_URI_MAP_TABLE_ROW2,
+                          server_name,
+                          match_type, uwr->uri,
+                          uri_worker_map_get_match(uwr, buf, l),
+                          uri_worker_map_get_source(uwr, l));
+            else
+                jk_printf(s, JK_STATUS_URI_MAP_TABLE_ROW,
+                          match_type, uwr->uri,
+                          uri_worker_map_get_match(uwr, buf, l),
+                          uri_worker_map_get_source(uwr, l));
         }
         else if (mime == JK_STATUS_MIME_XML) {
             jk_print_xml_start_elt(s, w, 6, 0, "map");
             jk_print_xml_att_int(s, 8, "id", count);
+            if (server_name)
+                jk_print_xml_att_string(s, 8, "server", server_name);
             jk_print_xml_att_string2(s, 8, "uri", match_type, uwr->uri);
             jk_print_xml_att_string(s, 8, "type", uri_worker_map_get_match(uwr, buf, l));
             jk_print_xml_att_string(s, 8, "source", uri_worker_map_get_source(uwr, l));
@@ -1238,12 +1273,16 @@ static void display_map(jk_ws_service_t *s,
         else if (mime == JK_STATUS_MIME_TXT) {
             jk_puts(s, "Map:");
             jk_printf(s, " id=%d", count);
+            if (server_name)
+                jk_printf(s, " server=\"%s\"", server_name);
             jk_printf(s, " uri=\"%s%s\"", match_type, uwr->uri);
             jk_printf(s, " type=\"%s\"", uri_worker_map_get_match(uwr, buf, l));
             jk_printf(s, " source=\"%s\"", uri_worker_map_get_source(uwr, l));
             jk_puts(s, "\n");
         }
         else if (mime == JK_STATUS_MIME_PROP) {
+            if (server_name)
+               jk_print_prop_item_string(s, w, worker, "map", count, "server", server_name);
             jk_print_prop_item_string2(s, w, worker, "map", count, "uri", match_type, uwr->uri);
             jk_print_prop_item_string(s, w, worker, "map", count, "type", uri_worker_map_get_match(uwr, buf, l));
             jk_print_prop_item_string(s, w, worker, "map", count, "source", uri_worker_map_get_source(uwr, l));
@@ -1259,15 +1298,22 @@ static void display_maps(jk_ws_service_t *s,
 {
     int mime;
     unsigned int hide;
+    int has_server_iterator = 0;
     int count=0;
     const char *arg;
     status_worker_t *w = p->worker;
+    jk_uri_worker_map_t *uw_map;
+    char server_name[80];
+    void *srv;
 
     JK_TRACE_ENTER(l);
     status_get_string(p, JK_STATUS_ARG_MIME, NULL, &arg, l);
     mime = status_mime_int(arg);
     hide = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
                           JK_STATUS_ARG_OPTION_NO_MAPS;
+    if (s->next_vhost)
+        has_server_iterator = 1;
+
     count = count_maps(s, worker, l);
 
     if (hide) {
@@ -1287,12 +1333,29 @@ static void display_maps(jk_ws_service_t *s,
             status_write_uri(s, p, "Hide", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
                              NULL, NULL, JK_STATUS_ARG_OPTION_NO_MAPS, 0, NULL, l);
             jk_puts(s, "]</h3><table>\n");
-            jk_printf(s, JK_STATUS_URI_MAP_TABLE_HEAD,
-                      "URI", "Match Type", "Source");
+            if (has_server_iterator)
+                jk_printf(s, JK_STATUS_URI_MAP_TABLE_HEAD2,
+                          "Server", "URI", "Match Type", "Source");
+            else
+                jk_printf(s, JK_STATUS_URI_MAP_TABLE_HEAD,
+                          "URI", "Match Type", "Source");
         }
-
-        display_map(s, p, worker, mime, l);
-
+        count = 0;
+        if (has_server_iterator) {
+            for (srv = s->next_vhost(NULL); srv; srv = s->next_vhost(srv)) {
+                uw_map = s->vhost_to_uw_map(srv);
+                if (uw_map) {
+                    s->vhost_to_text(srv, server_name, 80);
+                    display_map(s, p, uw_map, worker, server_name, &count, mime, l);
+                }
+            }
+        }
+        else {
+            uw_map = s->uw_map;
+            if (uw_map) {
+                display_map(s, p, uw_map, worker, NULL, &count, mime, l);
+            }
+        }
         if (mime == JK_STATUS_MIME_HTML) {
             jk_puts(s, "</table>\n");
         }
