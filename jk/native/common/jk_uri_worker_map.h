@@ -148,7 +148,7 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
                         jk_logger_t *l);
 
 int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
-                          jk_logger_t *l);
+                          int force, jk_logger_t *l);
 
 #ifdef __cplusplus
 }

@@ -611,7 +611,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
         return NULL;
     }
     if (uw_map->fname) {
-        uri_worker_map_update(uw_map, l);
+        uri_worker_map_update(uw_map, 0, l);
         if (!uw_map->size) {
             jk_log(l, JK_LOG_INFO,
                    "No worker maps defined for %s.",
@@ -760,12 +760,13 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
 }
 
 int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
-                          jk_logger_t *l)
+                          int force, jk_logger_t *l)
 {
     int rc = JK_TRUE;
     time_t now = time(NULL);
 
-    if (uw_map->reload > 0 && difftime(now, uw_map->checked) > uw_map->reload) {
+    if ((uw_map->reload > 0 && difftime(now, uw_map->checked) > uw_map->reload) ||
+        force) {
         struct stat statbuf;
         uw_map->checked = now;
         if ((rc = jk_stat(uw_map->fname, &statbuf)) == -1) {
