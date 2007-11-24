@@ -1186,55 +1186,23 @@ static int count_maps(jk_ws_service_t *s,
     return count;
 }
 
-static void display_maps(jk_ws_service_t *s,
-                         status_endpoint_t *p,
-                         const char *worker,
-                         jk_logger_t *l)
+static void display_map(jk_ws_service_t *s,
+                        status_endpoint_t *p,
+                        const char *worker,
+                        int mime,
+                        jk_logger_t *l)
 {
     char buf[64];
     unsigned int i;
-    int mime;
-    unsigned int hide;
     int count=0;
-    const char *arg;
     status_worker_t *w = p->worker;
     jk_uri_worker_map_t *uw_map = s->uw_map;
 
     JK_TRACE_ENTER(l);
-    status_get_string(p, JK_STATUS_ARG_MIME, NULL, &arg, l);
-    mime = status_mime_int(arg);
-    hide = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
-                          JK_STATUS_ARG_OPTION_NO_MAPS;
-    count = count_maps(s, worker, l);
 
-    if (count) {
-
-        if (hide) {
-            if (mime == JK_STATUS_MIME_HTML) {
-                jk_puts(s, "<p>\n");
-                status_write_uri(s, p, "Show URI Mappings", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
-                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_MAPS, NULL, l);
-                jk_puts(s, "</p>\n");
-            }
-        }
-        else {
-            if (mime == JK_STATUS_MIME_HTML) {
-                jk_printf(s, "<hr/><h3>URI Mappings for %s (%d maps) [", worker, count);
-                status_write_uri(s, p, "Hide", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
-                                 NULL, NULL, JK_STATUS_ARG_OPTION_NO_MAPS, 0, NULL, l);
-                jk_puts(s, "]</h3><table>\n");
-                jk_printf(s, JK_STATUS_URI_MAP_TABLE_HEAD,
-                          "URI", "Match Type", "Source");
-            }
-        }
+    if (uw_map->fname) {
+        uri_worker_map_update(uw_map, 1, l);
     }
-
-    if (hide) {
-        return;
-        JK_TRACE_EXIT(l);
-    }
-
-    count = 0;
     for (i = 0; i < uw_map->size; i++) {
         uri_worker_record_t *uwr = uw_map->maps[i];
         char match_type[3];
@@ -1281,7 +1249,50 @@ static void display_maps(jk_ws_service_t *s,
             jk_print_prop_item_string(s, w, worker, "map", count, "source", uri_worker_map_get_source(uwr, l));
         }
     }
+    JK_TRACE_EXIT(l);
+}
+
+static void display_maps(jk_ws_service_t *s,
+                         status_endpoint_t *p,
+                         const char *worker,
+                         jk_logger_t *l)
+{
+    int mime;
+    unsigned int hide;
+    int count=0;
+    const char *arg;
+    status_worker_t *w = p->worker;
+
+    JK_TRACE_ENTER(l);
+    status_get_string(p, JK_STATUS_ARG_MIME, NULL, &arg, l);
+    mime = status_mime_int(arg);
+    hide = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
+                          JK_STATUS_ARG_OPTION_NO_MAPS;
+    count = count_maps(s, worker, l);
+
+    if (hide) {
+        if (count && mime == JK_STATUS_MIME_HTML) {
+            jk_puts(s, "<p>\n");
+            status_write_uri(s, p, "Show URI Mappings", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
+                             NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_MAPS, NULL, l);
+            jk_puts(s, "</p>\n");
+        }
+        JK_TRACE_EXIT(l);
+        return;
+    }
+
     if (count) {
+        if (mime == JK_STATUS_MIME_HTML) {
+            jk_printf(s, "<hr/><h3>URI Mappings for %s (%d maps) [", worker, count);
+            status_write_uri(s, p, "Hide", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
+                             NULL, NULL, JK_STATUS_ARG_OPTION_NO_MAPS, 0, NULL, l);
+            jk_puts(s, "]</h3><table>\n");
+            jk_printf(s, JK_STATUS_URI_MAP_TABLE_HEAD,
+                      "URI", "Match Type", "Source");
+        }
+
+        display_map(s, p, worker, mime, l);
+
         if (mime == JK_STATUS_MIME_HTML) {
             jk_puts(s, "</table>\n");
         }
