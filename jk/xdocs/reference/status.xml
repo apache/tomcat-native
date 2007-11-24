@@ -157,6 +157,9 @@ blocks of information:
 <subsection name="Special Considerations concerning URL Maps and Virtual Hosts">
 <br/>
 <p>
+<b>Note: </b>The following restriction has been removed starting with version 1.2.26.
+</p>
+<p>
 The Apache module mod_jk makes use of the internal Apache httpd infrastructure concerning
 virtual hosts. The downside of this is, that the status worker can only show URL maps, for
 the virtual host it is defined in. It is not able to reach the configuration objects

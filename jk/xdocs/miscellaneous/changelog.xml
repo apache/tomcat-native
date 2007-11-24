@@ -43,6 +43,15 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        JKStatus: Enhance URI to worker map listing for Apache httpd.
+        We now list maps for all virtual servers and not only
+        the one, in which JKStatus itself was called. (rjung)
+      </update>
+      <update>
+        JKStatus: Enhance URI to worker map listing.
+        Update stale uriworkermap.properties immediately. (rjung)
+      </update>
       <fix>
         <bug>43873</bug>: Fix small memory leak occuring during httpd restart. (rjung)
       </fix>

@@ -241,7 +241,8 @@ the exclusion rule must be used
 For Apache you can define individual uriworkermap files per virtual host.
 The directive JkMountFile can be used in the main server and in each virtual host.
 If a virtual host does not use JkMountfile, but JkMountCopy is set to 'On',
-then it inhertis the JkMountFile from the main server.
+then it inherits the JkMountFile from the main server. If you want all vhost to inherit
+mounts from the main server, you can set JkMountCopy to 'All' in the main server.
 </p>
 </subsection>
 </section>
@@ -277,7 +278,31 @@ rule as disabled in the new file. Rules never got deleted.
 <p>
 The configuration view of the status worker also shows the various mapping rules.
 After each worker's configuration, the rules are listed, that forward to this worker.
-The list contains three columns:
+The list contains four columns:
+<ul>
+<li>
+the name of the virtual server
+</li>
+<li>
+the URI pattern, prefixed with '-' for a disabled pattern and '!' for an exclusion pattern
+</li>
+<li>
+the type of the rule: Exact or Wildchar
+</li>
+<li>
+and the source of the rule definition: 'worker definition' for the workers.properties file (mount attribute),
+'JkMount' for Apache httpd JkMount and it's relatives and finally 'uriworkermap' for the uriworkermap file.
+</li>
+</ul>
+</p>
+<p>
+<b>Note: </b>The following restriction has been removed starting with version 1.2.26.
+<br/>
+For Apache httpd, there is an important subtlety: the request going to the status worker
+gets executed in the context of some server (main or virtual). The status worker will only show the
+mapping rules, that are defined for this server (main or virtual).
+<br/>
+Until version 1.2.25 the list contained three columns:
 <ul>
 <li>
 the type of the rule: Exact or Wildchar, eventually prefixed with Disabled or Unmount (for exclusion rules)
@@ -290,9 +315,6 @@ and the source of the rule definition: 'worker definition' for the workers.prope
 'JkMount' for Apache httpd JkMount and it's relatives and finally 'uriworkermap' for the uriworkermap file.
 </li>
 </ul>
-For Apache httpd, there is an important subtlety: the request going to the status worker
-gets executed in the context of some server (main or virtual). The status worker will only show the
-mapping rules, that are defined for this server (main or virtual).
 </p>
 </section>
 

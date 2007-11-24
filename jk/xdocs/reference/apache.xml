@@ -171,6 +171,9 @@ or JkUnMount. The Mounts defined by JkMountFile and JkAutoAlias
 will only be inherited, if the VirtualHost does not define
 it's own JkMountFile or JkAutoAlias.
 <br/>
+If you want all vhost to inherit mounts from the main server,
+you can set JkMountCopy to 'All' in the main server.
+<br/>
 This directive is only allowed inside VirtualHost.
 <br/>
 The default is Off.
