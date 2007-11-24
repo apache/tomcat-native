@@ -1858,6 +1858,9 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->retries = JK_RETRIES;
     s->response_started = JK_FALSE;
     s->add_log_items = NULL;
+    s->next_vhost = NULL;
+    s->vhost_to_text = NULL;
+    s->vhost_to_uw_map = NULL;
 }
 
 #ifdef _MT_CODE_PTHREAD

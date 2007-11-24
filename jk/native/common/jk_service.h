@@ -283,6 +283,21 @@ struct jk_ws_service
                                       const char *const *log_names,
                                       const char *const *log_values,
                                       unsigned num_of_items);
+
+    /*
+     * Iterate through all vhosts
+     */
+    void *(JK_METHOD * next_vhost) (void *d);
+
+    /*
+     * String representation of a vhost
+     */
+    void (JK_METHOD * vhost_to_text) (void *d, char *buf, int len);
+
+    /*
+     * Get uw_map associated with a vhost
+     */
+    jk_uri_worker_map_t *(JK_METHOD * vhost_to_uw_map) (void *d);
 };
 
 /*
