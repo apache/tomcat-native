@@ -170,8 +170,8 @@
 #define JK_STATUS_FORM_START               "<form method=\"%s\" action=\"%s\">\n"
 #define JK_STATUS_FORM_HIDDEN_INT          "<input type=\"hidden\" name=\"%s\" value=\"%d\"/>\n"
 #define JK_STATUS_FORM_HIDDEN_STRING       "<input type=\"hidden\" name=\"%s\" value=\"%s\"/>\n"
-#define JK_STATUS_TABLE_HEAD_3_STRING      "<tr><th>%s</th><th>%s</th><th>%s</th></tr>\n"
-#define JK_STATUS_TABLE_ROW_3_STRING       "<tr><td>%s</td><td>%s</td><td>%s</td></tr>\n"
+#define JK_STATUS_URI_MAP_TABLE_HEAD       "<tr><th>%s</th><th>%s</th><th>%s</th></tr>\n"
+#define JK_STATUS_URI_MAP_TABLE_ROW        "<tr><td>%s%s</td><td>%s</td><td>%s</td></tr>\n"
 #define JK_STATUS_SHOW_AJP_HEAD            "<tr>" \
                                            "<th>Type</th>" \
                                            "<th>Host</th>" \
@@ -420,6 +420,15 @@ static void jk_print_xml_att_string(jk_ws_service_t *s,
     jk_printf(s, "%*s%s=\"%s\"\n", indentation, "", key, value ? value : "");
 }
 
+static void jk_print_xml_att_string2(jk_ws_service_t *s,
+                                    int indentation,
+                                    const char *key,
+                                    const char *value1, const char *value2)
+{
+    jk_printf(s, "%*s%s=\"%s%s\"\n", indentation, "", key,
+              value1 ? value1 : "", value2 ? value2 : "");
+}
+
 static void jk_print_xml_att_int(jk_ws_service_t *s,
                                  int indentation,
                                  const char *key, int value)
@@ -498,6 +507,21 @@ static void jk_print_prop_item_string(jk_ws_service_t *s, status_worker_t *w,
     }
     else {
         jk_printf(s, "%s.%s.%d.%s=%s\n", w->prefix, list, num, key, value ? value : "");
+    }
+}
+
+static void jk_print_prop_item_string2(jk_ws_service_t *s, status_worker_t *w,
+                                       const char *name, const char *list, int num,
+                                       const char *key,
+                                       const char *value1, const char *value2)
+{
+    if (name) {
+        jk_printf(s, "%s.%s.%s.%d.%s=%s%s\n", w->prefix, name, list, num,
+                  key, value1 ? value1 : "", value2 ? value2 : "");
+    }
+    else {
+        jk_printf(s, "%s.%s.%d.%s=%s%s\n", w->prefix, list, num,
+                  key, value1 ? value1 : "", value2 ? value2 : "");
     }
 }
 
@@ -1199,8 +1223,8 @@ static void display_maps(jk_ws_service_t *s,
                 status_write_uri(s, p, "Hide", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
                                  NULL, NULL, JK_STATUS_ARG_OPTION_NO_MAPS, 0, NULL, l);
                 jk_puts(s, "]</h3><table>\n");
-                jk_printf(s, JK_STATUS_TABLE_HEAD_3_STRING,
-                          "Match Type", "Uri", "Source");
+                jk_printf(s, JK_STATUS_URI_MAP_TABLE_HEAD,
+                          "URI", "Match Type", "Source");
             }
         }
     }
@@ -1213,47 +1237,47 @@ static void display_maps(jk_ws_service_t *s,
     count = 0;
     for (i = 0; i < uw_map->size; i++) {
         uri_worker_record_t *uwr = uw_map->maps[i];
+        char match_type[3];
+        int off = 0;
+
         if (strcmp(uwr->worker_name, worker)) {
             continue;
         }
         count++;
-
+        if (uwr->match_type & MATCH_TYPE_DISABLED) {
+            match_type[off] = '-';
+            off++;
+        }
+        if (uwr->match_type & MATCH_TYPE_NO_MATCH) {
+            match_type[off] = '!';
+            off++;
+        }
+        match_type[off] = '\0';
         if (mime == JK_STATUS_MIME_HTML) {
-            jk_printf(s, JK_STATUS_TABLE_ROW_3_STRING,
-                      uri_worker_map_get_match(uwr, buf, l), uwr->uri,
+            jk_printf(s, JK_STATUS_URI_MAP_TABLE_ROW,
+                      match_type, uwr->uri,
+                      uri_worker_map_get_match(uwr, buf, l),
                       uri_worker_map_get_source(uwr, l));
         }
         else if (mime == JK_STATUS_MIME_XML) {
             jk_print_xml_start_elt(s, w, 6, 0, "map");
             jk_print_xml_att_int(s, 8, "id", count);
+            jk_print_xml_att_string2(s, 8, "uri", match_type, uwr->uri);
             jk_print_xml_att_string(s, 8, "type", uri_worker_map_get_match(uwr, buf, l));
-            jk_print_xml_att_string(s, 8, "uri", uwr->uri);
             jk_print_xml_att_string(s, 8, "source", uri_worker_map_get_source(uwr, l));
             jk_print_xml_stop_elt(s, 6, 1);
         }
         else if (mime == JK_STATUS_MIME_TXT) {
             jk_puts(s, "Map:");
             jk_printf(s, " id=%d", count);
+            jk_printf(s, " uri=\"%s%s\"", match_type, uwr->uri);
             jk_printf(s, " type=\"%s\"", uri_worker_map_get_match(uwr, buf, l));
-            jk_printf(s, " uri=\"%s\"", uwr->uri);
             jk_printf(s, " source=\"%s\"", uri_worker_map_get_source(uwr, l));
             jk_puts(s, "\n");
         }
         else if (mime == JK_STATUS_MIME_PROP) {
-            char *mount = jk_pool_alloc(s->pool, sizeof(char *) * (strlen(uwr->uri)+3));
-            char *off = mount;
-            if (uwr->match_type & MATCH_TYPE_DISABLED) {
-                *off = '-';
-                off++;
-            }
-            if (uwr->match_type & MATCH_TYPE_NO_MATCH) {
-                *off = '!';
-                off++;
-            }
-            strcpy(off, uwr->uri);
-            jk_print_prop_att_string(s, w, worker, "mount", mount);
+            jk_print_prop_item_string2(s, w, worker, "map", count, "uri", match_type, uwr->uri);
             jk_print_prop_item_string(s, w, worker, "map", count, "type", uri_worker_map_get_match(uwr, buf, l));
-            jk_print_prop_item_string(s, w, worker, "map", count, "uri", uwr->uri);
             jk_print_prop_item_string(s, w, worker, "map", count, "source", uri_worker_map_get_source(uwr, l));
         }
     }
