@@ -2269,9 +2269,7 @@ static int jk_handler(request_rec * r)
             apr_table_setn(r->notes, JK_NOTE_WORKER_TYPE,
                            wc_get_name_for_type(worker->type, xconf->log));
 
-            if (xconf->format != NULL) {
-                request_begin = apr_time_now();
-            }
+            request_begin = apr_time_now();
 
             if (init_ws_service(&private_data, &s, xconf)) {
                 jk_endpoint_t *end = NULL;

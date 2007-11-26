@@ -2183,9 +2183,7 @@ static int jk_handler(request_rec * r)
             ap_table_setn(r->notes, JK_NOTE_WORKER_TYPE,
                           wc_get_name_for_type(worker->type, conf->log));
 #ifndef NO_GETTIMEOFDAY
-            if (conf->format != NULL) {
-                gettimeofday(&tv_begin, NULL);
-            }
+            gettimeofday(&tv_begin, NULL);
 #endif
 
             if (init_ws_service(&private_data, &s, conf)) {
