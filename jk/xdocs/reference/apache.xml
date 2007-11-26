@@ -433,9 +433,10 @@ Most of them are are only useful in combination with a load balancer worker.
 <attributes name="Note">
   <attribute name="JK_WORKER_NAME" required="false">Name of the worker selected by the URI mapping</attribute>
   <attribute name="JK_WORKER_TYPE" required="false">Type of the worker selected by the URI mapping</attribute>
-  <attribute name="JK_WORKER_ROUTE" required="false">Actual worker name selected by the URI mapping (usually a member of the load balancer)</attribute>
-  <attribute name="JK_REQUEST_DURATION" required="false">Request duration in seconds and microseconds.
-                                                         At the moment only available if JkRequestLogFormat is set.</attribute>
+  <attribute name="JK_WORKER_ROUTE" required="false">Actual worker name selected by the URI mapping (usually a member of the load balancer).<br/>
+                                                         Before version 1.2.26 only available if JkRequestLogFormat is set.</attribute>
+  <attribute name="JK_REQUEST_DURATION" required="false">Request duration in seconds and microseconds.<br/>
+                                                         Before version 1.2.26 only available if JkRequestLogFormat is set.</attribute>
   <attribute name="JK_LB_FIRST_NAME" required="false">Load-Balancer: Name of the first worker tried</attribute>
   <attribute name="JK_LB_FIRST_TYPE" required="false">Load-Balancer: Type of the first worker tried</attribute>
   <attribute name="JK_LB_FIRST_ACCESSED" required="false">Load-Balancer: Access count for the first worker tried</attribute>
