@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Apache: Create JK_WORKER_ROUTE and JK_REQUEST_DURATION notes for
+        access log even if no JkRequestLogFormat is set. (rjung)
+      </update>
+      <update>
         JKStatus: Enhance URI to worker map listing for Apache httpd.
         We now list maps for all virtual servers and not only
         the one, in which JKStatus itself was called. (rjung)

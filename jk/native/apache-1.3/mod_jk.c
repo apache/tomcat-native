@@ -2158,6 +2158,8 @@ static int jk_handler(request_rec * r)
         if (worker) {
 #ifndef NO_GETTIMEOFDAY
             struct timeval tv_begin, tv_end;
+            long micro, seconds;
+            char *duration = NULL;
 #endif
             int rc = JK_FALSE;
             int is_error = JK_HTTP_SERVER_ERROR;
@@ -2207,23 +2209,21 @@ static int jk_handler(request_rec * r)
                         }
                     }
                 }
-                if (conf->format != NULL) {
 #ifndef NO_GETTIMEOFDAY
-                    long micro, seconds;
-                    char *duration = NULL;
-                    gettimeofday(&tv_end, NULL);
-                    if (tv_end.tv_usec < tv_begin.tv_usec) {
-                        tv_end.tv_usec += 1000000;
-                        tv_end.tv_sec--;
-                    }
-                    micro = tv_end.tv_usec - tv_begin.tv_usec;
-                    seconds = tv_end.tv_sec - tv_begin.tv_sec;
-                    duration =
-                        ap_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
-                    ap_table_setn(r->notes, JK_NOTE_REQUEST_DURATION, duration);
+                gettimeofday(&tv_end, NULL);
+                if (tv_end.tv_usec < tv_begin.tv_usec) {
+                    tv_end.tv_usec += 1000000;
+                    tv_end.tv_sec--;
+                }
+                micro = tv_end.tv_usec - tv_begin.tv_usec;
+                seconds = tv_end.tv_sec - tv_begin.tv_sec;
+                duration =
+                    ap_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
+                ap_table_setn(r->notes, JK_NOTE_REQUEST_DURATION, duration);
 #endif
-                    if (s.route && *s.route)
-                        ap_table_setn(r->notes, JK_NOTE_WORKER_ROUTE, s.route);
+                if (s.route && *s.route)
+                    ap_table_setn(r->notes, JK_NOTE_WORKER_ROUTE, s.route);
+                if (conf->format != NULL) {
                     request_log_transaction(r, conf);
                 }
             }

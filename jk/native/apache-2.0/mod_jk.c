@@ -2243,6 +2243,9 @@ static int jk_handler(request_rec * r)
         }
 
         if (worker) {
+            long micro, seconds;
+            char *duration = NULL;
+            apr_time_t rd;
             apr_time_t request_begin = 0;
             int is_error = HTTP_INTERNAL_SERVER_ERROR;
             int rc = JK_FALSE;
@@ -2315,18 +2318,16 @@ static int jk_handler(request_rec * r)
                 JK_TRACE_EXIT(xconf->log);
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
+            rd = apr_time_now() - request_begin;
+            seconds = (long)apr_time_sec(rd);
+            micro = (long)(rd - apr_time_from_sec(seconds));
+
+            duration = apr_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
+            apr_table_setn(r->notes, JK_NOTE_REQUEST_DURATION, duration);
+            if (s.route && *s.route)
+                apr_table_setn(r->notes, JK_NOTE_WORKER_ROUTE, s.route);
+
             if (xconf->format != NULL) {
-                long micro, seconds;
-                char *duration = NULL;
-                apr_time_t rd = apr_time_now() - request_begin;
-                seconds = (long)apr_time_sec(rd);
-                micro = (long)(rd - apr_time_from_sec(seconds));
-
-                duration = apr_psprintf(r->pool, "%.1ld.%.6ld", seconds, micro);
-                apr_table_setn(r->notes, JK_NOTE_REQUEST_DURATION, duration);
-                if (s.route && *s.route)
-                    apr_table_setn(r->notes, JK_NOTE_WORKER_ROUTE, s.route);
-
                 request_log_transaction(r, xconf);
             }
 
