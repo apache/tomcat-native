@@ -1945,6 +1945,8 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
         return err_string;
     }
 
+    if (!jk_worker_properties)
+        jk_map_alloc(&jk_worker_properties);
     if (jk_map_read_property(jk_worker_properties, line,
                              JK_MAP_HANDLE_DUPLICATES, conf->log) == JK_FALSE)
         return apr_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line, NULL);
@@ -2757,7 +2759,8 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     int is_threaded;
     int mpm_threads = 1;
 
-    jk_map_alloc(&jk_worker_properties);
+    if (!jk_worker_properties)
+        jk_map_alloc(&jk_worker_properties);
     jk_map_put(jk_worker_properties, "ServerRoot", ap_server_root, NULL);
 
 #if !defined(WIN32) && !defined(NETWARE)

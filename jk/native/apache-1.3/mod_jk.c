@@ -1911,6 +1911,8 @@ static const char *jk_set_worker_property(cmd_parms * cmd,
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
+    if (!jk_worker_properties)
+        jk_map_alloc(&jk_worker_properties);
     if (jk_map_read_property(jk_worker_properties, line,
                              JK_MAP_HANDLE_DUPLICATES, conf->log) == JK_FALSE)
         return ap_pstrcat(cmd->temp_pool, "Invalid JkWorkerProperty ", line, NULL);
@@ -2560,7 +2562,8 @@ static void jk_init(server_rec * s, ap_pool * p)
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
-    jk_map_alloc(&jk_worker_properties);
+    if (!jk_worker_properties)
+        jk_map_alloc(&jk_worker_properties);
     jk_map_put(jk_worker_properties, "ServerRoot", ap_server_root, NULL);
 
     main_server = s;
