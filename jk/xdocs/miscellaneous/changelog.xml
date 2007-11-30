@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Common: Maintain idle connections in decreasing (LRU)
+        slot order. (rjung)
+      </update>
+      <update>
         Apache: Create JK_WORKER_ROUTE and JK_REQUEST_DURATION notes for
         access log even if no JkRequestLogFormat is set. (rjung)
       </update>

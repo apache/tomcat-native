@@ -2609,7 +2609,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
         if (rc) {
             unsigned int i, n = 0, cnt = 0;
             /* Count open slots */
-            for (i = 0; i < aw->ep_cache_sz; i++) {
+            for (i = aw->ep_cache_sz - 1; i >= 0; i--) {
                 if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd))
                     cnt++;
             }
