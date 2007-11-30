@@ -2607,14 +2607,15 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
         }
         JK_ENTER_CS(&aw->cs, rc);
         if (rc) {
-            unsigned int i, n = 0, cnt = 0;
+            unsigned int n = 0, cnt = 0;
+            int i;
             /* Count open slots */
-            for (i = aw->ep_cache_sz - 1; i >= 0; i--) {
+            for (i = (int)aw->ep_cache_sz - 1; i >= 0; i--) {
                 if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd))
                     cnt++;
             }
             /* Handle worker cache and recycle timeouts */
-            for (i = 0; i < aw->ep_cache_sz; i++) {
+            for (i = (int)aw->ep_cache_sz - 1; i >= 0; i--) {
                 /* Skip the closed sockets */
                 if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
                     int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
@@ -2627,11 +2628,11 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
                         ajp_reset_endpoint(aw->ep_cache[i], l);
                         if (JK_IS_DEBUG_LEVEL(l))
                             jk_log(l, JK_LOG_DEBUG,
-                                    "cleaning pool slot=%u elapsed %d in %d",
+                                    "cleaning pool slot=%d elapsed %d in %d",
                                     i, elapsed, (int)(difftime(time(NULL), rt)));
                     }
                 }
-                if ((cnt - n) <= aw->ep_mincache_sz) {
+                if (cnt <= aw->ep_mincache_sz + n) {
                     if (JK_IS_DEBUG_LEVEL(l)) {
                         jk_log(l, JK_LOG_DEBUG,
                         "reached pool min size %u from %u cache slots",
