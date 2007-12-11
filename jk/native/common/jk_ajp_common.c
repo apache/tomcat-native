@@ -686,7 +686,7 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
 static void ajp_reset_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 {
     if (IS_VALID_SOCKET(ae->sd) && !ae->reuse) {
-        jk_shutdown_socket(ae->sd);
+        jk_shutdown_socket(ae->sd, l);
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
             "reset socket with sd = %u", ae->sd );
@@ -704,7 +704,7 @@ void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
     JK_TRACE_ENTER(l);
 
     if (IS_VALID_SOCKET(ae->sd)) {
-        jk_shutdown_socket(ae->sd);
+        jk_shutdown_socket(ae->sd, l);
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "closed socket with sd = %d", ae->sd);
@@ -744,7 +744,7 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
         JK_LEAVE_CS(&aw->cs, rc);
         /* Close previous socket */
         if (IS_VALID_SOCKET(sock))
-            jk_shutdown_socket(sock);
+            jk_shutdown_socket(sock, l);
     }
 }
 
@@ -925,7 +925,7 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     }
 
     if ((rc = jk_tcp_socket_sendfull(ae->sd, msg->buf,
-                                     msg->len)) > 0) {
+                                     msg->len, l)) > 0) {
         ae->endpoint.wr += (jk_uint64_t)rc;
         JK_TRACE_EXIT(l);
         ae->last_errno = 0;
@@ -954,7 +954,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
 
     JK_TRACE_ENTER(l);
 
-    rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN);
+    rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN, l);
 
     if (rc < 0) {
         ae->last_errno = errno;
@@ -1030,7 +1030,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     msg->len = msglen;
     msg->pos = 0;
 
-    rc = jk_tcp_socket_recvfull(ae->sd, msg->buf, msglen);
+    rc = jk_tcp_socket_recvfull(ae->sd, msg->buf, msglen, l);
     if (rc < 0) {
         ae->last_errno = errno;
         if (rc == JK_SOCKET_EOF) {
@@ -1210,11 +1210,11 @@ static int ajp_send_request(jk_endpoint_t *e,
     while (IS_VALID_SOCKET(ae->sd)) {
         int rc = 0;
         err = 0;
-        if (!jk_is_socket_connected(ae->sd)) {
+        if (!jk_is_socket_connected(ae->sd, l)) {
             jk_log(l, JK_LOG_DEBUG,
                    "(%s) socket %d is not connected any more (errno=%d)",
                    ae->worker->name, ae->sd, errno);
-            jk_shutdown_socket(ae->sd);
+            jk_shutdown_socket(ae->sd, l);
             ae->sd = JK_INVALID_SOCKET;
             err = 1;
         }
@@ -1261,7 +1261,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) error sending request. Unrecoverable operation",
                        ae->worker->name);
-                jk_shutdown_socket(ae->sd);
+                jk_shutdown_socket(ae->sd, l);
                 ae->sd = JK_INVALID_SOCKET;
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -1310,7 +1310,7 @@ static int ajp_send_request(jk_endpoint_t *e,
              */
             if (ajp_connection_tcp_send_message(ae, op->request, l) != JK_TRUE) {
                 /* Close the socket if unable to send request */
-                jk_shutdown_socket(ae->sd);
+                jk_shutdown_socket(ae->sd, l);
                 ae->sd = JK_INVALID_SOCKET;
                 jk_log(l, JK_LOG_INFO,
                        "(%s) error sending request on a fresh connection (errno=%d)",
@@ -1321,7 +1321,7 @@ static int ajp_send_request(jk_endpoint_t *e,
         }
         else {
             /* Close the socket if unable to connect */
-            jk_shutdown_socket(ae->sd);
+            jk_shutdown_socket(ae->sd, l);
             ae->sd = JK_INVALID_SOCKET;
             jk_log(l, JK_LOG_INFO,
                    "(%s) error connecting to the backend server (errno=%d)",
@@ -1355,7 +1355,7 @@ static int ajp_send_request(jk_endpoint_t *e,
     if (postlen > AJP_HEADER_LEN) {
         if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
             /* Close the socket if unable to send request */
-            jk_shutdown_socket(ae->sd);
+            jk_shutdown_socket(ae->sd, l);
             ae->sd = JK_INVALID_SOCKET;
             jk_log(l, JK_LOG_ERROR, "(%s) failed resending request body (%d)",
                    ae->worker->name, postlen);
@@ -1375,7 +1375,7 @@ static int ajp_send_request(jk_endpoint_t *e,
         if (postlen > AJP_HEADER_LEN) {
             if (ajp_connection_tcp_send_message(ae, s->reco_buf, l) != JK_TRUE) {
                 /* Close the socket if unable to send request */
-                jk_shutdown_socket(ae->sd);
+                jk_shutdown_socket(ae->sd, l);
                 ae->sd = JK_INVALID_SOCKET;
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) failed resending request body (lb mode) (%d)",
@@ -1425,7 +1425,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             s->content_read = (jk_uint64_t)len;
             if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
                 /* Close the socket if unable to send request */
-                jk_shutdown_socket(ae->sd);
+                jk_shutdown_socket(ae->sd, l);
                 ae->sd = JK_INVALID_SOCKET;
                 jk_log(l, JK_LOG_ERROR, "(%s) error sending request body",
                        ae->worker->name);
@@ -1810,7 +1810,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) Tomcat is down or network problems",
                         p->worker->name);
-                jk_shutdown_socket(p->sd);
+                jk_shutdown_socket(p->sd, l);
                 p->sd = JK_INVALID_SOCKET;
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -2218,7 +2218,7 @@ int ajp_validate(jk_worker_t *pThis,
                    p->name, p->host, p->port);
 
         if (p->port > 1024) {
-            if (jk_resolve(p->host, p->port, &p->worker_inet_addr)) {
+            if (jk_resolve(p->host, p->port, &p->worker_inet_addr, l)) {
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
@@ -2499,7 +2499,7 @@ int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
                     jk_log(l, JK_LOG_DEBUG,
                     "Shutting down held socket %u in worker %s",
                             sock, p->worker->name);
-                jk_shutdown_socket(sock);
+                jk_shutdown_socket(sock, l);
             }
             if (i >= 0) {
                 if (JK_IS_DEBUG_LEVEL(l))

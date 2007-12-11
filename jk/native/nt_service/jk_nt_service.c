@@ -871,7 +871,7 @@ static void stop_tomcat(char *name,
         return;
     } 
     
-    if(jk_resolve("localhost", port, &in)) {
+    if(jk_resolve("localhost", port, &in, NULL)) {
         int sd = jk_open_socket(&in, JK_TRUE, 0, -1, NULL);
         if(sd >0) {
             int rc = JK_FALSE;
@@ -910,7 +910,8 @@ static void stop_tomcat(char *name,
     
                     if(0 > jk_tcp_socket_sendfull(sd, 
                                                   msg->buf,
-                                                  msg->len)) {
+                                                  msg->len,
+                                                  NULL)) {
                         rc = JK_FALSE;
                     }
                 }                                                    
@@ -921,7 +922,7 @@ static void stop_tomcat(char *name,
                     rc = JK_TRUE;
                 }
             }
-            jk_close_socket(sd);
+            jk_close_socket(sd, NULL);
             if(JK_TRUE == rc) {
                 if(WAIT_OBJECT_0 == WaitForSingleObject(hTomcat, 30*1000)) {
                     return;

@@ -117,7 +117,7 @@ static int sononblock(jk_sock_t sd)
 
 #if defined (WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 /* WIN32 implementation */
-static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
+static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_logger_t *l)
 {
     int rc;
     if (timeout <= 0)
@@ -167,7 +167,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
 
 #elif !defined(NETWARE)
 /* POSIX implementation */
-static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
+static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_logger_t *l)
 {
     int rc = 0;
 
@@ -216,7 +216,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
 }
 #else
 /* NETWARE implementation - blocking for now */
-static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout)
+static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_logger_t *l)
 {
     return connect(sock, addr, sizeof(struct sockaddr_in));
 }
@@ -245,7 +245,7 @@ in_addr_t jk_inet_addr(const char * addrstr)
 
 /** resolve the host IP */
 
-int jk_resolve(const char *host, int port, struct sockaddr_in *rc)
+int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *l)
 {
     int x;
     struct in_addr laddr;
@@ -349,7 +349,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                    sizeof(set))) {
         jk_log(l, JK_LOG_ERROR,
                 "failed setting TCP_NODELAY (errno=%d)", errno);
-        jk_close_socket(sock);
+        jk_close_socket(sock, l);
         JK_TRACE_EXIT(l);
         return JK_INVALID_SOCKET;
     }
@@ -362,7 +362,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                        sizeof(set))) {
             jk_log(l, JK_LOG_ERROR,
                    "failed setting SO_KEEPALIVE (errno=%d)", errno);
-            jk_close_socket(sock);
+            jk_close_socket(sock, l);
             JK_TRACE_EXIT(l);
             return JK_INVALID_SOCKET;
         }
@@ -379,7 +379,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
                     "failed setting SO_SNDBUF (errno=%d)", errno);
-            jk_close_socket(sock);
+            jk_close_socket(sock, l);
             JK_TRACE_EXIT(l);
             return JK_INVALID_SOCKET;
         }
@@ -390,7 +390,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
             JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
                     "failed setting SO_RCVBUF (errno=%d)", errno);
-            jk_close_socket(sock);
+            jk_close_socket(sock, l);
             JK_TRACE_EXIT(l);
             return JK_INVALID_SOCKET;
         }
@@ -432,7 +432,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
                 "failed setting SO_NOSIGPIPE (errno=%d)", errno);
-        jk_close_socket(sock);
+        jk_close_socket(sock, l);
         JK_TRACE_EXIT(l);
         return JK_INVALID_SOCKET;
     }
@@ -445,7 +445,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
         JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
                 "failed setting SO_LINGER (errno=%d)", errno);
-        jk_close_socket(sock);
+        jk_close_socket(sock, l);
         JK_TRACE_EXIT(l);
         return JK_INVALID_SOCKET;
     }
@@ -461,7 +461,7 @@ iSeries when Unix98 is required at compil time */
 #if (_XOPEN_SOURCE >= 520) && defined(AS400)
     ((struct sockaddr *)addr)->sa_len = sizeof(struct sockaddr_in);
 #endif
-    ret = nb_connect(sock, (struct sockaddr *)addr, timeout);
+    ret = nb_connect(sock, (struct sockaddr *)addr, timeout, l);
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
     if (ret == SOCKET_ERROR) {
         errno = WSAGetLastError() - WSABASEERR;
@@ -473,7 +473,7 @@ iSeries when Unix98 is required at compil time */
         jk_log(l, JK_LOG_INFO,
                "connect to %s failed (errno=%d)",
                jk_dump_hinfo(addr, buf), errno);
-        jk_close_socket(sock);
+        jk_close_socket(sock, l);
         sock = JK_INVALID_SOCKET;
     }
     else {
@@ -487,7 +487,7 @@ iSeries when Unix98 is required at compil time */
 
 /** close the socket */
 
-int jk_close_socket(jk_sock_t s)
+int jk_close_socket(jk_sock_t s, jk_logger_t *l)
 {
     if (IS_VALID_SOCKET(s))
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
@@ -510,7 +510,7 @@ int jk_close_socket(jk_sock_t s)
 #define SHUT_WR 0x01
 #endif
 #endif
-int jk_shutdown_socket(jk_sock_t s)
+int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l)
 {
     char dummy[512];
     int rc = 0;
@@ -525,7 +525,7 @@ int jk_shutdown_socket(jk_sock_t s)
      * to the peer.
      */
     if (shutdown(s, SHUT_WR)) {
-        return jk_close_socket(s);
+        return jk_close_socket(s, l);
     }
 
     /* Set up to wait for readable data on socket... */
@@ -562,7 +562,7 @@ int jk_shutdown_socket(jk_sock_t s)
 
     } while (difftime(time(NULL), start) < MAX_SECS_TO_LINGER);
 
-    return jk_close_socket(s);
+    return jk_close_socket(s, l);
 }
 
 /** send a long message
@@ -575,7 +575,7 @@ int jk_shutdown_socket(jk_sock_t s)
  * @bug       this fails on Unixes if len is too big for the underlying
  *             protocol.
  */
-int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len)
+int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_logger_t *l)
 {
     int sent = 0;
     int wr;
@@ -609,7 +609,7 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len)
  * @return    <0: receive failed or connection closed.
  *            >0: length of the received data.
  */
-int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len)
+int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t *l)
 {
     int rdlen = 0;
     int rd;
@@ -653,7 +653,7 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
     return buf;
 }
 
-int jk_is_socket_connected(jk_sock_t sock)
+int jk_is_socket_connected(jk_sock_t sock, jk_logger_t *l)
 {
     fd_set fd;
     struct timeval tv;

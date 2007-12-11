@@ -160,7 +160,7 @@ static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
     if (e && *e && (*e)->endpoint_private) {
         ajp12_endpoint_t *p = (*e)->endpoint_private;
         if (IS_VALID_SOCKET(p->sd)) {
-            jk_shutdown_socket(p->sd);
+            jk_shutdown_socket(p->sd, l);
         }
         free(p);
         *e = NULL;
@@ -192,7 +192,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                p->name, host, port);
 
         if (port > 1024 && host) {
-            if (jk_resolve(host, port, &p->worker_inet_addr)) {
+            if (jk_resolve(host, port, &p->worker_inet_addr, l)) {
                 return JK_TRUE;
             }
             jk_log(l, JK_LOG_ERROR,
