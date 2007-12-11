@@ -62,24 +62,24 @@ apache_dir=""
 apache_include=""
 APXS="apxs"
 AC_ARG_WITH(apxs,
-[  --with-apxs[=FILE]      Build shared Apache module. FILE is the optional
-                        pathname to the apxs tool; defaults to finding
-			apxs in your PATH.],
+[[  --with-apxs[=FILE]      Build shared Apache module.
+                          FILE is the optional pathname to the apxs tool;
+                          defaults to finding apxs in your PATH.]],
 [
     case "${withval}" in
         y | yes | true) find_apxs=true ;;
-        n | no | false) find_apxs=false ;;
-        *) find_apxs=false ;;
+        n | no | false) find_apxs= ;;
+        *) find_apxs=${withval} ;;
     esac
 
     if ${TEST} ${find_apxs} ; then
         AC_MSG_RESULT([need to check for Perl first, apxs depends on it...])
         AC_PATH_PROG(PERL,perl,$PATH)dnl
 
-        if ${TEST} ${find_apxs} ; then
-            APXS=${withval}
-        else
+        if ${TEST} ${find_apxs} = true ; then
             AC_PATH_PROG(APXS,apxs,$PATH)dnl
+        else
+            APXS=${find_apxs}
         fi
 
         if ${TEST} -n "${APXS}" ; then
