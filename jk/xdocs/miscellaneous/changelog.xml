@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Configure: Remove trace logging from compiled code
+        via new --disable-trace configure switch. (rjung)
+      </update>
+      <update>
         Common: Maintain idle connections in decreasing (LRU)
         slot order. (rjung)
       </update>

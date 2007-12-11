@@ -951,6 +951,17 @@ to force the removal of the synchronization code (thus increasing performance a 
 For instance, the prefork MPM is not multi-threaded. For Apache httpd 1.3
 this flag will be set automatically.</td>
 </tr>
+  <tr valign="top"><td>--disable-trace</td>
+  <td>
+When using log level "trace", mod_jk traces a lot of function calls with
+"enter" and "exit" log messages. Even if the log level is not "trace",
+comparing the log levels to decide about logging has some performance
+impact.<br/>
+If you use "--disable-trace", then the trace log code doesn't get compiled
+into the module binary and you might save some cycles during execution.<br/>
+Even with "--disable-trace" logging debug messages with debug log level
+will still be possible.</td>
+</tr>
   <tr valign="top"><td>--enable-flock</td>
   <td>
 In case the operating system supports flock system call use this flag to enable this
