@@ -872,7 +872,7 @@ static void stop_tomcat(char *name,
     } 
     
     if(jk_resolve("localhost", port, &in, NULL)) {
-        int sd = jk_open_socket(&in, JK_TRUE, 0, -1, NULL);
+        int sd = jk_open_socket(&in, JK_TRUE, 0, 0, NULL);
         if(sd >0) {
             int rc = JK_FALSE;
 
