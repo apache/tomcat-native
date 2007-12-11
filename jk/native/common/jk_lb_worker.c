@@ -886,7 +886,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     int num_of_workers;
     int first = 1;
     int was_forced = 0;
-    int rc = -1;
+    int rc = JK_UNSET;
     char *sessionid = NULL;
 
     JK_TRACE_ENTER(l);
@@ -940,7 +940,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                "service sticky_session=%d id='%s'",
                p->worker->sticky_session, sessionid ? sessionid : "empty");
 
-    while (attempt <= num_of_workers && rc == -1) {
+    while (attempt <= num_of_workers && rc == JK_UNSET) {
         worker_record_t *rec =
             get_most_suitable_worker(p->worker, sessionid, s, l);
         /* Do not reuse previous worker, because
@@ -1002,7 +1002,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                        rec->s->name, retry);
             }
             else {
-                int service_stat = -1;
+                int service_stat = JK_UNSET;
                 jk_uint64_t rd = 0;
                 jk_uint64_t wr = 0;
                 /* Reset endpoint read and write sizes for
@@ -1133,7 +1133,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_unlock();
             }
-            if ( rc == -1 ) {
+            if ( rc == JK_UNSET ) {
                 /*
                  * Error is recoverable by submitting the request to
                  * another worker... Lets try to do that.
@@ -1163,7 +1163,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      * Reset the service loop and go again
                      */
                     prec = NULL;
-                    rc   = -1;
+                    rc   = JK_UNSET;
                     jk_log(l, JK_LOG_INFO,
                            "Forcing recovery once for %d workers", nf);
                     continue;
@@ -1187,7 +1187,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         }
         attempt++;
     }
-    if ( rc == -1 ) {
+    if ( rc == JK_UNSET ) {
         jk_log(l, JK_LOG_INFO,
                "All tomcat instances are busy or in error state");
         /* Set error to Timeout */
