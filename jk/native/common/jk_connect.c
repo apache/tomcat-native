@@ -58,6 +58,12 @@ typedef char* SET_TYPE;
 typedef const char* SET_TYPE;
 #endif
 
+/** Set socket to blocking
+ * @param sd  socket to manipulate
+ * @return    errno: fcntl returns -1 /* ! WIN32 */
+ *            pseudo errno: ioctlsocket returns SOCKET_ERROR /* WIN32 */
+ *            0: success
+ */
 static int soblock(jk_sock_t sd)
 {
 /* BeOS uses setsockopt at present for non blocking... */
@@ -87,6 +93,12 @@ static int soblock(jk_sock_t sd)
     return 0;
 }
 
+/** Set socket to non-blocking
+ * @param sd  socket to manipulate
+ * @return    errno: fcntl returns -1 /* ! WIN32 */
+ *            pseudo errno: ioctlsocket returns SOCKET_ERROR /* WIN32 */
+ *            0: success
+ */
 static int sononblock(jk_sock_t sd)
 {
 #ifndef WIN32
@@ -117,6 +129,17 @@ static int sononblock(jk_sock_t sd)
 
 #if defined (WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
 /* WIN32 implementation */
+/** Non-blocking socket connect
+ * @param sock     socket to connect
+ * @param addr     address to connect to
+ * @param timeout  connect timeout in seconds
+ *                 (<=0: no timeout=blocking)
+ * @param l        logger
+ * @return         -1: some kind of error occured
+ *                 SOCKET_ERROR: no timeout given and error
+ *                               during blocking connect
+ *                 0: success
+ */
 static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_logger_t *l)
 {
     int rc;
@@ -167,6 +190,15 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
 
 #elif !defined(NETWARE)
 /* POSIX implementation */
+/** Non-blocking socket connect
+ * @param sock     socket to connect
+ * @param addr     address to connect to
+ * @param timeout  connect timeout in seconds
+ *                 (<=0: no timeout=blocking)
+ * @param l        logger
+ * @return         -1: some kind of error occured
+ *                 0: success
+ */
 static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_logger_t *l)
 {
     int rc = 0;
@@ -216,6 +248,14 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
 }
 #else
 /* NETWARE implementation - blocking for now */
+/** Non-blocking socket connect
+ * @param sock     socket to connect
+ * @param addr     address to connect to
+ * @param timeout  connect timeout in seconds (ignored!)
+ * @param l        logger
+ * @return         -1: some kind of error occured
+ *                 0: success
+ */
 static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_logger_t *l)
 {
     return connect(sock, addr, sizeof(struct sockaddr_in));
@@ -243,8 +283,14 @@ in_addr_t jk_inet_addr(const char * addrstr)
 
 #endif
 
-/** resolve the host IP */
-
+/** Resolve the host IP
+ * @param host     host or ip address
+ * @param port     port
+ * @param rc       return value pointer
+ * @param l        logger
+ * @return         JK_FALSE: some kind of error occured
+ *                 JK_TRUE: success
+ */
 int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *l)
 {
     int x;
@@ -262,7 +308,7 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
         }
     }
 
-    /* If we found also characters we shoud make name to IP resolution */
+    /* If we found also characters we should make name to IP resolution */
     if (host[x] != '\0') {
 
 #ifdef HAVE_APR
@@ -320,8 +366,17 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
     return JK_TRUE;
 }
 
-/** connect to Tomcat */
-
+/** Connect to Tomcat
+ * @param addr      address to connect to
+ * @param keepalive should we set SO_KEEPALIVE (if !=0)
+ * @param timeout   connect timeout in seconds
+ *                  (<=0: no timeout=blocking)
+ * @param sock_buf  size of send and recv buffer
+ *                  (<=0: use default)
+ * @param l         logger
+ * @return          JK_INVALID_SOCKET: some kind of error occured
+ *                  created socket: success
+ */
 jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                          int timeout, int sock_buf, jk_logger_t *l)
 {
@@ -342,7 +397,6 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                "socket() failed (errno=%d)", errno);
         JK_TRACE_EXIT(l);
         return JK_INVALID_SOCKET;
-;
     }
     /* Disable Nagle algorithm */
     if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (SET_TYPE)&set,
@@ -485,8 +539,13 @@ iSeries when Unix98 is required at compil time */
     return sock;
 }
 
-/** close the socket */
-
+/** Close the socket
+ * @param s         socket to close
+ * @param l         logger
+ * @return          -1: some kind of error occured /* ! WIN32 */
+ *                  SOCKET_ERROR: some kind of error occured  /* WIN32 */
+ *                  0: success
+ */
 int jk_close_socket(jk_sock_t s, jk_logger_t *l)
 {
     if (IS_VALID_SOCKET(s))
@@ -510,6 +569,15 @@ int jk_close_socket(jk_sock_t s, jk_logger_t *l)
 #define SHUT_WR 0x01
 #endif
 #endif
+
+/** Drain and close the socket
+ * @param s         socket to close
+ * @param l         logger
+ * @return          -1: socket to close is invalid
+ *                  -1: some kind of error occured /* ! WIN32 */
+ *                  SOCKET_ERROR: some kind of error occured  /* WIN32 */
+ *                  0: success
+ */
 int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l)
 {
     char dummy[512];
@@ -565,15 +633,17 @@ int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l)
     return jk_close_socket(s, l);
 }
 
-/** send a long message
- * @param sd  opened socket.
- * @param b   buffer containing the data.
- * @param len length to send.
- * @return    -2: send returned 0 ? what this that ?
- *            -3: send failed.
- *            >0: total size send.
+/** send a message
+ * @param sd  socket to use
+ * @param b   buffer containing the data
+ * @param len length to send
+ * @param l   logger
+ * @return    negative errno: write returns a fatal -1 /* ! WIN32 */
+ *            negative pseudo errno: send returns SOCKET_ERROR /* WIN32 */
+ *            JK_SOCKET_EOF: no bytes could be sent
+ *            >0: success, total size send
  * @bug       this fails on Unixes if len is too big for the underlying
- *             protocol.
+ *            protocol
  */
 int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_logger_t *l)
 {
@@ -602,12 +672,15 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
     return sent;
 }
 
-/** receive len bytes. Used in ajp_common.
- * @param sd  opened socket.
- * @param b   buffer to store the data.
- * @param len length to receive.
- * @return    <0: receive failed or connection closed.
- *            >0: length of the received data.
+/** receive a message
+ * @param sd  socket to use
+ * @param b   buffer to store the data
+ * @param len length to receive
+ * @param l   logger
+ * @return    negative errno: read returns a fatal -1 /* ! WIN32 */
+ *            negative pseudo errno: recv returns SOCKET_ERROR /* WIN32 */
+ *            JK_SOCKET_EOF: no bytes could be read
+ *            >0: success, total size received
  */
 int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t *l)
 {
@@ -653,6 +726,12 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
     return buf;
 }
 
+/** Test if a socket is still connected
+ * @param sock socket to use
+ * @param l    logger
+ * @return     JK_FALSE: failure
+ *             JK_TRUE: success
+ */
 int jk_is_socket_connected(jk_sock_t sock, jk_logger_t *l)
 {
     fd_set fd;
@@ -679,7 +758,7 @@ int jk_is_socket_connected(jk_sock_t sock, jk_logger_t *l)
 
     if (rc == 0) {
         /* If we get a timeout, then we are still connected */
-        return 1;
+        return JK_TRUE;
     }
     else if (rc == 1) {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
@@ -689,16 +768,16 @@ int jk_is_socket_connected(jk_sock_t sock, jk_logger_t *l)
                 errno = 0;
             else
                 errno = WSAGetLastError() - WSABASEERR;
-            return nr == 0 ? 0 : 1;
+            return nr == JK_FALSE ? JK_FALSE : JK_TRUE;
         }
         errno = WSAGetLastError() - WSABASEERR;
 #else
         int nr;
         if (ioctl(sock, FIONREAD, (void*)&nr) == 0) {
-            return nr == 0 ? 0 : 1;
+            return nr == JK_FALSE ? JK_FALSE : JK_TRUE;
         }
 #endif
     }
 
-    return 0;
+    return JK_FALSE;
 }
