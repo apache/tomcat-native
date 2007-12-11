@@ -37,7 +37,6 @@ extern "C"
 #endif                          /* __cplusplus */
 
 #define JK_SOCKET_EOF      (-2)
-#define JK_SOCKET_ERROR    (-3)
 
 int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *l);
 
