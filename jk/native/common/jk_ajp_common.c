@@ -725,14 +725,15 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
 {
     int rc;
     ajp_worker_t *aw = ae->worker;
-    jk_sock_t sock;
 
+    /* Close previous socket */
+    if (IS_VALID_SOCKET(ae->sd))
+        jk_shutdown_socket(ae->sd, l);
+    /* Mark existing endpoint socket as closed */
+    ae->sd = JK_INVALID_SOCKET;
     JK_ENTER_CS(&aw->cs, rc);
     if (rc) {
         unsigned int i;
-        sock = ae->sd;
-        /* Mark existing endpoint socket as closed */
-        ae->sd = JK_INVALID_SOCKET;
         for (i = 0; i < aw->ep_cache_sz; i++) {
             /* Find cache slot with usable socket */
             if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
@@ -742,9 +743,10 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
             }
         }
         JK_LEAVE_CS(&aw->cs, rc);
-        /* Close previous socket */
-        if (IS_VALID_SOCKET(sock))
-            jk_shutdown_socket(sock, l);
+        if (IS_VALID_SOCKET(ae->sd))
+            jk_log(l, JK_LOG_INFO,
+                   "(%s) Will try pooled connection sd = %d from slot %d",
+                    ae->worker->name, ae->sd, i);
     }
 }
 
