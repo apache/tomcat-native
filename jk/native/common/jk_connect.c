@@ -484,7 +484,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
         }
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "socket SO_SNDBUF and  SO_RCVBUF set to %d",
+                   "socket SO_SNDBUF and SO_RCVBUF set to %d",
                    sock_buf);
     }
 
