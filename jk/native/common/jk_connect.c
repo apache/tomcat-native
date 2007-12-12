@@ -768,13 +768,13 @@ int jk_is_socket_connected(jk_sock_t sock, jk_logger_t *l)
                 errno = 0;
             else
                 errno = WSAGetLastError() - WSABASEERR;
-            return nr == JK_FALSE ? JK_FALSE : JK_TRUE;
+            return nr == 0 ? JK_FALSE : JK_TRUE;
         }
         errno = WSAGetLastError() - WSABASEERR;
 #else
         int nr;
         if (ioctl(sock, FIONREAD, (void*)&nr) == 0) {
-            return nr == JK_FALSE ? JK_FALSE : JK_TRUE;
+            return nr == 0 ? JK_FALSE : JK_TRUE;
         }
 #endif
     }
