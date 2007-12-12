@@ -705,7 +705,7 @@ int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l)
  * @return    negative errno: write returns a fatal -1 (!WIN32)
  *            negative pseudo errno: send returns SOCKET_ERROR (WIN32)
  *            JK_SOCKET_EOF: no bytes could be sent
- *            >0: success, total size send
+ *            >0: success, provided number of bytes send
  * @remark    Always closes socket in case of error
  * @remark    Cares about errno
  * @bug       this fails on Unixes if len is too big for the underlying
@@ -756,7 +756,7 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
  * @return    negative errno: read returns a fatal -1 (!WIN32)
  *            negative pseudo errno: recv returns SOCKET_ERROR (WIN32)
  *            JK_SOCKET_EOF: no bytes could be read
- *            >0: success, total size received
+ *            >0: success, requested number of bytes received
  * @remark    Always closes socket in case of error
  * @remark    Cares about errno
  */

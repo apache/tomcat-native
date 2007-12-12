@@ -959,6 +959,8 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     /* We will invalidate the endpoint connection. */
     rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN, l);
 
+    /* If the return code is not negative */
+    /* then we always get back the correct number of bytes. */
     if (rc < 0) {
         ae->last_errno = errno;
         if (rc == JK_SOCKET_EOF) {
@@ -1047,6 +1049,8 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     /* If recvfull gets an error, it implicitely closes the socket. */
     /* We will invalidate the endpoint connection. */
     rc = jk_tcp_socket_recvfull(ae->sd, msg->buf, msglen, l);
+    /* If the return code is not negative */
+    /* then we always get back the correct number of bytes. */
     if (rc < 0) {
         ae->last_errno = errno;
         if (rc == JK_SOCKET_EOF) {
