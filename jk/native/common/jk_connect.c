@@ -692,6 +692,7 @@ int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l)
  *            negative pseudo errno: send returns SOCKET_ERROR (WIN32)
  *            JK_SOCKET_EOF: no bytes could be sent
  *            >0: success, total size send
+ * @remark    Always closes socket in case of error
  * @bug       this fails on Unixes if len is too big for the underlying
  *            protocol
  */
@@ -715,10 +716,12 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
         } while (JK_IS_SOCKET_ERROR(wr) && (errno == EINTR || errno == EAGAIN));
 
         if (JK_IS_SOCKET_ERROR(wr)) {
+            jk_shutdown_socket(sd, l);
             JK_TRACE_EXIT(l);
             return (errno > 0) ? -errno : errno;
         }
         else if (wr == 0) {
+            jk_shutdown_socket(sd, l);
             JK_TRACE_EXIT(l);
             return JK_SOCKET_EOF;
         }
@@ -738,6 +741,7 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
  *            negative pseudo errno: recv returns SOCKET_ERROR (WIN32)
  *            JK_SOCKET_EOF: no bytes could be read
  *            >0: success, total size received
+ * @remark    Always closes socket in case of error
  */
 int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t *l)
 {
@@ -759,10 +763,12 @@ int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t 
         } while (JK_IS_SOCKET_ERROR(rd) && (errno == EINTR || errno == EAGAIN));
 
         if (JK_IS_SOCKET_ERROR(rd)) {
+            jk_shutdown_socket(sd, l);
             JK_TRACE_EXIT(l);
             return (errno > 0) ? -errno : errno;
         }
         else if (rd == 0) {
+            jk_shutdown_socket(sd, l);
             JK_TRACE_EXIT(l);
             return JK_SOCKET_EOF;
         }
@@ -796,6 +802,8 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
  * @return        JK_FALSE: Timeout expired without something to read
  *                JK_FALSE: Error during waiting
  *                JK_TRUE: success
+ * @remark        Does not close socket in case of error
+ *                to allow for iterative waiting
  */
 int jk_is_input_event(jk_sock_t sd, int timeout, jk_logger_t *l)
 {
@@ -843,6 +851,7 @@ int jk_is_input_event(jk_sock_t sd, int timeout, jk_logger_t *l)
  * @param l    logger
  * @return     JK_FALSE: failure
  *             JK_TRUE: success
+ * @remark     Always closes socket in case of error
  */
 int jk_is_socket_connected(jk_sock_t sd, jk_logger_t *l)
 {
@@ -888,11 +897,12 @@ int jk_is_socket_connected(jk_sock_t sd, jk_logger_t *l)
         rc = ioctl(sd, FIONREAD, (void*)&nr);
 #endif
         if (rc == 0 && nr != 0) {
-            return JK_TRUE;
             JK_TRACE_EXIT(l);
+            return JK_TRUE;
         }
         JK_GET_SOCKET_ERRNO();
     }
+    jk_shutdown_socket(sd, l);
 
     JK_TRACE_EXIT(l);
     return JK_FALSE;
