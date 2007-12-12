@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        JKStatus: Repair detailed Apache httpd version display.
+        This was broken for httpd version 2.2.4+. (rjung)
+      </fix>
       <update>
         Configure: Remove trace logging from compiled code
         via new --disable-trace configure switch. (rjung)

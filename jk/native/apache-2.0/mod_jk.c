@@ -667,7 +667,7 @@ static int init_ws_service(apache_private_data_t * private_data,
      */
     s->server_port  = ap_get_server_port(r);
 
-#if (AP_MODULE_MAGIC_AT_LEAST(20060905,0))
+#if (AP_MODULE_MAGIC_AT_LEAST(20051115,4))
     s->server_software = (char *)ap_get_server_description();
 #else
     s->server_software = (char *)ap_get_server_version();
@@ -2814,7 +2814,7 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
        will feed it */
     worker_env.uri_to_worker = conf->uw_map;
     worker_env.virtual = "*";   /* for now */
-#if (AP_MODULE_MAGIC_AT_LEAST(20060905,0))
+#if (AP_MODULE_MAGIC_AT_LEAST(20051115,4))
     worker_env.server_name = (char *)ap_get_server_description();
 #else
     worker_env.server_name = (char *)ap_get_server_version();
