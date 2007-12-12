@@ -888,10 +888,6 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
         return JK_FATAL_ERROR;
     }
 
-    /* This is the only place in this function where we use the socket. */
-    /* If sendfull gets an error, it implicitely closes the socket. */
-    /* So any socket error inside ajp_connection_tcp_send_message */
-    /* results in a socket close and invalidated endpoint connection. */
     if ((rc = jk_tcp_socket_sendfull(ae->sd, msg->buf,
                                      msg->len, l)) > 0) {
         ae->endpoint.wr += (jk_uint64_t)rc;
@@ -902,7 +898,6 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     ae->last_errno = errno;
     jk_log(l, JK_LOG_ERROR,
            "sendfull returned %d (errno=%d)", rc, ae->last_errno);
-    ae->sd = JK_INVALID_SOCKET;
 
     JK_TRACE_EXIT(l);
     return JK_FALSE;
@@ -923,8 +918,6 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
 
     JK_TRACE_ENTER(l);
 
-    /* If recvfull gets an error, it implicitely closes the socket. */
-    /* We will invalidate the endpoint connection. */
     rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN, l);
 
     if (rc < 0) {
@@ -933,6 +926,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
             jk_log(l, JK_LOG_INFO,
                    "(%s) Tomcat has forced a connection close for socket %d",
                    ae->worker->name, ae->sd);
+            JK_TRACE_EXIT(l);
         }
         else {
             jk_log(l, JK_LOG_ERROR,
@@ -940,9 +934,8 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
                    "network problems or tomcat (%s) is down (errno=%d)",
                    ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
                    ae->last_errno);
+             JK_TRACE_EXIT(l);
         }
-        ae->sd = JK_INVALID_SOCKET;
-        JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
     ae->last_errno = 0;
@@ -963,10 +956,6 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
                        header, jk_dump_hinfo(&ae->worker->worker_inet_addr,
                                              buf));
             }
-            /* We've got a protocol error. */
-            /* We can't trust this connection any more. */
-            jk_shutdown_socket(ae->sd, l);
-            ae->sd = JK_INVALID_SOCKET;
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -985,10 +974,6 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
                        header, jk_dump_hinfo(&ae->worker->worker_inet_addr,
                                              buf));
             }
-            /* We've got a protocol error. */
-            /* We can't trust this connection any more. */
-            jk_shutdown_socket(ae->sd, l);
-            ae->sd = JK_INVALID_SOCKET;
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -1002,10 +987,6 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
                "wrong message size %d %d from %s",
                msglen, msg->maxlen,
                jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
-        /* We've got a protocol error. */
-        /* We can't trust this connection any more. */
-        jk_shutdown_socket(ae->sd, l);
-        ae->sd = JK_INVALID_SOCKET;
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -1013,8 +994,6 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     msg->len = msglen;
     msg->pos = 0;
 
-    /* If recvfull gets an error, it implicitely closes the socket. */
-    /* We will invalidate the endpoint connection. */
     rc = jk_tcp_socket_recvfull(ae->sd, msg->buf, msglen, l);
     if (rc < 0) {
         ae->last_errno = errno;
@@ -1024,6 +1003,8 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
                    "tomcat (%s) has forced a connection close for socket %d",
                    ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
                    ae->sd);
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
         }
         else {
             jk_log(l, JK_LOG_ERROR,
@@ -1031,10 +1012,9 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
                    "network problems or tomcat (%s) is down (errno=%d)",
                    ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
                    ae->last_errno);
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
         }
-        ae->sd = JK_INVALID_SOCKET;
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
     }
     ae->last_errno = 0;
     ae->endpoint.rd += (jk_uint64_t)rc;
@@ -1198,6 +1178,7 @@ static int ajp_send_request(jk_endpoint_t *e,
             jk_log(l, JK_LOG_DEBUG,
                    "(%s) socket %d is not connected any more (errno=%d)",
                    ae->worker->name, ae->sd, errno);
+            jk_shutdown_socket(ae->sd, l);
             ae->sd = JK_INVALID_SOCKET;
             err = 1;
         }
@@ -1292,6 +1273,9 @@ static int ajp_send_request(jk_endpoint_t *e,
              * have is probably unrecoverable
              */
             if (ajp_connection_tcp_send_message(ae, op->request, l) != JK_TRUE) {
+                /* Close the socket if unable to send request */
+                jk_shutdown_socket(ae->sd, l);
+                ae->sd = JK_INVALID_SOCKET;
                 jk_log(l, JK_LOG_INFO,
                        "(%s) error sending request on a fresh connection (errno=%d)",
                        ae->worker->name, ae->last_errno);
@@ -1334,6 +1318,9 @@ static int ajp_send_request(jk_endpoint_t *e,
     postlen = op->post->len;
     if (postlen > AJP_HEADER_LEN) {
         if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
+            /* Close the socket if unable to send request */
+            jk_shutdown_socket(ae->sd, l);
+            ae->sd = JK_INVALID_SOCKET;
             jk_log(l, JK_LOG_ERROR, "(%s) failed resending request body (%d)",
                    ae->worker->name, postlen);
             JK_TRACE_EXIT(l);
@@ -1351,6 +1338,9 @@ static int ajp_send_request(jk_endpoint_t *e,
 
         if (postlen > AJP_HEADER_LEN) {
             if (ajp_connection_tcp_send_message(ae, s->reco_buf, l) != JK_TRUE) {
+                /* Close the socket if unable to send request */
+                jk_shutdown_socket(ae->sd, l);
+                ae->sd = JK_INVALID_SOCKET;
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) failed resending request body (lb mode) (%d)",
                        ae->worker->name, postlen);
@@ -1398,6 +1388,9 @@ static int ajp_send_request(jk_endpoint_t *e,
 
             s->content_read = (jk_uint64_t)len;
             if (ajp_connection_tcp_send_message(ae, op->post, l) != JK_TRUE) {
+                /* Close the socket if unable to send request */
+                jk_shutdown_socket(ae->sd, l);
+                ae->sd = JK_INVALID_SOCKET;
                 jk_log(l, JK_LOG_ERROR, "(%s) error sending request body",
                        ae->worker->name);
                 JK_TRACE_EXIT(l);
@@ -1668,7 +1661,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
             }
         }
 
-        if (ajp_connection_tcp_get_message(p, op->reply, l) != JK_TRUE) {
+        if (!ajp_connection_tcp_get_message(p, op->reply, l)) {
             /* we just can't recover, unset recover flag */
             if (headeratclient == JK_FALSE) {
                 jk_log(l, JK_LOG_ERROR,
@@ -1785,6 +1778,8 @@ static int ajp_get_reply(jk_endpoint_t *e,
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) Tomcat is down or network problems",
                         p->worker->name);
+                jk_shutdown_socket(p->sd, l);
+                p->sd = JK_INVALID_SOCKET;
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
