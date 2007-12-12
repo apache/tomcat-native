@@ -587,9 +587,9 @@ static int ajp_unmarshal_response(jk_msg_buf_t *msg,
 {
     jk_pool_t *p = &ae->pool;
 
-    d->status = jk_b_get_int(msg);
     JK_TRACE_ENTER(l);
 
+    d->status = jk_b_get_int(msg);
     if (!d->status) {
         jk_log(l, JK_LOG_ERROR,
                "NULL status");
@@ -726,6 +726,8 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
     int rc;
     ajp_worker_t *aw = ae->worker;
 
+    JK_TRACE_ENTER(l);
+
     /* Close previous socket */
     if (IS_VALID_SOCKET(ae->sd))
         jk_shutdown_socket(ae->sd, l);
@@ -748,10 +750,12 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
                    "(%s) Will try pooled connection sd = %d from slot %d",
                     ae->worker->name, ae->sd, i);
     }
+    JK_TRACE_EXIT(l);
 }
 
 /*
  * Handle the CPING/CPONG initial query
+ * Cares about ae->errno.
  */
 static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
 {
@@ -759,6 +763,8 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
     jk_msg_buf_t *msg;
 
     JK_TRACE_ENTER(l);
+
+    ae->last_errno = 0;
     msg = jk_b_new(&ae->pool);
     if (!msg) {
         jk_log(l, JK_LOG_ERROR,
@@ -816,6 +822,10 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
     return JK_TRUE;
 }
 
+/*
+ * Connect an endpoint to a backend.
+ * Cares about ae->errno.
+ */
 int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 {
     char buf[32];
@@ -823,6 +833,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 
     JK_TRACE_ENTER(l);
 
+    ae->last_errno = 0;
     ae->sd = jk_open_socket(&ae->worker->worker_inet_addr,
                             ae->worker->keepalive,
                             ae->worker->socket_timeout,
@@ -879,6 +890,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 
 /*
  * Send a message to endpoint, using corresponding PROTO HEADER
+ * Cares about ae->errno.
  */
 
 int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
@@ -887,6 +899,8 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     int rc;
 
     JK_TRACE_ENTER(l);
+
+    ae->last_errno = 0;
     if (ae->proto == AJP13_PROTO) {
         jk_b_end(msg, AJP13_WS_HEADER);
         if (JK_IS_DEBUG_LEVEL(l))
@@ -899,7 +913,8 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     }
     else {
         jk_log(l, JK_LOG_ERROR,
-               "unknown protocol %d, supported are AJP13/AJP14", ae->proto);
+               "(%s) unknown protocol %d, supported are AJP13/AJP14",
+                ae->worker->name, ae->proto);
         JK_TRACE_EXIT(l);
         return JK_FATAL_ERROR;
     }
@@ -911,7 +926,6 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     if ((rc = jk_tcp_socket_sendfull(ae->sd, msg->buf,
                                      msg->len, l)) > 0) {
         ae->endpoint.wr += (jk_uint64_t)rc;
-        ae->last_errno = 0;
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
@@ -926,6 +940,7 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
 
 /*
  * Receive a message from endpoint, checking PROTO HEADER
+ * Cares about ae->errno.
  */
 
 int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
@@ -939,6 +954,7 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
 
     JK_TRACE_ENTER(l);
 
+    ae->last_errno = 0;
     /* If recvfull gets an error, it implicitely closes the socket. */
     /* We will invalidate the endpoint connection. */
     rc = jk_tcp_socket_recvfull(ae->sd, head, AJP_HEADER_LEN, l);
@@ -961,7 +977,6 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    ae->last_errno = 0;
     ae->endpoint.rd += (jk_uint64_t)rc;
     header = ((unsigned int)head[0] << 8) | head[1];
 
@@ -1052,7 +1067,6 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    ae->last_errno = 0;
     ae->endpoint.rd += (jk_uint64_t)rc;
 
     if (ae->proto == AJP13_PROTO) {
@@ -1081,6 +1095,7 @@ static int ajp_read_fully_from_server(jk_ws_service_t *s, jk_logger_t *l,
     unsigned int padded_len = len;
 
     JK_TRACE_ENTER(l);
+
     if (s->is_chunked && s->no_more_chunks) {
         JK_TRACE_EXIT(l);
         return 0;
@@ -1127,6 +1142,7 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t * ae,
     unsigned char *read_buf = msg->buf;
 
     JK_TRACE_ENTER(l);
+
     jk_b_reset(msg);
 
     read_buf += AJP_HEADER_LEN; /* leave some space for the buffer headers */
@@ -1201,6 +1217,8 @@ static int ajp_send_request(jk_endpoint_t *e,
     int postlen;
 
     JK_TRACE_ENTER(l);
+
+    ae->last_errno = 0;
     /* Up to now, we can recover */
     op->recoverable = JK_TRUE;
 
@@ -1211,9 +1229,10 @@ static int ajp_send_request(jk_endpoint_t *e,
         int rc = 0;
         err = 0;
         if (!jk_is_socket_connected(ae->sd, l)) {
+            ae->last_errno = errno;
             jk_log(l, JK_LOG_DEBUG,
                    "(%s) socket %d is not connected any more (errno=%d)",
-                   ae->worker->name, ae->sd, errno);
+                   ae->worker->name, ae->sd, ae->last_errno);
             ae->sd = JK_INVALID_SOCKET;
             err = 1;
         }
@@ -1446,6 +1465,7 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
     int code = (int)jk_b_get_byte(msg);
 
     JK_TRACE_ENTER(l);
+
     switch (code) {
     case JK_AJP13_SEND_HEADERS:
         {
@@ -1635,6 +1655,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
 
     JK_TRACE_ENTER(l);
 
+    p->last_errno = 0;
     /* Start read all reply message */
     while (1) {
         int rc = 0;
@@ -2226,6 +2247,7 @@ static int ajp_create_endpoint_cache(ajp_worker_t *p, int proto, jk_logger_t *l)
     time_t now = time(NULL);
 
     JK_TRACE_ENTER(l);
+
     p->ep_cache = (ajp_endpoint_t **)calloc(1, sizeof(ajp_endpoint_t *) *
                                             p->ep_cache_sz);
     if (!p->ep_cache) {
@@ -2443,6 +2465,7 @@ int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto)
 int JK_METHOD ajp_done(jk_endpoint_t **e, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
+
     if (e && *e && (*e)->endpoint_private) {
         ajp_endpoint_t *p = (*e)->endpoint_private;
         int rc;
