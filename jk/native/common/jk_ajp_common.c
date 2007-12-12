@@ -749,46 +749,6 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
 }
 
 /*
- * Wait input event on ajp_endpoint for timeout ms
- */
-static int ajp_is_input_event(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
-{
-    fd_set rset;
-    struct timeval tv;
-    int rc;
-
-    FD_ZERO(&rset);
-    FD_SET(ae->sd, &rset);
-    tv.tv_sec = timeout / 1000;
-    tv.tv_usec = (timeout % 1000) * 1000;
-
-    do {
-        rc = select((int)ae->sd + 1, &rset, NULL, NULL, &tv);
-    } while (rc < 0 && errno == EINTR);
-
-    ae->last_errno = 0;
-    if (rc == 0) {
-        /* Timeout. Set the errno to timeout */
-#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-        errno = WSAETIMEDOUT - WSABASEERR;
-#else
-        errno = ETIMEDOUT;
-#endif
-        ae->last_errno = errno;
-        return JK_FALSE;
-    }
-    else if (rc < 0) {
-        ae->last_errno = errno;
-        jk_log(l, JK_LOG_WARNING,
-               "error during select (errno=%d)", ae->last_errno);
-        return JK_FALSE;
-    }
-    else
-        return JK_TRUE;
-}
-
-
-/*
  * Handle the CPING/CPONG initial query
  */
 static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
@@ -823,8 +783,12 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
 
     /* wait for Pong reply for timeout milliseconds
      */
-    if (ajp_is_input_event(ae, timeout, l) == JK_FALSE) {
+    if (jk_is_input_event(ae->sd, timeout, l) == JK_FALSE) {
+        ae->last_errno = errno;
         jk_log(l, JK_LOG_INFO, "timeout in reply pong");
+        /* We can't trust this connection any more. */
+        jk_shutdown_socket(ae->sd, l);
+        ae->sd = JK_INVALID_SOCKET;
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -880,7 +844,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
         }
         /* should we send a CPING to validate connection ? */
         if (ae->worker->connect_timeout > 0) {
-            rc = ajp_handle_cping_cpong (ae,
+            rc = ajp_handle_cping_cpong(ae,
                         ae->worker->connect_timeout, l);
             JK_TRACE_EXIT(l);
             return rc;
@@ -1660,12 +1624,16 @@ static int ajp_get_reply(jk_endpoint_t *e,
 
         /* If we set a reply timeout, check if something is available */
         if (p->worker->reply_timeout > 0) {
-            if (ajp_is_input_event(p, p->worker->reply_timeout, l) ==
+            if (jk_is_input_event(p->sd, p->worker->reply_timeout, l) ==
                 JK_FALSE) {
+                p->last_errno = errno;
                 jk_log(l, JK_LOG_ERROR,
                        "(%s) Timeout with waiting reply from tomcat. "
                        "Tomcat is down, stopped or network problems (errno=%d)",
                        p->worker->name, p->last_errno);
+                /* We can't trust this connection any more. */
+                jk_shutdown_socket(p->sd, l);
+                p->sd = JK_INVALID_SOCKET;
                 if (headeratclient == JK_FALSE) {
                     if (p->worker->recovery_opts & RECOVER_ABORT_IF_TCGETREQUEST)
                         op->recoverable = JK_FALSE;

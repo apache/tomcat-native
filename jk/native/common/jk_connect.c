@@ -789,6 +789,55 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
     return buf;
 }
 
+/** Wait for input event on socket until timeout
+ * @param sd      socket to use
+ * @param timeout wait timeout in milliseconds
+ * @param l       logger
+ * @return        JK_FALSE: Timeout expired without something to read
+ *                JK_FALSE: Error during waiting
+ *                JK_TRUE: success
+ */
+int jk_is_input_event(jk_sock_t sd, int timeout, jk_logger_t *l)
+{
+    fd_set rset;
+    struct timeval tv;
+    int rc;
+    int save_errno;
+
+    JK_TRACE_ENTER(l);
+
+    FD_ZERO(&rset);
+    FD_SET(sd, &rset);
+    tv.tv_sec = timeout / 1000;
+    tv.tv_usec = (timeout % 1000) * 1000;
+
+    do {
+        rc = select((int)sd + 1, &rset, NULL, NULL, &tv);
+    } while (rc < 0 && errno == EINTR);
+
+    errno = 0;
+    if (rc == 0) {
+        /* Timeout. Set the errno to timeout */
+#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
+        errno = WSAETIMEDOUT - WSABASEERR;
+#else
+        errno = ETIMEDOUT;
+#endif
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    else if (rc < 0) {
+        save_errno = errno;
+        jk_log(l, JK_LOG_WARNING,
+               "error during select on socket sd = %d (errno=%d)", sd, errno);
+        errno = save_errno;
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    JK_TRACE_EXIT(l);
+    return JK_TRUE;
+}
+
 /** Test if a socket is still connected
  * @param sd   socket to use
  * @param l    logger

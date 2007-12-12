@@ -53,6 +53,8 @@ int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t 
 
 char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf);
 
+int jk_is_input_event(jk_sock_t sd, int timeout, jk_logger_t *l);
+
 int jk_is_socket_connected(jk_sock_t sd, jk_logger_t *l);
 
 
