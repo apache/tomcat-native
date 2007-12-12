@@ -43,9 +43,9 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
 jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                          int timeout, int sock_buf, jk_logger_t *l);
 
-int jk_close_socket(jk_sock_t s, jk_logger_t *l);
+int jk_close_socket(jk_sock_t sd, jk_logger_t *l);
 
-int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l);
+int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l);
 
 int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_logger_t *l);
 
