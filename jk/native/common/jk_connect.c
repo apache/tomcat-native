@@ -60,8 +60,8 @@ typedef const char* SET_TYPE;
 
 /** Set socket to blocking
  * @param sd  socket to manipulate
- * @return    errno: fcntl returns -1 /0 ! WIN32 0/
- *            pseudo errno: ioctlsocket returns SOCKET_ERROR /0 WIN32 0/
+ * @return    errno: fcntl returns -1 (!WIN32)
+ *            pseudo errno: ioctlsocket returns SOCKET_ERROR (WIN32)
  *            0: success
  */
 static int soblock(jk_sock_t sd)
@@ -85,8 +85,8 @@ static int soblock(jk_sock_t sd)
     }
 #else
     u_long on = 0;
-    if (ioctlsocket(sd, FIONBIO, &on) == SOCKET_ERROR) {
-        errno = WSAGetLastError() - WSABASEERR;
+    if (JK_IS_SOCKET_ERROR(ioctlsocket(sd, FIONBIO, &on))) {
+        JK_GET_SOCKET_ERRNO();
         return errno;
     }
 #endif /* WIN32 */
@@ -95,8 +95,8 @@ static int soblock(jk_sock_t sd)
 
 /** Set socket to non-blocking
  * @param sd  socket to manipulate
- * @return    errno: fcntl returns -1 /0 ! WIN32 0/
- *            pseudo errno: ioctlsocket returns SOCKET_ERROR /0 WIN32 0/
+ * @return    errno: fcntl returns -1 (!WIN32)
+ *            pseudo errno: ioctlsocket returns SOCKET_ERROR (WIN32)
  *            0: success
  */
 static int sononblock(jk_sock_t sd)
@@ -119,8 +119,8 @@ static int sononblock(jk_sock_t sd)
     }
 #else
     u_long on = 1;
-    if (ioctlsocket(sd, FIONBIO, &on) == SOCKET_ERROR) {
-        errno = WSAGetLastError() - WSABASEERR;
+    if (JK_IS_SOCKET_ERROR(ioctlsocket(sd, FIONBIO, &on))) {
+        JK_GET_SOCKET_ERRNO();
         return errno;
     }
 #endif /* WIN32 */
@@ -148,7 +148,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
 
     if ((rc = sononblock(sock)))
         return -1;
-    if (connect(sock, addr, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
+    if (JK_IS_SOCKET_ERROR(connect(sock, addr, sizeof(struct sockaddr_in)))) {
         struct timeval tv;
         fd_set wfdset, efdset;
 
@@ -166,7 +166,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
         tv.tv_sec  = timeout;
         tv.tv_usec = 0;
         rc = select((int)sock + 1, NULL, &wfdset, &efdset, &tv);
-        if (rc == SOCKET_ERROR || rc == 0) {
+        if (JK_IS_SOCKET_ERROR(rc) || rc == 0) {
             rc = WSAGetLastError();
             soblock(sock);
             WSASetLastError(rc);
@@ -517,8 +517,8 @@ iSeries when Unix98 is required at compil time */
 #endif
     ret = nb_connect(sock, (struct sockaddr *)addr, timeout, l);
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-    if (ret == SOCKET_ERROR) {
-        errno = WSAGetLastError() - WSABASEERR;
+    if (JK_IS_SOCKET_ERROR(ret)) {
+        JK_GET_SOCKET_ERRNO();
     }
 #endif /* WIN32 */
 
@@ -542,19 +542,20 @@ iSeries when Unix98 is required at compil time */
 /** Close the socket
  * @param s         socket to close
  * @param l         logger
- * @return          -1: some kind of error occured /0 ! WIN32 0/
- *                  SOCKET_ERROR: some kind of error occured  /0 WIN32 0/
+ * @return          -1: some kind of error occured (!WIN32)
+ *                  SOCKET_ERROR: some kind of error occured  (WIN32)
  *                  0: success
  */
 int jk_close_socket(jk_sock_t s, jk_logger_t *l)
 {
-    if (IS_VALID_SOCKET(s))
+    if (!IS_VALID_SOCKET(s))
+        return -1;
+
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-        return closesocket(s) ? -1 : 0;
+    return closesocket(s) ? -1 : 0;
 #else
-        return close(s);
+    return close(s);
 #endif
-    return -1;
 }
 
 #ifndef MAX_SECS_TO_LINGER
@@ -574,8 +575,8 @@ int jk_close_socket(jk_sock_t s, jk_logger_t *l)
  * @param s         socket to close
  * @param l         logger
  * @return          -1: socket to close is invalid
- *                  -1: some kind of error occured /0 ! WIN32 0/
- *                  SOCKET_ERROR: some kind of error occured  /0 WIN32 0/
+ *                  -1: some kind of error occured (!WIN32)
+ *                  SOCKET_ERROR: some kind of error occured  (WIN32)
  *                  0: success
  */
 int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l)
@@ -614,13 +615,12 @@ int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l)
             do {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
                 rc = recv(s, &dummy[0], sizeof(dummy), 0);
-                /* Assuming SOCKET_ERROR is -1 on NETWARE too */
-                if (rc == SOCKET_ERROR)
-                    errno = WSAGetLastError() - WSABASEERR;
+                if (JK_IS_SOCKET_ERROR(rc))
+                    JK_GET_SOCKET_ERRNO();
 #else
                 rc = read(s, &dummy[0], sizeof(dummy));
 #endif
-            } while (rc == -1 && (errno == EINTR || errno == EAGAIN));
+            } while (JK_IS_SOCKET_ERROR(rc) && (errno == EINTR || errno == EAGAIN));
 
             if (rc <= 0)
                 break;
@@ -638,8 +638,8 @@ int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l)
  * @param b   buffer containing the data
  * @param len length to send
  * @param l   logger
- * @return    negative errno: write returns a fatal -1 /0 ! WIN32 0/
- *            negative pseudo errno: send returns SOCKET_ERROR /0 WIN32 0/
+ * @return    negative errno: write returns a fatal -1 (!WIN32)
+ *            negative pseudo errno: send returns SOCKET_ERROR (WIN32)
  *            JK_SOCKET_EOF: no bytes could be sent
  *            >0: success, total size send
  * @bug       this fails on Unixes if len is too big for the underlying
@@ -655,14 +655,14 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
             wr = send(sd, (const char*)(b + sent),
                       len - sent, 0);
-            if (wr == SOCKET_ERROR)
-                errno = WSAGetLastError() - WSABASEERR;
+            if (JK_IS_SOCKET_ERROR(wr))
+                JK_GET_SOCKET_ERRNO();
 #else
             wr = write(sd, b + sent, len - sent);
 #endif
-        } while (wr == -1 && (errno == EINTR || errno == EAGAIN));
+        } while (JK_IS_SOCKET_ERROR(wr) && (errno == EINTR || errno == EAGAIN));
 
-        if (wr == -1)
+        if (JK_IS_SOCKET_ERROR(wr))
             return (errno > 0) ? -errno : errno;
         else if (wr == 0)
             return JK_SOCKET_EOF;
@@ -677,8 +677,8 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
  * @param b   buffer to store the data
  * @param len length to receive
  * @param l   logger
- * @return    negative errno: read returns a fatal -1 /0 ! WIN32 0/
- *            negative pseudo errno: recv returns SOCKET_ERROR /0 WIN32 0/
+ * @return    negative errno: read returns a fatal -1 (!WIN32)
+ *            negative pseudo errno: recv returns SOCKET_ERROR (WIN32)
  *            JK_SOCKET_EOF: no bytes could be read
  *            >0: success, total size received
  */
@@ -692,15 +692,14 @@ int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t 
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
             rd = recv(sd, (char *)b + rdlen,
                       len - rdlen, 0);
-            /* Assuming SOCKET_ERROR is -1 on NETWARE too */
-            if (rd == SOCKET_ERROR)
-                errno = WSAGetLastError() - WSABASEERR;
+            if (JK_IS_SOCKET_ERROR(rd))
+                JK_GET_SOCKET_ERRNO();
 #else
             rd = read(sd, (char *)b + rdlen, len - rdlen);
 #endif
-        } while (rd == -1 && (errno == EINTR || errno == EAGAIN));
+        } while (JK_IS_SOCKET_ERROR(rd) && (errno == EINTR || errno == EAGAIN));
 
-        if (rd == -1)
+        if (JK_IS_SOCKET_ERROR(rd))
             return (errno > 0) ? -errno : errno;
         else if (rd == 0)
             return JK_SOCKET_EOF;
@@ -748,13 +747,11 @@ int jk_is_socket_connected(jk_sock_t sock, jk_logger_t *l)
 
     do {
         rc = select((int)sock + 1, &fd, NULL, NULL, &tv);
-#if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-        errno = WSAGetLastError() - WSABASEERR;
-#endif
+        JK_GET_SOCKET_ERRNO();
         /* Wait one microsecond on next select, if EINTR */
         tv.tv_sec  = 0;
         tv.tv_usec = 1;
-    } while (rc == -1 && errno == EINTR);
+    } while (JK_IS_SOCKET_ERROR(rc) && errno == EINTR);
 
     if (rc == 0) {
         /* If we get a timeout, then we are still connected */
@@ -767,10 +764,10 @@ int jk_is_socket_connected(jk_sock_t sock, jk_logger_t *l)
             if (WSAGetLastError() == 0)
                 errno = 0;
             else
-                errno = WSAGetLastError() - WSABASEERR;
+                JK_GET_SOCKET_ERRNO();
             return nr == 0 ? JK_FALSE : JK_TRUE;
         }
-        errno = WSAGetLastError() - WSABASEERR;
+        JK_GET_SOCKET_ERRNO();
 #else
         int nr;
         if (ioctl(sock, FIONREAD, (void*)&nr) == 0) {
