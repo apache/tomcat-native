@@ -410,6 +410,7 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
  * @param l         logger
  * @return          JK_INVALID_SOCKET: some kind of error occured
  *                  created socket: success
+ * @remark          Cares about errno
  */
 jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                          int timeout, int sock_buf, jk_logger_t *l)
@@ -424,6 +425,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
 
     JK_TRACE_ENTER(l);
 
+    errno = 0;
     sd = socket(AF_INET, SOCK_STREAM, 0);
     if (!IS_VALID_SOCKET(sd)) {
         JK_GET_SOCKET_ERRNO();
@@ -435,6 +437,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
     /* Disable Nagle algorithm */
     if (setsockopt(sd, IPPROTO_TCP, TCP_NODELAY, (SET_TYPE)&set,
                    sizeof(set))) {
+        JK_GET_SOCKET_ERRNO();
         jk_log(l, JK_LOG_ERROR,
                 "failed setting TCP_NODELAY (errno=%d)", errno);
         jk_close_socket(sd, l);
@@ -448,6 +451,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
         set = 1;
         if (setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE, (SET_TYPE)&set,
                        sizeof(set))) {
+            JK_GET_SOCKET_ERRNO();
             jk_log(l, JK_LOG_ERROR,
                    "failed setting SO_KEEPALIVE (errno=%d)", errno);
             jk_close_socket(sd, l);
@@ -495,6 +499,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                    (const char *) &tmout, sizeof(int));
         setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO,
                    (const char *) &tmout, sizeof(int));
+        JK_GET_SOCKET_ERRNO();
 #elif defined(SO_RCVTIMEO) && defined(USE_SO_RCVTIMEO) && defined(SO_SNDTIMEO) && defined(USE_SO_SNDTIMEO)
         struct timeval tv;
         tv.tv_sec  = timeout;
@@ -579,10 +584,12 @@ iSeries when Unix98 is required at compil time */
  * @return          -1: some kind of error occured (!WIN32)
  *                  SOCKET_ERROR: some kind of error occured  (WIN32)
  *                  0: success
+ * @remark          Does not change errno
  */
 int jk_close_socket(jk_sock_t sd, jk_logger_t *l)
 {
     int rc;
+    int save_errno;
 
     JK_TRACE_ENTER(l);
 
@@ -591,11 +598,13 @@ int jk_close_socket(jk_sock_t sd, jk_logger_t *l)
         return -1;
     }
 
+    save_errno = errno;
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
     rc = closesocket(sd) ? -1 : 0;
 #else
     rc = close(sd);
 #endif
+    errno = save_errno;
     JK_TRACE_EXIT(l);
     return rc;
 }
@@ -620,11 +629,13 @@ int jk_close_socket(jk_sock_t sd, jk_logger_t *l)
  *                  -1: some kind of error occured (!WIN32)
  *                  SOCKET_ERROR: some kind of error occured  (WIN32)
  *                  0: success
+ * @remark          Does not change errno
  */
 int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l)
 {
     char dummy[512];
     int rc = 0;
+    int save_errno;
     fd_set rs;
     struct timeval tv;
     time_t start = time(NULL);
@@ -636,11 +647,13 @@ int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l)
         return -1;
     }
 
+    save_errno = errno;
     /* Shut down the socket for write, which will send a FIN
      * to the peer.
      */
     if (shutdown(sd, SHUT_WR)) {
         rc = jk_close_socket(sd, l);
+        errno = save_errno;
         JK_TRACE_EXIT(l);
         return rc;
     }
@@ -679,6 +692,7 @@ int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l)
     } while (difftime(time(NULL), start) < MAX_SECS_TO_LINGER);
 
     rc = jk_close_socket(sd, l);
+    errno = save_errno;
     JK_TRACE_EXIT(l);
     return rc;
 }
@@ -693,6 +707,7 @@ int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l)
  *            JK_SOCKET_EOF: no bytes could be sent
  *            >0: success, total size send
  * @remark    Always closes socket in case of error
+ * @remark    Cares about errno
  * @bug       this fails on Unixes if len is too big for the underlying
  *            protocol
  */
@@ -703,6 +718,7 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
 
     JK_TRACE_ENTER(l);
 
+    errno = 0;
     while (sent < len) {
         do {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
@@ -742,6 +758,7 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
  *            JK_SOCKET_EOF: no bytes could be read
  *            >0: success, total size received
  * @remark    Always closes socket in case of error
+ * @remark    Cares about errno
  */
 int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t *l)
 {
@@ -750,6 +767,7 @@ int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t 
 
     JK_TRACE_ENTER(l);
 
+    errno = 0;
     while (rdlen < len) {
         do {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
@@ -804,6 +822,7 @@ char *jk_dump_hinfo(struct sockaddr_in *saddr, char *buf)
  *                JK_TRUE: success
  * @remark        Does not close socket in case of error
  *                to allow for iterative waiting
+ * @remark        Cares about errno
  */
 int jk_is_input_event(jk_sock_t sd, int timeout, jk_logger_t *l)
 {
@@ -814,6 +833,7 @@ int jk_is_input_event(jk_sock_t sd, int timeout, jk_logger_t *l)
 
     JK_TRACE_ENTER(l);
 
+    errno = 0;
     FD_ZERO(&rset);
     FD_SET(sd, &rset);
     tv.tv_sec = timeout / 1000;
@@ -823,7 +843,6 @@ int jk_is_input_event(jk_sock_t sd, int timeout, jk_logger_t *l)
         rc = select((int)sd + 1, &rset, NULL, NULL, &tv);
     } while (rc < 0 && errno == EINTR);
 
-    errno = 0;
     if (rc == 0) {
         /* Timeout. Set the errno to timeout */
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
@@ -842,6 +861,7 @@ int jk_is_input_event(jk_sock_t sd, int timeout, jk_logger_t *l)
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
+    errno = 0;
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
@@ -852,6 +872,7 @@ int jk_is_input_event(jk_sock_t sd, int timeout, jk_logger_t *l)
  * @return     JK_FALSE: failure
  *             JK_TRUE: success
  * @remark     Always closes socket in case of error
+ * @remark     Cares about errno
  */
 int jk_is_socket_connected(jk_sock_t sd, jk_logger_t *l)
 {
@@ -861,6 +882,7 @@ int jk_is_socket_connected(jk_sock_t sd, jk_logger_t *l)
 
     JK_TRACE_ENTER(l);
 
+    errno = 0;
     FD_ZERO(&fd);
     FD_SET(sd, &fd);
 
@@ -877,6 +899,7 @@ int jk_is_socket_connected(jk_sock_t sd, jk_logger_t *l)
         tv.tv_usec = 1;
     } while (JK_IS_SOCKET_ERROR(rc) && errno == EINTR);
 
+    errno = 0;
     if (rc == 0) {
         /* If we get a timeout, then we are still connected */
         JK_TRACE_EXIT(l);
