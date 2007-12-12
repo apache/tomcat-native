@@ -261,7 +261,7 @@ static int sc_for_req_header(const char *header_name)
     p = &header[1];
 
 /* Always do memcmp including the final \0-termination character.
- */ 
+ */
     switch (header[0]) {
         case 'A':
             if (memcmp(p, "CCEPT", 6) == 0) {
@@ -825,40 +825,54 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
                             ae->worker->keepalive,
                             ae->worker->socket_timeout,
                             ae->worker->socket_buf, l);
-    if (IS_VALID_SOCKET(ae->sd)) {
-        ae->last_errno = 0;
-        if (JK_IS_DEBUG_LEVEL(l)) {
-            jk_log(l, JK_LOG_DEBUG,
-                   "Connected socket %d to (%s)",
-                   ae->sd,
-                   jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
-        }
-        /* set last_access only if needed */
-        if (ae->worker->cache_timeout > 0)
-            ae->last_access = time(NULL);
-        /* Check if we must execute a logon after the physical connect */
-        if (ae->worker->logon != NULL) {
-            rc = ae->worker->logon(ae, l);
-            JK_TRACE_EXIT(l);
-            return rc;
-        }
-        /* should we send a CPING to validate connection ? */
-        if (ae->worker->connect_timeout > 0) {
-            rc = ajp_handle_cping_cpong(ae,
-                        ae->worker->connect_timeout, l);
-            JK_TRACE_EXIT(l);
-            return rc;
-        }
-        JK_TRACE_EXIT(l);
-        return JK_TRUE;
-    }
-    ae->last_errno = errno;
 
-    jk_log(l, JK_LOG_INFO,
-           "Failed opening socket to (%s) (errno=%d)",
-           jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), ae->last_errno);
+    if (!IS_VALID_SOCKET(ae->sd)) {
+        ae->last_errno = errno;
+        jk_log(l, JK_LOG_INFO,
+               "Failed opening socket to (%s) (errno=%d)",
+               jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), ae->last_errno);
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+
+    ae->last_errno = 0;
+    if (JK_IS_DEBUG_LEVEL(l)) {
+        jk_log(l, JK_LOG_DEBUG,
+               "Connected socket %d to (%s)",
+               ae->sd,
+               jk_dump_hinfo(&ae->worker->worker_inet_addr, buf));
+    }
+    /* set last_access only if needed */
+    if (ae->worker->cache_timeout > 0)
+        ae->last_access = time(NULL);
+    /* Check if we must execute a logon after the physical connect */
+    /* XXX: Not sure, if we really should do logon before cping/cpong */
+    /* XXX: and if no cping/cpong is allowed before or after logon. */
+    if (ae->worker->logon != NULL) {
+        rc = ae->worker->logon(ae, l);
+        if (rc == JK_FALSE)
+            jk_log(l, JK_LOG_INFO,
+                   "(%s) ajp14 worker logon to the backend server failed",
+                   ae->worker->name);
+    }
+    /* should we send a CPING to validate connection ? */
+    else if (ae->worker->connect_timeout > 0) {
+        rc = ajp_handle_cping_cpong(ae, ae->worker->connect_timeout, l);
+        if (rc == JK_FALSE)
+            jk_log(l, JK_LOG_INFO,
+                   "(%s) cping/cpong after connecting to the backend server failed (errno=%d)",
+                   ae->worker->name, ae->last_errno);
+    }
+    if (rc != JK_TRUE) {
+        /* Close the socket if unable to connect */
+        jk_log(l, JK_LOG_INFO,
+               "(%s) error connecting to the backend server",
+               ae->worker->name, ae->last_errno);
+        jk_shutdown_socket(ae->sd, l);
+        ae->sd = JK_INVALID_SOCKET;
+    }
     JK_TRACE_EXIT(l);
-    return JK_FALSE;
+    return rc;
 }
 
 /*
@@ -895,8 +909,8 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     if ((rc = jk_tcp_socket_sendfull(ae->sd, msg->buf,
                                      msg->len, l)) > 0) {
         ae->endpoint.wr += (jk_uint64_t)rc;
-        JK_TRACE_EXIT(l);
         ae->last_errno = 0;
+        JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
     ae->last_errno = errno;
@@ -1212,7 +1226,7 @@ static int ajp_send_request(jk_endpoint_t *e,
                  * connections to the node if one of them fails
                  * the cping/cpong heartbeat?
                  * Tomcat can be either too busy or simply dead, so
-                 * there is a chance that all oter connections would
+                 * there is a chance that all other connections would
                  * fail as well.
                  */
                 err = 2;
@@ -1300,12 +1314,6 @@ static int ajp_send_request(jk_endpoint_t *e,
             }
         }
         else {
-            /* Close the socket if unable to connect */
-            jk_shutdown_socket(ae->sd, l);
-            ae->sd = JK_INVALID_SOCKET;
-            jk_log(l, JK_LOG_INFO,
-                   "(%s) error connecting to the backend server (errno=%d)",
-                   ae->worker->name, ae->last_errno);
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
