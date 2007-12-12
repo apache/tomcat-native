@@ -143,11 +143,19 @@ static int sononblock(jk_sock_t sd)
 static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_logger_t *l)
 {
     int rc;
-    if (timeout <= 0)
-        return connect(sock, addr, sizeof(struct sockaddr_in));
 
-    if ((rc = sononblock(sock)))
+    JK_TRACE_ENTER(l);
+
+    if (timeout <= 0) {
+        rc = connect(sock, addr, sizeof(struct sockaddr_in));
+        JK_TRACE_EXIT(l);
+        return rc;
+    }
+
+    if ((rc = sononblock(sock))) {
+        JK_TRACE_EXIT(l);
         return -1;
+    }
     if (JK_IS_SOCKET_ERROR(connect(sock, addr, sizeof(struct sockaddr_in)))) {
         struct timeval tv;
         fd_set wfdset, efdset;
@@ -155,6 +163,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
         if ((rc = WSAGetLastError()) != WSAEWOULDBLOCK) {
             soblock(sock);
             WSASetLastError(rc);
+            JK_TRACE_EXIT(l);
             return -1;
         }
         /* wait for the connect to complete or timeout */
@@ -170,6 +179,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
             rc = WSAGetLastError();
             soblock(sock);
             WSASetLastError(rc);
+            JK_TRACE_EXIT(l);
             return -1;
         }
         /* Evaluate the efdset */
@@ -181,10 +191,12 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
             soblock(sock);
             if (rc)
                 WSASetLastError(rc);
+            JK_TRACE_EXIT(l);
             return -1;
         }
     }
     soblock(sock);
+    JK_TRACE_EXIT(l);
     return 0;
 }
 
@@ -203,9 +215,13 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
 {
     int rc = 0;
 
+    JK_TRACE_ENTER(l);
+
     if (timeout > 0) {
-        if (sononblock(sock))
+        if (sononblock(sock)) {
+            JK_TRACE_EXIT(l);
             return -1;
+        }
     }
     do {
         rc = connect(sock, addr, sizeof(struct sockaddr_in));
@@ -227,6 +243,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
             int err = errno;
             soblock(sock);
             errno = err;
+            JK_TRACE_EXIT(l);
             return -1;
         }
         rc = 0;
@@ -244,6 +261,7 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
     if (rc == -1 && errno == EISCONN)
         rc = 0;
     soblock(sock);
+    JK_TRACE_EXIT(l);
     return rc;
 }
 #else
@@ -258,7 +276,13 @@ static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_log
  */
 static int nb_connect(jk_sock_t sock, struct sockaddr *addr, int timeout, jk_logger_t *l)
 {
-    return connect(sock, addr, sizeof(struct sockaddr_in));
+    int rc;
+
+    JK_TRACE_ENTER(l);
+
+    rc = connect(sock, addr, sizeof(struct sockaddr_in));
+    JK_TRACE_EXIT(l);
+    return rc;
 }
 #endif
 
@@ -296,6 +320,8 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
     int x;
     struct in_addr laddr;
 
+    JK_TRACE_ENTER(l);
+
     memset(rc, 0, sizeof(struct sockaddr_in));
 
     rc->sin_port = htons((short)port);
@@ -316,13 +342,17 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
         char *remote_ipaddr;
 
         if (!jk_apr_pool) {
-            if (apr_pool_create(&jk_apr_pool, NULL) != APR_SUCCESS)
+            if (apr_pool_create(&jk_apr_pool, NULL) != APR_SUCCESS) {
+                JK_TRACE_EXIT(l);
                 return JK_FALSE;
+            }
         }
         if (apr_sockaddr_info_get
             (&remote_sa, host, APR_UNSPEC, (apr_port_t) port, 0, jk_apr_pool)
-            != APR_SUCCESS)
+            != APR_SUCCESS) {
+            JK_TRACE_EXIT(l);
             return JK_FALSE;
+        }
 
         /* Since we are only handling AF_INET (IPV4) address (in_addr_t) */
         /* make sure we find one of those.                               */
@@ -333,8 +363,10 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
         /* if temp_sa is set, we have a valid address otherwise, just return */
         if (NULL != temp_sa)
             remote_sa = temp_sa;
-        else
+        else {
+            JK_TRACE_EXIT(l);
             return JK_FALSE;
+        }
 
         apr_sockaddr_ip_get(&remote_ipaddr, remote_sa);
 
@@ -350,6 +382,7 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
         struct hostent *hoste = gethostbyname(host);
 #endif
         if (!hoste) {
+            JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
 
@@ -363,6 +396,7 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
     }
     memcpy(&(rc->sin_addr), &laddr, sizeof(laddr));
 
+    JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
 
@@ -548,14 +582,22 @@ iSeries when Unix98 is required at compil time */
  */
 int jk_close_socket(jk_sock_t s, jk_logger_t *l)
 {
-    if (!IS_VALID_SOCKET(s))
+    int rc;
+
+    JK_TRACE_ENTER(l);
+
+    if (!IS_VALID_SOCKET(s)) {
+        JK_TRACE_EXIT(l);
         return -1;
+    }
 
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
-    return closesocket(s) ? -1 : 0;
+    rc = closesocket(s) ? -1 : 0;
 #else
-    return close(s);
+    rc = close(s);
 #endif
+    JK_TRACE_EXIT(l);
+    return rc;
 }
 
 #ifndef MAX_SECS_TO_LINGER
@@ -587,14 +629,20 @@ int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l)
     struct timeval tv;
     time_t start = time(NULL);
 
-    if (!IS_VALID_SOCKET(s))
+    JK_TRACE_ENTER(l);
+
+    if (!IS_VALID_SOCKET(s)) {
+        JK_TRACE_EXIT(l);
         return -1;
+    }
 
     /* Shut down the socket for write, which will send a FIN
      * to the peer.
      */
     if (shutdown(s, SHUT_WR)) {
-        return jk_close_socket(s, l);
+        rc = jk_close_socket(s, l);
+        JK_TRACE_EXIT(l);
+        return rc;
     }
 
     /* Set up to wait for readable data on socket... */
@@ -630,7 +678,9 @@ int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l)
 
     } while (difftime(time(NULL), start) < MAX_SECS_TO_LINGER);
 
-    return jk_close_socket(s, l);
+    rc = jk_close_socket(s, l);
+    JK_TRACE_EXIT(l);
+    return rc;
 }
 
 /** send a message
@@ -650,6 +700,8 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
     int sent = 0;
     int wr;
 
+    JK_TRACE_ENTER(l);
+
     while (sent < len) {
         do {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
@@ -662,13 +714,18 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
 #endif
         } while (JK_IS_SOCKET_ERROR(wr) && (errno == EINTR || errno == EAGAIN));
 
-        if (JK_IS_SOCKET_ERROR(wr))
+        if (JK_IS_SOCKET_ERROR(wr)) {
+            JK_TRACE_EXIT(l);
             return (errno > 0) ? -errno : errno;
-        else if (wr == 0)
+        }
+        else if (wr == 0) {
+            JK_TRACE_EXIT(l);
             return JK_SOCKET_EOF;
+        }
         sent += wr;
     }
 
+    JK_TRACE_EXIT(l);
     return sent;
 }
 
@@ -687,6 +744,8 @@ int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t 
     int rdlen = 0;
     int rd;
 
+    JK_TRACE_ENTER(l);
+
     while (rdlen < len) {
         do {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
@@ -699,13 +758,18 @@ int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t 
 #endif
         } while (JK_IS_SOCKET_ERROR(rd) && (errno == EINTR || errno == EAGAIN));
 
-        if (JK_IS_SOCKET_ERROR(rd))
+        if (JK_IS_SOCKET_ERROR(rd)) {
+            JK_TRACE_EXIT(l);
             return (errno > 0) ? -errno : errno;
-        else if (rd == 0)
+        }
+        else if (rd == 0) {
+            JK_TRACE_EXIT(l);
             return JK_SOCKET_EOF;
+        }
         rdlen += rd;
     }
 
+    JK_TRACE_EXIT(l);
     return rdlen;
 }
 
@@ -737,6 +801,8 @@ int jk_is_socket_connected(jk_sock_t sock, jk_logger_t *l)
     struct timeval tv;
     int rc;
 
+    JK_TRACE_ENTER(l);
+
     FD_ZERO(&fd);
     FD_SET(sock, &fd);
 
@@ -755,26 +821,30 @@ int jk_is_socket_connected(jk_sock_t sock, jk_logger_t *l)
 
     if (rc == 0) {
         /* If we get a timeout, then we are still connected */
+        JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
     else if (rc == 1) {
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
         u_long nr;
-        if (ioctlsocket(sock, FIONREAD, &nr) == 0) {
+        rc = ioctlsocket(sock, FIONREAD, &nr);
+        if (rc == 0) {
             if (WSAGetLastError() == 0)
                 errno = 0;
             else
                 JK_GET_SOCKET_ERRNO();
-            return nr == 0 ? JK_FALSE : JK_TRUE;
         }
-        JK_GET_SOCKET_ERRNO();
 #else
         int nr;
-        if (ioctl(sock, FIONREAD, (void*)&nr) == 0) {
-            return nr == 0 ? JK_FALSE : JK_TRUE;
-        }
+        rc = ioctl(sock, FIONREAD, (void*)&nr);
 #endif
+        if (rc == 0 && nr != 0) {
+            return JK_TRUE;
+            JK_TRACE_EXIT(l);
+        }
+        JK_GET_SOCKET_ERRNO();
     }
 
+    JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
