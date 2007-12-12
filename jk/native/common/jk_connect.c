@@ -60,8 +60,8 @@ typedef const char* SET_TYPE;
 
 /** Set socket to blocking
  * @param sd  socket to manipulate
- * @return    errno: fcntl returns -1 /* ! WIN32 */
- *            pseudo errno: ioctlsocket returns SOCKET_ERROR /* WIN32 */
+ * @return    errno: fcntl returns -1 /0 ! WIN32 0/
+ *            pseudo errno: ioctlsocket returns SOCKET_ERROR /0 WIN32 0/
  *            0: success
  */
 static int soblock(jk_sock_t sd)
@@ -95,8 +95,8 @@ static int soblock(jk_sock_t sd)
 
 /** Set socket to non-blocking
  * @param sd  socket to manipulate
- * @return    errno: fcntl returns -1 /* ! WIN32 */
- *            pseudo errno: ioctlsocket returns SOCKET_ERROR /* WIN32 */
+ * @return    errno: fcntl returns -1 /0 ! WIN32 0/
+ *            pseudo errno: ioctlsocket returns SOCKET_ERROR /0 WIN32 0/
  *            0: success
  */
 static int sononblock(jk_sock_t sd)
@@ -542,8 +542,8 @@ iSeries when Unix98 is required at compil time */
 /** Close the socket
  * @param s         socket to close
  * @param l         logger
- * @return          -1: some kind of error occured /* ! WIN32 */
- *                  SOCKET_ERROR: some kind of error occured  /* WIN32 */
+ * @return          -1: some kind of error occured /0 ! WIN32 0/
+ *                  SOCKET_ERROR: some kind of error occured  /0 WIN32 0/
  *                  0: success
  */
 int jk_close_socket(jk_sock_t s, jk_logger_t *l)
@@ -574,8 +574,8 @@ int jk_close_socket(jk_sock_t s, jk_logger_t *l)
  * @param s         socket to close
  * @param l         logger
  * @return          -1: socket to close is invalid
- *                  -1: some kind of error occured /* ! WIN32 */
- *                  SOCKET_ERROR: some kind of error occured  /* WIN32 */
+ *                  -1: some kind of error occured /0 ! WIN32 0/
+ *                  SOCKET_ERROR: some kind of error occured  /0 WIN32 0/
  *                  0: success
  */
 int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l)
@@ -638,8 +638,8 @@ int jk_shutdown_socket(jk_sock_t s, jk_logger_t *l)
  * @param b   buffer containing the data
  * @param len length to send
  * @param l   logger
- * @return    negative errno: write returns a fatal -1 /* ! WIN32 */
- *            negative pseudo errno: send returns SOCKET_ERROR /* WIN32 */
+ * @return    negative errno: write returns a fatal -1 /0 ! WIN32 0/
+ *            negative pseudo errno: send returns SOCKET_ERROR /0 WIN32 0/
  *            JK_SOCKET_EOF: no bytes could be sent
  *            >0: success, total size send
  * @bug       this fails on Unixes if len is too big for the underlying
@@ -677,8 +677,8 @@ int jk_tcp_socket_sendfull(jk_sock_t sd, const unsigned char *b, int len, jk_log
  * @param b   buffer to store the data
  * @param len length to receive
  * @param l   logger
- * @return    negative errno: read returns a fatal -1 /* ! WIN32 */
- *            negative pseudo errno: recv returns SOCKET_ERROR /* WIN32 */
+ * @return    negative errno: read returns a fatal -1 /0 ! WIN32 0/
+ *            negative pseudo errno: recv returns SOCKET_ERROR /0 WIN32 0/
  *            JK_SOCKET_EOF: no bytes could be read
  *            >0: success, total size received
  */
