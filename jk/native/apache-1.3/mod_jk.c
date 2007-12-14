@@ -247,7 +247,7 @@ static void JK_METHOD ws_add_log_items(jk_ws_service_t *s,
 
 static void * JK_METHOD ws_next_vhost(void *d);
 
-static void JK_METHOD ws_vhost_to_text(void *d, char *buf, int len);
+static void JK_METHOD ws_vhost_to_text(void *d, char *buf, size_t len);
 
 static jk_uri_worker_map_t * JK_METHOD ws_vhost_to_uw_map(void *d);
 
@@ -465,10 +465,10 @@ static void * JK_METHOD ws_next_vhost(void *d)
     return s->next;
 }
 
-static void JK_METHOD ws_vhost_to_text(void *d, char *buf, int len)
+static void JK_METHOD ws_vhost_to_text(void *d, char *buf, size_t len)
 {
     server_rec *s = (server_rec *)d;
-    int used = 0;
+    size_t used = 0;
 
     if (s->server_hostname)
         used += strlen(s->server_hostname);

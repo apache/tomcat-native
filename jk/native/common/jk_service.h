@@ -292,7 +292,7 @@ struct jk_ws_service
     /*
      * String representation of a vhost
      */
-    void (JK_METHOD * vhost_to_text) (void *d, char *buf, int len);
+    void (JK_METHOD * vhost_to_text) (void *d, char *buf, size_t len);
 
     /*
      * Get uw_map associated with a vhost
