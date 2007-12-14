@@ -717,13 +717,17 @@ void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 }
 
 
-/*
- * Try another connection from cache
+/** Steal a connection from an idle cache endpoint
+ * @param ae   endpoint that needs a new connection
+ * @param l    logger
+ * @return     JK_FALSE: failure
+ *             JK_TRUE: success
+ * @remark     Always closes old socket endpoint
  */
-
-static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
+static int ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
 {
     int rc;
+    int ret = JK_FALSE;
     ajp_worker_t *aw = ae->worker;
 
     JK_TRACE_ENTER(l);
@@ -745,17 +749,25 @@ static void ajp_next_connection(ajp_endpoint_t *ae, jk_logger_t *l)
             }
         }
         JK_LEAVE_CS(&aw->cs, rc);
-        if (IS_VALID_SOCKET(ae->sd))
+        if (IS_VALID_SOCKET(ae->sd)) {
+            ret = JK_TRUE;
             jk_log(l, JK_LOG_INFO,
                    "(%s) Will try pooled connection sd = %d from slot %d",
                     ae->worker->name, ae->sd, i);
+        }
     }
     JK_TRACE_EXIT(l);
+    return ret;
 }
 
-/*
- * Handle the CPING/CPONG initial query
- * Cares about ae->errno.
+/** Handle the cping/cpong query
+ * @param ae       endpoint
+ * @param timeout  wait timeout in milliseconds
+ * @param l        logger
+ * @return         JK_FALSE: failure
+ *                 JK_TRUE: success
+ * @remark         Always closes socket in case of
+ *                 a socket error
  */
 static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t *l)
 {
@@ -793,7 +805,7 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
      */
     if (jk_is_input_event(ae->sd, timeout, l) == JK_FALSE) {
         ae->last_errno = errno;
-        jk_log(l, JK_LOG_INFO, "timeout in reply pong");
+        jk_log(l, JK_LOG_INFO, "timeout in reply cpong");
         /* We can't trust this connection any more. */
         jk_shutdown_socket(ae->sd, l);
         ae->sd = JK_INVALID_SOCKET;
@@ -811,9 +823,12 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
     }
 
     if ((cmd = jk_b_get_byte(msg)) != AJP13_CPONG_REPLY) {
-        jk_log(l, JK_LOG_INFO,
+        jk_log(l, JK_LOG_ERROR,
                "awaited reply cpong, received %d instead",
                cmd);
+        /* We can't trust this connection any more. */
+        jk_shutdown_socket(ae->sd, l);
+        ae->sd = JK_INVALID_SOCKET;
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
@@ -822,9 +837,14 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
     return JK_TRUE;
 }
 
-/*
- * Connect an endpoint to a backend.
- * Cares about ae->errno.
+/** Connect an endpoint to a backend
+ * @param ae       endpoint
+ * @param l        logger
+ * @return         JK_FALSE: failure
+ *                 JK_TRUE: success
+ * @remark         Always closes socket in case of
+ *                 a socket error
+ * @remark         Cares about ae->last_errno
  */
 int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 {
@@ -841,7 +861,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 
     if (!IS_VALID_SOCKET(ae->sd)) {
         ae->last_errno = errno;
-        jk_log(l, JK_LOG_INFO,
+        jk_log(l, JK_LOG_ERROR,
                "Failed opening socket to (%s) (errno=%d)",
                jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), ae->last_errno);
         JK_TRACE_EXIT(l);
@@ -863,36 +883,38 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
     /* XXX: and if no cping/cpong is allowed before or after logon. */
     if (ae->worker->logon != NULL) {
         rc = ae->worker->logon(ae, l);
-        if (rc == JK_FALSE)
-            jk_log(l, JK_LOG_INFO,
+        if (rc == JK_FALSE) {
+            jk_log(l, JK_LOG_ERROR,
                    "(%s) ajp14 worker logon to the backend server failed",
                    ae->worker->name);
+            /* Close the socket if unable to logon */
+            jk_shutdown_socket(ae->sd, l);
+            ae->sd = JK_INVALID_SOCKET;
+        }
     }
-    /* should we send a CPING to validate connection ? */
+    /* XXX: Should we send a cping also after logon to validate the connection? */
     else if (ae->worker->connect_timeout > 0) {
         rc = ajp_handle_cping_cpong(ae, ae->worker->connect_timeout, l);
         if (rc == JK_FALSE)
-            jk_log(l, JK_LOG_INFO,
+            jk_log(l, JK_LOG_ERROR,
                    "(%s) cping/cpong after connecting to the backend server failed (errno=%d)",
                    ae->worker->name, ae->last_errno);
-    }
-    if (rc != JK_TRUE) {
-        /* Close the socket if unable to connect */
-        jk_log(l, JK_LOG_INFO,
-               "(%s) error connecting to the backend server",
-               ae->worker->name, ae->last_errno);
-        jk_shutdown_socket(ae->sd, l);
-        ae->sd = JK_INVALID_SOCKET;
     }
     JK_TRACE_EXIT(l);
     return rc;
 }
 
-/*
- * Send a message to endpoint, using corresponding PROTO HEADER
- * Cares about ae->errno.
+/** Send a message to an endpoint, using corresponding PROTO HEADER
+ * @param ae       endpoint
+ * @param msg      message to send
+ * @param l        logger
+ * @return         JK_FATAL_ERROR: message contains unknown protocol
+ *                 JK_FALSE: other failure 
+ *                 JK_TRUE: success
+ * @remark         Always closes socket in case of
+ *                 a socket error, or JK_FATAL_ERROR
+ * @remark         Cares about ae->last_errno
  */
-
 int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
                                     jk_msg_buf_t *msg, jk_logger_t *l)
 {
@@ -915,6 +937,11 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
         jk_log(l, JK_LOG_ERROR,
                "(%s) unknown protocol %d, supported are AJP13/AJP14",
                 ae->worker->name, ae->proto);
+        /* We've got a protocol error. */
+        /* We can't trust this connection any more, */
+        /* because we might have send already parts of the request. */
+        jk_shutdown_socket(ae->sd, l);
+        ae->sd = JK_INVALID_SOCKET;
         JK_TRACE_EXIT(l);
         return JK_FATAL_ERROR;
     }
@@ -938,11 +965,16 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     return JK_FALSE;
 }
 
-/*
- * Receive a message from endpoint, checking PROTO HEADER
- * Cares about ae->errno.
+/** Receive a message from an endpoint, checking PROTO HEADER
+ * @param ae       endpoint
+ * @param msg      message to send
+ * @param l        logger
+ * @return         JK_FALSE: failure 
+ *                 JK_TRUE: success
+ * @remark         Always closes socket in case of
+ *                 a socket error
+ * @remark         Cares about ae->last_errno
  */
-
 int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
                                    jk_msg_buf_t *msg, jk_logger_t *l)
 {
@@ -964,9 +996,11 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     if (rc < 0) {
         ae->last_errno = errno;
         if (rc == JK_SOCKET_EOF) {
-            jk_log(l, JK_LOG_INFO,
-                   "(%s) Tomcat has forced a connection close for socket %d",
-                   ae->worker->name, ae->sd);
+            jk_log(l, JK_LOG_ERROR,
+                   "(%s) can't receive the response message from tomcat, "
+                   "tomcat (%s) has forced a connection close for socket %d",
+                   ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
+                   ae->sd);
         }
         else {
             jk_log(l, JK_LOG_ERROR,
@@ -1130,6 +1164,7 @@ static int ajp_read_fully_from_server(jk_ws_service_t *s, jk_logger_t *l,
         rdlen += this_time;
     }
 
+    JK_TRACE_EXIT(l);
     return (int)rdlen;
 }
 
@@ -1192,12 +1227,12 @@ static int ajp_read_into_msg_buff(ajp_endpoint_t * ae,
  * send request to Tomcat via Ajp13
  * - first try to find reuseable socket
  * - if no one available, try to connect
- * - send request, but send must be see as asynchronous,
+ * - send request, but send must be seen as asynchronous,
  *   since send() call will return noerror about 95% of time
  *   Hopefully we'll get more information on next read.
  *
- * nb: reqmsg is the original request msg buffer
- *     repmsg is the reply msg buffer which could be scratched
+ * nb: op->request is the original request msg buffer
+ *     op->reply is the reply msg buffer which could be scratched
  *
  * Return values of ajp_send_request() function:
  * return value        op->recoverable   reason
@@ -1346,7 +1381,7 @@ static int ajp_send_request(jk_endpoint_t *e,
 
     /*
      * From now on an error means that we have an internal server error
-     * or Tomcat crashed. In any case we cannot recover this.
+     * or Tomcat crashed.
      */
 
     if (JK_IS_DEBUG_LEVEL(l))
@@ -1994,7 +2029,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
     s->secret = p->worker->secret;
 
     /*
-     * We get here initial request (in reqmsg)
+     * We get here initial request (in op->request)
      */
     if (!ajp_marshal_into_msgb(op->request, s, l, p)) {
         *is_error = JK_REQUEST_TOO_LARGE;
@@ -2015,8 +2050,8 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
      */
     for (i = 0; i < p->worker->worker.retries; i++) {
         /*
-         * We're using reqmsg which hold initial request
-         * if Tomcat is stopped or restarted, we will pass reqmsg
+         * We're using op->request which hold initial request
+         * if Tomcat is stopped or restarted, we will pass op->request
          * to next valid tomcat.
          */
         err = ajp_send_request(e, s, l, p, op);
