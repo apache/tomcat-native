@@ -214,14 +214,14 @@ extern "C"
 /* HTTP Error codes
  */
 
-#define JK_HTTP_OK               200
-#define JK_HTTP_BAD_REQUEST      400
-#define JK_REQUEST_TOO_LARGE     413
-#define JK_HTTP_SERVER_ERROR     500
-#define JK_HTTP_NOT_IMPLEMENTED  501
-#define JK_HTTP_BAD_GATEWAY      502
-#define JK_HTTP_SERVER_BUSY      503
-#define JK_HTTP_GATEWAY_TIME_OUT 504
+#define JK_HTTP_OK                200
+#define JK_HTTP_BAD_REQUEST       400
+#define JK_HTTP_REQUEST_TOO_LARGE 413
+#define JK_HTTP_SERVER_ERROR      500
+#define JK_HTTP_NOT_IMPLEMENTED   501
+#define JK_HTTP_BAD_GATEWAY       502
+#define JK_HTTP_SERVER_BUSY       503
+#define JK_HTTP_GATEWAY_TIME_OUT  504
 
 
 /*

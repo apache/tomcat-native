@@ -1929,7 +1929,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
  * return value      is_error              op->recoverable    reason
  * JK_FALSE          JK_HTTP_SERVER_ERROR  UNDEF              Invalid Parameters (null values)
  * JK_SERVER_ERROR   JK_HTTP_OK            UNDEF              Error during initializing empty request, response or post body objects
- * JK_CLIENT_ERROR   JK_REQUEST_TOO_LARGE  JK_TRUE            Request doesn't fit into buffer (error during ajp_marshal_into_msgb())
+ * JK_CLIENT_ERROR   JK_HTTP_REQUEST_TOO_LARGE JK_TRUE        Request doesn't fit into buffer (error during ajp_marshal_into_msgb())
  * JK_CLIENT_ERROR   JK_HTTP_BAD_REQUEST   JK_FALSE           Error during reading parts of POST body from client
  * JK_SERVER_ERROR   JK_HTTP_SERVER_ERROR  JK_FALSE           If ajp_send_request() returns JK_TRUE but !op->recoverable.
  *           This should never happen.
@@ -2036,7 +2036,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
      * We get here initial request (in op->request)
      */
     if (!ajp_marshal_into_msgb(op->request, s, l, p)) {
-        *is_error = JK_REQUEST_TOO_LARGE;
+        *is_error = JK_HTTP_REQUEST_TOO_LARGE;
         jk_log(l, JK_LOG_INFO,
                 "Creating AJP message failed, "
                 "without recovery");
