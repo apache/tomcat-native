@@ -828,7 +828,7 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
     }
 
     if ((cmd = jk_b_get_byte(msg)) != AJP13_CPONG_REPLY) {
-        jk_log(l, JK_LOG_ERROR,
+        jk_log(l, JK_LOG_WAITING,
                "awaited reply cpong, received %d instead",
                cmd);
         /* We can't trust this connection any more. */
@@ -866,7 +866,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 
     if (!IS_VALID_SOCKET(ae->sd)) {
         ae->last_errno = errno;
-        jk_log(l, JK_LOG_ERROR,
+        jk_log(l, JK_LOG_INFO,
                "Failed opening socket to (%s) (errno=%d)",
                jk_dump_hinfo(&ae->worker->worker_inet_addr, buf), ae->last_errno);
         JK_TRACE_EXIT(l);
@@ -1275,7 +1275,7 @@ static int ajp_send_request(jk_endpoint_t *e,
         int err = JK_FALSE;
         if (jk_is_socket_connected(ae->sd, l) == JK_FALSE) {
             ae->last_errno = errno;
-            jk_log(l, JK_LOG_INFO,
+            jk_log(l, JK_LOG_DEBUG,
                    "(%s) failed sending request, "
                    "socket %d is not connected any more (errno=%d)",
                    ae->worker->name, ae->sd, ae->last_errno);
@@ -2368,7 +2368,7 @@ int ajp_init(jk_worker_t *pThis,
                                   JK_RETRIES);
         if (pThis->retries < 1) {
             jk_log(l, JK_LOG_INFO,
-                   "number of retries must be grater then 1. Setting to default=%d",
+                   "number of retries must be greater then 1. Setting to default=%d",
                    JK_RETRIES);
             pThis->retries = JK_RETRIES;
         }

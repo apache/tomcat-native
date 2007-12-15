@@ -1165,7 +1165,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rc = JK_FALSE;
                 }
                 if (rec->s->state == JK_LB_STATE_ERROR)
-                    jk_log(l, JK_LOG_ERROR,
+                    jk_log(l, JK_LOG_INFO,
                            "service failed, worker %s is in error state",
                            rec->s->name);
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
