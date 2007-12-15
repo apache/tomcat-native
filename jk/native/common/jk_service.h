@@ -336,6 +336,14 @@ struct jk_endpoint
     jk_uint64_t wr;
 
     /*
+     * Flag to pass back recoverability status from
+     * a load balancer member to the load balancer itself.
+     * Depending on the configuration and request status
+     * recovery is not allowed.
+     */
+    int recoverable;
+
+    /*
      * A 'this' pointer which is used by the subclasses of this class to
      * point to data/functions which are specific to a given protocol
      * (e.g. ajp12 or ajp13 or ajp14).
