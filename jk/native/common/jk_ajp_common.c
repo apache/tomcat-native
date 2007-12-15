@@ -828,7 +828,7 @@ static int ajp_handle_cping_cpong(ajp_endpoint_t * ae, int timeout, jk_logger_t 
     }
 
     if ((cmd = jk_b_get_byte(msg)) != AJP13_CPONG_REPLY) {
-        jk_log(l, JK_LOG_WAITING,
+        jk_log(l, JK_LOG_WARNING,
                "awaited reply cpong, received %d instead",
                cmd);
         /* We can't trust this connection any more. */
