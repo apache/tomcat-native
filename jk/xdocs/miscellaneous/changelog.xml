@@ -44,8 +44,19 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        <bug>43229</bug>: Load balancer does not do fail over after
+        reply timeouts. (rjung)
+      </fix>
+      <fix>
         JKStatus: Repair detailed Apache httpd version display.
         This was broken for httpd version 2.2.4+. (rjung)
+      </fix>
+      <update>
+        LB/AJP: Refactoring of jk_connect.c, jk_ajp_common.c,
+        jk_lb_worker.c (rjung)
+      </update>
+      <fix>
+        Configure: Repair broken apxs auto-detection. (rjung)
       </fix>
       <update>
         Configure: Remove trace logging from compiled code
