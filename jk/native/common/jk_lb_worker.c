@@ -886,6 +886,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     int num_of_workers;
     int first = 1;
     int was_forced = 0;
+    int recoverable = JK_TRUE;
     int rc = JK_UNSET;
     char *sessionid = NULL;
 
@@ -940,9 +941,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
                "service sticky_session=%d id='%s'",
                p->worker->sticky_session, sessionid ? sessionid : "empty");
 
-    while (attempt <= num_of_workers && rc == JK_UNSET) {
+    while (attempt <= num_of_workers && recoverable == JK_TRUE) {
         worker_record_t *rec =
             get_most_suitable_worker(p->worker, sessionid, s, l);
+        rc = JK_FALSE;
+        *is_error = JK_HTTP_SERVER_BUSY;
         /* Do not reuse previous worker, because
          * that worker already failed.
          */
@@ -1009,6 +1012,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  * this request.
                  */
                 end->rd = end->wr = 0;
+                end->recoverable = JK_TRUE;
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_lock();
 
@@ -1031,6 +1035,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 service_stat = end->service(end, s, l, &is_service_error);
                 rd = end->rd;
                 wr = end->wr;
+                recoverable = end->recoverable;
+                *is_error = is_service_error;
                 end->done(&end, l);
 
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
@@ -1080,6 +1086,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rec->s->state = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
                     rc = JK_TRUE;
+                    recoverable = JK_UNSET;
                 }
                 else if (service_stat == JK_CLIENT_ERROR) {
                     /*
@@ -1089,51 +1096,82 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rec->s->client_errors++;
                     rec->s->state = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
-                    jk_log(l, JK_LOG_INFO,
-                           "unrecoverable error %d, request failed."
-                           " Client failed in the middle of request,"
-                           " we can't recover to another instance.",
-                           is_service_error);
-                    *is_error = is_service_error;
                     rc = JK_CLIENT_ERROR;
+                    recoverable = JK_FALSE;
                 }
-                else {
-                    if (is_service_error != JK_HTTP_SERVER_BUSY) {
+                else if (service_stat == JK_SERVER_ERROR) {
+                    /*
+                    * Internal JK server error
+                    * Don't mark the node as bad.
+                    * Failing over to another node could help.
+                    */
+                    rec->s->state = JK_LB_STATE_OK;
+                    rec->s->error_time = 0;
+                    rc = JK_FALSE;
+                }
+                else if (service_stat == JK_STATUS_ERROR) {
+                    /*
+                    * Status code configured as service is down.
+                    * Don't mark the node as bad.
+                    * Failing over to another node could help.
+                    */
+                    rec->s->state = JK_LB_STATE_OK;
+                    rec->s->error_time = 0;
+                    rc = JK_FALSE;
+                }
+                else if (service_stat == JK_STATUS_FATAL_ERROR) {
+                    /*
+                    * Status code configured as service is down.
+                    * Mark the node as bad.
+                    * Failing over to another node could help.
+                    */
+                    rec->s->errors++;
+                    rec->s->state = JK_LB_STATE_ERROR;
+                    rec->s->error_time = time(NULL);
+                    rc = JK_FALSE;
+                }
+                else if (service_stat == JK_REPLY_TIMEOUT) {
+                    rec->s->reply_timeouts++;
+                    if (rec->s->reply_timeouts > (unsigned)p->worker->s->max_reply_timeouts) {
                         /*
-                        * Error is not recoverable - break with an error.
+                        * Service failed - to many reply timeouts
+                        * Take this node out of service.
                         */
-                        jk_log(l, JK_LOG_ERROR,
-                            "unrecoverable error %d, request failed."
-                            " Tomcat failed in the middle of request,"
-                            " we can't recover to another instance.",
-                            is_service_error);
-                        *is_error = is_service_error;
-                        rc = JK_FALSE;
-                    }
-                    if (service_stat == JK_REPLY_TIMEOUT) {
-                        rec->s->reply_timeouts++;
-                    }
-                    if (service_stat != JK_STATUS_ERROR &&
-                        (service_stat != JK_REPLY_TIMEOUT ||
-                        rec->s->reply_timeouts > (unsigned)p->worker->s->max_reply_timeouts)) {
-
-                        /*
-                        * Service failed !!!
-                        * Time for fault tolerance (if possible)...
-                        */
-
                         rec->s->errors++;
                         rec->s->state = JK_LB_STATE_ERROR;
                         rec->s->error_time = time(NULL);
-                        jk_log(l, JK_LOG_INFO,
-                               "service failed, worker %s is in error state",
-                               rec->s->name);
                     }
+                    else {
+                    /*
+                    * XXX: if we want to be able to failover
+                    * to other nodes after a reply timeout,
+                    * but we do not put the timeout node into error,
+                    * how can we make sure, that we actually fail over
+                    * to other nodes?
+                    */
+                        rec->s->state = JK_LB_STATE_OK;
+                        rec->s->error_time = 0;
+                    }
+                    rc = JK_FALSE;
                 }
+                else {
+                    /*
+                    * Service failed !!!
+                    * Time for fault tolerance (if possible)...
+                    */
+                    rec->s->errors++;
+                    rec->s->state = JK_LB_STATE_ERROR;
+                    rec->s->error_time = time(NULL);
+                    rc = JK_FALSE;
+                }
+                if (rec->s->state == JK_LB_STATE_ERROR)
+                    jk_log(l, JK_LOG_ERROR,
+                           "service failed, worker %s is in error state",
+                           rec->s->name);
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_unlock();
             }
-            if ( rc == JK_UNSET ) {
+            if (recoverable == JK_TRUE) {
                 /*
                  * Error is recoverable by submitting the request to
                  * another worker... Lets try to do that.
@@ -1141,6 +1179,23 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
                            "recoverable error... will try to recover on other worker");
+            }
+            else {
+                /*
+                * Error is not recoverable - break with an error.
+                */
+                if (rc == JK_CLIENT_ERROR)
+                    jk_log(l, JK_LOG_INFO,
+                           "unrecoverable error %d, request failed."
+                           " Client failed in the middle of request,"
+                           " we can't recover to another instance.",
+                           *is_error);
+                else if (rc != JK_TRUE)
+                    jk_log(l, JK_LOG_ERROR,
+                           "unrecoverable error %d, request failed."
+                           " Tomcat failed in the middle of request,"
+                           " we can't recover to another instance.",
+                           *is_error);
             }
             if (first == 1 && s->add_log_items) {
                 first = 0;
@@ -1163,7 +1218,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      * Reset the service loop and go again
                      */
                     prec = NULL;
-                    rc   = JK_UNSET;
                     jk_log(l, JK_LOG_INFO,
                            "Forcing recovery once for %d workers", nf);
                     continue;
@@ -1187,12 +1241,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
         }
         attempt++;
     }
-    if ( rc == JK_UNSET ) {
+    if ( recoverable == JK_TRUE ) {
         jk_log(l, JK_LOG_INFO,
                "All tomcat instances are busy or in error state");
-        /* Set error to Timeout */
-        *is_error = JK_HTTP_SERVER_BUSY;
-        rc = JK_FALSE;
+        /* rc and http error must be set above */
     }
     if (prec && s->add_log_items) {
         lb_add_log_items(s, lb_last_log_names, prec, l);
