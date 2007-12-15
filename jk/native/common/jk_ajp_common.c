@@ -2103,6 +2103,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 rc = JK_CLIENT_ERROR;
                 log_error = JK_FALSE;
                 e->recoverable = JK_FALSE;
+                op->recoverable = JK_FALSE;
                   /* This doesn't make sense, because we already set reuse */
                   /* to JK_FALSE at the beginning of service() and only set it to true again after */
                   /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
@@ -2118,6 +2119,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 rc = JK_CLIENT_ERROR;
                 log_error = JK_FALSE;
                 e->recoverable = JK_FALSE;
+                op->recoverable = JK_FALSE;
                   /* This doesn't make sense, because we already set reuse */
                   /* to JK_FALSE at the beginning of service() and only set it to true again after */
                   /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
