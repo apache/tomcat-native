@@ -150,9 +150,10 @@
 #define JK_STATUS_REFRESH_DEF              "10"
 #define JK_STATUS_ESC_CHARS                ("<>?&")
 
-#define JK_STATUS_HEAD                     "<!DOCTYPE HTML PUBLIC \"-//W3C//" \
-                                           "DTD HTML 3.2 Final//EN\">\n"      \
-                                           "<html><head><title>JK Status Manager</title>"
+#define JK_STATUS_HEAD                     "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n" \
+                                           "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"" \
+                                           " \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n" \
+                                           "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">"
 
 #define JK_STATUS_COPYRIGHT                "Copyright &#169; 1999-2007, The Apache Software Foundation<br />" \
                                            "Licensed under the <a href=\"http://www.apache.org/licenses/LICENSE-2.0\">" \
@@ -1928,7 +1929,7 @@ static void form_worker(jk_ws_service_t *s,
     jk_putv(s, "<hr/><h3>Edit load balancer settings for ",
             name, "</h3>\n", NULL);
 
-    status_start_form(s, p, "GET", JK_STATUS_CMD_UPDATE, l);
+    status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, l);
 
     jk_putv(s, "<table>\n<tr><td>", JK_STATUS_ARG_LB_TEXT_RETRIES,
             ":</td><td><input name=\"",
@@ -2016,7 +2017,7 @@ static void form_member(jk_ws_service_t *s,
 
     jk_putv(s, "<hr/><h3>Edit worker settings for ",
             wr->s->name, "</h3>\n", NULL);
-    status_start_form(s, p, "GET", JK_STATUS_CMD_UPDATE, l);
+    status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, l);
 
     jk_puts(s, "<table>\n");
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ACTIVATION,
@@ -2128,7 +2129,7 @@ static void form_all_members(jk_ws_service_t *s,
                 "' for all members of load balancer ",
                 name, "</h3>\n", NULL);
 
-        status_start_form(s, p, "GET", JK_STATUS_CMD_UPDATE, l);
+        status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, l);
 
         jk_putv(s, "<table><tr>"
                 "<th>Balanced Worker</th><th>", aname, "</th>"
@@ -3397,7 +3398,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         jk_puts(s, "\">Stop auto refresh</a>]&nbsp;&nbsp;");
                     }
                     else {
-                        status_start_form(s, p, "GET", JK_STATUS_CMD_UNKNOWN, l);
+                        status_start_form(s, p, "get", JK_STATUS_CMD_UNKNOWN, l);
                         jk_puts(s, "<input type=\"submit\" value=\"Start auto refresh\"/>\n");
                         jk_putv(s, "(every ",
                                 "<input name=\"", JK_STATUS_ARG_REFRESH,
