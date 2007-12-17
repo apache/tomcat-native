@@ -553,7 +553,6 @@ int jk_open_file_logger(jk_logger_t **l, const char *file, int level)
         if (rc && p) {
             rc->log = log_to_file;
             rc->level = level;
-            jk_set_time_fmt(rc, NULL);
             rc->logger_private = p;
 #if defined(AS400) && !defined(AS400_UTF8)
             p->logfile = fopen(file, "a+, o_ccsid=0");
@@ -562,7 +561,7 @@ int jk_open_file_logger(jk_logger_t **l, const char *file, int level)
 #endif
             if (p->logfile) {
                 *l = rc;
-                jk_log(rc, JK_LOG_DEBUG, "log time stamp format is '%s'", rc->log_fmt);
+                jk_set_time_fmt(rc, NULL);
                 return JK_TRUE;
             }
         }
