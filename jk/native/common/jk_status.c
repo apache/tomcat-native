@@ -153,7 +153,8 @@
 #define JK_STATUS_HEAD                     "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n" \
                                            "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"" \
                                            " \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n" \
-                                           "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">"
+                                           "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">" \
+                                           "<head><title>JK Status Manager</title>"
 
 #define JK_STATUS_COPYRIGHT                "Copyright &#169; 1999-2007, The Apache Software Foundation<br />" \
                                            "Licensed under the <a href=\"http://www.apache.org/licenses/LICENSE-2.0\">" \
