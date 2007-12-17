@@ -709,8 +709,8 @@ void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-        "(%s) closing endpoint with sd = %u %s",
-         ae->worker->name, ae->sd, ae->reuse? "" : "(socket shutdown)");
+        "closing endpoint with sd = %u %s",
+         ae->sd, ae->reuse? "" : "(socket shutdown)");
     if (IS_VALID_SOCKET(ae->sd)) {
         jk_shutdown_socket(ae->sd, l);
         ae->sd = JK_INVALID_SOCKET;
