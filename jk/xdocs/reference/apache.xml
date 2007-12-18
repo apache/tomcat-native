@@ -174,7 +174,8 @@ it's own JkMountFile or JkAutoAlias.
 If you want all vhost to inherit mounts from the main server,
 you can set JkMountCopy to 'All' in the main server.
 <br/>
-This directive is only allowed inside VirtualHost.
+This directive is only allowed inside VirtualHost (with value "On")
+and in the global server (with value "All").
 <br/>
 The default is Off.
 <br/>
