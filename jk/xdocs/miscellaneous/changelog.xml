@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        <bug>42003</bug>: Allocate memory instead using fixed size from
+        the stack. (mturk)
+      </fix>
+      <fix>
         <bug>43229</bug>: Load balancer does not do fail over after
         reply timeouts. (rjung)
       </fix>
