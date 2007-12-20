@@ -631,19 +631,25 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
  * vhost mapping rules especially for IIS.
  */
     if (vhost) {
+        int off = 0;
+/* Add leading '/' if necessary */
+        if (vhost[0] != '/') {
+            url[0] = '/';
+            off = 1;
+        }
 /* Size including leading slash. */
-        vhost_len = strlen(vhost) + 1;
-        if (vhost_len >= JK_MAX_URI_LEN) {
+        vhost_len = strlen(vhost);
+        if (vhost_len + off >= JK_MAX_URI_LEN) {
             vhost_len = 0;
             jk_log(l, JK_LOG_WARNING,
                    "Host prefix %s for URI %s is invalid and will be ignored."
                    " It must be smaller than %d chars",
-                   vhost, JK_MAX_URI_LEN-1);
+                   vhost, JK_MAX_URI_LEN - off);
         }
         else {
-            url[0] = '/';
-            strncpy(&url[1], vhost, vhost_len);
+            strncpy(&url[off], vhost, vhost_len + 1);
         }
+        vhost_len += off;
     }
     for (i = 0; i < strlen(uri); i++) {
         if (i == JK_MAX_URI_LEN) {
