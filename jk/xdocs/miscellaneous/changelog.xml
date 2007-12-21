@@ -43,6 +43,13 @@
   <br />
   <subsection name="Native">
     <changelog>
+    </changelog>
+  </subsection>
+</section>
+<section name="Changes between 1.2.25 and 1.2.26">
+  <br />
+  <subsection name="Native">
+    <changelog>
       <fix>
         <bug>42003</bug>: Allocate memory instead using fixed size from
         the stack. (mturk)
