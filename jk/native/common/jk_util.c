@@ -31,6 +31,13 @@
 #include "jk_lb_worker.h"
 #include "jk_mt.h"
 
+#include "ap_config.h"
+#include "httpd.h"
+#include "http_config.h"
+#include "http_core.h"
+#include "http_log.h"
+
+
 #define SYSPROPS_OF_WORKER          ("sysprops")
 #define STDERR_OF_WORKER            ("stderr")
 #define STDOUT_OF_WORKER            ("stdout")
@@ -605,6 +612,8 @@ int jk_log(jk_logger_t *l,
      * to the output routing.
      */
     static int usable_size = HUGE_BUFFER_SIZE - 3;
+    ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
+                "jk_log %d %d %d", l, file, fmt);
     if (!l || !file || !fmt) {
         return -1;
     }
