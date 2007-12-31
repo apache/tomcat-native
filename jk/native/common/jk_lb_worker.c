@@ -632,7 +632,6 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
 static worker_record_t *find_best_byvalue(lb_worker_t *p,
                                           jk_logger_t *l)
 {
-    static unsigned int next_offset = 0;
     unsigned int i;
     unsigned int j;
     unsigned int offset;
@@ -642,7 +641,7 @@ static worker_record_t *find_best_byvalue(lb_worker_t *p,
     /* find the least busy worker */
     worker_record_t *candidate = NULL;
 
-    offset = next_offset;
+    offset = p->next_offset;
 
     /* First try to see if we have available candidate */
     for (j = offset; j < p->num_of_workers + offset; j++) {
@@ -658,7 +657,7 @@ static worker_record_t *find_best_byvalue(lb_worker_t *p,
                 candidate = &p->lb_workers[i];
                 curmin = p->lb_workers[i].s->lb_value;
                 d = p->lb_workers[i].s->distance;
-                next_offset = i + 1;
+                p->next_offset = i + 1;
             }
         }
     }
@@ -1536,6 +1535,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->recover_wait_time = WAIT_BEFORE_RECOVER;
         private_data->max_reply_timeouts = 0;
         private_data->sequence = 0;
+        private_data->next_offset = 0;
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);
         return JK_LB_WORKER_TYPE;

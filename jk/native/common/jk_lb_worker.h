@@ -143,6 +143,7 @@ struct lb_worker
     int          maintain_time;
     unsigned int max_packet_size;
     unsigned int sequence;
+    unsigned int next_offset;
 
     jk_pool_t p;
     jk_pool_atom_t buf[TINY_POOL_SIZE];

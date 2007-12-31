@@ -39,10 +39,13 @@
   new documentation project for JK was started.
   </p>
 </section>
-<section name="Changes between 1.2.25 and 1.2.26">
+<section name="Changes between 1.2.26 and 1.2.27">
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        <bug>44147</bug>: Multiple load balancing workers problem. (rjung)
+      </fix>
     </changelog>
   </subsection>
 </section>
