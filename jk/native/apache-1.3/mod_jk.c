@@ -610,7 +610,6 @@ static int init_ws_service(apache_private_data_t * private_data,
     int size;
     request_rec *r = private_data->r;
     char *ssl_temp = NULL;
-    s->route = NULL;        /* Used for sticky session routing */
 
     /* Copy in function pointers (which are really methods) */
     s->start_response = ws_start_response;
@@ -621,9 +620,6 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->next_vhost = ws_next_vhost;
     s->vhost_to_text = ws_vhost_to_text;
     s->vhost_to_uw_map = ws_vhost_to_uw_map;
-
-    /* Clear RECO status */
-    s->reco_status = RECO_NONE;
 
     s->auth_type = NULL_FOR_EMPTY(r->connection->ap_auth_type);
     s->remote_user = NULL_FOR_EMPTY(r->connection->user);
@@ -641,17 +637,11 @@ static int init_ws_service(apache_private_data_t * private_data,
 
     if (conf->options & JK_OPT_FLUSHPACKETS)
         s->flush_packets = 1;
-    else
-        s->flush_packets = 0;
     if (conf->options & JK_OPT_FLUSHEADER)
         s->flush_header = 1;
-    else
-        s->flush_header = 0;
 
     if (conf->options & JK_OPT_DISABLEREUSE)
         s->disable_reuse = 1;
-    else
-        s->disable_reuse = 0;
 
     /* get server name */
     /* s->server_name  = (char *)(r->hostname ? r->hostname : r->server->server_hostname); */
@@ -717,13 +707,6 @@ static int init_ws_service(apache_private_data_t * private_data,
     default:
         return JK_FALSE;
     }
-
-    s->is_ssl = JK_FALSE;
-    s->ssl_cert = NULL;
-    s->ssl_cert_len = 0;
-    s->ssl_cipher = NULL;       /* required by Servlet 2.3 Api, allready in original ajp13 */
-    s->ssl_session = NULL;
-    s->ssl_key_size = -1;       /* required by Servlet 2.3 Api, added in jtc */
 
     if (conf->ssl_enable || conf->envvars) {
         ap_add_common_vars(r);
@@ -817,9 +800,6 @@ static int init_ws_service(apache_private_data_t * private_data,
         }
     }
 
-    s->headers_names = NULL;
-    s->headers_values = NULL;
-    s->num_headers = 0;
     if (r->headers_in && ap_table_elts(r->headers_in)) {
         int need_content_length_header = (!s->is_chunked
                                           && s->content_length ==

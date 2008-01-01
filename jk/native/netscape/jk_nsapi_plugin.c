@@ -416,22 +416,13 @@ static int init_ws_service(nsapi_private_data_t * private_data,
     int size;
     int rc;
 
-    s->route = NULL;
     s->start_response = start_response;
     s->read = ws_read;
     s->write = ws_write;
-    s->flush = NULL;
-    s->flush_packets = JK_FALSE;
-    s->flush_header = JK_FALSE;
-    s->disable_reuse = JK_FALSE;
-
-    /* Clear RECO status */
-    s->reco_status = RECO_NONE;
 
     s->auth_type = pblock_findval("auth-type", private_data->rq->vars);
     s->remote_user = pblock_findval("auth-user", private_data->rq->vars);
 
-    s->content_length = 0;
     tmp = NULL;
     rc = request_header("content-length",
                         &tmp, private_data->sn, private_data->rq);
@@ -467,10 +458,6 @@ static int init_ws_service(nsapi_private_data_t * private_data,
         s->server_port = server_portnum;
     s->server_software = system_version();
 
-
-    s->headers_names = NULL;
-    s->headers_values = NULL;
-    s->num_headers = 0;
     s->uw_map = uw_map;
 
 #ifdef NETWARE
@@ -484,7 +471,6 @@ static int init_ws_service(nsapi_private_data_t * private_data,
 #endif
         s->is_ssl = security_active;
 
-    s->ssl_key_size = -1;       /* required by Servlet 2.3 Api, added in jtc */
     if (s->is_ssl) {
         char *ssl_cert = pblock_findval("auth-cert", private_data->rq->vars);
         if (ssl_cert != NULL) {
@@ -498,12 +484,7 @@ static int init_ws_service(nsapi_private_data_t * private_data,
         }
         s->ssl_cipher = pblock_findval("cipher", private_data->sn->client);
         s->ssl_session = pblock_findval("ssl-id", private_data->sn->client);
-    }
-    else {
-        s->ssl_cert = NULL;
-        s->ssl_cert_len = 0;
-        s->ssl_cipher = NULL;
-        s->ssl_session = NULL;
+        /* XXX: We need to investigate how to set s->ssl_key_size */
     }
 
     rc = setup_http_headers(private_data, s);

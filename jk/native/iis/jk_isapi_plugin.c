@@ -1968,21 +1968,9 @@ static int init_ws_service(isapi_private_data_t * private_data,
 
     DWORD huge_buf_sz;
 
-    s->route = NULL;
-
     s->start_response = start_response;
     s->read = read;
     s->write = write;
-
-    /* Yes we do want to reuse AJP connections */
-    s->disable_reuse = JK_FALSE;
-
-    s->flush = NULL;
-    s->flush_packets = JK_FALSE;
-    s->flush_header = JK_FALSE;
-
-    /* Clear RECO status */
-    s->reco_status = RECO_NONE;
 
     if (!(huge_buf = jk_pool_alloc(&private_data->p, MAX_PACKET_SIZE))) {
 
@@ -2015,15 +2003,6 @@ static int init_ws_service(isapi_private_data_t * private_data,
     s->method = private_data->lpEcb->lpszMethod;
     s->content_length = (jk_uint64_t)private_data->lpEcb->cbTotalBytes;
 
-    s->ssl_cert = NULL;
-    s->ssl_cert_len = 0;
-    s->ssl_cipher = NULL;
-    s->ssl_session = NULL;
-    s->ssl_key_size = -1;
-
-    s->headers_names = NULL;
-    s->headers_values = NULL;
-    s->num_headers = 0;
     s->uw_map = uw_map;
     /*
      * Add SSL IIS environment
@@ -2060,6 +2039,8 @@ static int init_ws_service(isapi_private_data_t * private_data,
                 num_of_vars++;
             }
         }
+        /* XXX: To make the isapi plugin more consistent with the other web servers */
+        /* we should also set s->ssl_cipher, s->ssl_session, and s->ssl_key_size. */
         if (num_of_vars) {
             unsigned int j;
 

@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Move initialization of service members with defaults from web server
+        specific code to our generic jk_init_ws_service() function. (rjung)
+      </update>
+      <update>
         Common: Add missing prepost cping/cpong directly after connect
         in case prepost cping is used, but no connect cping. (rjung)
       </update>
