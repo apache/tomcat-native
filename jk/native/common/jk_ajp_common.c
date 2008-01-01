@@ -1363,7 +1363,24 @@ static int ajp_send_request(jk_endpoint_t *e,
             JK_TRACE_EXIT(l);
             return JK_FATAL_ERROR;
         }
-        /* Send the request.
+        if (ae->worker->connect_timeout <= 0 &&
+            ae->worker->prepost_timeout > 0) {
+            /* handle cping/cpong if prepost_timeout is set
+             * and we didn't already do a connect cping/cpong.
+             */
+            if (ajp_handle_cping_cpong(ae,
+                        ae->worker->prepost_timeout, l) == JK_FALSE) {
+                jk_log(l, JK_LOG_INFO,
+                       "(%s) failed sending request, "
+                       "socket %d prepost cping/cpong failure (errno=%d)",
+                        ae->worker->name, ae->sd, ae->last_errno);
+                JK_TRACE_EXIT(l);
+                return JK_FATAL_ERROR;
+            }
+        }
+
+        /* We've got a connected socket and the optional
+         * cping/cpong worked, so let's send the request now.
          */
         rc = ajp_connection_tcp_send_message(ae, op->request, l);
         /* Error during sending the request.
