@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Apache: Enhance robustness of message formating in jk_error_exit(). (rjung)
+      </update>
       <fix>
         <bug>44147</bug>: Multiple load balancing workers problem. (rjung)
       </fix>

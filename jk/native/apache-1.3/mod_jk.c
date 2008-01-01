@@ -542,10 +542,20 @@ static void jk_error_exit(const char *file,
 {
     va_list ap;
     char *res;
+    char *ch;
 
     va_start(ap, fmt);
     res = ap_pvsprintf(p, fmt, ap);
     va_end(ap);
+    /* Replace all format characters in the resulting message */
+    /* because we feed the message to ap_log_error(). */
+    ch = res;
+    while (*ch) {
+        if (*ch == '%') {
+            *ch = '#';
+        }
+        ch++;
+    }
 
     ap_log_error(file, line, level, s, res);
     if ( s ) {
