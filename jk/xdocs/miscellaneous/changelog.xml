@@ -44,6 +44,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Status: Improve XSS hardening. (rjung)
+      </update>
+      <update>
         Move initialization of service members with defaults from web server
         specific code to our generic jk_init_ws_service() function. (rjung)
       </update>

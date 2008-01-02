@@ -148,7 +148,7 @@
 
 #define JK_STATUS_WAIT_AFTER_UPDATE        "3"
 #define JK_STATUS_REFRESH_DEF              "10"
-#define JK_STATUS_ESC_CHARS                ("<>?&")
+#define JK_STATUS_ESC_CHARS                ("<>?\"")
 
 #define JK_STATUS_HEAD                     "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n" \
                                            "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"" \
@@ -247,6 +247,7 @@ struct status_endpoint
 {
     status_worker_t *worker;
 
+    char            *query_string;
     jk_map_t        *req_params;
     char            *msg;
 
@@ -936,13 +937,6 @@ static int status_parse_uri(jk_ws_service_t *s,
 
     JK_TRACE_ENTER(l);
 
-    if (!jk_map_alloc(&(p->req_params))) {
-        jk_log(l, JK_LOG_ERROR,
-               "Status worker '%s' could not alloc map for request parameters",
-               w->name);
-        JK_TRACE_EXIT(l);
-        return JK_FALSE;
-    }
     if (!s->query_string) {
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
@@ -951,15 +945,39 @@ static int status_parse_uri(jk_ws_service_t *s,
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
-    m = p->req_params;
-    query = jk_pool_strdup(s->pool, s->query_string);
-    if (!query) {
+
+    p->query_string = jk_pool_strdup(s->pool, s->query_string);
+    if (!p->query_string) {
         jk_log(l, JK_LOG_ERROR,
-               "Status worker '%s' could not copy string",
+               "Status worker '%s' could not copy query string",
                w->name);
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
+
+    /* XXX We simply mask special chars n the query string with '@' to prevent cross site scripting */
+    query = p->query_string;
+    while ((query = strpbrk(query, JK_STATUS_ESC_CHARS)))
+        query[0] = '@';
+
+    if (!jk_map_alloc(&(p->req_params))) {
+        jk_log(l, JK_LOG_ERROR,
+               "Status worker '%s' could not alloc map for request parameters",
+               w->name);
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+    m = p->req_params;
+
+    query = jk_pool_strdup(s->pool, p->query_string);
+    if (!query) {
+        jk_log(l, JK_LOG_ERROR,
+               "Status worker '%s' could not copy query string",
+               w->name);
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+
 #ifdef _REENTRANT
     for (param = strtok_r(query, "&", &lasts);
          param; param = strtok_r(NULL, "&", &lasts)) {
@@ -977,14 +995,9 @@ static int status_parse_uri(jk_ws_service_t *s,
         }
         value = strchr(key, '=');
         if (value) {
-            char *off;
             *value = '\0';
             value++;
     /* XXX Depending on the params values, we might need to trim and decode */
-    /* XXX For now we simply mask special chars with '@' to prevent cross code injection */
-            off = value;
-            while ((off = strpbrk(off, JK_STATUS_ESC_CHARS)))
-                off[0] = '@';
             if (strlen(key)) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
@@ -3336,7 +3349,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     cmd == JK_STATUS_CMD_SHOW) &&
                     refresh > 0) {
                     jk_printf(s, "\n<meta http-equiv=\"Refresh\" content=\"%d;url=%s?%s\">",
-                          refresh, s->req_uri, s->query_string);
+                          refresh, s->req_uri, p->query_string);
                 }
                 if (w->css) {
                     jk_putv(s, "\n<link rel=\"stylesheet\" type=\"text/css\" href=\"",
@@ -3362,7 +3375,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if (cmd == JK_STATUS_CMD_LIST ||
                     cmd == JK_STATUS_CMD_SHOW) {
                     if (refresh > 0) {
-                        const char *str = s->query_string;
+                        const char *str = p->query_string;
                         char *buf = jk_pool_alloc(s->pool, sizeof(char *) * (strlen(str)+1));
                         int result = 0;
                         size_t scan = 0;
