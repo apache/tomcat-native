@@ -149,6 +149,10 @@
 #define JK_STATUS_WAIT_AFTER_UPDATE        "3"
 #define JK_STATUS_REFRESH_DEF              "10"
 #define JK_STATUS_ESC_CHARS                ("<>?\"")
+#define JK_STATUS_TIME_FMT_HTML            "%a, %d %b %Y %T %Z"
+#define JK_STATUS_TIME_FMT_TEXT            "%Y%m%d%H%M%S"
+#define JK_STATUS_TIME_FMT_TZ              "%Z"
+#define JK_STATUS_TIME_BUF_SZ              (80)
 
 #define JK_STATUS_HEAD                     "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n" \
                                            "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"" \
@@ -432,6 +436,13 @@ static void jk_print_xml_att_int(jk_ws_service_t *s,
     jk_printf(s, "%*s%s=\"%d\"\n", indentation, "", key, value);
 }
 
+static void jk_print_xml_att_long(jk_ws_service_t *s,
+                                  int indentation,
+                                  const char *key, long value)
+{
+    jk_printf(s, "%*s%s=\"%ld\"\n", indentation, "", key, value);
+}
+
 static void jk_print_xml_att_uint32(jk_ws_service_t *s,
                                     int indentation,
                                     const char *key, jk_uint32_t value)
@@ -467,6 +478,18 @@ static void jk_print_prop_att_int(jk_ws_service_t *s, status_worker_t *w,
     }
     else {
         jk_printf(s, "%s.%s=%d\n", w->prefix, key, value);
+    }
+}
+
+static void jk_print_prop_att_long(jk_ws_service_t *s, status_worker_t *w,
+                                   const char *name,
+                                   const char *key, long value)
+{
+    if (name) {
+        jk_printf(s, "%s.%s.%s=%ld\n", w->prefix, name, key, value);
+    }
+    else {
+        jk_printf(s, "%s.%s=%ld\n", w->prefix, key, value);
     }
 }
 
@@ -3209,6 +3232,23 @@ static int JK_METHOD service(jk_endpoint_t *e,
     }
 
     if (!err) {
+        char buf_time[JK_STATUS_TIME_BUF_SZ];
+        char buf_tz[JK_STATUS_TIME_BUF_SZ];
+        int rc_time;
+        time_t clock = time(NULL);
+        long unix_seconds = (long)clock;
+#ifdef _MT_CODE_PTHREAD
+        struct tm res;
+        struct tm *tms = localtime_r(&clock, &res);
+#else
+        struct tm *tms = localtime(&clock);
+#endif
+        if (mime == JK_STATUS_MIME_HTML)
+            rc_time = strftime(buf_time, JK_STATUS_TIME_BUF_SZ, JK_STATUS_TIME_FMT_HTML, tms);
+        else {
+            rc_time = strftime(buf_time, JK_STATUS_TIME_BUF_SZ, JK_STATUS_TIME_FMT_TEXT, tms);
+        }
+        strftime(buf_tz, JK_STATUS_TIME_BUF_SZ, JK_STATUS_TIME_FMT_TZ, tms);
         if (cmd == JK_STATUS_CMD_UPDATE) {
             /* lock shared memory */
             jk_shm_lock();
@@ -3278,6 +3318,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if ((cmd == JK_STATUS_CMD_LIST) ||
                     (cmd == JK_STATUS_CMD_SHOW) ||
                     (cmd == JK_STATUS_CMD_VERSION)) {
+                    if (rc_time > 0 ) {
+                        jk_print_xml_start_elt(s, w, 0, 0, "time");
+                        jk_print_xml_att_string(s, 2, "datetime", buf_time);
+                        jk_print_xml_att_string(s, 2, "tz", buf_tz);
+                        jk_print_xml_att_long(s, 2, "unix", unix_seconds);
+                        jk_print_xml_stop_elt(s, 0, 1);
+                    }
                     jk_print_xml_start_elt(s, w, 0, 0, "software");
                     jk_print_xml_att_string(s, 2, "web_server", s->server_software);
                     jk_print_xml_att_string(s, 2, "jk_version", JK_EXPOSED_VERSION);
@@ -3304,6 +3351,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if ((cmd == JK_STATUS_CMD_LIST) ||
                     (cmd == JK_STATUS_CMD_SHOW) ||
                     (cmd == JK_STATUS_CMD_VERSION)) {
+                    if (rc_time > 0) {
+                        jk_puts(s, "Time:");
+                        jk_printf(s, " datetime=%s", buf_time);
+                        jk_printf(s, " tz=%s", buf_tz);
+                        jk_printf(s, " unix=%ld", unix_seconds);
+                        jk_puts(s, "\n");
+                    }
                     jk_puts(s, "Software:");
                     jk_printf(s, " web_server=\"%s\"", s->server_software);
                     jk_printf(s, " jk_version=%s", JK_EXPOSED_VERSION);
@@ -3328,6 +3382,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if ((cmd == JK_STATUS_CMD_LIST) ||
                     (cmd == JK_STATUS_CMD_SHOW) ||
                     (cmd == JK_STATUS_CMD_VERSION)) {
+                    if (rc_time > 0) {
+                        jk_print_prop_att_string(s, w, NULL, "time_datetime", buf_time);
+                        jk_print_prop_att_string(s, w, NULL, "time_tz", buf_tz);
+                        jk_print_prop_att_long(s, w, NULL, "time_unix", unix_seconds);
+                    }
                     jk_print_prop_att_string(s, w, NULL, "web_server", s->server_software);
                     jk_print_prop_att_string(s, w, NULL, "jk_version", JK_EXPOSED_VERSION);
                 }
@@ -3367,10 +3426,15 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     (cmd == JK_STATUS_CMD_SHOW) ||
                     (cmd == JK_STATUS_CMD_VERSION)) {
                     jk_putv(s, "<table><tr><td>Server Version:</td><td>",
-                            s->server_software, "</td></tr>\n", NULL);
+                            s->server_software, "</td><td>&nbsp;&nbsp;&nbsp;</td><td>", NULL);
+                    if (rc_time > 0) {
+                        jk_putv(s, "Server Time:</td><td>", buf_time, NULL);
+                    }
+                    jk_puts(s, "</td></tr>\n");
                     jk_putv(s, "<tr><td>JK Version:</td><td>",
-                            JK_EXPOSED_VERSION, "</td></tr></table>\n", NULL);
-                    jk_puts(s, "<hr/>\n");
+                            JK_EXPOSED_VERSION, "</td><td></td><td>", NULL);
+                    jk_printf(s, "Unix Seconds:</td><td>%d", unix_seconds);
+                    jk_puts(s, "</td></tr></table>\n<hr/>\n");
                 }
                 if (cmd == JK_STATUS_CMD_LIST ||
                     cmd == JK_STATUS_CMD_SHOW) {

@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Status: Include server local time in output. (rjung)
+      </update>
       <fix>
         <bug>44116</bug>: Fix handling of multiple JSESSIONID cookies. (rjung)
       </fix>
