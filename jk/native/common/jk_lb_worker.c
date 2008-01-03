@@ -358,25 +358,27 @@ static char *get_cookie(jk_ws_service_t *s, const char *name)
                          * Session cookie was found, get it's value
                          */
                         char *id_end;
+                        size_t sz;
                         ++id_start;
-                        id_start = jk_pool_strdup(s->pool, id_start);
-                        if ((id_end = strchr(id_start, ';')) != NULL) {
-                            *id_end = '\0';
-                        }
-                        if ((id_end = strchr(id_start, ',')) != NULL) {
-                            *id_end = '\0';
+                        if ((id_end = strpbrk(id_start, ";,")) != NULL)
+                            sz = id_end - id_start;
+                        else {
+                            sz = strlen(id_start);
+                            id_end = id_start + sz;
                         }
                         if (result == NULL) {
-                            result = id_start;
+                            result = jk_pool_alloc(s->pool, sz + 1);
+                            memcpy(result, id_start, sz);
+                            result[sz] = '\0';
                         }
                         else {
                             size_t osz = strlen(result) + 1;
-                            size_t sz = osz + strlen(id_start) + 1;
                             result =
-                                jk_pool_realloc(s->pool, sz, result, osz);
+                                jk_pool_realloc(s->pool, osz + sz + 1, result, osz);
                             strcat(result, ";");
-                            strcat(result, id_start);
+                            strncat(result, id_start, sz);
                         }
+                        id_start = id_end;
                     }
                 }
             }

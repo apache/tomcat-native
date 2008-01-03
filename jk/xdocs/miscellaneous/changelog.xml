@@ -44,7 +44,10 @@
   <subsection name="Native">
     <changelog>
       <fix>
-        Use thread safe localtime_r where appropriate. (rjung)
+        <bug>44116</bug>: Fix handling of multiple JSESSIONID cookies. (rjung)
+      </fix>
+      <fix>
+        <bug>37850</bug>: Use thread safe localtime_r where appropriate. (rjung)
       </fix>
       <fix>
         Use thread safe strtok_r on more platforms, especially AIX. (rjung)
@@ -53,15 +56,16 @@
         Status: Improve XSS hardening. (rjung)
       </update>
       <update>
-        Move initialization of service members with defaults from web server
-        specific code to our generic jk_init_ws_service() function. (rjung)
+        <bug>35303</bug>: Move initialization of service members with defaults from
+        web server specific code to our generic jk_init_ws_service() function. (rjung)
       </update>
-      <update>
-        Common: Add missing prepost cping/cpong directly after connect
+      <fix>
+        <bug>36385</bug>: Add missing prepost cping/cpong directly after connect
         in case prepost cping is used, but no connect cping. (rjung)
-      </update>
+      </fix>
       <update>
-        Apache: Enhance robustness of message formating in jk_error_exit(). (rjung)
+        <bug>37322</bug>: Apache: Enhance robustness of message formating
+        in jk_error_exit(). (rjung)
       </update>
       <fix>
         <bug>44147</bug>: Multiple load balancing workers problem. (rjung)
