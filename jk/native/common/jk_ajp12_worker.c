@@ -540,7 +540,7 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
         char *line = NULL;
         char *name = NULL;
         char *value = NULL;
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD
         char *lasts;
 #endif
 
@@ -588,7 +588,7 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
         jk_log(l, JK_LOG_DEBUG, "ajpv12_handle_response, read %s=%s", name,
                value);
         if (0 == strcmp("Status", name)) {
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD
             char *numeric = strtok_r(value, " \t", &lasts);
 #else
             char *numeric = strtok(value, " \t");
@@ -600,7 +600,7 @@ static int ajpv12_handle_response(ajp12_endpoint_t * p,
                        "ajpv12_handle_response, invalid status code");
                 return JK_FALSE;
             }
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD
             reason = jk_pool_strdup(s->pool, strtok_r(NULL, " \t", &lasts));
 #else
             reason = jk_pool_strdup(s->pool, strtok(NULL, " \t"));

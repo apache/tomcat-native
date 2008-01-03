@@ -929,7 +929,7 @@ static int status_parse_uri(jk_ws_service_t *s,
 {
     jk_map_t *m;
     status_worker_t *w = p->worker;
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD_MT_CODE_PTHREAD
     char *lasts;
 #endif
     char *param;
@@ -978,7 +978,7 @@ static int status_parse_uri(jk_ws_service_t *s,
         return JK_FALSE;
     }
 
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD_MT_CODE_PTHREAD
     for (param = strtok_r(query, "&", &lasts);
          param; param = strtok_r(NULL, "&", &lasts)) {
 #else

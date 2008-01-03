@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        Use thread safe strtok_r on more platforms, especially AIX. (rjung)
+      </fix>
       <update>
         Status: Improve XSS hardening. (rjung)
       </update>

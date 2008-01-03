@@ -1756,7 +1756,7 @@ int jk_get_worker_libpath(jk_map_t *m, const char *wname, const char **libpath)
 char **jk_parse_sysprops(jk_pool_t *p, const char *sysprops)
 {
     char **rc = NULL;
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD
     char *lasts;
 #endif
 
@@ -1774,7 +1774,7 @@ char **jk_parse_sysprops(jk_pool_t *p, const char *sysprops)
             rc = jk_pool_alloc(p, (num_of_prps + 1) * sizeof(char *));
             if (rc) {
                 unsigned i = 0;
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD
                 char *tmp = strtok_r(prps, "*", &lasts);
 #else
                 char *tmp = strtok(prps, "*");
@@ -1782,7 +1782,7 @@ char **jk_parse_sysprops(jk_pool_t *p, const char *sysprops)
 
                 while (tmp && i < num_of_prps) {
                     rc[i] = tmp;
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD
                     tmp = strtok_r(NULL, "*", &lasts);
 #else
                     tmp = strtok(NULL, "*");

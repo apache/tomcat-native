@@ -249,7 +249,7 @@ char **jk_map_get_string_list(jk_map_t *m,
     const char *l = jk_map_get_string(m, name, def);
     char **ar = NULL;
 
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD
     char *lasts;
 #endif
 
@@ -269,7 +269,7 @@ char **jk_map_get_string_list(jk_map_t *m,
          * GS, in addition to VG's patch, we now need to
          * strtok also by a "*"
          */
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD
         for (p = strtok_r(v, " \t,", &lasts);
              p; p = strtok_r(NULL, " \t,", &lasts))
 #else
@@ -305,7 +305,7 @@ int jk_map_get_int_list(jk_map_t *m,
 {
     const char *l = jk_map_get_string(m, name, def);
 
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD
     char *lasts;
 #endif
 
@@ -326,7 +326,7 @@ int jk_map_get_int_list(jk_map_t *m,
          * GS, in addition to VG's patch, we now need to
          * strtok also by a "*"
          */
-#ifdef _REENTRANT
+#ifdef _MT_CODE_PTHREAD
         for (p = strtok_r(v, " \t,", &lasts);
              p; p = strtok_r(NULL, " \t,", &lasts))
 #else
