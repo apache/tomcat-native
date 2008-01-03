@@ -474,9 +474,7 @@ int jk_map_read_property(jk_map_t *m, const char *str,
         if (v) {
             *v = '\0';
             v++;
-            trim(prp);
-            trim(v);
-            if (strlen(v) && strlen(prp)) {
+            if (trim(v) && trim(prp)) {
                 if (treatment == JK_MAP_HANDLE_RAW) {
                     v = jk_pool_strdup(&m->p, v);
                 }
