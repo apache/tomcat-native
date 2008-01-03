@@ -44,6 +44,9 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        Use thread safe localtime_r where appropriate. (rjung)
+      </fix>
+      <fix>
         Use thread safe strtok_r on more platforms, especially AIX. (rjung)
       </fix>
       <update>

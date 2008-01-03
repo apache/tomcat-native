@@ -436,6 +436,9 @@ static int set_time_str(char *str, int len, jk_logger_t *l)
 {
     time_t t;
     struct tm *tms;
+#ifdef _MT_CODE_PTHREAD
+    struct tm res;
+#endif
     int done;
 /* We want to use a fixed maximum size buffer here.
  * If we would dynamically adjust it to the real format
@@ -488,7 +491,11 @@ static int set_time_str(char *str, int len, jk_logger_t *l)
 #else
     t = time(NULL);
 #endif
+#ifdef _MT_CODE_PTHREAD
+    tms = localtime_r(&t, &res);
+#else
     tms = localtime(&t);
+#endif
     if (log_fmt[0])
         done = (int)strftime(str, len, log_fmt, tms);
     else
