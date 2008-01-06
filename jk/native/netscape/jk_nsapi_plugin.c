@@ -233,6 +233,7 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
     char *reject_unsafe = pblock_findval(REJECT_UNSAFE_TAG, pb);
 
     int rc = REQ_ABORTED;
+    int rv;
 
     if (!worker_prp_file) {
         worker_prp_file = JK_WORKER_FILE_DEF;
@@ -268,7 +269,11 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
         logger = NULL;
     }
     
-    jk_shm_open(shm_file, JK_SHM_DEF_SIZE, logger);
+    if ((rv = jk_shm_open(shm_file, JK_SHM_DEF_SIZE, logger)) != 0) {
+        jk_log(logger, JK_LOG_ERROR,
+               "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
+               jk_shm_name(), rv);
+    }
     if (jk_map_alloc(&init_map)) {
         if (jk_map_read_properties(init_map, worker_prp_file, NULL,
                                    JK_MAP_HANDLE_DUPLICATES, logger)) {

@@ -44,6 +44,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+        SHM: Make open/attach logging consistent for all web servers. (rjung)
+      </update>
+      <update>
         Status: Include server local time in output. (rjung)
       </update>
       <fix>

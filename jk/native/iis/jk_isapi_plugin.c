@@ -1656,6 +1656,7 @@ static int init_jk(char *serverName)
 {
     char shm_name[MAX_PATH];
     int rc = JK_FALSE;
+    int rv;
 
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
@@ -1674,7 +1675,11 @@ static int init_jk(char *serverName)
     /*
      * Create named shared memory for each server
      */
-    jk_shm_open(shm_name, shm_config_size, logger);
+    if ((rv = jk_shm_open(shm_name, shm_config_size, logger)) != 0) {
+        jk_log(logger, JK_LOG_ERROR,
+               "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
+               jk_shm_name(), rv);
+    }
 
     jk_set_worker_def_cache_size(DEFAULT_WORKER_THREADS);
 

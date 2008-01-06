@@ -2655,12 +2655,7 @@ static void jk_init(server_rec * s, ap_pool * p)
     }
 #endif
 
-    if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) == 0) {
-        if (JK_IS_DEBUG_LEVEL(conf->log))
-            jk_log(conf->log, JK_LOG_DEBUG, "Initialized shm:%s (%d bytes)",
-                   jk_shm_name(), (int) jk_shm_size, rc);
-    }
-    else
+    if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) != 0)
         jk_log(conf->log, JK_LOG_ERROR,
                "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
                jk_shm_name(), rc);
@@ -2959,12 +2954,7 @@ static void child_init_handler(server_rec * s, ap_pool * p)
 
     JK_TRACE_ENTER(conf->log);
 
-    if ((rc = jk_shm_attach(jk_shm_file, jk_shm_size, conf->log)) == 0) {
-        if (JK_IS_DEBUG_LEVEL(conf->log))
-            jk_log(conf->log, JK_LOG_DEBUG, "Attached shm:%s (%d bytes)",
-                   jk_shm_name(), (int) jk_shm_size);
-    }
-    else
+    if ((rc = jk_shm_attach(jk_shm_file, jk_shm_size, conf->log)) != 0)
         jk_log(conf->log, JK_LOG_ERROR, "Attaching shm:%s errno=%d",
                jk_shm_name(), rc);
 
