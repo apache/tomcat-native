@@ -103,21 +103,22 @@ size_t jk_shm_calculate_size(jk_map_t *init_data, jk_logger_t *l)
         if (!strcmp(type, JK_LB_WORKER_NAME)) {
             char **member_list;
             unsigned num_of_members;
+            num_of_shm_workers++;
             if (jk_get_lb_worker_list(init_data, worker_list[i],
                                       &member_list, &num_of_members) == JK_FALSE) {
                 jk_log(l, JK_LOG_ERROR,
                        "Could not get member list for lb worker from map");
-                JK_TRACE_EXIT(l);
-                return 0;
             }
-            if (JK_IS_DEBUG_LEVEL(l))
-                jk_log(l, JK_LOG_DEBUG, "worker %s of type %s has %u members",
-                       worker_list[i], JK_LB_WORKER_NAME, num_of_members);
-            num_of_shm_workers += num_of_members + 1;
+            else {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG, "worker %s of type %s has %u members",
+                           worker_list[i], JK_LB_WORKER_NAME, num_of_members);
+                num_of_shm_workers += num_of_members;
+            }
         }
     }
     if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG, "shared memory will contain %u items", num_of_shm_workers);
+        jk_log(l, JK_LOG_DEBUG, "shared memory will contain %d items", num_of_shm_workers);
     jk_shmem.workers = num_of_shm_workers;
     JK_TRACE_EXIT(l);
     return JK_SHM_SIZE(jk_shmem.workers);
@@ -635,7 +636,7 @@ void *jk_shm_alloc(jk_pool_t *p, size_t size)
     void *rc = NULL;
 
     if (jk_shmem.hdr) {
-        size = JK_ALIGN_DEFAULT(size);
+        size = JK_SHM_ALIGN(size);
         if ((jk_shmem.hdr->h.data.size - jk_shmem.hdr->h.data.pos) >= size) {
             rc = &(jk_shmem.hdr->buf[jk_shmem.hdr->h.data.pos]);
             jk_shmem.hdr->h.data.pos += size;
@@ -706,9 +707,9 @@ int jk_shm_unlock()
 
 jk_shm_worker_t *jk_shm_alloc_worker(jk_pool_t *p)
 {
-    jk_shm_worker_t *w = (jk_shm_worker_t *)jk_shm_alloc(p, sizeof(jk_shm_worker_t));
+    jk_shm_worker_t *w = (jk_shm_worker_t *)jk_shm_alloc(p, JK_SHM_WORKER_SIZE);
     if (w) {
-        memset(w, 0, sizeof(jk_shm_worker_t));
+        memset(w, 0, JK_SHM_WORKER_SIZE);
         if (jk_shmem.hdr) {
             jk_shmem.hdr->h.data.workers++;
             w->id = jk_shmem.hdr->h.data.workers;
