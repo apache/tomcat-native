@@ -2747,24 +2747,6 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
         jk_map_alloc(&jk_worker_properties);
     jk_map_put(jk_worker_properties, "ServerRoot", ap_server_root, NULL);
 
-#if !defined(WIN32) && !defined(NETWARE)
-    if (!jk_shm_file) {
-        jk_shm_file = ap_server_root_relative(pconf, JK_SHM_DEF_FILE);
-        if (jk_shm_file)
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-                         "No JkShmFile defined in httpd.conf. "
-                         "Using default %s", jk_shm_file);
-    }
-#endif
-    if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) == 0) {
-        apr_pool_cleanup_register(pconf, conf->log, jk_cleanup_shmem,
-                                  jk_cleanup_shmem);
-    }
-    else
-        jk_log(conf->log, JK_LOG_ERROR,
-               "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
-               jk_shm_name(), rc);
-
     /* Set default connection cache size for multi-threaded MPMs */
     if (ap_mpm_query(AP_MPMQ_IS_THREADED, &is_threaded) == APR_SUCCESS &&
         is_threaded != AP_MPMQ_NOT_SUPPORTED) {
@@ -2792,6 +2774,24 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                      "Error in resolving configuration references");
         return JK_FALSE;
     }
+
+#if !defined(WIN32) && !defined(NETWARE)
+    if (!jk_shm_file) {
+        jk_shm_file = ap_server_root_relative(pconf, JK_SHM_DEF_FILE);
+        if (jk_shm_file)
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+                         "No JkShmFile defined in httpd.conf. "
+                         "Using default %s", jk_shm_file);
+    }
+#endif
+    if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) == 0) {
+        apr_pool_cleanup_register(pconf, conf->log, jk_cleanup_shmem,
+                                  jk_cleanup_shmem);
+    }
+    else
+        jk_log(conf->log, JK_LOG_ERROR,
+               "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
+               jk_shm_name(), rc);
 
     /* we add the URI->WORKER MAP since workers using AJP14
        will feed it */

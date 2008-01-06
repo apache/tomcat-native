@@ -2640,6 +2640,20 @@ static void jk_init(server_rec * s, ap_pool * p)
         }
     }
 
+    if ((jk_worker_file != NULL) &&
+        !jk_map_read_properties(jk_worker_properties, jk_worker_file, NULL,
+                                JK_MAP_HANDLE_DUPLICATES, conf->log)) {
+        jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
+                      "Error in reading worker properties from '%s'",
+                      jk_worker_file);
+    }
+
+    if (jk_map_resolve_references(jk_worker_properties, "worker.",
+                                  1, 1, conf->log) == JK_FALSE) {
+        jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
+                      "Error in resolving configuration references");
+    }
+
 #if !defined(WIN32) && !defined(NETWARE)
     if (!jk_shm_file) {
         jk_shm_file = ap_server_root_relative(p, JK_SHM_DEF_FILE);
@@ -2663,20 +2677,6 @@ static void jk_init(server_rec * s, ap_pool * p)
     /* SREVILAK -- register cleanup handler to clear resources on restart,
      * to make sure log file gets closed in the parent process  */
     ap_register_cleanup(p, s, jk_server_cleanup, ap_null_cleanup);
-
-    if ((jk_worker_file != NULL) &&
-        !jk_map_read_properties(jk_worker_properties, jk_worker_file, NULL,
-                                JK_MAP_HANDLE_DUPLICATES, conf->log)) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
-                      "Error in reading worker properties from '%s'",
-                      jk_worker_file);
-    }
-
-    if (jk_map_resolve_references(jk_worker_properties, "worker.",
-                                  1, 1, conf->log) == JK_FALSE) {
-        jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
-                      "Error in resolving configuration references");
-    }
 
     /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
     worker_env.uri_to_worker = conf->uw_map;

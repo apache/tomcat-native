@@ -1656,7 +1656,6 @@ static int init_jk(char *serverName)
 {
     char shm_name[MAX_PATH];
     int rc = JK_FALSE;
-    int rv;
 
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
@@ -1671,14 +1670,6 @@ static int init_jk(char *serverName)
             if (!isalnum(shm_name[i]))
                 shm_name[i] = '_';
         }
-    }
-    /*
-     * Create named shared memory for each server
-     */
-    if ((rv = jk_shm_open(shm_name, shm_config_size, logger)) != 0) {
-        jk_log(logger, JK_LOG_ERROR,
-               "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
-               jk_shm_name(), rv);
     }
 
     jk_set_worker_def_cache_size(DEFAULT_WORKER_THREADS);
@@ -1761,11 +1752,20 @@ static int init_jk(char *serverName)
         if (jk_map_alloc(&workers_map)) {
             if (jk_map_read_properties(workers_map, worker_file, NULL,
                                        JK_MAP_HANDLE_DUPLICATES, logger)) {
+                int rv;
+
                 /* we add the URI->WORKER MAP since workers using AJP14 will feed it */
 
                 if (jk_map_resolve_references(workers_map, "worker.", 1, 1, logger) == JK_FALSE) {
                     jk_log(logger, JK_LOG_ERROR, "Error in resolving configuration references");
                 }
+                /*
+                 * Create named shared memory for each server
+                 */
+                if ((rv = jk_shm_open(shm_name, shm_config_size, logger)) != 0)
+                    jk_log(logger, JK_LOG_ERROR,
+                           "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
+                           jk_shm_name(), rv);
 
                 worker_env.uri_to_worker = uw_map;
                 worker_env.server_name = serverName;
@@ -1774,10 +1774,9 @@ static int init_jk(char *serverName)
                     rc = JK_TRUE;
                 }
             }
-            else {
+            else
                 jk_log(logger, JK_LOG_EMERG,
                        "Unable to read worker file %s.", worker_file);
-            }
             if (rc != JK_TRUE) {
                 jk_map_free(&workers_map);
                 workers_map = NULL;
