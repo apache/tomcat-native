@@ -17,6 +17,7 @@
 -->
 <classpath>
 	<classpathentry excluding="org/apache/coyote/tomcat3/|org/apache/coyote/tomcat4/" kind="src" path="coyote/src/java"/>
+	<classpathentry excluding="org/apache/ajp/tomcat33/|org/apache/ajp/tomcat4/" kind="src" path="jk/java"/>
 	<classpathentry kind="src" path="http11/src/java"/>
 	<classpathentry kind="src" path="jni/examples"/>
 	<classpathentry kind="src" path="jni/java"/>
