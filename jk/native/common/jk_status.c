@@ -2977,8 +2977,6 @@ static int reset_worker(jk_ws_service_t *s,
             wr->s->errors           = 0;
             wr->s->lb_value         = 0;
             wr->s->max_busy         = 0;
-            wr->s->recoveries       = 0;
-            wr->s->recovery_errors  = 0;
             wr->s->readed           = 0;
             wr->s->transferred      = 0;
             wr->s->state            = JK_LB_STATE_IDLE;
@@ -2999,8 +2997,6 @@ static int reset_worker(jk_ws_service_t *s,
         wr->s->errors           = 0;
         wr->s->lb_value         = 0;
         wr->s->max_busy         = 0;
-        wr->s->recoveries       = 0;
-        wr->s->recovery_errors  = 0;
         wr->s->readed           = 0;
         wr->s->transferred      = 0;
         wr->s->state            = JK_LB_STATE_IDLE;

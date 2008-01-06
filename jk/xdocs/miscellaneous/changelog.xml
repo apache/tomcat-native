@@ -44,6 +44,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+        SHM: Remove unused attributes. (rjung)
+      </update>
+      <update>
         SHM: Automatically determine shm size for all web servers. (rjung)
       </update>
       <update>

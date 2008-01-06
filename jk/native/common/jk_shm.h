@@ -41,7 +41,7 @@ extern "C"
  */
 
 #define JK_SHM_MAJOR    '1'
-#define JK_SHM_MINOR    '2'
+#define JK_SHM_MINOR    '3'
 #define JK_SHM_STR_SIZ  63
 #define JK_SHM_URI_SIZ  127
 #define JK_SHM_DYNAMIC  16
@@ -50,11 +50,11 @@ extern "C"
 
 /* Really huge numbers, but 64 workers should be enough */
 #define JK_SHM_MAX_WORKERS  64
+#define JK_SHM_ALIGNMENT    64
+#define JK_SHM_ALIGN(x)     JK_ALIGN((x), JK_SHM_ALIGNMENT)
 #define JK_SHM_WORKER_SIZE  JK_SHM_ALIGN(sizeof(jk_shm_worker_t))
 #define JK_SHM_SIZE(x)      ((x) * JK_SHM_WORKER_SIZE)
 #define JK_SHM_DEF_SIZE     JK_SHM_SIZE(JK_SHM_MAX_WORKERS)
-#define JK_SHM_ALIGNMENT    64
-#define JK_SHM_ALIGN(x)     JK_ALIGN((x), JK_SHM_ALIGNMENT)
 
 /** jk shm worker record structure */
 struct jk_shm_worker
@@ -68,8 +68,6 @@ struct jk_shm_worker
     volatile int busy;
     /* Maximum number of busy channels */
     volatile int max_busy;
-    /* Number of currently connected channels */
-    volatile int connected;
     /* worker name */
     char    name[JK_SHM_STR_SIZ+1];
     /* route */
@@ -97,7 +95,6 @@ struct jk_shm_worker
     int     retries;
     int     lbmethod;
     int     lblock;
-    unsigned int max_packet_size;
     /* Statistical data */
     volatile time_t  error_time;
     /* Service transfer rate time */
@@ -112,10 +109,6 @@ struct jk_shm_worker
     volatile jk_uint64_t  elected_snapshot;
     /* Number of non 200 responses */
     volatile jk_uint32_t  errors;
-    /* Number of recovery attempts */
-    volatile jk_uint32_t  recoveries;
-    /* Number of recovery failures */
-    volatile jk_uint32_t  recovery_errors;
     /* Decayed number of reply_timeout errors */
     volatile jk_uint32_t  reply_timeouts;
     /* Number of client errors */
