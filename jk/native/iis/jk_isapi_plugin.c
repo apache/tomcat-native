@@ -1765,9 +1765,9 @@ static int init_jk(char *serverName)
                 if (shm_config_size == 0)
                     shm_config_size = jk_shm_calculate_size(workers_map, logger);
                 else {
-                    jk_log(logger, JK_LOG_INFO,
+                    jk_log(logger, JK_LOG_WARNING,
                            "The optimal shared memory size can now be determined automatically.");
-                    jk_log(logger, JK_LOG_INFO,
+                    jk_log(logger, JK_LOG_WARNING,
                            "You can remove the JkShmSize directive if you want to use the optimal size.");
                 }
                 if ((rv = jk_shm_open(shm_name, shm_config_size, logger)) != 0)

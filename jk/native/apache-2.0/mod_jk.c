@@ -2787,9 +2787,9 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
     if (jk_shm_size == 0)
         jk_shm_size = jk_shm_calculate_size(jk_worker_properties, conf->log);
     else {
-        jk_log(conf->log, JK_LOG_INFO,
+        jk_log(conf->log, JK_LOG_WARNING,
                "The optimal shared memory size can now be determined automatically.");
-        jk_log(conf->log, JK_LOG_INFO,
+        jk_log(conf->log, JK_LOG_WARNING,
                "You can remove the JkShmSize directive if you want to use the optimal size.");
     }
     if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) == 0) {
