@@ -37,10 +37,6 @@ import org.apache.tomcat.util.buf.MessageBytes;
  */
 public class ServerCookie implements Serializable {
     
-    
-    private static org.apache.commons.logging.Log log =
-        org.apache.commons.logging.LogFactory.getLog(ServerCookie.class);
-    
     // Version 0 (Netscape) attributes
     private MessageBytes name=MessageBytes.newInstance();
     private MessageBytes value=MessageBytes.newInstance();
@@ -123,11 +119,6 @@ public class ServerCookie implements Serializable {
 
 
     // -------------------- utils --------------------
-
-    public static void log(String s ) {
-        if (log.isDebugEnabled())
-            log.debug("ServerCookie: " + s);
-    }
 
     public String toString() {
         return "Cookie " + getName() + "=" + getValue() + " ; "
