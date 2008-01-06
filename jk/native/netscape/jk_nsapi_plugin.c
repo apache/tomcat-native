@@ -159,7 +159,6 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
 
         *a = 0;
         if (l) {
-            char *buf = b;
             unsigned i;
             netbuf *inbuf = p->sn->inbuf;
 
@@ -172,6 +171,7 @@ static int JK_METHOD ws_read(jk_ws_service_t *s,
             }
 
 #else
+            char *buf = b;
             int ch;
             for (i = 0; i < l; i++) {
                 ch = netbuf_getc(inbuf);
