@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        SHM: Use distinct structs for lb and ajp13 in shm.
+        Improves type safety and saves a few bytes. (rjung)
+      </update>
+      <update>
         SHM: Remove unused attributes. (rjung)
       </update>
       <update>

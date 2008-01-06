@@ -49,27 +49,26 @@ extern "C"
 #define JK_SHM_MAGIC_SIZ  8
 
 /* Really huge numbers, but 64 workers should be enough */
-#define JK_SHM_MAX_WORKERS  64
-#define JK_SHM_ALIGNMENT    64
-#define JK_SHM_ALIGN(x)     JK_ALIGN((x), JK_SHM_ALIGNMENT)
-#define JK_SHM_WORKER_SIZE  JK_SHM_ALIGN(sizeof(jk_shm_worker_t))
-#define JK_SHM_SIZE(x)      ((x) * JK_SHM_WORKER_SIZE)
-#define JK_SHM_DEF_SIZE     JK_SHM_SIZE(JK_SHM_MAX_WORKERS)
+#define JK_SHM_MAX_WORKERS       64
+#define JK_SHM_ALIGNMENT         64
+#define JK_SHM_ALIGN(x)          JK_ALIGN((x), JK_SHM_ALIGNMENT)
+#define JK_SHM_AJP13_WORKER_SIZE JK_SHM_ALIGN(sizeof(jk_shm_ajp13_worker_t))
+#define JK_SHM_LB_WORKER_SIZE    JK_SHM_ALIGN(sizeof(jk_shm_lb_worker_t))
+#define JK_SHM_AJP13_SIZE(x)     ((x) * JK_SHM_AJP13_WORKER_SIZE)
+#define JK_SHM_LB_SIZE(x)        ((x) * JK_SHM_LB_WORKER_SIZE)
+#define JK_SHM_DEF_SIZE          JK_SHM_AJP13_SIZE(JK_SHM_MAX_WORKERS)
 
-/** jk shm worker record structure */
-struct jk_shm_worker
+/** jk shm ajp13 worker record structure */
+struct jk_shm_ajp13_worker
 {
     int     id;
-    /* Sequence counter starting at 0 and increasing
-     * every time we change the config
-     */
-    volatile unsigned int sequence;
+    int     type;
+    /* worker name */
+    char    name[JK_SHM_STR_SIZ+1];
     /* Number of currently busy channels */
     volatile int busy;
     /* Maximum number of busy channels */
     volatile int max_busy;
-    /* worker name */
-    char    name[JK_SHM_STR_SIZ+1];
     /* route */
     char    route[JK_SHM_STR_SIZ+1];
     /* worker domain */
@@ -88,17 +87,8 @@ struct jk_shm_worker
     volatile jk_uint64_t lb_mult;
     /* Current lb value  */
     volatile jk_uint64_t lb_value;
-    int     sticky_session;
-    int     sticky_session_force;
-    int     recover_wait_time;
-    int     max_reply_timeouts;
-    int     retries;
-    int     lbmethod;
-    int     lblock;
     /* Statistical data */
     volatile time_t  error_time;
-    /* Service transfer rate time */
-    volatile time_t  last_maintain_time;
     /* Number of bytes read from remote */
     volatile jk_uint64_t readed;
     /* Number of bytes transferred to remote */
@@ -114,7 +104,34 @@ struct jk_shm_worker
     /* Number of client errors */
     volatile jk_uint32_t  client_errors;
 };
-typedef struct jk_shm_worker jk_shm_worker_t;
+typedef struct jk_shm_ajp13_worker jk_shm_ajp13_worker_t;
+
+/** jk shm lb worker record structure */
+struct jk_shm_lb_worker
+{
+    int     id;
+    int     type;
+    /* worker name */
+    char    name[JK_SHM_STR_SIZ+1];
+    /* Sequence counter starting at 0 and increasing
+     * every time we change the config
+     */
+    volatile unsigned int sequence;
+    /* Number of currently busy channels */
+    volatile int busy;
+    /* Maximum number of busy channels */
+    volatile int max_busy;
+    int     sticky_session;
+    int     sticky_session_force;
+    int     recover_wait_time;
+    int     max_reply_timeouts;
+    int     retries;
+    int     lbmethod;
+    int     lblock;
+    /* Service transfer rate time */
+    volatile time_t  last_maintain_time;
+};
+typedef struct jk_shm_lb_worker jk_shm_lb_worker_t;
 
 const char *jk_shm_name(void);
 
@@ -139,10 +156,15 @@ int jk_shm_attach(const char *fname, size_t sz, jk_logger_t *l);
  */
 void *jk_shm_alloc(jk_pool_t *p, size_t size);
 
-/* allocate shm worker record
+/* allocate shm ajp13 worker record
  * If there is no shm present the pool will be used instead
  */
-jk_shm_worker_t *jk_shm_alloc_worker(jk_pool_t *p);
+jk_shm_ajp13_worker_t *jk_shm_alloc_ajp13_worker(jk_pool_t *p);
+
+/* allocate shm lb worker record
+ * If there is no shm present the pool will be used instead
+ */
+jk_shm_lb_worker_t *jk_shm_alloc_lb_worker(jk_pool_t *p);
 
 /* Return workers.properties last modified time
  */

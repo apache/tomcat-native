@@ -120,11 +120,11 @@ extern "C"
 
 struct worker_record
 {
-    jk_worker_t      *w;
+    jk_worker_t           *w;
     /* Shared memory worker data */
-    jk_shm_worker_t  *s;
+    jk_shm_ajp13_worker_t *s;
     /* Current route. Can be name or domain */
-    const char       *r;
+    const char            *r;
 };
 typedef struct worker_record worker_record_t;
 
@@ -152,7 +152,7 @@ struct lb_worker
     JK_CRIT_SEC cs;
 
     /* Shared memory worker data */
-    jk_shm_worker_t  *s;
+    jk_shm_lb_worker_t *s;
 };
 typedef struct lb_worker lb_worker_t;
 
