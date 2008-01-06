@@ -92,7 +92,7 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
         return 0;
     }
 
-    jk_shmem.size =  JK_SHM_ALIGN(sizeof(jk_shm_header_t) + sz);
+    jk_shmem.size = JK_SHM_ALIGN(sizeof(jk_shm_header_t) + sz);
 
 #if defined (WIN32)
     if (fname) {
@@ -167,9 +167,11 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
     JK_INIT_CS(&(jk_shmem.cs), rc);
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-               "%s shared memory size=%u free=%u addr=%#lx",
+               "%s shared memory %s size=%u free=%u addr=%#lx",
                attached ? "Attached" : "Initialized",
-               jk_shmem.size, jk_shmem.hdr->h.data.size, jk_shmem.hdr);
+               jk_shm_name(), jk_shmem.size,
+               jk_shmem.hdr->h.data.size - jk_shmem.hdr->h.data.pos,
+               jk_shmem.hdr);
     JK_TRACE_EXIT(l);
     return 0;
 }
@@ -182,8 +184,8 @@ int jk_shm_attach(const char *fname, size_t sz, jk_logger_t *l)
             jk_shmem.attached = 1;
             if (JK_IS_DEBUG_LEVEL(l)) {
                 jk_log(l, JK_LOG_DEBUG,
-                   "Attached shared memory [%d] size=%u free=%u addr=%#lx",
-                   jk_shmem.hdr->h.data.childs, jk_shmem.hdr->h.data.size,
+                   "Attached shared memory %s [%d] size=%u free=%u addr=%#lx",
+                   jk_shm_name(), jk_shmem.hdr->h.data.childs, jk_shmem.size,
                    jk_shmem.hdr->h.data.size - jk_shmem.hdr->h.data.pos,
                    jk_shmem.hdr);
             }
@@ -445,8 +447,10 @@ static int do_shm_open(const char *fname, int attached,
         jk_shmem.hdr->h.data.childs = 1;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "Initialized shared memory size=%u free=%u addr=%#lx",
-                   jk_shmem.size, jk_shmem.hdr->h.data.size, jk_shmem.hdr);
+                   "Initialized shared memory %s size=%u free=%u addr=%#lx",
+                   jk_shm_name(), jk_shmem.size,
+                   jk_shmem.hdr->h.data.size - jk_shmem.hdr->h.data.pos,
+                   jk_shmem.hdr);
     }
     else {
         unsigned int nchild;
@@ -455,8 +459,8 @@ static int do_shm_open(const char *fname, int attached,
         nchild = jk_shmem.hdr->h.data.childs;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "Attached shared memory [%d] size=%u free=%u addr=%#lx",
-                   nchild, jk_shmem.hdr->h.data.size,
+                   "Attached shared memory %s [%d] size=%u free=%u addr=%#lx",
+                   jk_shm_name(), nchild, jk_shmem.size,
                    jk_shmem.hdr->h.data.size - jk_shmem.hdr->h.data.pos,
                    jk_shmem.hdr);
         /*
