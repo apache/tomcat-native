@@ -26,6 +26,7 @@
 #include "jk_pool.h"
 #include "jk_util.h"
 #include "jk_mt.h"
+#include "jk_lb_worker.h"
 #include "jk_shm.h"
 
 /** jk shm header core data structure */
@@ -58,6 +59,7 @@ typedef struct jk_shm_header jk_shm_header_t;
 struct jk_shm
 {
     size_t     size;
+    unsigned   workers;
     char       *filename;
     char       *lockname;
     int        fd;
@@ -70,12 +72,57 @@ struct jk_shm
 typedef struct jk_shm jk_shm_t;
 
 static const char shm_signature[] = { JK_SHM_MAGIC };
-static jk_shm_t jk_shmem = { 0, NULL, NULL, -1, -1, 0, NULL};
+static jk_shm_t jk_shmem = { 0, 0, NULL, NULL, -1, -1, 0, NULL};
 static time_t jk_workers_modified_time = 0;
 static time_t jk_workers_access_time = 0;
 #if defined (WIN32)
 static HANDLE jk_shm_map = NULL;
 #endif
+
+/* Calculate needed shm size */
+size_t jk_shm_calculate_size(jk_map_t *init_data, jk_logger_t *l)
+{
+    char **worker_list;
+    unsigned i;
+    unsigned num_of_workers;
+    int num_of_shm_workers = 0;
+
+    JK_TRACE_ENTER(l);
+
+    if (jk_get_worker_list(init_data, &worker_list,
+                           &num_of_workers) == JK_FALSE) {
+        jk_log(l, JK_LOG_ERROR,
+               "Could not get worker list from map");
+        JK_TRACE_EXIT(l);
+        return 0;
+    }
+
+    for (i = 0; i < num_of_workers; i++) {
+        const char *type = jk_get_worker_type(init_data, worker_list[i]);
+
+        if (!strcmp(type, JK_LB_WORKER_NAME)) {
+            char **member_list;
+            unsigned num_of_members;
+            if (jk_get_lb_worker_list(init_data, worker_list[i],
+                                      &member_list, &num_of_members) == JK_FALSE) {
+                jk_log(l, JK_LOG_ERROR,
+                       "Could not get member list for lb worker from map");
+                JK_TRACE_EXIT(l);
+                return 0;
+            }
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG, "worker %s of type %s has %u members",
+                       worker_list[i], JK_LB_WORKER_NAME, num_of_members);
+            num_of_shm_workers += num_of_members + 1;
+        }
+    }
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG, "shared memory will contain %u items", num_of_shm_workers);
+    jk_shmem.workers = num_of_shm_workers;
+    JK_TRACE_EXIT(l);
+    return JK_SHM_SIZE(jk_shmem.workers);
+}
+
 
 #if defined (WIN32) || defined(NETWARE)
 

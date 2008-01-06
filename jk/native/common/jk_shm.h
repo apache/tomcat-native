@@ -51,9 +51,10 @@ extern "C"
 /* Really huge numbers, but 64 workers should be enough */
 #define JK_SHM_MAX_WORKERS  64
 #define JK_SHM_WORKER_SIZE  JK_SHM_ALIGN(sizeof(jk_shm_worker_t))
-#define JK_SHM_DEF_SIZE     (JK_SHM_MAX_WORKERS * JK_SHM_WORKER_SIZE)
+#define JK_SHM_SIZE(x)      ((x) * JK_SHM_WORKER_SIZE)
+#define JK_SHM_DEF_SIZE     JK_SHM_SIZE(JK_SHM_MAX_WORKERS)
 #define JK_SHM_ALIGNMENT    64
-#define JK_SHM_ALIGN(x)     JK_ALIGN(x, JK_SHM_ALIGNMENT)
+#define JK_SHM_ALIGN(x)     JK_ALIGN((x), JK_SHM_ALIGNMENT)
 
 /** jk shm worker record structure */
 struct jk_shm_worker
@@ -123,6 +124,9 @@ struct jk_shm_worker
 typedef struct jk_shm_worker jk_shm_worker_t;
 
 const char *jk_shm_name(void);
+
+/* Calculate needed shm size */
+size_t jk_shm_calculate_size(jk_map_t *init_data, jk_logger_t *l);
 
 /* Open the shared memory creating file if needed
  */
