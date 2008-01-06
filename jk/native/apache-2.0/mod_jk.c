@@ -231,7 +231,7 @@ static apr_hash_t *jk_log_fps = NULL;
 static jk_worker_env_t worker_env;
 static apr_global_mutex_t *jk_log_lock = NULL;
 static char *jk_shm_file = NULL;
-static size_t jk_shm_size = JK_SHM_DEF_SIZE;
+static size_t jk_shm_size = 0;
 /*
  * Worker stuff
 */
@@ -2784,6 +2784,14 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
                          "Using default %s", jk_shm_file);
     }
 #endif
+    if (jk_shm_size == 0)
+        jk_shm_size = jk_shm_calculate_size(jk_worker_properties, conf->log);
+    else {
+        jk_log(conf->log, JK_LOG_INFO,
+               "The optimal shared memory size can now be determined automatically.");
+        jk_log(conf->log, JK_LOG_INFO,
+               "You can remove the JkShmSize directive if you want to use the optimal size.");
+    }
     if ((rc = jk_shm_open(jk_shm_file, jk_shm_size, conf->log)) == 0) {
         apr_pool_cleanup_register(pconf, conf->log, jk_cleanup_shmem,
                                   jk_cleanup_shmem);

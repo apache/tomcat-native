@@ -59,6 +59,7 @@ static jk_logger_t *logger = NULL;
 static jk_worker_env_t worker_env;
 static jk_map_t *init_map = NULL;
 static jk_uri_worker_map_t *uw_map = NULL;
+static size_t jk_shm_size = 0;
 
 #ifdef NETWARE
 int (*PR_IsSocketSecure) (SYS_NETFD * csd);     /* pointer to PR_IsSocketSecure function */
@@ -282,11 +283,13 @@ NSAPI_PUBLIC int jk_init(pblock * pb, Session * sn, Request * rq)
             if (reject_unsafe) {
                 jk_map_add(init_map, "worker." REJECT_UNSAFE_TAG, reject_unsafe); 
             }
-            if ((rv = jk_shm_open(shm_file, JK_SHM_DEF_SIZE, logger)) != 0) {
+
+            jk_shm_size = jk_shm_calculate_size(init_map, logger);
+            if ((rv = jk_shm_open(shm_file, jk_shm_size, logger)) != 0)
                 jk_log(logger, JK_LOG_ERROR,
                        "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
                        jk_shm_name(), rv);
-            }
+
             s = systhread_start(SYSTHREAD_DEFAULT_PRIORITY,
                                 0, init_workers_on_other_threads, init_map);
             for (sleep_cnt = 0; sleep_cnt < 60; sleep_cnt++) {

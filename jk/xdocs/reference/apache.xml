@@ -108,6 +108,9 @@ This directive is only allowed once. It must be put into
 <br/>
 The default value depends on the platform. It is usually less than 64KB.
 </p></attribute>
+<p>Starting with version 1.2.27 the size of the shared memory is determined
+automatically, even for large numbers of workers. This attribute is not
+needed any longer.</p>
 <attribute name="JkMountFile" required="false"><p>
 File containing multiple mappings from a context to a Tomcat worker.
 It is usually called uriworkermap.properties.

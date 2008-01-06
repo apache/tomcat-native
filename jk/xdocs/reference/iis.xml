@@ -98,6 +98,9 @@ the number of all defined workers * 400.
 (Set this value only if you have <b>more</b> then <b>64</b> workers)
 </p>
 <p>This directive has been added in version 1.2.20</p>
+<p>Starting with version 1.2.27 the size of the shared memory is determined
+automatically, even for large numbers of workers. This attribute is not
+needed any longer.</p>
 </attribute>
 <attribute name="worker_mount_reload" required="false"><p>
 A DWORD value specifying the time in seconds upon which the

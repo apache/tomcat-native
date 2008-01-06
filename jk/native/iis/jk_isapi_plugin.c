@@ -193,7 +193,7 @@ static char worker_file[MAX_PATH * 2];
 static char worker_mount_file[MAX_PATH * 2] = {0};
 static int  worker_mount_reload = JK_URIMAP_DEF_RELOAD;
 static char rewrite_rule_file[MAX_PATH * 2] = {0};
-static int shm_config_size = JK_SHM_DEF_SIZE;
+static size_t shm_config_size = 0;
 static int strip_session = 0;
 static DWORD auth_notification_flags = 0;
 static int   use_auth_notification_flags = 1;
@@ -1762,6 +1762,14 @@ static int init_jk(char *serverName)
                 /*
                  * Create named shared memory for each server
                  */
+                if (shm_config_size == 0)
+                    shm_config_size = jk_shm_calculate_size(workers_map, logger);
+                else {
+                    jk_log(logger, JK_LOG_INFO,
+                           "The optimal shared memory size can now be determined automatically.");
+                    jk_log(logger, JK_LOG_INFO,
+                           "You can remove the JkShmSize directive if you want to use the optimal size.");
+                }
                 if ((rv = jk_shm_open(shm_name, shm_config_size, logger)) != 0)
                     jk_log(logger, JK_LOG_ERROR,
                            "Initializing shm:%s errno=%d. Load balancing workers will not function properly.",
@@ -1867,7 +1875,7 @@ static int read_registry_init_data(void)
             ok = JK_FALSE;
         }
     }
-    shm_config_size = get_config_int(src, SHM_SIZE_TAG, JK_SHM_DEF_SIZE);
+    shm_config_size = (size_t) get_config_int(src, SHM_SIZE_TAG, 0);
     worker_mount_reload = get_config_int(src, WORKER_MOUNT_RELOAD_TAG, JK_URIMAP_DEF_RELOAD);
     strip_session = get_config_bool(src, STRIP_SESSION_TAG, JK_FALSE);
     use_auth_notification_flags = get_config_int(src, AUTH_COMPLETE_TAG, 1);

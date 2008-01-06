@@ -44,6 +44,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+        SHM: Automatically determine shm size for all web servers. (rjung)
+      </update>
+      <update>
         SHM: Make open/attach logging consistent for all web servers. (rjung)
       </update>
       <update>
