@@ -1865,7 +1865,6 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->secret = NULL;
     s->reco_buf = NULL;
     s->reco_status = RECO_NONE;
-    s->retries = JK_RETRIES;
     s->flush_packets = JK_FALSE;
     s->flush_header = JK_FALSE;
     s->response_started = JK_FALSE;

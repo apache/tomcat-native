@@ -208,10 +208,6 @@ struct jk_ws_service
     jk_msg_buf_t *reco_buf;
     int reco_status;
 
-    /* Number of retries. Defaults to JK_RETRIES
-     */
-    int retries;
-
     /*
      * If set call flush after each write
      */

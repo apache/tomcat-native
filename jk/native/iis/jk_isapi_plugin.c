@@ -1506,8 +1506,6 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
 
             if (worker) {
                 jk_endpoint_t *e = NULL;
-                /* Update retries for this worker */
-                s.retries = worker->retries;
                 if (worker->get_endpoint(worker, &e, logger)) {
                     int is_error = JK_HTTP_SERVER_ERROR;
                     int result;

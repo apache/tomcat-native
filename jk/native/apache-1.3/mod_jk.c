@@ -2166,8 +2166,6 @@ static int jk_handler(request_rec * r)
             wc_maintain(conf->log);
             jk_init_ws_service(&s);
 
-            /* Update retries for this worker */
-            s.retries = worker->retries;
             s.ws_private = &private_data;
             s.pool = &private_data.p;
             ap_table_setn(r->notes, JK_NOTE_WORKER_TYPE,
