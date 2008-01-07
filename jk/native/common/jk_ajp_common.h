@@ -284,9 +284,9 @@ struct ajp_worker
     int prepost_timeout;   /* before sending a request cping/cpong timeout delay in ms (0 means disabled) */
 
     /*
-     * Recovery option
+     * Recovery options
      */
-    unsigned int recovery_opts; /* Set the recovery option */
+    unsigned int recovery_opts;
     
     unsigned int max_packet_size;  /*  Maximum AJP Packet size */
     
