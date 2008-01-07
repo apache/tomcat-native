@@ -971,7 +971,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                 jk_shm_unlock();
                        
-            while ((!(r=rec->w->get_endpoint(rec->w, &end, l)) || !end) && (retry < p->worker->s->retries)) {
+            while ((!(r=rec->w->get_endpoint(rec->w, &end, l)) || !end) && (retry < p->worker->retries)) {
                 retry++;
                 retry_wait *=2;
 
