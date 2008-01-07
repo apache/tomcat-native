@@ -3814,7 +3814,6 @@ int JK_METHOD status_worker_factory(jk_worker_t **w,
         private_data->worker.init = init;
         private_data->worker.get_endpoint = get_endpoint;
         private_data->worker.destroy = destroy;
-        private_data->worker.retries = 1;
 
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);

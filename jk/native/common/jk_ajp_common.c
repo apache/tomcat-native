@@ -2065,9 +2065,9 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
 
     if (JK_IS_DEBUG_LEVEL(l)) {
         jk_log(l, JK_LOG_DEBUG, "processing %s with %d retries",
-               p->worker->name, p->worker->worker.retries);
+               p->worker->name, p->worker->retries);
     }
-    for (i = 0; i < p->worker->worker.retries; i++) {
+    for (i = 0; i < p->worker->retries; i++) {
         /*
          * We're using op->request which hold initial request
          * if Tomcat is stopped or restarted, we will pass op->request
@@ -2375,6 +2375,11 @@ int ajp_init(jk_worker_t *pThis,
         p->recovery_opts =
             jk_get_worker_recovery_opts(props, p->name,
                                         AJP_DEF_RECOVERY_OPTS);
+
+        p->retries =
+            jk_get_worker_retries(props, p->name,
+                                  JK_RETRIES);
+
         p->max_packet_size =
             jk_get_max_packet_size(props, p->name);
 
@@ -2382,14 +2387,11 @@ int ajp_init(jk_worker_t *pThis,
                                      &p->http_status_fail[0],
                                      JK_MAX_HTTP_STATUS_FAILS);
 
-        pThis->retries =
-            jk_get_worker_retries(props, p->name,
-                                  JK_RETRIES);
-        if (pThis->retries < 1) {
+        if (p->retries < 1) {
             jk_log(l, JK_LOG_INFO,
                    "number of retries must be greater then 1. Setting to default=%d",
                    JK_RETRIES);
-            pThis->retries = JK_RETRIES;
+            p->retries = JK_RETRIES;
         }
 
         if (JK_IS_DEBUG_LEVEL(l)) {
@@ -2431,7 +2433,7 @@ int ajp_init(jk_worker_t *pThis,
 
             jk_log(l, JK_LOG_DEBUG,
                    "retries:          %d",
-                    pThis->retries);
+                    p->retries);
 
             jk_log(l, JK_LOG_DEBUG,
                    "max packet size:  %d",

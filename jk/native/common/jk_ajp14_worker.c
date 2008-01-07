@@ -307,8 +307,6 @@ static int JK_METHOD init(jk_worker_t *pThis,
         return JK_FALSE;
     }
     aw = pThis->worker_private;
-    pThis->retries = jk_get_worker_retries(props, aw->name,
-                                           JK_RETRIES);
 
     /* Set Secret Key (used at logon time) */
     aw->login->secret_key = jk_get_worker_secret_key(props, aw->name);
@@ -425,7 +423,6 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
     aw->worker.get_endpoint = get_endpoint;
     aw->worker.destroy = destroy;
     aw->worker.maintain = ajp_maintain;
-    aw->worker.retries = JK_RETRIES;
 
     aw->logon = logon;          /* LogOn Handler for AJP14 */
     *w = &aw->worker;

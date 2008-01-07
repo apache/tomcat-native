@@ -1423,9 +1423,8 @@ static int JK_METHOD init(jk_worker_t *pThis,
     lb_worker_t *p = (lb_worker_t *)pThis->worker_private;
     JK_TRACE_ENTER(log);
 
-    pThis->retries = jk_get_worker_retries(props, p->s->name,
-                                           JK_RETRIES);
-    p->retries = pThis->retries;
+    p->retries = jk_get_worker_retries(props, p->s->name,
+                                       JK_RETRIES);
     p->recover_wait_time = jk_get_worker_recover_timeout(props, p->s->name,
                                                             WAIT_BEFORE_RECOVER);
     if (p->recover_wait_time < 1)
@@ -1533,7 +1532,6 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->worker.get_endpoint = get_endpoint;
         private_data->worker.destroy = destroy;
         private_data->worker.maintain = maintain_workers;
-        private_data->worker.retries = JK_RETRIES;
         private_data->recover_wait_time = WAIT_BEFORE_RECOVER;
         private_data->max_reply_timeouts = 0;
         private_data->sequence = 0;

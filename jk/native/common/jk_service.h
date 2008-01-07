@@ -412,11 +412,6 @@ struct jk_worker
 {
 
     /*
-     * Public property to enable the number of retry attempts
-     * on this worker.
-     */
-    int retries;
-    /*
      * A 'this' pointer which is used by the subclasses of this class to
      * point to data/functions which are specific to a given protocol
      * (e.g. ajp12 or ajp13 or ajp14).

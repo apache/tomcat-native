@@ -288,6 +288,12 @@ struct ajp_worker
      */
     unsigned int recovery_opts;
     
+    /*
+     * Public property to enable the number of retry attempts
+     * on this worker.
+     */
+    int retries;
+
     unsigned int max_packet_size;  /*  Maximum AJP Packet size */
     
     /* 
