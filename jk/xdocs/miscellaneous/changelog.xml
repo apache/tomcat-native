@@ -44,7 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
-        LB: Use property table to decide which cmd action uses which
+        Status: Add "dump" action to dump our initial configuration. (rjung)
+      </update>
+      <update>
+        Status: Use property table to decide which cmd action uses which
         output elements. (rjung)
       </update>
       <update>

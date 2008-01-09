@@ -94,6 +94,12 @@ or one of its members.
 <li>
 <b>version</b>: only show version information of the web server and the JK software
 </li>
+<li>
+<b>dump</b>: list the original workers configuration. <b>Caution</b>: the dump will only contain
+the configuration that was used during startup. Any changes applied later by the dynamic management
+interface of the status worker itself will not be contained in this dump.
+The dump action has been added in version 1.2.27.
+</li>
 </ul>
 </p>
 </subsection>
@@ -227,7 +233,7 @@ worker.mystatus.css=/private/admin/static/mystatus.css
 </source>
 When writing HTML output, the status worker then includes the line
 <source>
-<link rel="stylesheet" type="text/css" href="/private/admin/static/mystatus.css" />
+&lt;link rel="stylesheet" type="text/css" href="/private/admin/static/mystatus.css" /&gt;
 </source>
 There is no sample stylesheet included with the mod_jk release, and by default the attribute css
 is empty, so no stylesheet reference will be included in the pages. The HTML code
@@ -366,18 +372,22 @@ can be found.
 <br/>
 <p>
 This section should help you building automation scripts based on the jk status
-management interface. This interface is still not stable, we expect further
-improvements in the next releases. It is well possible, that the request parameters
-might change in an incompatible way. So be prepared to change you scripts when
-updating to future versions.
+management interface. This interface is stable in the sense, that we only expect
+to add further parameters in the future. Existing parameters from previous versions
+will keep their original semantics. We also expect the output formats XML, Properties
+and Text to be kept stable. So please use those, if you want to parse status worker
+output in your automation scripts.
 </p>
 <subsection name="Actions">
 <br/>
 <p>
 The action is determined by the parameter <b>cmd</b>. It can have the values "list", "show",
-"edit", "update", "reset", "recover" and "version". If you omit the "cmd" parameter,
+"edit", "update", "reset", "recover", "version" and "dump". If you omit the "cmd" parameter,
 the default "list" will be used.
-All actions except for "list" and "refresh" need additional parameters.
+All actions except for "list", "refresh", "version" and "dump" need additional parameters.
+</p>
+<p>
+The action "dump" has been added in version 1.2.27.
 </p>
 </subsection>
 <subsection name="Output Format">

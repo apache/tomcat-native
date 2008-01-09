@@ -109,8 +109,9 @@
 #define JK_STATUS_CMD_RESET                (5)
 #define JK_STATUS_CMD_VERSION              (6)
 #define JK_STATUS_CMD_RECOVER              (7)
+#define JK_STATUS_CMD_DUMP                 (8)
 #define JK_STATUS_CMD_DEF                  (JK_STATUS_CMD_LIST)
-#define JK_STATUS_CMD_MAX                  (JK_STATUS_CMD_RECOVER)
+#define JK_STATUS_CMD_MAX                  (JK_STATUS_CMD_DUMP)
 #define JK_STATUS_CMD_TEXT_UNKNOWN         ("unknown")
 #define JK_STATUS_CMD_TEXT_LIST            ("list")
 #define JK_STATUS_CMD_TEXT_SHOW            ("show")
@@ -119,6 +120,7 @@
 #define JK_STATUS_CMD_TEXT_RESET           ("reset")
 #define JK_STATUS_CMD_TEXT_VERSION         ("version")
 #define JK_STATUS_CMD_TEXT_RECOVER         ("recover")
+#define JK_STATUS_CMD_TEXT_DUMP            ("dump")
 #define JK_STATUS_CMD_TEXT_DEF             (JK_STATUS_CMD_TEXT_LIST)
 
 #define JK_STATUS_CMD_PROP_CHECK_WORKER    0x00000001
@@ -129,8 +131,9 @@
 #define JK_STATUS_CMD_PROP_BACK_LIST       0x00000020
 #define JK_STATUS_CMD_PROP_FMT             0x00000040
 #define JK_STATUS_CMD_PROP_SWITCH_RO       0x00000080
-#define JK_STATUS_CMD_PROP_LINK_HELP       0x00000100
-#define JK_STATUS_CMD_PROP_LEGEND          0x00000200
+#define JK_STATUS_CMD_PROP_DUMP_LINK       0x00000100
+#define JK_STATUS_CMD_PROP_LINK_HELP       0x00000200
+#define JK_STATUS_CMD_PROP_LEGEND          0x00000400
 
 #define JK_STATUS_MIME_UNKNOWN             (0)
 #define JK_STATUS_MIME_HTML                (1)
@@ -319,6 +322,7 @@ static const char *cmd_type[] = {
     JK_STATUS_CMD_TEXT_RESET,
     JK_STATUS_CMD_TEXT_VERSION,
     JK_STATUS_CMD_TEXT_RECOVER,
+    JK_STATUS_CMD_TEXT_DUMP,
     NULL
 };
 
@@ -795,6 +799,8 @@ static int status_cmd_int(const char *cmd)
         return JK_STATUS_CMD_VERSION;
     else if (!strcmp(cmd, JK_STATUS_CMD_TEXT_RECOVER))
         return JK_STATUS_CMD_RECOVER;
+    else if (!strcmp(cmd, JK_STATUS_CMD_TEXT_DUMP))
+        return JK_STATUS_CMD_DUMP;
     return JK_STATUS_CMD_UNKNOWN;
 }
 
@@ -831,14 +837,21 @@ static jk_uint32_t status_cmd_props(int cmd)
   if (cmd == JK_STATUS_CMD_LIST ||
       cmd == JK_STATUS_CMD_SHOW ||
       cmd == JK_STATUS_CMD_VERSION)
+      props |= JK_STATUS_CMD_PROP_DUMP_LINK;
+  if (cmd == JK_STATUS_CMD_LIST ||
+      cmd == JK_STATUS_CMD_SHOW ||
+      cmd == JK_STATUS_CMD_VERSION ||
+      cmd == JK_STATUS_CMD_DUMP)
       props |= JK_STATUS_CMD_PROP_HEAD |
                JK_STATUS_CMD_PROP_FMT;
   if (cmd == JK_STATUS_CMD_SHOW ||
-      cmd == JK_STATUS_CMD_VERSION)
+      cmd == JK_STATUS_CMD_VERSION ||
+      cmd == JK_STATUS_CMD_DUMP)
       props |= JK_STATUS_CMD_PROP_BACK_LIST;
   if (cmd == JK_STATUS_CMD_SHOW ||
       cmd == JK_STATUS_CMD_EDIT ||
-      cmd == JK_STATUS_CMD_VERSION)
+      cmd == JK_STATUS_CMD_VERSION ||
+      cmd == JK_STATUS_CMD_DUMP)
       props |= JK_STATUS_CMD_PROP_BACK_LINK;
   if (cmd != JK_STATUS_CMD_EDIT &&
       cmd != JK_STATUS_CMD_UPDATE &&
@@ -846,7 +859,8 @@ static jk_uint32_t status_cmd_props(int cmd)
       cmd != JK_STATUS_CMD_RECOVER)
       props |= JK_STATUS_CMD_PROP_READONLY;
   if (cmd != JK_STATUS_CMD_LIST &&
-      cmd != JK_STATUS_CMD_VERSION)
+      cmd != JK_STATUS_CMD_VERSION &&
+      cmd != JK_STATUS_CMD_DUMP)
       props |= JK_STATUS_CMD_PROP_CHECK_WORKER;
       
     return props;
@@ -3108,6 +3122,63 @@ static int recover_worker(jk_ws_service_t *s,
     return JK_FALSE;
 }
 
+static int dump_config(jk_ws_service_t *s,
+                       status_endpoint_t *p,
+                       int mime, jk_logger_t *l)
+{
+    status_worker_t *w = p->worker;
+    jk_worker_env_t *we = w->we;
+    jk_map_t *init_data = we->init_data;
+
+    JK_TRACE_ENTER(l);
+
+    if (init_data) {
+        int l = jk_map_size(init_data);
+        int i;
+        if (mime == JK_STATUS_MIME_HTML) {
+            jk_puts(s, "<hr/><h2>Configuration Data</h2><hr/>\n");
+            jk_puts(s, "This dump does not include any changes applied by the status worker\n");
+            jk_puts(s, "to the configuration after the initial startup\n");
+            jk_puts(s, "<PRE>\n");
+        }
+        else if (mime == JK_STATUS_MIME_XML) {
+            jk_print_xml_start_elt(s, w, 2, 0, "configuration");
+        }
+        else if (mime == JK_STATUS_MIME_TXT) {
+            jk_puts(s, "Configuration:\n");
+        }
+        for (i=0;i<l;i++) {
+            const char *name = jk_map_name_at(init_data, i);
+            if (name) {
+                const char *value = jk_map_value_at(init_data, i);
+                if (!value)
+		    value = "(null)";
+                if (mime == JK_STATUS_MIME_HTML ||
+                    mime == JK_STATUS_MIME_PROP ||
+                    mime == JK_STATUS_MIME_TXT) {
+                    jk_putv(s, name, "=", value, "\n", NULL);
+                }
+                else if (mime == JK_STATUS_MIME_XML) {
+                     jk_print_xml_att_string(s, 4, name, value);
+                }
+            }
+        }
+        if (mime == JK_STATUS_MIME_HTML) {
+            jk_puts(s, "</PRE>\n");
+        }
+        else if (mime == JK_STATUS_MIME_XML) {
+            jk_print_xml_stop_elt(s, 2, 1);
+        }
+    }
+    else {
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+
+    JK_TRACE_EXIT(l);
+    return JK_TRUE;
+}
+
 /*
  * Return values of service() method for status worker:
  * return value  is_error              reason
@@ -3553,6 +3624,12 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         jk_puts(s, "]&nbsp;&nbsp;\n");
                     }
                 }
+                if (cmd_props & JK_STATUS_CMD_PROP_DUMP_LINK) {
+                    jk_puts(s, "[");
+                    status_write_uri(s, p, "Dump", JK_STATUS_CMD_DUMP, JK_STATUS_MIME_UNKNOWN,
+                                     NULL, NULL, 0, 0, NULL, l);
+                    jk_puts(s, "]&nbsp;&nbsp;\n");
+                }
                 if (cmd_props & JK_STATUS_CMD_PROP_LINK_HELP) {
                     jk_puts(s, "[");
                     if (cmd == JK_STATUS_CMD_LIST) {
@@ -3581,6 +3658,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     if(edit_worker(s, p, l) != JK_TRUE) {
                         err = "Error in generating this worker's configuration form.";
                     }
+                }
+            }
+            if (cmd == JK_STATUS_CMD_DUMP) {
+                if (dump_config(s, p, mime, l) == JK_FALSE) {
+                    err = "Dumping configuration failed";
                 }
             }
             if (cmd_props & JK_STATUS_CMD_PROP_LEGEND) {
