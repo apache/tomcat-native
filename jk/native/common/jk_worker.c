@@ -63,6 +63,7 @@ int wc_open(jk_map_t *init_data, jk_worker_env_t *we, jk_logger_t *l)
     }
 
     jk_map_dump(init_data, l);
+    we->init_data = init_data;
     if (!jk_get_worker_list(init_data, &(we->worker_list),
                             &we->num_of_workers)) {
         JK_TRACE_EXIT(l);

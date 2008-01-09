@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Common: Include original configuration map in worker_env
+        to make it available for workers, e.g. the status worker. (rjung)
+      </update>
+      <update>
         LB: Refactor "route" return for httpd note. Don't use a
         member of the worker_record, because that's not thread safe. (rjung)
       </update>

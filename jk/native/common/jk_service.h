@@ -51,6 +51,9 @@ extern "C"
 struct jk_worker_env
 {
 
+    /* The original configuration map */
+    jk_map_t *init_data;
+
     /* The URI to WORKER map, will be feeded by AJP14 autoconf feature */
     jk_uri_worker_map_t *uri_to_worker;
 
