@@ -807,7 +807,6 @@ int jk_map_resolve_references(jk_map_t *m, const char *prefix,
                             if (rc == JK_FALSE) {
                                 break;
                             }
-                            *v = '\0';
                         }
                     }
                 }
