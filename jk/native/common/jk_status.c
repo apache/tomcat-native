@@ -121,6 +121,17 @@
 #define JK_STATUS_CMD_TEXT_RECOVER         ("recover")
 #define JK_STATUS_CMD_TEXT_DEF             (JK_STATUS_CMD_TEXT_LIST)
 
+#define JK_STATUS_CMD_PROP_CHECK_WORKER    0x00000001
+#define JK_STATUS_CMD_PROP_READONLY        0x00000002
+#define JK_STATUS_CMD_PROP_HEAD            0x00000004
+#define JK_STATUS_CMD_PROP_REFRESH         0x00000008
+#define JK_STATUS_CMD_PROP_BACK_LINK       0x00000010
+#define JK_STATUS_CMD_PROP_BACK_LIST       0x00000020
+#define JK_STATUS_CMD_PROP_FMT             0x00000040
+#define JK_STATUS_CMD_PROP_SWITCH_RO       0x00000080
+#define JK_STATUS_CMD_PROP_LINK_HELP       0x00000100
+#define JK_STATUS_CMD_PROP_LEGEND          0x00000200
+
 #define JK_STATUS_MIME_UNKNOWN             (0)
 #define JK_STATUS_MIME_HTML                (1)
 #define JK_STATUS_MIME_XML                 (2)
@@ -805,6 +816,40 @@ static int status_mime_int(const char *mime)
     else if (!strcmp(mime, JK_STATUS_MIME_TEXT_PROP))
         return JK_STATUS_MIME_PROP;
     return JK_STATUS_MIME_UNKNOWN;
+}
+
+static jk_uint32_t status_cmd_props(int cmd)
+{
+  jk_uint32_t props = 0;
+
+  if (cmd == JK_STATUS_CMD_LIST ||
+      cmd == JK_STATUS_CMD_SHOW)
+      props |= JK_STATUS_CMD_PROP_REFRESH |
+               JK_STATUS_CMD_PROP_SWITCH_RO |
+               JK_STATUS_CMD_PROP_LINK_HELP |
+               JK_STATUS_CMD_PROP_LEGEND;
+  if (cmd == JK_STATUS_CMD_LIST ||
+      cmd == JK_STATUS_CMD_SHOW ||
+      cmd == JK_STATUS_CMD_VERSION)
+      props |= JK_STATUS_CMD_PROP_HEAD |
+               JK_STATUS_CMD_PROP_FMT;
+  if (cmd == JK_STATUS_CMD_SHOW ||
+      cmd == JK_STATUS_CMD_VERSION)
+      props |= JK_STATUS_CMD_PROP_BACK_LIST;
+  if (cmd == JK_STATUS_CMD_SHOW ||
+      cmd == JK_STATUS_CMD_EDIT ||
+      cmd == JK_STATUS_CMD_VERSION)
+      props |= JK_STATUS_CMD_PROP_BACK_LINK;
+  if (cmd != JK_STATUS_CMD_EDIT &&
+      cmd != JK_STATUS_CMD_UPDATE &&
+      cmd != JK_STATUS_CMD_RESET &&
+      cmd != JK_STATUS_CMD_RECOVER)
+      props |= JK_STATUS_CMD_PROP_READONLY;
+  if (cmd != JK_STATUS_CMD_LIST &&
+      cmd != JK_STATUS_CMD_VERSION)
+      props |= JK_STATUS_CMD_PROP_CHECK_WORKER;
+      
+    return props;
 }
 
 static void status_start_form(jk_ws_service_t *s,
@@ -2824,8 +2869,6 @@ static int list_workers(jk_ws_service_t *s,
         list_workers_type(s, p, 0, ajp_cnt, l);
     }
 
-    display_legend(s, p, l);
-
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
@@ -2845,7 +2888,6 @@ static int show_worker(jk_ws_service_t *s,
         return JK_FALSE;
     }
     display_worker(s, p, jw, l);
-    display_legend(s, p, l);
 
     JK_TRACE_EXIT(l);
     return JK_TRUE;
@@ -3077,6 +3119,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                              jk_logger_t *l, int *is_error)
 {
     int cmd;
+    jk_uint32_t cmd_props;
     int mime;
     int refresh;
     int read_only = 0;
@@ -3132,6 +3175,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     }
     status_get_string(p, JK_STATUS_ARG_CMD, NULL, &arg, l);
     cmd = status_cmd_int(arg);
+    cmd_props = status_cmd_props(cmd);
     status_get_string(p, JK_STATUS_ARG_MIME, NULL, &arg, l);
     mime = status_mime_int(arg);
     refresh = status_get_int(p, JK_STATUS_ARG_REFRESH, 0, l);
@@ -3204,11 +3248,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     }
 
     if (!err) {
-        if (read_only &&
-            (cmd == JK_STATUS_CMD_EDIT ||
-            cmd == JK_STATUS_CMD_UPDATE ||
-            cmd == JK_STATUS_CMD_RESET ||
-            cmd == JK_STATUS_CMD_RECOVER)) {
+        if (read_only && !(cmd_props & JK_STATUS_CMD_PROP_READONLY)) {
             err = "This command is not allowed in read only mode.";
         }
     }
@@ -3220,8 +3260,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         else if (mime == JK_STATUS_MIME_UNKNOWN) {
             err = "Invalid mime type.";
         }
-        else if (cmd != JK_STATUS_CMD_LIST &&
-                 cmd != JK_STATUS_CMD_VERSION &&
+        else if (cmd_props & JK_STATUS_CMD_PROP_CHECK_WORKER &&
                  (check_worker(s, p, l) != JK_TRUE)) {
             err = p->msg;
         }
@@ -3311,9 +3350,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 jk_print_xml_att_string(s, 2, "name", s->server_name);
                 jk_print_xml_att_int(s, 2, "port", s->server_port);
                 jk_print_xml_stop_elt(s, 0, 1);
-                if ((cmd == JK_STATUS_CMD_LIST) ||
-                    (cmd == JK_STATUS_CMD_SHOW) ||
-                    (cmd == JK_STATUS_CMD_VERSION)) {
+                if (cmd_props & JK_STATUS_CMD_PROP_HEAD) {
                     if (rc_time > 0 ) {
                         jk_print_xml_start_elt(s, w, 0, 0, "time");
                         jk_print_xml_att_string(s, 2, "datetime", buf_time);
@@ -3344,9 +3381,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 jk_printf(s, " name=%s", s->server_name);
                 jk_printf(s, " port=%d", s->server_port);
                 jk_puts(s, "\n");
-                if ((cmd == JK_STATUS_CMD_LIST) ||
-                    (cmd == JK_STATUS_CMD_SHOW) ||
-                    (cmd == JK_STATUS_CMD_VERSION)) {
+                if (cmd_props & JK_STATUS_CMD_PROP_HEAD) {
                     if (rc_time > 0) {
                         jk_puts(s, "Time:");
                         jk_printf(s, " datetime=%s", buf_time);
@@ -3375,9 +3410,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             else if (mime == JK_STATUS_MIME_PROP) {
                 jk_print_prop_att_string(s, w, NULL, "server_name", s->server_name);
                 jk_print_prop_att_int(s, w, NULL, "server_port", s->server_port);
-                if ((cmd == JK_STATUS_CMD_LIST) ||
-                    (cmd == JK_STATUS_CMD_SHOW) ||
-                    (cmd == JK_STATUS_CMD_VERSION)) {
+                if (cmd_props & JK_STATUS_CMD_PROP_HEAD) {
                     if (rc_time > 0) {
                         jk_print_prop_att_string(s, w, NULL, "time_datetime", buf_time);
                         jk_print_prop_att_string(s, w, NULL, "time_tz", buf_tz);
@@ -3400,8 +3433,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 }
             }
             else if (mime == JK_STATUS_MIME_HTML) {
-                if ((cmd == JK_STATUS_CMD_LIST ||
-                    cmd == JK_STATUS_CMD_SHOW) &&
+                if (cmd_props & JK_STATUS_CMD_PROP_REFRESH &&
                     refresh > 0) {
                     jk_printf(s, "\n<meta http-equiv=\"Refresh\" content=\"%d;url=%s?%s\">",
                           refresh, s->req_uri, p->query_string);
@@ -3418,9 +3450,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_puts(s, " (read only)");
                 }
                 jk_puts(s, "</h1>\n\n");
-                if ((cmd == JK_STATUS_CMD_LIST) ||
-                    (cmd == JK_STATUS_CMD_SHOW) ||
-                    (cmd == JK_STATUS_CMD_VERSION)) {
+                if (cmd_props & JK_STATUS_CMD_PROP_HEAD) {
                     jk_putv(s, "<table><tr><td>Server Version:</td><td>",
                             s->server_software, "</td><td>&nbsp;&nbsp;&nbsp;</td><td>", NULL);
                     if (rc_time > 0) {
@@ -3432,8 +3462,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_printf(s, "Unix Seconds:</td><td>%d", unix_seconds);
                     jk_puts(s, "</td></tr></table>\n<hr/>\n");
                 }
-                if (cmd == JK_STATUS_CMD_LIST ||
-                    cmd == JK_STATUS_CMD_SHOW) {
+                if (cmd_props & JK_STATUS_CMD_PROP_REFRESH) {
                     if (refresh > 0) {
                         const char *str = p->query_string;
                         char *buf = jk_pool_alloc(s->pool, sizeof(char *) * (strlen(str)+1));
@@ -3482,15 +3511,12 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         jk_puts(s, "</form>\n");
                     }
                 }
-                if (cmd == JK_STATUS_CMD_SHOW ||
-                    cmd == JK_STATUS_CMD_EDIT ||
-                    cmd == JK_STATUS_CMD_VERSION) {
+                if (cmd_props & JK_STATUS_CMD_PROP_BACK_LINK) {
                     int from;
                     status_get_string(p, JK_STATUS_ARG_FROM, NULL, &arg, l);
                     from = status_cmd_int(arg);
                     jk_puts(s, "[");
-                    if (cmd == JK_STATUS_CMD_SHOW ||
-                        cmd == JK_STATUS_CMD_VERSION ||
+                    if (cmd_props & JK_STATUS_CMD_PROP_BACK_LIST ||
                         from == JK_STATUS_CMD_LIST) {
                         status_write_uri(s, p, "Back to worker list", JK_STATUS_CMD_LIST, JK_STATUS_MIME_UNKNOWN,
                                          "", "", 0, 0, "", l);
@@ -3501,9 +3527,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     }
                     jk_puts(s, "]&nbsp;&nbsp;");
                 }
-                if (cmd == JK_STATUS_CMD_LIST ||
-                    cmd == JK_STATUS_CMD_SHOW ||
-                    cmd == JK_STATUS_CMD_VERSION) {
+                if (cmd_props & JK_STATUS_CMD_PROP_FMT) {
                     jk_puts(s, "[Change&nbsp;Format: ");
                     status_write_uri(s, p, "XML", 0, JK_STATUS_MIME_XML,
                                      NULL, NULL, 0, 0, NULL, l);
@@ -3515,7 +3539,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                                      NULL, NULL, 0, 0, NULL, l);
                     jk_puts(s, "]&nbsp;&nbsp;");
                 }
-                if (cmd == JK_STATUS_CMD_LIST || cmd == JK_STATUS_CMD_SHOW) {
+                if (cmd_props & JK_STATUS_CMD_PROP_SWITCH_RO) {
                     if (!w->read_only) {
                         jk_puts(s, "[");
                         if (read_only) {
@@ -3529,12 +3553,13 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         jk_puts(s, "]&nbsp;&nbsp;\n");
                     }
                 }
-                if (cmd == JK_STATUS_CMD_LIST || cmd == JK_STATUS_CMD_SHOW) {
+                if (cmd_props & JK_STATUS_CMD_PROP_LINK_HELP) {
                     jk_puts(s, "[");
-                    if (cmd == JK_STATUS_CMD_LIST)
+                    if (cmd == JK_STATUS_CMD_LIST) {
                         jk_puts(s, "<b>S</b>=Show only this worker");
-                    if (!read_only && cmd == JK_STATUS_CMD_LIST)
-                        jk_puts(s, ", ");
+                        if (!read_only)
+                            jk_puts(s, ", ");
+                    }
                     if (!read_only)
                         jk_puts(s, "<b>E</b>=Edit worker, <b>R</b>=Reset worker state, <b>T</b>=Try worker recovery");
                     jk_puts(s, "]\n");
@@ -3557,6 +3582,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         err = "Error in generating this worker's configuration form.";
                     }
                 }
+            }
+            if (cmd_props & JK_STATUS_CMD_PROP_LEGEND) {
+                display_legend(s, p, l);
             }
         }
     }

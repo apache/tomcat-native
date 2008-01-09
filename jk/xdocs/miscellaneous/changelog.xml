@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        LB: Use property table to decide which cmd action uses which
+        output elements. (rjung)
+      </update>
+      <update>
         Common: Include original configuration map in worker_env
         to make it available for workers, e.g. the status worker. (rjung)
       </update>
