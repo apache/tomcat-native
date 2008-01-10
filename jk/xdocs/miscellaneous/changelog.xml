@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Status: Minor layout changes, use drop down instead of multiple
+        text links. (rjung)
+      </update>
+      <update>
         SHM: Use local copies of read mostly attributes of lb sub workers
         in lb and status worker. (rjung)
       </update>

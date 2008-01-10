@@ -870,6 +870,7 @@ static void status_start_form(jk_ws_service_t *s,
                               status_endpoint_t *p,
                               const char *method,
                               int cmd,
+                              const char *overwrite,
                               jk_logger_t *l)
 {
 
@@ -890,7 +891,10 @@ static void status_start_form(jk_ws_service_t *s,
     for (i = 0; i < sz; i++) {
         const char *k = jk_map_name_at(m, i);
         const char *v = jk_map_value_at(m, i);
-        if (strcmp(k, JK_STATUS_ARG_CMD) || cmd == JK_STATUS_CMD_UNKNOWN) {
+        if ((strcmp(k, JK_STATUS_ARG_CMD) ||
+            cmd == JK_STATUS_CMD_UNKNOWN) &&
+            (!overwrite ||
+            strcmp(k, overwrite))) {
             jk_printf(s, JK_STATUS_FORM_HIDDEN_STRING, k, v);
         }
     }
@@ -1794,25 +1798,21 @@ static void display_worker_lb(jk_ws_service_t *s,
 
             jk_puts(s, "</table><br/>\n");
             if (!read_only) {
-                jk_puts(s, "<b>E</b>dit one attribute for all members: [");
-                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_ACTIVATION, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                                 name, "", 0, 0, JK_STATUS_ARG_LBM_ACTIVATION, l);
-                jk_puts(s, "\n|");
-                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_FACTOR, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                                 name, "", 0, 0, JK_STATUS_ARG_LBM_FACTOR, l);
-                jk_puts(s, "\n|");
-                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_ROUTE, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                                 name, "", 0, 0, JK_STATUS_ARG_LBM_ROUTE, l);
-                jk_puts(s, "\n|");
-                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_REDIRECT, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                                 name, "", 0, 0, JK_STATUS_ARG_LBM_REDIRECT, l);
-                jk_puts(s, "\n|");
-                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_DOMAIN, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                                 name, "", 0, 0, JK_STATUS_ARG_LBM_DOMAIN, l);
-                jk_puts(s, "\n|");
-                status_write_uri(s, p, JK_STATUS_ARG_LBM_TEXT_DISTANCE, JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                                 name, "", 0, 0, JK_STATUS_ARG_LBM_DISTANCE, l);
-                jk_puts(s, "\n]<br/>\n");
+                const char *arg;
+                status_get_string(p, JK_STATUS_ARG_CMD, NULL, &arg, l);
+                status_start_form(s, p, "get", JK_STATUS_CMD_EDIT, NULL, l);
+                jk_printf(s, JK_STATUS_FORM_HIDDEN_STRING, JK_STATUS_ARG_WORKER, name);
+                jk_printf(s, JK_STATUS_FORM_HIDDEN_STRING, JK_STATUS_ARG_FROM, arg);
+                jk_puts(s, "<table><tr><td><b>E</b>dit this attribute for all members:</td><td>");
+                jk_putv(s, "<select name=\"", JK_STATUS_ARG_ATTRIBUTE,
+                        "\" size=\"1\">\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_LBM_ACTIVATION, "\">", JK_STATUS_ARG_LBM_TEXT_ACTIVATION, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_LBM_FACTOR, "\">", JK_STATUS_ARG_LBM_TEXT_FACTOR, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_LBM_ROUTE, "\">", JK_STATUS_ARG_LBM_TEXT_ROUTE, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_LBM_REDIRECT, "\">", JK_STATUS_ARG_LBM_TEXT_REDIRECT, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_LBM_DOMAIN, "\">", JK_STATUS_ARG_LBM_TEXT_DOMAIN, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_LBM_DISTANCE, "\">", JK_STATUS_ARG_LBM_TEXT_DISTANCE, "</option>\n", NULL);
+                jk_puts(s, "</select></td><td><input type=\"submit\" value=\"Go\"/></tr></table></form>\n");
             }
 
         }
@@ -2025,7 +2025,7 @@ static void form_worker(jk_ws_service_t *s,
     jk_putv(s, "<hr/><h3>Edit load balancer settings for ",
             name, "</h3>\n", NULL);
 
-    status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, l);
+    status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, NULL, l);
 
     jk_putv(s, "<table>\n<tr><td>", JK_STATUS_ARG_LB_TEXT_RETRIES,
             ":</td><td><input name=\"",
@@ -2113,7 +2113,7 @@ static void form_member(jk_ws_service_t *s,
 
     jk_putv(s, "<hr/><h3>Edit worker settings for ",
             wr->name, "</h3>\n", NULL);
-    status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, l);
+    status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, NULL, l);
 
     jk_puts(s, "<table>\n");
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ACTIVATION,
@@ -2225,7 +2225,7 @@ static void form_all_members(jk_ws_service_t *s,
                 "' for all members of load balancer ",
                 name, "</h3>\n", NULL);
 
-        status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, l);
+        status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, NULL, l);
 
         jk_putv(s, "<table><tr>"
                 "<th>Balanced Worker</th><th>", aname, "</th>"
@@ -3539,7 +3539,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_printf(s, "Unix Seconds:</td><td>%d", unix_seconds);
                     jk_puts(s, "</td></tr></table>\n<hr/>\n");
                 }
+                jk_puts(s, "<table><tbody valign=\"baseline\"><tr>\n");
                 if (cmd_props & JK_STATUS_CMD_PROP_REFRESH) {
+                    jk_puts(s, "<td>");
                     if (refresh > 0) {
                         const char *str = p->query_string;
                         char *buf = jk_pool_alloc(s->pool, sizeof(char *) * (strlen(str)+1));
@@ -3575,10 +3577,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         jk_putv(s, "[<a href=\"", s->req_uri, NULL);
                         if (buf && buf[0])
                             jk_putv(s, "?", buf, NULL);
-                        jk_puts(s, "\">Stop auto refresh</a>]&nbsp;&nbsp;");
+                        jk_puts(s, "\">Stop auto refresh</a>]");
                     }
                     else {
-                        status_start_form(s, p, "get", JK_STATUS_CMD_UNKNOWN, l);
+                        status_start_form(s, p, "get", JK_STATUS_CMD_UNKNOWN, JK_STATUS_ARG_REFRESH, l);
                         jk_puts(s, "<input type=\"submit\" value=\"Start auto refresh\"/>\n");
                         jk_putv(s, "(every ",
                                 "<input name=\"", JK_STATUS_ARG_REFRESH,
@@ -3587,9 +3589,24 @@ static int JK_METHOD service(jk_endpoint_t *e,
                                 "seconds)", NULL);
                         jk_puts(s, "</form>\n");
                     }
+                    jk_puts(s, "</td><td>&nbsp;&nbsp;|&nbsp;&nbsp;</td>\n");
                 }
+                if (cmd_props & JK_STATUS_CMD_PROP_FMT) {
+                    jk_puts(s, "<td>\n");
+                    status_start_form(s, p, "get", JK_STATUS_CMD_UNKNOWN, JK_STATUS_ARG_MIME, l);
+                    jk_puts(s, "<input type=\"submit\" value=\"Change format\"/>\n");
+                    jk_putv(s, "<select name=\"", JK_STATUS_ARG_MIME, "\" size=\"1\">", NULL);
+                    jk_putv(s, "<option value=\"", JK_STATUS_MIME_TEXT_XML, "\">XML</option>", NULL);
+                    jk_putv(s, "<option value=\"", JK_STATUS_MIME_TEXT_PROP, "\">Properties</option>", NULL);
+                    jk_putv(s, "<option value=\"", JK_STATUS_MIME_TEXT_TXT, "\">Text</option>", NULL);
+                    jk_puts(s, "</select></form>\n");
+                    jk_puts(s, "</td>\n");
+                }
+                jk_puts(s, "</tr></table>\n");
+                jk_puts(s, "<table><tbody valign=\"baseline\"><tr>\n");
                 if (cmd_props & JK_STATUS_CMD_PROP_BACK_LINK) {
                     int from;
+                    jk_puts(s, "<td>\n");
                     status_get_string(p, JK_STATUS_ARG_FROM, NULL, &arg, l);
                     from = status_cmd_int(arg);
                     jk_puts(s, "[");
@@ -3603,20 +3620,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                                          NULL, NULL, 0, 0, "", l);
                     }
                     jk_puts(s, "]&nbsp;&nbsp;");
-                }
-                if (cmd_props & JK_STATUS_CMD_PROP_FMT) {
-                    jk_puts(s, "[Change&nbsp;Format: ");
-                    status_write_uri(s, p, "XML", 0, JK_STATUS_MIME_XML,
-                                     NULL, NULL, 0, 0, NULL, l);
-                    jk_puts(s, "&nbsp;|&nbsp;");
-                    status_write_uri(s, p, "Property", 0, JK_STATUS_MIME_PROP,
-                                     NULL, NULL, 0, 0, NULL, l);
-                    jk_puts(s, "&nbsp;|&nbsp;");
-                    status_write_uri(s, p, "Text", 0, JK_STATUS_MIME_TXT,
-                                     NULL, NULL, 0, 0, NULL, l);
-                    jk_puts(s, "]&nbsp;&nbsp;");
+                    jk_puts(s, "</td>\n");
                 }
                 if (cmd_props & JK_STATUS_CMD_PROP_SWITCH_RO) {
+                    jk_puts(s, "<td>\n");
                     if (!w->read_only) {
                         jk_puts(s, "[");
                         if (read_only) {
@@ -3629,24 +3636,28 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         }
                         jk_puts(s, "]&nbsp;&nbsp;\n");
                     }
+                    jk_puts(s, "</td>\n");
                 }
                 if (cmd_props & JK_STATUS_CMD_PROP_DUMP_LINK) {
+                    jk_puts(s, "<td>\n");
                     jk_puts(s, "[");
                     status_write_uri(s, p, "Dump", JK_STATUS_CMD_DUMP, JK_STATUS_MIME_UNKNOWN,
                                      NULL, NULL, 0, 0, NULL, l);
                     jk_puts(s, "]&nbsp;&nbsp;\n");
+                    jk_puts(s, "</td>\n");
                 }
-                if (cmd_props & JK_STATUS_CMD_PROP_LINK_HELP) {
+                if (cmd_props & JK_STATUS_CMD_PROP_LINK_HELP &&
+                    (cmd == JK_STATUS_CMD_LIST || !read_only)) {
+                    jk_puts(s, "<td>\n");
                     jk_puts(s, "[");
                     if (cmd == JK_STATUS_CMD_LIST) {
-                        jk_puts(s, "<b>S</b>=Show only this worker");
-                        if (!read_only)
-                            jk_puts(s, ", ");
+                        jk_puts(s, "<b>S</b>=Show only this worker, ");
                     }
-                    if (!read_only)
-                        jk_puts(s, "<b>E</b>=Edit worker, <b>R</b>=Reset worker state, <b>T</b>=Try worker recovery");
-                    jk_puts(s, "]\n");
+                    jk_puts(s, "<b>E</b>=Edit worker, <b>R</b>=Reset worker state, <b>T</b>=Try worker recovery");
+                    jk_puts(s, "]<br/>\n");
+                    jk_puts(s, "</td>\n");
                 }
+                jk_puts(s, "</tr></table>\n");
                 if (cmd == JK_STATUS_CMD_LIST) {
                     /* Step 2: Display configuration */
                     if (list_workers(s, p, l) != JK_TRUE) {
