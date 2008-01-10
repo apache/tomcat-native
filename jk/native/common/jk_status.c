@@ -3152,7 +3152,7 @@ static int dump_config(jk_ws_service_t *s,
             if (name) {
                 const char *value = jk_map_value_at(init_data, i);
                 if (!value)
-		    value = "(null)";
+                    value = "(null)";
                 if (mime == JK_STATUS_MIME_HTML ||
                     mime == JK_STATUS_MIME_PROP ||
                     mime == JK_STATUS_MIME_TXT) {
