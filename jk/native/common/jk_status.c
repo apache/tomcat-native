@@ -583,7 +583,7 @@ static int status_rate(worker_record_t *wr, status_worker_t *w,
                        jk_logger_t *l)
 {
     jk_uint32_t mask = 0;
-    int activation = wr->s->activation;
+    int activation = wr->activation;
     int state = wr->s->state;
     jk_uint32_t good = w->good_mask;
     jk_uint32_t bad = w->bad_mask;
@@ -1224,7 +1224,7 @@ static int search_sub_worker(jk_ws_service_t *s,
     }
     for (i = 0; i < (int)lb->num_of_workers; i++) {
         wr = &(lb->lb_workers[i]);
-        if (strcmp(sub_worker, wr->s->name) == 0)
+        if (strcmp(sub_worker, wr->name) == 0)
             break;
     }
     *wrp = wr;
@@ -1457,7 +1457,7 @@ static void display_worker_lb(jk_ws_service_t *s,
     int ms_min;
     int ms_max;
     unsigned int j;
-    const char *name = lb->s->name;
+    const char *name = lb->name;
     status_worker_t *w = p->worker;
 
     JK_TRACE_ENTER(l);
@@ -1661,28 +1661,28 @@ static void display_worker_lb(jk_ws_service_t *s,
                 if (!read_only) {
                     jk_puts(s, "[");
                     status_write_uri(s, p, "E", JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
-                                     name, wr->s->name, 0, 0, "", l);
+                                     name, wr->name, 0, 0, "", l);
                     jk_puts(s, "|");
                     status_write_uri(s, p, "R", JK_STATUS_CMD_RESET, JK_STATUS_MIME_UNKNOWN,
-                                     name, wr->s->name, 0, 0, "", l);
+                                     name, wr->name, 0, 0, "", l);
                     if (wr->s->state == JK_LB_STATE_ERROR) {
                         jk_puts(s, "|");
                         status_write_uri(s, p, "T", JK_STATUS_CMD_RECOVER, JK_STATUS_MIME_UNKNOWN,
-                                         name, wr->s->name, 0, 0, "", l);
+                                         name, wr->name, 0, 0, "", l);
                     }
                     jk_puts(s, "]");
                 }
                 jk_puts(s, "&nbsp;</td>");
                 jk_printf(s, JK_STATUS_SHOW_MEMBER_ROW,
-                          wr->s->name,
+                          wr->name,
                           status_worker_type(wr->w->type),
                           a->host, a->port,
                           jk_dump_hinfo(&a->worker_inet_addr, buf),
                           jk_lb_get_activation(wr, l),
                           jk_lb_get_state(wr, l),
-                          wr->s->distance,
-                          wr->s->lb_factor,
-                          wr->s->lb_mult,
+                          wr->distance,
+                          wr->lb_factor,
+                          wr->lb_mult,
                           wr->s->lb_value,
                           wr->s->elected,
                           wr->s->errors,
@@ -1692,9 +1692,9 @@ static void display_worker_lb(jk_ws_service_t *s,
                           status_strfsize(wr->s->readed, buf_rd),
                           wr->s->busy,
                           wr->s->max_busy,
-                          wr->s->route,
-                          wr->s->redirect ? (*wr->s->redirect ? wr->s->redirect : "&nbsp;") : "&nbsp",
-                          wr->s->domain ? (*wr->s->domain ? wr->s->domain : "&nbsp;") : "&nbsp",
+                          wr->route,
+                          wr->redirect ? (*wr->redirect ? wr->redirect : "&nbsp;") : "&nbsp",
+                          wr->domain ? (*wr->domain ? wr->domain : "&nbsp;") : "&nbsp",
                           rs_min,
                           rs_max);
 
@@ -1702,19 +1702,19 @@ static void display_worker_lb(jk_ws_service_t *s,
             else if (mime == JK_STATUS_MIME_XML) {
 
                 jk_print_xml_start_elt(s, w, 6, 0, "member");
-                jk_print_xml_att_string(s, 8, "name", wr->s->name);
+                jk_print_xml_att_string(s, 8, "name", wr->name);
                 jk_print_xml_att_string(s, 8, "type", status_worker_type(wr->w->type));
                 jk_print_xml_att_string(s, 8, "host", a->host);
                 jk_print_xml_att_int(s, 8, "port", a->port);
                 jk_print_xml_att_string(s, 8, "address", jk_dump_hinfo(&a->worker_inet_addr, buf));
                 jk_print_xml_att_string(s, 8, "activation", jk_lb_get_activation(wr, l));
-                jk_print_xml_att_int(s, 8, "lbfactor", wr->s->lb_factor);
-                jk_print_xml_att_string(s, 8, "route", wr->s->route);
-                jk_print_xml_att_string(s, 8, "redirect", wr->s->redirect);
-                jk_print_xml_att_string(s, 8, "domain", wr->s->domain);
-                jk_print_xml_att_int(s, 8, "distance", wr->s->distance);
+                jk_print_xml_att_int(s, 8, "lbfactor", wr->lb_factor);
+                jk_print_xml_att_string(s, 8, "route", wr->route);
+                jk_print_xml_att_string(s, 8, "redirect", wr->redirect);
+                jk_print_xml_att_string(s, 8, "domain", wr->domain);
+                jk_print_xml_att_int(s, 8, "distance", wr->distance);
                 jk_print_xml_att_string(s, 8, "state", jk_lb_get_state(wr, l));
-                jk_print_xml_att_uint64(s, 8, "lbmult", wr->s->lb_mult);
+                jk_print_xml_att_uint64(s, 8, "lbmult", wr->lb_mult);
                 jk_print_xml_att_uint64(s, 8, "lbvalue", wr->s->lb_value);
                 jk_print_xml_att_uint64(s, 8, "elected", wr->s->elected);
                 jk_print_xml_att_uint32(s, 8, "errors", wr->s->errors);
@@ -1733,19 +1733,19 @@ static void display_worker_lb(jk_ws_service_t *s,
             else if (mime == JK_STATUS_MIME_TXT) {
 
                 jk_puts(s, "Member:");
-                jk_printf(s, " name=%s", wr->s->name);
+                jk_printf(s, " name=%s", wr->name);
                 jk_printf(s, " type=%s", status_worker_type(wr->w->type));
                 jk_printf(s, " host=%s", a->host);
                 jk_printf(s, " port=%d", a->port);
                 jk_printf(s, " address=%s", jk_dump_hinfo(&a->worker_inet_addr, buf));
                 jk_printf(s, " activation=%s", jk_lb_get_activation(wr, l));
-                jk_printf(s, " lbfactor=%d", wr->s->lb_factor);
-                jk_printf(s, " route=\"%s\"", wr->s->route ? wr->s->route : "");
-                jk_printf(s, " redirect=\"%s\"", wr->s->redirect ? wr->s->redirect : "");
-                jk_printf(s, " domain=\"%s\"", wr->s->domain ? wr->s->domain : "");
-                jk_printf(s, " distance=%d", wr->s->distance);
+                jk_printf(s, " lbfactor=%d", wr->lb_factor);
+                jk_printf(s, " route=\"%s\"", wr->route ? wr->route : "");
+                jk_printf(s, " redirect=\"%s\"", wr->redirect ? wr->redirect : "");
+                jk_printf(s, " domain=\"%s\"", wr->domain ? wr->domain : "");
+                jk_printf(s, " distance=%d", wr->distance);
                 jk_printf(s, " state=%s", jk_lb_get_state(wr, l));
-                jk_printf(s, " lbmult=%" JK_UINT64_T_FMT, wr->s->lb_mult);
+                jk_printf(s, " lbmult=%" JK_UINT64_T_FMT, wr->lb_mult);
                 jk_printf(s, " lbvalue=%" JK_UINT64_T_FMT, wr->s->lb_value);
                 jk_printf(s, " elected=%" JK_UINT64_T_FMT, wr->s->elected);
                 jk_printf(s, " errors=%" JK_UINT32_T_FMT, wr->s->errors);
@@ -1762,30 +1762,30 @@ static void display_worker_lb(jk_ws_service_t *s,
             }
             else if (mime == JK_STATUS_MIME_PROP) {
 
-                jk_print_prop_att_string(s, w, name, "balance_workers", wr->s->name);
-                jk_print_prop_att_string(s, w, wr->s->name, "type", status_worker_type(wr->w->type));
-                jk_print_prop_att_string(s, w, wr->s->name, "host", a->host);
-                jk_print_prop_att_int(s, w, wr->s->name, "port", a->port);
-                jk_print_prop_att_string(s, w, wr->s->name, "address", jk_dump_hinfo(&a->worker_inet_addr, buf));
-                jk_print_prop_att_string(s, w, wr->s->name, "activation", jk_lb_get_activation(wr, l));
-                jk_print_prop_att_int(s, w, wr->s->name, "lbfactor", wr->s->lb_factor);
-                jk_print_prop_att_string(s, w, wr->s->name, "route", wr->s->route);
-                jk_print_prop_att_string(s, w, wr->s->name, "redirect", wr->s->redirect);
-                jk_print_prop_att_string(s, w, wr->s->name, "domain", wr->s->domain);
-                jk_print_prop_att_int(s, w, wr->s->name, "distance", wr->s->distance);
-                jk_print_prop_att_string(s, w, wr->s->name, "state", jk_lb_get_state(wr, l));
-                jk_print_prop_att_uint64(s, w, wr->s->name, "lbmult", wr->s->lb_mult);
-                jk_print_prop_att_uint64(s, w, wr->s->name, "lbvalue", wr->s->lb_value);
-                jk_print_prop_att_uint64(s, w, wr->s->name, "elected", wr->s->elected);
-                jk_print_prop_att_uint32(s, w, wr->s->name, "errors", wr->s->errors);
-                jk_print_prop_att_uint32(s, w, wr->s->name, "client_errors", wr->s->client_errors);
-                jk_print_prop_att_uint32(s, w, wr->s->name, "reply_timeouts", wr->s->reply_timeouts);
-                jk_print_prop_att_uint64(s, w, wr->s->name, "transferred", wr->s->transferred);
-                jk_print_prop_att_uint64(s, w, wr->s->name, "read", wr->s->readed);
-                jk_print_prop_att_int(s, w, wr->s->name, "busy", wr->s->busy);
-                jk_print_prop_att_int(s, w, wr->s->name, "max_busy", wr->s->max_busy);
-                jk_print_prop_att_int(s, w, wr->s->name, "time_to_recover_min", rs_min);
-                jk_print_prop_att_int(s, w, wr->s->name, "time_to_recover_max", rs_max);
+                jk_print_prop_att_string(s, w, name, "balance_workers", wr->name);
+                jk_print_prop_att_string(s, w, wr->name, "type", status_worker_type(wr->w->type));
+                jk_print_prop_att_string(s, w, wr->name, "host", a->host);
+                jk_print_prop_att_int(s, w, wr->name, "port", a->port);
+                jk_print_prop_att_string(s, w, wr->name, "address", jk_dump_hinfo(&a->worker_inet_addr, buf));
+                jk_print_prop_att_string(s, w, wr->name, "activation", jk_lb_get_activation(wr, l));
+                jk_print_prop_att_int(s, w, wr->name, "lbfactor", wr->lb_factor);
+                jk_print_prop_att_string(s, w, wr->name, "route", wr->route);
+                jk_print_prop_att_string(s, w, wr->name, "redirect", wr->redirect);
+                jk_print_prop_att_string(s, w, wr->name, "domain", wr->domain);
+                jk_print_prop_att_int(s, w, wr->name, "distance", wr->distance);
+                jk_print_prop_att_string(s, w, wr->name, "state", jk_lb_get_state(wr, l));
+                jk_print_prop_att_uint64(s, w, wr->name, "lbmult", wr->lb_mult);
+                jk_print_prop_att_uint64(s, w, wr->name, "lbvalue", wr->s->lb_value);
+                jk_print_prop_att_uint64(s, w, wr->name, "elected", wr->s->elected);
+                jk_print_prop_att_uint32(s, w, wr->name, "errors", wr->s->errors);
+                jk_print_prop_att_uint32(s, w, wr->name, "client_errors", wr->s->client_errors);
+                jk_print_prop_att_uint32(s, w, wr->name, "reply_timeouts", wr->s->reply_timeouts);
+                jk_print_prop_att_uint64(s, w, wr->name, "transferred", wr->s->transferred);
+                jk_print_prop_att_uint64(s, w, wr->name, "read", wr->s->readed);
+                jk_print_prop_att_int(s, w, wr->name, "busy", wr->s->busy);
+                jk_print_prop_att_int(s, w, wr->name, "max_busy", wr->s->max_busy);
+                jk_print_prop_att_int(s, w, wr->name, "time_to_recover_min", rs_min);
+                jk_print_prop_att_int(s, w, wr->name, "time_to_recover_max", rs_max);
 
             }
         }
@@ -1948,7 +1948,7 @@ static void display_worker(jk_ws_service_t *s,
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "Status worker '%s' %s lb worker '%s'",
-                       w->name, "displaying", lb->s->name);
+                       w->name, "displaying", lb->name);
             display_worker_lb(s, p, lb, l);
         }
         else {
@@ -1995,7 +1995,7 @@ static void form_worker(jk_ws_service_t *s,
     JK_TRACE_ENTER(l);
     if (jw->type == JK_LB_WORKER_TYPE) {
         lb = (lb_worker_t *)jw->worker_private;
-        name = lb->s->name;
+        name = lb->name;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Status worker '%s' producing edit form for lb worker '%s'",
@@ -2109,10 +2109,10 @@ static void form_member(jk_ws_service_t *s,
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "Status worker '%s' producing edit form for sub worker '%s' of lb worker '%s'",
-               w->name, wr->s->name, lb_name);
+               w->name, wr->name, lb_name);
 
     jk_putv(s, "<hr/><h3>Edit worker settings for ",
-            wr->s->name, "</h3>\n", NULL);
+            wr->name, "</h3>\n", NULL);
     status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, l);
 
     jk_puts(s, "<table>\n");
@@ -2121,43 +2121,43 @@ static void form_member(jk_ws_service_t *s,
     jk_putv(s, "<tr><td>&nbsp;&nbsp;Active</td><td><input name=\"",
             JK_STATUS_ARG_LBM_ACTIVATION, "\" type=\"radio\"", NULL);
     jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_ACTIVE);
-    if (wr->s->activation == JK_LB_ACTIVATION_ACTIVE)
+    if (wr->activation == JK_LB_ACTIVATION_ACTIVE)
         jk_puts(s, " checked=\"checked\"");
     jk_puts(s, "/></td></tr>\n");
     jk_putv(s, "<tr><td>&nbsp;&nbsp;Disabled</td><td><input name=\"",
             JK_STATUS_ARG_LBM_ACTIVATION, "\" type=\"radio\"", NULL);
     jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_DISABLED);
-    if (wr->s->activation == JK_LB_ACTIVATION_DISABLED)
+    if (wr->activation == JK_LB_ACTIVATION_DISABLED)
         jk_puts(s, " checked=\"checked\"");
     jk_puts(s, "/></td></tr>\n");
     jk_putv(s, "<tr><td>&nbsp;&nbsp;Stopped</td><td><input name=\"",
             JK_STATUS_ARG_LBM_ACTIVATION, "\" type=\"radio\"", NULL);
     jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_STOPPED);
-    if (wr->s->activation == JK_LB_ACTIVATION_STOPPED)
+    if (wr->activation == JK_LB_ACTIVATION_STOPPED)
         jk_puts(s, " checked=\"checked\"");
     jk_puts(s, "/></td></tr>\n");
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_FACTOR,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LBM_FACTOR, "\" type=\"text\" ", NULL);
-    jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->s->lb_factor);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->lb_factor);
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ROUTE,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LBM_ROUTE, "\" type=\"text\" ", NULL);
-    jk_printf(s, "value=\"%s\"/></td></tr>\n", wr->s->route);
+    jk_printf(s, "value=\"%s\"/></td></tr>\n", wr->route);
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_REDIRECT,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LBM_REDIRECT, "\" type=\"text\" ", NULL);
-    jk_putv(s, "value=\"", wr->s->redirect, NULL);
+    jk_putv(s, "value=\"", wr->redirect, NULL);
     jk_puts(s, "\"/></td></tr>\n");
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_DOMAIN,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LBM_DOMAIN, "\" type=\"text\" ", NULL);
-    jk_putv(s, "value=\"", wr->s->domain, NULL);
+    jk_putv(s, "value=\"", wr->domain, NULL);
     jk_puts(s, "\"/></td></tr>\n");
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_DISTANCE,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LBM_DISTANCE, "\" type=\"text\" ", NULL);
-    jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->s->distance);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->distance);
     jk_puts(s, "</table>\n");
     jk_puts(s, "<br/><input type=\"submit\" value=\"Update Worker\"/>\n</form>\n");
     JK_TRACE_EXIT(l);
@@ -2206,7 +2206,7 @@ static void form_all_members(jk_ws_service_t *s,
     }
     if (jw->type == JK_LB_WORKER_TYPE) {
         lb = (lb_worker_t *)jw->worker_private;
-        name = lb->s->name;
+        name = lb->name;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Status worker '%s' producing edit form for attribute '%s' [%s] of all members of lb worker '%s'",
@@ -2234,46 +2234,46 @@ static void form_all_members(jk_ws_service_t *s,
         for (i = 0; i < lb->num_of_workers; i++) {
             worker_record_t *wr = &(lb->lb_workers[i]);
 
-            jk_putv(s, "<tr><td>", wr->s->name, "</td><td>\n", NULL);
+            jk_putv(s, "<tr><td>", wr->name, "</td><td>\n", NULL);
 
             if (!strcmp(attribute, JK_STATUS_ARG_LBM_ACTIVATION)) {
 
                 jk_printf(s, "Active:&nbsp;<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"radio\"", i);
                 jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_ACTIVE);
-                if (wr->s->activation == JK_LB_ACTIVATION_ACTIVE)
+                if (wr->activation == JK_LB_ACTIVATION_ACTIVE)
                     jk_puts(s, " checked=\"checked\"");
                 jk_puts(s, "/>&nbsp;|&nbsp;\n");
                 jk_printf(s, "Disabled:&nbsp;<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"radio\"", i);
                 jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_DISABLED);
-                if (wr->s->activation == JK_LB_ACTIVATION_DISABLED)
+                if (wr->activation == JK_LB_ACTIVATION_DISABLED)
                     jk_puts(s, " checked=\"checked\"");
                 jk_puts(s, "/>&nbsp;|&nbsp;\n");
                 jk_printf(s, "Stopped:&nbsp;<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"radio\"", i);
                 jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_STOPPED);
-                if (wr->s->activation == JK_LB_ACTIVATION_STOPPED)
+                if (wr->activation == JK_LB_ACTIVATION_STOPPED)
                     jk_puts(s, " checked=\"checked\"");
                 jk_puts(s, "/>\n");
 
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_FACTOR)) {
                 jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
-                jk_printf(s, "value=\"%d\"/>\n", wr->s->lb_factor);
+                jk_printf(s, "value=\"%d\"/>\n", wr->lb_factor);
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_ROUTE)) {
                 jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
-                jk_putv(s, "value=\"", wr->s->route, "\"/>\n", NULL);
+                jk_putv(s, "value=\"", wr->route, "\"/>\n", NULL);
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_REDIRECT)) {
                 jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
-                jk_putv(s, "value=\"", wr->s->redirect, "\"/>\n", NULL);
+                jk_putv(s, "value=\"", wr->redirect, "\"/>\n", NULL);
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DOMAIN)) {
                 jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
-                jk_putv(s, "value=\"", wr->s->domain, "\"/>\n", NULL);
+                jk_putv(s, "value=\"", wr->domain, "\"/>\n", NULL);
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DISTANCE)) {
                 jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
-                jk_printf(s, "value=\"%d\"/>\n", wr->s->distance);
+                jk_printf(s, "value=\"%d\"/>\n", wr->distance);
             }
 
             jk_puts(s, "</td></tr>");
@@ -2299,7 +2299,7 @@ static void commit_worker(jk_ws_service_t *s,
     JK_TRACE_ENTER(l);
     if (jw->type == JK_LB_WORKER_TYPE) {
         lb = (lb_worker_t *)jw->worker_private;
-        name = lb->s->name;
+        name = lb->name;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Status worker '%s' committing changes for lb worker '%s'",
@@ -2400,40 +2400,40 @@ static int commit_member(jk_ws_service_t *s,
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "Status worker '%s' committing changes for sub worker '%s' of lb worker '%s'",
-               w->name, wr->s->name, lb_name);
+               w->name, wr->name, lb_name);
 
     if (status_get_string(p, JK_STATUS_ARG_LBM_ACTIVATION, NULL, &arg, l) == JK_TRUE) {
         i = jk_lb_get_activation_code(arg);
-        if (i != wr->s->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
-            wr->s->activation = i;
+        if (i != wr->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
+            wr->activation = i;
             jk_log(l, JK_LOG_INFO,
                    "Status worker '%s' setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
-                   w->name, wr->s->name, lb_name, jk_lb_get_activation(wr, l));
+                   w->name, wr->name, lb_name, jk_lb_get_activation(wr, l));
             rc |= 1;
         }
     }
     i = status_get_int(p, JK_STATUS_ARG_LBM_FACTOR,
-                       wr->s->lb_factor, l);
-    if (i != wr->s->lb_factor && i > 0) {
+                       wr->lb_factor, l);
+    if (i != wr->lb_factor && i > 0) {
         jk_log(l, JK_LOG_INFO,
                "Status worker '%s' setting 'lbfactor' for sub worker '%s' of lb worker '%s' to '%i'",
-               w->name, wr->s->name, lb_name, i);
-        wr->s->lb_factor = i;
+               w->name, wr->name, lb_name, i);
+        wr->lb_factor = i;
         /* Recalculate the load multiplicators wrt. lb_factor */
         rc |= 2;
     }
     if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_ROUTE,
                                 NULL, &arg, l)) == JK_TRUE) {
-        if (strncmp(wr->s->route, arg, JK_SHM_STR_SIZ)) {
+        if (strncmp(wr->route, arg, JK_SHM_STR_SIZ)) {
             jk_log(l, JK_LOG_INFO,
                    "Status worker '%s' setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
-                   w->name, wr->s->name, lb_name, arg);
-            strncpy(wr->s->route, arg, JK_SHM_STR_SIZ);
-            if (!wr->s->domain[0]) {
-                char * id_domain = strchr(wr->s->route, '.');
+                   w->name, wr->name, lb_name, arg);
+            strncpy(wr->route, arg, JK_SHM_STR_SIZ);
+            if (!wr->domain[0]) {
+                char * id_domain = strchr(wr->route, '.');
                 if (id_domain) {
                     *id_domain = '\0';
-                    strcpy(wr->s->domain, wr->s->route);
+                    strcpy(wr->domain, wr->route);
                     *id_domain = '.';
                 }
             }
@@ -2441,30 +2441,31 @@ static int commit_member(jk_ws_service_t *s,
     }
     if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_REDIRECT,
                                 NULL, &arg, l)) == JK_TRUE) {
-        if (strncmp(wr->s->redirect, arg, JK_SHM_STR_SIZ)) {
+        if (strncmp(wr->redirect, arg, JK_SHM_STR_SIZ)) {
             jk_log(l, JK_LOG_INFO,
                    "Status worker '%s' setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
-                   w->name, wr->s->name, lb_name, arg);
-            strncpy(wr->s->redirect, arg, JK_SHM_STR_SIZ);
+                   w->name, wr->name, lb_name, arg);
+            strncpy(wr->redirect, arg, JK_SHM_STR_SIZ);
         }
     }
     if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_DOMAIN,
                                 NULL, &arg, l)) == JK_TRUE) {
-        if (strncmp(wr->s->domain, arg, JK_SHM_STR_SIZ)) {
+        if (strncmp(wr->domain, arg, JK_SHM_STR_SIZ)) {
             jk_log(l, JK_LOG_INFO,
                    "Status worker '%s' setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
-                   w->name, wr->s->name, lb_name, arg);
-            strncpy(wr->s->domain, arg, JK_SHM_STR_SIZ);
+                   w->name, wr->name, lb_name, arg);
+            strncpy(wr->domain, arg, JK_SHM_STR_SIZ);
         }
     }
     i = status_get_int(p, JK_STATUS_ARG_LBM_DISTANCE,
-                       wr->s->distance, l);
-    if (i != wr->s->distance && i > 0) {
+                       wr->distance, l);
+    if (i != wr->distance && i > 0) {
         jk_log(l, JK_LOG_INFO,
                "Status worker '%s' setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
-               w->name, wr->s->name, lb_name, i);
-        wr->s->distance = i;
+               w->name, wr->name, lb_name, i);
+        wr->distance = i;
     }
+    wr->sequence++;
     return rc;
 }
 
@@ -2515,7 +2516,7 @@ static void commit_all_members(jk_ws_service_t *s,
     }
     if (jw->type == JK_LB_WORKER_TYPE) {
         lb = (lb_worker_t *)jw->worker_private;
-        name = lb->s->name;
+        name = lb->name;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Status worker '%s' committing changes for attribute '%s' [%s] of all members of lb worker '%s'",
@@ -2535,22 +2536,22 @@ static void commit_all_members(jk_ws_service_t *s,
             snprintf(vname, 32-1, "" JK_STATUS_ARG_MULT_VALUE_BASE "%d", j);
 
             if (!strcmp(attribute, JK_STATUS_ARG_LBM_FACTOR)) {
-                i = status_get_int(p, vname, wr->s->lb_factor, l);
-                if (i != wr->s->lb_factor && i > 0) {
+                i = status_get_int(p, vname, wr->lb_factor, l);
+                if (i != wr->lb_factor && i > 0) {
                     jk_log(l, JK_LOG_INFO,
                            "Status worker '%s' setting 'lbfactor' for sub worker '%s' of lb worker '%s' to '%i'",
-                           w->name, wr->s->name, name, i);
-                    wr->s->lb_factor = i;
+                           w->name, wr->name, name, i);
+                    wr->lb_factor = i;
                     rc = 2;
                 }
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DISTANCE)) {
-                i = status_get_int(p, vname, wr->s->distance, l);
-                if (i != wr->s->distance && i > 0) {
+                i = status_get_int(p, vname, wr->distance, l);
+                if (i != wr->distance && i > 0) {
                     jk_log(l, JK_LOG_INFO,
                            "Status worker '%s' setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
-                           w->name, wr->s->name, name, i);
-                    wr->s->lb_factor = i;
+                           w->name, wr->name, name, i);
+                    wr->lb_factor = i;
                 }
             }
             else {
@@ -2558,27 +2559,27 @@ static void commit_all_members(jk_ws_service_t *s,
                 if (!strcmp(attribute, JK_STATUS_ARG_LBM_ACTIVATION)) {
                     if (rv == JK_TRUE) {
                         i = jk_lb_get_activation_code(arg);
-                        if (i != wr->s->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
-                            wr->s->activation = i;
+                        if (i != wr->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
+                            wr->activation = i;
                             jk_log(l, JK_LOG_INFO,
                                    "Status worker '%s' setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
-                                   w->name, wr->s->name, name, jk_lb_get_activation(wr, l));
+                                   w->name, wr->name, name, jk_lb_get_activation(wr, l));
                             rc = 1;
                         }
                     }
                 }
                 else if (!strcmp(attribute, JK_STATUS_ARG_LBM_ROUTE)) {
                     if (rv == JK_TRUE) {
-                        if (strncmp(wr->s->route, arg, JK_SHM_STR_SIZ)) {
+                        if (strncmp(wr->route, arg, JK_SHM_STR_SIZ)) {
                             jk_log(l, JK_LOG_INFO,
                                    "Status worker '%s' setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
-                                   w->name, wr->s->name, name, arg);
-                            strncpy(wr->s->route, arg, JK_SHM_STR_SIZ);
-                            if (!wr->s->domain[0]) {
-                                char * id_domain = strchr(wr->s->route, '.');
+                                   w->name, wr->name, name, arg);
+                            strncpy(wr->route, arg, JK_SHM_STR_SIZ);
+                            if (!wr->domain[0]) {
+                                char * id_domain = strchr(wr->route, '.');
                                 if (id_domain) {
                                     *id_domain = '\0';
-                                    strcpy(wr->s->domain, wr->s->route);
+                                    strcpy(wr->domain, wr->route);
                                     *id_domain = '.';
                                 }
                             }
@@ -2587,31 +2588,34 @@ static void commit_all_members(jk_ws_service_t *s,
                 }
                 else if (!strcmp(attribute, JK_STATUS_ARG_LBM_REDIRECT)) {
                     if (rv == JK_TRUE) {
-                        if (strncmp(wr->s->redirect, arg, JK_SHM_STR_SIZ)) {
+                        if (strncmp(wr->redirect, arg, JK_SHM_STR_SIZ)) {
                             jk_log(l, JK_LOG_INFO,
                                    "Status worker '%s' setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
-                                   w->name, wr->s->name, name, arg);
-                            strncpy(wr->s->redirect, arg, JK_SHM_STR_SIZ);
+                                   w->name, wr->name, name, arg);
+                            strncpy(wr->redirect, arg, JK_SHM_STR_SIZ);
                         }
                     }
                 }
                 else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DOMAIN)) {
                     if (rv == JK_TRUE) {
-                        if (strncmp(wr->s->domain, arg, JK_SHM_STR_SIZ)) {
+                        if (strncmp(wr->domain, arg, JK_SHM_STR_SIZ)) {
                             jk_log(l, JK_LOG_INFO,
                                    "Status worker '%s' setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
-                                   w->name, wr->s->name, name, arg);
-                            strncpy(wr->s->domain, arg, JK_SHM_STR_SIZ);
+                                   w->name, wr->name, name, arg);
+                            strncpy(wr->domain, arg, JK_SHM_STR_SIZ);
                         }
                     }
                 }
             }
+            wr->sequence++;
         }
         if (rc == 1)
             reset_lb_values(lb, l);
         else if (rc == 2)
             /* Recalculate the load multiplicators wrt. lb_factor */
             update_mult(lb, l);
+        lb->sequence++;
+        jk_lb_push(lb, l);
     }
     JK_TRACE_EXIT(l);
 }
@@ -2987,7 +2991,9 @@ static int update_worker(jk_ws_service_t *s,
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-        rc = commit_member(s, p, wr, lb->s->name, l);
+        rc = commit_member(s, p, wr, lb->name, l);
+        lb->sequence++;
+        jk_lb_push(lb, l);
         if (rc & 1)
             reset_lb_values(lb, l);
         if (rc & 2)

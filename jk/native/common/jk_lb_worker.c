@@ -40,8 +40,8 @@
  * The load balancing code in this
  */
 
-#define JK_WORKER_USABLE(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->state != JK_LB_STATE_PROBE && (w)->state != JK_LB_STATE_BUSY && (w)->activation != JK_LB_ACTIVATION_STOPPED && (w)->activation != JK_LB_ACTIVATION_DISABLED)
-#define JK_WORKER_USABLE_STICKY(w)   ((w)->state != JK_LB_STATE_ERROR && (w)->state != JK_LB_STATE_PROBE && (w)->activation != JK_LB_ACTIVATION_STOPPED)
+#define JK_WORKER_USABLE(w)   ((w)->s->state != JK_LB_STATE_ERROR && (w)->s->state != JK_LB_STATE_PROBE && (w)->s->state != JK_LB_STATE_BUSY && (w)->activation != JK_LB_ACTIVATION_STOPPED && (w)->activation != JK_LB_ACTIVATION_DISABLED)
+#define JK_WORKER_USABLE_STICKY(w)   ((w)->s->state != JK_LB_STATE_ERROR && (w)->s->state != JK_LB_STATE_PROBE && (w)->activation != JK_LB_ACTIVATION_STOPPED)
 
 static const char *lb_locking_type[] = {
     JK_LB_LOCK_TEXT_OPTIMISTIC,
@@ -211,7 +211,7 @@ int jk_lb_get_state_code(const char *v)
 /* Return the string representation of the balance worker activation */
 const char *jk_lb_get_activation(worker_record_t *p, jk_logger_t *l)
 {
-    return lb_activation_type[p->s->activation];
+    return lb_activation_type[p->activation];
 }
 
 int jk_lb_get_activation_code(const char *v)
@@ -235,16 +235,16 @@ void update_mult(lb_worker_t *p, jk_logger_t *l)
     jk_uint64_t s = 1;
     JK_TRACE_ENTER(l);
     for (i = 0; i < p->num_of_workers; i++) {
-        s = scm(s, p->lb_workers[i].s->lb_factor);
+        s = scm(s, p->lb_workers[i].lb_factor);
     }
     for (i = 0; i < p->num_of_workers; i++) {
-        p->lb_workers[i].s->lb_mult = s / p->lb_workers[i].s->lb_factor;
+        p->lb_workers[i].lb_mult = s / p->lb_workers[i].lb_factor;
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "worker %s gets multiplicity %"
                    JK_UINT64_T_FMT,
-                   p->lb_workers[i].s->name,
-                   p->lb_workers[i].s->lb_mult);
+                   p->lb_workers[i].name,
+                   p->lb_workers[i].lb_mult);
     }
     JK_TRACE_EXIT(l);
 }
@@ -273,7 +273,7 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "syncing mem for lb '%s' from shm",
-               p->s->name);
+               p->name);
     p->sticky_session = p->s->sticky_session;
     p->sticky_session_force = p->s->sticky_session_force;
     p->recover_wait_time = p->s->recover_wait_time;
@@ -289,7 +289,7 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "syncing mem for member '%s' of lb '%s' from shm",
-                       w->s->name, p->s->name);
+                       w->name, p->name);
             strncpy(w->route, w->s->route, JK_SHM_STR_SIZ);
             strncpy(w->domain, w->s->domain, JK_SHM_STR_SIZ);
             strncpy(w->redirect, w->s->redirect, JK_SHM_STR_SIZ);
@@ -314,7 +314,7 @@ void jk_lb_push(lb_worker_t * p, jk_logger_t *l)
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "syncing shm for lb '%s' from mem",
-               p->s->name);
+               p->name);
     p->s->sticky_session = p->sticky_session;
     p->s->sticky_session_force = p->sticky_session_force;
     p->s->recover_wait_time = p->recover_wait_time;
@@ -330,7 +330,7 @@ void jk_lb_push(lb_worker_t * p, jk_logger_t *l)
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "syncing shm for member '%s' of lb '%s' from mem",
-                       w->s->name, p->s->name);
+                       w->name, p->name);
             strncpy(w->s->route, w->route, JK_SHM_STR_SIZ);
             strncpy(w->s->domain, w->domain, JK_SHM_STR_SIZ);
             strncpy(w->s->redirect, w->redirect, JK_SHM_STR_SIZ);
@@ -492,17 +492,17 @@ static int recover_workers(lb_worker_t *p,
         w = &p->lb_workers[i];
         if (w->s->state == JK_LB_STATE_ERROR) {
             elapsed = (int)difftime(now, w->s->error_time);
-            if (elapsed <= p->s->recover_wait_time) {
+            if (elapsed <= p->recover_wait_time) {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
                            "worker %s will recover in %d seconds",
-                           w->s->name, p->s->recover_wait_time - elapsed);
+                           w->name, p->recover_wait_time - elapsed);
             }
             else {
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG,
                            "worker %s is marked for recovery",
-                           w->s->name);
+                           w->name);
                 if (p->lbmethod != JK_LB_METHOD_BUSYNESS)
                     w->s->lb_value = curmax;
                 w->s->reply_timeouts = 0;
@@ -537,7 +537,7 @@ static int force_recovery(lb_worker_t *p,
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_INFO,
                        "worker %s is marked for recovery",
-                       w->s->name);
+                       w->name);
             w->s->state = JK_LB_STATE_FORCE;
             forced++;
         }
@@ -630,7 +630,7 @@ static worker_record_t *find_by_session(lb_worker_t *p,
     unsigned int i;
 
     for (i = 0; i < p->num_of_workers; i++) {
-        if (strcmp(p->lb_workers[i].s->route, name) == 0) {
+        if (strcmp(p->lb_workers[i].route, name) == 0) {
             rc = &p->lb_workers[i];
             break;
         }
@@ -651,19 +651,19 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* Skip all workers that are not member of domain */
-        if (strlen(p->lb_workers[i].s->domain) == 0 ||
-            strcmp(p->lb_workers[i].s->domain, domain))
+        if (strlen(p->lb_workers[i].domain) == 0 ||
+            strcmp(p->lb_workers[i].domain, domain))
             continue;
         /* Take into calculation only the workers that are
          * not in error state, stopped, disabled or busy.
          */
-        if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
-            if (!candidate || p->lb_workers[i].s->distance < d ||
+        if (JK_WORKER_USABLE(&p->lb_workers[i])) {
+            if (!candidate || p->lb_workers[i].distance < d ||
                 (p->lb_workers[i].s->lb_value < curmin &&
-                p->lb_workers[i].s->distance == d)) {
+                p->lb_workers[i].distance == d)) {
                 candidate = &p->lb_workers[i];
                 curmin = p->lb_workers[i].s->lb_value;
-                d = p->lb_workers[i].s->distance;
+                d = p->lb_workers[i].distance;
             }
         }
     }
@@ -693,13 +693,13 @@ static worker_record_t *find_best_byvalue(lb_worker_t *p,
         /* Take into calculation only the workers that are
          * not in error state, stopped, disabled or busy.
          */
-        if (JK_WORKER_USABLE(p->lb_workers[i].s)) {
-            if (!candidate || p->lb_workers[i].s->distance < d ||
+        if (JK_WORKER_USABLE(&p->lb_workers[i])) {
+            if (!candidate || p->lb_workers[i].distance < d ||
                 (p->lb_workers[i].s->lb_value < curmin &&
-                p->lb_workers[i].s->distance == d)) {
+                p->lb_workers[i].distance == d)) {
                 candidate = &p->lb_workers[i];
                 curmin = p->lb_workers[i].s->lb_value;
-                d = p->lb_workers[i].s->distance;
+                d = p->lb_workers[i].distance;
                 p->next_offset = i + 1;
             }
         }
@@ -722,7 +722,7 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
         *route_is_domain = JK_TRUE;
     }
     if (candidate) {
-        if (!JK_WORKER_USABLE_STICKY(candidate->s)) {
+        if (!JK_WORKER_USABLE_STICKY(candidate)) {
             /* We have a worker that is error state or stopped.
              * If it has a redirection set use that redirection worker.
              * This enables to safely remove the member from the
@@ -731,15 +731,15 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
              */
             if (p->sticky_session_force)
                 candidate = NULL;
-            else if (*candidate->s->redirect) {
-                candidate = find_by_session(p, candidate->s->redirect, l);
+            else if (*candidate->redirect) {
+                candidate = find_by_session(p, candidate->redirect, l);
                 *route_is_domain = JK_FALSE;
             }
-            else if (*candidate->s->domain && !uses_domain) {
-                candidate = find_best_bydomain(p, candidate->s->domain, l);
+            else if (*candidate->domain && !uses_domain) {
+                candidate = find_best_bydomain(p, candidate->domain, l);
                 *route_is_domain = JK_TRUE;
             }
-            if (candidate && !JK_WORKER_USABLE_STICKY(candidate->s))
+            if (candidate && !JK_WORKER_USABLE_STICKY(candidate))
                 candidate = NULL;
         }
     }
@@ -755,8 +755,8 @@ static worker_record_t *find_failover_worker(lb_worker_t * p,
     const char *redirect = NULL;
 
     for (i = 0; i < p->num_of_workers; i++) {
-        if (strlen(p->lb_workers[i].s->redirect)) {
-            redirect = p->lb_workers[i].s->redirect;
+        if (strlen(p->lb_workers[i].redirect)) {
+            redirect = p->lb_workers[i].redirect;
             break;
         }
     }
@@ -791,8 +791,8 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
         /* No need to find the best worker
          * if there is a single one
          */
-        if (JK_WORKER_USABLE_STICKY(p->lb_workers[0].s)) {
-            if (p->lb_workers[0].s->activation != JK_LB_ACTIVATION_DISABLED) {
+        if (JK_WORKER_USABLE_STICKY(&p->lb_workers[0])) {
+            if (p->lb_workers[0].activation != JK_LB_ACTIVATION_DISABLED) {
                 JK_TRACE_EXIT(l);
                 return p->lb_workers;
             }
@@ -843,7 +843,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
                                "found worker %s (%s) for route %s and partial sessionid %s",
-                               rc->s->name, rc->s->route, session_route, sessionid);
+                               rc->name, rc->route, session_route, sessionid);
                     JK_TRACE_EXIT(l);
                     return rc;
                 }
@@ -874,7 +874,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
     if (rc && JK_IS_DEBUG_LEVEL(l)) {
         jk_log(l, JK_LOG_DEBUG,
                "found best worker %s (%s) using method '%s'",
-               rc->s->name, rc->s->route, jk_lb_get_method(p, l));
+               rc->name, rc->route, jk_lb_get_method(p, l));
     }
     JK_TRACE_EXIT(l);
     return rc;
@@ -889,7 +889,7 @@ static void lb_add_log_items(jk_ws_service_t *s,
     char *buf = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT * JK_LB_UINT64_STR_SZ);
     if (log_values && buf) {
         /* JK_NOTE_LB_FIRST/LAST_NAME */
-        log_values[0] = w->s->name;
+        log_values[0] = w->name;
         snprintf(buf, JK_LB_UINT64_STR_SZ, "%" JK_UINT64_T_FMT, w->s->lb_value);
         /* JK_NOTE_LB_FIRST/LAST_VALUE */
         log_values[1] = buf;
@@ -1002,15 +1002,15 @@ static int JK_METHOD service(jk_endpoint_t *e,
             int retry = 0;
             int retry_wait = JK_LB_MIN_RETRY_WAIT;
             if (route_is_domain == JK_FALSE)
-                s->route = rec->s->route;
+                s->route = rec->route;
             else
-                s->route = rec->s->domain;
+                s->route = rec->domain;
             prec = rec;
 
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "service worker=%s route=%s",
-                       rec->s->name, s->route);
+                       rec->name, s->route);
 
             if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                 jk_shm_lock();
@@ -1051,7 +1051,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_shm_unlock();
                 jk_log(l, JK_LOG_INFO,
                        "could not get free endpoint for worker %s (%d retries)",
-                       rec->s->name, retry);
+                       rec->name, retry);
             }
             else {
                 int service_stat = JK_UNSET;
@@ -1077,7 +1077,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS) ||
                      (p->worker->lbmethod == JK_LB_METHOD_SESSIONS &&
                       !sessionid) )
-                    rec->s->lb_value += rec->s->lb_mult;
+                    rec->s->lb_value += rec->lb_mult;
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_unlock();
 
@@ -1095,11 +1095,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 rec->s->readed += rd;
                 rec->s->transferred += wr;
                 if (p->worker->lbmethod == JK_LB_METHOD_TRAFFIC) {
-                    rec->s->lb_value += (rd+wr)*rec->s->lb_mult;
+                    rec->s->lb_value += (rd+wr)*rec->lb_mult;
                 }
                 else if (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS) {
-                    if (rec->s->lb_value >= rec->s->lb_mult) {
-                        rec->s->lb_value -= rec->s->lb_mult;
+                    if (rec->s->lb_value >= rec->lb_mult) {
+                        rec->s->lb_value -= rec->lb_mult;
                     }
                     else {
                         rec->s->lb_value = 0;
@@ -1111,9 +1111,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                                    JK_UINT64_T_FMT
                                    ") ",
                                    "- correcting to 0",
-                                   rec->s->name,
+                                   rec->name,
                                    rec->s->lb_value,
-                                   rec->s->lb_mult);
+                                   rec->lb_mult);
                         }
                     }
                 }
@@ -1181,7 +1181,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 }
                 else if (service_stat == JK_REPLY_TIMEOUT) {
                     rec->s->reply_timeouts++;
-                    if (rec->s->reply_timeouts > (unsigned)p->worker->s->max_reply_timeouts) {
+                    if (rec->s->reply_timeouts > (unsigned)p->worker->max_reply_timeouts) {
                         /*
                         * Service failed - to many reply timeouts
                         * Take this node out of service.
@@ -1216,7 +1216,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if (rec->s->state == JK_LB_STATE_ERROR)
                     jk_log(l, JK_LOG_INFO,
                            "service failed, worker %s is in error state",
-                           rec->s->name);
+                           rec->name);
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_unlock();
             }
@@ -1333,12 +1333,12 @@ static int JK_METHOD validate(jk_worker_t *pThis,
         unsigned int num_of_workers;
         const char *secret;
 
-        p->sticky_session = jk_get_is_sticky_session(props, p->s->name);
-        p->sticky_session_force = jk_get_is_sticky_session_force(props, p->s->name);
-        secret = jk_get_worker_secret(props, p->s->name);
+        p->sticky_session = jk_get_is_sticky_session(props, p->name);
+        p->sticky_session_force = jk_get_is_sticky_session_force(props, p->name);
+        secret = jk_get_worker_secret(props, p->name);
 
         if (jk_get_lb_worker_list(props,
-                                  p->s->name,
+                                  p->name,
                                   &worker_names,
                                   &num_of_workers) && num_of_workers) {
             unsigned int i = 0;
@@ -1365,12 +1365,16 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             for (i = 0; i < num_of_workers; i++) {
                 const char *s;
                 unsigned int ms;
+                strncpy(p->lb_workers[i].name, worker_names[i],
+                        JK_SHM_STR_SIZ);
                 strncpy(p->lb_workers[i].s->name, worker_names[i],
                         JK_SHM_STR_SIZ);
-                p->lb_workers[i].s->lb_factor =
+                p->lb_workers[i].sequence = 0;
+                p->lb_workers[i].s->sequence = 0;
+                p->lb_workers[i].lb_factor =
                     jk_get_lb_factor(props, worker_names[i]);
-                if (p->lb_workers[i].s->lb_factor < 1) {
-                    p->lb_workers[i].s->lb_factor = 1;
+                if (p->lb_workers[i].lb_factor < 1) {
+                    p->lb_workers[i].lb_factor = 1;
                 }
                 /* Calculate the maximum packet size from all workers
                  * for the recovery buffer.
@@ -1378,23 +1382,23 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 ms = jk_get_max_packet_size(props, worker_names[i]);
                 if (ms > p->max_packet_size)
                     p->max_packet_size = ms;
-                p->lb_workers[i].s->distance =
+                p->lb_workers[i].distance =
                     jk_get_distance(props, worker_names[i]);
                 if ((s = jk_get_worker_route(props, worker_names[i], NULL)))
-                    strncpy(p->lb_workers[i].s->route, s, JK_SHM_STR_SIZ);
+                    strncpy(p->lb_workers[i].route, s, JK_SHM_STR_SIZ);
                 else
-                    strncpy(p->lb_workers[i].s->route, worker_names[i], JK_SHM_STR_SIZ);
+                    strncpy(p->lb_workers[i].route, worker_names[i], JK_SHM_STR_SIZ);
                 if ((s = jk_get_worker_domain(props, worker_names[i], NULL)))
-                    strncpy(p->lb_workers[i].s->domain, s, JK_SHM_STR_SIZ);
+                    strncpy(p->lb_workers[i].domain, s, JK_SHM_STR_SIZ);
                 if ((s = jk_get_worker_redirect(props, worker_names[i], NULL)))
-                    strncpy(p->lb_workers[i].s->redirect, s, JK_SHM_STR_SIZ);
+                    strncpy(p->lb_workers[i].redirect, s, JK_SHM_STR_SIZ);
 
                 p->lb_workers[i].s->lb_value = 0;
                 p->lb_workers[i].s->state = JK_LB_STATE_IDLE;
                 p->lb_workers[i].s->error_time = 0;
-                p->lb_workers[i].s->activation =
+                p->lb_workers[i].activation =
                     jk_get_worker_activation(props, worker_names[i]);
-                if (!wc_create_worker(p->lb_workers[i].s->name, 0,
+                if (!wc_create_worker(p->lb_workers[i].name, 0,
                                       props,
                                       &(p->lb_workers[i].w),
                                       we, l) || !p->lb_workers[i].w) {
@@ -1411,17 +1415,17 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             if (i != num_of_workers) {
                 jk_log(l, JK_LOG_ERROR,
                        "Failed creating worker %s",
-                       p->lb_workers[i].s->name);
+                       p->lb_workers[i].name);
                 close_workers(p, i, l);
             }
             else {
                 /* Update domain names if route contains period '.' */
                 for (i = 0; i < num_of_workers; i++) {
-                    if (!p->lb_workers[i].s->domain[0]) {
-                        char * id_domain = strchr(p->lb_workers[i].s->route, '.');
+                    if (!p->lb_workers[i].domain[0]) {
+                        char * id_domain = strchr(p->lb_workers[i].route, '.');
                         if (id_domain) {
                             *id_domain = '\0';
-                            strcpy(p->lb_workers[i].s->domain, p->lb_workers[i].s->route);
+                            strcpy(p->lb_workers[i].domain, p->lb_workers[i].route);
                             *id_domain = '.';
                         }
                     }
@@ -1429,23 +1433,23 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                         jk_log(l, JK_LOG_DEBUG,
                                "Balanced worker %i has name %s and route %s in domain %s",
                                i,
-                               p->lb_workers[i].s->name,
-                               p->lb_workers[i].s->route,
-                               p->lb_workers[i].s->domain);
+                               p->lb_workers[i].name,
+                               p->lb_workers[i].route,
+                               p->lb_workers[i].domain);
                     }
                 }
                 p->num_of_workers = num_of_workers;
                 update_mult(p, l);
                 for (i = 0; i < num_of_workers; i++) {
                     for (j = 0; j < i; j++) {
-                        if (strcmp(p->lb_workers[i].s->route, p->lb_workers[j].s->route) == 0) {
+                        if (strcmp(p->lb_workers[i].route, p->lb_workers[j].route) == 0) {
                             jk_log(l, JK_LOG_ERROR,
                                    "Balanced workers number %i (%s) and %i (%s) share the same route %s - aborting configuration!",
                                    i,
-                                   p->lb_workers[i].s->name,
+                                   p->lb_workers[i].name,
                                    j,
-                                   p->lb_workers[j].s->name,
-                                   p->lb_workers[i].s->route);
+                                   p->lb_workers[j].name,
+                                   p->lb_workers[i].route);
                             JK_TRACE_EXIT(l);
                             return JK_FALSE;
                         }
@@ -1471,21 +1475,21 @@ static int JK_METHOD init(jk_worker_t *pThis,
     lb_worker_t *p = (lb_worker_t *)pThis->worker_private;
     JK_TRACE_ENTER(log);
 
-    p->retries = jk_get_worker_retries(props, p->s->name,
+    p->retries = jk_get_worker_retries(props, p->name,
                                        JK_RETRIES);
-    p->recover_wait_time = jk_get_worker_recover_timeout(props, p->s->name,
+    p->recover_wait_time = jk_get_worker_recover_timeout(props, p->name,
                                                             WAIT_BEFORE_RECOVER);
     if (p->recover_wait_time < 1)
         p->recover_wait_time = 1;
-    p->max_reply_timeouts = jk_get_worker_max_reply_timeouts(props, p->s->name,
+    p->max_reply_timeouts = jk_get_worker_max_reply_timeouts(props, p->name,
                                                              0);
     p->maintain_time = jk_get_worker_maintain_time(props);
     if(p->maintain_time < 0)
         p->maintain_time = 0;
     p->s->last_maintain_time = time(NULL);
 
-    p->lbmethod = jk_get_lb_method(props, p->s->name);
-    p->lblock   = jk_get_lb_lock(props, p->s->name);
+    p->lbmethod = jk_get_lb_method(props, p->name);
+    p->lblock   = jk_get_lb_lock(props, p->name);
 
     JK_INIT_CS(&(p->cs), i);
     if (i == JK_FALSE) {
@@ -1571,6 +1575,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
             JK_TRACE_EXIT(l);
             return 0;
         }
+        strncpy(private_data->name, name, JK_SHM_STR_SIZ);
         strncpy(private_data->s->name, name, JK_SHM_STR_SIZ);
         private_data->lb_workers = NULL;
         private_data->num_of_workers = 0;
@@ -1583,6 +1588,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->recover_wait_time = WAIT_BEFORE_RECOVER;
         private_data->max_reply_timeouts = 0;
         private_data->sequence = 0;
+        private_data->s->sequence = 0;
         private_data->next_offset = 0;
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);
