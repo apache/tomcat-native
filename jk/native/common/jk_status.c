@@ -1470,7 +1470,7 @@ static void display_worker_lb(jk_ws_service_t *s,
     status_get_string(p, JK_STATUS_ARG_MIME, NULL, &arg, l);
     mime = status_mime_int(arg);
     hide_members = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
-                                JK_STATUS_ARG_OPTION_NO_MEMBERS;
+                                  JK_STATUS_ARG_OPTION_NO_MEMBERS;
     if (w->read_only) {
         read_only = 1;
     }
@@ -1802,7 +1802,8 @@ static void display_worker_lb(jk_ws_service_t *s,
                 status_get_string(p, JK_STATUS_ARG_CMD, NULL, &arg, l);
                 status_start_form(s, p, "get", JK_STATUS_CMD_EDIT, NULL, l);
                 jk_printf(s, JK_STATUS_FORM_HIDDEN_STRING, JK_STATUS_ARG_WORKER, name);
-                jk_printf(s, JK_STATUS_FORM_HIDDEN_STRING, JK_STATUS_ARG_FROM, arg);
+                if (arg)
+                    jk_printf(s, JK_STATUS_FORM_HIDDEN_STRING, JK_STATUS_ARG_FROM, arg);
                 jk_puts(s, "<table><tr><td><b>E</b>dit this attribute for all members:</td><td>");
                 jk_putv(s, "<select name=\"", JK_STATUS_ARG_ATTRIBUTE,
                         "\" size=\"1\">\n", NULL);
@@ -2385,10 +2386,10 @@ static void commit_worker(jk_ws_service_t *s,
 }
 
 static int commit_member(jk_ws_service_t *s,
-                          status_endpoint_t *p,
-                          worker_record_t *wr,
-                          const char *lb_name,
-                          jk_logger_t *l)
+                         status_endpoint_t *p,
+                         worker_record_t *wr,
+                         const char *lb_name,
+                         jk_logger_t *l)
 {
     const char *arg;
     status_worker_t *w = p->worker;
