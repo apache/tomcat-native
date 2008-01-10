@@ -65,6 +65,10 @@ struct jk_shm_ajp13_worker
     int     type;
     /* worker name */
     char    name[JK_SHM_STR_SIZ+1];
+    /* Sequence counter starting at 0 and increasing
+     * every time we change the config
+     */
+    volatile unsigned int sequence;
     /* Number of currently busy channels */
     volatile int busy;
     /* Maximum number of busy channels */

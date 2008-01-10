@@ -264,8 +264,12 @@ void reset_lb_values(lb_worker_t *p, jk_logger_t *l)
 }
 
 /* Syncing config values from shm */
-void jk_lb_pull(lb_worker_t * p, jk_logger_t *l) {
+void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
+{
+    unsigned int i = 0;
+
     JK_TRACE_ENTER(l);
+
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "syncing mem for lb '%s' from shm",
@@ -278,12 +282,35 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l) {
     p->lbmethod = p->s->lbmethod;
     p->lblock = p->s->lblock;
     p->sequence = p->s->sequence;
+
+    for (i = 0; i < p->num_of_workers; i++) {
+        worker_record_t *w = &p->lb_workers[i];
+        if (w->sequence != w->s->sequence) {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "syncing mem for member '%s' of lb '%s' from shm",
+                       w->s->name, p->s->name);
+            strncpy(w->route, w->s->route, JK_SHM_STR_SIZ);
+            strncpy(w->domain, w->s->domain, JK_SHM_STR_SIZ);
+            strncpy(w->redirect, w->s->redirect, JK_SHM_STR_SIZ);
+            w->distance = w->s->distance;
+            w->activation = w->s->activation;
+            w->lb_factor = w->s->lb_factor;
+            w->lb_mult = w->s->lb_mult;
+            w->sequence = w->s->sequence;
+        }
+    }
+
     JK_TRACE_EXIT(l);
 }
 
-/* Syncing config values from shm */
-void jk_lb_push(lb_worker_t * p, jk_logger_t *l) {
+/* Syncing config values to shm */
+void jk_lb_push(lb_worker_t * p, jk_logger_t *l)
+{
+    unsigned int i = 0;
+
     JK_TRACE_ENTER(l);
+
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "syncing shm for lb '%s' from mem",
@@ -296,6 +323,25 @@ void jk_lb_push(lb_worker_t * p, jk_logger_t *l) {
     p->s->lbmethod = p->lbmethod;
     p->s->lblock = p->lblock;
     p->s->sequence = p->sequence;
+
+    for (i = 0; i < p->num_of_workers; i++) {
+        worker_record_t *w = &p->lb_workers[i];
+        if (w->sequence != w->s->sequence) {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "syncing shm for member '%s' of lb '%s' from mem",
+                       w->s->name, p->s->name);
+            strncpy(w->s->route, w->route, JK_SHM_STR_SIZ);
+            strncpy(w->s->domain, w->domain, JK_SHM_STR_SIZ);
+            strncpy(w->s->redirect, w->redirect, JK_SHM_STR_SIZ);
+            w->s->distance = w->distance;
+            w->s->activation = w->activation;
+            w->s->lb_factor = w->lb_factor;
+            w->s->lb_mult = w->lb_mult;
+            w->s->sequence = w->sequence;
+        }
+    }
+
     JK_TRACE_EXIT(l);
 }
 
@@ -798,7 +844,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
                         jk_log(l, JK_LOG_DEBUG,
                                "found worker %s (%s) for route %s and partial sessionid %s",
                                rc->s->name, rc->s->route, session_route, sessionid);
-                        JK_TRACE_EXIT(l);
+                    JK_TRACE_EXIT(l);
                     return rc;
                 }
             }
@@ -905,6 +951,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
     /* Set returned error to OK */
     *is_error = JK_HTTP_OK;
 
+    jk_shm_lock();
+    if (p->worker->sequence != p->worker->s->sequence)
+        jk_lb_pull(p->worker, l);
+    jk_shm_unlock();
+
     /* set the recovery post, for LB mode */
     s->reco_buf = jk_b_new(s->pool);
     if (!s->reco_buf) {
@@ -923,11 +974,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
     }
     jk_b_reset(s->reco_buf);
     s->reco_status = RECO_INITED;
-
-    jk_shm_lock();
-    if (p->worker->sequence != p->worker->s->sequence)
-        jk_lb_pull(p->worker, l);
-    jk_shm_unlock();
 
     if (p->worker->sticky_session) {
         /* Use sessionid only if sticky_session is

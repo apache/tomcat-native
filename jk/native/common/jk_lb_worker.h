@@ -123,6 +123,25 @@ struct worker_record
     jk_worker_t           *w;
     /* Shared memory worker data */
     jk_shm_ajp13_worker_t *s;
+    char         name[JK_SHM_STR_SIZ+1];
+    /* route */
+    char    route[JK_SHM_STR_SIZ+1];
+    /* worker domain */
+    char    domain[JK_SHM_STR_SIZ+1];
+    /* worker redirect route */
+    char    redirect[JK_SHM_STR_SIZ+1];
+    /* worker distance */
+    volatile int distance;
+    /* current activation state (config) of the worker */
+    volatile int activation;
+    /* Current lb factor */
+    volatile int lb_factor;
+    /* Current lb reciprocal factor */
+    volatile jk_uint64_t lb_mult;
+    /* Sequence counter starting at 0 and increasing
+     * every time we change the config
+     */
+    volatile unsigned int sequence;
 };
 typedef struct worker_record worker_record_t;
 
