@@ -2551,7 +2551,7 @@ static void commit_all_members(jk_ws_service_t *s,
                     jk_log(l, JK_LOG_INFO,
                            "Status worker '%s' setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
                            w->name, wr->name, name, i);
-                    wr->lb_factor = i;
+                    wr->distance = i;
                 }
             }
             else {
