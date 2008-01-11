@@ -2396,6 +2396,29 @@ static void commit_worker(jk_ws_service_t *s,
     }
 }
 
+static int set_int_if_changed(status_endpoint_t *p,
+                              worker_record_t *wr,
+                              const char *att,
+                              const char *arg,
+                              int min,
+                              int max,
+                              volatile int *param,
+                              const char *lb_name,
+                              jk_logger_t *l)
+{
+    int i;
+    status_worker_t *w = p->worker;
+    i = status_get_int(p, arg, *param, l);
+    if (i != *param && i >= min && i <= max) {
+        jk_log(l, JK_LOG_INFO,
+               "Status worker '%s' setting '%s' for sub worker '%s' of lb worker '%s' to '%i'",
+               w->name, att, wr->name, lb_name, i);
+        *param = i;
+        return JK_TRUE;
+    }
+    return JK_FALSE;
+}
+
 static int commit_member(jk_ws_service_t *s,
                          status_endpoint_t *p,
                          worker_record_t *wr,
@@ -2424,16 +2447,10 @@ static int commit_member(jk_ws_service_t *s,
             rc |= 1;
         }
     }
-    i = status_get_int(p, JK_STATUS_ARG_LBM_FACTOR,
-                       wr->lb_factor, l);
-    if (i != wr->lb_factor && i > 0) {
-        jk_log(l, JK_LOG_INFO,
-               "Status worker '%s' setting 'lbfactor' for sub worker '%s' of lb worker '%s' to '%i'",
-               w->name, wr->name, lb_name, i);
-        wr->lb_factor = i;
+    if (set_int_if_changed(p, wr, "lbfactor", JK_STATUS_ARG_LBM_FACTOR,
+                           1, INT_MAX, &wr->lb_factor, lb_name, l))
         /* Recalculate the load multiplicators wrt. lb_factor */
         rc |= 2;
-    }
     if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_ROUTE,
                                 NULL, &arg, l)) == JK_TRUE) {
         if (strncmp(wr->route, arg, JK_SHM_STR_SIZ)) {
@@ -2472,15 +2489,9 @@ static int commit_member(jk_ws_service_t *s,
             rc |= 4;
         }
     }
-    i = status_get_int(p, JK_STATUS_ARG_LBM_DISTANCE,
-                       wr->distance, l);
-    if (i != wr->distance && i > 0) {
-        jk_log(l, JK_LOG_INFO,
-               "Status worker '%s' setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
-               w->name, wr->name, lb_name, i);
-        wr->distance = i;
+    if (set_int_if_changed(p, wr, "distance", JK_STATUS_ARG_LBM_DISTANCE,
+                           0, INT_MAX, &wr->distance, lb_name, l))
         rc |= 4;
-    }
     if (rc)
         wr->sequence++;
     return rc;
@@ -2554,25 +2565,16 @@ static void commit_all_members(jk_ws_service_t *s,
             snprintf(vname, 32-1, "" JK_STATUS_ARG_MULT_VALUE_BASE "%d", j);
 
             if (!strcmp(attribute, JK_STATUS_ARG_LBM_FACTOR)) {
-                i = status_get_int(p, vname, wr->lb_factor, l);
-                if (i != wr->lb_factor && i > 0) {
-                    jk_log(l, JK_LOG_INFO,
-                           "Status worker '%s' setting 'lbfactor' for sub worker '%s' of lb worker '%s' to '%i'",
-                           w->name, wr->name, name, i);
-                    wr->lb_factor = i;
+                if (set_int_if_changed(p, wr, "lbfactor", vname,
+                                       1, INT_MAX, &wr->lb_factor, name, l)) {
                     rc = 2;
                     sync_needed = JK_TRUE;
                 }
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DISTANCE)) {
-                i = status_get_int(p, vname, wr->distance, l);
-                if (i != wr->distance && i > 0) {
-                    jk_log(l, JK_LOG_INFO,
-                           "Status worker '%s' setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
-                           w->name, wr->name, name, i);
-                    wr->distance = i;
+                if (set_int_if_changed(p, wr, "distance", vname,
+                                       0, INT_MAX, &wr->distance, name, l))
                     sync_needed = JK_TRUE;
-                }
             }
             else {
                 int rv = status_get_string(p, vname, NULL, &arg, l);
