@@ -2107,6 +2107,7 @@ static void form_member(jk_ws_service_t *s,
     status_worker_t *w = p->worker;
 
     JK_TRACE_ENTER(l);
+
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "Status worker '%s' producing edit form for sub worker '%s' of lb worker '%s'",
@@ -2295,6 +2296,7 @@ static void commit_worker(jk_ws_service_t *s,
     lb_worker_t *lb = NULL;
     status_worker_t *w = p->worker;
     const char *arg;
+    int sync_needed = JK_FALSE;
     int i;
 
     JK_TRACE_ENTER(l);
@@ -2332,6 +2334,7 @@ static void commit_worker(jk_ws_service_t *s,
                "Status worker '%s' setting 'retries' for lb worker '%s' to '%i'",
                w->name, name, i);
         lb->retries = i;
+        sync_needed = JK_TRUE;
     }
     i = status_get_int(p, JK_STATUS_ARG_LB_RECOVER_TIME,
                        lb->recover_wait_time, l);
@@ -2340,6 +2343,7 @@ static void commit_worker(jk_ws_service_t *s,
                "Status worker '%s' setting 'recover_time' for lb worker '%s' to '%i'",
                w->name, name, i);
         lb->recover_wait_time = i;
+        sync_needed = JK_TRUE;
     }
     i = status_get_int(p, JK_STATUS_ARG_LB_MAX_REPLY_TIMEOUTS,
                        lb->max_reply_timeouts, l);
@@ -2348,6 +2352,7 @@ static void commit_worker(jk_ws_service_t *s,
                "Status worker '%s' setting 'max_reply_timeouts' for lb worker '%s' to '%i'",
                w->name, name, i);
         lb->max_reply_timeouts = i;
+        sync_needed = JK_TRUE;
     }
     i = status_get_bool(p, JK_STATUS_ARG_LB_STICKY, 0, l);
     if (i != lb->sticky_session) {
@@ -2355,6 +2360,7 @@ static void commit_worker(jk_ws_service_t *s,
                "Status worker '%s' setting 'sticky_session' for lb worker '%s' to '%i'",
                w->name, name, i);
         lb->sticky_session = i;
+        sync_needed = JK_TRUE;
     }
     i = status_get_bool(p, JK_STATUS_ARG_LB_STICKY_FORCE, 0, l);
     if (i != lb->sticky_session_force) {
@@ -2362,27 +2368,32 @@ static void commit_worker(jk_ws_service_t *s,
                "Status worker '%s' setting 'sticky_session_force' for lb worker '%s' to '%i'",
                w->name, name, i);
         lb->sticky_session_force = i;
+        sync_needed = JK_TRUE;
     }
     if (status_get_string(p, JK_STATUS_ARG_LB_METHOD, NULL, &arg, l) == JK_TRUE) {
         i = jk_lb_get_method_code(arg);
         if (i != lb->lbmethod && i >= 0 && i <= JK_LB_METHOD_MAX) {
-            lb->lbmethod = i;
             jk_log(l, JK_LOG_INFO,
                    "Status worker '%s' setting 'method' for lb worker '%s' to '%s'",
                    w->name, name, jk_lb_get_method(lb, l));
+            lb->lbmethod = i;
+            sync_needed = JK_TRUE;
         }
     }
     if (status_get_string(p, JK_STATUS_ARG_LB_LOCK, NULL, &arg, l) == JK_TRUE) {
         i = jk_lb_get_lock_code(arg);
         if (i != lb->lblock && i >= 0 && i <= JK_LB_LOCK_MAX) {
-            lb->lblock = i;
             jk_log(l, JK_LOG_INFO,
                    "Status worker '%s' setting 'lock' for lb worker '%s' to '%s'",
                    w->name, name, jk_lb_get_lock(lb, l));
+            lb->lblock = i;
+            sync_needed = JK_TRUE;
         }
     }
-    lb->sequence++;
-    jk_lb_push(lb, l);
+    if (sync_needed == JK_TRUE) {
+        lb->sequence++;
+        jk_lb_push(lb, l);
+    }
 }
 
 static int commit_member(jk_ws_service_t *s,
@@ -2430,6 +2441,7 @@ static int commit_member(jk_ws_service_t *s,
                    "Status worker '%s' setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
                    w->name, wr->name, lb_name, arg);
             strncpy(wr->route, arg, JK_SHM_STR_SIZ);
+            rc |= 4;
             if (!wr->domain[0]) {
                 char * id_domain = strchr(wr->route, '.');
                 if (id_domain) {
@@ -2447,6 +2459,7 @@ static int commit_member(jk_ws_service_t *s,
                    "Status worker '%s' setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
                    w->name, wr->name, lb_name, arg);
             strncpy(wr->redirect, arg, JK_SHM_STR_SIZ);
+            rc |= 4;
         }
     }
     if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_DOMAIN,
@@ -2456,6 +2469,7 @@ static int commit_member(jk_ws_service_t *s,
                    "Status worker '%s' setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
                    w->name, wr->name, lb_name, arg);
             strncpy(wr->domain, arg, JK_SHM_STR_SIZ);
+            rc |= 4;
         }
     }
     i = status_get_int(p, JK_STATUS_ARG_LBM_DISTANCE,
@@ -2465,8 +2479,10 @@ static int commit_member(jk_ws_service_t *s,
                "Status worker '%s' setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
                w->name, wr->name, lb_name, i);
         wr->distance = i;
+        rc |= 4;
     }
-    wr->sequence++;
+    if (rc)
+        wr->sequence++;
     return rc;
 }
 
@@ -2533,6 +2549,7 @@ static void commit_all_members(jk_ws_service_t *s,
 
     if (lb) {
         for (j = 0; j < lb->num_of_workers; j++) {
+            int sync_needed = JK_FALSE;
             worker_record_t *wr = &(lb->lb_workers[j]);
             snprintf(vname, 32-1, "" JK_STATUS_ARG_MULT_VALUE_BASE "%d", j);
 
@@ -2544,6 +2561,7 @@ static void commit_all_members(jk_ws_service_t *s,
                            w->name, wr->name, name, i);
                     wr->lb_factor = i;
                     rc = 2;
+                    sync_needed = JK_TRUE;
                 }
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DISTANCE)) {
@@ -2553,6 +2571,7 @@ static void commit_all_members(jk_ws_service_t *s,
                            "Status worker '%s' setting 'distance' for sub worker '%s' of lb worker '%s' to '%i'",
                            w->name, wr->name, name, i);
                     wr->distance = i;
+                    sync_needed = JK_TRUE;
                 }
             }
             else {
@@ -2561,11 +2580,12 @@ static void commit_all_members(jk_ws_service_t *s,
                     if (rv == JK_TRUE) {
                         i = jk_lb_get_activation_code(arg);
                         if (i != wr->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
-                            wr->activation = i;
                             jk_log(l, JK_LOG_INFO,
                                    "Status worker '%s' setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
                                    w->name, wr->name, name, jk_lb_get_activation(wr, l));
+                            wr->activation = i;
                             rc = 1;
+                            sync_needed = JK_TRUE;
                         }
                     }
                 }
@@ -2576,6 +2596,7 @@ static void commit_all_members(jk_ws_service_t *s,
                                    "Status worker '%s' setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
                                    w->name, wr->name, name, arg);
                             strncpy(wr->route, arg, JK_SHM_STR_SIZ);
+                            sync_needed = JK_TRUE;
                             if (!wr->domain[0]) {
                                 char * id_domain = strchr(wr->route, '.');
                                 if (id_domain) {
@@ -2594,6 +2615,7 @@ static void commit_all_members(jk_ws_service_t *s,
                                    "Status worker '%s' setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
                                    w->name, wr->name, name, arg);
                             strncpy(wr->redirect, arg, JK_SHM_STR_SIZ);
+                            sync_needed = JK_TRUE;
                         }
                     }
                 }
@@ -2604,19 +2626,26 @@ static void commit_all_members(jk_ws_service_t *s,
                                    "Status worker '%s' setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
                                    w->name, wr->name, name, arg);
                             strncpy(wr->domain, arg, JK_SHM_STR_SIZ);
+                            sync_needed = JK_TRUE;
                         }
                     }
                 }
             }
-            wr->sequence++;
+            if (sync_needed == JK_TRUE) {
+                wr->sequence++;
+                if (!rc)
+                    rc = 3;
+            }
         }
         if (rc == 1)
             reset_lb_values(lb, l);
         else if (rc == 2)
             /* Recalculate the load multiplicators wrt. lb_factor */
             update_mult(lb, l);
-        lb->sequence++;
-        jk_lb_push(lb, l);
+        if (rc) {
+            lb->sequence++;
+            jk_lb_push(lb, l);
+        }
     }
     JK_TRACE_EXIT(l);
 }
@@ -2993,8 +3022,10 @@ static int update_worker(jk_ws_service_t *s,
             return JK_FALSE;
         }
         rc = commit_member(s, p, wr, lb->name, l);
-        lb->sequence++;
-        jk_lb_push(lb, l);
+        if (rc) {
+            lb->sequence++;
+            jk_lb_push(lb, l);
+        }
         if (rc & 1)
             reset_lb_values(lb, l);
         if (rc & 2)
