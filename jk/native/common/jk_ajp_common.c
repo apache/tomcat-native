@@ -942,6 +942,50 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
     return rc;
 }
 
+/* Syncing config values from shm */
+void jk_ajp_pull(ajp_worker_t * aw, jk_logger_t *l)
+{
+    JK_TRACE_ENTER(l);
+
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "syncing mem for ajp worker '%s' from shm",
+               aw->name);
+
+    aw->cache_timeout = aw->s->cache_timeout;
+    aw->connect_timeout = aw->s->connect_timeout;
+    aw->reply_timeout = aw->s->reply_timeout;
+    aw->prepost_timeout = aw->s->prepost_timeout;
+    aw->recovery_opts = aw->s->recovery_opts;
+    aw->retries = aw->s->retries;
+    aw->max_packet_size = aw->s->max_packet_size;
+    aw->sequence = aw->s->h.sequence;
+
+    JK_TRACE_EXIT(l);
+}
+
+/* Syncing config values to shm */
+void jk_ajp_push(ajp_worker_t * aw, jk_logger_t *l)
+{
+    JK_TRACE_ENTER(l);
+
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "syncing shm for ajp worker '%s' from mem",
+               aw->name);
+
+    aw->s->cache_timeout = aw->cache_timeout;
+    aw->s->connect_timeout = aw->connect_timeout;
+    aw->s->reply_timeout = aw->reply_timeout;
+    aw->s->prepost_timeout = aw->prepost_timeout;
+    aw->s->recovery_opts = aw->recovery_opts;
+    aw->s->retries = aw->retries;
+    aw->s->max_packet_size = aw->max_packet_size;
+    aw->s->h.sequence = aw->sequence;
+
+    JK_TRACE_EXIT(l);
+}
+
 /** Send a message to an endpoint, using corresponding PROTO HEADER
  * @param ae       endpoint
  * @param msg      message to send
@@ -2041,6 +2085,11 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
 
     p = e->endpoint_private;
     aw = p->worker;
+
+    jk_shm_lock();
+    if (aw->sequence != aw->s->h.sequence)
+        jk_ajp_pull(aw, l);
+    jk_shm_unlock();
 
     aw->s->used++;
 

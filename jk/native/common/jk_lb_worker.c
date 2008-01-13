@@ -287,10 +287,15 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
     for (i = 0; i < p->num_of_workers; i++) {
         lb_sub_worker_t *w = &p->lb_workers[i];
         if (w->sequence != w->s->h.sequence) {
+            jk_worker_t *jw = w->worker;
+            ajp_worker_t *aw = (ajp_worker_t *)jw->worker_private;
+
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "syncing mem for member '%s' of lb '%s' from shm",
                        w->name, p->name);
+
+            jk_ajp_pull(aw, l);
             strncpy(w->route, w->s->route, JK_SHM_STR_SIZ);
             strncpy(w->domain, w->s->domain, JK_SHM_STR_SIZ);
             strncpy(w->redirect, w->s->redirect, JK_SHM_STR_SIZ);
@@ -329,10 +334,15 @@ void jk_lb_push(lb_worker_t * p, jk_logger_t *l)
     for (i = 0; i < p->num_of_workers; i++) {
         lb_sub_worker_t *w = &p->lb_workers[i];
         if (w->sequence != w->s->h.sequence) {
+            jk_worker_t *jw = w->worker;
+            ajp_worker_t *aw = (ajp_worker_t *)jw->worker_private;
+
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "syncing shm for member '%s' of lb '%s' from mem",
                        w->name, p->name);
+
+            jk_ajp_push(aw, l);
             strncpy(w->s->route, w->route, JK_SHM_STR_SIZ);
             strncpy(w->s->domain, w->domain, JK_SHM_STR_SIZ);
             strncpy(w->s->redirect, w->redirect, JK_SHM_STR_SIZ);
