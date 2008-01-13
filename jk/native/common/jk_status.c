@@ -463,6 +463,13 @@ static void jk_print_xml_att_int(jk_ws_service_t *s,
     jk_printf(s, "%*s%s=\"%d\"\n", indentation, "", key, value);
 }
 
+static void jk_print_xml_att_uint(jk_ws_service_t *s,
+                                  int indentation,
+                                  const char *key, unsigned int value)
+{
+    jk_printf(s, "%*s%s=\"%u\"\n", indentation, "", key, value);
+}
+
 static void jk_print_xml_att_long(jk_ws_service_t *s,
                                   int indentation,
                                   const char *key, long value)
@@ -505,6 +512,18 @@ static void jk_print_prop_att_int(jk_ws_service_t *s, status_worker_t *w,
     }
     else {
         jk_printf(s, "%s.%s=%d\n", w->prefix, key, value);
+    }
+}
+
+static void jk_print_prop_att_uint(jk_ws_service_t *s, status_worker_t *w,
+                                   const char *name,
+                                   const char *key, unsigned int value)
+{
+    if (name) {
+        jk_printf(s, "%s.%s.%s=%u\n", w->prefix, name, key, value);
+    }
+    else {
+        jk_printf(s, "%s.%s=%u\n", w->prefix, key, value);
     }
 }
 
@@ -2493,7 +2512,7 @@ static void commit_worker(jk_ws_service_t *s,
 }
 
 static int set_int_if_changed(status_endpoint_t *p,
-                              lb_sub_worker_t *wr,
+                              const char *name,
                               const char *att,
                               const char *arg,
                               int min,
@@ -2506,9 +2525,42 @@ static int set_int_if_changed(status_endpoint_t *p,
     status_worker_t *w = p->worker;
     i = status_get_int(p, arg, *param, l);
     if (i != *param && i >= min && i <= max) {
-        jk_log(l, JK_LOG_INFO,
-               "Status worker '%s' setting '%s' for sub worker '%s' of lb worker '%s' to '%i'",
-               w->name, att, wr->name, lb_name, i);
+        if (lb_name)
+            jk_log(l, JK_LOG_INFO,
+                   "Status worker '%s' setting '%s' for sub worker '%s' of lb worker '%s' to '%i'",
+                   w->name, att, name, lb_name, i);
+        else
+            jk_log(l, JK_LOG_INFO,
+                   "Status worker '%s' setting '%s' for ajp worker '%s' to '%i'",
+                   w->name, att, name, i);
+        *param = i;
+        return JK_TRUE;
+    }
+    return JK_FALSE;
+}
+
+static int set_uint_if_changed(status_endpoint_t *p,
+                               const char *name,
+                               const char *att,
+                               const char *arg,
+                               uint min,
+                               uint max,
+                               uint *param,
+                               const char *lb_name,
+                              jk_logger_t *l)
+{
+    unsigned i;
+    status_worker_t *w = p->worker;
+    i = (unsigned)status_get_int(p, arg, *param, l);
+    if (i != *param && i >= min && i <= max) {
+        if (lb_name)
+            jk_log(l, JK_LOG_INFO,
+                   "Status worker '%s' setting '%s' for sub worker '%s' of lb worker '%s' to '%u'",
+                   w->name, att, name, lb_name, i);
+        else
+            jk_log(l, JK_LOG_INFO,
+                   "Status worker '%s' setting '%s' for ajp worker '%s' to '%u'",
+                   w->name, att, name, i);
         *param = i;
         return JK_TRUE;
     }
@@ -2543,7 +2595,7 @@ static int commit_member(jk_ws_service_t *s,
             rc |= 1;
         }
     }
-    if (set_int_if_changed(p, wr, "lbfactor", JK_STATUS_ARG_LBM_FACTOR,
+    if (set_int_if_changed(p, wr->name, "lbfactor", JK_STATUS_ARG_LBM_FACTOR,
                            1, INT_MAX, &wr->lb_factor, lb_name, l))
         /* Recalculate the load multiplicators wrt. lb_factor */
         rc |= 2;
@@ -2585,7 +2637,7 @@ static int commit_member(jk_ws_service_t *s,
             rc |= 4;
         }
     }
-    if (set_int_if_changed(p, wr, "distance", JK_STATUS_ARG_LBM_DISTANCE,
+    if (set_int_if_changed(p, wr->name, "distance", JK_STATUS_ARG_LBM_DISTANCE,
                            0, INT_MAX, &wr->distance, lb_name, l))
         rc |= 4;
     if (rc)
@@ -2661,14 +2713,14 @@ static void commit_all_members(jk_ws_service_t *s,
             snprintf(vname, 32-1, "" JK_STATUS_ARG_MULT_VALUE_BASE "%d", j);
 
             if (!strcmp(attribute, JK_STATUS_ARG_LBM_FACTOR)) {
-                if (set_int_if_changed(p, wr, "lbfactor", vname,
+                if (set_int_if_changed(p, wr->name, "lbfactor", vname,
                                        1, INT_MAX, &wr->lb_factor, name, l)) {
                     rc = 2;
                     sync_needed = JK_TRUE;
                 }
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DISTANCE)) {
-                if (set_int_if_changed(p, wr, "distance", vname,
+                if (set_int_if_changed(p, wr->name, "distance", vname,
                                        0, INT_MAX, &wr->distance, name, l))
                     sync_needed = JK_TRUE;
             }
