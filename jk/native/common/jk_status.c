@@ -1645,7 +1645,7 @@ static void display_worker_lb(jk_ws_service_t *s,
 
         for (j = 0; j < lb->num_of_workers; j++) {
             lb_sub_worker_t *wr = &(lb->lb_workers[j]);
-            ajp_worker_t *a = (ajp_worker_t *)wr->worker->worker_private;
+            ajp_worker_t *aw = (ajp_worker_t *)wr->worker->worker_private;
             int rs_min = 0;
             int rs_max = 0;
             if (wr->s->state == JK_LB_STATE_ERROR) {
@@ -1680,22 +1680,22 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_printf(s, JK_STATUS_SHOW_MEMBER_ROW,
                           wr->name,
                           status_worker_type(wr->worker->type),
-                          a->host, a->port,
-                          jk_dump_hinfo(&a->worker_inet_addr, buf),
+                          aw->host, aw->port,
+                          jk_dump_hinfo(&aw->worker_inet_addr, buf),
                           jk_lb_get_activation(wr, l),
                           jk_lb_get_state(wr, l),
                           wr->distance,
                           wr->lb_factor,
                           wr->lb_mult,
                           wr->s->lb_value,
-                          wr->s->elected,
+                          aw->s->used,
                           wr->s->errors,
-                          wr->s->client_errors,
-                          wr->s->reply_timeouts,
-                          status_strfsize(wr->s->transferred, buf_wr),
-                          status_strfsize(wr->s->readed, buf_rd),
-                          wr->s->busy,
-                          wr->s->max_busy,
+                          aw->s->client_errors,
+                          aw->s->reply_timeouts,
+                          status_strfsize(aw->s->transferred, buf_wr),
+                          status_strfsize(aw->s->readed, buf_rd),
+                          aw->s->busy,
+                          aw->s->max_busy,
                           wr->route,
                           wr->redirect ? (*wr->redirect ? wr->redirect : "&nbsp;") : "&nbsp",
                           wr->domain ? (*wr->domain ? wr->domain : "&nbsp;") : "&nbsp",
@@ -1708,9 +1708,9 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_print_xml_start_elt(s, w, 6, 0, "member");
                 jk_print_xml_att_string(s, 8, "name", wr->name);
                 jk_print_xml_att_string(s, 8, "type", status_worker_type(wr->worker->type));
-                jk_print_xml_att_string(s, 8, "host", a->host);
-                jk_print_xml_att_int(s, 8, "port", a->port);
-                jk_print_xml_att_string(s, 8, "address", jk_dump_hinfo(&a->worker_inet_addr, buf));
+                jk_print_xml_att_string(s, 8, "host", aw->host);
+                jk_print_xml_att_int(s, 8, "port", aw->port);
+                jk_print_xml_att_string(s, 8, "address", jk_dump_hinfo(&aw->worker_inet_addr, buf));
                 jk_print_xml_att_string(s, 8, "activation", jk_lb_get_activation(wr, l));
                 jk_print_xml_att_int(s, 8, "lbfactor", wr->lb_factor);
                 jk_print_xml_att_string(s, 8, "route", wr->route);
@@ -1720,14 +1720,14 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_print_xml_att_string(s, 8, "state", jk_lb_get_state(wr, l));
                 jk_print_xml_att_uint64(s, 8, "lbmult", wr->lb_mult);
                 jk_print_xml_att_uint64(s, 8, "lbvalue", wr->s->lb_value);
-                jk_print_xml_att_uint64(s, 8, "elected", wr->s->elected);
+                jk_print_xml_att_uint64(s, 8, "elected", aw->s->used);
                 jk_print_xml_att_uint32(s, 8, "errors", wr->s->errors);
-                jk_print_xml_att_uint32(s, 8, "client_errors", wr->s->client_errors);
-                jk_print_xml_att_uint32(s, 8, "reply_timeouts", wr->s->reply_timeouts);
-                jk_print_xml_att_uint64(s, 8, "transferred", wr->s->transferred);
-                jk_print_xml_att_uint64(s, 8, "read", wr->s->readed);
-                jk_print_xml_att_int(s, 8, "busy", wr->s->busy);
-                jk_print_xml_att_int(s, 8, "max_busy", wr->s->max_busy);
+                jk_print_xml_att_uint32(s, 8, "client_errors", aw->s->client_errors);
+                jk_print_xml_att_uint32(s, 8, "reply_timeouts", aw->s->reply_timeouts);
+                jk_print_xml_att_uint64(s, 8, "transferred", aw->s->transferred);
+                jk_print_xml_att_uint64(s, 8, "read", aw->s->readed);
+                jk_print_xml_att_int(s, 8, "busy", aw->s->busy);
+                jk_print_xml_att_int(s, 8, "max_busy", aw->s->max_busy);
                 jk_print_xml_att_int(s, 8, "time_to_recover_min", rs_min);
                 jk_print_xml_att_int(s, 8, "time_to_recover_max", rs_max);
                 /* Terminate the tag */
@@ -1739,9 +1739,9 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_puts(s, "Member:");
                 jk_printf(s, " name=%s", wr->name);
                 jk_printf(s, " type=%s", status_worker_type(wr->worker->type));
-                jk_printf(s, " host=%s", a->host);
-                jk_printf(s, " port=%d", a->port);
-                jk_printf(s, " address=%s", jk_dump_hinfo(&a->worker_inet_addr, buf));
+                jk_printf(s, " host=%s", aw->host);
+                jk_printf(s, " port=%d", aw->port);
+                jk_printf(s, " address=%s", jk_dump_hinfo(&aw->worker_inet_addr, buf));
                 jk_printf(s, " activation=%s", jk_lb_get_activation(wr, l));
                 jk_printf(s, " lbfactor=%d", wr->lb_factor);
                 jk_printf(s, " route=\"%s\"", wr->route ? wr->route : "");
@@ -1751,14 +1751,14 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_printf(s, " state=%s", jk_lb_get_state(wr, l));
                 jk_printf(s, " lbmult=%" JK_UINT64_T_FMT, wr->lb_mult);
                 jk_printf(s, " lbvalue=%" JK_UINT64_T_FMT, wr->s->lb_value);
-                jk_printf(s, " elected=%" JK_UINT64_T_FMT, wr->s->elected);
+                jk_printf(s, " elected=%" JK_UINT64_T_FMT, aw->s->used);
                 jk_printf(s, " errors=%" JK_UINT32_T_FMT, wr->s->errors);
-                jk_printf(s, " client_errors=%" JK_UINT32_T_FMT, wr->s->client_errors);
-                jk_printf(s, " reply_timeouts=%" JK_UINT32_T_FMT, wr->s->reply_timeouts);
-                jk_printf(s, " transferred=%" JK_UINT64_T_FMT, wr->s->transferred);
-                jk_printf(s, " read=%" JK_UINT64_T_FMT, wr->s->readed);
-                jk_printf(s, " busy=%d", wr->s->busy);
-                jk_printf(s, " max_busy=%d", wr->s->max_busy);
+                jk_printf(s, " client_errors=%" JK_UINT32_T_FMT, aw->s->client_errors);
+                jk_printf(s, " reply_timeouts=%" JK_UINT32_T_FMT, aw->s->reply_timeouts);
+                jk_printf(s, " transferred=%" JK_UINT64_T_FMT, aw->s->transferred);
+                jk_printf(s, " read=%" JK_UINT64_T_FMT, aw->s->readed);
+                jk_printf(s, " busy=%d", aw->s->busy);
+                jk_printf(s, " max_busy=%d", aw->s->max_busy);
                 jk_printf(s, " time_to_recover_min=%d", rs_min);
                 jk_printf(s, " time_to_recover_max=%d", rs_max);
                 jk_puts(s, "\n");
@@ -1768,9 +1768,9 @@ static void display_worker_lb(jk_ws_service_t *s,
 
                 jk_print_prop_att_string(s, w, name, "balance_workers", wr->name);
                 jk_print_prop_att_string(s, w, wr->name, "type", status_worker_type(wr->worker->type));
-                jk_print_prop_att_string(s, w, wr->name, "host", a->host);
-                jk_print_prop_att_int(s, w, wr->name, "port", a->port);
-                jk_print_prop_att_string(s, w, wr->name, "address", jk_dump_hinfo(&a->worker_inet_addr, buf));
+                jk_print_prop_att_string(s, w, wr->name, "host", aw->host);
+                jk_print_prop_att_int(s, w, wr->name, "port", aw->port);
+                jk_print_prop_att_string(s, w, wr->name, "address", jk_dump_hinfo(&aw->worker_inet_addr, buf));
                 jk_print_prop_att_string(s, w, wr->name, "activation", jk_lb_get_activation(wr, l));
                 jk_print_prop_att_int(s, w, wr->name, "lbfactor", wr->lb_factor);
                 jk_print_prop_att_string(s, w, wr->name, "route", wr->route);
@@ -1780,14 +1780,14 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_print_prop_att_string(s, w, wr->name, "state", jk_lb_get_state(wr, l));
                 jk_print_prop_att_uint64(s, w, wr->name, "lbmult", wr->lb_mult);
                 jk_print_prop_att_uint64(s, w, wr->name, "lbvalue", wr->s->lb_value);
-                jk_print_prop_att_uint64(s, w, wr->name, "elected", wr->s->elected);
+                jk_print_prop_att_uint64(s, w, wr->name, "elected", aw->s->used);
                 jk_print_prop_att_uint32(s, w, wr->name, "errors", wr->s->errors);
-                jk_print_prop_att_uint32(s, w, wr->name, "client_errors", wr->s->client_errors);
-                jk_print_prop_att_uint32(s, w, wr->name, "reply_timeouts", wr->s->reply_timeouts);
-                jk_print_prop_att_uint64(s, w, wr->name, "transferred", wr->s->transferred);
-                jk_print_prop_att_uint64(s, w, wr->name, "read", wr->s->readed);
-                jk_print_prop_att_int(s, w, wr->name, "busy", wr->s->busy);
-                jk_print_prop_att_int(s, w, wr->name, "max_busy", wr->s->max_busy);
+                jk_print_prop_att_uint32(s, w, wr->name, "client_errors", aw->s->client_errors);
+                jk_print_prop_att_uint32(s, w, wr->name, "reply_timeouts", aw->s->reply_timeouts);
+                jk_print_prop_att_uint64(s, w, wr->name, "transferred", aw->s->transferred);
+                jk_print_prop_att_uint64(s, w, wr->name, "read", aw->s->readed);
+                jk_print_prop_att_int(s, w, wr->name, "busy", aw->s->busy);
+                jk_print_prop_att_int(s, w, wr->name, "max_busy", aw->s->max_busy);
                 jk_print_prop_att_int(s, w, wr->name, "time_to_recover_min", rs_min);
                 jk_print_prop_att_int(s, w, wr->name, "time_to_recover_max", rs_max);
 
@@ -1892,15 +1892,15 @@ static void display_worker_ajp(jk_ws_service_t *s,
     }
     else if (mime == JK_STATUS_MIME_XML) {
 
-        jk_print_xml_start_elt(s, w, 0, 0, "ajp");
-        jk_print_xml_att_string(s, 2, "name", name);
-        jk_print_xml_att_string(s, 2, "type", status_worker_type(aw->worker.type));
-        jk_print_xml_att_string(s, 2, "host", aw->host);
-        jk_print_xml_att_int(s, 2, "port", aw->port);
-        jk_print_xml_att_string(s, 2, "address", jk_dump_hinfo(&aw->worker_inet_addr, buf));
-        jk_print_xml_att_int(s, 2, "map_count", map_count);
+        jk_print_xml_start_elt(s, w, 2, 0, "ajp");
+        jk_print_xml_att_string(s, 4, "name", name);
+        jk_print_xml_att_string(s, 4, "type", status_worker_type(aw->worker.type));
+        jk_print_xml_att_string(s, 4, "host", aw->host);
+        jk_print_xml_att_int(s, 4, "port", aw->port);
+        jk_print_xml_att_string(s, 4, "address", jk_dump_hinfo(&aw->worker_inet_addr, buf));
+        jk_print_xml_att_int(s, 4, "map_count", map_count);
         /* Terminate the tag */
-        jk_print_xml_stop_elt(s, 0, 0);
+        jk_print_xml_stop_elt(s, 1, 0);
 
     }
     else if (mime == JK_STATUS_MIME_TXT) {
@@ -1927,10 +1927,6 @@ static void display_worker_ajp(jk_ws_service_t *s,
     }
     if (name)
         display_maps(s, p, name, l);
-
-    if (mime == JK_STATUS_MIME_XML) {
-        jk_print_xml_close_elt(s, w, 0, "ajp");
-    }
 
     JK_TRACE_EXIT(l);
 }
@@ -3048,6 +3044,7 @@ static int reset_worker(jk_ws_service_t *s,
     jk_worker_t *jw = NULL;
     lb_worker_t *lb = NULL;
     lb_sub_worker_t *wr = NULL;
+    ajp_worker_t *aw = NULL;
 
     JK_TRACE_ENTER(l);
     fetch_worker_and_sub_worker(p, "resetting", &worker, &sub_worker, l);
@@ -3065,16 +3062,17 @@ static int reset_worker(jk_ws_service_t *s,
         lb->s->max_busy = 0;
         for (i = 0; i < lb->num_of_workers; i++) {
             wr = &(lb->lb_workers[i]);
-            wr->s->client_errors    = 0;
-            wr->s->reply_timeouts   = 0;
-            wr->s->elected          = 0;
+            aw = (ajp_worker_t *)wr->worker->worker_private;
+            aw->s->client_errors    = 0;
+            aw->s->reply_timeouts   = 0;
+            aw->s->used             = 0;
             wr->s->elected_snapshot = 0;
             wr->s->error_time       = 0;
             wr->s->errors           = 0;
             wr->s->lb_value         = 0;
-            wr->s->max_busy         = 0;
-            wr->s->readed           = 0;
-            wr->s->transferred      = 0;
+            aw->s->max_busy         = 0;
+            aw->s->readed           = 0;
+            aw->s->transferred      = 0;
             wr->s->state            = JK_LB_STATE_IDLE;
         }
         JK_TRACE_EXIT(l);
@@ -3085,16 +3083,17 @@ static int reset_worker(jk_ws_service_t *s,
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-        wr->s->client_errors    = 0;
-        wr->s->reply_timeouts   = 0;
-        wr->s->elected          = 0;
+        aw = (ajp_worker_t *)wr->worker->worker_private;
+        aw->s->client_errors    = 0;
+        aw->s->reply_timeouts   = 0;
+        aw->s->used             = 0;
         wr->s->elected_snapshot = 0;
         wr->s->error_time       = 0;
         wr->s->errors           = 0;
         wr->s->lb_value         = 0;
-        wr->s->max_busy         = 0;
-        wr->s->readed           = 0;
-        wr->s->transferred      = 0;
+        aw->s->max_busy         = 0;
+        aw->s->readed           = 0;
+        aw->s->transferred      = 0;
         wr->s->state            = JK_LB_STATE_IDLE;
         JK_TRACE_EXIT(l);
         return JK_TRUE;
@@ -3127,6 +3126,7 @@ static int recover_worker(jk_ws_service_t *s,
 
     if (wr->s->state == JK_LB_STATE_ERROR) {
         lb_worker_t *lb = NULL;
+        ajp_worker_t *aw = (ajp_worker_t *)wr->worker->worker_private;
 
         /* We need an lb to correct the lb_value */
         if (check_valid_lb(s, p, jw, worker, &lb, 0, l) == JK_FALSE) {
@@ -3146,7 +3146,7 @@ static int recover_worker(jk_ws_service_t *s,
             wr->s->lb_value = curmax;
         }
 
-        wr->s->reply_timeouts = 0;
+        aw->s->reply_timeouts = 0;
         wr->s->state = JK_LB_STATE_RECOVER;
         jk_log(l, JK_LOG_INFO,
                "Status worker '%s' marked worker '%s' sub worker '%s' for recovery",

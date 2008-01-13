@@ -486,12 +486,14 @@ static int recover_workers(lb_worker_t *p,
     int non_error = 0;
     int elapsed;
     lb_sub_worker_t *w = NULL;
+    ajp_worker_t *aw = NULL;
     JK_TRACE_ENTER(l);
 
     if (p->sequence != p->s->h.sequence)
         jk_lb_pull(p, l);
     for (i = 0; i < p->num_of_workers; i++) {
         w = &p->lb_workers[i];
+        aw = (ajp_worker_t *)w->worker->worker_private;
         if (w->s->state == JK_LB_STATE_ERROR) {
             elapsed = (int)difftime(now, w->s->error_time);
             if (elapsed <= p->recover_wait_time) {
@@ -507,7 +509,7 @@ static int recover_workers(lb_worker_t *p,
                            w->name);
                 if (p->lbmethod != JK_LB_METHOD_BUSYNESS)
                     w->s->lb_value = curmax;
-                w->s->reply_timeouts = 0;
+                aw->s->reply_timeouts = 0;
                 w->s->state = JK_LB_STATE_RECOVER;
                 non_error++;
             }
@@ -515,10 +517,10 @@ static int recover_workers(lb_worker_t *p,
         else {
             non_error++;
             if (w->s->state == JK_LB_STATE_OK &&
-                w->s->elected == w->s->elected_snapshot)
+                aw->s->used == w->s->elected_snapshot)
                 w->s->state = JK_LB_STATE_IDLE;
         }
-        w->s->elected_snapshot = w->s->elected;
+        w->s->elected_snapshot = aw->s->used;
     }
 
     JK_TRACE_EXIT(l);
@@ -563,11 +565,13 @@ static jk_uint64_t decay_load(lb_worker_t *p,
     JK_TRACE_ENTER(l);
     if (p->lbmethod != JK_LB_METHOD_BUSYNESS) {
         for (i = 0; i < p->num_of_workers; i++) {
-            p->lb_workers[i].s->lb_value >>= exponent;
-            if (p->lb_workers[i].s->lb_value > curmax) {
-                curmax = p->lb_workers[i].s->lb_value;
+            lb_sub_worker_t *w = &p->lb_workers[i];
+            ajp_worker_t *aw = (ajp_worker_t *)w->worker->worker_private;
+            w->s->lb_value >>= exponent;
+            if (w->s->lb_value > curmax) {
+                curmax = w->s->lb_value;
             }
-            p->lb_workers[i].s->reply_timeouts >>= exponent;
+            aw->s->reply_timeouts >>= exponent;
         }
     }
     JK_TRACE_EXIT(l);
@@ -887,6 +891,7 @@ static void lb_add_log_items(jk_ws_service_t *s,
                              lb_sub_worker_t *w,
                              jk_logger_t *l)
 {
+    ajp_worker_t *aw = (ajp_worker_t *)w->worker->worker_private;
     const char **log_values = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT);
     char *buf = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT * JK_LB_UINT64_STR_SZ);
     if (log_values && buf) {
@@ -896,15 +901,15 @@ static void lb_add_log_items(jk_ws_service_t *s,
         /* JK_NOTE_LB_FIRST/LAST_VALUE */
         log_values[1] = buf;
         buf += JK_LB_UINT64_STR_SZ;
-        snprintf(buf, JK_LB_UINT64_STR_SZ, "%" JK_UINT64_T_FMT, w->s->elected);
+        snprintf(buf, JK_LB_UINT64_STR_SZ, "%" JK_UINT64_T_FMT, aw->s->used);
         /* JK_NOTE_LB_FIRST/LAST_ACCESSED */
         log_values[2] = buf;
         buf += JK_LB_UINT64_STR_SZ;
-        snprintf(buf, JK_LB_UINT64_STR_SZ, "%" JK_UINT64_T_FMT, w->s->readed);
+        snprintf(buf, JK_LB_UINT64_STR_SZ, "%" JK_UINT64_T_FMT, aw->s->readed);
         /* JK_NOTE_LB_FIRST/LAST_READ */
         log_values[3] = buf;
         buf += JK_LB_UINT64_STR_SZ;
-        snprintf(buf, JK_LB_UINT64_STR_SZ, "%" JK_UINT64_T_FMT, w->s->transferred);
+        snprintf(buf, JK_LB_UINT64_STR_SZ, "%" JK_UINT64_T_FMT, aw->s->transferred);
         /* JK_NOTE_LB_FIRST/LAST_TRANSFERRED */
         log_values[4] = buf;
         buf += JK_LB_UINT64_STR_SZ;
@@ -912,7 +917,7 @@ static void lb_add_log_items(jk_ws_service_t *s,
         /* JK_NOTE_LB_FIRST/LAST_ERRORS */
         log_values[5] = buf;
         buf += JK_LB_UINT64_STR_SZ;
-        snprintf(buf, JK_LB_UINT64_STR_SZ, "%d", w->s->busy);
+        snprintf(buf, JK_LB_UINT64_STR_SZ, "%d", aw->s->busy);
         /* JK_NOTE_LB_FIRST/LAST_BUSY */
         log_values[6] = buf;
         /* JK_NOTE_LB_FIRST/LAST_ACTIVATION */
@@ -1000,6 +1005,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         if (rec) {
             int r;
             int is_service_error = JK_HTTP_OK;
+            ajp_worker_t *aw = (ajp_worker_t *)rec->worker->worker_private;
             jk_endpoint_t *end = NULL;
             int retry = 0;
             int retry_wait = JK_LB_MIN_RETRY_WAIT;
@@ -1067,14 +1073,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_lock();
 
-                rec->s->elected++;
                 /* Increment the number of workers serving request */
                 p->worker->s->busy++;
                 if (p->worker->s->busy > p->worker->s->max_busy)
                     p->worker->s->max_busy = p->worker->s->busy;
-                rec->s->busy++;
-                if (rec->s->busy > rec->s->max_busy)
-                    rec->s->max_busy = rec->s->busy;
                 if ( (p->worker->lbmethod == JK_LB_METHOD_REQUESTS) ||
                      (p->worker->lbmethod == JK_LB_METHOD_BUSYNESS) ||
                      (p->worker->lbmethod == JK_LB_METHOD_SESSIONS &&
@@ -1094,8 +1096,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_shm_lock();
 
                 /* Update partial reads and writes if any */
-                rec->s->readed += rd;
-                rec->s->transferred += wr;
                 if (p->worker->lbmethod == JK_LB_METHOD_TRAFFIC) {
                     rec->s->lb_value += (rd+wr)*rec->lb_mult;
                 }
@@ -1129,8 +1129,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  * Check if the busy was reset to zero by graceful
                  * restart of the server.
                  */
-                if (rec->s->busy)
-                    rec->s->busy--;
                 if (p->worker->s->busy)
                     p->worker->s->busy--;
                 if (service_stat == JK_TRUE) {
@@ -1144,7 +1142,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     * Client error !!!
                     * Since this is bad request do not fail over.
                     */
-                    rec->s->client_errors++;
                     rec->s->state = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
                     rc = JK_CLIENT_ERROR;
@@ -1182,8 +1179,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rc = JK_FALSE;
                 }
                 else if (service_stat == JK_REPLY_TIMEOUT) {
-                    rec->s->reply_timeouts++;
-                    if (rec->s->reply_timeouts > (unsigned)p->worker->max_reply_timeouts) {
+                    if (aw->s->reply_timeouts > (unsigned)p->worker->max_reply_timeouts) {
                         /*
                         * Service failed - to many reply timeouts
                         * Take this node out of service.

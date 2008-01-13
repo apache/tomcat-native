@@ -110,10 +110,6 @@ struct jk_shm_lb_sub_worker
 {
     jk_shm_worker_header_t h;
 
-    /* Number of currently busy channels */
-    volatile int busy;
-    /* Maximum number of busy channels */
-    volatile int max_busy;
     /* route */
     char    route[JK_SHM_STR_SIZ+1];
     /* worker domain */
@@ -134,20 +130,10 @@ struct jk_shm_lb_sub_worker
     volatile jk_uint64_t lb_value;
     /* Statistical data */
     volatile time_t  error_time;
-    /* Number of bytes read from remote */
-    volatile jk_uint64_t readed;
-    /* Number of bytes transferred to remote */
-    volatile jk_uint64_t transferred;
-    /* Number of times the worker was elected */
-    volatile jk_uint64_t  elected;
     /* Number of times the worker was elected - snapshot during maintenance */
     volatile jk_uint64_t  elected_snapshot;
     /* Number of non 200 responses */
     volatile jk_uint32_t  errors;
-    /* Decayed number of reply_timeout errors */
-    volatile jk_uint32_t  reply_timeouts;
-    /* Number of client errors */
-    volatile jk_uint32_t  client_errors;
 };
 typedef struct jk_shm_lb_sub_worker jk_shm_lb_sub_worker_t;
 
