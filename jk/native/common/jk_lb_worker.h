@@ -119,12 +119,18 @@ extern "C"
 /* The exponent x is JK_LB_DECAY_MULT*#MAINT_INTV_SINCE_LAST_MAINT */
 #define JK_LB_DECAY_MULT         (1)
 
-struct worker_record
+struct lb_sub_worker
 {
-    jk_worker_t           *w;
+    jk_worker_t *worker;
     /* Shared memory worker data */
     jk_shm_lb_sub_worker_t *s;
+
     char         name[JK_SHM_STR_SIZ+1];
+    /* Sequence counter starting at 0 and increasing
+     * every time we change the config
+     */
+    volatile unsigned int sequence;
+
     /* route */
     char    route[JK_SHM_STR_SIZ+1];
     /* worker domain */
@@ -139,18 +145,28 @@ struct worker_record
     int lb_factor;
     /* Current lb reciprocal factor */
     jk_uint64_t lb_mult;
+};
+typedef struct lb_sub_worker lb_sub_worker_t;
+
+struct lb_worker
+{
+    jk_worker_t worker;
+    /* Shared memory worker data */
+    jk_shm_lb_worker_t *s;
+
+    char         name[JK_SHM_STR_SIZ+1];
     /* Sequence counter starting at 0 and increasing
      * every time we change the config
      */
     volatile unsigned int sequence;
-};
-typedef struct worker_record worker_record_t;
 
-struct lb_worker
-{
-    worker_record_t *lb_workers;
+    jk_pool_t p;
+    jk_pool_atom_t buf[TINY_POOL_SIZE];
+
+    JK_CRIT_SEC cs;
+
+    lb_sub_worker_t *lb_workers;
     unsigned int num_of_workers;
-    char         name[JK_SHM_STR_SIZ+1];
     int          sticky_session;
     int          sticky_session_force;
     int          recover_wait_time;
@@ -160,17 +176,8 @@ struct lb_worker
     int          lblock;
     int          maintain_time;
     unsigned int max_packet_size;
-    unsigned int sequence;
     unsigned int next_offset;
 
-    jk_pool_t p;
-    jk_pool_atom_t buf[TINY_POOL_SIZE];
-
-    jk_worker_t worker;
-    JK_CRIT_SEC cs;
-
-    /* Shared memory worker data */
-    jk_shm_lb_worker_t *s;
 };
 typedef struct lb_worker lb_worker_t;
 
@@ -181,9 +188,9 @@ const char *jk_lb_get_lock(lb_worker_t *p, jk_logger_t *l);
 int jk_lb_get_lock_code(const char *v);
 const char *jk_lb_get_method(lb_worker_t *p, jk_logger_t *l);
 int jk_lb_get_method_code(const char *v);
-const char *jk_lb_get_state(worker_record_t *p, jk_logger_t *l);
+const char *jk_lb_get_state(lb_sub_worker_t *p, jk_logger_t *l);
 int jk_lb_get_state_code(const char *v);
-const char *jk_lb_get_activation(worker_record_t *p, jk_logger_t *l);
+const char *jk_lb_get_activation(lb_sub_worker_t *p, jk_logger_t *l);
 int jk_lb_get_activation_code(const char *v);
 void reset_lb_values(lb_worker_t *p, jk_logger_t *l);
 void jk_lb_pull(lb_worker_t * p, jk_logger_t *l);

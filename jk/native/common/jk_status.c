@@ -579,7 +579,7 @@ static char *status_strfsize(jk_uint64_t size, char *buf)
     } while (1);
 }
 
-static int status_rate(worker_record_t *wr, status_worker_t *w,
+static int status_rate(lb_sub_worker_t *wr, status_worker_t *w,
                        jk_logger_t *l)
 {
     jk_uint32_t mask = 0;
@@ -1199,12 +1199,12 @@ static int search_sub_worker(jk_ws_service_t *s,
                              status_endpoint_t *p,
                              jk_worker_t *jw,
                              const char *worker,
-                             worker_record_t **wrp,
+                             lb_sub_worker_t **wrp,
                              const char *sub_worker,
                              jk_logger_t *l)
 {
     lb_worker_t *lb = NULL;
-    worker_record_t *wr = NULL;
+    lb_sub_worker_t *wr = NULL;
     status_worker_t *w = p->worker;
     unsigned int i;
 
@@ -1488,7 +1488,7 @@ static void display_worker_lb(jk_ws_service_t *s,
     jk_shm_unlock();
 
     for (j = 0; j < lb->num_of_workers; j++) {
-        worker_record_t *wr = &(lb->lb_workers[j]);
+        lb_sub_worker_t *wr = &(lb->lb_workers[j]);
         int rate;
         rate = status_rate(wr, w, l);
         if (rate > 0 )
@@ -1644,8 +1644,8 @@ static void display_worker_lb(jk_ws_service_t *s,
         }
 
         for (j = 0; j < lb->num_of_workers; j++) {
-            worker_record_t *wr = &(lb->lb_workers[j]);
-            ajp_worker_t *a = (ajp_worker_t *)wr->w->worker_private;
+            lb_sub_worker_t *wr = &(lb->lb_workers[j]);
+            ajp_worker_t *a = (ajp_worker_t *)wr->worker->worker_private;
             int rs_min = 0;
             int rs_max = 0;
             if (wr->s->state == JK_LB_STATE_ERROR) {
@@ -1679,7 +1679,7 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_puts(s, "&nbsp;</td>");
                 jk_printf(s, JK_STATUS_SHOW_MEMBER_ROW,
                           wr->name,
-                          status_worker_type(wr->w->type),
+                          status_worker_type(wr->worker->type),
                           a->host, a->port,
                           jk_dump_hinfo(&a->worker_inet_addr, buf),
                           jk_lb_get_activation(wr, l),
@@ -1707,7 +1707,7 @@ static void display_worker_lb(jk_ws_service_t *s,
 
                 jk_print_xml_start_elt(s, w, 6, 0, "member");
                 jk_print_xml_att_string(s, 8, "name", wr->name);
-                jk_print_xml_att_string(s, 8, "type", status_worker_type(wr->w->type));
+                jk_print_xml_att_string(s, 8, "type", status_worker_type(wr->worker->type));
                 jk_print_xml_att_string(s, 8, "host", a->host);
                 jk_print_xml_att_int(s, 8, "port", a->port);
                 jk_print_xml_att_string(s, 8, "address", jk_dump_hinfo(&a->worker_inet_addr, buf));
@@ -1738,7 +1738,7 @@ static void display_worker_lb(jk_ws_service_t *s,
 
                 jk_puts(s, "Member:");
                 jk_printf(s, " name=%s", wr->name);
-                jk_printf(s, " type=%s", status_worker_type(wr->w->type));
+                jk_printf(s, " type=%s", status_worker_type(wr->worker->type));
                 jk_printf(s, " host=%s", a->host);
                 jk_printf(s, " port=%d", a->port);
                 jk_printf(s, " address=%s", jk_dump_hinfo(&a->worker_inet_addr, buf));
@@ -1767,7 +1767,7 @@ static void display_worker_lb(jk_ws_service_t *s,
             else if (mime == JK_STATUS_MIME_PROP) {
 
                 jk_print_prop_att_string(s, w, name, "balance_workers", wr->name);
-                jk_print_prop_att_string(s, w, wr->name, "type", status_worker_type(wr->w->type));
+                jk_print_prop_att_string(s, w, wr->name, "type", status_worker_type(wr->worker->type));
                 jk_print_prop_att_string(s, w, wr->name, "host", a->host);
                 jk_print_prop_att_int(s, w, wr->name, "port", a->port);
                 jk_print_prop_att_string(s, w, wr->name, "address", jk_dump_hinfo(&a->worker_inet_addr, buf));
@@ -2100,7 +2100,7 @@ static void form_worker(jk_ws_service_t *s,
 
 static void form_member(jk_ws_service_t *s,
                         status_endpoint_t *p,
-                        worker_record_t *wr,
+                        lb_sub_worker_t *wr,
                         const char *lb_name,
                         jk_logger_t *l)
 {
@@ -2234,7 +2234,7 @@ static void form_all_members(jk_ws_service_t *s,
                 "</tr>", NULL);
 
         for (i = 0; i < lb->num_of_workers; i++) {
-            worker_record_t *wr = &(lb->lb_workers[i]);
+            lb_sub_worker_t *wr = &(lb->lb_workers[i]);
 
             jk_putv(s, "<tr><td>", wr->name, "</td><td>\n", NULL);
 
@@ -2397,7 +2397,7 @@ static void commit_worker(jk_ws_service_t *s,
 }
 
 static int set_int_if_changed(status_endpoint_t *p,
-                              worker_record_t *wr,
+                              lb_sub_worker_t *wr,
                               const char *att,
                               const char *arg,
                               int min,
@@ -2421,7 +2421,7 @@ static int set_int_if_changed(status_endpoint_t *p,
 
 static int commit_member(jk_ws_service_t *s,
                          status_endpoint_t *p,
-                         worker_record_t *wr,
+                         lb_sub_worker_t *wr,
                          const char *lb_name,
                          jk_logger_t *l)
 {
@@ -2561,7 +2561,7 @@ static void commit_all_members(jk_ws_service_t *s,
     if (lb) {
         for (j = 0; j < lb->num_of_workers; j++) {
             int sync_needed = JK_FALSE;
-            worker_record_t *wr = &(lb->lb_workers[j]);
+            lb_sub_worker_t *wr = &(lb->lb_workers[j]);
             snprintf(vname, 32-1, "" JK_STATUS_ARG_MULT_VALUE_BASE "%d", j);
 
             if (!strcmp(attribute, JK_STATUS_ARG_LBM_FACTOR)) {
@@ -2723,7 +2723,7 @@ static int check_worker(jk_ws_service_t *s,
     const char *worker;
     const char *sub_worker;
     jk_worker_t *jw = NULL;
-    worker_record_t *wr = NULL;
+    lb_sub_worker_t *wr = NULL;
 
     JK_TRACE_ENTER(l);
     fetch_worker_and_sub_worker(p, "checking", &worker, &sub_worker, l);
@@ -2969,7 +2969,7 @@ static int edit_worker(jk_ws_service_t *s,
             form_worker(s, p, jw, l);
     }
     else  {
-        worker_record_t *wr = NULL;
+        lb_sub_worker_t *wr = NULL;
         if (jw->type != JK_LB_WORKER_TYPE) {
             jk_log(l, JK_LOG_WARNING,
                    "Status worker '%s' worker type not implemented",
@@ -3013,7 +3013,7 @@ static int update_worker(jk_ws_service_t *s,
     }
     else  {
         lb_worker_t *lb = NULL;
-        worker_record_t *wr = NULL;
+        lb_sub_worker_t *wr = NULL;
         int rc = 0;
         if (check_valid_lb(s, p, jw, worker, &lb, 0, l) == JK_FALSE) {
             JK_TRACE_EXIT(l);
@@ -3047,7 +3047,7 @@ static int reset_worker(jk_ws_service_t *s,
     const char *sub_worker;
     jk_worker_t *jw = NULL;
     lb_worker_t *lb = NULL;
-    worker_record_t *wr = NULL;
+    lb_sub_worker_t *wr = NULL;
 
     JK_TRACE_ENTER(l);
     fetch_worker_and_sub_worker(p, "resetting", &worker, &sub_worker, l);
@@ -3110,7 +3110,7 @@ static int recover_worker(jk_ws_service_t *s,
     const char *worker;
     const char *sub_worker;
     jk_worker_t *jw = NULL;
-    worker_record_t *wr = NULL;
+    lb_sub_worker_t *wr = NULL;
     status_worker_t *w = p->worker;
 
     JK_TRACE_ENTER(l);

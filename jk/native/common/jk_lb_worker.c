@@ -180,7 +180,7 @@ int jk_lb_get_method_code(const char *v)
 }
 
 /* Return the string representation of the balance worker state */
-const char *jk_lb_get_state(worker_record_t *p, jk_logger_t *l)
+const char *jk_lb_get_state(lb_sub_worker_t *p, jk_logger_t *l)
 {
     return lb_state_type[p->s->state];
 }
@@ -209,7 +209,7 @@ int jk_lb_get_state_code(const char *v)
 }
 
 /* Return the string representation of the balance worker activation */
-const char *jk_lb_get_activation(worker_record_t *p, jk_logger_t *l)
+const char *jk_lb_get_activation(lb_sub_worker_t *p, jk_logger_t *l)
 {
     return lb_activation_type[p->activation];
 }
@@ -284,7 +284,7 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
     p->sequence = p->s->h.sequence;
 
     for (i = 0; i < p->num_of_workers; i++) {
-        worker_record_t *w = &p->lb_workers[i];
+        lb_sub_worker_t *w = &p->lb_workers[i];
         if (w->sequence != w->s->h.sequence) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
@@ -325,7 +325,7 @@ void jk_lb_push(lb_worker_t * p, jk_logger_t *l)
     p->s->h.sequence = p->sequence;
 
     for (i = 0; i < p->num_of_workers; i++) {
-        worker_record_t *w = &p->lb_workers[i];
+        lb_sub_worker_t *w = &p->lb_workers[i];
         if (w->sequence != w->s->h.sequence) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
@@ -461,7 +461,7 @@ static void close_workers(lb_worker_t * p, int num_of_workers, jk_logger_t *l)
 {
     int i = 0;
     for (i = 0; i < num_of_workers; i++) {
-        p->lb_workers[i].w->destroy(&(p->lb_workers[i].w), l);
+        p->lb_workers[i].worker->destroy(&(p->lb_workers[i].worker), l);
     }
 }
 
@@ -483,7 +483,7 @@ static int recover_workers(lb_worker_t *p,
     unsigned int i;
     int non_error = 0;
     int elapsed;
-    worker_record_t *w = NULL;
+    lb_sub_worker_t *w = NULL;
     JK_TRACE_ENTER(l);
 
     if (p->sequence != p->s->h.sequence)
@@ -528,7 +528,7 @@ static int force_recovery(lb_worker_t *p,
 {
     unsigned int i;
     int forced = 0;
-    worker_record_t *w = NULL;
+    lb_sub_worker_t *w = NULL;
     JK_TRACE_ENTER(l);
 
     for (i = 0; i < p->num_of_workers; i++) {
@@ -583,8 +583,8 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l
         lb_worker_t *lb = (lb_worker_t *)p->worker_private;
 
         for (i = 0; i < lb->num_of_workers; i++) {
-            if (lb->lb_workers[i].w->maintain) {
-                lb->lb_workers[i].w->maintain(lb->lb_workers[i].w, now, l);
+            if (lb->lb_workers[i].worker->maintain) {
+                lb->lb_workers[i].worker->maintain(lb->lb_workers[i].worker, now, l);
             }
         }
 
@@ -621,12 +621,12 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l
     return JK_TRUE;
 }
 
-static worker_record_t *find_by_session(lb_worker_t *p,
+static lb_sub_worker_t *find_by_session(lb_worker_t *p,
                                         const char *name,
                                         jk_logger_t *l)
 {
 
-    worker_record_t *rc = NULL;
+    lb_sub_worker_t *rc = NULL;
     unsigned int i;
 
     for (i = 0; i < p->num_of_workers; i++) {
@@ -638,7 +638,7 @@ static worker_record_t *find_by_session(lb_worker_t *p,
     return rc;
 }
 
-static worker_record_t *find_best_bydomain(lb_worker_t *p,
+static lb_sub_worker_t *find_best_bydomain(lb_worker_t *p,
                                            const char *domain,
                                            jk_logger_t *l)
 {
@@ -646,7 +646,7 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
     int d = 0;
     jk_uint64_t curmin = 0;
 
-    worker_record_t *candidate = NULL;
+    lb_sub_worker_t *candidate = NULL;
 
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
@@ -672,7 +672,7 @@ static worker_record_t *find_best_bydomain(lb_worker_t *p,
 }
 
 
-static worker_record_t *find_best_byvalue(lb_worker_t *p,
+static lb_sub_worker_t *find_best_byvalue(lb_worker_t *p,
                                           jk_logger_t *l)
 {
     unsigned int i;
@@ -682,7 +682,7 @@ static worker_record_t *find_best_byvalue(lb_worker_t *p,
     jk_uint64_t curmin = 0;
 
     /* find the least busy worker */
-    worker_record_t *candidate = NULL;
+    lb_sub_worker_t *candidate = NULL;
 
     offset = p->next_offset;
 
@@ -707,13 +707,13 @@ static worker_record_t *find_best_byvalue(lb_worker_t *p,
     return candidate;
 }
 
-static worker_record_t *find_bysession_route(lb_worker_t *p,
+static lb_sub_worker_t *find_bysession_route(lb_worker_t *p,
                                              const char *name,
                                              int *route_is_domain,
                                              jk_logger_t *l)
 {
     int uses_domain  = 0;
-    worker_record_t *candidate = NULL;
+    lb_sub_worker_t *candidate = NULL;
 
     candidate = find_by_session(p, name, l);
     if (!candidate) {
@@ -746,11 +746,11 @@ static worker_record_t *find_bysession_route(lb_worker_t *p,
     return candidate;
 }
 
-static worker_record_t *find_failover_worker(lb_worker_t * p,
+static lb_sub_worker_t *find_failover_worker(lb_worker_t * p,
                                              int *route_is_domain,
                                              jk_logger_t *l)
 {
-    worker_record_t *rc = NULL;
+    lb_sub_worker_t *rc = NULL;
     unsigned int i;
     const char *redirect = NULL;
 
@@ -765,11 +765,11 @@ static worker_record_t *find_failover_worker(lb_worker_t * p,
     return rc;
 }
 
-static worker_record_t *find_best_worker(lb_worker_t * p,
+static lb_sub_worker_t *find_best_worker(lb_worker_t * p,
                                          int *route_is_domain,
                                          jk_logger_t *l)
 {
-    worker_record_t *rc = NULL;
+    lb_sub_worker_t *rc = NULL;
 
     rc = find_best_byvalue(p, l);
     /* By default use worker route as session route */
@@ -778,12 +778,12 @@ static worker_record_t *find_best_worker(lb_worker_t * p,
     return rc;
 }
 
-static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
+static lb_sub_worker_t *get_most_suitable_worker(lb_worker_t * p,
                                                  char *sessionid,
                                                  int *route_is_domain,
                                                  jk_logger_t *l)
 {
-    worker_record_t *rc = NULL;
+    lb_sub_worker_t *rc = NULL;
     int r;
 
     JK_TRACE_ENTER(l);
@@ -882,7 +882,7 @@ static worker_record_t *get_most_suitable_worker(lb_worker_t * p,
 
 static void lb_add_log_items(jk_ws_service_t *s,
                              const char *const *log_names,
-                             worker_record_t *w,
+                             lb_sub_worker_t *w,
                              jk_logger_t *l)
 {
     const char **log_values = jk_pool_alloc(s->pool, sizeof(char *) * JK_LB_NOTES_COUNT);
@@ -927,7 +927,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 {
     lb_endpoint_t *p;
     int attempt = 1;
-    worker_record_t *prec = NULL;
+    lb_sub_worker_t *prec = NULL;
     int num_of_workers;
     int first = 1;
     int was_forced = 0;
@@ -988,7 +988,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     while (attempt <= num_of_workers && recoverable == JK_TRUE) {
         int route_is_domain = JK_FALSE;
-        worker_record_t *rec =
+        lb_sub_worker_t *rec =
             get_most_suitable_worker(p->worker, sessionid, &route_is_domain, l);
         rc = JK_FALSE;
         *is_error = JK_HTTP_SERVER_BUSY;
@@ -1019,7 +1019,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                 jk_shm_unlock();
                        
-            while ((!(r=rec->w->get_endpoint(rec->w, &end, l)) || !end) && (retry < p->worker->retries)) {
+            while ((!(r=rec->worker->get_endpoint(rec->worker, &end, l)) || !end) && (retry < p->worker->retries)) {
                 retry++;
                 retry_wait *=2;
 
@@ -1346,7 +1346,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             p->max_packet_size = DEF_BUFFER_SZ;
             p->lb_workers = jk_pool_alloc(&p->p,
                                           num_of_workers *
-                                          sizeof(worker_record_t));
+                                          sizeof(lb_sub_worker_t));
             if (!p->lb_workers) {
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
@@ -1400,13 +1400,13 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                     jk_get_worker_activation(props, worker_names[i]);
                 if (!wc_create_worker(p->lb_workers[i].name, 0,
                                       props,
-                                      &(p->lb_workers[i].w),
-                                      we, l) || !p->lb_workers[i].w) {
+                                      &(p->lb_workers[i].worker),
+                                      we, l) || !p->lb_workers[i].worker) {
                     break;
                 }
-                if (secret && (p->lb_workers[i].w->type == JK_AJP13_WORKER_TYPE ||
-                    p->lb_workers[i].w->type == JK_AJP14_WORKER_TYPE)) {
-                    ajp_worker_t *aw = (ajp_worker_t *)p->lb_workers[i].w->worker_private;
+                if (secret && (p->lb_workers[i].worker->type == JK_AJP13_WORKER_TYPE ||
+                    p->lb_workers[i].worker->type == JK_AJP14_WORKER_TYPE)) {
+                    ajp_worker_t *aw = (ajp_worker_t *)p->lb_workers[i].worker->worker_private;
                     if (!aw->secret)
                         aw->secret = secret;
                 }
