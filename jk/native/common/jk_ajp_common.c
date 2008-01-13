@@ -61,6 +61,15 @@ static const char *long_res_header_for_sc(int sc)
     return rc;
 }
 
+static const char *ajp_state_type[] = {
+    JK_AJP_STATE_TEXT_IDLE,
+    JK_AJP_STATE_TEXT_OK,
+    JK_AJP_STATE_TEXT_ERROR,
+    JK_AJP_STATE_TEXT_PROBE,
+    "unknown",
+    NULL
+};
+
 #define UNKNOWN_METHOD (-1)
 
 static int sc_for_req_method(const char *method, size_t len)
@@ -329,6 +338,30 @@ static int sc_for_req_header(const char *header_name)
     }
     /* NOTREACHED */
 }
+
+/* Return the string representation of the worker state */
+const char *jk_ajp_get_state(ajp_worker_t *aw, jk_logger_t *l)
+{
+    return ajp_state_type[aw->s->state];
+}
+
+/* Return the int representation of the worker state */
+int jk_ajp_get_state_code(const char *v)
+{
+    if (!v)
+        return JK_AJP_STATE_DEF;
+    else if  (*v == 'i' || *v == 'I' || *v == 'n' || *v == 'N' || *v == '0')
+        return JK_AJP_STATE_IDLE;
+    else if  (*v == 'o' || *v == 'O' || *v == '1')
+        return JK_AJP_STATE_OK;
+    else if  (*v == 'e' || *v == 'E' || *v == '4')
+        return JK_AJP_STATE_ERROR;
+    else if  (*v == 'p' || *v == 'P' || *v == '6')
+        return JK_AJP_STATE_PROBE;
+    else
+        return JK_AJP_STATE_DEF;
+}
+
 
 
 /*
@@ -1931,6 +1964,21 @@ static int ajp_get_reply(jk_endpoint_t *e,
     return JK_FALSE;
 }
 
+static void ajp_update_stats(jk_endpoint_t *e, ajp_worker_t *aw, int rc, jk_logger_t *l)
+{
+    aw->s->readed += e->rd;
+    aw->s->transferred += e->wr;
+    if (aw->s->busy)
+        aw->s->busy--;
+    if (rc != JK_TRUE) {
+        aw->s->state = JK_AJP_STATE_ERROR;
+        aw->s->errors++;
+        aw->s->error_time = time(NULL);
+    }
+    else
+        aw->s->state = JK_AJP_STATE_OK;
+}
+
 /*
  * service is now splitted in ajp_send_request and ajp_get_reply
  * much more easier to do errors recovery
@@ -1976,6 +2024,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
     ajp_operation_t oper;
     ajp_operation_t *op = &oper;
     ajp_endpoint_t *p;
+    ajp_worker_t *aw;
     int log_error;
     int rc = JK_UNSET;
     char *msg;
@@ -1991,6 +2040,9 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
     }
 
     p = e->endpoint_private;
+    aw = p->worker;
+
+    aw->s->used++;
 
     /* Set returned error to SERVER ERROR */
     *is_error = JK_HTTP_SERVER_ERROR;
@@ -2002,7 +2054,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
         JK_TRACE_EXIT(l);
         return JK_SERVER_ERROR;
     }
-    if (jk_b_set_buffer_size(op->request, p->worker->max_packet_size)) {
+    if (jk_b_set_buffer_size(op->request, aw->max_packet_size)) {
         jk_log(l, JK_LOG_ERROR,
                "Failed allocating AJP message buffer");
         JK_TRACE_EXIT(l);
@@ -2017,7 +2069,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
         JK_TRACE_EXIT(l);
         return JK_SERVER_ERROR;
     }
-    if (jk_b_set_buffer_size(op->reply, p->worker->max_packet_size)) {
+    if (jk_b_set_buffer_size(op->reply, aw->max_packet_size)) {
         jk_log(l, JK_LOG_ERROR,
                "Failed allocating AJP message buffer");
         JK_TRACE_EXIT(l);
@@ -2032,7 +2084,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
         JK_TRACE_EXIT(l);
         return JK_SERVER_ERROR;
     }
-    if (jk_b_set_buffer_size(op->post, p->worker->max_packet_size)) {
+    if (jk_b_set_buffer_size(op->post, aw->max_packet_size)) {
         jk_log(l, JK_LOG_ERROR,
                "Failed allocating AJP message buffer");
         JK_TRACE_EXIT(l);
@@ -2049,7 +2101,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
     p->left_bytes_to_send = s->content_length;
     p->reuse = JK_FALSE;
 
-    s->secret = p->worker->secret;
+    s->secret = aw->secret;
 
     /*
      * We get here initial request (in op->request)
@@ -2059,15 +2111,21 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
         jk_log(l, JK_LOG_INFO,
                 "Creating AJP message failed, "
                 "without recovery");
+        aw->s->client_errors++;
         JK_TRACE_EXIT(l);
         return JK_CLIENT_ERROR;
     }
 
     if (JK_IS_DEBUG_LEVEL(l)) {
         jk_log(l, JK_LOG_DEBUG, "processing %s with %d retries",
-               p->worker->name, p->worker->retries);
+               aw->name, aw->retries);
     }
-    for (i = 0; i < p->worker->retries; i++) {
+    aw->s->busy++;
+    if (aw->s->state == JK_AJP_STATE_ERROR)
+        aw->s->state = JK_AJP_STATE_PROBE;
+    if (aw->s->busy > aw->s->max_busy)
+        aw->s->max_busy = aw->s->busy;
+    for (i = 0; i < aw->retries; i++) {
         /*
          * We're using op->request which hold initial request
          * if Tomcat is stopped or restarted, we will pass op->request
@@ -2081,6 +2139,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
         if (err == JK_CLIENT_RD_ERROR) {
             *is_error = JK_HTTP_BAD_REQUEST;
             msg = "because of client read error";
+            aw->s->client_errors++;
             rc = JK_CLIENT_ERROR;
             log_error = JK_FALSE;
             e->recoverable = JK_FALSE;
@@ -2088,7 +2147,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
               /* This doesn't make sense, because we already set reuse */
               /* to JK_FALSE at the beginning of service() and only set it to true again after */
               /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
-//            if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+//            if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
 //                /* Mark the endpoint for shutdown */
 //                p->reuse = JK_FALSE;
 //            }
@@ -2110,6 +2169,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             if (err == JK_TRUE) {
                 *is_error = JK_HTTP_OK;
                 /* Done with the request */
+                ajp_update_stats(e, aw, JK_TRUE, l);
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
@@ -2117,6 +2177,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             if (err == JK_CLIENT_RD_ERROR) {
                 *is_error = JK_HTTP_BAD_REQUEST;
                 msg = "because of client read error";
+                aw->s->client_errors++;
                 rc = JK_CLIENT_ERROR;
                 log_error = JK_FALSE;
                 e->recoverable = JK_FALSE;
@@ -2124,7 +2185,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                   /* This doesn't make sense, because we already set reuse */
                   /* to JK_FALSE at the beginning of service() and only set it to true again after */
                   /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
-//                if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+//                if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
 //                    /* Mark the endpoint for shutdown */
 //                    p->reuse = JK_FALSE;
 //                }
@@ -2133,6 +2194,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 /* XXX: Is this correct to log this as 200? */
                 *is_error = JK_HTTP_OK;
                 msg = "because of client write error";
+                aw->s->client_errors++;
                 rc = JK_CLIENT_ERROR;
                 log_error = JK_FALSE;
                 e->recoverable = JK_FALSE;
@@ -2140,7 +2202,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                   /* This doesn't make sense, because we already set reuse */
                   /* to JK_FALSE at the beginning of service() and only set it to true again after */
                   /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
-//                if (p->worker->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+//                if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
 //                    /* Mark the endpoint for shutdown */
 //                    p->reuse = JK_FALSE;
 //                }
@@ -2153,6 +2215,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             else if (err == JK_REPLY_TIMEOUT) {
                 *is_error = JK_HTTP_GATEWAY_TIME_OUT;
                 msg = "because of reply timeout";
+                aw->s->reply_timeouts++;
                 rc = err;
             }
             else if (err == JK_STATUS_ERROR || err == JK_STATUS_FATAL_ERROR) {
@@ -2190,25 +2253,26 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             rc = JK_FATAL_ERROR;
             jk_log(l, JK_LOG_ERROR,
                    "(%s) unexpected condition err=%d recoverable=%d",
-                   p->worker->name, err, op->recoverable);
+                   aw->name, err, op->recoverable);
         }
         if (!op->recoverable && log_error == JK_TRUE) {
             jk_log(l, JK_LOG_ERROR,
                    "(%s) sending request to tomcat failed (unrecoverable), "
                    "%s "
                    "(attempt=%d)",
-                   p->worker->name, msg, i + 1);
+                   aw->name, msg, i + 1);
         }
         else {
             jk_log(l, JK_LOG_INFO,
                    "(%s) sending request to tomcat failed (%srecoverable), "
                    "%s "
                    "(attempt=%d)",
-                   p->worker->name,
+                   aw->name,
                    op->recoverable ? "" : "un",
                    msg, i + 1);
         }
         if (!op->recoverable) {
+            ajp_update_stats(e, aw, rc, l);
             JK_TRACE_EXIT(l);
             return rc;
         }
@@ -2221,10 +2285,11 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
     jk_log(l, JK_LOG_ERROR,
            "(%s) Connecting to tomcat failed. Tomcat is probably not started "
            "or is listening on the wrong port",
-           p->worker->name);
+           aw->name);
 
 /* XXX: Do we need to fix rc or is_error before returning? */
 
+    ajp_update_stats(e, aw, rc, l);
     JK_TRACE_EXIT(l);
     return rc;
 }
@@ -2394,6 +2459,11 @@ int ajp_init(jk_worker_t *pThis,
             p->retries = JK_RETRIES;
         }
 
+        p->maintain_time = jk_get_worker_maintain_time(props);
+        if(p->maintain_time < 0)
+            p->maintain_time = 0;
+        p->s->last_maintain_time = time(NULL);
+
         if (JK_IS_DEBUG_LEVEL(l)) {
 
             jk_log(l, JK_LOG_DEBUG,
@@ -2509,6 +2579,15 @@ int JK_METHOD ajp_worker_factory(jk_worker_t **w,
 
     *w = &aw->worker;
 
+    aw->s = jk_shm_alloc_ajp_worker(&aw->p);
+    if (!aw->s) {
+        jk_close_pool(&aw->p);
+        free(aw);
+        jk_log(l, JK_LOG_ERROR,
+               "allocating ajp worker record from shared memory");
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
     JK_TRACE_EXIT(l);
     return JK_TRUE;
 }
@@ -2676,6 +2755,27 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
     if (pThis && pThis->worker_private) {
         ajp_worker_t *aw = pThis->worker_private;
         int rc;
+        long delta;
+
+        jk_shm_lock();
+
+        /* Now we check for global maintenance (once for all processes).
+         * Checking workers for idleness.
+         * Therefore we globally sync and we use a global timestamp.
+         * Since it's possible that we come here a few milliseconds
+         * before the interval has passed, we allow a little tolerance.
+         */
+        delta = (long)difftime(now, aw->s->last_maintain_time) + JK_AJP_MAINTAIN_TOLERANCE;
+        if (delta >= aw->maintain_time) {
+            aw->s->last_maintain_time = now;
+            if (aw->s->state == JK_AJP_STATE_OK &&
+                aw->s->used == aw->s->used_snapshot)
+                aw->s->state = JK_AJP_STATE_IDLE;
+            aw->s->used_snapshot = aw->s->used;
+        }
+
+        jk_shm_unlock();
+
         /* Obtain current time only if needed */
         if (aw->cache_timeout <= 0) {
             /* Nothing to do. */

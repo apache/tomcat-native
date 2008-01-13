@@ -35,6 +35,22 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
+#define JK_AJP_STATE_IDLE               (0)
+#define JK_AJP_STATE_OK                 (1)
+#define JK_AJP_STATE_ERROR              (2)
+#define JK_AJP_STATE_PROBE              (3)
+#define JK_AJP_STATE_DEF                (JK_AJP_STATE_IDLE)
+#define JK_AJP_STATE_TEXT_IDLE          ("OK/IDLE")
+#define JK_AJP_STATE_TEXT_OK            ("OK")
+#define JK_AJP_STATE_TEXT_ERROR         ("ERR")
+#define JK_AJP_STATE_TEXT_PROBE         ("ERR/PRB")
+#define JK_AJP_STATE_TEXT_MAX           (JK_AJP_STATE_PROBE)
+#define JK_AJP_STATE_TEXT_DEF           (JK_AJP_STATE_TEXT_IDLE)
+
+/* We accept doing global maintenance if we are */
+/* JK_AJP_MAINTAIN_TOLERANCE seconds early. */
+#define JK_AJP_MAINTAIN_TOLERANCE (2)
+
 /*
  * Conditional request attributes
  *
@@ -234,8 +250,14 @@ typedef struct ajp_worker ajp_worker_t;
 struct ajp_worker
 {
     jk_worker_t worker;
+    /* Shared memory worker data */
+    jk_shm_ajp_worker_t *s;
 
     char         name[JK_SHM_STR_SIZ+1];
+    /* Sequence counter starting at 0 and increasing
+     * every time we change the config
+     */
+    volatile unsigned int sequence;
 
     jk_pool_t p;
     jk_pool_atom_t buf[TINY_POOL_SIZE];
@@ -246,6 +268,7 @@ struct ajp_worker
     unsigned connect_retry_attempts;
     const char *host;
     int port;
+    int maintain_time;
     /*
      * Open connections cache...
      *
@@ -353,6 +376,10 @@ struct ajp_operation
  * Functions
  */
 
+
+const char *jk_ajp_get_state(ajp_worker_t *aw, jk_logger_t *l);
+
+int jk_ajp_get_state_code(const char *v);
 
 int ajp_validate(jk_worker_t *pThis,
                  jk_map_t *props,
