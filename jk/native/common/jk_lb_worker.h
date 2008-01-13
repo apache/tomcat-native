@@ -132,13 +132,13 @@ struct worker_record
     /* worker redirect route */
     char    redirect[JK_SHM_STR_SIZ+1];
     /* worker distance */
-    volatile int distance;
+    int distance;
     /* current activation state (config) of the worker */
-    volatile int activation;
+    int activation;
     /* Current lb factor */
-    volatile int lb_factor;
+    int lb_factor;
     /* Current lb reciprocal factor */
-    volatile jk_uint64_t lb_mult;
+    jk_uint64_t lb_mult;
     /* Sequence counter starting at 0 and increasing
      * every time we change the config
      */

@@ -2402,7 +2402,7 @@ static int set_int_if_changed(status_endpoint_t *p,
                               const char *arg,
                               int min,
                               int max,
-                              volatile int *param,
+                              int *param,
                               const char *lb_name,
                               jk_logger_t *l)
 {
