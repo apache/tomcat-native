@@ -78,38 +78,17 @@ int JK_METHOD ajp13_worker_factory(jk_worker_t **w,
     ajp_worker_t *aw;
 
     JK_TRACE_ENTER(l);
-    if (name == NULL || w == NULL) {
-        JK_LOG_NULL_PARAMS(l);
-        JK_TRACE_EXIT(l);
+    if (ajp_worker_factory(w, name, l) == JK_FALSE)
         return 0;
-    }
 
-    aw = (ajp_worker_t *) calloc(1, sizeof(ajp_worker_t));
-    if (!aw) {
-        jk_log(l, JK_LOG_ERROR,
-               "malloc of private_data failed");
-        JK_TRACE_EXIT(l);
-        return 0;
-    }
-
-    aw->name = name;
+    aw = (*w)->worker_private;
     aw->proto = AJP13_PROTO;
-    aw->login = NULL;
-
-    aw->ep_cache_sz = 0;
-    aw->ep_cache = NULL;
-    aw->connect_retry_attempts = AJP_DEF_RETRY_ATTEMPTS;
-    aw->worker.worker_private = aw;
 
     aw->worker.validate = validate;
     aw->worker.init = init;
     aw->worker.get_endpoint = get_endpoint;
     aw->worker.destroy = destroy;
-    aw->worker.maintain = ajp_maintain;
 
-    aw->logon = NULL;           /* No Logon on AJP13 */
-
-    *w = &aw->worker;
     JK_TRACE_EXIT(l);
     return JK_AJP13_WORKER_TYPE;
 }

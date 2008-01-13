@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        AJP: Refactor factories, move ajp13/ajp14 common parts into
+        ajp_factory. (rjung)
+      </update>
+      <update>
         Status: Only sync shm worker config values of the workers
         for which we changed values. (rjung)
       </update>

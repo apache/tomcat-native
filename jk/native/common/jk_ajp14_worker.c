@@ -371,31 +371,10 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
     ajp_worker_t *aw;
 
     JK_TRACE_ENTER(l);
-
-    if (name == NULL || w == NULL) {
-        JK_LOG_NULL_PARAMS(l);
-        JK_TRACE_EXIT(l);
+    if (ajp_worker_factory(w, name, l) == JK_FALSE)
         return 0;
-    }
 
-    aw = (ajp_worker_t *) calloc(1, sizeof(ajp_worker_t));
-    if (!aw) {
-        jk_log(l, JK_LOG_ERROR,
-               "malloc of private data failed");
-       JK_TRACE_EXIT(l);
-       return 0;
-    }
-
-    aw->name = strdup(name);
-
-    if (!aw->name) {
-        free(aw);
-        jk_log(l, JK_LOG_ERROR,
-               "malloc failed for name");
-        JK_TRACE_EXIT(l);
-        return 0;
-    }
-
+    aw = (*w)->worker_private;
     aw->proto = AJP14_PROTO;
 
     aw->login = (jk_login_service_t *)malloc(sizeof(jk_login_service_t));
@@ -413,19 +392,12 @@ int JK_METHOD ajp14_worker_factory(jk_worker_t **w,
         (AJP14_CONTEXT_INFO_NEG | AJP14_PROTO_SUPPORT_AJP14_NEG);
     aw->login->web_server_name = NULL;  /* must be set in init */
 
-    aw->ep_cache_sz = 0;
-    aw->ep_cache = NULL;
-    aw->connect_retry_attempts = AJP_DEF_RETRY_ATTEMPTS;
-    aw->worker.worker_private = aw;
-
     aw->worker.validate = validate;
     aw->worker.init = init;
     aw->worker.get_endpoint = get_endpoint;
     aw->worker.destroy = destroy;
-    aw->worker.maintain = ajp_maintain;
 
     aw->logon = logon;          /* LogOn Handler for AJP14 */
-    *w = &aw->worker;
 
     JK_TRACE_EXIT(l);
     return JK_AJP14_WORKER_TYPE;

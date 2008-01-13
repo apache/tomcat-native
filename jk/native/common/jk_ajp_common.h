@@ -27,6 +27,7 @@
 
 #include "jk_service.h"
 #include "jk_msg_buff.h"
+#include "jk_shm.h"
 #include "jk_mt.h"
 
 #ifdef __cplusplus
@@ -232,9 +233,17 @@ typedef struct ajp_worker ajp_worker_t;
 
 struct ajp_worker
 {
+    jk_worker_t worker;
+
+    char         name[JK_SHM_STR_SIZ+1];
+
+    jk_pool_t p;
+    jk_pool_atom_t buf[TINY_POOL_SIZE];
+
+    JK_CRIT_SEC cs;
+
     struct sockaddr_in worker_inet_addr;    /* Contains host and port */
     unsigned connect_retry_attempts;
-    const char *name;
     const char *host;
     int port;
     /*
@@ -244,7 +253,6 @@ struct ajp_worker
      * 2. Cache size.
      * 3. An array of "open" endpoints.
      */
-    JK_CRIT_SEC cs;
     unsigned int ep_cache_sz;
     unsigned int ep_mincache_sz;
     unsigned int ep_maxcache_sz;
@@ -256,8 +264,6 @@ struct ajp_worker
 
     /* Weak secret similar with ajp12, used in ajp13 */
     const char *secret;
-
-    jk_worker_t worker;
 
     /*
      * Post physical connect handler.
@@ -355,6 +361,9 @@ int ajp_validate(jk_worker_t *pThis,
 int ajp_init(jk_worker_t *pThis,
              jk_map_t *props,
              jk_worker_env_t *we, jk_logger_t *l, int proto);
+
+int JK_METHOD ajp_worker_factory(jk_worker_t **w,
+                                 const char *name, jk_logger_t *l);
 
 int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto);
 

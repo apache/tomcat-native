@@ -2471,6 +2471,48 @@ int ajp_init(jk_worker_t *pThis,
     return rc;
 }
 
+int JK_METHOD ajp_worker_factory(jk_worker_t **w,
+                                 const char *name, jk_logger_t *l)
+{
+    ajp_worker_t *aw;
+
+    JK_TRACE_ENTER(l);
+    if (name == NULL || w == NULL) {
+        JK_LOG_NULL_PARAMS(l);
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+
+    aw = (ajp_worker_t *) calloc(1, sizeof(ajp_worker_t));
+    if (!aw) {
+        jk_log(l, JK_LOG_ERROR,
+               "malloc of private_data failed");
+        JK_TRACE_EXIT(l);
+        return JK_FALSE;
+    }
+
+    jk_open_pool(&aw->p,
+                 aw->buf,
+                 sizeof(jk_pool_atom_t) * TINY_POOL_SIZE);
+
+    strncpy(aw->name, name, JK_SHM_STR_SIZ);
+    aw->login = NULL;
+
+    aw->ep_cache_sz = 0;
+    aw->ep_cache = NULL;
+    aw->connect_retry_attempts = AJP_DEF_RETRY_ATTEMPTS;
+    aw->worker.worker_private = aw;
+
+    aw->worker.maintain = ajp_maintain;
+
+    aw->logon = NULL;
+
+    *w = &aw->worker;
+
+    JK_TRACE_EXIT(l);
+    return JK_TRUE;
+}
+
 int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto)
 {
     JK_TRACE_ENTER(l);
@@ -2500,6 +2542,7 @@ int ajp_destroy(jk_worker_t **pThis, jk_logger_t *l, int proto)
             aw->login = NULL;
         }
 
+        jk_close_pool(&aw->p);
         free(aw);
         JK_TRACE_EXIT(l);
         return JK_TRUE;
@@ -2639,6 +2682,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
             JK_TRACE_EXIT(l);
             return JK_TRUE;
         }
+
         JK_ENTER_CS(&aw->cs, rc);
         if (rc) {
             unsigned int n = 0, cnt = 0;
