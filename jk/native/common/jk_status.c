@@ -71,13 +71,13 @@
 #define JK_STATUS_ARG_OPTION_NO_AJP        0x0010
 #define JK_STATUS_ARG_OPTION_READ_ONLY     0x0020
 
-#define JK_STATUS_ARG_LB_RETRIES           ("lr")
-#define JK_STATUS_ARG_LB_RECOVER_TIME      ("lt")
-#define JK_STATUS_ARG_LB_MAX_REPLY_TIMEOUTS ("lx")
-#define JK_STATUS_ARG_LB_STICKY            ("ls")
-#define JK_STATUS_ARG_LB_STICKY_FORCE      ("lf")
-#define JK_STATUS_ARG_LB_METHOD            ("lm")
-#define JK_STATUS_ARG_LB_LOCK              ("ll")
+#define JK_STATUS_ARG_LB_RETRIES           ("vlr")
+#define JK_STATUS_ARG_LB_RECOVER_TIME      ("vlt")
+#define JK_STATUS_ARG_LB_MAX_REPLY_TIMEOUTS ("vlx")
+#define JK_STATUS_ARG_LB_STICKY            ("vls")
+#define JK_STATUS_ARG_LB_STICKY_FORCE      ("vlf")
+#define JK_STATUS_ARG_LB_METHOD            ("vlm")
+#define JK_STATUS_ARG_LB_LOCK              ("vll")
 
 #define JK_STATUS_ARG_LB_TEXT_RETRIES      "Retries"
 #define JK_STATUS_ARG_LB_TEXT_RECOVER_TIME "Recover Wait Time"
@@ -87,12 +87,12 @@
 #define JK_STATUS_ARG_LB_TEXT_METHOD       "LB Method"
 #define JK_STATUS_ARG_LB_TEXT_LOCK         "Locking"
 
-#define JK_STATUS_ARG_LBM_ACTIVATION       ("wa")
-#define JK_STATUS_ARG_LBM_FACTOR           ("wf")
-#define JK_STATUS_ARG_LBM_ROUTE            ("wn")
-#define JK_STATUS_ARG_LBM_REDIRECT         ("wr")
-#define JK_STATUS_ARG_LBM_DOMAIN           ("wc")
-#define JK_STATUS_ARG_LBM_DISTANCE         ("wd")
+#define JK_STATUS_ARG_LBM_ACTIVATION       ("vwa")
+#define JK_STATUS_ARG_LBM_FACTOR           ("vwf")
+#define JK_STATUS_ARG_LBM_ROUTE            ("vwn")
+#define JK_STATUS_ARG_LBM_REDIRECT         ("vwr")
+#define JK_STATUS_ARG_LBM_DOMAIN           ("vwc")
+#define JK_STATUS_ARG_LBM_DISTANCE         ("vwd")
 
 #define JK_STATUS_ARG_LBM_TEXT_ACTIVATION  "Activation"
 #define JK_STATUS_ARG_LBM_TEXT_FACTOR      "LB Factor"
@@ -965,7 +965,7 @@ static void status_write_uri(jk_ws_service_t *s,
                   JK_STATUS_ARG_WORKER, worker);
         started=1;
     }
-    if (sub_worker && sub_worker[0]) {
+    if (sub_worker && sub_worker[0] && cmd != JK_STATUS_CMD_LIST) {
         jk_printf(s, "%s%s=%s", started ? "&amp;" : "?",
                   JK_STATUS_ARG_SUB_WORKER, sub_worker);
         started=1;
@@ -992,7 +992,7 @@ static void status_write_uri(jk_ws_service_t *s,
         if (!strcmp(k, JK_STATUS_ARG_WORKER) && worker) {
             continue;
         }
-        if (!strcmp(k, JK_STATUS_ARG_SUB_WORKER) && sub_worker) {
+        if (!strcmp(k, JK_STATUS_ARG_SUB_WORKER) && (sub_worker || cmd == JK_STATUS_CMD_LIST)) {
             continue;
         }
         if (!strcmp(k, JK_STATUS_ARG_ATTRIBUTE) && attribute) {
@@ -1004,7 +1004,7 @@ static void status_write_uri(jk_ws_service_t *s,
         if (!strncmp(k, JK_STATUS_ARG_MULT_VALUE_BASE, 3) && cmd != JK_STATUS_CMD_UPDATE) {
             continue;
         }
-        if (strlen(k) == 2 && (k[0] == 'l' || k[0] == 'w') && cmd != JK_STATUS_CMD_UPDATE) {
+        if (k[0] == 'v' && cmd != JK_STATUS_CMD_UPDATE) {
             continue;
         }
         if (!strcmp(k, JK_STATUS_ARG_OPTIONS)) {

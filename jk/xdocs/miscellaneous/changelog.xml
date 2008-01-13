@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Status: Change parameter names of update action to
+        make them more easily distinguishable from other parameters. (rjung)
+      </update>
+      <update>
         Status: Add non ajp worker statistics also for
         workers, that are not lb members. (rjung)
       </update>

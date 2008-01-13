@@ -450,46 +450,46 @@ But you can also make direct calls to the update action. The following request p
 contain the configuration information, you want to change. First the list for load balancer workers:
 <ul>
 <li>
-<b>lr</b>: retries (number)
+<b>vlr</b>: retries (number)
 </li>
 <li>
-<b>lt</b>: recover_time (seconds)
+<b>vlt</b>: recover_time (seconds)
 </li>
 <li>
-<b>lx</b>: max_reply_timeouts (number)
+<b>vlx</b>: max_reply_timeouts (number)
 </li>
 <li>
-<b>ls</b>: sticky_session (0/f/n/off=off, 1/t/y/on=on; case insensitive)
+<b>vls</b>: sticky_session (0/f/n/off=off, 1/t/y/on=on; case insensitive)
 </li>
 <li>
-<b>lf</b>: sticky_session_force (0/f/n/off=off, 1/t/y/on=on; case insensitive)
+<b>vlf</b>: sticky_session_force (0/f/n/off=off, 1/t/y/on=on; case insensitive)
 </li>
 <li>
-<b>lm</b>: method (0/r="Requests", 1/t="Traffic", 2/b="Busyness", 3/s="Sessions"; case insensitive, only first character is used)
+<b>vlm</b>: method (0/r="Requests", 1/t="Traffic", 2/b="Busyness", 3/s="Sessions"; case insensitive, only first character is used)
 </li>
 <li>
-<b>ll</b>: lock (0/o="Optimistic", 1/p="Pessimistic"; case insensitive, only first character is used)
+<b>vll</b>: lock (0/o="Optimistic", 1/p="Pessimistic"; case insensitive, only first character is used)
 </li>
 </ul>
 And now the list of parameters you can use to change settings for load balancer members:
 <ul>
 <li>
-<b>wa</b>: activation flag (0/a="active", 1/d="disabled", 2/s="stopped"; case insensitive, only first character is used)
+<b>vwa</b>: activation flag (0/a="active", 1/d="disabled", 2/s="stopped"; case insensitive, only first character is used)
 </li>
 <li>
-<b>wf</b>: load balancing factor (integer weight)
+<b>vwf</b>: load balancing factor (integer weight)
 </li>
 <li>
-<b>wn</b>: route for use with sticky sessions (string)
+<b>vwn</b>: route for use with sticky sessions (string)
 </li>
 <li>
-<b>wr</b>: redirect to define simple failover rules (string)
+<b>vwr</b>: redirect to define simple failover rules (string)
 </li>
 <li>
-<b>wc</b>: domain to tell JK about your replication design (string)
+<b>vwc</b>: domain to tell JK about your replication design (string)
 </li>
 <li>
-<b>wd</b>: distance to express preferences (integer)
+<b>vwd</b>: distance to express preferences (integer)
 </li>
 </ul>
 For the details of all parameters, we refer to the <a href="workers.html">workers.properties Reference</a>.
@@ -503,7 +503,7 @@ member of a load balancer respectively on one page. If you want to edit one
 configuration aspect for all members of a load balancer simultaneously, this
 will be triggered by the parameter <b>att</b>. The value of the parameter indicates,
 which aspect you want to edit. The list is the same as in the previous section:
-"wa", "wf", "wn", "wr", "wc" and "wd". But here you
+"vwa", "vwf", "vwn", "vwr", "vwc" and "vwd". But here you
 need to put the name into the parameter "att", instead of using it as a request
 parameter name.
 </p>
