@@ -44,6 +44,13 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Status: Only sync shm worker config values of the workers
+        for which we changed values. (rjung)
+      </update>
+      <fix>
+        Status: Set lb_factor instead of distance. (rjung)
+      </fix>
+      <update>
         Status: Minor layout changes, use drop down instead of multiple
         text links. (rjung)
       </update>
