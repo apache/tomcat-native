@@ -79,6 +79,14 @@ struct jk_shm_ajp_worker
 {
     jk_shm_worker_header_t h;
 
+    /* Configuration data mirrored from ajp_worker */
+    int cache_timeout;
+    int connect_timeout;
+    int reply_timeout;
+    int prepost_timeout;
+    unsigned int recovery_opts;
+    int retries;
+    unsigned int max_packet_size;
     /* current error state (runtime) of the worker */
     volatile int state;
     /* Statistical data */
