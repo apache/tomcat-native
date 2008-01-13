@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Status: Add non ajp worker statistics also for
+        workers, that are not lb members. (rjung)
+      </update>
+      <update>
         AJP: Refactor factories, move ajp13/ajp14 common parts into
         ajp_factory. (rjung)
       </update>
