@@ -162,7 +162,7 @@ const char *jk_lb_get_method(lb_worker_t *p, jk_logger_t *l)
     return lb_method_type[p->lbmethod];
 }
 
-/* Return the int representation of the lb lock type */
+/* Return the int representation of the lb method type */
 int jk_lb_get_method_code(const char *v)
 {
     if (!v)
@@ -185,7 +185,7 @@ const char *jk_lb_get_state(lb_sub_worker_t *p, jk_logger_t *l)
     return lb_state_type[p->s->state];
 }
 
-/* Return the int representation of the lb lock type */
+/* Return the int representation of the lb state */
 int jk_lb_get_state_code(const char *v)
 {
     if (!v)
@@ -281,6 +281,7 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
     p->retries = p->s->retries;
     p->lbmethod = p->s->lbmethod;
     p->lblock = p->s->lblock;
+    p->max_packet_size = p->s->max_packet_size;
     p->sequence = p->s->h.sequence;
 
     for (i = 0; i < p->num_of_workers; i++) {
@@ -322,6 +323,7 @@ void jk_lb_push(lb_worker_t * p, jk_logger_t *l)
     p->s->retries = p->retries;
     p->s->lbmethod = p->lbmethod;
     p->s->lblock = p->lblock;
+    p->s->max_packet_size = p->max_packet_size;
     p->s->h.sequence = p->sequence;
 
     for (i = 0; i < p->num_of_workers; i++) {
@@ -1356,7 +1358,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 p->lb_workers[i].s = jk_shm_alloc_lb_sub_worker(&p->p);
                 if (p->lb_workers[i].s == NULL) {
                     jk_log(l, JK_LOG_ERROR,
-                           "allocating ajp13 worker record from shared memory");
+                           "allocating lb sub worker record from shared memory");
                     JK_TRACE_EXIT(l);
                     return JK_FALSE;
                 }

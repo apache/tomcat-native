@@ -167,6 +167,7 @@ struct jk_shm_lb_worker
     int     retries;
     int     lbmethod;
     int     lblock;
+    unsigned int max_packet_size;
     volatile time_t  last_maintain_time;
 };
 typedef struct jk_shm_lb_worker jk_shm_lb_worker_t;
