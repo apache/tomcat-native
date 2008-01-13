@@ -74,6 +74,7 @@
 #include <errno.h>
 #include <time.h>
 #include <ctype.h>
+#include <limits.h>
 
 #ifdef _OSD_POSIX
 #include "ap_config.h"
