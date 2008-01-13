@@ -28,6 +28,7 @@
 #include "jk_mt.h"
 #include "jk_lb_worker.h"
 #include "jk_ajp13_worker.h"
+#include "jk_ajp14_worker.h"
 #include "jk_shm.h"
 
 /** jk shm header core data structure */
@@ -60,7 +61,8 @@ typedef struct jk_shm_header jk_shm_header_t;
 struct jk_shm
 {
     size_t     size;
-    unsigned   ajp13_workers;
+    unsigned   ajp_workers;
+    unsigned   lb_sub_workers;
     unsigned   lb_workers;
     char       *filename;
     char       *lockname;
@@ -74,7 +76,7 @@ struct jk_shm
 typedef struct jk_shm jk_shm_t;
 
 static const char shm_signature[] = { JK_SHM_MAGIC };
-static jk_shm_t jk_shmem = { 0, 0, 0, NULL, NULL, -1, -1, 0, NULL};
+static jk_shm_t jk_shmem = { 0, 0, 0, 0, NULL, NULL, -1, -1, 0, NULL};
 static time_t jk_workers_modified_time = 0;
 static time_t jk_workers_access_time = 0;
 #if defined (WIN32)
@@ -87,8 +89,9 @@ size_t jk_shm_calculate_size(jk_map_t *init_data, jk_logger_t *l)
     char **worker_list;
     unsigned i;
     unsigned num_of_workers;
+    int num_of_ajp_workers = 0;
+    int num_of_lb_sub_workers = 0;
     int num_of_lb_workers = 0;
-    int num_of_ajp13_workers = 0;
 
     JK_TRACE_ENTER(l);
 
@@ -103,7 +106,11 @@ size_t jk_shm_calculate_size(jk_map_t *init_data, jk_logger_t *l)
     for (i = 0; i < num_of_workers; i++) {
         const char *type = jk_get_worker_type(init_data, worker_list[i]);
 
-        if (!strcmp(type, JK_LB_WORKER_NAME)) {
+        if (!strcmp(type, JK_AJP13_WORKER_NAME) ||
+            !strcmp(type, JK_AJP14_WORKER_NAME)) {
+            num_of_ajp_workers++;
+        }
+        else if (!strcmp(type, JK_LB_WORKER_NAME)) {
             char **member_list;
             unsigned num_of_members;
             num_of_lb_workers++;
@@ -116,17 +123,23 @@ size_t jk_shm_calculate_size(jk_map_t *init_data, jk_logger_t *l)
                 if (JK_IS_DEBUG_LEVEL(l))
                     jk_log(l, JK_LOG_DEBUG, "worker %s of type %s has %u members",
                            worker_list[i], JK_LB_WORKER_NAME, num_of_members);
-                num_of_ajp13_workers += num_of_members;
+                num_of_lb_sub_workers += num_of_members;
             }
         }
     }
     if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG, "shared memory will contain %d lb workers with %d ajp13 members",
-               num_of_lb_workers, num_of_ajp13_workers);
+        jk_log(l, JK_LOG_DEBUG, "shared memory will contain %d ajp workers of size %d and %d lb workers of size %d with %d members of size %d+%d",
+               num_of_ajp_workers, JK_SHM_AJP_SIZE(1),
+               num_of_lb_workers, JK_SHM_LB_SIZE(1),
+               num_of_lb_sub_workers, JK_SHM_LB_SUB_SIZE(1), JK_SHM_AJP_SIZE(1));
+    jk_shmem.ajp_workers = num_of_ajp_workers;
+    jk_shmem.lb_sub_workers = num_of_lb_sub_workers;
     jk_shmem.lb_workers = num_of_lb_workers;
-    jk_shmem.ajp13_workers = num_of_ajp13_workers;
     JK_TRACE_EXIT(l);
-    return JK_SHM_LB_SIZE(jk_shmem.lb_workers) + JK_SHM_AJP13_SIZE(jk_shmem.ajp13_workers);
+    return JK_SHM_AJP_SIZE(jk_shmem.ajp_workers) +
+           JK_SHM_LB_SUB_SIZE(jk_shmem.lb_sub_workers) +
+           JK_SHM_AJP_SIZE(jk_shmem.lb_sub_workers) +
+           JK_SHM_LB_SIZE(jk_shmem.lb_workers);
 }
 
 
@@ -710,15 +723,31 @@ int jk_shm_unlock()
     return rc;
 }
 
-jk_shm_ajp13_worker_t *jk_shm_alloc_ajp13_worker(jk_pool_t *p)
+jk_shm_ajp_worker_t *jk_shm_alloc_ajp_worker(jk_pool_t *p)
 {
-    jk_shm_ajp13_worker_t *w = (jk_shm_ajp13_worker_t *)jk_shm_alloc(p, JK_SHM_AJP13_WORKER_SIZE);
+    jk_shm_ajp_worker_t *w = (jk_shm_ajp_worker_t *)jk_shm_alloc(p, JK_SHM_AJP_WORKER_SIZE);
     if (w) {
-        memset(w, 0, JK_SHM_AJP13_WORKER_SIZE);
+        memset(w, 0, JK_SHM_AJP_WORKER_SIZE);
         if (jk_shmem.hdr) {
             jk_shmem.hdr->h.data.workers++;
             w->h.id = jk_shmem.hdr->h.data.workers;
             w->h.type = JK_AJP13_WORKER_TYPE;
+        }
+        else
+            w->h.id = -1;
+    }
+    return w;
+}
+
+jk_shm_lb_sub_worker_t *jk_shm_alloc_lb_sub_worker(jk_pool_t *p)
+{
+    jk_shm_lb_sub_worker_t *w = (jk_shm_lb_sub_worker_t *)jk_shm_alloc(p, JK_SHM_LB_SUB_WORKER_SIZE);
+    if (w) {
+        memset(w, 0, JK_SHM_LB_SUB_WORKER_SIZE);
+        if (jk_shmem.hdr) {
+            jk_shmem.hdr->h.data.workers++;
+            w->h.id = jk_shmem.hdr->h.data.workers;
+            w->h.type = JK_LB_SUB_WORKER_TYPE;
         }
         else
             w->h.id = -1;

@@ -49,14 +49,16 @@ extern "C"
 #define JK_SHM_MAGIC_SIZ  8
 
 /* Really huge numbers, but 64 workers should be enough */
-#define JK_SHM_MAX_WORKERS       64
-#define JK_SHM_ALIGNMENT         64
-#define JK_SHM_ALIGN(x)          JK_ALIGN((x), JK_SHM_ALIGNMENT)
-#define JK_SHM_AJP13_WORKER_SIZE JK_SHM_ALIGN(sizeof(jk_shm_ajp13_worker_t))
-#define JK_SHM_LB_WORKER_SIZE    JK_SHM_ALIGN(sizeof(jk_shm_lb_worker_t))
-#define JK_SHM_AJP13_SIZE(x)     ((x) * JK_SHM_AJP13_WORKER_SIZE)
-#define JK_SHM_LB_SIZE(x)        ((x) * JK_SHM_LB_WORKER_SIZE)
-#define JK_SHM_DEF_SIZE          JK_SHM_AJP13_SIZE(JK_SHM_MAX_WORKERS)
+#define JK_SHM_MAX_WORKERS        64
+#define JK_SHM_ALIGNMENT          64
+#define JK_SHM_ALIGN(x)           JK_ALIGN((x), JK_SHM_ALIGNMENT)
+#define JK_SHM_AJP_WORKER_SIZE    JK_SHM_ALIGN(sizeof(jk_shm_ajp_worker_t))
+#define JK_SHM_LB_SUB_WORKER_SIZE JK_SHM_ALIGN(sizeof(jk_shm_lb_sub_worker_t))
+#define JK_SHM_LB_WORKER_SIZE     JK_SHM_ALIGN(sizeof(jk_shm_lb_worker_t))
+#define JK_SHM_AJP_SIZE(x)        ((x) * JK_SHM_AJP_WORKER_SIZE)
+#define JK_SHM_LB_SUB_SIZE(x)     ((x) * JK_SHM_LB_SUB_WORKER_SIZE)
+#define JK_SHM_LB_SIZE(x)         ((x) * JK_SHM_LB_WORKER_SIZE)
+#define JK_SHM_DEF_SIZE           JK_SHM_AJP_SIZE(JK_SHM_MAX_WORKERS) + JK_SHM_LB_SUB_SIZE(JK_SHM_MAX_WORKERS) + JK_SHM_LB_SIZE(JK_SHM_MAX_WORKERS)
 
 /** jk shm generic worker record structure */
 struct jk_shm_worker_header
@@ -72,8 +74,39 @@ struct jk_shm_worker_header
 };
 typedef struct jk_shm_worker_header jk_shm_worker_header_t;
 
-/** jk shm ajp13 worker record structure */
-struct jk_shm_ajp13_worker
+/** jk shm ajp13/ajp14 worker record structure */
+struct jk_shm_ajp_worker
+{
+    jk_shm_worker_header_t h;
+
+    /* current error state (runtime) of the worker */
+    volatile int state;
+    /* Statistical data */
+    /* Number of currently busy channels */
+    volatile int busy;
+    /* Maximum number of busy channels */
+    volatile int max_busy;
+    volatile time_t  error_time;
+    /* Number of bytes read from remote */
+    volatile jk_uint64_t readed;
+    /* Number of bytes transferred to remote */
+    volatile jk_uint64_t transferred;
+    /* Number of times the worker was used */
+    volatile jk_uint64_t  used;
+    /* Number of times the worker was used - snapshot during maintenance */
+    volatile jk_uint64_t  used_snapshot;
+    /* Number of non 200 responses */
+    volatile jk_uint32_t  errors;
+    /* Decayed number of reply_timeout errors */
+    volatile jk_uint32_t  reply_timeouts;
+    /* Number of client errors */
+    volatile jk_uint32_t  client_errors;
+    volatile time_t  last_maintain_time;
+};
+typedef struct jk_shm_ajp_worker jk_shm_ajp_worker_t;
+
+/** jk shm lb sub worker record structure */
+struct jk_shm_lb_sub_worker
 {
     jk_shm_worker_header_t h;
 
@@ -116,7 +149,7 @@ struct jk_shm_ajp13_worker
     /* Number of client errors */
     volatile jk_uint32_t  client_errors;
 };
-typedef struct jk_shm_ajp13_worker jk_shm_ajp13_worker_t;
+typedef struct jk_shm_lb_sub_worker jk_shm_lb_sub_worker_t;
 
 /** jk shm lb worker record structure */
 struct jk_shm_lb_worker
@@ -134,7 +167,6 @@ struct jk_shm_lb_worker
     int     retries;
     int     lbmethod;
     int     lblock;
-    /* Service transfer rate time */
     volatile time_t  last_maintain_time;
 };
 typedef struct jk_shm_lb_worker jk_shm_lb_worker_t;
@@ -162,10 +194,15 @@ int jk_shm_attach(const char *fname, size_t sz, jk_logger_t *l);
  */
 void *jk_shm_alloc(jk_pool_t *p, size_t size);
 
-/* allocate shm ajp13 worker record
+/* allocate shm ajp worker record
  * If there is no shm present the pool will be used instead
  */
-jk_shm_ajp13_worker_t *jk_shm_alloc_ajp13_worker(jk_pool_t *p);
+jk_shm_ajp_worker_t *jk_shm_alloc_ajp_worker(jk_pool_t *p);
+
+/* allocate shm lb sub worker record
+ * If there is no shm present the pool will be used instead
+ */
+jk_shm_lb_sub_worker_t *jk_shm_alloc_lb_sub_worker(jk_pool_t *p);
 
 /* allocate shm lb worker record
  * If there is no shm present the pool will be used instead

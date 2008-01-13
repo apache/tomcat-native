@@ -37,6 +37,7 @@ extern "C"
 
 #define JK_LB_WORKER_NAME     ("lb")
 #define JK_LB_WORKER_TYPE     (5)
+#define JK_LB_SUB_WORKER_TYPE (7)
 #define JK_LB_DEF_DOMAIN_NAME ("unknown")
 
 #define JK_LB_METHOD_REQUESTS          (0)
@@ -122,7 +123,7 @@ struct worker_record
 {
     jk_worker_t           *w;
     /* Shared memory worker data */
-    jk_shm_ajp13_worker_t *s;
+    jk_shm_lb_sub_worker_t *s;
     char         name[JK_SHM_STR_SIZ+1];
     /* route */
     char    route[JK_SHM_STR_SIZ+1];

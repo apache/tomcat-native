@@ -1353,7 +1353,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
             }
 
             for (i = 0; i < num_of_workers; i++) {
-                p->lb_workers[i].s = jk_shm_alloc_ajp13_worker(&p->p);
+                p->lb_workers[i].s = jk_shm_alloc_lb_sub_worker(&p->p);
                 if (p->lb_workers[i].s == NULL) {
                     jk_log(l, JK_LOG_ERROR,
                            "allocating ajp13 worker record from shared memory");
