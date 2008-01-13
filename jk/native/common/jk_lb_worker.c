@@ -281,11 +281,11 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
     p->retries = p->s->retries;
     p->lbmethod = p->s->lbmethod;
     p->lblock = p->s->lblock;
-    p->sequence = p->s->sequence;
+    p->sequence = p->s->h.sequence;
 
     for (i = 0; i < p->num_of_workers; i++) {
         worker_record_t *w = &p->lb_workers[i];
-        if (w->sequence != w->s->sequence) {
+        if (w->sequence != w->s->h.sequence) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "syncing mem for member '%s' of lb '%s' from shm",
@@ -297,7 +297,7 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
             w->activation = w->s->activation;
             w->lb_factor = w->s->lb_factor;
             w->lb_mult = w->s->lb_mult;
-            w->sequence = w->s->sequence;
+            w->sequence = w->s->h.sequence;
         }
     }
 
@@ -322,11 +322,11 @@ void jk_lb_push(lb_worker_t * p, jk_logger_t *l)
     p->s->retries = p->retries;
     p->s->lbmethod = p->lbmethod;
     p->s->lblock = p->lblock;
-    p->s->sequence = p->sequence;
+    p->s->h.sequence = p->sequence;
 
     for (i = 0; i < p->num_of_workers; i++) {
         worker_record_t *w = &p->lb_workers[i];
-        if (w->sequence != w->s->sequence) {
+        if (w->sequence != w->s->h.sequence) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "syncing shm for member '%s' of lb '%s' from mem",
@@ -338,7 +338,7 @@ void jk_lb_push(lb_worker_t * p, jk_logger_t *l)
             w->s->activation = w->activation;
             w->s->lb_factor = w->lb_factor;
             w->s->lb_mult = w->lb_mult;
-            w->s->sequence = w->sequence;
+            w->s->h.sequence = w->sequence;
         }
     }
 
@@ -486,7 +486,7 @@ static int recover_workers(lb_worker_t *p,
     worker_record_t *w = NULL;
     JK_TRACE_ENTER(l);
 
-    if (p->sequence != p->s->sequence)
+    if (p->sequence != p->s->h.sequence)
         jk_lb_pull(p, l);
     for (i = 0; i < p->num_of_workers; i++) {
         w = &p->lb_workers[i];
@@ -952,7 +952,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     *is_error = JK_HTTP_OK;
 
     jk_shm_lock();
-    if (p->worker->sequence != p->worker->s->sequence)
+    if (p->worker->sequence != p->worker->s->h.sequence)
         jk_lb_pull(p->worker, l);
     jk_shm_unlock();
 
@@ -1367,10 +1367,10 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 unsigned int ms;
                 strncpy(p->lb_workers[i].name, worker_names[i],
                         JK_SHM_STR_SIZ);
-                strncpy(p->lb_workers[i].s->name, worker_names[i],
+                strncpy(p->lb_workers[i].s->h.name, worker_names[i],
                         JK_SHM_STR_SIZ);
                 p->lb_workers[i].sequence = 0;
-                p->lb_workers[i].s->sequence = 0;
+                p->lb_workers[i].s->h.sequence = 0;
                 p->lb_workers[i].lb_factor =
                     jk_get_lb_factor(props, worker_names[i]);
                 if (p->lb_workers[i].lb_factor < 1) {
@@ -1576,7 +1576,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
             return 0;
         }
         strncpy(private_data->name, name, JK_SHM_STR_SIZ);
-        strncpy(private_data->s->name, name, JK_SHM_STR_SIZ);
+        strncpy(private_data->s->h.name, name, JK_SHM_STR_SIZ);
         private_data->lb_workers = NULL;
         private_data->num_of_workers = 0;
         private_data->worker.worker_private = private_data;
@@ -1588,7 +1588,7 @@ int JK_METHOD lb_worker_factory(jk_worker_t **w,
         private_data->recover_wait_time = WAIT_BEFORE_RECOVER;
         private_data->max_reply_timeouts = 0;
         private_data->sequence = 0;
-        private_data->s->sequence = 0;
+        private_data->s->h.sequence = 0;
         private_data->next_offset = 0;
         *w = &private_data->worker;
         JK_TRACE_EXIT(l);

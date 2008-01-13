@@ -717,11 +717,11 @@ jk_shm_ajp13_worker_t *jk_shm_alloc_ajp13_worker(jk_pool_t *p)
         memset(w, 0, JK_SHM_AJP13_WORKER_SIZE);
         if (jk_shmem.hdr) {
             jk_shmem.hdr->h.data.workers++;
-            w->id = jk_shmem.hdr->h.data.workers;
-            w->type = JK_AJP13_WORKER_TYPE;
+            w->h.id = jk_shmem.hdr->h.data.workers;
+            w->h.type = JK_AJP13_WORKER_TYPE;
         }
         else
-            w->id = -1;
+            w->h.id = -1;
     }
     return w;
 }
@@ -733,11 +733,11 @@ jk_shm_lb_worker_t *jk_shm_alloc_lb_worker(jk_pool_t *p)
         memset(w, 0, JK_SHM_LB_WORKER_SIZE);
         if (jk_shmem.hdr) {
             jk_shmem.hdr->h.data.workers++;
-            w->id = jk_shmem.hdr->h.data.workers;
-            w->type = JK_LB_WORKER_TYPE;
+            w->h.id = jk_shmem.hdr->h.data.workers;
+            w->h.type = JK_LB_WORKER_TYPE;
         }
         else
-            w->id = -1;
+            w->h.id = -1;
     }
     return w;
 }

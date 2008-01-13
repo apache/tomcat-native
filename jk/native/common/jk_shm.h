@@ -58,8 +58,8 @@ extern "C"
 #define JK_SHM_LB_SIZE(x)        ((x) * JK_SHM_LB_WORKER_SIZE)
 #define JK_SHM_DEF_SIZE          JK_SHM_AJP13_SIZE(JK_SHM_MAX_WORKERS)
 
-/** jk shm ajp13 worker record structure */
-struct jk_shm_ajp13_worker
+/** jk shm generic worker record structure */
+struct jk_shm_worker_header
 {
     int     id;
     int     type;
@@ -69,6 +69,14 @@ struct jk_shm_ajp13_worker
      * every time we change the config
      */
     volatile unsigned int sequence;
+};
+typedef struct jk_shm_worker_header jk_shm_worker_header_t;
+
+/** jk shm ajp13 worker record structure */
+struct jk_shm_ajp13_worker
+{
+    jk_shm_worker_header_t h;
+
     /* Number of currently busy channels */
     volatile int busy;
     /* Maximum number of busy channels */
@@ -113,14 +121,8 @@ typedef struct jk_shm_ajp13_worker jk_shm_ajp13_worker_t;
 /** jk shm lb worker record structure */
 struct jk_shm_lb_worker
 {
-    int     id;
-    int     type;
-    /* worker name */
-    char    name[JK_SHM_STR_SIZ+1];
-    /* Sequence counter starting at 0 and increasing
-     * every time we change the config
-     */
-    volatile unsigned int sequence;
+    jk_shm_worker_header_t h;
+
     /* Number of currently busy channels */
     volatile int busy;
     /* Maximum number of busy channels */

@@ -1483,7 +1483,7 @@ static void display_worker_lb(jk_ws_service_t *s,
     }
 
     jk_shm_lock();
-    if (lb->sequence != lb->s->sequence)
+    if (lb->sequence != lb->s->h.sequence)
         jk_lb_pull(lb, l);
     jk_shm_unlock();
 
@@ -2019,7 +2019,7 @@ static void form_worker(jk_ws_service_t *s,
     }
 
     jk_shm_lock();
-    if (lb->sequence != lb->s->sequence)
+    if (lb->sequence != lb->s->h.sequence)
         jk_lb_pull(lb, l);
     jk_shm_unlock();
 
@@ -2324,7 +2324,7 @@ static void commit_worker(jk_ws_service_t *s,
         return;
     }
 
-    if (lb->sequence != lb->s->sequence)
+    if (lb->sequence != lb->s->h.sequence)
         jk_lb_pull(lb, l);
 
     i = status_get_int(p, JK_STATUS_ARG_LB_RETRIES,
