@@ -2408,6 +2408,8 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
         }
         if (!overrides->mount_file)
             overrides->mount_file = base->mount_file;
+    }
+    if (overrides->mountcopy == JK_TRUE) {
         if (!overrides->alias_dir)
             overrides->alias_dir = base->alias_dir;
     }

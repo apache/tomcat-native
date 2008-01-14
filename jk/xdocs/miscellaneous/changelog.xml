@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        Apache: JkAutoAlias does not work in combination with JkMountCopy
+        if there are no JkMount in virtual host. (rjung)
+      </fix>
       <update>
         LB: Optimize state macros to improve performance. (rjung)
       </update>
