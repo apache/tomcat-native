@@ -1990,6 +1990,7 @@ static void display_worker_lb(jk_ws_service_t *s,
 static void display_worker_ajp(jk_ws_service_t *s,
                                status_endpoint_t *p,
                                ajp_worker_t *aw,
+                               int type,
                                jk_logger_t *l)
 {
     int cmd;
@@ -2016,6 +2017,11 @@ static void display_worker_ajp(jk_ws_service_t *s,
     if (cmd == JK_STATUS_CMD_SHOW) {
         single = 1;
     }
+
+    jk_shm_lock();
+    if (aw->sequence != aw->s->h.sequence)
+        jk_ajp_pull(aw, l);
+    jk_shm_unlock();
 
     map_count = count_maps(s, name, l);
 
@@ -2081,7 +2087,7 @@ static void display_worker(jk_ws_service_t *s,
                 jk_log(l, JK_LOG_DEBUG,
                        "Status worker '%s' %s ajp worker '%s'",
                        w->name, "displaying", aw->name);
-            display_worker_ajp(s, p, aw, l);
+            display_worker_ajp(s, p, aw, jw->type, l);
         }
         else {
             jk_log(l, JK_LOG_WARNING,
@@ -2132,11 +2138,6 @@ static void form_worker(jk_ws_service_t *s,
         JK_TRACE_EXIT(l);
         return;
     }
-
-    jk_shm_lock();
-    if (lb->sequence != lb->s->h.sequence)
-        jk_lb_pull(lb, l);
-    jk_shm_unlock();
 
     jk_putv(s, "<hr/><h3>Edit load balancer settings for ",
             name, "</h3>\n", NULL);
@@ -2439,9 +2440,6 @@ static void commit_worker(jk_ws_service_t *s,
         return;
     }
 
-    if (lb->sequence != lb->s->h.sequence)
-        jk_lb_pull(lb, l);
-
     i = status_get_int(p, JK_STATUS_ARG_LB_RETRIES,
                        lb->retries, l);
     if (i != lb->retries && i > 0) {
@@ -2569,11 +2567,12 @@ static int set_uint_if_changed(status_endpoint_t *p,
 
 static int commit_member(jk_ws_service_t *s,
                          status_endpoint_t *p,
+                         lb_worker_t *lb,
                          lb_sub_worker_t *wr,
-                         const char *lb_name,
                          jk_logger_t *l)
 {
     const char *arg;
+    const char *lb_name = lb->name;
     status_worker_t *w = p->worker;
     int rc = 0;
     int rv;
@@ -2640,8 +2639,6 @@ static int commit_member(jk_ws_service_t *s,
     if (set_int_if_changed(p, wr->name, "distance", JK_STATUS_ARG_LBM_DISTANCE,
                            0, INT_MAX, &wr->distance, lb_name, l))
         rc |= 4;
-    if (rc)
-        wr->sequence++;
     return rc;
 }
 
@@ -3097,8 +3094,10 @@ static int edit_worker(jk_ws_service_t *s,
 {
     const char *worker;
     const char *sub_worker;
-    jk_worker_t *jw = NULL;
     status_worker_t *w = p->worker;
+    jk_worker_t *jw = NULL;
+    lb_worker_t *lb = NULL;
+    lb_sub_worker_t *wr = NULL;
 
     JK_TRACE_ENTER(l);
     fetch_worker_and_sub_worker(p, "editing", &worker, &sub_worker, l);
@@ -3107,32 +3106,58 @@ static int edit_worker(jk_ws_service_t *s,
         return JK_FALSE;
     }
 
-    if (!sub_worker || !sub_worker[0]) {
-        const char *arg;
+    if (jw->type == JK_LB_WORKER_TYPE) {
+        if (check_valid_lb(s, p, jw, worker, &lb, 0, l) == JK_FALSE) {
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
 
-        if (status_get_string(p, JK_STATUS_ARG_ATTRIBUTE,
-                              NULL, &arg, l) == JK_TRUE)
-            form_all_members(s, p, jw, arg, l);
-        else
-            form_worker(s, p, jw, l);
+        jk_shm_lock();
+        if (lb->sequence != lb->s->h.sequence)
+            jk_lb_pull(lb, l);
+        jk_shm_unlock();
+        if (!sub_worker || !sub_worker[0]) {
+            const char *arg;
+            if (status_get_string(p, JK_STATUS_ARG_ATTRIBUTE,
+                                  NULL, &arg, l) == JK_TRUE) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Status worker '%s' %s lb worker '%s' with all sub workers",
+                           w->name, "editing", lb->name);
+                form_all_members(s, p, jw, arg, l);
+            }
+            else {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Status worker '%s' %s lb worker '%s'",
+                           w->name, "editing", lb->name);
+                form_worker(s, p, jw, l);
+            }
+            JK_TRACE_EXIT(l);
+            return JK_TRUE;
+        }
+        else  {
+            if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
+                JK_TRACE_EXIT(l);
+                return JK_FALSE;
+            }
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Status worker '%s' %s lb worker '%s' sub worker '%s'",
+                       w->name, "editing", lb->name, wr->name);
+            form_member(s, p, wr, lb->name, l);
+            JK_TRACE_EXIT(l);
+            return JK_TRUE;
+        }
     }
-    else  {
-        lb_sub_worker_t *wr = NULL;
-        if (jw->type != JK_LB_WORKER_TYPE) {
-            jk_log(l, JK_LOG_WARNING,
+    else {
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
                    "Status worker '%s' worker type not implemented",
                    w->name);
-            JK_TRACE_EXIT(l);
-            return JK_FALSE;
-        }
-        if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
-            JK_TRACE_EXIT(l);
-            return JK_FALSE;
-        }
-        form_member(s, p, wr, worker, l);
     }
     JK_TRACE_EXIT(l);
-    return JK_TRUE;
+    return JK_FALSE;
 }
 
 static int update_worker(jk_ws_service_t *s,
@@ -3141,7 +3166,11 @@ static int update_worker(jk_ws_service_t *s,
 {
     const char *worker;
     const char *sub_worker;
+    status_worker_t *w = p->worker;
     jk_worker_t *jw = NULL;
+    lb_worker_t *lb = NULL;
+    lb_sub_worker_t *wr = NULL;
+    int rc;
 
     JK_TRACE_ENTER(l);
     fetch_worker_and_sub_worker(p, "updating", &worker, &sub_worker, l);
@@ -3150,40 +3179,66 @@ static int update_worker(jk_ws_service_t *s,
         return JK_FALSE;
     }
 
-    if (!sub_worker || !sub_worker[0]) {
-        const char *arg;
-
-        if (status_get_string(p, JK_STATUS_ARG_ATTRIBUTE,
-                              NULL, &arg, l) == JK_TRUE)
-            commit_all_members(s, p, jw, arg, l);
-        else
-            commit_worker(s, p, jw, l);
-    }
-    else  {
-        lb_worker_t *lb = NULL;
-        lb_sub_worker_t *wr = NULL;
-        int rc = 0;
+    if (jw->type == JK_LB_WORKER_TYPE) {
         if (check_valid_lb(s, p, jw, worker, &lb, 0, l) == JK_FALSE) {
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-        if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
+
+        if (lb->sequence != lb->s->h.sequence)
+            jk_lb_pull(lb, l);
+        if (!sub_worker || !sub_worker[0]) {
+            const char *arg;
+            if (status_get_string(p, JK_STATUS_ARG_ATTRIBUTE,
+                                  NULL, &arg, l) == JK_TRUE) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Status worker '%s' %s lb worker '%s' with all sub workers",
+                           w->name, "updating", lb->name);
+                commit_all_members(s, p, jw, arg, l);
+            }
+            else {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Status worker '%s' %s lb worker '%s'",
+                           w->name, "updating", lb->name);
+                commit_worker(s, p, jw, l);
+            }
             JK_TRACE_EXIT(l);
-            return JK_FALSE;
+            return JK_TRUE;
         }
-        rc = commit_member(s, p, wr, lb->name, l);
-        if (rc) {
-            lb->sequence++;
-            jk_lb_push(lb, l);
+        else  {
+            if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
+                JK_TRACE_EXIT(l);
+                return JK_FALSE;
+            }
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Status worker '%s' %s lb worker '%s' sub worker '%s'",
+                       w->name, "updating", lb->name, wr->name);
+            rc = commit_member(s, p, lb, wr, l);
+            if (rc) {
+                wr->sequence++;
+                lb->sequence++;
+                jk_lb_push(lb, l);
+            }
+            if (rc & 1)
+                reset_lb_values(lb, l);
+            if (rc & 2)
+                /* Recalculate the load multiplicators wrt. lb_factor */
+                update_mult(lb, l);
+            JK_TRACE_EXIT(l);
+            return JK_TRUE;
         }
-        if (rc & 1)
-            reset_lb_values(lb, l);
-        if (rc & 2)
-            /* Recalculate the load multiplicators wrt. lb_factor */
-            update_mult(lb, l);
+    }
+    else {
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "Status worker '%s' worker type not implemented",
+                   w->name);
     }
     JK_TRACE_EXIT(l);
-    return JK_TRUE;
+    return JK_FALSE;
 }
 
 static int reset_worker(jk_ws_service_t *s,
