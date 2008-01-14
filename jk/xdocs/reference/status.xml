@@ -40,9 +40,6 @@ via a simple embedded web interface.
 </p>
 <p>
 The status worker is especially powerful, when used together with load balancing workers.
-The dynamic management features of load balancers in combination with the status worker
-are a good reason, to use load balancer workers on top of ajp13 workers, even if there would
-be only one member worker in the load balancer.
 </p>
 <p>
 This document does not explain the HTML user interface of the status worker.
@@ -85,8 +82,7 @@ made through the status worker will be lost! On the other hand, the changes done
 worker will be applied during runtime without a restart of the web server.
 </li>
 <li>
-<b>reset</b>: reset all runtime information for a load balancer
-or one of its members.
+<b>reset</b>: reset all runtime statistics for a worker.
 </li>
 <li>
 <b>recover</b>: Mark a member of a load balancer, that is in error state, for immediate recovery.
@@ -148,15 +144,28 @@ blocks of information:
 <b>Legend</b>: Do not show the legend for the information presented in "list" and "show" actions
 </li>
 <li>
-<b>Load Balancer Workers</b>: Do not show workers of type "lb"
+<b>URI mappings</b>: Do not show the URI mapping for the workers
+</li>
+<li>
+<b>Load Balancing Workers</b>: Do not show workers of type "lb"
 </li>
 <li>
 <b>AJP Workers</b>: Do not show workers of type ajp
 </li>
 <li>
-<b>Member Workers</b>: Do not show detailed information concerning each member of load balancers
+<b>Balancer Members</b>: Do not show detailed information concerning each member of load balancers
+</li>
+<li>
+<b>Load Balancer Configuration</b>: Do not show configuration data for load balancers
+</li>
+<li>
+<b>Load Balancer Summary</b>: Do not show status summary for load balancers
+</li>
+<li>
+<b>AJP Configuration</b>: Do not show configuration data for ajp workers load balancer members
 </li>
 </ul>
+The last three minimization features have been added in version 1.2.27.
 </p>
 </subsection>
 
@@ -439,7 +448,17 @@ by default no options are activated. The following options exist:
 <li>
 <b>0x0020</b>: only allow read_only actions for a read/write status worker.
 </li>
+<li>
+<b>0x0040</b>: hide load balancer configuration
+</li>
+<li>
+<b>0x0080</b>: hide load balancer status summary
+</li>
+<li>
+<b>0x0100</b>: hide configuraton for ajp and load balancer member workers
+</li>
 </ul>
+Values 0x0040-0x0100 have been added in version 1.2.27.
 </p>
 </subsection>
 <subsection name="Data Parameters for the standard Update Action">
@@ -492,6 +511,34 @@ And now the list of parameters you can use to change settings for load balancer 
 <b>vwd</b>: distance to express preferences (integer)
 </li>
 </ul>
+Finally the list of parameters you can use to change settings for ajp workers and ajp load balancer members:
+<ul>
+<li>
+<b>vacpt</b>: connection_pool_timeout (number)
+</li>
+<li>
+<b>vact</b>: connect_timeout (number)
+</li>
+<li>
+<b>vapt</b>: prepost_timeout (number)
+</li>
+<li>
+<b>vart</b>: reply_timeout (number)
+</li>
+<li>
+<b>var</b>: retries (number)
+</li>
+<li>
+<b>varo</b>: recovery_options (number)
+</li>
+<li>
+<b>vamps</b>: max_packet_size (number)
+</li>
+</ul>
+The leading character "v" has been added to the parameters in version 1.2.27.
+Changing settings for ajp workers has also been introduced in version 1.2.27.
+</p>
+<p>
 For the details of all parameters, we refer to the <a href="workers.html">workers.properties Reference</a>.
 </p>
 </subsection>
@@ -503,7 +550,8 @@ member of a load balancer respectively on one page. If you want to edit one
 configuration aspect for all members of a load balancer simultaneously, this
 will be triggered by the parameter <b>att</b>. The value of the parameter indicates,
 which aspect you want to edit. The list is the same as in the previous section:
-"vwa", "vwf", "vwn", "vwr", "vwc" and "vwd". But here you
+"vwa", "vwf", "vwn", "vwr", "vwc", "vwd", "vacpt", "vact", "vapt", "vart", "var",
+"varo" and "vamps". But here you
 need to put the name into the parameter "att", instead of using it as a request
 parameter name.
 </p>

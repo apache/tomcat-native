@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Status: Add manageability for ajp parameters of ajp
+        workers and ajp lb members. (rjung)
+      </update>
+      <update>
         Status: Change parameter names of update action to
         make them more easily distinguishable from other parameters. (rjung)
       </update>

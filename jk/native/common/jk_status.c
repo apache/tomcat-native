@@ -72,6 +72,7 @@
 #define JK_STATUS_ARG_OPTION_READ_ONLY     0x0020
 #define JK_STATUS_ARG_OPTION_NO_LB_CONF    0x0040
 #define JK_STATUS_ARG_OPTION_NO_LB_SUMMARY 0x0080
+#define JK_STATUS_ARG_OPTION_NO_AJP_CONF   0x0100
 
 #define JK_STATUS_ARG_LB_RETRIES           ("vlr")
 #define JK_STATUS_ARG_LB_RECOVER_TIME      ("vlt")
@@ -102,6 +103,22 @@
 #define JK_STATUS_ARG_LBM_TEXT_REDIRECT    "Redirect Route"
 #define JK_STATUS_ARG_LBM_TEXT_DOMAIN      "Cluster Domain"
 #define JK_STATUS_ARG_LBM_TEXT_DISTANCE    "Distance"
+
+#define JK_STATUS_ARG_AJP_CACHE_TO         "vacpt"
+#define JK_STATUS_ARG_AJP_CONNECT_TO       "vact"
+#define JK_STATUS_ARG_AJP_PREPOST_TO       "vapt"
+#define JK_STATUS_ARG_AJP_REPLY_TO         "vart"
+#define JK_STATUS_ARG_AJP_RETRIES          "var"
+#define JK_STATUS_ARG_AJP_REC_OPTS         "varo"
+#define JK_STATUS_ARG_AJP_MAX_PK_SZ        "vamps"
+
+#define JK_STATUS_ARG_AJP_TEXT_CACHE_TO    "Connection Pool Timeout"
+#define JK_STATUS_ARG_AJP_TEXT_CONNECT_TO  "Connect Timeout"
+#define JK_STATUS_ARG_AJP_TEXT_PREPOST_TO  "Prepost Timeout"
+#define JK_STATUS_ARG_AJP_TEXT_REPLY_TO    "Reply Timeout"
+#define JK_STATUS_ARG_AJP_TEXT_RETRIES     "Retries"
+#define JK_STATUS_ARG_AJP_TEXT_REC_OPTS    "Recovery Options"
+#define JK_STATUS_ARG_AJP_TEXT_MAX_PK_SZ   "Max Packet Size"
 
 #define JK_STATUS_CMD_UNKNOWN              (0)
 #define JK_STATUS_CMD_LIST                 (1)
@@ -196,18 +213,36 @@
 #define JK_STATUS_URI_MAP_TABLE_ROW        "<tr><td>%s</td><td>%s</td><td>%s</td></tr>\n"
 #define JK_STATUS_URI_MAP_TABLE_HEAD2      "<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>\n"
 #define JK_STATUS_URI_MAP_TABLE_ROW2       "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"
-#define JK_STATUS_SHOW_AJP_HEAD            "<tr>" \
+#define JK_STATUS_SHOW_AJP_CONF_HEAD       "<tr>" \
                                            "<th>Type</th>" \
                                            "<th>Host</th><th>Addr</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_CACHE_TO "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_CONNECT_TO "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_PREPOST_TO "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_REPLY_TO "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_RETRIES "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_REC_OPTS "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_MAX_PK_SZ "</th>" \
+                                           "<th>\n"
+#define JK_STATUS_SHOW_AJP_CONF_ROW        "<tr>" \
+                                           "<td>%s</td>" \
+                                           "<td>%s:%d</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%u</td>" \
+                                           "<td>%u</td>" \
+                                           "<td></td>" \
+                                           "</tr>\n"
+#define JK_STATUS_SHOW_AJP_HEAD            "<tr>" \
                                            "<th>State</th>" \
                                            "<th>Acc</th>" \
                                            "<th>Err</th><th>CE</th><th>RE</th>" \
                                            "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th>" \
                                            "</tr>\n"
 #define JK_STATUS_SHOW_AJP_ROW             "<tr>" \
-                                           "<td>%s</td>" \
-                                           "<td>%s:%d</td>" \
-                                           "<td>%s</td>" \
                                            "<td>%s</td>" \
                                            "<td>%" JK_UINT64_T_FMT "</td>" \
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
@@ -240,8 +275,7 @@
                                            "<td></td>" \
                                            "</tr>\n"
 #define JK_STATUS_SHOW_MEMBER_HEAD         "<tr>" \
-                                           "<th>&nbsp;</th><th>Name</th><th>Type</th>" \
-                                           "<th>Host</th><th>Addr</th>" \
+                                           "<th>&nbsp;</th><th>Name</th>" \
                                            "<th>Act</th><th>State</th>" \
                                            "<th>D</th><th>F</th><th>M</th>" \
                                            "<th>V</th><th>Acc</th>" \
@@ -251,9 +285,6 @@
                                            "<th>RR</th><th>Cd</th><th>Rs</th>" \
                                            "</tr>\n"
 #define JK_STATUS_SHOW_MEMBER_ROW          "<td>%s</td>" \
-                                           "<td>%s</td>" \
-                                           "<td>%s:%d</td>" \
-                                           "<td>%s</td>" \
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
                                            "<td>%d</td>" \
@@ -272,6 +303,31 @@
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
                                            "<td>%d/%d</td>" \
+                                           "</tr>\n"
+#define JK_STATUS_SHOW_MEMBER_CONF_HEAD    "<tr>" \
+                                           "<th>Name</th><th>Type</th>" \
+                                           "<th>Host</th><th>Addr</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_CACHE_TO "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_CONNECT_TO "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_PREPOST_TO "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_REPLY_TO "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_RETRIES "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_REC_OPTS "</th>" \
+                                           "<th>" JK_STATUS_ARG_AJP_TEXT_MAX_PK_SZ "</th>" \
+                                           "<th>\n"
+#define JK_STATUS_SHOW_MEMBER_CONF_ROW     "<tr>" \
+                                           "<td>%s</td>" \
+                                           "<td>%s</td>" \
+                                           "<td>%s:%d</td>" \
+                                           "<td>%s</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%d</td>" \
+                                           "<td>%u</td>" \
+                                           "<td>%u</td>" \
+                                           "<td></td>" \
                                            "</tr>\n"
 
 typedef struct status_worker status_worker_t;
@@ -1473,6 +1529,46 @@ static void display_maps(jk_ws_service_t *s,
     JK_TRACE_EXIT(l);
 }
 
+static void display_worker_ajp_conf_details(jk_ws_service_t *s,
+                                            status_endpoint_t *p,
+                                            ajp_worker_t *aw,
+                                            int is_member,
+                                            int type,
+                                            jk_logger_t *l)
+{
+    char buf[32];
+
+    JK_TRACE_ENTER(l);
+
+    if (is_member)
+        jk_printf(s, JK_STATUS_SHOW_MEMBER_CONF_ROW,
+                  aw->name,
+                  status_worker_type(type),
+                  aw->host, aw->port,
+                  jk_dump_hinfo(&aw->worker_inet_addr, buf),
+                  aw->cache_timeout,
+                  aw->connect_timeout,
+                  aw->prepost_timeout,
+                  aw->reply_timeout,
+                  aw->retries,
+                  aw->recovery_opts,
+                  aw->max_packet_size);
+    else
+        jk_printf(s, JK_STATUS_SHOW_AJP_CONF_ROW,
+                  status_worker_type(type),
+                  aw->host, aw->port,
+                  jk_dump_hinfo(&aw->worker_inet_addr, buf),
+                  aw->cache_timeout,
+                  aw->connect_timeout,
+                  aw->prepost_timeout,
+                  aw->reply_timeout,
+                  aw->retries,
+                  aw->recovery_opts,
+                  aw->max_packet_size);
+    JK_TRACE_EXIT(l);
+
+}
+
 static void display_worker_ajp_details(jk_ws_service_t *s,
                                        status_endpoint_t *p,
                                        ajp_worker_t *aw,
@@ -1527,9 +1623,6 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
         if (lb)
             jk_printf(s, JK_STATUS_SHOW_MEMBER_ROW,
                       sub_name,
-                      status_worker_type(wr->worker->type),
-                      aw->host, aw->port,
-                      jk_dump_hinfo(&aw->worker_inet_addr, buf),
                       jk_lb_get_activation(wr, l),
                       jk_lb_get_state(wr, l),
                       wr->distance,
@@ -1551,9 +1644,6 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
                       rs_max);
         else
             jk_printf(s, JK_STATUS_SHOW_AJP_ROW,
-                      status_worker_type(aw->worker.type),
-                      aw->host, aw->port,
-                      jk_dump_hinfo(&aw->worker_inet_addr, buf),
                       jk_ajp_get_state(aw, l),
                       aw->s->used,
                       aw->s->errors,
@@ -1583,6 +1673,13 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
         jk_print_xml_att_string(s, off+2, "host", aw->host);
         jk_print_xml_att_int(s, off+2, "port", aw->port);
         jk_print_xml_att_string(s, off+2, "address", jk_dump_hinfo(&aw->worker_inet_addr, buf));
+        jk_print_xml_att_int(s, off+2, "connection_pool_timeout", aw->cache_timeout);
+        jk_print_xml_att_int(s, off+2, "connect_timeout", aw->connect_timeout);
+        jk_print_xml_att_int(s, off+2, "prepost_timeout", aw->prepost_timeout);
+        jk_print_xml_att_int(s, off+2, "reply_timeout", aw->reply_timeout);
+        jk_print_xml_att_int(s, off+2, "retries", aw->retries);
+        jk_print_xml_att_uint(s, off+2, "recovery_options", aw->recovery_opts);
+        jk_print_xml_att_uint(s, off+2, "max_packet_size", aw->max_packet_size);
         if (lb) {
             jk_print_xml_att_string(s, off+2, "activation", jk_lb_get_activation(wr, l));
             jk_print_xml_att_int(s, off+2, "lbfactor", wr->lb_factor);
@@ -1631,6 +1728,13 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
         jk_printf(s, " host=%s", aw->host);
         jk_printf(s, " port=%d", aw->port);
         jk_printf(s, " address=%s", jk_dump_hinfo(&aw->worker_inet_addr, buf));
+        jk_printf(s, " connection_pool_timeout=%d", aw->cache_timeout);
+        jk_printf(s, " connect_timeout=%d", aw->connect_timeout);
+        jk_printf(s, " prepost_timeout=%d", aw->prepost_timeout);
+        jk_printf(s, " reply_timeout=%d", aw->reply_timeout);
+        jk_printf(s, " retries=%d", aw->retries);
+        jk_printf(s, " recovery_options=%u", aw->recovery_opts);
+        jk_printf(s, " max_packet_size=%u", aw->max_packet_size);
         if (lb) {
             jk_printf(s, " activation=%s", jk_lb_get_activation(wr, l));
             jk_printf(s, " lbfactor=%d", wr->lb_factor);
@@ -1676,6 +1780,13 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
         jk_print_prop_att_string(s, w, ajp_name, "host", aw->host);
         jk_print_prop_att_int(s, w, ajp_name, "port", aw->port);
         jk_print_prop_att_string(s, w, ajp_name, "address", jk_dump_hinfo(&aw->worker_inet_addr, buf));
+        jk_print_prop_att_int(s, w, ajp_name, "connection_pool_timeout", aw->cache_timeout);
+        jk_print_prop_att_int(s, w, ajp_name, "connect_timeout", aw->connect_timeout);
+        jk_print_prop_att_int(s, w, ajp_name, "prepost_timeout", aw->prepost_timeout);
+        jk_print_prop_att_int(s, w, ajp_name, "reply_timeout", aw->reply_timeout);
+        jk_print_prop_att_int(s, w, ajp_name, "retries", aw->retries);
+        jk_print_prop_att_uint(s, w, ajp_name, "recovery_options", aw->recovery_opts);
+        jk_print_prop_att_uint(s, w, ajp_name, "max_packet_size", aw->max_packet_size);
         if (lb) {
             jk_print_prop_att_string(s, w, ajp_name, "activation", jk_lb_get_activation(wr, l));
             jk_print_prop_att_int(s, w, ajp_name, "lbfactor", wr->lb_factor);
@@ -1722,6 +1833,7 @@ static void display_worker_lb(jk_ws_service_t *s,
     unsigned int hide_members;
     unsigned int hide_lb_conf;
     unsigned int hide_lb_summary;
+    unsigned int hide_ajp_conf;
     const char *arg;
     time_t now = time(NULL);
     unsigned int good = 0;
@@ -1746,6 +1858,8 @@ static void display_worker_lb(jk_ws_service_t *s,
                                   JK_STATUS_ARG_OPTION_NO_LB_CONF;
     hide_lb_summary = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
                                      JK_STATUS_ARG_OPTION_NO_LB_SUMMARY;
+    hide_ajp_conf = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
+                                   JK_STATUS_ARG_OPTION_NO_AJP_CONF;
     if (w->read_only) {
         read_only = 1;
     }
@@ -1805,7 +1919,6 @@ static void display_worker_lb(jk_ws_service_t *s,
         }
         jk_puts(s, "]&nbsp;&nbsp;");
         jk_putv(s, "Worker Status for ", name, "</h3>\n", NULL);
-
         if (hide_lb_conf) {
             pstart = JK_TRUE;
             jk_puts(s, "<p>\n");
@@ -1831,6 +1944,21 @@ static void display_worker_lb(jk_ws_service_t *s,
             else {
                 status_write_uri(s, p, "Show LB Summary", JK_STATUS_CMD_LIST, JK_STATUS_MIME_UNKNOWN,
                                  NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_LB_SUMMARY, "", l);
+            }
+        }
+        if (!hide_members && hide_ajp_conf) {
+            if (pstart == JK_FALSE)
+                jk_puts(s, "<p>\n");
+            else
+                jk_puts(s, "&nbsp;&nbsp;|&nbsp;&nbsp;");
+            pstart = JK_TRUE;
+            if (single) {
+                status_write_uri(s, p, "Show AJP Configuration", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_AJP_CONF, "", l);
+            }
+            else {
+                status_write_uri(s, p, "Show AJP Configuration", JK_STATUS_CMD_LIST, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_AJP_CONF, "", l);
             }
         }
         if (hide_members) {
@@ -1969,6 +2097,20 @@ static void display_worker_lb(jk_ws_service_t *s,
                                  NULL, NULL, JK_STATUS_ARG_OPTION_NO_MEMBERS, 0, "", l);
             }
             jk_puts(s, "]</h4>\n");
+            if (!hide_ajp_conf) {
+                jk_puts(s, "<table>" JK_STATUS_SHOW_MEMBER_CONF_HEAD);
+                jk_puts(s, "[");
+                status_write_uri(s, p, "Hide", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, JK_STATUS_ARG_OPTION_NO_AJP_CONF, 0, NULL, l);
+                jk_puts(s, "]</td></tr>");
+                for (j = 0; j < lb->num_of_workers; j++) {
+                    lb_sub_worker_t *wr = &(lb->lb_workers[j]);
+                    jk_worker_t *jw = (jk_worker_t *)wr->worker;
+                    ajp_worker_t *aw = (ajp_worker_t *)jw->worker_private;
+                    display_worker_ajp_conf_details(s, p, aw, 1, jw->type, l);
+                }
+                jk_puts(s, "</table>\n<br/>\n");
+            }
             jk_puts(s, "<table>" JK_STATUS_SHOW_MEMBER_HEAD);
 
         }
@@ -2018,6 +2160,13 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_putv(s, "<option value=\"", JK_STATUS_ARG_LBM_REDIRECT, "\">", JK_STATUS_ARG_LBM_TEXT_REDIRECT, "</option>\n", NULL);
                 jk_putv(s, "<option value=\"", JK_STATUS_ARG_LBM_DOMAIN, "\">", JK_STATUS_ARG_LBM_TEXT_DOMAIN, "</option>\n", NULL);
                 jk_putv(s, "<option value=\"", JK_STATUS_ARG_LBM_DISTANCE, "\">", JK_STATUS_ARG_LBM_TEXT_DISTANCE, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_CACHE_TO, "\">", JK_STATUS_ARG_AJP_TEXT_CACHE_TO, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_CONNECT_TO, "\">", JK_STATUS_ARG_AJP_TEXT_CONNECT_TO, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_PREPOST_TO, "\">", JK_STATUS_ARG_AJP_TEXT_PREPOST_TO, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_REPLY_TO, "\">", JK_STATUS_ARG_AJP_TEXT_REPLY_TO, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_RETRIES, "\">", JK_STATUS_ARG_AJP_TEXT_RETRIES, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_REC_OPTS, "\">", JK_STATUS_ARG_AJP_TEXT_REC_OPTS, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_MAX_PK_SZ, "\">", JK_STATUS_ARG_AJP_TEXT_MAX_PK_SZ, "</option>\n", NULL);
                 jk_puts(s, "</select></td><td><input type=\"submit\" value=\"Go\"/></tr></table></form>\n");
             }
 
@@ -2045,6 +2194,7 @@ static void display_worker_ajp(jk_ws_service_t *s,
     int mime;
     int read_only = 0;
     int single = 0;
+    unsigned int hide_ajp_conf;
     const char *arg;
     int map_count;
     const char *name = aw->name;
@@ -2055,6 +2205,8 @@ static void display_worker_ajp(jk_ws_service_t *s,
     cmd = status_cmd_int(arg);
     status_get_string(p, JK_STATUS_ARG_MIME, NULL, &arg, l);
     mime = status_mime_int(arg);
+    hide_ajp_conf = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
+                                   JK_STATUS_ARG_OPTION_NO_AJP_CONF;
     if (w->read_only) {
         read_only = 1;
     }
@@ -2091,6 +2243,27 @@ static void display_worker_ajp(jk_ws_service_t *s,
         }
         jk_puts(s, "]&nbsp;&nbsp;");
         jk_putv(s, "Worker Status for ", name, "</h3>\n", NULL);
+        if (!hide_ajp_conf) {
+            jk_puts(s, "<table>" JK_STATUS_SHOW_AJP_CONF_HEAD);
+            jk_puts(s, "[");
+            status_write_uri(s, p, "Hide", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
+                             NULL, NULL, JK_STATUS_ARG_OPTION_NO_AJP_CONF, 0, NULL, l);
+            jk_puts(s, "]</td></tr>");
+            display_worker_ajp_conf_details(s, p, aw, 0, type, l);
+            jk_puts(s, "</table>\n<br/>\n");
+        }
+        else {
+            jk_puts(s, "<p>\n");
+            if (single) {
+                status_write_uri(s, p, "Show AJP Configuration", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_AJP_CONF, "", l);
+            }
+            else {
+                status_write_uri(s, p, "Show AJP Configuration", JK_STATUS_CMD_LIST, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_AJP_CONF, "", l);
+            }
+            jk_puts(s, "</p>\n");
+        }
         jk_puts(s, "<table>" JK_STATUS_SHOW_AJP_HEAD);
     }
     display_worker_ajp_details(s, p, aw, NULL, NULL, 0, 0, map_count, l);
@@ -2265,6 +2438,7 @@ static void form_worker(jk_ws_service_t *s,
 static void form_member(jk_ws_service_t *s,
                         status_endpoint_t *p,
                         lb_sub_worker_t *wr,
+                        ajp_worker_t *aw,
                         const char *lb_name,
                         jk_logger_t *l)
 {
@@ -2275,14 +2449,17 @@ static void form_member(jk_ws_service_t *s,
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "Status worker '%s' producing edit form for sub worker '%s' of lb worker '%s'",
-               w->name, wr->name, lb_name);
+               w->name, wr? wr->name : aw->name, lb_name);
 
     jk_putv(s, "<hr/><h3>Edit worker settings for ",
-            wr->name, "</h3>\n", NULL);
+            wr? wr->name : aw->name, "</h3>\n", NULL);
     status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, NULL, l);
 
     if (wr) {
-        jk_puts(s, "<table>\n");
+        jk_puts(s, "<table><tbody valign=\"baseline\"><tr><th>Balancing related settings</th>\n");
+        jk_puts(s, "<th>&nbsp;&nbsp;</th><th>AJP settings</th>\n");
+        jk_puts(s, "</tr>\n");
+        jk_puts(s, "<tr><td><table>\n");
         jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ACTIVATION,
                 ":</td><td></td></tr>\n", NULL);
         jk_putv(s, "<tr><td>&nbsp;&nbsp;Active</td><td><input name=\"",
@@ -2326,7 +2503,41 @@ static void form_member(jk_ws_service_t *s,
                 JK_STATUS_ARG_LBM_DISTANCE, "\" type=\"text\" ", NULL);
         jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->distance);
         jk_puts(s, "</table>\n");
+        jk_puts(s, "</td><td></td><td>\n");
     }
+
+    jk_puts(s, "<table>\n");
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_AJP_TEXT_CACHE_TO,
+            ":</td><td><input name=\"",
+            JK_STATUS_ARG_AJP_CACHE_TO, "\" type=\"text\" ", NULL);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", aw->cache_timeout);
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_AJP_TEXT_CONNECT_TO,
+            ":</td><td><input name=\"",
+            JK_STATUS_ARG_AJP_CONNECT_TO, "\" type=\"text\" ", NULL);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", aw->connect_timeout);
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_AJP_TEXT_PREPOST_TO,
+            ":</td><td><input name=\"",
+            JK_STATUS_ARG_AJP_PREPOST_TO, "\" type=\"text\" ", NULL);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", aw->prepost_timeout);
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_AJP_TEXT_REPLY_TO,
+            ":</td><td><input name=\"",
+            JK_STATUS_ARG_AJP_REPLY_TO, "\" type=\"text\" ", NULL);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", aw->reply_timeout);
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_AJP_TEXT_RETRIES,
+            ":</td><td><input name=\"",
+            JK_STATUS_ARG_AJP_RETRIES, "\" type=\"text\" ", NULL);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", aw->retries);
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_AJP_TEXT_REC_OPTS,
+            ":</td><td><input name=\"",
+            JK_STATUS_ARG_AJP_REC_OPTS, "\" type=\"text\" ", NULL);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", aw->recovery_opts);
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_AJP_TEXT_MAX_PK_SZ,
+            ":</td><td><input name=\"",
+            JK_STATUS_ARG_AJP_MAX_PK_SZ, "\" type=\"text\" ", NULL);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", aw->max_packet_size);
+    jk_puts(s, "</table>\n");
+    if (wr)
+        jk_puts(s, "</td></tr></table>\n");
     jk_puts(s, "<br/><input type=\"submit\" value=\"Update Worker\"/>\n</form>\n");
     JK_TRACE_EXIT(l);
 }
@@ -2364,6 +2575,20 @@ static void form_all_members(jk_ws_service_t *s,
             aname=JK_STATUS_ARG_LBM_TEXT_DOMAIN;
         else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DISTANCE))
             aname=JK_STATUS_ARG_LBM_TEXT_DISTANCE;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CACHE_TO))
+            aname=JK_STATUS_ARG_AJP_TEXT_CACHE_TO;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CONNECT_TO))
+            aname=JK_STATUS_ARG_AJP_TEXT_CONNECT_TO;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_PREPOST_TO))
+            aname=JK_STATUS_ARG_AJP_TEXT_PREPOST_TO;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_REPLY_TO))
+            aname=JK_STATUS_ARG_AJP_TEXT_REPLY_TO;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRIES))
+            aname=JK_STATUS_ARG_AJP_TEXT_RETRIES;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_REC_OPTS))
+            aname=JK_STATUS_ARG_AJP_TEXT_REC_OPTS;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_MAX_PK_SZ))
+            aname=JK_STATUS_ARG_AJP_TEXT_MAX_PK_SZ;
         else {
             jk_log(l, JK_LOG_WARNING,
                    "Status worker '%s' unknown attribute '%s'",
@@ -2401,6 +2626,8 @@ static void form_all_members(jk_ws_service_t *s,
 
         for (i = 0; i < lb->num_of_workers; i++) {
             lb_sub_worker_t *wr = &(lb->lb_workers[i]);
+            jk_worker_t *jw = wr->worker;
+            ajp_worker_t *aw = (ajp_worker_t *)jw->worker_private;;
 
             jk_putv(s, "<tr><td>", wr->name, "</td><td>\n", NULL);
 
@@ -2442,6 +2669,34 @@ static void form_all_members(jk_ws_service_t *s,
             else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DISTANCE)) {
                 jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
                 jk_printf(s, "value=\"%d\"/>\n", wr->distance);
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CACHE_TO)) {
+                jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
+                jk_printf(s, "value=\"%d\"/>\n", aw->cache_timeout);
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CONNECT_TO)) {
+                jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
+                jk_printf(s, "value=\"%d\"/>\n", aw->connect_timeout);
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_PREPOST_TO)) {
+                jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
+                jk_printf(s, "value=\"%d\"/>\n", aw->prepost_timeout);
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_REPLY_TO)) {
+                jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
+                jk_printf(s, "value=\"%d\"/>\n", aw->reply_timeout);
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRIES)) {
+                jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
+                jk_printf(s, "value=\"%d\"/>\n", aw->retries);
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_REC_OPTS)) {
+                jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
+                jk_printf(s, "value=\"%d\"/>\n", aw->recovery_opts);
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_MAX_PK_SZ)) {
+                jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
+                jk_printf(s, "value=\"%d\"/>\n", aw->max_packet_size);
             }
 
             jk_puts(s, "</td></tr>");
@@ -2619,20 +2874,31 @@ static int commit_member(jk_ws_service_t *s,
                          status_endpoint_t *p,
                          lb_worker_t *lb,
                          lb_sub_worker_t *wr,
+                         ajp_worker_t *aw,
                          jk_logger_t *l)
 {
     const char *arg;
-    const char *lb_name = lb->name;
+    const char *lb_name = NULL;
     status_worker_t *w = p->worker;
     int rc = 0;
     int rv;
     int i;
+    int old;
 
     JK_TRACE_ENTER(l);
-    if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG,
-               "Status worker '%s' committing changes for sub worker '%s' of lb worker '%s'",
-               w->name, wr->name, lb_name);
+    if (lb) {
+        lb_name = lb->name;
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "Status worker '%s' committing changes for sub worker '%s' of lb worker '%s'",
+                   w->name, wr->name, lb_name);
+    }
+    else {
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "Status worker '%s' committing changes for ajp worker '%s'",
+                   w->name, aw->name);
+    }
 
     if (lb) {
         if (status_get_string(p, JK_STATUS_ARG_LBM_ACTIVATION, NULL, &arg, l) == JK_TRUE) {
@@ -2691,6 +2957,41 @@ static int commit_member(jk_ws_service_t *s,
                                0, INT_MAX, &wr->distance, lb_name, l))
             rc |= 4;
     }
+    old = aw->cache_timeout;
+    if (set_int_if_changed(p, aw->name, "connection_pool_timeout", JK_STATUS_ARG_AJP_CACHE_TO,
+                           0, INT_MAX, &aw->cache_timeout, lb_name, l)) {
+        rc |= 4;
+        if (old == 0) {
+            unsigned int i;
+            for (i = 0; i < aw->ep_cache_sz; i++) {
+                ajp_endpoint_t *ae = (ajp_endpoint_t *) aw->ep_cache[i];
+                if (ae)
+                    ae->last_access = time(NULL);
+            }
+        }
+    }
+    if (set_int_if_changed(p, aw->name, "connect_timeout", JK_STATUS_ARG_AJP_CONNECT_TO,
+                           0, INT_MAX, &aw->connect_timeout, lb_name, l))
+        rc |= 4;
+    if (set_int_if_changed(p, aw->name, "prepost_timeout", JK_STATUS_ARG_AJP_PREPOST_TO,
+                           0, INT_MAX, &aw->prepost_timeout, lb_name, l))
+        rc |= 4;
+    if (set_int_if_changed(p, aw->name, "reply_timeout", JK_STATUS_ARG_AJP_REPLY_TO,
+                           0, INT_MAX, &aw->reply_timeout, lb_name, l))
+        rc |= 4;
+    if (set_int_if_changed(p, aw->name, "retries", JK_STATUS_ARG_AJP_RETRIES,
+                           1, INT_MAX, &aw->retries, lb_name, l))
+        rc |= 4;
+    if (set_uint_if_changed(p, aw->name, "recovery_options", JK_STATUS_ARG_AJP_REC_OPTS,
+                           0, INT_MAX, &aw->recovery_opts, lb_name, l))
+        rc |= 4;
+    if (set_uint_if_changed(p, aw->name, "max_packet_size", JK_STATUS_ARG_AJP_MAX_PK_SZ,
+                           8*1024, 64*1024, &aw->max_packet_size, lb_name, l)) {
+        rc |= 4;
+        if (aw->max_packet_size > lb->max_packet_size) {
+            lb->max_packet_size = aw->max_packet_size;
+        }
+    }
     return rc;
 }
 
@@ -2731,6 +3032,20 @@ static void commit_all_members(jk_ws_service_t *s,
             aname=JK_STATUS_ARG_LBM_TEXT_DOMAIN;
         else if (!strcmp(attribute, JK_STATUS_ARG_LBM_DISTANCE))
             aname=JK_STATUS_ARG_LBM_TEXT_DISTANCE;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CACHE_TO))
+            aname=JK_STATUS_ARG_AJP_TEXT_CACHE_TO;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CONNECT_TO))
+            aname=JK_STATUS_ARG_AJP_TEXT_CONNECT_TO;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_PREPOST_TO))
+            aname=JK_STATUS_ARG_AJP_TEXT_PREPOST_TO;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_REPLY_TO))
+            aname=JK_STATUS_ARG_AJP_TEXT_REPLY_TO;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRIES))
+            aname=JK_STATUS_ARG_AJP_TEXT_RETRIES;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_REC_OPTS))
+            aname=JK_STATUS_ARG_AJP_TEXT_REC_OPTS;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_MAX_PK_SZ))
+            aname=JK_STATUS_ARG_AJP_TEXT_MAX_PK_SZ;
         else {
             jk_log(l, JK_LOG_WARNING,
                    "Status worker '%s' unknown attribute '%s'",
@@ -2759,6 +3074,8 @@ static void commit_all_members(jk_ws_service_t *s,
         for (j = 0; j < lb->num_of_workers; j++) {
             int sync_needed = JK_FALSE;
             lb_sub_worker_t *wr = &(lb->lb_workers[j]);
+            jk_worker_t *jw = wr->worker;
+            ajp_worker_t *aw = (ajp_worker_t *)jw->worker_private;;
             snprintf(vname, 32-1, "" JK_STATUS_ARG_MULT_VALUE_BASE "%d", j);
 
             if (!strcmp(attribute, JK_STATUS_ARG_LBM_FACTOR)) {
@@ -2772,6 +3089,55 @@ static void commit_all_members(jk_ws_service_t *s,
                 if (set_int_if_changed(p, wr->name, "distance", vname,
                                        0, INT_MAX, &wr->distance, name, l))
                     sync_needed = JK_TRUE;
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CACHE_TO)) {
+                int old = aw->cache_timeout;
+                if (set_int_if_changed(p, aw->name, "connection_pool_timeout", vname,
+                                       0, INT_MAX, &aw->cache_timeout, name, l)) {
+                    sync_needed = JK_TRUE;
+                    if (old == 0) {
+                        unsigned int i;
+                        for (i = 0; i < aw->ep_cache_sz; i++) {
+                            ajp_endpoint_t *ae = (ajp_endpoint_t *) aw->ep_cache[i];
+                            if (ae)
+                                ae->last_access = time(NULL);
+                        }
+                    }
+                }
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CONNECT_TO)) {
+                if (set_int_if_changed(p, aw->name, "connect_timeout", vname,
+                                       0, INT_MAX, &aw->connect_timeout, name, l))
+                    sync_needed = JK_TRUE;
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_PREPOST_TO)) {
+                if (set_int_if_changed(p, aw->name, "prepost_timeout", vname,
+                                       0, INT_MAX, &aw->prepost_timeout, name, l))
+                    sync_needed = JK_TRUE;
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_REPLY_TO)) {
+                if (set_int_if_changed(p, aw->name, "reply_timeout", vname,
+                                       0, INT_MAX, &aw->reply_timeout, name, l))
+                    sync_needed = JK_TRUE;
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRIES)) {
+                if (set_int_if_changed(p, aw->name, "retries", vname,
+                                       1, INT_MAX, &aw->retries, name, l))
+                    sync_needed = JK_TRUE;
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_REC_OPTS)) {
+                if (set_uint_if_changed(p, aw->name, "recovery_options", vname,
+                                       0, INT_MAX, &aw->recovery_opts, name, l))
+                    sync_needed = JK_TRUE;
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_MAX_PK_SZ)) {
+                if (set_uint_if_changed(p, aw->name, "max_packet_size", vname,
+                                       8*1024, 64*1024, &aw->max_packet_size, name, l)) {
+                    sync_needed = JK_TRUE;
+                    if (aw->max_packet_size > lb->max_packet_size) {
+                        lb->max_packet_size = aw->max_packet_size;
+                    }
+                }
             }
             else {
                 int rv = status_get_string(p, vname, NULL, &arg, l);
@@ -3150,6 +3516,7 @@ static int edit_worker(jk_ws_service_t *s,
     jk_worker_t *jw = NULL;
     lb_worker_t *lb = NULL;
     lb_sub_worker_t *wr = NULL;
+    ajp_worker_t *aw = NULL;
 
     JK_TRACE_ENTER(l);
     fetch_worker_and_sub_worker(p, "editing", &worker, &sub_worker, l);
@@ -3197,9 +3564,32 @@ static int edit_worker(jk_ws_service_t *s,
                 jk_log(l, JK_LOG_DEBUG,
                        "Status worker '%s' %s lb worker '%s' sub worker '%s'",
                        w->name, "editing", lb->name, wr->name);
-            form_member(s, p, wr, lb->name, l);
+            aw = (ajp_worker_t *)wr->worker->worker_private;
+            form_member(s, p, wr, aw, worker, l);
             JK_TRACE_EXIT(l);
             return JK_TRUE;
+        }
+    }
+    else if (jw->type == JK_AJP13_WORKER_TYPE ||
+             jw->type == JK_AJP14_WORKER_TYPE) {
+        ajp_worker_t *aw = (ajp_worker_t *)jw->worker_private;
+        if (aw) {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Status worker '%s' %s ajp worker '%s'",
+                       w->name, "editing", aw->name);
+            jk_shm_lock();
+            if (aw->sequence != aw->s->h.sequence)
+                jk_ajp_pull(aw, l);
+            jk_shm_unlock();
+            form_member(s, p, NULL, aw, worker, l);
+            JK_TRACE_EXIT(l);
+            return JK_TRUE;
+        }
+        else {
+            jk_log(l, JK_LOG_WARNING,
+                   "Status worker '%s' aw worker is (null)",
+                   w->name);
         }
     }
     else {
@@ -3222,6 +3612,7 @@ static int update_worker(jk_ws_service_t *s,
     jk_worker_t *jw = NULL;
     lb_worker_t *lb = NULL;
     lb_sub_worker_t *wr = NULL;
+    ajp_worker_t *aw = NULL;
     int rc;
 
     JK_TRACE_ENTER(l);
@@ -3268,7 +3659,8 @@ static int update_worker(jk_ws_service_t *s,
                 jk_log(l, JK_LOG_DEBUG,
                        "Status worker '%s' %s lb worker '%s' sub worker '%s'",
                        w->name, "updating", lb->name, wr->name);
-            rc = commit_member(s, p, lb, wr, l);
+            aw = (ajp_worker_t *)wr->worker->worker_private;
+            rc = commit_member(s, p, lb, wr, aw, l);
             if (rc) {
                 wr->sequence++;
                 lb->sequence++;
@@ -3281,6 +3673,29 @@ static int update_worker(jk_ws_service_t *s,
                 update_mult(lb, l);
             JK_TRACE_EXIT(l);
             return JK_TRUE;
+        }
+    }
+    else if (jw->type == JK_AJP13_WORKER_TYPE ||
+             jw->type == JK_AJP14_WORKER_TYPE) {
+        ajp_worker_t *aw = (ajp_worker_t *)jw->worker_private;
+        if (aw) {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "Status worker '%s' %s ajp worker '%s'",
+                       w->name, "updating", aw->name);
+            if (aw->sequence != aw->s->h.sequence)
+                jk_ajp_pull(aw, l);
+            if (commit_member(s, p, NULL, NULL, aw, l)) {
+                aw->sequence++;
+                jk_ajp_push(aw, l);
+            }
+            JK_TRACE_EXIT(l);
+            return JK_TRUE;
+        }
+        else {
+            jk_log(l, JK_LOG_WARNING,
+                   "Status worker '%s' aw worker is (null)",
+                   w->name);
         }
     }
     else {
