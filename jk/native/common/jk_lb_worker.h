@@ -58,20 +58,27 @@ extern "C"
 #define JK_LB_LOCK_TEXT_OPTIMISTIC     ("Optimistic")
 #define JK_LB_LOCK_TEXT_PESSIMISTIC    ("Pessimistic")
 #define JK_LB_LOCK_TEXT_DEF            (JK_LB_LOCK_TEXT_OPTIMISTIC)
+/*
+ * The following definitions for state and activation
+ * need to be kept in sync with the two macros 
+ * JK_WORKER_USABLE() and JK_WORKER_USABLE_STICKY() in jk_lb_worker.c.
+ * Since we use ordered comparisons there instead of multiple
+ * equal/unequal compares, order of the values is critical here.
+ */
 #define JK_LB_STATE_IDLE               (0)
 #define JK_LB_STATE_OK                 (1)
 #define JK_LB_STATE_RECOVER            (2)
-#define JK_LB_STATE_BUSY               (3)
-#define JK_LB_STATE_ERROR              (4)
-#define JK_LB_STATE_FORCE              (5)
+#define JK_LB_STATE_FORCE              (3)
+#define JK_LB_STATE_BUSY               (4)
+#define JK_LB_STATE_ERROR              (5)
 #define JK_LB_STATE_PROBE              (6)
 #define JK_LB_STATE_DEF                (JK_LB_STATE_IDLE)
 #define JK_LB_STATE_TEXT_IDLE          ("OK/IDLE")
 #define JK_LB_STATE_TEXT_OK            ("OK")
 #define JK_LB_STATE_TEXT_RECOVER       ("ERR/REC")
 #define JK_LB_STATE_TEXT_BUSY          ("OK/BUSY")
-#define JK_LB_STATE_TEXT_ERROR         ("ERR")
 #define JK_LB_STATE_TEXT_FORCE         ("ERR/FRC")
+#define JK_LB_STATE_TEXT_ERROR         ("ERR")
 #define JK_LB_STATE_TEXT_PROBE         ("ERR/PRB")
 #define JK_LB_STATE_TEXT_MAX           (JK_LB_STATE_PROBE)
 #define JK_LB_STATE_TEXT_DEF           (JK_LB_STATE_TEXT_IDLE)

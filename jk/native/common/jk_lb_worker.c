@@ -40,8 +40,18 @@
  * The load balancing code in this
  */
 
-#define JK_WORKER_USABLE(w)   ((w)->s->state != JK_LB_STATE_ERROR && (w)->s->state != JK_LB_STATE_PROBE && (w)->s->state != JK_LB_STATE_BUSY && (w)->activation != JK_LB_ACTIVATION_STOPPED && (w)->activation != JK_LB_ACTIVATION_DISABLED)
-#define JK_WORKER_USABLE_STICKY(w)   ((w)->s->state != JK_LB_STATE_ERROR && (w)->s->state != JK_LB_STATE_PROBE && (w)->activation != JK_LB_ACTIVATION_STOPPED)
+/*
+ * The following two macros need to be kept in sync with
+ * the existing values for state and activation.
+ * Note: state <= JK_LB_STATE_FORCE is equivalent to
+ *       state is none of JK_LB_STATE_BUSY, JK_LB_STATE_ERROR, JK_LB_STATE_PROBE
+ * Note: state <= JK_LB_STATE_BUSY is equivalent to
+ *       state is none of JK_LB_STATE_ERROR, JK_LB_STATE_PROBE
+ * Note: activation == JK_LB_ACTIVATION_ACTIVE is equivalent to
+ *       activation is none of JK_LB_ACTIVATION_STOPPED, JK_LB_ACTIVATION_DISABLED
+ */
+#define JK_WORKER_USABLE(w)   ((w)->s->state <= JK_LB_STATE_FORCE && (w)->activation == JK_LB_ACTIVATION_ACTIVE)
+#define JK_WORKER_USABLE_STICKY(w)   ((w)->s->state <= JK_LB_STATE_BUSY && (w)->activation != JK_LB_ACTIVATION_STOPPED)
 
 static const char *lb_locking_type[] = {
     JK_LB_LOCK_TEXT_OPTIMISTIC,

@@ -44,6 +44,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+        LB: Optimize state macros to improve performance. (rjung)
+      </update>
+      <update>
         Apache: Allow dynamic setting of reply timeout using the environment
         variable JK_REPLY_TIMEOUT. (rjung)
       </update>
