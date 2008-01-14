@@ -2591,9 +2591,9 @@ static int set_uint_if_changed(status_endpoint_t *p,
                                const char *name,
                                const char *att,
                                const char *arg,
-                               uint min,
-                               uint max,
-                               uint *param,
+                               unsigned int min,
+                               unsigned int max,
+                               unsigned int *param,
                                const char *lb_name,
                               jk_logger_t *l)
 {
