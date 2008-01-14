@@ -216,7 +216,7 @@ public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
 	/**
      * Create JkStatus worker update link
      * <ul>
-     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=loadbalancer&lm=1&ll=1&lr=2&lt=60&ls=true&lf=false&lx=0
+     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=loadbalancer&vlm=1&vll=1&vlr=2&vlt=60&vls=true&vlf=false&vlx=0
      * <br/>
      *
      * 
@@ -224,23 +224,23 @@ public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
      * <br/>
      * <ul>
      * <li><b>w:<b/> name loadbalancer</li>
-     * <li><b>lm:<b/> method (lb strategy)</li>
-     * <li><b>ll:<b/> lock</li>
-     * <li><b>lr:<b/> retries</li>
-     * <li><b>lt:<b/> recover wait timeout</li>
-     * <li><b>ls:<b/> sticky session</li>
-     * <li><b>lf:<b/> force sticky session</li>
-     * <li><b>lx:<b/> max reply timeouts</li>
+     * <li><b>vlm:<b/> method (lb strategy)</li>
+     * <li><b>vll:<b/> lock</li>
+     * <li><b>vlr:<b/> retries</li>
+     * <li><b>vlt:<b/> recover wait timeout</li>
+     * <li><b>vls:<b/> sticky session</li>
+     * <li><b>vlf:<b/> force sticky session</li>
+     * <li><b>vlx:<b/> max reply timeouts</li>
      * </ul>
      * <ul>
-     * <li>lm=0 or Requests</li>
-     * <li>lm=1 or Traffic</li>
-     * <li>lm=2 or Busyness</li>
-     * <li>lm=3 or Sessions</li>
+     * <li>vlm=0 or Requests</li>
+     * <li>vlm=1 or Traffic</li>
+     * <li>vlm=2 or Busyness</li>
+     * <li>vlm=3 or Sessions</li>
      * </ul>
      * <ul>
-     * <li>ll=0 or Optimistic</li>
-     * <li>ll=1 or Pessimistic</li>
+     * <li>vll=0 or Optimistic</li>
+     * <li>vll=1 or Pessimistic</li>
      * </ul>
      * 
      * @return create jkstatus update worker link
@@ -253,39 +253,39 @@ public class JkStatusUpdateLoadbalancerTask extends AbstractJkStatusTask {
             sb.append("&w=");
             sb.append(URLEncoder.encode(loadbalancer, getCharset()));
             if (stickySession != null) { 
-				sb.append("&ls=");
+				sb.append("&vls=");
 				sb.append(stickySession);
 			}
             if (forceStickySession != null) { 
- 				sb.append("&lf=");
+ 				sb.append("&vlf=");
  				sb.append(forceStickySession);
  			}
 			if (retries >= 0) {
-				sb.append("&lr=");
+				sb.append("&vlr=");
 				sb.append(retries);
 			}
 			if (recoverWaitTime >= 0) {
-				sb.append("&lt=");
+				sb.append("&vlt=");
 				sb.append(recoverWaitTime);
 			}
 			if (method == null && methodCode >= 0 && methodCode < 4) {
-				sb.append("&lm=");
+				sb.append("&vlm=");
 				sb.append(methodCode);
 			}
             if (method != null) { 
- 				sb.append("&lm=");
+ 				sb.append("&vlm=");
  				sb.append(method);
  			}
 			if (lock == null && lockCode >= 0 && lockCode < 2) {
-				sb.append("&ll=");
+				sb.append("&vll=");
 				sb.append(lockCode);
 			}
             if (lock != null) { 
- 				sb.append("&ll=");
+ 				sb.append("&vll=");
  				sb.append(lock);
  			}
 			if (maxReplyTimeouts >= 0) {
-				sb.append("&lx=");
+				sb.append("&vlx=");
 				sb.append(maxReplyTimeouts);
 			}
             

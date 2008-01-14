@@ -356,14 +356,14 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
      * Create JkStatus link
      * <ul>
      * <li><b>load balance example:
-     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=lb&lf=false&ls=true</li>
+     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=lb&vlf=false&vls=true</li>
      * <li><b>worker example:
-     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=node1&wn=node01&l=lb&wf=1&wa=2&wx=0
+     * </b>http://localhost/jkstatus?cmd=update&mime=txt&w=lb&sw=node1&vwn=node01&vwf=1&vwa=2&vwx=0
      * <br/>
      * <ul>
-     * <li>wa=0 active</li>
-     * <li>wa=1 disabled</li>
-     * <li>wa=2 stopped</li>
+     * <li>vwa=0 active</li>
+     * <li>vwa=1 disabled</li>
+     * <li>vwa=2 stopped</li>
      * </ul>
      * </li>
      * </ul>
@@ -372,23 +372,23 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
      * <br/>
      * <ul>
      * <li><b>w:<b/> name lb worker</li>
-     * <li><b>lr:<b/> Number of Retries</li>
-     * <li><b>lt:<b/> recover wait time</li>
-     * <li><b>lf:<b/> Force Sticky Session</li>
-     * <li><b>ls:<b/> Sticky session</li>
+     * <li><b>vlr:<b/> Number of Retries</li>
+     * <li><b>vlt:<b/> recover wait time</li>
+     * <li><b>vlf:<b/> Force Sticky Session</li>
+     * <li><b>vls:<b/> Sticky session</li>
      * </ul>
      * 
      * <br/>Tcp worker parameter:
      * <br/>
      * <ul>
-     * <li><b>w:<b/> name tcp worker node</li>
-     * <li><b>l:<b/> name loadbalancer</li>
-     * <li><b>wf:<b/> load factor</li>
-     * <li><b>wn:<b/> jvm route</li>
-     * <li><b>wx:<b/> distance</li>
-     * <li><b>wa:<b/> activation state</li>
-     * <li><b>wr:<b/> redirect route</li>
-     * <li><b>wd:<b/> cluster domain</li>
+     * <li><b>w:<b/> name worker</li>
+     * <li><b>sw:<b/> name lb sub worker</li>
+     * <li><b>vwf:<b/> load factor</li>
+     * <li><b>vwn:<b/> jvm route</li>
+     * <li><b>vwx:<b/> distance</li>
+     * <li><b>vwa:<b/> activation state</li>
+     * <li><b>vwr:<b/> redirect route</li>
+     * <li><b>vwd:<b/> cluster domain</li>
      * <li><b>ws:<b/> stopped deprecated 1.2.16</li>
      * <li><b>wd:<b/> disabled deprecated 1.2.16</li>
      * </ul>
@@ -401,63 +401,64 @@ public class JkStatusUpdateTask extends AbstractCatalinaTask {
         try {
             sb.append("?cmd=update&mime=txt");
             sb.append("&w=");
-            sb.append(URLEncoder.encode(worker, getCharset()));
 
             if (isLBMode) {
-                //http://localhost/jkstatus?cmd=update&mime=txt&w=lb&lf=false&ls=true
+                sb.append(URLEncoder.encode(worker, getCharset()));
+                //http://localhost/jkstatus?cmd=update&mime=txt&w=lb&vlf=false&vls=true
                 if ((lbRetries != null)) { // > 0
-                    sb.append("&lr=");
+                    sb.append("&vlr=");
                     sb.append(lbRetries);
                 }
                 if ((lbRecovertime != null)) { // > 59
-                    sb.append("&lt=");
+                    sb.append("&vlt=");
                     sb.append(lbRecovertime);
                 }
                 if ((lbStickySession != null)) {
-                    sb.append("&ls=");
+                    sb.append("&vls=");
                     sb.append(lbStickySession);
                 }
                 if ((lbForceSession != null)) {
-                    sb.append("&lf=");
+                    sb.append("&vlf=");
                     sb.append(lbForceSession);
                 }
             } else {
-                //http://localhost/status?cmd=update&mime=txt&w=node1&l=lb&wf=1&wd=false&ws=false
+                //http://localhost/status?cmd=update&mime=txt&sw=node1&w=lb&vwf=1&wd=false&ws=false
                 if (workerLb != null) { // must be configured
-                    sb.append("&l=");
                     sb.append(URLEncoder.encode(workerLb, getCharset()));
                 }
+                sb.append("&sw=");
+                sb.append(URLEncoder.encode(worker, getCharset()));
                 if (workerLoadFactor != null) { // >= 1
-                    sb.append("&wf=");
+                    sb.append("&vwf=");
                     sb.append(workerLoadFactor);
                 }
                 if (workerJvmRoute != null) {
-                    sb.append("&wn=");
+                    sb.append("&vwn=");
                     sb.append(URLEncoder.encode(workerJvmRoute, getCharset()));
                 } 
                 if (workerDisabled != null) {
-                    sb.append("&wd=");
+                    sb.append("&vwd=");
                     sb.append(workerDisabled);
                 }
                 if (workerStopped != null) {
-                    sb.append("&ws=");
+                    sb.append("&vws=");
                     sb.append(workerStopped);
                 }
                 if (workerActivation >= 0 && workerActivation < 3) {
-                    sb.append("&wa=");
+                    sb.append("&vwa=");
                     sb.append(workerActivation);
                 } 
                 if (workerDistance >= 0) {
-                    sb.append("&wx=");
+                    sb.append("&vwx=");
                     sb.append(workerDistance);
                 }
                 if (workerRedirect != null) { // other worker conrecte lb's
-                    sb.append("&wr=");
+                    sb.append("&vwr=");
                     sb.append(URLEncoder.encode(workerRedirect,
                             getCharset()));
                 }
                 if (workerClusterDomain != null) {
-                    sb.append("&wc=");
+                    sb.append("&vwc=");
                     sb.append(URLEncoder.encode(workerClusterDomain,
                             getCharset()));
                 }
