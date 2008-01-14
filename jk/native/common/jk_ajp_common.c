@@ -1815,10 +1815,14 @@ static int ajp_get_reply(jk_endpoint_t *e,
     /* Start read all reply message */
     while (1) {
         int rc = 0;
+        /* Allow to overwrite reply_timeout on a per URL basis via service struct */
+        int reply_timeout = s->reply_timeout;
 
+        if (reply_timeout < 0)
+            reply_timeout = p->worker->reply_timeout;
         /* If we set a reply timeout, check if something is available */
-        if (p->worker->reply_timeout > 0) {
-            if (jk_is_input_event(p->sd, p->worker->reply_timeout, l) ==
+        if (reply_timeout > 0) {
+            if (jk_is_input_event(p->sd, reply_timeout, l) ==
                 JK_FALSE) {
                 p->last_errno = errno;
                 jk_log(l, JK_LOG_ERROR,

@@ -248,6 +248,17 @@ The default value is "0" (timeout disabled) and you can set it to any
 millisecond value.
 </p>
 <p>
+In combination with Apache httpd, you can also set a more flexible reply_timeout
+using an httpd environment variable. If you set the variable JK_REPLY_TIMEOUT
+to some integer value, this value will be used instead of the value in
+the worker configuration. This way you can set reply timeouts more flexible
+with mod_setenvif and mod_rewrite depending on URI, query string etc.
+If the environment variable JK_REPLY_TIMEOUT is not set, or is set to a
+negative value, the default reply timeout of the worker will be used. If
+JK_REPLY_TIMEOUT contains the value "0", then the reply timeout will be disabled
+for the request.
+</p>
+<p>
 In combination with a load balancing worker, JK will disable a member
 worker of the load balancer if a reply timeout fires. The worker will then
 no longer be used until it gets recovered during the next automatic

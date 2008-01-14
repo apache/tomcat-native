@@ -658,8 +658,12 @@ By default (value zero) the webserver will wait forever which could be an issue 
 If you set a reply_timeout, adjust it carefully if you have long running servlets.
 </p>
 <p>
+The reply_timeout can be overwritten using the Apache httpd environment variable
+JK_REPLY_TIMEOUT.
+</p>
+<p>
 This features has been added in <b>jk 1.2.6</b> to avoid problem with hung Tomcat's and works on all
-servlet engines supporting ajp13.
+servlet engines supporting ajp13. The variable JK_REPLY_TIMEOUT has been added in version 1.2.27.
 </p>
 </directive>
 

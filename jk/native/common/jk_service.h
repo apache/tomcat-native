@@ -222,6 +222,11 @@ struct jk_ws_service
     int flush_header;
 
     /*
+     * If >= 0, overwrite the worker reply_timeout
+     */
+    int reply_timeout;
+
+    /*
      * JK_TRUE if response headers have been sent back
      */
     int response_started;

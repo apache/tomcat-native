@@ -44,6 +44,10 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Apache: Allow dynamic setting of reply timeout using the environment
+        variable JK_REPLY_TIMEOUT. (rjung)
+      </update>
+      <update>
         Status: Add manageability for ajp parameters of ajp
         workers and ajp lb members. (rjung)
       </update>

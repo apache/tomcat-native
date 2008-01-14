@@ -1867,6 +1867,7 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->reco_status = RECO_NONE;
     s->flush_packets = JK_FALSE;
     s->flush_header = JK_FALSE;
+    s->reply_timeout = -1;
     s->response_started = JK_FALSE;
     s->http_response_status = JK_HTTP_OK;
     s->uw_map = NULL;

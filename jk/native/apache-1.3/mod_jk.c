@@ -70,6 +70,7 @@
 #define JK_ENV_SESSION              ("SSL_SESSION_ID")
 #define JK_ENV_KEY_SIZE             ("SSL_CIPHER_USEKEYSIZE")
 #define JK_ENV_CERTCHAIN_PREFIX     ("SSL_CLIENT_CERT_CHAIN_")
+#define JK_ENV_REPLY_TIMEOUT        ("JK_REPLY_TIMEOUT")
 #define JK_ENV_WORKER_NAME          ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_NAME         ("JK_WORKER_NAME")
 #define JK_NOTE_WORKER_TYPE         ("JK_WORKER_TYPE")
@@ -610,6 +611,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     int size;
     request_rec *r = private_data->r;
     char *ssl_temp = NULL;
+    const char *reply_timeout = NULL;
 
     /* Copy in function pointers (which are really methods) */
     s->start_response = ws_start_response;
@@ -639,6 +641,10 @@ static int init_ws_service(apache_private_data_t * private_data,
         s->flush_packets = 1;
     if (conf->options & JK_OPT_FLUSHEADER)
         s->flush_header = 1;
+
+    reply_timeout = apr_table_get(r->subprocess_env, "JK_REPLY_TIMEOUT");
+    if (reply_timeout)
+        s->reply_timeout = atoi(reply_timeout);
 
     if (conf->options & JK_OPT_DISABLEREUSE)
         s->disable_reuse = 1;
