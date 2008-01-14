@@ -70,6 +70,8 @@
 #define JK_STATUS_ARG_OPTION_NO_LB         0x0008
 #define JK_STATUS_ARG_OPTION_NO_AJP        0x0010
 #define JK_STATUS_ARG_OPTION_READ_ONLY     0x0020
+#define JK_STATUS_ARG_OPTION_NO_LB_CONF    0x0040
+#define JK_STATUS_ARG_OPTION_NO_LB_SUMMARY 0x0080
 
 #define JK_STATUS_ARG_LB_RETRIES           ("vlr")
 #define JK_STATUS_ARG_LB_RECOVER_TIME      ("vlt")
@@ -225,7 +227,7 @@
                                            "<th>" JK_STATUS_ARG_LB_TEXT_LOCK "</th>" \
                                            "<th>" JK_STATUS_ARG_LB_TEXT_RECOVER_TIME "</th>" \
                                            "<th>" JK_STATUS_ARG_LB_TEXT_MAX_REPLY_TIMEOUTS "</th>" \
-                                           "</tr>\n"
+                                           "<th>\n"
 #define JK_STATUS_SHOW_LB_ROW              "<tr>" \
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
@@ -235,6 +237,7 @@
                                            "<td>%s</td>" \
                                            "<td>%d</td>" \
                                            "<td>%d</td>" \
+                                           "<td></td>" \
                                            "</tr>\n"
 #define JK_STATUS_SHOW_MEMBER_HEAD         "<tr>" \
                                            "<th>&nbsp;</th><th>Name</th><th>Type</th>" \
@@ -1717,6 +1720,8 @@ static void display_worker_lb(jk_ws_service_t *s,
     int read_only = 0;
     int single = 0;
     unsigned int hide_members;
+    unsigned int hide_lb_conf;
+    unsigned int hide_lb_summary;
     const char *arg;
     time_t now = time(NULL);
     unsigned int good = 0;
@@ -1726,6 +1731,7 @@ static void display_worker_lb(jk_ws_service_t *s,
     int ms_min;
     int ms_max;
     unsigned int j;
+    int pstart = JK_FALSE;
     const char *name = lb->name;
     status_worker_t *w = p->worker;
 
@@ -1736,6 +1742,10 @@ static void display_worker_lb(jk_ws_service_t *s,
     mime = status_mime_int(arg);
     hide_members = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
                                   JK_STATUS_ARG_OPTION_NO_MEMBERS;
+    hide_lb_conf = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
+                                  JK_STATUS_ARG_OPTION_NO_LB_CONF;
+    hide_lb_summary = status_get_int(p, JK_STATUS_ARG_OPTIONS, 0, l) &
+                                     JK_STATUS_ARG_OPTION_NO_LB_SUMMARY;
     if (w->read_only) {
         read_only = 1;
     }
@@ -1795,29 +1805,84 @@ static void display_worker_lb(jk_ws_service_t *s,
         }
         jk_puts(s, "]&nbsp;&nbsp;");
         jk_putv(s, "Worker Status for ", name, "</h3>\n", NULL);
-        jk_puts(s, "<table>" JK_STATUS_SHOW_LB_HEAD);
-        jk_printf(s, JK_STATUS_SHOW_LB_ROW,
-                  status_worker_type(JK_LB_WORKER_TYPE),
-                  jk_get_bool(lb->sticky_session),
-                  jk_get_bool(lb->sticky_session_force),
-                  lb->retries,
-                  jk_lb_get_method(lb, l),
-                  jk_lb_get_lock(lb, l),
-                  lb->recover_wait_time,
-                  lb->max_reply_timeouts);
-        jk_puts(s, "</table>\n<br/>\n");
 
-        jk_puts(s, "<table><tr>"
-                "<th>Good</th><th>Degraded</th><th>Bad/Stopped</th><th>Busy</th><th>Max Busy</th><th>Next Maintenance</th>"
-                "</tr>\n<tr>");
-        jk_printf(s, "<td>%d</td>", good);
-        jk_printf(s, "<td>%d</td>", degraded);
-        jk_printf(s, "<td>%d</td>", bad);
-        jk_printf(s, "<td>%d</td>", lb->s->busy);
-        jk_printf(s, "<td>%d</td>", lb->s->max_busy);
-        jk_printf(s, "<td>%d/%d</td>", ms_min, ms_max);
-        jk_puts(s, "</tr>\n</table>\n\n");
+        if (hide_lb_conf) {
+            pstart = JK_TRUE;
+            jk_puts(s, "<p>\n");
+            if (single) {
+                status_write_uri(s, p, "Show LB Configuration", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_LB_CONF, "", l);
+            }
+            else {
+                status_write_uri(s, p, "Show LB Configuration", JK_STATUS_CMD_LIST, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_LB_CONF, "", l);
+            }
+        }
+        if (hide_lb_summary) {
+            if (pstart == JK_FALSE)
+                jk_puts(s, "<p>\n");
+            else
+                jk_puts(s, "&nbsp;&nbsp;|&nbsp;&nbsp;");
+            pstart = JK_TRUE;
+            if (single) {
+                status_write_uri(s, p, "Show LB Summary", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_LB_SUMMARY, "", l);
+            }
+            else {
+                status_write_uri(s, p, "Show LB Summary", JK_STATUS_CMD_LIST, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_LB_SUMMARY, "", l);
+            }
+        }
+        if (hide_members) {
+            if (pstart == JK_FALSE)
+                jk_puts(s, "<p>\n");
+            else
+                jk_puts(s, "&nbsp;&nbsp;|&nbsp;&nbsp;");
+            pstart = JK_TRUE;
+            if (single) {
+                status_write_uri(s, p, "Show Balancer Members", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_MEMBERS, "", l);
+            }
+            else {
+                status_write_uri(s, p, "Show Balancer Members", JK_STATUS_CMD_LIST, JK_STATUS_MIME_UNKNOWN,
+                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_MEMBERS, "", l);
+            }
+        }
+        if (pstart == JK_TRUE)
+            jk_puts(s, "</p>\n");
 
+        if (!hide_lb_conf) {
+            jk_puts(s, "<table>" JK_STATUS_SHOW_LB_HEAD);
+            jk_puts(s, "[");
+            status_write_uri(s, p, "Hide", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
+                             NULL, NULL, JK_STATUS_ARG_OPTION_NO_LB_CONF, 0, NULL, l);
+            jk_puts(s, "]</th></tr>");
+            jk_printf(s, JK_STATUS_SHOW_LB_ROW,
+                      status_worker_type(JK_LB_WORKER_TYPE),
+                      jk_get_bool(lb->sticky_session),
+                      jk_get_bool(lb->sticky_session_force),
+                      lb->retries,
+                      jk_lb_get_method(lb, l),
+                      jk_lb_get_lock(lb, l),
+                      lb->recover_wait_time,
+                      lb->max_reply_timeouts);
+            jk_puts(s, "</table>\n<br/>\n");
+        }
+
+        if (!hide_lb_summary) {
+            jk_puts(s, "<table><tr>"
+                    "<th>Good</th><th>Degraded</th><th>Bad/Stopped</th><th>Busy</th><th>Max Busy</th><th>Next Maintenance</th><th>[");
+            status_write_uri(s, p, "Hide", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
+                             NULL, NULL, JK_STATUS_ARG_OPTION_NO_LB_SUMMARY, 0, NULL, l);
+            jk_puts(s, "]</th></tr>\n<tr>");
+            jk_printf(s, "<td>%d</td>", good);
+            jk_printf(s, "<td>%d</td>", degraded);
+            jk_printf(s, "<td>%d</td>", bad);
+            jk_printf(s, "<td>%d</td>", lb->s->busy);
+            jk_printf(s, "<td>%d</td>", lb->s->max_busy);
+            jk_printf(s, "<td>%d/%d</td>", ms_min, ms_max);
+            jk_puts(s, "<td></td></tr>\n</table>\n\n");
+        }
     }
     else if (mime == JK_STATUS_MIME_XML) {
 
@@ -1956,23 +2021,6 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_puts(s, "</select></td><td><input type=\"submit\" value=\"Go\"/></tr></table></form>\n");
             }
 
-        }
-
-    }
-    else {
-
-        if (mime == JK_STATUS_MIME_HTML) {
-
-            jk_puts(s, "<p>\n");
-            if (single) {
-                status_write_uri(s, p, "Show Balancer Members", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
-                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_MEMBERS, "", l);
-            }
-            else {
-                status_write_uri(s, p, "Show Balancer Members", JK_STATUS_CMD_LIST, JK_STATUS_MIME_UNKNOWN,
-                                 NULL, NULL, 0, JK_STATUS_ARG_OPTION_NO_MEMBERS, "", l);
-            }
-            jk_puts(s, "</p>\n");
         }
 
     }
@@ -2233,50 +2281,52 @@ static void form_member(jk_ws_service_t *s,
             wr->name, "</h3>\n", NULL);
     status_start_form(s, p, "get", JK_STATUS_CMD_UPDATE, NULL, l);
 
-    jk_puts(s, "<table>\n");
-    jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ACTIVATION,
-            ":</td><td></td></tr>\n", NULL);
-    jk_putv(s, "<tr><td>&nbsp;&nbsp;Active</td><td><input name=\"",
-            JK_STATUS_ARG_LBM_ACTIVATION, "\" type=\"radio\"", NULL);
-    jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_ACTIVE);
-    if (wr->activation == JK_LB_ACTIVATION_ACTIVE)
-        jk_puts(s, " checked=\"checked\"");
-    jk_puts(s, "/></td></tr>\n");
-    jk_putv(s, "<tr><td>&nbsp;&nbsp;Disabled</td><td><input name=\"",
-            JK_STATUS_ARG_LBM_ACTIVATION, "\" type=\"radio\"", NULL);
-    jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_DISABLED);
-    if (wr->activation == JK_LB_ACTIVATION_DISABLED)
-        jk_puts(s, " checked=\"checked\"");
-    jk_puts(s, "/></td></tr>\n");
-    jk_putv(s, "<tr><td>&nbsp;&nbsp;Stopped</td><td><input name=\"",
-            JK_STATUS_ARG_LBM_ACTIVATION, "\" type=\"radio\"", NULL);
-    jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_STOPPED);
-    if (wr->activation == JK_LB_ACTIVATION_STOPPED)
-        jk_puts(s, " checked=\"checked\"");
-    jk_puts(s, "/></td></tr>\n");
-    jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_FACTOR,
-            ":</td><td><input name=\"",
-            JK_STATUS_ARG_LBM_FACTOR, "\" type=\"text\" ", NULL);
-    jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->lb_factor);
-    jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ROUTE,
-            ":</td><td><input name=\"",
-            JK_STATUS_ARG_LBM_ROUTE, "\" type=\"text\" ", NULL);
-    jk_printf(s, "value=\"%s\"/></td></tr>\n", wr->route);
-    jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_REDIRECT,
-            ":</td><td><input name=\"",
-            JK_STATUS_ARG_LBM_REDIRECT, "\" type=\"text\" ", NULL);
-    jk_putv(s, "value=\"", wr->redirect, NULL);
-    jk_puts(s, "\"/></td></tr>\n");
-    jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_DOMAIN,
-            ":</td><td><input name=\"",
-            JK_STATUS_ARG_LBM_DOMAIN, "\" type=\"text\" ", NULL);
-    jk_putv(s, "value=\"", wr->domain, NULL);
-    jk_puts(s, "\"/></td></tr>\n");
-    jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_DISTANCE,
-            ":</td><td><input name=\"",
-            JK_STATUS_ARG_LBM_DISTANCE, "\" type=\"text\" ", NULL);
-    jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->distance);
-    jk_puts(s, "</table>\n");
+    if (wr) {
+        jk_puts(s, "<table>\n");
+        jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ACTIVATION,
+                ":</td><td></td></tr>\n", NULL);
+        jk_putv(s, "<tr><td>&nbsp;&nbsp;Active</td><td><input name=\"",
+                JK_STATUS_ARG_LBM_ACTIVATION, "\" type=\"radio\"", NULL);
+        jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_ACTIVE);
+        if (wr->activation == JK_LB_ACTIVATION_ACTIVE)
+            jk_puts(s, " checked=\"checked\"");
+        jk_puts(s, "/></td></tr>\n");
+        jk_putv(s, "<tr><td>&nbsp;&nbsp;Disabled</td><td><input name=\"",
+                JK_STATUS_ARG_LBM_ACTIVATION, "\" type=\"radio\"", NULL);
+        jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_DISABLED);
+        if (wr->activation == JK_LB_ACTIVATION_DISABLED)
+            jk_puts(s, " checked=\"checked\"");
+        jk_puts(s, "/></td></tr>\n");
+        jk_putv(s, "<tr><td>&nbsp;&nbsp;Stopped</td><td><input name=\"",
+                JK_STATUS_ARG_LBM_ACTIVATION, "\" type=\"radio\"", NULL);
+        jk_printf(s, " value=\"%d\"", JK_LB_ACTIVATION_STOPPED);
+        if (wr->activation == JK_LB_ACTIVATION_STOPPED)
+            jk_puts(s, " checked=\"checked\"");
+        jk_puts(s, "/></td></tr>\n");
+        jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_FACTOR,
+                ":</td><td><input name=\"",
+                JK_STATUS_ARG_LBM_FACTOR, "\" type=\"text\" ", NULL);
+        jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->lb_factor);
+        jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_ROUTE,
+                ":</td><td><input name=\"",
+                JK_STATUS_ARG_LBM_ROUTE, "\" type=\"text\" ", NULL);
+        jk_printf(s, "value=\"%s\"/></td></tr>\n", wr->route);
+        jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_REDIRECT,
+                ":</td><td><input name=\"",
+                JK_STATUS_ARG_LBM_REDIRECT, "\" type=\"text\" ", NULL);
+        jk_putv(s, "value=\"", wr->redirect, NULL);
+        jk_puts(s, "\"/></td></tr>\n");
+        jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_DOMAIN,
+                ":</td><td><input name=\"",
+                JK_STATUS_ARG_LBM_DOMAIN, "\" type=\"text\" ", NULL);
+        jk_putv(s, "value=\"", wr->domain, NULL);
+        jk_puts(s, "\"/></td></tr>\n");
+        jk_putv(s, "<tr><td>", JK_STATUS_ARG_LBM_TEXT_DISTANCE,
+                ":</td><td><input name=\"",
+                JK_STATUS_ARG_LBM_DISTANCE, "\" type=\"text\" ", NULL);
+        jk_printf(s, "value=\"%d\"/></td></tr>\n", wr->distance);
+        jk_puts(s, "</table>\n");
+    }
     jk_puts(s, "<br/><input type=\"submit\" value=\"Update Worker\"/>\n</form>\n");
     JK_TRACE_EXIT(l);
 }
@@ -2584,61 +2634,63 @@ static int commit_member(jk_ws_service_t *s,
                "Status worker '%s' committing changes for sub worker '%s' of lb worker '%s'",
                w->name, wr->name, lb_name);
 
-    if (status_get_string(p, JK_STATUS_ARG_LBM_ACTIVATION, NULL, &arg, l) == JK_TRUE) {
-        i = jk_lb_get_activation_code(arg);
-        if (i != wr->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
-            wr->activation = i;
-            jk_log(l, JK_LOG_INFO,
-                   "Status worker '%s' setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
-                   w->name, wr->name, lb_name, jk_lb_get_activation(wr, l));
-            rc |= 1;
+    if (lb) {
+        if (status_get_string(p, JK_STATUS_ARG_LBM_ACTIVATION, NULL, &arg, l) == JK_TRUE) {
+            i = jk_lb_get_activation_code(arg);
+            if (i != wr->activation && i >= 0 && i <= JK_LB_ACTIVATION_MAX) {
+                wr->activation = i;
+                jk_log(l, JK_LOG_INFO,
+                       "Status worker '%s' setting 'activation' for sub worker '%s' of lb worker '%s' to '%s'",
+                       w->name, wr->name, lb_name, jk_lb_get_activation(wr, l));
+                rc |= 1;
+            }
         }
-    }
-    if (set_int_if_changed(p, wr->name, "lbfactor", JK_STATUS_ARG_LBM_FACTOR,
-                           1, INT_MAX, &wr->lb_factor, lb_name, l))
-        /* Recalculate the load multiplicators wrt. lb_factor */
-        rc |= 2;
-    if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_ROUTE,
-                                NULL, &arg, l)) == JK_TRUE) {
-        if (strncmp(wr->route, arg, JK_SHM_STR_SIZ)) {
-            jk_log(l, JK_LOG_INFO,
-                   "Status worker '%s' setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
-                   w->name, wr->name, lb_name, arg);
-            strncpy(wr->route, arg, JK_SHM_STR_SIZ);
-            rc |= 4;
-            if (!wr->domain[0]) {
-                char * id_domain = strchr(wr->route, '.');
-                if (id_domain) {
-                    *id_domain = '\0';
-                    strcpy(wr->domain, wr->route);
-                    *id_domain = '.';
+        if (set_int_if_changed(p, wr->name, "lbfactor", JK_STATUS_ARG_LBM_FACTOR,
+                               1, INT_MAX, &wr->lb_factor, lb_name, l))
+            /* Recalculate the load multiplicators wrt. lb_factor */
+            rc |= 2;
+        if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_ROUTE,
+                                    NULL, &arg, l)) == JK_TRUE) {
+            if (strncmp(wr->route, arg, JK_SHM_STR_SIZ)) {
+                jk_log(l, JK_LOG_INFO,
+                       "Status worker '%s' setting 'route' for sub worker '%s' of lb worker '%s' to '%s'",
+                       w->name, wr->name, lb_name, arg);
+                strncpy(wr->route, arg, JK_SHM_STR_SIZ);
+                rc |= 4;
+                if (!wr->domain[0]) {
+                    char * id_domain = strchr(wr->route, '.');
+                    if (id_domain) {
+                        *id_domain = '\0';
+                        strcpy(wr->domain, wr->route);
+                        *id_domain = '.';
+                    }
                 }
             }
         }
-    }
-    if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_REDIRECT,
-                                NULL, &arg, l)) == JK_TRUE) {
-        if (strncmp(wr->redirect, arg, JK_SHM_STR_SIZ)) {
-            jk_log(l, JK_LOG_INFO,
-                   "Status worker '%s' setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
-                   w->name, wr->name, lb_name, arg);
-            strncpy(wr->redirect, arg, JK_SHM_STR_SIZ);
-            rc |= 4;
+        if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_REDIRECT,
+                                    NULL, &arg, l)) == JK_TRUE) {
+            if (strncmp(wr->redirect, arg, JK_SHM_STR_SIZ)) {
+                jk_log(l, JK_LOG_INFO,
+                       "Status worker '%s' setting 'redirect' for sub worker '%s' of lb worker '%s' to '%s'",
+                       w->name, wr->name, lb_name, arg);
+                strncpy(wr->redirect, arg, JK_SHM_STR_SIZ);
+                rc |= 4;
+            }
         }
-    }
-    if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_DOMAIN,
-                                NULL, &arg, l)) == JK_TRUE) {
-        if (strncmp(wr->domain, arg, JK_SHM_STR_SIZ)) {
-            jk_log(l, JK_LOG_INFO,
-                   "Status worker '%s' setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
-                   w->name, wr->name, lb_name, arg);
-            strncpy(wr->domain, arg, JK_SHM_STR_SIZ);
-            rc |= 4;
+        if ((rv = status_get_string(p, JK_STATUS_ARG_LBM_DOMAIN,
+                                    NULL, &arg, l)) == JK_TRUE) {
+            if (strncmp(wr->domain, arg, JK_SHM_STR_SIZ)) {
+                jk_log(l, JK_LOG_INFO,
+                       "Status worker '%s' setting 'domain' for sub worker '%s' of lb worker '%s' to '%s'",
+                       w->name, wr->name, lb_name, arg);
+                strncpy(wr->domain, arg, JK_SHM_STR_SIZ);
+                rc |= 4;
+            }
         }
+        if (set_int_if_changed(p, wr->name, "distance", JK_STATUS_ARG_LBM_DISTANCE,
+                               0, INT_MAX, &wr->distance, lb_name, l))
+            rc |= 4;
     }
-    if (set_int_if_changed(p, wr->name, "distance", JK_STATUS_ARG_LBM_DISTANCE,
-                           0, INT_MAX, &wr->distance, lb_name, l))
-        rc |= 4;
     return rc;
 }
 
