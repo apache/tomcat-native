@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Configure: Don't use post httpd 2.2.0 API functions when building
+        with new --enable-api-compatibility configure switch. (rjung)
+      </update>
       <fix>
         Apache: JkAutoAlias does not work in combination with JkMountCopy
         if there are no JkMount in virtual host. (rjung)

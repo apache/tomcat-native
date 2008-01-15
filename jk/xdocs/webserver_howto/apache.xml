@@ -962,6 +962,13 @@ into the module binary and you might save some cycles during execution.<br/>
 Even with "--disable-trace" logging debug messages with debug log level
 will still be possible.</td>
 </tr>
+  <tr valign="top"><td>--enable-api-compatibility</td>
+  <td>
+Only use httpd API functions available in all httpd production releases
+of the chosen major httpd release branch. This improves binary
+compatibility of module builds with httpd releases older than the release
+against mod_jk is build (only between minor httpd versions).</td>
+</tr>
   <tr valign="top"><td>--enable-flock</td>
   <td>
 In case the operating system supports flock system call use this flag to enable this
