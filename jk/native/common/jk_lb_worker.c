@@ -647,49 +647,53 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l
     return JK_TRUE;
 }
 
-static lb_sub_worker_t *find_by_session(lb_worker_t *p,
-                                        const char *name,
-                                        jk_logger_t *l)
+static int find_by_session(jk_ws_service_t *s,
+                           lb_worker_t *p,
+                           const char *name,
+                           jk_logger_t *l)
 {
 
-    lb_sub_worker_t *rc = NULL;
+    int rc = -1;
     unsigned int i;
 
     for (i = 0; i < p->num_of_workers; i++) {
         if (strcmp(p->lb_workers[i].route, name) == 0) {
-            rc = &p->lb_workers[i];
+            rc = i;
             break;
         }
     }
     return rc;
 }
 
-static lb_sub_worker_t *find_best_bydomain(lb_worker_t *p,
-                                           const char *domain,
-                                           jk_logger_t *l)
+static int find_best_bydomain(jk_ws_service_t *s,
+                              lb_worker_t *p,
+                              const char *domain,
+                              jk_logger_t *l)
 {
     unsigned int i;
     int d = 0;
     jk_uint64_t curmin = 0;
 
-    lb_sub_worker_t *candidate = NULL;
+    int candidate = -1;
+    lb_sub_worker_t wr;
 
     /* First try to see if we have available candidate */
     for (i = 0; i < p->num_of_workers; i++) {
         /* Skip all workers that are not member of domain */
-        if (strlen(p->lb_workers[i].domain) == 0 ||
-            strcmp(p->lb_workers[i].domain, domain))
+        wr = p->lb_workers[i];
+        if (strlen(wr.domain) == 0 ||
+            strcmp(wr.domain, domain))
             continue;
         /* Take into calculation only the workers that are
          * not in error state, stopped, disabled or busy.
          */
-        if (JK_WORKER_USABLE(&p->lb_workers[i])) {
-            if (!candidate || p->lb_workers[i].distance < d ||
-                (p->lb_workers[i].s->lb_value < curmin &&
-                p->lb_workers[i].distance == d)) {
-                candidate = &p->lb_workers[i];
-                curmin = p->lb_workers[i].s->lb_value;
-                d = p->lb_workers[i].distance;
+        if (JK_WORKER_USABLE(&wr)) {
+            if (!candidate || wr.distance < d ||
+                (wr.s->lb_value < curmin &&
+                wr.distance == d)) {
+                candidate = i;
+                curmin = wr.s->lb_value;
+                d = wr.distance;
             }
         }
     }
@@ -698,8 +702,9 @@ static lb_sub_worker_t *find_best_bydomain(lb_worker_t *p,
 }
 
 
-static lb_sub_worker_t *find_best_byvalue(lb_worker_t *p,
-                                          jk_logger_t *l)
+static int find_best_byvalue(jk_ws_service_t *s,
+                             lb_worker_t *p,
+                             jk_logger_t *l)
 {
     unsigned int i;
     unsigned int j;
@@ -708,24 +713,26 @@ static lb_sub_worker_t *find_best_byvalue(lb_worker_t *p,
     jk_uint64_t curmin = 0;
 
     /* find the least busy worker */
-    lb_sub_worker_t *candidate = NULL;
+    int candidate = -1;
+    lb_sub_worker_t wr;
 
     offset = p->next_offset;
 
     /* First try to see if we have available candidate */
     for (j = offset; j < p->num_of_workers + offset; j++) {
         i = j % p->num_of_workers;
+        wr = p->lb_workers[i];
 
         /* Take into calculation only the workers that are
          * not in error state, stopped, disabled or busy.
          */
-        if (JK_WORKER_USABLE(&p->lb_workers[i])) {
-            if (!candidate || p->lb_workers[i].distance < d ||
-                (p->lb_workers[i].s->lb_value < curmin &&
-                p->lb_workers[i].distance == d)) {
-                candidate = &p->lb_workers[i];
-                curmin = p->lb_workers[i].s->lb_value;
-                d = p->lb_workers[i].distance;
+        if (JK_WORKER_USABLE(&wr)) {
+            if (candidate < 0 || wr.distance < d ||
+                (wr.s->lb_value < curmin &&
+                wr.distance == d)) {
+                candidate = i;
+                curmin = wr.s->lb_value;
+                d = wr.distance;
                 p->next_offset = i + 1;
             }
         }
@@ -733,22 +740,24 @@ static lb_sub_worker_t *find_best_byvalue(lb_worker_t *p,
     return candidate;
 }
 
-static lb_sub_worker_t *find_bysession_route(lb_worker_t *p,
-                                             const char *name,
-                                             int *route_is_domain,
-                                             jk_logger_t *l)
+static int find_bysession_route(jk_ws_service_t *s,
+                                lb_worker_t *p,
+                                const char *name,
+                                int *route_is_domain,
+                                jk_logger_t *l)
 {
     int uses_domain  = 0;
-    lb_sub_worker_t *candidate = NULL;
+    int candidate = -1;
 
-    candidate = find_by_session(p, name, l);
-    if (!candidate) {
+    candidate = find_by_session(s, p, name, l);
+    if (candidate < 0) {
         uses_domain = 1;
-        candidate = find_best_bydomain(p, name, l);
+        candidate = find_best_bydomain(s, p, name, l);
         *route_is_domain = JK_TRUE;
     }
-    if (candidate) {
-        if (!JK_WORKER_USABLE_STICKY(candidate)) {
+    if (candidate >= 0) {
+        lb_sub_worker_t wr = p->lb_workers[candidate];
+        if (!JK_WORKER_USABLE_STICKY(&wr)) {
             /* We have a worker that is error state or stopped.
              * If it has a redirection set use that redirection worker.
              * This enables to safely remove the member from the
@@ -756,27 +765,31 @@ static lb_sub_worker_t *find_bysession_route(lb_worker_t *p,
              * session replication between those two remote.
              */
             if (p->sticky_session_force)
-                candidate = NULL;
-            else if (*candidate->redirect) {
-                candidate = find_by_session(p, candidate->redirect, l);
+                candidate = -1;
+            else if (*wr.redirect) {
+                candidate = find_by_session(s, p, wr.redirect, l);
                 *route_is_domain = JK_FALSE;
             }
-            else if (*candidate->domain && !uses_domain) {
-                candidate = find_best_bydomain(p, candidate->domain, l);
+            else if (*wr.domain && !uses_domain) {
+                candidate = find_best_bydomain(s, p, wr.domain, l);
                 *route_is_domain = JK_TRUE;
             }
-            if (candidate && !JK_WORKER_USABLE_STICKY(candidate))
-                candidate = NULL;
+            if (candidate >= 0) {
+                wr = p->lb_workers[candidate];
+                if (!JK_WORKER_USABLE_STICKY(&wr))
+                    candidate = -1;
+            }
         }
     }
     return candidate;
 }
 
-static lb_sub_worker_t *find_failover_worker(lb_worker_t * p,
-                                             int *route_is_domain,
-                                             jk_logger_t *l)
+static int find_failover_worker(jk_ws_service_t *s,
+                                lb_worker_t * p,
+                                int *route_is_domain,
+                                jk_logger_t *l)
 {
-    lb_sub_worker_t *rc = NULL;
+    int rc = -1;
     unsigned int i;
     const char *redirect = NULL;
 
@@ -787,29 +800,31 @@ static lb_sub_worker_t *find_failover_worker(lb_worker_t * p,
         }
     }
     if (redirect)
-        rc = find_bysession_route(p, redirect, route_is_domain, l);
+        rc = find_bysession_route(s, p, redirect, route_is_domain, l);
     return rc;
 }
 
-static lb_sub_worker_t *find_best_worker(lb_worker_t * p,
-                                         int *route_is_domain,
-                                         jk_logger_t *l)
+static int find_best_worker(jk_ws_service_t *s,
+                            lb_worker_t * p,
+                            int *route_is_domain,
+                            jk_logger_t *l)
 {
-    lb_sub_worker_t *rc = NULL;
+    int rc = -1;
 
-    rc = find_best_byvalue(p, l);
+    rc = find_best_byvalue(s, p, l);
     /* By default use worker route as session route */
-    if (!rc)
-        rc = find_failover_worker(p, route_is_domain, l);
+    if (rc < 0)
+        rc = find_failover_worker(s, p, route_is_domain, l);
     return rc;
 }
 
-static lb_sub_worker_t *get_most_suitable_worker(lb_worker_t * p,
+static lb_sub_worker_t *get_most_suitable_worker(jk_ws_service_t *s,
+                                                 lb_worker_t * p,
                                                  char *sessionid,
                                                  int *route_is_domain,
                                                  jk_logger_t *l)
 {
-    lb_sub_worker_t *rc = NULL;
+    int rc = -1;
     int r;
 
     JK_TRACE_ENTER(l);
@@ -859,8 +874,9 @@ static lb_sub_worker_t *get_most_suitable_worker(lb_worker_t * p,
                            session_route);
 
                 /* We have a session route. Whow! */
-                rc = find_bysession_route(p, session_route, route_is_domain, l);
-                if (rc) {
+                rc = find_bysession_route(s, p, session_route, route_is_domain, l);
+                if (rc >= 0) {
+                    lb_sub_worker_t *wr = &(p->lb_workers[rc]);
                     if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
                         jk_shm_unlock();
                     else {
@@ -869,16 +885,16 @@ static lb_sub_worker_t *get_most_suitable_worker(lb_worker_t * p,
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
                                "found worker %s (%s) for route %s and partial sessionid %s",
-                               rc->name, rc->route, session_route, sessionid);
+                               wr->name, wr->route, session_route, sessionid);
                     JK_TRACE_EXIT(l);
-                    return rc;
+                    return wr;
                 }
             }
             /* Try next partial sessionid if present */
             sessionid = next;
-            rc = NULL;
+            rc = -1;
         }
-        if (!rc && p->sticky_session_force) {
+        if (rc < 0 && p->sticky_session_force) {
             if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
                 jk_shm_unlock();
             else {
@@ -891,19 +907,23 @@ static lb_sub_worker_t *get_most_suitable_worker(lb_worker_t * p,
             return NULL;
         }
     }
-    rc = find_best_worker(p, route_is_domain, l);
+    rc = find_best_worker(s, p, route_is_domain, l);
     if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
         jk_shm_unlock();
     else {
         JK_LEAVE_CS(&(p->cs), r);
     }
-    if (rc && JK_IS_DEBUG_LEVEL(l)) {
-        jk_log(l, JK_LOG_DEBUG,
-               "found best worker %s (%s) using method '%s'",
-               rc->name, rc->route, jk_lb_get_method(p, l));
+    if (rc >= 0) {
+        lb_sub_worker_t *wr = &(p->lb_workers[rc]);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "found best worker %s (%s) using method '%s'",
+                   wr->name, wr->route, jk_lb_get_method(p, l));
+        JK_TRACE_EXIT(l);
+        return wr;
     }
     JK_TRACE_EXIT(l);
-    return rc;
+    return NULL;
 }
 
 static void lb_add_log_items(jk_ws_service_t *s,
@@ -1016,7 +1036,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     while (attempt <= num_of_workers && recoverable == JK_TRUE) {
         int route_is_domain = JK_FALSE;
         lb_sub_worker_t *rec =
-            get_most_suitable_worker(p->worker, sessionid, &route_is_domain, l);
+            get_most_suitable_worker(s, p->worker, sessionid, &route_is_domain, l);
         rc = JK_FALSE;
         *is_error = JK_HTTP_SERVER_BUSY;
         /* Do not reuse previous worker, because
