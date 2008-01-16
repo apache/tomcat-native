@@ -743,7 +743,6 @@ static int find_best_byvalue(jk_ws_service_t *s,
 static int find_bysession_route(jk_ws_service_t *s,
                                 lb_worker_t *p,
                                 const char *name,
-                                int *route_is_domain,
                                 jk_logger_t *l)
 {
     int uses_domain  = 0;
@@ -753,10 +752,11 @@ static int find_bysession_route(jk_ws_service_t *s,
     if (candidate < 0) {
         uses_domain = 1;
         candidate = find_best_bydomain(s, p, name, l);
-        *route_is_domain = JK_TRUE;
     }
     if (candidate >= 0) {
         lb_sub_worker_t wr = p->lb_workers[candidate];
+        if (uses_domain)
+            s->route = wr.domain;
         if (!JK_WORKER_USABLE_STICKY(&wr)) {
             /* We have a worker that is error state or stopped.
              * If it has a redirection set use that redirection worker.
@@ -768,11 +768,11 @@ static int find_bysession_route(jk_ws_service_t *s,
                 candidate = -1;
             else if (*wr.redirect) {
                 candidate = find_by_session(s, p, wr.redirect, l);
-                *route_is_domain = JK_FALSE;
+                s->route = NULL;
             }
             else if (*wr.domain && !uses_domain) {
                 candidate = find_best_bydomain(s, p, wr.domain, l);
-                *route_is_domain = JK_TRUE;
+                s->route = wr.domain;
             }
             if (candidate >= 0) {
                 wr = p->lb_workers[candidate];
@@ -786,7 +786,6 @@ static int find_bysession_route(jk_ws_service_t *s,
 
 static int find_failover_worker(jk_ws_service_t *s,
                                 lb_worker_t * p,
-                                int *route_is_domain,
                                 jk_logger_t *l)
 {
     int rc = -1;
@@ -800,13 +799,12 @@ static int find_failover_worker(jk_ws_service_t *s,
         }
     }
     if (redirect)
-        rc = find_bysession_route(s, p, redirect, route_is_domain, l);
+        rc = find_bysession_route(s, p, redirect, l);
     return rc;
 }
 
 static int find_best_worker(jk_ws_service_t *s,
                             lb_worker_t * p,
-                            int *route_is_domain,
                             jk_logger_t *l)
 {
     int rc = -1;
@@ -814,14 +812,13 @@ static int find_best_worker(jk_ws_service_t *s,
     rc = find_best_byvalue(s, p, l);
     /* By default use worker route as session route */
     if (rc < 0)
-        rc = find_failover_worker(s, p, route_is_domain, l);
+        rc = find_failover_worker(s, p, l);
     return rc;
 }
 
 static lb_sub_worker_t *get_most_suitable_worker(jk_ws_service_t *s,
                                                  lb_worker_t * p,
                                                  char *sessionid,
-                                                 int *route_is_domain,
                                                  jk_logger_t *l)
 {
     int rc = -1;
@@ -874,7 +871,7 @@ static lb_sub_worker_t *get_most_suitable_worker(jk_ws_service_t *s,
                            session_route);
 
                 /* We have a session route. Whow! */
-                rc = find_bysession_route(s, p, session_route, route_is_domain, l);
+                rc = find_bysession_route(s, p, session_route, l);
                 if (rc >= 0) {
                     lb_sub_worker_t *wr = &(p->lb_workers[rc]);
                     if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
@@ -907,7 +904,7 @@ static lb_sub_worker_t *get_most_suitable_worker(jk_ws_service_t *s,
             return NULL;
         }
     }
-    rc = find_best_worker(s, p, route_is_domain, l);
+    rc = find_best_worker(s, p, l);
     if (p->lblock == JK_LB_LOCK_PESSIMISTIC)
         jk_shm_unlock();
     else {
@@ -1034,9 +1031,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                p->worker->sticky_session, sessionid ? sessionid : "empty");
 
     while (attempt <= num_of_workers && recoverable == JK_TRUE) {
-        int route_is_domain = JK_FALSE;
         lb_sub_worker_t *rec =
-            get_most_suitable_worker(s, p->worker, sessionid, &route_is_domain, l);
+            get_most_suitable_worker(s, p->worker, sessionid, l);
         rc = JK_FALSE;
         *is_error = JK_HTTP_SERVER_BUSY;
         /* Do not reuse previous worker, because
@@ -1049,10 +1045,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
             jk_endpoint_t *end = NULL;
             int retry = 0;
             int retry_wait = JK_LB_MIN_RETRY_WAIT;
-            if (route_is_domain == JK_FALSE)
+
+            if (!s->route)
                 s->route = rec->route;
-            else
-                s->route = rec->domain;
             prec = rec;
 
             if (JK_IS_DEBUG_LEVEL(l))
