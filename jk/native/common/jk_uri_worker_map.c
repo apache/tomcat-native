@@ -37,6 +37,8 @@
 #define JK_STRNCMP  strncmp
 #endif
 
+#define IND_THIS(x)                        ((x)[uw_map->index])
+#define IND_NEXT(x)                        ((x)[(uw_map->index+1) % 2])
 
 static const char *uri_worker_map_source_type[] = {
     "unknown",
@@ -140,7 +142,7 @@ static void worker_qsort(jk_uri_worker_map_t *uw_map)
 {
 
    /* Sort remaining args using Quicksort algorithm: */
-   qsort((void *)uw_map->maps, uw_map->size,
+   qsort((void *)IND_NEXT(uw_map->maps), IND_NEXT(uw_map->size),
          sizeof(uri_worker_record_t *), worker_compare );
 
 }
@@ -179,6 +181,8 @@ static int wildchar_match(const char *str, const char *exp, int icase)
 int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map_p,
                          jk_map_t *init_data, jk_logger_t *l)
 {
+    int i;
+
     JK_TRACE_ENTER(l);
 
     if (uw_map_p) {
@@ -198,10 +202,15 @@ int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map_p,
 
         jk_open_pool(&(uw_map->p),
                      uw_map->buf, sizeof(jk_pool_atom_t) * BIG_POOL_SIZE);
-        uw_map->size = 0;
-        uw_map->nosize = 0;
-        uw_map->capacity = 0;
-        uw_map->maps = NULL;
+        for(i=0;i<=1;i++) {
+            jk_open_pool(&(uw_map->p_dyn[i]),
+                         uw_map->buf_dyn[i], sizeof(jk_pool_atom_t) * BIG_POOL_SIZE);
+            uw_map->size[i] = 0;
+            uw_map->nosize[i] = 0;
+            uw_map->capacity[i] = 0;
+            uw_map->maps[i] = NULL;
+        }
+        uw_map->index = 0;
         uw_map->fname = NULL;
         uw_map->reject_unsafe = 0;
         uw_map->reload = JK_URIMAP_DEF_RELOAD;
@@ -227,6 +236,8 @@ static int uri_worker_map_close(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
     if (uw_map) {
         int i;
         JK_DELETE_CS(&(uw_map->cs), i);
+        jk_close_pool(&uw_map->p_dyn[0]);
+        jk_close_pool(&uw_map->p_dyn[1]);
         jk_close_pool(&uw_map->p);
         JK_TRACE_EXIT(l);
         return JK_TRUE;
@@ -263,24 +274,24 @@ int uri_worker_map_free(jk_uri_worker_map_t **uw_map, jk_logger_t *l)
 
 static int uri_worker_map_realloc(jk_uri_worker_map_t *uw_map)
 {
-    if (uw_map->size == uw_map->capacity) {
+    if (IND_NEXT(uw_map->size) == IND_NEXT(uw_map->capacity)) {
         uri_worker_record_t **uwr;
-        int capacity = uw_map->capacity + UW_INC_SIZE;
+        int capacity = IND_NEXT(uw_map->capacity) + UW_INC_SIZE;
 
         uwr =
-            (uri_worker_record_t **) jk_pool_alloc(&uw_map->p,
+            (uri_worker_record_t **) jk_pool_alloc(&IND_NEXT(uw_map->p_dyn),
                                                    sizeof(uri_worker_record_t
                                                           *) * capacity);
 
         if (!uwr)
             return JK_FALSE;
 
-        if (uw_map->capacity && uw_map->maps)
-            memcpy(uwr, uw_map->maps,
-                   sizeof(uri_worker_record_t *) * uw_map->capacity);
+        if (IND_NEXT(uw_map->capacity) && IND_NEXT(uw_map->maps))
+            memcpy(uwr, IND_NEXT(uw_map->maps),
+                   sizeof(uri_worker_record_t *) * IND_NEXT(uw_map->capacity));
 
-        uw_map->maps = uwr;
-        uw_map->capacity = capacity;
+        IND_NEXT(uw_map->maps) = uwr;
+        IND_NEXT(uw_map->capacity) = capacity;
     }
 
     return JK_TRUE;
@@ -296,23 +307,35 @@ static int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
 {
     uri_worker_record_t *uwr = NULL;
     unsigned int i;
-    unsigned int j;
+    unsigned int new_size = 0;
+    unsigned int new_nosize = 0;
 
     JK_TRACE_ENTER(l);
 
-    for (i = 0; i < uw_map->size; i++) {
-        uwr = uw_map->maps[i];
+    IND_NEXT(uw_map->maps) =
+            (uri_worker_record_t **) jk_pool_alloc(&(IND_NEXT(uw_map->p_dyn)),
+                                                   sizeof(uri_worker_record_t
+                                                          *) * IND_THIS(uw_map->size));
+    IND_NEXT(uw_map->capacity) = IND_THIS(uw_map->size);
+    IND_NEXT(uw_map->size) = 0;
+    IND_NEXT(uw_map->nosize) = 0;
+    for (i = 0; i < IND_THIS(uw_map->size); i++) {
+        uwr = IND_THIS(uw_map->maps)[i];
         if (uwr->source_type == SOURCE_TYPE_URIMAP) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "deleting map rule '%s=%s' source '%s'",
                        uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
-            for (j = i; j < uw_map->size-1; j++)
-                uw_map->maps[j] = uw_map->maps[j+1];
-            uw_map->size--;
-            i--;
+        }
+        else {
+            IND_NEXT(uw_map->maps)[new_size] = uwr;
+            new_size++;
+            if (uwr->match_type & MATCH_TYPE_NO_MATCH)
+                new_nosize++;
         }
     }
+    IND_NEXT(uw_map->size) = new_size;
+    IND_NEXT(uw_map->nosize) = new_nosize;
 
     JK_TRACE_EXIT(l);
     return JK_TRUE;
@@ -324,6 +347,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 {
     uri_worker_record_t *uwr = NULL;
     char *uri;
+    jk_pool_t *p;
     unsigned int match_type = 0;
 
     JK_TRACE_ENTER(l);
@@ -345,8 +369,12 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    uwr = (uri_worker_record_t *)jk_pool_alloc(&uw_map->p,
-                                    sizeof(uri_worker_record_t));
+    if (source_type == SOURCE_TYPE_URIMAP)
+        p = &IND_NEXT(uw_map->p_dyn);
+    else
+        p = &uw_map->p;
+
+    uwr = (uri_worker_record_t *)jk_pool_alloc(p, sizeof(uri_worker_record_t));
     if (!uwr) {
         jk_log(l, JK_LOG_ERROR,
                "can't alloc map entry");
@@ -354,7 +382,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         return JK_FALSE;
     }
 
-    uri = jk_pool_strdup(&uw_map->p, puri);
+    uri = jk_pool_strdup(p, puri);
     if (!uri || !worker) {
         jk_log(l, JK_LOG_ERROR,
                "can't alloc uri/worker strings");
@@ -365,7 +393,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     if (*uri == '/') {
         uwr->uri = uri;
         uwr->context = uri;
-        uwr->worker_name = jk_pool_strdup(&uw_map->p, worker);
+        uwr->worker_name = jk_pool_strdup(p, worker);
         uwr->context_len = strlen(uwr->context);
         uwr->source_type = source_type;
         if (strchr(uri, '*') ||
@@ -404,11 +432,11 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         return JK_FALSE;
     }
     uwr->match_type = match_type;
-    uw_map->maps[uw_map->size] = uwr;
-    uw_map->size++;
+    IND_NEXT(uw_map->maps)[IND_NEXT(uw_map->size)] = uwr;
+    IND_NEXT(uw_map->size)++;
     if (match_type & MATCH_TYPE_NO_MATCH) {
         /* If we split the mappings this one will be calculated */
-        uw_map->nosize++;
+        IND_NEXT(uw_map->nosize)++;
     }
     worker_qsort(uw_map);
     JK_TRACE_EXIT(l);
@@ -478,6 +506,8 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
         if (rc == JK_FALSE) {
             jk_log(l, JK_LOG_ERROR,
                    "there was an error, freeing buf");
+            jk_close_pool(&uw_map->p_dyn[0]);
+            jk_close_pool(&uw_map->p_dyn[1]);
             jk_close_pool(&uw_map->p);
         }
     }
@@ -493,8 +523,8 @@ static int find_match(jk_uri_worker_map_t *uw_map,
 
     JK_TRACE_ENTER(l);
 
-    for (i = 0; i < uw_map->size; i++) {
-        uri_worker_record_t *uwr = uw_map->maps[i];
+    for (i = 0; i < IND_THIS(uw_map->size); i++) {
+        uri_worker_record_t *uwr = IND_THIS(uw_map->maps)[i];
 
         /* Check for match types */
         if ((uwr->match_type & MATCH_TYPE_DISABLED) ||
@@ -543,12 +573,12 @@ static int is_nomatch(jk_uri_worker_map_t *uw_map,
                       jk_logger_t *l)
 {
     unsigned int i;
-    const char *worker = uw_map->maps[match]->worker_name;
+    const char *worker = IND_THIS(uw_map->maps)[match]->worker_name;
 
     JK_TRACE_ENTER(l);
 
-    for (i = 0; i < uw_map->size; i++) {
-        uri_worker_record_t *uwr = uw_map->maps[i];
+    for (i = 0; i < IND_THIS(uw_map->size); i++) {
+        uri_worker_record_t *uwr = IND_THIS(uw_map->maps)[i];
 
         /* Check only nomatch mappings */
         if (!(uwr->match_type & MATCH_TYPE_NO_MATCH) ||
@@ -615,7 +645,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     }
     if (uw_map->fname) {
         uri_worker_map_update(uw_map, 0, l);
-        if (!uw_map->size) {
+        if (!IND_THIS(uw_map->size)) {
             jk_log(l, JK_LOG_INFO,
                    "No worker maps defined for %s.",
                    uw_map->fname);
@@ -683,7 +713,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s' from %d maps",
-               url, uw_map->size);
+               url, IND_THIS(uw_map->size));
     rv = find_match(uw_map, url, l);
 /* If this doesn't find a match, try without the vhost. */
     if (rv < 0 && vhost_len) {
@@ -691,7 +721,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     }
 
 /* In case we found a match, check for the unmounts. */
-    if (rv >= 0 && uw_map->nosize) {
+    if (rv >= 0 && IND_THIS(uw_map->nosize)) {
 /* Again first including vhost. */
         int rc = is_nomatch(uw_map, url, rv, l);
 /* If no unmount was find, try without vhost. */
@@ -701,7 +731,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             if (JK_IS_DEBUG_LEVEL(l)) {
                 jk_log(l, JK_LOG_DEBUG,
                        "Denying match for worker %s by nomatch rule",
-                       uw_map->maps[rv]->worker_name);
+                       IND_THIS(uw_map->maps)[rv]->worker_name);
             }
             rv = -1;
         }
@@ -709,7 +739,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 
     if (rv >= 0) {
         JK_TRACE_EXIT(l);
-        return uw_map->maps[rv]->worker_name;
+        return IND_THIS(uw_map->maps)[rv]->worker_name;
     }
     JK_TRACE_EXIT(l);
     return NULL;
@@ -769,6 +799,8 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
         rc = JK_TRUE;
     }
     jk_map_free(&map);
+    uw_map->index = (uw_map->index + 1) % 2;
+    jk_reset_pool(&(IND_NEXT(uw_map->p_dyn)));
     return rc;
 }
 

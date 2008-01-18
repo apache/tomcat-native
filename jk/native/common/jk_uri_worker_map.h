@@ -96,17 +96,27 @@ struct jk_uri_worker_map
     jk_pool_t p;
     jk_pool_atom_t buf[BIG_POOL_SIZE];
 
+    /* Index 0 or 1, which map instance do we use */
+    /* Needed to make map reload more atomically */
+    int index;
+
+    /* Memory Pool - cleared when doing reload */
+    /* Use this pool to allocate objects, that are deleted */
+    /* when the map gets dynamically reloaded from uriworkermap.properties. */
+    jk_pool_t p_dyn[2];
+    jk_pool_atom_t buf_dyn[2][BIG_POOL_SIZE];
+
     /* map URI->WORKER */
-    uri_worker_record_t **maps;
+    uri_worker_record_t **maps[2];
     
     /* Map Number */
-    unsigned int size;
+    unsigned int size[2];
 
     /* Map Capacity */
-    unsigned int capacity;
+    unsigned int capacity[2];
 
     /* NoMap Number */
-    unsigned int nosize;
+    unsigned int nosize[2];
 
     /* Dynamic config support */
 

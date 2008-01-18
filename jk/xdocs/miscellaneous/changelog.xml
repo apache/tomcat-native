@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        URI Map: Make dynamic reloading atomic and free memory
+        not needed any longer. (rjung)
+      </fix>
       <update>
         Configure: Don't use post httpd 2.2.0 API functions when building
         with new --enable-api-compatibility configure switch. (rjung)

@@ -1344,8 +1344,8 @@ static int count_map(jk_uri_worker_map_t *uw_map,
 
     JK_TRACE_ENTER(l);
     if (uw_map) {
-        for (i = 0; i < uw_map->size; i++) {
-            uri_worker_record_t *uwr = uw_map->maps[i];
+        for (i = 0; i < uw_map->size[uw_map->index]; i++) {
+            uri_worker_record_t *uwr = uw_map->maps[uw_map->index][i];
             if (strcmp(uwr->worker_name, worker)) {
                 continue;
             }
@@ -1394,8 +1394,8 @@ static void display_map(jk_ws_service_t *s,
     if (uw_map->fname) {
         uri_worker_map_update(uw_map, 1, l);
     }
-    for (i = 0; i < uw_map->size; i++) {
-        uri_worker_record_t *uwr = uw_map->maps[i];
+    for (i = 0; i < uw_map->size[uw_map->index]; i++) {
+        uri_worker_record_t *uwr = uw_map->maps[uw_map->index][i];
 
         if (strcmp(uwr->worker_name, worker)) {
             continue;
