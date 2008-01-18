@@ -486,8 +486,8 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
     return rc;
 }
 
-static const char *find_match(jk_uri_worker_map_t *uw_map,
-                        const char *url, jk_logger_t *l)
+static int find_match(jk_uri_worker_map_t *uw_map,
+                      const char *url, jk_logger_t *l)
 {
     unsigned int i;
 
@@ -519,7 +519,7 @@ static const char *find_match(jk_uri_worker_map_t *uw_map,
                                "Found a wildchar match '%s=%s'",
                                uwr->context, uwr->worker_name);
                     JK_TRACE_EXIT(l);
-                    return uwr->worker_name;
+                    return i;
              }
         }
         else if (JK_STRNCMP(uwr->context, url, uwr->context_len) == 0) {
@@ -529,20 +529,21 @@ static const char *find_match(jk_uri_worker_map_t *uw_map,
                            "Found an exact match '%s=%s'",
                            uwr->context, uwr->worker_name);
                 JK_TRACE_EXIT(l);
-                return uwr->worker_name;
+                return i;
             }
         }
     }
 
     JK_TRACE_EXIT(l);
-    return NULL;
+    return -1;
 }
 
 static int is_nomatch(jk_uri_worker_map_t *uw_map,
-                      const char *uri, const char* worker,
+                      const char *uri, int match,
                       jk_logger_t *l)
 {
     unsigned int i;
+    const char *worker = uw_map->maps[match]->worker_name;
 
     JK_TRACE_ENTER(l);
 
@@ -596,7 +597,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     unsigned int i;
     unsigned int vhost_len;
     int reject_unsafe;
-    const char *rv = NULL;
+    int rv = -1;
     char  url[JK_MAX_URI_LEN+1];
 
     JK_TRACE_ENTER(l);
@@ -685,12 +686,12 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                url, uw_map->size);
     rv = find_match(uw_map, url, l);
 /* If this doesn't find a match, try without the vhost. */
-    if (! rv && vhost_len) {
+    if (rv < 0 && vhost_len) {
         rv = find_match(uw_map, &url[vhost_len], l);
     }
 
 /* In case we found a match, check for the unmounts. */
-    if (rv && uw_map->nosize) {
+    if (rv >= 0 && uw_map->nosize) {
 /* Again first including vhost. */
         int rc = is_nomatch(uw_map, url, rv, l);
 /* If no unmount was find, try without vhost. */
@@ -700,14 +701,18 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
             if (JK_IS_DEBUG_LEVEL(l)) {
                 jk_log(l, JK_LOG_DEBUG,
                        "Denying match for worker %s by nomatch rule",
-                       rv);
+                       uw_map->maps[rv]->worker_name);
             }
-            rv = NULL;
+            rv = -1;
         }
     }
 
+    if (rv >= 0) {
+        JK_TRACE_EXIT(l);
+        return uw_map->maps[rv]->worker_name;
+    }
     JK_TRACE_EXIT(l);
-    return rv;
+    return NULL;
 }
 
 int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
