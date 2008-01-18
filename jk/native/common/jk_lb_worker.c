@@ -688,7 +688,7 @@ static int find_best_bydomain(jk_ws_service_t *s,
          * not in error state, stopped, disabled or busy.
          */
         if (JK_WORKER_USABLE(&wr)) {
-            if (!candidate || wr.distance < d ||
+            if (candidate < 0 || wr.distance < d ||
                 (wr.s->lb_value < curmin &&
                 wr.distance == d)) {
                 candidate = i;
