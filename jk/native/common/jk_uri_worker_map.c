@@ -354,7 +354,7 @@ static void extract_activation(lb_worker_t *lb,
                                int activation,
                                jk_logger_t *l)
 {
-    int i;
+    unsigned int i;
     char *worker;
 #ifdef _MT_CODE_PTHREAD
     char *lasts;
