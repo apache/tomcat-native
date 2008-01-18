@@ -317,8 +317,6 @@ static int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
     return JK_TRUE;
 }
 
-
-
 int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                        const char *puri, const char *worker,
                        unsigned int source_type, jk_logger_t *l)
@@ -376,17 +374,19 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
              * /context/ *.suffix
              */
             match_type |= MATCH_TYPE_WILDCHAR_PATH;
-            jk_log(l, JK_LOG_DEBUG,
-                   "wildchar rule '%s=%s' source '%s' was added",
-                   uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "wildchar rule '%s=%s' source '%s' was added",
+                       uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
 
         }
         else {
             /* Something like:  JkMount /login/j_security_check ajp13 */
             match_type |= MATCH_TYPE_EXACT;
-            jk_log(l, JK_LOG_DEBUG,
-                   "exact rule '%s=%s' source '%s' was added",
-                   uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "exact rule '%s=%s' source '%s' was added",
+                       uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
         }
     }
     else {
@@ -424,9 +424,10 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
     if (uw_map) {
         int sz = jk_map_size(init_data);
 
-        jk_log(l, JK_LOG_DEBUG,
-               "rule map size is %d",
-               sz);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "rule map size is %d",
+                   sz);
 
         if (sz > 0) {
             int i;
@@ -475,7 +476,7 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
 
         if (rc == JK_FALSE) {
             jk_log(l, JK_LOG_ERROR,
-                   "there was an error, freing buf");
+                   "there was an error, freeing buf");
             jk_close_pool(&uw_map->p);
         }
     }
@@ -563,9 +564,10 @@ static int is_nomatch(jk_uri_worker_map_t *uw_map,
                                0
 #endif
                                ) == 0) {
-                    jk_log(l, JK_LOG_DEBUG,
-                           "Found a wildchar no match '%s=%s' source '%s'",
-                           uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
+                    if (JK_IS_DEBUG_LEVEL(l))
+                        jk_log(l, JK_LOG_DEBUG,
+                               "Found a wildchar no match '%s=%s' source '%s'",
+                               uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
                     JK_TRACE_EXIT(l);
                     return JK_TRUE;
              }
@@ -585,7 +587,6 @@ static int is_nomatch(jk_uri_worker_map_t *uw_map,
     JK_TRACE_EXIT(l);
     return JK_FALSE;
 }
-
 
 const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                               const char *uri, const char *vhost,
