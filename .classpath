@@ -17,7 +17,7 @@
 -->
 <classpath>
 	<classpathentry excluding="org/apache/coyote/tomcat3/|org/apache/coyote/tomcat4/" kind="src" path="coyote/src/java"/>
-	<classpathentry excluding="org/apache/ajp/tomcat33/|org/apache/ajp/tomcat4/" kind="src" path="jk/java"/>
+	<classpathentry excluding="org/apache/ajp/tomcat33/|org/apache/ajp/tomcat4/|org/apache/jk/config/" kind="src" path="jk/java"/>
 	<classpathentry kind="src" path="http11/src/java"/>
 	<classpathentry kind="src" path="jni/examples"/>
 	<classpathentry kind="src" path="jni/java"/>
@@ -25,10 +25,8 @@
 	<classpathentry excluding="org/apache/tomcat/util/net/puretls/" kind="src" path="util/java"/>
 	<classpathentry kind="src" path="util/loader"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/commons-logging-1.0.4/commons-logging-api.jar"/>
-	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/mx4j-3.0.1/lib/mx4j.jar"/>
-	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/commons-modeler-1.1/commons-modeler.jar"/>
-	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/commons-collections-3.1/commons-collections-3.1.jar"/>
 	<classpathentry kind="var" path="ANT_HOME/lib/ant.jar"/>
+	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/commons-logging-1.1.1/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="var" path="TOMCAT_LIBS_BASE/commons-modeler-2.0.1/commons-modeler-2.0.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
