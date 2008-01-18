@@ -68,6 +68,23 @@ extern "C"
 #define SOURCE_TYPE_TEXT_DISCOVER   ("ajp14")
 
 #define JK_MAX_URI_LEN              4095
+
+struct rule_extension
+{
+    /* reply_timeout overwrite */
+    int reply_timeout;
+    /* activation state overwrites for load balancers */
+    /* Number of elements in the array activations. */
+    int size;
+    /* Dynamically allocated array with one entry per lb member. */
+    int *activation;
+    /* Temporary storage for the original extension strings. */
+    char *active;
+    char *disable;
+    char *stop;
+};
+typedef struct rule_extension rule_extension_t;
+
 struct uri_worker_record
 {
     /* Original uri for logging */
@@ -87,6 +104,9 @@ struct uri_worker_record
 
     /* char length of the context */
     size_t context_len;
+
+    /* extended mapping properties */
+    rule_extension_t extensions;
 };
 typedef struct uri_worker_record uri_worker_record_t;
 
@@ -146,6 +166,8 @@ int uri_worker_map_free(jk_uri_worker_map_t **uw_map, jk_logger_t *l);
 int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
                         jk_map_t *init_data, jk_logger_t *l);
 
+void uri_worker_map_ext(jk_uri_worker_map_t *uw_map, jk_logger_t *l);
+
 int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                        const char *puri, const char *worker,
                        unsigned int source_type, jk_logger_t *l);
@@ -153,6 +175,11 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                               const char *uri, const char *vhost,
                               jk_logger_t *l);
+
+const char *map_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
+                                  const char *uri, const char *vhost,
+                                  rule_extension_t **extensions,
+                                  jk_logger_t *l);
 
 int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
                         jk_logger_t *l);

@@ -28,6 +28,8 @@
 #include "jk_map.h"
 #include "jk_mt.h"
 #include "jk_uri_worker_map.h"
+#include "jk_worker.h"
+#include "jk_lb_worker.h"
 
 #ifdef WIN32
 #define JK_STRCMP   strcasecmp
@@ -36,6 +38,11 @@
 #define JK_STRCMP   strcmp
 #define JK_STRNCMP  strncmp
 #endif
+
+#define JK_UWMAP_EXTENSION_REPLY_TIMEOUT "reply_timeout="
+#define JK_UWMAP_EXTENSION_ACTIVE        "active="
+#define JK_UWMAP_EXTENSION_DISABLE       "disable="
+#define JK_UWMAP_EXTENSION_STOP          "stop="
 
 #define IND_THIS(x)                        ((x)[uw_map->index])
 #define IND_NEXT(x)                        ((x)[(uw_map->index+1) % 2])
@@ -341,6 +348,112 @@ static int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
     return JK_TRUE;
 }
 
+static void extract_activation(lb_worker_t *lb,
+                               int *activations,
+                               char *workers,
+                               int activation,
+                               jk_logger_t *l)
+{
+    int i;
+    char *worker;
+#ifdef _MT_CODE_PTHREAD
+    char *lasts;
+#endif
+
+    JK_TRACE_ENTER(l);
+
+#ifdef _MT_CODE_PTHREAD
+    for (worker = strtok_r(workers, ",", &lasts);
+         worker; worker = strtok_r(NULL, "&", &lasts)) {
+#else
+    for (worker = strtok(workers, ","); worker; worker = strtok(NULL, ",")) {
+#endif
+        for (i=0; i<lb->num_of_workers; i++) {
+            if (!strcmp(worker, lb->lb_workers[i].name))
+                activations[i] = activation;
+        }
+    }
+
+    JK_TRACE_EXIT(l);
+
+}
+
+void uri_worker_map_ext(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
+{
+    unsigned int i;
+
+    JK_TRACE_ENTER(l);
+
+    for (i = 0; i < IND_NEXT(uw_map->size); i++) {
+        uri_worker_record_t *uwr = IND_NEXT(uw_map->maps)[i];
+        jk_worker_t *jw = wc_get_worker_for_name(uwr->worker_name, l);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "Checking extension for worker %d: %s of type %s (%d)",
+                   i, uwr->worker_name, wc_get_name_for_type(jw->type,l), jw->type);
+
+        if (jw->type == JK_LB_WORKER_TYPE &&
+            (uwr->extensions.active || uwr->extensions.disable || uwr->extensions.stop)) {
+            int j;
+            lb_worker_t *lb = (lb_worker_t *)jw->worker_private;
+            jk_pool_t *p;
+            if (!uwr->extensions.activation) {
+                uwr->extensions.size = lb->num_of_workers;
+                if (uwr->source_type == SOURCE_TYPE_URIMAP)
+                    p = &IND_NEXT(uw_map->p_dyn);
+                else
+                    p = &uw_map->p;
+                uwr->extensions.activation = (int *)jk_pool_alloc(p,
+                                                        uwr->extensions.size * sizeof(int));
+                if (!uwr->extensions.activation) {
+                    jk_log(l, JK_LOG_ERROR,
+                           "can't alloc extensions activation list");
+                    continue;
+                } else if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Allocated activations array of size %d for lb worker %s",
+                           uwr->extensions.size, uwr->worker_name);
+                for (j=0; j<uwr->extensions.size; j++) {
+                    uwr->extensions.activation[j] = JK_LB_ACTIVATION_UNSET;
+                }
+            }
+            if (uwr->extensions.active)
+                extract_activation(lb, uwr->extensions.activation,
+                                   uwr->extensions.active, JK_LB_ACTIVATION_ACTIVE, l);
+            if (uwr->extensions.disable)
+                extract_activation(lb, uwr->extensions.activation,
+                                   uwr->extensions.disable, JK_LB_ACTIVATION_DISABLED, l);
+            if (uwr->extensions.stop)
+                extract_activation(lb, uwr->extensions.activation,
+                                   uwr->extensions.stop, JK_LB_ACTIVATION_STOPPED, l);
+        }
+        else if (uwr->extensions.active) {
+            jk_log(l, JK_LOG_WARNING,
+                   "Worker %s is not of type lb, activation extension "
+                   JK_UWMAP_EXTENSION_ACTIVE " for %s ignored",
+                   uwr->worker_name, uwr->extensions.active);
+        }
+        else if (uwr->extensions.disable) {
+            jk_log(l, JK_LOG_WARNING,
+                   "Worker %s is not of type lb, activation extension "
+                   JK_UWMAP_EXTENSION_DISABLE " for %s ignored",
+                   uwr->worker_name, uwr->extensions.disable);
+        }
+        else if (uwr->extensions.stop) {
+            jk_log(l, JK_LOG_WARNING,
+                   "Worker %s is not of type lb, activation extension "
+                   JK_UWMAP_EXTENSION_STOP " for %s ignored",
+                   uwr->worker_name, uwr->extensions.stop);
+        }
+    }
+    uw_map->index = (uw_map->index + 1) % 2;
+    jk_reset_pool(&(IND_NEXT(uw_map->p_dyn)));
+
+    JK_TRACE_EXIT(l);
+    return;
+
+}
+
 int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                        const char *puri, const char *worker,
                        unsigned int source_type, jk_logger_t *l)
@@ -391,11 +504,63 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
     }
 
     if (*uri == '/') {
+        char *w;
+        char *param;
+#ifdef _MT_CODE_PTHREAD
+        char *lasts;
+#endif
+
+        w = jk_pool_strdup(p, worker);
+        uwr->extensions.reply_timeout = -1;
+        uwr->extensions.active = NULL;
+        uwr->extensions.disable = NULL;
+        uwr->extensions.stop = NULL;
+        uwr->extensions.size = 0;
+        uwr->extensions.activation = NULL;
+
+#ifdef _MT_CODE_PTHREAD
+        param = strtok_r(w, ";", &lasts);
+#else
+        param = strtok(w, ";");
+#endif
+        if (param) {
+#ifdef _MT_CODE_PTHREAD
+            for (; param; param = strtok_r(NULL, ";", &lasts)) {
+#else
+            for (; param; param = strtok(NULL, ";")) {
+#endif
+                if (!strncmp(param, JK_UWMAP_EXTENSION_REPLY_TIMEOUT, strlen(JK_UWMAP_EXTENSION_REPLY_TIMEOUT))) {
+                    uwr->extensions.reply_timeout = atoi(param + strlen(JK_UWMAP_EXTENSION_REPLY_TIMEOUT));
+                }
+                else if (!strncmp(param, JK_UWMAP_EXTENSION_ACTIVE, strlen(JK_UWMAP_EXTENSION_ACTIVE))) {
+                    if (uwr->extensions.active)
+                        jk_log(l, JK_LOG_WARNING,
+                               "active extension in uriworker map only allowed once");
+                    else
+                        uwr->extensions.active = param + strlen(JK_UWMAP_EXTENSION_ACTIVE);
+                }
+                else if (!strncmp(param, JK_UWMAP_EXTENSION_DISABLE, strlen(JK_UWMAP_EXTENSION_DISABLE))) {
+                    if (uwr->extensions.disable)
+                        jk_log(l, JK_LOG_WARNING,
+                               "disable extension in uriworker map only allowed once");
+                    else
+                        uwr->extensions.disable = param + strlen(JK_UWMAP_EXTENSION_DISABLE);
+                }
+                else if (!strncmp(param, JK_UWMAP_EXTENSION_STOP, strlen(JK_UWMAP_EXTENSION_STOP))) {
+                    if (uwr->extensions.stop)
+                        jk_log(l, JK_LOG_WARNING,
+                               "stop extension in uriworker map only allowed once");
+                    else
+                        uwr->extensions.stop = param + strlen(JK_UWMAP_EXTENSION_STOP);
+                }
+            }
+        }
+
+        uwr->source_type = source_type;
+        uwr->worker_name = w;
         uwr->uri = uri;
         uwr->context = uri;
-        uwr->worker_name = jk_pool_strdup(p, worker);
         uwr->context_len = strlen(uwr->context);
-        uwr->source_type = source_type;
         if (strchr(uri, '*') ||
             strchr(uri, '?')) {
             /* Something like
@@ -620,9 +785,10 @@ static int is_nomatch(jk_uri_worker_map_t *uw_map,
     return JK_FALSE;
 }
 
-const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
-                              const char *uri, const char *vhost,
-                              jk_logger_t *l)
+const char *map_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
+                                  const char *uri, const char *vhost,
+                                  rule_extension_t **extensions,
+                                  jk_logger_t *l)
 {
     unsigned int i;
     unsigned int vhost_len;
@@ -632,11 +798,12 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 
     JK_TRACE_ENTER(l);
 
-    if (!uw_map || !uri) {
+    if (!uw_map || !uri || !extensions) {
         JK_LOG_NULL_PARAMS(l);
         JK_TRACE_EXIT(l);
         return NULL;
     }
+    *extensions = NULL;
     if (*uri != '/') {
         jk_log(l, JK_LOG_WARNING,
                 "Uri %s is invalid. Uri must start with /", uri);
@@ -738,11 +905,20 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
     }
 
     if (rv >= 0) {
+        *extensions = &(IND_THIS(uw_map->maps)[rv]->extensions);
         JK_TRACE_EXIT(l);
         return IND_THIS(uw_map->maps)[rv]->worker_name;
     }
     JK_TRACE_EXIT(l);
     return NULL;
+}
+
+const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
+                              const char *uri, const char *vhost,
+                              jk_logger_t *l)
+{
+    rule_extension_t *ext;
+    return map_uri_to_worker_ext(uw_map, uri, vhost, &ext, l);
 }
 
 int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
@@ -799,8 +975,6 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
         rc = JK_TRUE;
     }
     jk_map_free(&map);
-    uw_map->index = (uw_map->index + 1) % 2;
-    jk_reset_pool(&(IND_NEXT(uw_map->p_dyn)));
     return rc;
 }
 
@@ -838,6 +1012,7 @@ int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
             return JK_TRUE;
         }
         rc = uri_worker_map_load(uw_map, l);
+        uri_worker_map_ext(uw_map, l);
         JK_LEAVE_CS(&(uw_map->cs), rc);
         jk_log(l, JK_LOG_INFO,
                "Reloaded urimaps from %s", uw_map->fname);

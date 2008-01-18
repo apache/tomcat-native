@@ -75,6 +75,16 @@ typedef struct jk_ws_service jk_ws_service_t;
 typedef struct jk_endpoint jk_endpoint_t;
 typedef struct jk_worker jk_worker_t;
 
+struct svc_extension
+{
+    /* reply_timeout overwrite */
+    int reply_timeout;
+    /* activation state overwrites for load balancers */
+    /* Dynamically allocated array with one entry per lb member. */
+    int *activation;
+};
+typedef struct svc_extension svc_extension_t;
+
 /*
  * The web server service 'class'.  An instance of this class is created
  * for each request which is forwarded from the web server to the servlet
@@ -222,9 +232,9 @@ struct jk_ws_service
     int flush_header;
 
     /*
-     * If >= 0, overwrite the worker reply_timeout
+     * service extensions
      */
-    int reply_timeout;
+    svc_extension_t extension;
 
     /*
      * JK_TRUE if response headers have been sent back

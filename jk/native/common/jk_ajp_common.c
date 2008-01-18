@@ -1816,8 +1816,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
     while (1) {
         int rc = 0;
         /* Allow to overwrite reply_timeout on a per URL basis via service struct */
-        int reply_timeout = s->reply_timeout;
-
+        int reply_timeout = s->extension.reply_timeout;
         if (reply_timeout < 0)
             reply_timeout = p->worker->reply_timeout;
         /* If we set a reply timeout, check if something is available */

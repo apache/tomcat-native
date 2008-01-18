@@ -612,6 +612,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     request_rec *r = private_data->r;
     char *ssl_temp = NULL;
     const char *reply_timeout = NULL;
+    rule_extension_t *e;
 
     /* Copy in function pointers (which are really methods) */
     s->start_response = ws_start_response;
@@ -642,9 +643,20 @@ static int init_ws_service(apache_private_data_t * private_data,
     if (conf->options & JK_OPT_FLUSHEADER)
         s->flush_header = 1;
 
+    e = (rule_extension_t *)ap_get_module_config(r->request_config, &jk_module);
+    if (e) {
+        s->extension.reply_timeout = e->reply_timeout;
+        if (e->activation) {
+            s->extension.activation = ap_palloc(r->pool, e->size * sizeof(int));
+            memcpy(s->extension.activation, e->activation, e->size * sizeof(int));
+        }
+    }
     reply_timeout = ap_table_get(r->subprocess_env, "JK_REPLY_TIMEOUT");
-    if (reply_timeout)
-        s->reply_timeout = atoi(reply_timeout);
+    if (reply_timeout) {
+        int r = atoi(reply_timeout);
+        if (r >= 0)
+            s->extension.reply_timeout = r;
+    }
 
     if (conf->options & JK_OPT_DISABLEREUSE)
         s->disable_reuse = 1;
@@ -2712,6 +2724,13 @@ static void jk_init(server_rec * s, ap_pool * p)
                       "Error in creating the workers."
                       " Please consult your mod_jk log file '%s'.", conf->log_file);
     }
+    uri_worker_map_ext(conf->uw_map, conf->log);
+    for (srv = s; srv; srv = srv->next) {
+        jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
+                                                                           &jk_module);
+        if (conf->uw_map != sconf->uw_map)
+            uri_worker_map_ext(sconf->uw_map, sconf->log);
+    }
 
 }
 
@@ -2722,6 +2741,10 @@ static void jk_init(server_rec * s, ap_pool * p)
  */
 static int jk_translate(request_rec * r)
 {
+    rule_extension_t **ext = ap_palloc(r->pool, sizeof(rule_extension_t *));
+    *ext = NULL;
+    ap_set_module_config(r->request_config, &jk_module, ext);
+
     if (!r->proxyreq) {
         jk_server_conf_t *conf =
             (jk_server_conf_t *) ap_get_module_config(r->server->
@@ -2749,9 +2772,12 @@ static int jk_translate(request_rec * r)
                            r->uri);
                 return DECLINED;
             }
-            else
-                worker = map_uri_to_worker(conf->uw_map, clean_uri,
-                                           NULL, conf->log);
+            else {
+                rule_extension_t *e;
+                worker = map_uri_to_worker_ext(conf->uw_map, clean_uri,
+                                               NULL, &e, conf->log);
+                ap_set_module_config(r->request_config, &jk_module, e);
+            }
 
             /* Don't know the worker, ForwardDirectories is set, there is a
              * previous request for which the handler is JK_HANDLER (as set by

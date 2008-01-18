@@ -1779,6 +1779,7 @@ static int init_jk(char *serverName)
                 if (wc_open(workers_map, &worker_env, logger)) {
                     rc = JK_TRUE;
                 }
+                uri_worker_map_ext(uw_map, logger);
             }
             else
                 jk_log(logger, JK_LOG_EMERG,
