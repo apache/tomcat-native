@@ -43,6 +43,11 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        URI Map: Add extension attribute parsing.
+        First uses are reply_timeout and activation status per mount.
+        Usage currently only implemented for httpd. (rjung)
+      </update>
       <fix>
         URI Map: Make dynamic reloading atomic and free memory
         not needed any longer. (rjung)
