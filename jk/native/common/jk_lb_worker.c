@@ -50,8 +50,8 @@
  * Note: activation == JK_LB_ACTIVATION_ACTIVE is equivalent to
  *       activation is none of JK_LB_ACTIVATION_STOPPED, JK_LB_ACTIVATION_DISABLED
  */
-#define JK_WORKER_USABLE(w)   ((w)->s->state <= JK_LB_STATE_FORCE && (w)->activation == JK_LB_ACTIVATION_ACTIVE)
-#define JK_WORKER_USABLE_STICKY(w)   ((w)->s->state <= JK_LB_STATE_BUSY && (w)->activation != JK_LB_ACTIVATION_STOPPED)
+#define JK_WORKER_USABLE(s, activation)   ((s)->state <= JK_LB_STATE_FORCE && activation == JK_LB_ACTIVATION_ACTIVE)
+#define JK_WORKER_USABLE_STICKY(s, activation)   ((s)->state <= JK_LB_STATE_BUSY && activation != JK_LB_ACTIVATION_STOPPED)
 
 static const char *lb_locking_type[] = {
     JK_LB_LOCK_TEXT_OPTIMISTIC,
@@ -675,6 +675,7 @@ static int find_best_bydomain(jk_ws_service_t *s,
     jk_uint64_t curmin = 0;
 
     int candidate = -1;
+    int activation;
     lb_sub_worker_t wr;
 
     /* First try to see if we have available candidate */
@@ -687,7 +688,12 @@ static int find_best_bydomain(jk_ws_service_t *s,
         /* Take into calculation only the workers that are
          * not in error state, stopped, disabled or busy.
          */
-        if (JK_WORKER_USABLE(&wr)) {
+        activation = s->extension.activation ?
+                     s->extension.activation[i] :
+                     JK_LB_ACTIVATION_UNSET;
+        if (activation == JK_LB_ACTIVATION_UNSET)
+            activation = wr.activation;
+        if (JK_WORKER_USABLE(wr.s, activation)) {
             if (candidate < 0 || wr.distance < d ||
                 (wr.s->lb_value < curmin &&
                 wr.distance == d)) {
@@ -714,6 +720,7 @@ static int find_best_byvalue(jk_ws_service_t *s,
 
     /* find the least busy worker */
     int candidate = -1;
+    int activation;
     lb_sub_worker_t wr;
 
     offset = p->next_offset;
@@ -722,11 +729,16 @@ static int find_best_byvalue(jk_ws_service_t *s,
     for (j = offset; j < p->num_of_workers + offset; j++) {
         i = j % p->num_of_workers;
         wr = p->lb_workers[i];
+        activation = s->extension.activation ?
+                     s->extension.activation[i] :
+                     JK_LB_ACTIVATION_UNSET;
+        if (activation == JK_LB_ACTIVATION_UNSET)
+            activation = wr.activation;
 
         /* Take into calculation only the workers that are
          * not in error state, stopped, disabled or busy.
          */
-        if (JK_WORKER_USABLE(&wr)) {
+        if (JK_WORKER_USABLE(wr.s, activation)) {
             if (candidate < 0 || wr.distance < d ||
                 (wr.s->lb_value < curmin &&
                 wr.distance == d)) {
@@ -757,7 +769,12 @@ static int find_bysession_route(jk_ws_service_t *s,
         lb_sub_worker_t wr = p->lb_workers[candidate];
         if (uses_domain)
             s->route = wr.domain;
-        if (!JK_WORKER_USABLE_STICKY(&wr)) {
+        int activation = s->extension.activation ?
+                         s->extension.activation[candidate] :
+                         JK_LB_ACTIVATION_UNSET;
+        if (activation == JK_LB_ACTIVATION_UNSET)
+            activation = wr.activation;
+        if (!JK_WORKER_USABLE_STICKY(wr.s, activation)) {
             /* We have a worker that is error state or stopped.
              * If it has a redirection set use that redirection worker.
              * This enables to safely remove the member from the
@@ -776,7 +793,12 @@ static int find_bysession_route(jk_ws_service_t *s,
             }
             if (candidate >= 0) {
                 wr = p->lb_workers[candidate];
-                if (!JK_WORKER_USABLE_STICKY(&wr))
+                activation = s->extension.activation ?
+                             s->extension.activation[candidate] :
+                             JK_LB_ACTIVATION_UNSET;
+                if (activation == JK_LB_ACTIVATION_UNSET)
+                    activation = wr.activation;
+                if (!JK_WORKER_USABLE_STICKY(wr.s, activation))
                     candidate = -1;
             }
         }
@@ -829,8 +851,13 @@ static lb_sub_worker_t *get_most_suitable_worker(jk_ws_service_t *s,
         /* No need to find the best worker
          * if there is a single one
          */
-        if (JK_WORKER_USABLE_STICKY(&p->lb_workers[0])) {
-            if (p->lb_workers[0].activation != JK_LB_ACTIVATION_DISABLED) {
+        int activation = s->extension.activation ?
+                         s->extension.activation[0] :
+                         JK_LB_ACTIVATION_UNSET;
+        if (activation == JK_LB_ACTIVATION_UNSET)
+            activation = p->lb_workers[0].activation;
+        if (JK_WORKER_USABLE_STICKY(p->lb_workers[0].s, activation)) {
+            if (activation != JK_LB_ACTIVATION_DISABLED) {
                 JK_TRACE_EXIT(l);
                 return p->lb_workers;
             }
