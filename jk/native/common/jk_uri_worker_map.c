@@ -292,7 +292,7 @@ static int uri_worker_map_realloc(jk_uri_worker_map_t *uw_map)
  */
 
 static int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
-                         unsigned int source_type, jk_logger_t *l)
+                                jk_logger_t *l)
 {
     uri_worker_record_t *uwr = NULL;
     unsigned int i;
@@ -302,10 +302,11 @@ static int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
 
     for (i = 0; i < uw_map->size; i++) {
         uwr = uw_map->maps[i];
-        if (uwr->source_type == source_type) {
-            jk_log(l, JK_LOG_DEBUG,
-                   "deleting map rule '%s=%s' source '%s'",
-                   uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
+        if (uwr->source_type == SOURCE_TYPE_URIMAP) {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "deleting map rule '%s=%s' source '%s'",
+                       uwr->context, uwr->worker_name, uri_worker_map_get_source(uwr, l));
             for (j = i; j < uw_map->size-1; j++)
                 uw_map->maps[j] = uw_map->maps[j+1];
             uw_map->size--;
@@ -723,7 +724,7 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
             jk_log(l, JK_LOG_DEBUG,
                    "Loading urimaps from %s with reload check interval %d seconds",
                    uw_map->fname, uw_map->reload);
-        uri_worker_map_clear(uw_map, SOURCE_TYPE_URIMAP, l);
+        uri_worker_map_clear(uw_map, l);
         for (i = 0; i < jk_map_size(map); i++) {
             const char *u = jk_map_name_at(map, i);
             const char *w = jk_map_value_at(map, i);
