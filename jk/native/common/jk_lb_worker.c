@@ -767,11 +767,12 @@ static int find_bysession_route(jk_ws_service_t *s,
     }
     if (candidate >= 0) {
         lb_sub_worker_t wr = p->lb_workers[candidate];
+        int activation;
         if (uses_domain)
             s->route = wr.domain;
-        int activation = s->extension.activation ?
-                         s->extension.activation[candidate] :
-                         JK_LB_ACTIVATION_UNSET;
+        activation = s->extension.activation ?
+                     s->extension.activation[candidate] :
+                     JK_LB_ACTIVATION_UNSET;
         if (activation == JK_LB_ACTIVATION_UNSET)
             activation = wr.activation;
         if (!JK_WORKER_USABLE_STICKY(wr.s, activation)) {
