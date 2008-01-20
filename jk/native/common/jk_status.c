@@ -182,7 +182,7 @@
 #define JK_STATUS_WAIT_AFTER_UPDATE        "3"
 #define JK_STATUS_REFRESH_DEF              "10"
 #define JK_STATUS_ESC_CHARS                ("<>?\"")
-#define JK_STATUS_TIME_FMT_HTML            "%a, %d %b %Y %T %Z"
+#define JK_STATUS_TIME_FMT_HTML            "%a, %d %b %Y %X %Z"
 #define JK_STATUS_TIME_FMT_TEXT            "%Y%m%d%H%M%S"
 #define JK_STATUS_TIME_FMT_TZ              "%Z"
 #define JK_STATUS_TIME_BUF_SZ              (80)
