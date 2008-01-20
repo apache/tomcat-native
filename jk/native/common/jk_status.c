@@ -1424,8 +1424,8 @@ static void display_map(jk_ws_service_t *s,
                           uri_worker_map_get_source(uwr, l),
                           uwr->extensions.reply_timeout,
                           uwr->extensions.active ? uwr->extensions.active : "-",
-                          uwr->extensions.disable ? uwr->extensions.disable : "-",
-                          uwr->extensions.stop ? uwr->extensions.stop : "-");
+                          uwr->extensions.disabled ? uwr->extensions.disabled : "-",
+                          uwr->extensions.stopped ? uwr->extensions.stopped : "-");
             else
                 jk_printf(s, JK_STATUS_URI_MAP_TABLE_ROW,
                           uwr->uri,
@@ -1433,8 +1433,8 @@ static void display_map(jk_ws_service_t *s,
                           uri_worker_map_get_source(uwr, l),
                           uwr->extensions.reply_timeout,
                           uwr->extensions.active ? uwr->extensions.active : "-",
-                          uwr->extensions.disable ? uwr->extensions.disable : "-",
-                          uwr->extensions.stop ? uwr->extensions.stop : "-");
+                          uwr->extensions.disabled ? uwr->extensions.disabled : "-",
+                          uwr->extensions.stopped ? uwr->extensions.stopped : "-");
         }
         else if (mime == JK_STATUS_MIME_XML) {
             jk_print_xml_start_elt(s, w, 6, 0, "map");
@@ -1446,8 +1446,8 @@ static void display_map(jk_ws_service_t *s,
             jk_print_xml_att_string(s, 8, "source", uri_worker_map_get_source(uwr, l));
             jk_print_xml_att_int(s, 8, "reply_timeout", uwr->extensions.reply_timeout);
             jk_print_xml_att_string(s, 8, "active", uwr->extensions.active);
-            jk_print_xml_att_string(s, 8, "disabled", uwr->extensions.disable);
-            jk_print_xml_att_string(s, 8, "stopped", uwr->extensions.stop);
+            jk_print_xml_att_string(s, 8, "disabled", uwr->extensions.disabled);
+            jk_print_xml_att_string(s, 8, "stopped", uwr->extensions.stopped);
             jk_print_xml_stop_elt(s, 6, 1);
         }
         else if (mime == JK_STATUS_MIME_TXT) {
@@ -1460,8 +1460,8 @@ static void display_map(jk_ws_service_t *s,
             jk_printf(s, " source=\"%s\"", uri_worker_map_get_source(uwr, l));
             jk_printf(s, " reply_timeout=\"%d\"", uwr->extensions.reply_timeout);
             jk_printf(s, " active=\"%s\"", uwr->extensions.active);
-            jk_printf(s, " disabled=\"%s\"", uwr->extensions.disable);
-            jk_printf(s, " stopped=\"%s\"", uwr->extensions.stop);
+            jk_printf(s, " disabled=\"%s\"", uwr->extensions.disabled);
+            jk_printf(s, " stopped=\"%s\"", uwr->extensions.stopped);
             jk_puts(s, "\n");
         }
         else if (mime == JK_STATUS_MIME_PROP) {
@@ -1472,8 +1472,8 @@ static void display_map(jk_ws_service_t *s,
             jk_print_prop_item_string(s, w, worker, "map", count, "source", uri_worker_map_get_source(uwr, l));
             jk_print_prop_item_int(s, w, worker, "map", count, "reply_timeout", uwr->extensions.reply_timeout);
             jk_print_prop_item_string(s, w, worker, "map", count, "active", uwr->extensions.active);
-            jk_print_prop_item_string(s, w, worker, "map", count, "disabled", uwr->extensions.disable);
-            jk_print_prop_item_string(s, w, worker, "map", count, "stopped", uwr->extensions.stop);
+            jk_print_prop_item_string(s, w, worker, "map", count, "disabled", uwr->extensions.disabled);
+            jk_print_prop_item_string(s, w, worker, "map", count, "stopped", uwr->extensions.stopped);
         }
     }
     JK_TRACE_EXIT(l);
@@ -1523,10 +1523,10 @@ static void display_maps(jk_ws_service_t *s,
             jk_puts(s, "]</h3><table>\n");
             if (has_server_iterator)
                 jk_printf(s, JK_STATUS_URI_MAP_TABLE_HEAD2,
-                          "Server", "URI", "Match Type", "Source", "Reply Timeout", "Force Active", "Force Disabled", "Force Stopped");
+                          "Server", "URI", "Match Type", "Source", "Reply Timeout", "Active", "Disabled", "Stopped");
             else
                 jk_printf(s, JK_STATUS_URI_MAP_TABLE_HEAD,
-                          "URI", "Match Type", "Source", "Reply Timeout", "Force Active", "Force Disabled", "Force Stopped");
+                          "URI", "Match Type", "Source", "Reply Timeout", "Active", "Disabled", "Stopped");
         }
         count = 0;
         if (has_server_iterator) {

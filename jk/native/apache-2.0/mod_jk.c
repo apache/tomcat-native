@@ -659,8 +659,8 @@ static int init_ws_service(apache_private_data_t * private_data,
     if (e) {
         s->extension.reply_timeout = e->reply_timeout;
         if (e->activation) {
-            s->extension.activation = apr_palloc(r->pool, e->size * sizeof(int));
-            memcpy(s->extension.activation, e->activation, e->size * sizeof(int));
+            s->extension.activation = apr_palloc(r->pool, e->activation_size * sizeof(int));
+            memcpy(s->extension.activation, e->activation, e->activation_size * sizeof(int));
         }
     }
     reply_timeout = apr_table_get(r->subprocess_env, "JK_REPLY_TIMEOUT");

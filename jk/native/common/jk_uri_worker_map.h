@@ -75,13 +75,13 @@ struct rule_extension
     int reply_timeout;
     /* activation state overwrites for load balancers */
     /* Number of elements in the array activations. */
-    int size;
+    int activation_size;
     /* Dynamically allocated array with one entry per lb member. */
     int *activation;
     /* Temporary storage for the original extension strings. */
     char *active;
-    char *disable;
-    char *stop;
+    char *disabled;
+    char *stopped;
 };
 typedef struct rule_extension rule_extension_t;
 
