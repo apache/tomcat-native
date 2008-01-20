@@ -427,11 +427,11 @@ static void extract_fail_on_status(jk_uri_worker_map_t *uw_map,
     } else if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
                "Allocated fail_on_status array of size %d for worker %s",
-               uwr->extensions.fail_on_status, uwr->worker_name);
+               uwr->extensions.fail_on_status_size, uwr->worker_name);
 
 
-    for (j=0; j<uwr->extensions.activation_size; j++) {
-        uwr->extensions.activation[j] = JK_LB_ACTIVATION_UNSET;
+    for (j=0; j<uwr->extensions.fail_on_status_size; j++) {
+        uwr->extensions.fail_on_status[j] = 0;
     }
 
     cnt = 0;
