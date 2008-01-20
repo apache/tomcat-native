@@ -82,14 +82,17 @@ extern "C"
 #define JK_LB_STATE_TEXT_PROBE         ("ERR/PRB")
 #define JK_LB_STATE_TEXT_MAX           (JK_LB_STATE_PROBE)
 #define JK_LB_STATE_TEXT_DEF           (JK_LB_STATE_TEXT_IDLE)
+/* All JK_LB_ACTIVATION_* values must be single digit. */
+/* Otherwise the string encoding of the activation array */
+/* fails e.g. in the isapi redirector. */
 /* JK_LB_ACTIVATION_UNSET is not allowed as an actual worker state. */
 /* It will not work e.g. when the status worker tries to show the state. */
 /* It is only used in rule extension data to indicate, that the */
 /* activation state should not be overwritten. */
-#define JK_LB_ACTIVATION_UNSET         (-1)
 #define JK_LB_ACTIVATION_ACTIVE        (0)
 #define JK_LB_ACTIVATION_DISABLED      (1)
 #define JK_LB_ACTIVATION_STOPPED       (2)
+#define JK_LB_ACTIVATION_UNSET         (9)
 #define JK_LB_ACTIVATION_DEF           (JK_LB_ACTIVATION_ACTIVE)
 #define JK_LB_ACTIVATION_MAX           (JK_LB_ACTIVATION_STOPPED)
 #define JK_LB_ACTIVATION_TEXT_ACTIVE   ("ACT")
