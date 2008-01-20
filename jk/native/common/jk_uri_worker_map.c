@@ -349,13 +349,16 @@ static int uri_worker_map_clear(jk_uri_worker_map_t *uw_map,
     return JK_TRUE;
 }
 
-static void extract_activation(lb_worker_t *lb,
+static void extract_activation(jk_uri_worker_map_t *uw_map,
+                               uri_worker_record_t *uwr,
+                               lb_worker_t *lb,
                                int *activations,
                                char *workers,
                                int activation,
                                jk_logger_t *l)
 {
     unsigned int i;
+    jk_pool_t *p;
     char *worker;
 #ifdef _MT_CODE_PTHREAD
     char *lasts;
@@ -363,11 +366,17 @@ static void extract_activation(lb_worker_t *lb,
 
     JK_TRACE_ENTER(l);
 
+    if (uwr->source_type == SOURCE_TYPE_URIMAP)
+        p = &IND_NEXT(uw_map->p_dyn);
+    else
+        p = &uw_map->p;
+    worker = jk_pool_strdup(p, workers);
+
 #ifdef _MT_CODE_PTHREAD
-    for (worker = strtok_r(workers, ", ", &lasts);
+    for (worker = strtok_r(worker, ", ", &lasts);
          worker; worker = strtok_r(NULL, ", ", &lasts)) {
 #else
-    for (worker = strtok(workers, ", "); worker; worker = strtok(NULL, ", ")) {
+    for (worker = strtok(worker, ", "); worker; worker = strtok(NULL, ", ")) {
 #endif
         for (i=0; i<lb->num_of_workers; i++) {
             if (!strcmp(worker, lb->lb_workers[i].name)) {
@@ -418,11 +427,13 @@ static void extract_fail_on_status(jk_uri_worker_map_t *uw_map,
         p = &IND_NEXT(uw_map->p_dyn);
     else
         p = &uw_map->p;
+    status = jk_pool_strdup(p, uwr->extensions.fail_on_status_str);
     uwr->extensions.fail_on_status = (int *)jk_pool_alloc(p,
                                             uwr->extensions.fail_on_status_size * sizeof(int));
     if (!uwr->extensions.fail_on_status) {
         jk_log(l, JK_LOG_ERROR,
                "can't alloc extensions fail_on_status list");
+        JK_TRACE_EXIT(l);
         return;
     } else if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
@@ -436,10 +447,10 @@ static void extract_fail_on_status(jk_uri_worker_map_t *uw_map,
 
     cnt = 0;
 #ifdef _MT_CODE_PTHREAD
-    for (status = strtok_r(uwr->extensions.fail_on_status_str, ", ", &lasts);
+    for (status = strtok_r(status, ", ", &lasts);
          status; status = strtok_r(NULL, "&", &lasts)) {
 #else
-    for (status = strtok(uwr->extensions.fail_on_status_str, ", "); status; status = strtok(NULL, ", ")) {
+    for (status = strtok(status, ", "); status; status = strtok(NULL, ", ")) {
 #endif
         uwr->extensions.fail_on_status[cnt] = atoi(status);
         cnt++;
@@ -489,13 +500,13 @@ void uri_worker_map_ext(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
                 }
             }
             if (uwr->extensions.active)
-                extract_activation(lb, uwr->extensions.activation,
+                extract_activation(uw_map, uwr, lb, uwr->extensions.activation,
                                    uwr->extensions.active, JK_LB_ACTIVATION_ACTIVE, l);
             if (uwr->extensions.disabled)
-                extract_activation(lb, uwr->extensions.activation,
+                extract_activation(uw_map, uwr, lb, uwr->extensions.activation,
                                    uwr->extensions.disabled, JK_LB_ACTIVATION_DISABLED, l);
             if (uwr->extensions.stopped)
-                extract_activation(lb, uwr->extensions.activation,
+                extract_activation(uw_map, uwr, lb, uwr->extensions.activation,
                                    uwr->extensions.stopped, JK_LB_ACTIVATION_STOPPED, l);
         }
         else if (uwr->extensions.active) {
@@ -516,7 +527,7 @@ void uri_worker_map_ext(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
                    JK_UWMAP_EXTENSION_STOPPED " for %s ignored",
                    uwr->worker_name, uwr->extensions.stopped);
         }
-        else if (uwr->extensions.fail_on_status_str) {
+        if (uwr->extensions.fail_on_status_str) {
             extract_fail_on_status(uw_map, uwr, l);
         }
     }
@@ -1090,7 +1101,7 @@ int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
         if (statbuf.st_mtime == uw_map->modified) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
-                       "File %s  is not modified",
+                       "File %s is not modified",
                        uw_map->fname);
             return JK_TRUE;
         }
