@@ -1602,20 +1602,6 @@ static int ajp_send_request(jk_endpoint_t *e,
 }
 
 
-static int is_http_status_fail(ajp_worker_t *w, int status)
-{
-    unsigned int i;
-    int soft_status = -1 * status;
-    for (i = 0; i < w->http_status_fail_num; i++) {
-        if (w->http_status_fail[i] == status)
-            return 1;
-        else if (w->http_status_fail[i] == soft_status)
-            return -1;
-    }
-    return 0;
-}
-
-
 /*
  * What to do with incoming data (dispatcher)
  */
@@ -1641,7 +1627,12 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 return JK_AJP13_ERROR;
             }
             r->http_response_status = res.status;
-            rc = is_http_status_fail(ae->worker, res.status);
+            if (r->extension.fail_on_status_size > 0)
+                rc = is_http_status_fail(r->extension.fail_on_status_size,
+                                         r->extension.fail_on_status, res.status);
+            else
+                rc = is_http_status_fail(ae->worker->http_status_fail_num,
+                                         ae->worker->http_status_fail, res.status);
             if (rc > 0) {
                 JK_TRACE_EXIT(l);
                 return JK_STATUS_FATAL_ERROR;

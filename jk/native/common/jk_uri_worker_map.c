@@ -39,10 +39,11 @@
 #define JK_STRNCMP  strncmp
 #endif
 
-#define JK_UWMAP_EXTENSION_REPLY_TIMEOUT "reply_timeout="
-#define JK_UWMAP_EXTENSION_ACTIVE        "active="
-#define JK_UWMAP_EXTENSION_DISABLED      "disabled="
-#define JK_UWMAP_EXTENSION_STOPPED       "stopped="
+#define JK_UWMAP_EXTENSION_REPLY_TIMEOUT  "reply_timeout="
+#define JK_UWMAP_EXTENSION_ACTIVE         "active="
+#define JK_UWMAP_EXTENSION_DISABLED       "disabled="
+#define JK_UWMAP_EXTENSION_STOPPED        "stopped="
+#define JK_UWMAP_EXTENSION_FAIL_ON_STATUS "fail_on_status="
 
 #define IND_THIS(x)                        ((x)[uw_map->index])
 #define IND_NEXT(x)                        ((x)[(uw_map->index+1) % 2])
@@ -391,6 +392,63 @@ static void extract_activation(lb_worker_t *lb,
 
 }
 
+static void extract_fail_on_status(jk_uri_worker_map_t *uw_map,
+                                   uri_worker_record_t *uwr,
+                                   jk_logger_t *l)
+{
+    unsigned int i;
+    int j;
+    int cnt = 1;
+    jk_pool_t *p;
+    char *status;
+#ifdef _MT_CODE_PTHREAD
+    char *lasts;
+#endif
+
+    JK_TRACE_ENTER(l);
+
+    for (i=0; i<strlen(uwr->extensions.fail_on_status_str); i++) {
+        if (uwr->extensions.fail_on_status_str[i] == ',' ||
+            uwr->extensions.fail_on_status_str[i] == ' ')
+            cnt++;
+    }
+    uwr->extensions.fail_on_status_size = cnt;
+
+    if (uwr->source_type == SOURCE_TYPE_URIMAP)
+        p = &IND_NEXT(uw_map->p_dyn);
+    else
+        p = &uw_map->p;
+    uwr->extensions.fail_on_status = (int *)jk_pool_alloc(p,
+                                            uwr->extensions.fail_on_status_size * sizeof(int));
+    if (!uwr->extensions.fail_on_status) {
+        jk_log(l, JK_LOG_ERROR,
+               "can't alloc extensions fail_on_status list");
+        return;
+    } else if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG,
+               "Allocated fail_on_status array of size %d for worker %s",
+               uwr->extensions.fail_on_status, uwr->worker_name);
+
+
+    for (j=0; j<uwr->extensions.activation_size; j++) {
+        uwr->extensions.activation[j] = JK_LB_ACTIVATION_UNSET;
+    }
+
+    cnt = 0;
+#ifdef _MT_CODE_PTHREAD
+    for (status = strtok_r(uwr->extensions.fail_on_status_str, ", ", &lasts);
+         status; status = strtok_r(NULL, "&", &lasts)) {
+#else
+    for (status = strtok(uwr->extensions.fail_on_status_str, ", "); status; status = strtok(NULL, ", ")) {
+#endif
+        uwr->extensions.fail_on_status[cnt] = atoi(status);
+        cnt++;
+    }
+
+    JK_TRACE_EXIT(l);
+
+}
+
 void uri_worker_map_ext(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
 {
     unsigned int i;
@@ -457,6 +515,9 @@ void uri_worker_map_ext(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
                    "Worker %s is not of type lb, activation extension "
                    JK_UWMAP_EXTENSION_STOPPED " for %s ignored",
                    uwr->worker_name, uwr->extensions.stopped);
+        }
+        else if (uwr->extensions.fail_on_status_str) {
+            extract_fail_on_status(uw_map, uwr, l);
         }
     }
     uw_map->index = (uw_map->index + 1) % 2;
@@ -530,6 +591,9 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         uwr->extensions.stopped = NULL;
         uwr->extensions.activation_size = 0;
         uwr->extensions.activation = NULL;
+        uwr->extensions.fail_on_status_size = 0;
+        uwr->extensions.fail_on_status = NULL;
+        uwr->extensions.fail_on_status_str = NULL;
 
 #ifdef _MT_CODE_PTHREAD
         param = strtok_r(w, ";", &lasts);
@@ -568,6 +632,14 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                                JK_UWMAP_EXTENSION_STOPPED);
                     else
                         uwr->extensions.stopped = param + strlen(JK_UWMAP_EXTENSION_STOPPED);
+                }
+                else if (!strncmp(param, JK_UWMAP_EXTENSION_FAIL_ON_STATUS, strlen(JK_UWMAP_EXTENSION_FAIL_ON_STATUS))) {
+                    if (uwr->extensions.fail_on_status_str)
+                        jk_log(l, JK_LOG_WARNING,
+                               "extension '%s' in uri worker map only allowed once",
+                               JK_UWMAP_EXTENSION_ACTIVE);
+                    else
+                        uwr->extensions.fail_on_status_str = param + strlen(JK_UWMAP_EXTENSION_FAIL_ON_STATUS);
                 }
                 else {
                     jk_log(l, JK_LOG_WARNING,

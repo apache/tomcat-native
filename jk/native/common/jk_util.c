@@ -1760,6 +1760,20 @@ int jk_get_worker_libpath(jk_map_t *m, const char *wname, const char **libpath)
     return JK_FALSE;
 }
 
+int is_http_status_fail(unsigned int http_status_fail_num,
+                        int *http_status_fail, int status)
+{
+    unsigned int i;
+    int soft_status = -1 * status;
+    for (i = 0; i < http_status_fail_num; i++) {
+        if (http_status_fail[i] == status)
+            return 1;
+        else if (http_status_fail[i] == soft_status)
+            return -1;
+    }
+    return 0;
+}
+
 char **jk_parse_sysprops(jk_pool_t *p, const char *sysprops)
 {
     char **rc = NULL;

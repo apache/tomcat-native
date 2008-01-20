@@ -82,6 +82,13 @@ struct rule_extension
     char *active;
     char *disabled;
     char *stopped;
+    /* fail_on_status overwrites */
+    /* Number of elements in the array fail_on_status. */
+    int fail_on_status_size;
+    /* Dynamically allocated array with one entry per status. */
+    int *fail_on_status;
+    /* Temporary storage for the original extension strings. */
+    char *fail_on_status_str;
 };
 typedef struct rule_extension rule_extension_t;
 

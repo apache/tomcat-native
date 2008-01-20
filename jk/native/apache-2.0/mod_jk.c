@@ -662,6 +662,10 @@ static int init_ws_service(apache_private_data_t * private_data,
             s->extension.activation = apr_palloc(r->pool, e->activation_size * sizeof(int));
             memcpy(s->extension.activation, e->activation, e->activation_size * sizeof(int));
         }
+        if (e->fail_on_status_size > 0) {
+            s->extension.fail_on_status = apr_palloc(r->pool, e->fail_on_status_size * sizeof(int));
+            memcpy(s->extension.fail_on_status, e->fail_on_status, e->fail_on_status_size * sizeof(int));
+        }
     }
     reply_timeout = apr_table_get(r->subprocess_env, "JK_REPLY_TIMEOUT");
     if (reply_timeout) {

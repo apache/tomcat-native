@@ -44,8 +44,9 @@
   <subsection name="Native">
     <changelog>
       <update>
-        URI Map: Add extension attribute parsing.
-        First uses are reply_timeout and activation status per mount.
+        URI Map: Add extension attributes to uri worker map.
+        Allowed are reply_timeout, active/disabled/stopped
+        and fail_on_status.
         Usage currently only implemented for httpd. (rjung)
       </update>
       <fix>

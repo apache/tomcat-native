@@ -82,6 +82,11 @@ struct svc_extension
     /* activation state overwrites for load balancers */
     /* Dynamically allocated array with one entry per lb member. */
     int *activation;
+    /* fail_on_status overwrites */
+    /* Number of elements in the array fail_on_status. */
+    int fail_on_status_size;
+    /* Dynamically allocated array with one entry per status. */
+    int *fail_on_status;
 };
 typedef struct svc_extension svc_extension_t;
 

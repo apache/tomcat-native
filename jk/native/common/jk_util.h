@@ -206,8 +206,10 @@ const char *jk_get_worker_prop_prefix(jk_map_t *m, const char *wname, const char
 int jk_get_worker_fail_on_status(jk_map_t *m, const char *wname,
                                  int *list, unsigned int list_size);
 
-
 int jk_get_worker_user_case_insensitive(jk_map_t *m, const char *wname);
+
+int is_http_status_fail(unsigned int http_status_fail_num,
+                        int *http_status_fail, int status);
 
 #define TC32_BRIDGE_TYPE    32
 #define TC33_BRIDGE_TYPE    33
