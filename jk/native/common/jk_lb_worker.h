@@ -205,6 +205,7 @@ const char *jk_lb_get_method(lb_worker_t *p, jk_logger_t *l);
 int jk_lb_get_method_code(const char *v);
 const char *jk_lb_get_state(lb_sub_worker_t *p, jk_logger_t *l);
 int jk_lb_get_state_code(const char *v);
+const char *jk_lb_get_activation_direct(int activation, jk_logger_t *l);
 const char *jk_lb_get_activation(lb_sub_worker_t *p, jk_logger_t *l);
 int jk_lb_get_activation_code(const char *v);
 void reset_lb_values(lb_worker_t *p, jk_logger_t *l);

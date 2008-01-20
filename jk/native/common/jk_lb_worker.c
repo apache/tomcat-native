@@ -219,6 +219,14 @@ int jk_lb_get_state_code(const char *v)
 }
 
 /* Return the string representation of the balance worker activation */
+/* based on the integer representation */
+const char *jk_lb_get_activation_direct(int activation, jk_logger_t *l)
+{
+    return lb_activation_type[activation];
+}
+
+/* Return the string representation of the balance worker activation */
+/* based on the sub worker struct */
 const char *jk_lb_get_activation(lb_sub_worker_t *p, jk_logger_t *l)
 {
     return lb_activation_type[p->activation];

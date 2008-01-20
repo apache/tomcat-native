@@ -369,9 +369,22 @@ static void extract_activation(lb_worker_t *lb,
     for (worker = strtok(workers, ", "); worker; worker = strtok(NULL, ", ")) {
 #endif
         for (i=0; i<lb->num_of_workers; i++) {
-            if (!strcmp(worker, lb->lb_workers[i].name))
+            if (!strcmp(worker, lb->lb_workers[i].name)) {
+                if (activations[i] != JK_LB_ACTIVATION_UNSET)
+                    jk_log(l, JK_LOG_WARNING,
+                           "inconsistent activation overwrite for member %s "
+                           "of load balancer %s: '%s' replaced by '%s'",
+                           worker, lb->name,
+                           jk_lb_get_activation_direct(activations[i], l),
+                           jk_lb_get_activation_direct(activation, l));
                 activations[i] = activation;
+                break;
+            }
         }
+        if (i >= lb->num_of_workers)
+            jk_log(l, JK_LOG_WARNING,
+                   "could not find member %s of load balancer %s",
+                   worker, lb->name);
     }
 
     JK_TRACE_EXIT(l);
@@ -525,9 +538,9 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 #endif
         if (param) {
 #ifdef _MT_CODE_PTHREAD
-            for (; param; param = strtok_r(NULL, ";", &lasts)) {
+            for (param = strtok_r(NULL, ";", &lasts); param; param = strtok_r(NULL, ";", &lasts)) {
 #else
-            for (; param; param = strtok(NULL, ";")) {
+            for (param = strtok(NULL, ";"); param; param = strtok(NULL, ";")) {
 #endif
                 if (!strncmp(param, JK_UWMAP_EXTENSION_REPLY_TIMEOUT, strlen(JK_UWMAP_EXTENSION_REPLY_TIMEOUT))) {
                     uwr->extensions.reply_timeout = atoi(param + strlen(JK_UWMAP_EXTENSION_REPLY_TIMEOUT));
@@ -555,6 +568,11 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                                JK_UWMAP_EXTENSION_STOPPED);
                     else
                         uwr->extensions.stopped = param + strlen(JK_UWMAP_EXTENSION_STOPPED);
+                }
+                else {
+                    jk_log(l, JK_LOG_WARNING,
+                           "unknown extension '%s' in uri worker map",
+                           param);
                 }
             }
         }
