@@ -363,10 +363,10 @@ static void extract_activation(lb_worker_t *lb,
     JK_TRACE_ENTER(l);
 
 #ifdef _MT_CODE_PTHREAD
-    for (worker = strtok_r(workers, ",", &lasts);
-         worker; worker = strtok_r(NULL, "&", &lasts)) {
+    for (worker = strtok_r(workers, ", ", &lasts);
+         worker; worker = strtok_r(NULL, ", ", &lasts)) {
 #else
-    for (worker = strtok(workers, ","); worker; worker = strtok(NULL, ",")) {
+    for (worker = strtok(workers, ", "); worker; worker = strtok(NULL, ", ")) {
 #endif
         for (i=0; i<lb->num_of_workers; i++) {
             if (!strcmp(worker, lb->lb_workers[i].name))
