@@ -2971,11 +2971,12 @@ static int jk_post_config(apr_pool_t * pconf,
             conf->was_initialized = JK_TRUE;
             if (init_jk(pconf, conf, s) == JK_FALSE)
                 return HTTP_INTERNAL_SERVER_ERROR;
-            uri_worker_map_ext(conf->uw_map, conf->log);
+            if (conf->uw_map)
+                uri_worker_map_ext(conf->uw_map, conf->log);
             for (srv = s; srv; srv = srv->next) {
                 jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                                    &jk_module);
-                if (conf->uw_map != sconf->uw_map)
+                if (conf->uw_map != sconf->uw_map && sconf->uw_map)
                     uri_worker_map_ext(sconf->uw_map, sconf->log);
             }
 
