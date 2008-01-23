@@ -468,7 +468,16 @@ void uri_worker_map_ext(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
 
     for (i = 0; i < IND_NEXT(uw_map->size); i++) {
         uri_worker_record_t *uwr = IND_NEXT(uw_map->maps)[i];
-        jk_worker_t *jw = wc_get_worker_for_name(uwr->worker_name, l);
+        jk_worker_t *jw;
+        if(uwr->match_type & MATCH_TYPE_NO_MATCH)
+            continue;
+        jw = wc_get_worker_for_name(uwr->worker_name, l);
+        if(!jw) {
+            jk_log(l, JK_LOG_ERROR,
+                   "Could not find worker with name '%s' in uri map post processing.",
+                   uwr->worker_name);
+            continue;
+        }
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "Checking extension for worker %d: %s of type %s (%d)",
@@ -854,7 +863,8 @@ static int is_nomatch(jk_uri_worker_map_t *uw_map,
             (uwr->match_type & MATCH_TYPE_DISABLED))
             continue;
         /* Check only matching workers */
-        if (*uwr->worker_name != '*' && strcmp(uwr->worker_name, worker))
+        if (strcmp(uwr->worker_name, worker) &&
+            strcmp(uwr->worker_name, "*"))
             continue;
         if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {
             /* Map is already sorted by context_len */

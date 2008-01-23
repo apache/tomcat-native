@@ -1358,7 +1358,8 @@ static int count_map(jk_uri_worker_map_t *uw_map,
     if (uw_map) {
         for (i = 0; i < uw_map->size[uw_map->index]; i++) {
             uri_worker_record_t *uwr = uw_map->maps[uw_map->index][i];
-            if (strcmp(uwr->worker_name, worker)) {
+            if (strcmp(uwr->worker_name, worker) &&
+                strcmp(uwr->worker_name, "*")) {
                 continue;
             }
             count++;
@@ -1409,7 +1410,8 @@ static void display_map(jk_ws_service_t *s,
     for (i = 0; i < uw_map->size[uw_map->index]; i++) {
         uri_worker_record_t *uwr = uw_map->maps[uw_map->index][i];
 
-        if (strcmp(uwr->worker_name, worker)) {
+        if (strcmp(uwr->worker_name, worker) &&
+            strcmp(uwr->worker_name, "*")) {
             continue;
         }
         (*count_ptr)++;
