@@ -308,7 +308,6 @@ public class ServerCookie implements Serializable {
     /**
      * @deprecated - Not used
      */
-    @Deprecated
     public static void maybeQuote(int version, StringBuffer buf, String value) {
         // special case - a \n or \r  shouldn't happen in any case
         if (isToken(value)) {
