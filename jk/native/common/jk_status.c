@@ -227,7 +227,7 @@
 #define JK_STATUS_SHOW_AJP_CONF_ROW        "<tr>" \
                                            "<td>%s</td>" \
                                            "<td>%s:%d</td>" \
-                                           "<td>%d</td>" \
+                                           "<td>%s</td>" \
                                            "<td>%d</td>" \
                                            "<td>%d</td>" \
                                            "<td>%d</td>" \
