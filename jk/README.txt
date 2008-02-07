@@ -26,6 +26,8 @@ Building native part:
 * You need to install the web server and go the native subdirectory
   and process the instructions in its BUILDING.txt.
 
+* Read the BUILD.txt 
+
 Building the doc:
 
 * Go to the subdirection xdocs and use ant
