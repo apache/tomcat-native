@@ -50,7 +50,6 @@
   <!-- =================== BUILD: Set compile flags ======================= -->
   <target name="flags">
     <!-- JDK flags -->
-    <available property="jdk.1.2.present" classname="java.util.HashMap" />
     <available property="jdk.1.3.present" 
      classname="java.lang.reflect.Proxy" />
     <available property="jdk.1.4.present" classname="java.nio.Buffer" />
@@ -75,7 +74,6 @@
     <echo message="&lt;style&gt; task available (required)=${style.available}" />
 
     <echo message="--- JDK ---" />
-    <echo message="jdk.1.2.present=${jdk.1.2.present}" />
     <echo message="jdk.1.3.present=${jdk.1.3.present}" />
     <echo message="jdk.1.4.present=${jdk.1.4.present}" />
 
