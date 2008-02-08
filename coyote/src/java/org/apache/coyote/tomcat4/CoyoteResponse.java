@@ -796,18 +796,20 @@ public class CoyoteResponse
         if (included)
             return;
 
-        cookies.add(cookie);
-
         StringBuffer sb = new StringBuffer();
+        //web application code can receive a IllegalArgumentException 
+        //from the appendCookieValue invokation
         ServerCookie.appendCookieValue
             (sb, cookie.getVersion(), cookie.getName(), cookie.getValue(),
              cookie.getPath(), cookie.getDomain(), cookie.getComment(), 
              cookie.getMaxAge(), cookie.getSecure());
+        // if we reached here, no exception, cookie is valid
         // the header name is Set-Cookie for both "old" and v.1 ( RFC2109 )
         // RFC2965 is not supported by browsers and the Servlet spec
         // asks for 2109.
         addHeader("Set-Cookie", sb.toString());
 
+        cookies.add(cookie);
     }
 
 
