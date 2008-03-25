@@ -53,7 +53,9 @@ They can be used to manage the JK web server plugins via the special status work
 	&lt;property file="jkstatus.properties.default"/&gt;
 
     &lt;path id="jkstatus.classpath"&gt;
-      &lt;pathelement location="${catalina.home}/bin/commons-logging-api.jar"/&gt;
+      &lt;fileset dir="${catalina.home}/bin"&gt;
+          &lt;include name="commons-logging-api-*.jar"/&gt;
+      &lt;/fileset&gt;
       &lt;pathelement location="${catalina.home}/server/lib/catalina-ant.jar"/&gt;
       &lt;pathelement location="../dist/tomcat-jkstatus-ant.jar"/&gt;
       &lt;pathelement location="${catalina.home}/server/lib/tomcat-util.jar"/&gt;

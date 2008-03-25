@@ -25,7 +25,9 @@
 	<property file="jkstatus.properties.default"/>
 
     <path id="jkstatus.classpath">
-      <pathelement location="${catalina.home}/bin/commons-logging-api.jar"/>
+      <fileset dir="${catalina.home}/bin">
+          <include name="commons-logging-api-*.jar"/>
+      </fileset>
       <pathelement location="${catalina.home}/server/lib/catalina-ant.jar"/>
       <!--<pathelement location="${catalina.home}/server/lib/tomcat-jkstatus-ant.jar"/>-->
       <pathelement location="../dist/tomcat-jkstatus-ant.jar"/>

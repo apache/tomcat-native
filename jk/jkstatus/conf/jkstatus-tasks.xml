@@ -26,7 +26,9 @@
   <dirname property="jkstatus.home.bin.dir" file="${ant.file.jkstatus-tasks}"/>
   <property name="jkstatus.home" value="${jkstatus.home.bin.dir}/.."/>
   <path id="jkstatus.path">
-      <pathelement location="${jkstatus.home}/bin/commons-logging-api.jar"/>
+      <fileset dir="${jkstatus.home}/bin">
+          <include name="commons-logging-api-*.jar"/>
+      </fileset>
       <pathelement location="${jkstatus.home}/lib/catalina-ant.jar"/>
       <pathelement location="${jkstatus.home}/lib/tomcat-jkstatus-ant.jar"/>
       <pathelement location="${jkstatus.home}/lib/tomcat-util.jar"/>
