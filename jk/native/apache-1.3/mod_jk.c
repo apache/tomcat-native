@@ -2400,7 +2400,12 @@ static void *merge_jk_config(ap_pool * p, void *basev, void *overridesv)
     if (!overrides->key_size_indicator)
         overrides->key_size_indicator = base->key_size_indicator;
 
-    overrides->options |= (base->options & ~base->exclude_options);
+/* Don't simply accumulate bits in the JK_OPT_FWDURIMASK region, */
+/* because those are multi-bit values. */
+    if (overrides->options & JK_OPT_FWDURIMASK)
+        overrides->options |= (base->options & ~base->exclude_options) & ~JK_OPT_FWDURIMASK;
+    else
+        overrides->options |= (base->options & ~base->exclude_options);
 
     if (base->envvars) {
         if (overrides->envvars && overrides->envvars_has_own) {

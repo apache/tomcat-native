@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        <bug>44738</bug>: Fix merging of JkOption ForwardURI* between virtual hosts.
+        Patch contributed by Toshihiro Sasajima. (rjung)
+      </fix>
       <update>
         URI Map: Add extension attributes to uri worker map.
         Allowed are reply_timeout, active/disabled/stopped
