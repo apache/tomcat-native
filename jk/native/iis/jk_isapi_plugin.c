@@ -1659,6 +1659,9 @@ static int init_jk(char *serverName)
         logger = NULL;
     }
     StringCbCopy(shm_name, MAX_PATH, SHM_DEF_NAME);
+
+    jk_log(logger, JK_LOG_INFO, "Starting %s", VERSION_STRING );
+
     if (*serverName) {
         size_t i;
         StringCbCat(shm_name, MAX_PATH, "_");
@@ -1691,6 +1694,11 @@ static int init_jk(char *serverName)
         jk_log(logger, JK_LOG_DEBUG, "Using rewrite rule file %s.",
                rewrite_rule_file);
         jk_log(logger, JK_LOG_DEBUG, "Using uri select %d.", uri_select_option);
+
+        jk_log(logger, JK_LOG_DEBUG, "Using uri header %s.", URI_HEADER_NAME);
+        jk_log(logger, JK_LOG_DEBUG, "Using query header %s.", QUERY_HEADER_NAME);
+        jk_log(logger, JK_LOG_DEBUG, "Using worker header %s.", WORKER_HEADER_NAME);
+        jk_log(logger, JK_LOG_DEBUG, "Using translate header %s.", TOMCAT_TRANSLATE_HEADER_NAME);
     }
 
     if (rewrite_rule_file[0] && jk_map_alloc(&rewrite_map)) {
@@ -1979,12 +1987,14 @@ static int init_ws_service(isapi_private_data_t * private_data,
 
     DWORD huge_buf_sz;
 
+    JK_TRACE_ENTER(logger);
+
     s->start_response = start_response;
     s->read = read;
     s->write = write;
 
     if (!(huge_buf = jk_pool_alloc(&private_data->p, MAX_PACKET_SIZE))) {
-
+        JK_TRACE_EXIT(logger);
         return JK_FALSE;    
     }
     huge_buf_sz = MAX_PACKET_SIZE;
@@ -1992,12 +2002,22 @@ static int init_ws_service(isapi_private_data_t * private_data,
     GET_SERVER_VARIABLE_VALUE(HTTP_URI_HEADER_NAME, s->req_uri);
     GET_SERVER_VARIABLE_VALUE(HTTP_QUERY_HEADER_NAME, s->query_string);
 
+    if (JK_IS_DEBUG_LEVEL(logger)) {
+        jk_log(logger, JK_LOG_DEBUG, "Reading extension header %s: %s", HTTP_WORKER_HEADER_NAME, (*worker_name) );
+        jk_log(logger, JK_LOG_DEBUG, "Reading extension header %s: %s", HTTP_URI_HEADER_NAME, s->req_uri);
+        jk_log(logger, JK_LOG_DEBUG, "Reading extension header %s: %s", HTTP_QUERY_HEADER_NAME, s->query_string);
+    }
+
     if (s->req_uri == NULL) {
+        if (JK_IS_DEBUG_LEVEL(logger))
+            jk_log(logger, JK_LOG_DEBUG, "No URI header value provided. Defaulting to old behaviour" );
         s->query_string = private_data->lpEcb->lpszQueryString;
         *worker_name = DEFAULT_WORKER_NAME;
         GET_SERVER_VARIABLE_VALUE("URL", s->req_uri);
-        if (unescape_url(s->req_uri) < 0)
+        if (unescape_url(s->req_uri) < 0) {
+            JK_TRACE_EXIT(logger);
             return JK_FALSE;
+        }
         getparents(s->req_uri);
     }
 
@@ -2129,6 +2149,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
                 jk_pool_alloc(&private_data->p, (cnt + 1) * sizeof(char *));
 
             if (!s->headers_names || !s->headers_values || !headers_buf) {
+                JK_TRACE_EXIT(logger);
                 return JK_FALSE;
             }
 
@@ -2214,10 +2235,12 @@ static int init_ws_service(isapi_private_data_t * private_data,
         }
         else {
             /* We must have our two headers */
+            JK_TRACE_EXIT(logger);
             return JK_FALSE;
         }
     }
     else {
+        JK_TRACE_EXIT(logger);
         return JK_FALSE;
     }
 
@@ -2238,6 +2261,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
                STRNULL_FOR_NULL(s->req_uri));
     }
 
+    JK_TRACE_EXIT(logger);
     return JK_TRUE;
 }
 
