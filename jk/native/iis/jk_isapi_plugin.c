@@ -49,7 +49,7 @@
 
 #include <strsafe.h>
 
-#define VERSION_STRING "Jakarta/ISAPI/" JK_VERSTRING
+#define VERSION_STRING "Jakarta/ISAPI/" JK_EXPOSED_VERSION
 #define SHM_DEF_NAME   "JKISAPISHMEM"
 #define DEFAULT_WORKER_NAME ("ajp13")
 
@@ -1799,9 +1799,7 @@ static int init_jk(char *serverName)
         }
     }
     if (rc) {
-        jk_log(logger, JK_LOG_INFO,
-               "isapi_redirect/%s initialized",
-               JK_VERSTRING);
+        jk_log(logger, JK_LOG_INFO, "Initialized %s", (VERSION_STRING) );
     }
     return rc;
 }
