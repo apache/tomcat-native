@@ -85,7 +85,7 @@ MPKXDC	= mkxdc
 AWK	= awk
 
 # Global flags for all compilers
-CFLAGS	= $(OPT) -D$(DB) -DNETWARE -DXP_NETWARE -nostdinc
+CFLAGS	= $(OPT) -D$(DB) -DNETWARE -DXP_NETWARE -nostdinc -DJK_NSAPI
 
 ifeq ($(CC),mwccnlm)
 LD	= mwldnlm
