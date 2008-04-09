@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Detect correct plugin name for various web servers via additional
+        preprocessor defines. (rjung)
+      </update>
       <fix>
         <bug>44738</bug>: Fix merging of JkOption ForwardURI* between virtual hosts.
         Patch contributed by Toshihiro Sasajima. (rjung)

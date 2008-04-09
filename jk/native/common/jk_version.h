@@ -40,7 +40,13 @@
 /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
 
 #if !defined(PACKAGE)
+#if defined(JK_ISAPI)
+#define PACKAGE "isapi_redirector"
+#elif defined(JK_NSAPI)
+#define PACKAGE "nsapi_redirector"
+#else
 #define PACKAGE "mod_jk"
+#endif
 #endif
 
 /* Build JK_EXPOSED_VERSION and JK_VERSION */

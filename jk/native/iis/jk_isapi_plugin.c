@@ -1799,7 +1799,7 @@ static int init_jk(char *serverName)
         }
     }
     if (rc) {
-        jk_log(logger, JK_LOG_INFO, "Initialized %s", (VERSION_STRING) );
+        jk_log(logger, JK_LOG_INFO, "%s initialized", (VERSION_STRING) );
     }
     return rc;
 }
