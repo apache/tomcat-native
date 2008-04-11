@@ -1078,14 +1078,14 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
     if (rc < 0) {
         ae->last_errno = errno;
         if (rc == JK_SOCKET_EOF) {
-            jk_log(l, JK_LOG_ERROR,
+            jk_log(l, JK_LOG_INFO,
                    "(%s) can't receive the response message from tomcat, "
                    "tomcat (%s) has forced a connection close for socket %d",
                    ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
                    ae->sd);
         }
         else {
-            jk_log(l, JK_LOG_ERROR,
+            jk_log(l, JK_LOG_INFO,
                    "(%s) can't receive the response message from tomcat, "
                    "network problems or tomcat (%s) is down (errno=%d)",
                    ae->worker->name, jk_dump_hinfo(&ae->worker->worker_inet_addr, buf),
