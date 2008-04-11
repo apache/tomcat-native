@@ -48,6 +48,15 @@
         preprocessor defines. (rjung)
       </update>
       <fix>
+        Do not put loadbalancer node in error state if there is opened
+        channel. This fixes the bug when new new connection fails due to
+        bussines, causing opened connections fail stickyness.
+        This brings back per-node busy counter and private state array
+        for each request. We can mark the state as error for failover to
+        work while still operating and reporting node as OK if there are
+        opened working connections. (mturk)
+      </fix>
+      <fix>
         <bug>44738</bug>: Fix merging of JkOption ForwardURI* between virtual hosts.
         Patch contributed by Toshihiro Sasajima. (rjung)
       </fix>

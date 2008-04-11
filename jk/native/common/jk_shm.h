@@ -124,6 +124,8 @@ struct jk_shm_lb_sub_worker
     char    domain[JK_SHM_STR_SIZ+1];
     /* worker redirect route */
     char    redirect[JK_SHM_STR_SIZ+1];
+    /* Number of currently busy channels */
+    volatile int busy;
     /* worker distance */
     volatile int distance;
     /* current activation state (config) of the worker */

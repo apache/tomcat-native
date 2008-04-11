@@ -158,6 +158,8 @@ struct lb_sub_worker
     int activation;
     /* Current lb factor */
     int lb_factor;
+    /* Current worker index */
+    int i;
     /* Current lb reciprocal factor */
     jk_uint64_t lb_mult;
 };
