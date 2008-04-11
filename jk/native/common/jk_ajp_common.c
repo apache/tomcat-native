@@ -1039,7 +1039,7 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
         return JK_TRUE;
     }
     ae->last_errno = errno;
-    jk_log(l, JK_LOG_ERROR,
+    jk_log(l, JK_LOG_INFO,
            "sendfull returned %d (errno=%d)", rc, ae->last_errno);
     ae->sd = JK_INVALID_SOCKET;
 
