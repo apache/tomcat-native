@@ -233,6 +233,8 @@ static jk_worker_env_t worker_env;
 static apr_global_mutex_t *jk_log_lock = NULL;
 static char *jk_shm_file = NULL;
 static size_t jk_shm_size = 0;
+static int jk_watchdog_interval = 0;
+
 /*
  * Worker stuff
 */
@@ -1143,6 +1145,26 @@ static const char *jk_set_mount_file_reload(cmd_parms * cmd,
 }
 
 /*
+ * JkWatchdogInterval Directive Handling
+ *
+ * JkWatchdogInterval seconds
+ */
+
+static const char *jk_set_watchdog_interval(cmd_parms * cmd,
+                                            void *dummy, const char *watchdog_interval)
+{
+#if APR_HAS_THREADS
+    jk_watchdog_interval = atoi(watchdog_interval);
+    if (jk_watchdog_interval < 0) {
+        jk_watchdog_interval = 0;
+    }
+    return NULL;
+#else
+    return "APR was compiled without threading support. Cannot create watchdog thread";
+#endif
+}
+
+/*
  * JkLogFile Directive Handling
  *
  * JkLogFile file
@@ -1996,6 +2018,15 @@ static const command_rec jk_cmds[] = {
                   "the reload check interval of the mount file"),
 
     /*
+     * JkWatchdogInterval specifies the maintain interval for the
+     * wathdog thread.
+     *
+     * Default value is: 0 meaning watchdog thread will not be created
+     */
+    AP_INIT_TAKE1("JkWatchdogInterval", jk_set_watchdog_interval, NULL, RSRC_CONF,
+                  "maintain interval of the watchdog thread"),
+
+    /*
      * JkMount mounts a url prefix to a worker (the worker need to be
      * defined in the worker properties file.
      */
@@ -2273,8 +2304,9 @@ static int jk_handler(request_rec * r)
             private_data.read_body_started = JK_FALSE;
             private_data.r = r;
 
-            wc_maintain(xconf->log);
-
+            /* Maintain will be done by watchdog thread */
+			if (!jk_watchdog_interval)
+            	wc_maintain(xconf->log);
             jk_init_ws_service(&s);
             s.ws_private = &private_data;
             s.pool = &private_data.p;
@@ -2725,6 +2757,28 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
     return -1;
 }
 
+#if APR_HAS_THREADS
+
+static void * APR_THREAD_FUNC jk_watchdog_func(apr_thread_t *thd, void *data)
+{
+    int i;
+    jk_server_conf_t *conf = (jk_server_conf_t *)data;
+
+    if (JK_IS_DEBUG_LEVEL(conf->log))
+        jk_log(conf->log, JK_LOG_DEBUG,
+               "Watchdog initialized");
+    for (;;) {
+        apr_sleep(apr_time_from_sec(60));
+        if (JK_IS_DEBUG_LEVEL(conf->log))
+           jk_log(conf->log, JK_LOG_DEBUG,
+                  "Watchdog running");
+        wc_maintain(conf->log);
+    }
+    apr_thread_exit(thd, 0);
+    return NULL;
+}
+
+#endif
 
 /** Standard apache callback, initialize jk.
  */
@@ -2733,6 +2787,7 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
     jk_server_conf_t *conf;
     apr_status_t rv;
     int rc;
+    apr_thread_t *wdt;
 
     conf = ap_get_module_config(s->module_config, &jk_module);
 
@@ -2743,6 +2798,16 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
     }
 
     JK_TRACE_ENTER(conf->log);
+
+    if (jk_watchdog_interval) {
+#if APR_HAS_THREADS
+        rv = apr_thread_create(&wdt, NULL, jk_watchdog_func, conf, pconf);
+        if (rv != APR_SUCCESS) {
+            ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
+                     "mod_jk: could not init JK watchdog thread");
+        }
+#endif
+    }
 
     if ((rc = jk_shm_attach(jk_shm_file, jk_shm_size, conf->log)) == 0) {
         apr_pool_cleanup_register(pconf, conf->log, jk_cleanup_shmem,

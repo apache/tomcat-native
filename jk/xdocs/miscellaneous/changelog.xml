@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Add JkWatchdogInterval directive for Apache 2.0
+        that allows unatended maintenance of the workers. (mturk)
+      </update>
       <fix>
         Fix docs for worker attribute "secret". (rjung)
       </fix>

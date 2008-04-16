@@ -194,6 +194,17 @@ It is allowed in the global configuration and in VirtualHost.
 <br/>
 The default value is JK_WORKER_NAME.
 </p></attribute>
+<attribute name="JkWatchdogInterval" required="false"><p>
+This directive configures the watchdog thread interval in seconds.
+The workers are maintained periodically on this interval.
+If you set this directive to "0", watchdog thread will not be
+created and standard on request maintenance will be applied.
+<br/>
+The default value is 0 seconds, meaning the watchdog thread
+will not be created inside each child process.
+<br/>
+This directive has been added in version 1.2.27 of mod_jk.
+</p></attribute>
 <attribute name="JkLogFile" required="false"><p>
 Full or server relative path to the Tomcat Connector module log file.
 It will also work with pipe, by using a value of the form "| ...".
