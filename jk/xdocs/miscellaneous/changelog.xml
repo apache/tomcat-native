@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        Fix docs for worker attribute "secret". (rjung)
+      </fix>
       <update>
         Detect correct plugin name for various web servers via additional
         preprocessor defines. (rjung)
