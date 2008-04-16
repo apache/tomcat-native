@@ -2305,8 +2305,8 @@ static int jk_handler(request_rec * r)
             private_data.r = r;
 
             /* Maintain will be done by watchdog thread */
-			if (!jk_watchdog_interval)
-            	wc_maintain(xconf->log);
+            if (!jk_watchdog_interval)
+                wc_maintain(xconf->log);
             jk_init_ws_service(&s);
             s.ws_private = &private_data;
             s.pool = &private_data.p;
@@ -2768,7 +2768,7 @@ static void * APR_THREAD_FUNC jk_watchdog_func(apr_thread_t *thd, void *data)
         jk_log(conf->log, JK_LOG_DEBUG,
                "Watchdog initialized");
     for (;;) {
-        apr_sleep(apr_time_from_sec(60));
+        apr_sleep(apr_time_from_sec(jk_watchdog_interval));
         if (JK_IS_DEBUG_LEVEL(conf->log))
            jk_log(conf->log, JK_LOG_DEBUG,
                   "Watchdog running");
