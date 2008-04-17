@@ -657,7 +657,7 @@ static int JK_METHOD maintain_workers(jk_worker_t *p, time_t now, jk_logger_t *l
 
 static int find_by_session(jk_ws_service_t *s,
                            lb_worker_t *p,
-                           const char *name,                           
+                           const char *name,
                            jk_logger_t *l)
 {
 
@@ -1043,7 +1043,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         jk_log(l, JK_LOG_ERROR,
                "Failed allocating private worker state memory");
         JK_TRACE_EXIT(l);
-        return JK_SERVER_ERROR;        
+        return JK_SERVER_ERROR;
     }
 
     jk_shm_lock();
@@ -1062,14 +1062,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
         jk_log(l, JK_LOG_ERROR,
                "Failed allocating AJP message");
         JK_TRACE_EXIT(l);
-        return JK_SERVER_ERROR;        
+        return JK_SERVER_ERROR;
     }
     if (jk_b_set_buffer_size(s->reco_buf, p->worker->max_packet_size)) {
         *is_error = JK_HTTP_SERVER_ERROR;
         jk_log(l, JK_LOG_ERROR,
                "Failed allocating AJP message buffer");
         JK_TRACE_EXIT(l);
-        return JK_SERVER_ERROR;        
+        return JK_SERVER_ERROR;
     }
     jk_b_reset(s->reco_buf);
     s->reco_status = RECO_INITED;
@@ -1118,7 +1118,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             }
             if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                 jk_shm_unlock();
-                       
+
             while ((!(r=rec->worker->get_endpoint(rec->worker, &end, l)) || !end) && (retry < p->worker->retries)) {
                 retry++;
                 retry_wait *=2;
