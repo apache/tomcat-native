@@ -103,6 +103,7 @@ static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
 #define STRIP_SESSION_TAG           ("strip_session")
 #define AUTH_COMPLETE_TAG           ("auth_complete")
 #define REJECT_UNSAFE_TAG           ("reject_unsafe")
+#define WATCHDOG_INTERVAL_TAG       ("watchdog_interval")
 
 
 #define TRANSLATE_HEADER            ("Translate:")
@@ -198,6 +199,7 @@ static int strip_session = 0;
 static DWORD auth_notification_flags = 0;
 static int   use_auth_notification_flags = 1;
 static int reject_unsafe = 0;
+static int watchdog_interval = 0;
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -1486,7 +1488,8 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
         jk_pool_atom_t buf[SMALL_POOL_SIZE];
         char *worker_name;
 
-        wc_maintain(logger);
+        if (!watchdog_interval)
+            wc_maintain(logger);
         jk_init_ws_service(&s);
         jk_open_pool(&private_data.p, buf, sizeof(buf));
 
@@ -1650,6 +1653,25 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
     return fReturn;
 }
 
+static DWORD WINAPI watchdog_thread(void *param)
+{
+    if (JK_IS_DEBUG_LEVEL(logger)) {
+        jk_log(logger, JK_LOG_DEBUG,
+               "Watchdog thread initialized");
+    }
+    while (is_inited) {
+        Sleep(watchdog_interval * 1000);
+        if (!is_inited)
+            break;
+        if (JK_IS_DEBUG_LEVEL(logger)) {
+            jk_log(logger, JK_LOG_DEBUG,
+                   "Watchdog thread running");
+        }
+        wc_maintain(logger);
+    }
+    return 0;
+}
+
 static int init_jk(char *serverName)
 {
     char shm_name[MAX_PATH];
@@ -1799,6 +1821,9 @@ static int init_jk(char *serverName)
         }
     }
     if (rc) {
+        HANDLE wt;
+        DWORD  wi;
+        wt = CreateThread(NULL, 0, watchdog_thread, NULL, 0, &wi);
         jk_log(logger, JK_LOG_INFO, "%s initialized", (VERSION_STRING) );
     }
     return rc;
@@ -1885,6 +1910,7 @@ static int read_registry_init_data(void)
     strip_session = get_config_bool(src, STRIP_SESSION_TAG, JK_FALSE);
     use_auth_notification_flags = get_config_int(src, AUTH_COMPLETE_TAG, 1);
     reject_unsafe = get_config_bool(src, REJECT_UNSAFE_TAG, JK_FALSE);
+    watchdog_interval = get_config_int(src, WATCHDOG_INTERVAL_TAG, 0);
     if (using_ini_file) {
         jk_map_free(&map);
     }
@@ -1993,7 +2019,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
 
     if (!(huge_buf = jk_pool_alloc(&private_data->p, MAX_PACKET_SIZE))) {
         JK_TRACE_EXIT(logger);
-        return JK_FALSE;    
+        return JK_FALSE;
     }
     huge_buf_sz = MAX_PACKET_SIZE;
     GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, (*worker_name));
