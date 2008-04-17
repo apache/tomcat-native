@@ -2190,10 +2190,12 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
               /* This doesn't make sense, because we already set reuse */
               /* to JK_FALSE at the beginning of service() and only set it to true again after */
               /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
-//            if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
-//                /* Mark the endpoint for shutdown */
-//                p->reuse = JK_FALSE;
-//            }
+#if 0
+            if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+                /* Mark the endpoint for shutdown */
+                p->reuse = JK_FALSE;
+            }
+#endif
         }
         else if (err == JK_FATAL_ERROR) {
             *is_error = JK_HTTP_SERVER_BUSY;
@@ -2228,10 +2230,12 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                   /* This doesn't make sense, because we already set reuse */
                   /* to JK_FALSE at the beginning of service() and only set it to true again after */
                   /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
-//                if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
-//                    /* Mark the endpoint for shutdown */
-//                    p->reuse = JK_FALSE;
-//                }
+#if 0
+                if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+                    /* Mark the endpoint for shutdown */
+                    p->reuse = JK_FALSE;
+                }
+#endif
             }
             else if (err == JK_CLIENT_WR_ERROR) {
                 /* XXX: Is this correct to log this as 200? */
@@ -2245,10 +2249,12 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                   /* This doesn't make sense, because we already set reuse */
                   /* to JK_FALSE at the beginning of service() and only set it to true again after */
                   /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
-//                if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
-//                    /* Mark the endpoint for shutdown */
-//                    p->reuse = JK_FALSE;
-//                }
+#if 0
+                if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
+                    /* Mark the endpoint for shutdown */
+                    p->reuse = JK_FALSE;
+                }
+#endif
             }
             else if (err == JK_FATAL_ERROR) {
                 *is_error = JK_HTTP_SERVER_ERROR;
