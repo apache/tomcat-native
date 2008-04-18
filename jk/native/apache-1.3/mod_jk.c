@@ -1053,7 +1053,7 @@ static const char *jk_set_worker_file(cmd_parms * cmd,
         return "JkWorkersFile file name invalid";
 
     if (stat(jk_worker_file, &statbuf) == -1)
-        return "Can't find the workers file specified";
+        return "JkWorkersFile: Can't find the workers file specified";
 
     return NULL;
 }
@@ -1085,7 +1085,7 @@ static const char *jk_set_mount_file(cmd_parms * cmd,
         return "JkMountFile file name invalid";
 
     if (stat(conf->mount_file, &statbuf) == -1)
-        return "Can't find the mount file specified";
+        return "JkMountFile: Can't find the mount file specified";
 
     if (!conf->uri_to_context) {
         if (!jk_map_alloc(&(conf->uri_to_context))) {
@@ -1942,7 +1942,7 @@ static const command_rec jk_cmds[] = {
      * servlet requests.
      */
     {"JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF, TAKE1,
-     "the name of a worker file for the Tomcat servlet containers"},
+     "The name of a worker file for the Tomcat servlet containers"},
 
     /*
      * JkMountFile specifies a full path to the location of the
@@ -1952,7 +1952,7 @@ static const command_rec jk_cmds[] = {
      * to redirect servlet requests.
      */
     {"JkMountFile", jk_set_mount_file, NULL, RSRC_CONF, TAKE1,
-     "the name of a mount file for the Tomcat servlet uri mappings"},
+     "The name of a mount file for the Tomcat servlet uri mappings"},
 
     /*
      * JkMountFileReload specifies the reload check interval for the
@@ -1961,7 +1961,7 @@ static const command_rec jk_cmds[] = {
      * Default value is: JK_URIMAP_DEF_RELOAD
      */
     {"JkMountFileReload", jk_set_mount_file_reload, NULL, RSRC_CONF, TAKE1,
-     "the reload check interval of the mount file"},
+     "The reload check interval of the mount file"},
 
     /*
      * JkMount mounts a url prefix to a worker (the worker need to be

@@ -1080,7 +1080,7 @@ static const char *jk_set_worker_file(cmd_parms * cmd,
         return "JkWorkersFile file name invalid";
 
     if (jk_file_exists(jk_worker_file) != JK_TRUE)
-        return "Can't find the workers file specified";
+        return "JkWorkersFile: Can't find the workers file specified";
 
     return NULL;
 }
@@ -1107,7 +1107,7 @@ static const char *jk_set_mount_file(cmd_parms * cmd,
         return "JkMountFile file name invalid";
 
     if (jk_file_exists(conf->mount_file) != JK_TRUE)
-        return "Can't find the mount file specified";
+        return "JkMountFile: Can't find the mount file specified";
 
     if (!conf->uri_to_context) {
         if (!jk_map_alloc(&(conf->uri_to_context))) {
@@ -1160,7 +1160,7 @@ static const char *jk_set_watchdog_interval(cmd_parms * cmd,
     }
     return NULL;
 #else
-    return "APR was compiled without threading support. Cannot create watchdog thread";
+    return "JkWatchdogInterval: APR was compiled without threading support. Cannot create watchdog thread";
 #endif
 }
 
@@ -1996,7 +1996,7 @@ static const command_rec jk_cmds[] = {
      * servlet requests.
      */
     AP_INIT_TAKE1("JkWorkersFile", jk_set_worker_file, NULL, RSRC_CONF,
-                  "the name of a worker file for the Tomcat servlet containers"),
+                  "The name of a worker file for the Tomcat servlet containers"),
 
     /*
      * JkMountFile specifies a full path to the location of the
@@ -2006,7 +2006,7 @@ static const command_rec jk_cmds[] = {
      * to redirect servlet requests.
      */
     AP_INIT_TAKE1("JkMountFile", jk_set_mount_file, NULL, RSRC_CONF,
-                  "the name of a mount file for the Tomcat servlet uri mapping"),
+                  "The name of a mount file for the Tomcat servlet uri mapping"),
 
     /*
      * JkMountFileReload specifies the reload check interval for the
@@ -2015,16 +2015,16 @@ static const command_rec jk_cmds[] = {
      * Default value is: JK_URIMAP_DEF_RELOAD
      */
     AP_INIT_TAKE1("JkMountFileReload", jk_set_mount_file_reload, NULL, RSRC_CONF,
-                  "the reload check interval of the mount file"),
+                  "The reload check interval of the mount file"),
 
     /*
      * JkWatchdogInterval specifies the maintain interval for the
-     * wathdog thread.
+     * watchdog thread.
      *
      * Default value is: 0 meaning watchdog thread will not be created
      */
     AP_INIT_TAKE1("JkWatchdogInterval", jk_set_watchdog_interval, NULL, RSRC_CONF,
-                  "maintain interval of the watchdog thread"),
+                  "The maintain interval of the watchdog thread"),
 
     /*
      * JkMount mounts a url prefix to a worker (the worker need to be

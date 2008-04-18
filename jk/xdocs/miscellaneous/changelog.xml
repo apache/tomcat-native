@@ -45,7 +45,7 @@
     <changelog>
       <update>
         Add JkWatchdogInterval directive for Apache 2.0
-        that allows unatended maintenance of the workers. (mturk)
+        that allows unattended maintenance of the workers. (mturk)
       </update>
       <fix>
         Fix docs for worker attribute "secret". (rjung)
@@ -56,8 +56,8 @@
       </update>
       <fix>
         Do not put loadbalancer node in error state if there is opened
-        channel. This fixes the bug when new new connection fails due to
-        bussines, causing opened connections fail stickyness.
+        channel. This fixes the bug when new connection fails due to
+        busyness, causing opened connections fail stickyness.
         This brings back per-node busy counter and private state array
         for each request. We can mark the state as error for failover to
         work while still operating and reporting node as OK if there are
