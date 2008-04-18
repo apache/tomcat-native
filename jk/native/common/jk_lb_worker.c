@@ -1062,6 +1062,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         jk_log(l, JK_LOG_ERROR,
                "Failed allocating AJP message");
         JK_TRACE_EXIT(l);
+        free(states);
         return JK_SERVER_ERROR;
     }
     if (jk_b_set_buffer_size(s->reco_buf, p->worker->max_packet_size)) {
@@ -1069,6 +1070,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         jk_log(l, JK_LOG_ERROR,
                "Failed allocating AJP message buffer");
         JK_TRACE_EXIT(l);
+        free(states);
         return JK_SERVER_ERROR;
     }
     jk_b_reset(s->reco_buf);
@@ -1231,7 +1233,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if (rec->s->busy)
                     rec->s->busy--;
                 if (service_stat == JK_TRUE) {
-                    rec->s->state = JK_LB_STATE_OK;
+                    rec->s->state  = JK_LB_STATE_OK;
+                    states[rec->i] = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
                     rc = JK_TRUE;
                     recoverable = JK_UNSET;
