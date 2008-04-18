@@ -204,6 +204,8 @@ The default value is 0 seconds, meaning the watchdog thread
 will not be created inside each child process.
 <br/>
 This directive has been added in version 1.2.27 of mod_jk.
+It is available only for httpd 2.0 and above using APR libraries
+including thread support.
 </p></attribute>
 <attribute name="JkLogFile" required="false"><p>
 Full or server relative path to the Tomcat Connector module log file.
