@@ -33,8 +33,9 @@ JK_CVST="tomcat-connectors"
 JK_OWNER="root"
 JK_GROUP="bin"
 
-COPY_TOP="KEYS LICENSE NOTICE"
+COPY_TOP="KEYS"
 COPY_JK="BUILD.txt native jkstatus support tools xdocs"
+COPY_NATIVE="LICENSE NOTICE"
 COPY_BUILD="docs"
 COPY_CONF="uriworkermap.properties workers.properties workers.properties.minimal"
 
@@ -186,6 +187,7 @@ cd ../../..
 # Copying things into the source distribution
 copy_files ${JK_DIST}.tmp $JK_DIST "$COPY_TOP"
 copy_files ${JK_DIST}.tmp/jk $JK_DIST "$COPY_JK"
+copy_files ${JK_DIST}.tmp/jk/native $JK_DIST "$COPY_NATIVE"
 copy_files ${JK_DIST}.tmp/jk/build $JK_DIST "$COPY_BUILD"
 copy_files ${JK_DIST}.tmp/jk/conf $JK_DIST/conf "$COPY_CONF"
 
@@ -194,6 +196,8 @@ targetdir=${JK_DIST}
 rm -rf ${targetdir}/xdocs/jk2
 rm -rf ${targetdir}/native/CHANGES.txt
 rm -rf ${targetdir}/native/build.xml
+rm -rf ${targetdir}/native/NOTICE
+rm -rf ${targetdir}/native/LICENSE
 find ${JK_DIST} -name .cvsignore -exec rm -rf \{\} \; 
 find ${JK_DIST} -name CVS -exec rm -rf \{\} \; 
 find ${JK_DIST} -name .svn -exec rm -rf \{\} \; 
