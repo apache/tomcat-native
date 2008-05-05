@@ -296,9 +296,15 @@ that should be sent to servlet-engine as a request attribute.
 If the default value is not given explicitely, the variable
 will only be send, if it is set during runtime.
 <br/>
-This directive can be used multiple times per virtual server.
-<br/>
 The default is empty, so no additional variables will be sent.
+<br/>
+This directive can be used multiple times per virtual server.
+The settings will be merged between the global server and any
+virtual server.
+<br/>
+You can retrieve the variables on Tomcat as request attributes
+via request.getAttribute(attributeName). Note that the variables
+send via JkEnvVar will not be listed in request.getAttributeNames().
 <br/>
 Empty default values are supported since version 1.2.20.
 Not sending variables with empty defaults and empty runtime value
@@ -738,11 +744,16 @@ This directive exists only since version 1.2.22.
 </p>
 
 <p>
-The directive <b>JkEnvVar</b> allows you to forward environment variables from Apache server to Tomcat engine.
-The variables can be retrieved on the Tomcat side as request attributes.
+The directive <b>JkEnvVar</b> allows you to forward environment variables
+from Apache server to Tomcat engine.
 You can add a default value as a second parameter to the directive.
 If the default value is not given explicitely, the variable
 will only be send, if it is set during runtime.
+<br/>
+The variables can be retrieved on the Tomcat side as request attributes
+via request.getAttribute(attributeName).
+Note that the variables send via JkEnvVar will not be listed
+in request.getAttributeNames().
 <br/>
 <br/>
 The variables are inherited from the global server to virtual hosts.
