@@ -237,6 +237,20 @@ This key contains a "," separated list of dlls (full paths) -
 you need to insert the full path to isapi_redirect.dll.
 </li>
 <li>
+If you're using IIS 6.0 you must also do the following:
+<br />
+Using the IIS management console, add the Jakarta Isapi Redirector to the Web
+Service Extensions. 
+<ol>
+<li>Right-click on Web Service Extensions and choose Add a new Web Service
+Extension.</li> 
+<li>Enter tomcat for the Extension Name.</li>
+<li>Add the isapi_redirect.dll to the required files.</li> 
+<li>Check the Set extension status to Allowed.</li>
+<li>Click on OK.</li>
+</ol>
+</li>
+<li>
 Restart IIS (stop + start the IIS service), make sure that the tomcat filter is marked with a green up-pointing arrow.
 Under Win98 you may need to <b>cd WINDOWS\SYSTEM\inetsrv</b> and type PWS /stop 
 ( the DLL and log files are locked - even if you click the stop button, 
