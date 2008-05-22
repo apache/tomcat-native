@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        Fix Cygwin build. (rjung)
+      </fix>
       <update>
         Add info to docs, that variables sent via JkEnvVar
         are not listed in request.getAttributeNames(). (rjung)
