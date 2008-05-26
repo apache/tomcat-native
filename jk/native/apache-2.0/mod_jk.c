@@ -2761,7 +2761,6 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
 
 static void * APR_THREAD_FUNC jk_watchdog_func(apr_thread_t *thd, void *data)
 {
-    int i;
     jk_server_conf_t *conf = (jk_server_conf_t *)data;
 
     if (JK_IS_DEBUG_LEVEL(conf->log))
