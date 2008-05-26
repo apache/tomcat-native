@@ -44,6 +44,11 @@
   <subsection name="Native">
     <changelog>
       <fix>
+        <bug>45026</bug>: For Apache httpd 2.x add "Unknown Reason"
+        as the reason phrase, if we get an empty one from the backend.
+        Otherwise httpd 2.x returns status 500.
+      </fix>
+      <fix>
         Fix Cygwin build. (rjung)
       </fix>
       <update>

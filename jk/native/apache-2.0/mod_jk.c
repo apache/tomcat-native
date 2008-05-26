@@ -283,8 +283,25 @@ static int JK_METHOD ws_start_response(jk_ws_service_t *s,
     apache_private_data_t *p = s->ws_private;
     request_rec *r = p->r;
 
-    if (!reason) {
-        reason = "";
+    /* If there is no reason given (or an empty one),
+     * we'll try to guess a good one.
+     */
+    if (!reason || *reason == '\0') {
+        /* We ask Apache httpd about a good reason phrase. */
+        reason = ap_get_status_line(status);
+        /* Unfortunately it returns with a 500 reason phrase,
+         * whenever it does not know about the given status code,
+         * e.g. in the case of custom status codes.
+         */
+        if (status != 500 && !strncmp(reason, "500 ", 4)) {
+            reason = "Unknown Reason";
+        } else {
+            /* Apache httpd returns a full status line,
+             * but we only want a reason phrase, so skip
+             * the prepended status code.
+             */
+            reason = reason + 4;
+        }
     }
     r->status = status;
     r->status_line = apr_psprintf(r->pool, "%d %s", status, reason);
