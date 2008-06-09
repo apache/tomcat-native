@@ -168,7 +168,7 @@ the ajp12 worker properties are :
 </p>
 
 <p>
-<b>lbfactor</b>property is used when working with a load balancer worker, this is the load-balancing factor for the worker.
+<b>lbfactor</b> property is used when working with a load balancer worker, this is the load-balancing factor for the worker.
 We'll see more on this in the <a href="../generic_howto/loadbalancers.html">lb worker</a> section.
 </p>
 
@@ -418,21 +418,13 @@ An ajp12 worker that used the host localhost and the port 8007
 An ajp13 worker that used the host localhost and the port 8008
 </li>
 <li>
-A jni worker
-</li>
-<li>
-A lb worker that load balance the ajp12 and ajp13 workers
+An lb worker that load balance the ajp12 and ajp13 workers
 </li>
 </ul>
 
 <source>
-  # Define some properties
-  workers.apache_log=/var/log/httpd/
-  workers.tomcat_home=/var/tomcat3
-  workers.java_home=/opt/IBMJava2-131/
-  ps=/
-  # Define 4 workers, 3 real workers using ajp12, ajp13, jni, the last one being a loadbalancing worker 
-  worker.list=worker1, worker2, worker3, worker4
+  # Define 3 workers, 2 real workers using ajp12, ajp13, the last one being a loadbalancing worker 
+  worker.list=worker1, worker2, worker3
   # Set properties for worker1 (ajp12)
   worker.worker1.type=ajp12
   worker.worker1.host=locahost
@@ -446,23 +438,8 @@ A lb worker that load balance the ajp12 and ajp13 workers
   worker.worker2.connection_pool_timeout=600
   worker.worker2.socket_keepalive=1
   worker.worker2.socket_timeout=60
-  # Set properties for worker3 (jni)
-  worker.worker3.type=jni
-  # Set worker3 bridge type, here Tomcat 3.3
-  worker.worker3.bridge=tomcat33
-  # Set worker3 classpath
-  worker.worker3.class_path=$(workers.tomcat_home)$(ps)classes
-  worker.worker3.class_path=$(workers.tomcat_home)$(ps)lib$(ps)tomcat.jar
-  # Set worker3 tomcat command line
-  worker.worker3.cmd_line=-home
-  worker.worker3.cmd_line=$(workers.tomcat_home)
-  # Set worker3 Tomcat/JVM settings
-  worker.worker3.jvm_lib=$(workers.java_home)$(ps)jre$(ps)bin$(ps)classic$(ps)libjvm.so
-  worker.worker3.stdout=$(workers.apache_log)$(ps)inprocess.stdout
-  worker.worker3.stderr=$(workers.apache_log)$(ps)inprocess.stderr
-  worker.worker3.sysprops=tomcat.home=$(workers.tomcat_home)
-  # Set properties for worker4 (lb) which use worker1 and worker2
-  worker.worker4.balance_workers=worker1,worker2
+  # Set properties for worker3 (lb) which use worker1 and worker2
+  worker.worker3.balance_workers=worker1,worker2
 </source>
 
 </section>

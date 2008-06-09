@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Documentation: Remove JNI parameters from sample configuration
+        in the workers generic howto. (rjung)
+      </update>
       <fix>
         <bug>45026</bug>: For Apache httpd 2.x add "Unknown Reason"
         as the reason phrase, if we get an empty one from the backend.
