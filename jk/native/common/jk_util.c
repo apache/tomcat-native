@@ -1899,6 +1899,37 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->vhost_to_uw_map = NULL;
 }
 
+/* Match = 0, NoMatch = 1, Abort = -1
+ * Based loosely on sections of wildmat.c by Rich Salz
+ */
+int jk_wildchar_match(const char *str, const char *exp, int icase)
+{
+    int x, y;
+
+    for (x = 0, y = 0; exp[y]; ++y, ++x) {
+        if (!str[x] && exp[y] != '*')
+            return -1;
+        if (exp[y] == '*') {
+            while (exp[++y] == '*');
+            if (!exp[y])
+                return 0;
+            while (str[x]) {
+                int ret;
+                if ((ret = jk_wildchar_match(&str[x++], &exp[y], icase)) != 1)
+                    return ret;
+            }
+            return -1;
+        }
+        else if (exp[y] != '?') {
+            if (icase && (tolower(str[x]) != tolower(exp[y])))
+                return 1;
+            else if (!icase && str[x] != exp[y])
+                return 1;
+        }
+    }
+    return (str[x] != '\0');
+}
+
 #ifdef _MT_CODE_PTHREAD
 jk_uint32_t jk_gettid()
 {

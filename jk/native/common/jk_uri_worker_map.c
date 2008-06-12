@@ -155,37 +155,6 @@ static void worker_qsort(jk_uri_worker_map_t *uw_map)
 
 }
 
-/* Match = 0, NoMatch = 1, Abort = -1
- * Based loosely on sections of wildmat.c by Rich Salz
- */
-static int wildchar_match(const char *str, const char *exp, int icase)
-{
-    int x, y;
-
-    for (x = 0, y = 0; exp[y]; ++y, ++x) {
-        if (!str[x] && exp[y] != '*')
-            return -1;
-        if (exp[y] == '*') {
-            while (exp[++y] == '*');
-            if (!exp[y])
-                return 0;
-            while (str[x]) {
-                int ret;
-                if ((ret = wildchar_match(&str[x++], &exp[y], icase)) != 1)
-                    return ret;
-            }
-            return -1;
-        }
-        else if (exp[y] != '?') {
-            if (icase && (tolower(str[x]) != tolower(exp[y])))
-                return 1;
-            else if (!icase && str[x] != exp[y])
-                return 1;
-        }
-    }
-    return (str[x] != '\0');
-}
-
 int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map_p,
                          jk_map_t *init_data, jk_logger_t *l)
 {
@@ -815,7 +784,7 @@ static int find_match(jk_uri_worker_map_t *uw_map,
 
         if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {
             /* Map is already sorted by context_len */
-            if (wildchar_match(url, uwr->context,
+            if (jk_wildchar_match(url, uwr->context,
 #ifdef WIN32
                                0
 #else
@@ -868,7 +837,7 @@ static int is_nomatch(jk_uri_worker_map_t *uw_map,
             continue;
         if (uwr->match_type & MATCH_TYPE_WILDCHAR_PATH) {
             /* Map is already sorted by context_len */
-            if (wildchar_match(uri, uwr->context,
+            if (jk_wildchar_match(uri, uwr->context,
 #ifdef WIN32
                                0
 #else
