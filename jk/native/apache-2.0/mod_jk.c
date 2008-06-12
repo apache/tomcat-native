@@ -2179,6 +2179,8 @@ static const command_rec jk_cmds[] = {
  */
 static apr_status_t jk_cleanup_shmem(void *data)
 {
+    /* Force the watchdog thread exit */
+    jk_watchdog_interval = 0;
     jk_shm_close();
     return APR_SUCCESS;
 }
@@ -2788,9 +2790,10 @@ static void * APR_THREAD_FUNC jk_watchdog_func(apr_thread_t *thd, void *data)
         if (JK_IS_DEBUG_LEVEL(conf->log))
            jk_log(conf->log, JK_LOG_DEBUG,
                   "Watchdog running");
+        if (!jk_watchdog_interval)
+            break;
         wc_maintain(conf->log);
     }
-    apr_thread_exit(thd, 0);
     return NULL;
 }
 
@@ -2822,6 +2825,7 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
             ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
                      "mod_jk: could not init JK watchdog thread");
         }
+        apr_thread_detach(wdt);
 #endif
     }
 
