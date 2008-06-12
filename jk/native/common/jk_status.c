@@ -1303,12 +1303,13 @@ static int search_sub_worker(jk_ws_service_t *s,
                              const char *worker,
                              lb_sub_worker_t **wrp,
                              const char *sub_worker,
+                             unsigned int *idx,
                              jk_logger_t *l)
 {
     lb_worker_t *lb = NULL;
     lb_sub_worker_t *wr = NULL;
     status_worker_t *w = p->worker;
-    unsigned int i;
+    unsigned int i = 0;
 
     JK_TRACE_ENTER(l);
     if (JK_IS_DEBUG_LEVEL(l))
@@ -1328,13 +1329,21 @@ static int search_sub_worker(jk_ws_service_t *s,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    for (i = 0; i < (int)lb->num_of_workers; i++) {
+    if (*idx)
+        i = *idx;
+    for (; i < lb->num_of_workers; i++) {
         wr = &(lb->lb_workers[i]);
-        if (strcmp(sub_worker, wr->name) == 0)
+        if (idx) {
+            if (jk_wildchar_match(wr->name, sub_worker, 0) == 0) {
+                *idx = i + 1;
+                break;    
+            }
+        }
+        else if (strcmp(sub_worker, wr->name) == 0)
             break;
     }
     *wrp = wr;
-    if (!wr || i == (int)lb->num_of_workers) {
+    if (!wr || i == lb->num_of_workers) {
         jk_log(l, JK_LOG_WARNING,
                "Status worker '%s' could not find sub worker '%s' of worker '%s'",
                w->name, sub_worker, worker ? worker : "(null)");
@@ -3335,7 +3344,8 @@ static int check_worker(jk_ws_service_t *s,
     }
 
     if (sub_worker && sub_worker[0]) {
-        if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
+        if(search_sub_worker(s, p, jw, worker, &wr, sub_worker,
+                             NULL, l) == JK_FALSE) {
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
@@ -3595,7 +3605,8 @@ static int edit_worker(jk_ws_service_t *s,
             return JK_TRUE;
         }
         else  {
-            if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
+            if(search_sub_worker(s, p, jw, worker, &wr, sub_worker,
+                                 NULL, l) == JK_FALSE) {
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
@@ -3690,26 +3701,44 @@ static int update_worker(jk_ws_service_t *s,
             return JK_TRUE;
         }
         else  {
-            if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
-                JK_TRACE_EXIT(l);
-                return JK_FALSE;
+            unsigned int idx = 0;
+            unsigned int *wi = NULL;
+
+            if (strchr(sub_worker, '*') || strchr(sub_worker, '?')) {
+                /* We have a wildchar matching rule */
+                wi = &idx;
             }
-            if (JK_IS_DEBUG_LEVEL(l))
-                jk_log(l, JK_LOG_DEBUG,
+            for (;;) {
+                if (search_sub_worker(s, p, jw, worker, &wr, sub_worker,
+                                      wi, l) == JK_FALSE) {
+                    if (!idx) {
+                        JK_TRACE_EXIT(l);
+                        return JK_FALSE;
+                    }
+                    else {
+                        /* We have found at least one match previously */
+                        break;
+                    }
+                }
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
                        "Status worker '%s' %s lb worker '%s' sub worker '%s'",
                        w->name, "updating", lb->name, wr->name);
-            aw = (ajp_worker_t *)wr->worker->worker_private;
-            rc = commit_member(s, p, lb, wr, aw, l);
-            if (rc) {
-                wr->sequence++;
-                lb->sequence++;
-                jk_lb_push(lb, l);
+                aw = (ajp_worker_t *)wr->worker->worker_private;
+                rc = commit_member(s, p, lb, wr, aw, l);
+                if (rc) {
+                    wr->sequence++;
+                    lb->sequence++;
+                    jk_lb_push(lb, l);
+                }
+                if (rc & 1)
+                    reset_lb_values(lb, l);
+                if (rc & 2)
+                    /* Recalculate the load multiplicators wrt. lb_factor */
+                    update_mult(lb, l);
+                if (!wi)
+                    break;
             }
-            if (rc & 1)
-                reset_lb_values(lb, l);
-            if (rc & 2)
-                /* Recalculate the load multiplicators wrt. lb_factor */
-                update_mult(lb, l);
             JK_TRACE_EXIT(l);
             return JK_TRUE;
         }
@@ -3798,7 +3827,8 @@ static int reset_worker(jk_ws_service_t *s,
             return JK_TRUE;
         }
         else  {
-            if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
+            if(search_sub_worker(s, p, jw, worker, &wr, sub_worker,
+                                 NULL, l) == JK_FALSE) {
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;
             }
@@ -3874,7 +3904,8 @@ static int recover_worker(jk_ws_service_t *s,
         return JK_FALSE;
     }
 
-    if(search_sub_worker(s, p, jw, worker, &wr, sub_worker, l) == JK_FALSE) {
+    if(search_sub_worker(s, p, jw, worker, &wr, sub_worker,
+                         NULL, l) == JK_FALSE) {
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
