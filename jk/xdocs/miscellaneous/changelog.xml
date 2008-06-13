@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        Documentation: "val" attribute numbering in status worker
+        needs to start with 0 instead of 1. (rjung)
+      </fix>
       <update>
         Documentation: Remove JNI parameters from sample configuration
         in the workers generic howto. (rjung)

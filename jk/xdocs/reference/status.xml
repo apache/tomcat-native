@@ -557,7 +557,7 @@ parameter name.
 </p>
 <p>
 The values of the common aspect for all the load balancer members will be given
-in parameters named "val1", "val2", ....
+in parameters named "val0", "val1", ....
 </p>
 </subsection>
 </section>
