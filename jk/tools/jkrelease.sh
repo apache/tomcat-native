@@ -174,6 +174,11 @@ rm -rf ${JK_DIST}.tmp
 
 mkdir -p ${JK_DIST}.tmp
 svn export $revision "${JK_SVN_URL}/jk" ${JK_DIST}.tmp/jk
+if [ $? -ne 0 ]; then
+  echo "svn export failed"
+  exit 1
+fi
+
 for item in ${COPY_TOP}
 do
     svn export $revision "${JK_SVN_URL}/${item}" ${JK_DIST}.tmp/${item}
