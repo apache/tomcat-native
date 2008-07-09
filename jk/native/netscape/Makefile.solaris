@@ -16,23 +16,27 @@
 # Defines for example NSAPI programs running under SOLARIS
 
 # Choose between the settings for gcc or Sun Studio compiler
-SUITSPOT_HOME=/opt/SUNWwbsvr/plugins
 
 # gcc
 # If you get relocation errors, try:
 #   1. compiling with Sun's cc
 #   2. statically linking with libgcc
 #   3. Adjusting LD_LIBRARY_PATH to grab libgcc_s
-#CC=gcc
+CC=gcc
 # For 64 Bit builds, add "-m64" to EXTRA_CFLAGS
-#EXTRA_CFLAGS=-fPIC -pthread
-#LDFLAGS=-shared
+EXTRA_CFLAGS=-fPIC -pthread
+LDFLAGS=-shared
 
 # Sun Studio cc compiler
-CC=cc
+#CC=cc
 # For 64 Bit builds, add "-xtarget=generic64" to EXTRA_CFLAGS
-EXTRA_CFLAGS=-xcode=pic32 -mt
-LDFLAGS=-G
+#EXTRA_CFLAGS=-xcode=pic32 -mt
+#LDFLAGS=-G
+
+# Change this according to location where on installed the server.
+# Don't forget to do the ./configure --enable-netscape=/opt/SUNWwbsvr/plugins
+# before doing gmake -f Makefile.solaris
+SUITSPOT_HOME=/opt/SUNWwbsvr/plugins
 
 CC_CMD=$(CC) $(CFLAGS) $(EXTRA_CFLAGS) \
 	-DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX -DMCC_HTTPD -DSPAPI20 -DJK_NSAPI
