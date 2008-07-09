@@ -16,22 +16,23 @@
 # Defines for example NSAPI programs running under SOLARIS
 
 # Choose between the settings for gcc or Sun Studio compiler
+SUITSPOT_HOME=/opt/SUNWwbsvr/plugins
 
 # gcc
 # If you get relocation errors, try:
 #   1. compiling with Sun's cc
 #   2. statically linking with libgcc
 #   3. Adjusting LD_LIBRARY_PATH to grab libgcc_s
-CC=gcc
+#CC=gcc
 # For 64 Bit builds, add "-m64" to EXTRA_CFLAGS
-EXTRA_CFLAGS=-fPIC -pthread
-LDFLAGS=-shared
+#EXTRA_CFLAGS=-fPIC -pthread
+#LDFLAGS=-shared
 
 # Sun Studio cc compiler
-#CC=cc
+CC=cc
 # For 64 Bit builds, add "-xtarget=generic64" to EXTRA_CFLAGS
-#EXTRA_CFLAGS=-xcode=pic32 -mt
-#LDFLAGS=-G
+EXTRA_CFLAGS=-xcode=pic32 -mt
+LDFLAGS=-G
 
 CC_CMD=$(CC) $(CFLAGS) $(EXTRA_CFLAGS) \
 	-DNET_SSL -DSOLARIS -D_REENTRANT -DXP_UNIX -DMCC_HTTPD -DSPAPI20 -DJK_NSAPI
@@ -48,8 +49,19 @@ JAVA_INCLUDE=$(JAVA_HOME)/include
 JK_DIR=../common
 VPATH=.:$(JK_DIR)
 
-JK_SRCS = $(shell \ls $(JK_DIR)/*.c)
-JK_OBJS = $(patsubst $(JK_DIR)/%.c,%.o,$(JK_SRCS))
+JK_OBJS = ap_snprintf.o        jk_md5.o \
+jk_ajp12_worker.o    jk_msg_buff.o \
+jk_ajp13.o           jk_nwmain.o \
+jk_ajp13_worker.o    jk_pool.o \
+jk_ajp14.o           jk_shm.o \
+jk_ajp14_worker.o    jk_sockbuf.o \
+jk_ajp_common.o      jk_status.o \
+jk_connect.o         jk_uri_worker_map.o \
+jk_context.o         jk_url.o \
+jk_jni_worker.o      jk_util.o \
+jk_lb_worker.o       jk_worker.o \
+jk_map.o
+
 
 PLUGIN_OBJ = jk_nsapi_plugin.o
 
@@ -64,6 +76,7 @@ nsapi_redirector.so: $(JK_OBJS) $(PLUGIN_OBJ)
 
 clean:
 	rm -f *.o nsapi_redirector.so $(JK_OBJS)
+	rm -f $(JK_DIR)/*.o
 
 %.o : %.c
 	$(CC_CMD) $(INCLUDE_FLAGS) -c $<
