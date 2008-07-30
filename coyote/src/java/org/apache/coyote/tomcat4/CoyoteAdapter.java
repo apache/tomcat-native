@@ -264,6 +264,13 @@ final class CoyoteAdapter
             }
         }
 
+        // Check that the URI is still normalized
+        if (!checkNormalize(req.decodedURI())) {
+            res.setStatus(400);
+            res.setMessage("Invalid URI character encoding");
+            throw new IOException("Invalid URI character encoding");
+        }
+
         // Parse cookies
         parseCookies(req, request);
 
@@ -669,6 +676,67 @@ final class CoyoteAdapter
         }
 
         uriBC.setBytes(b, start, end);
+
+        return true;
+
+    }
+
+
+    /**
+     * Check that the URI is normalized following character decoding.
+     * <p>
+     * This method checks for "\", 0, "//", "/./" and "/../". This method will
+     * return false if sequences that are supposed to be normalized are still 
+     * present in the URI.
+     * 
+     * @param uriMB URI to be checked (should be chars)
+     */
+    public static boolean checkNormalize(MessageBytes uriMB) {
+
+        CharChunk uriCC = uriMB.getCharChunk();
+        char[] c = uriCC.getChars();
+        int start = uriCC.getStart();
+        int end = uriCC.getEnd();
+
+        int pos = 0;
+
+        // Check for '\' and 0
+        for (pos = start; pos < end; pos++) {
+            if (c[pos] == '\\') {
+                return false;
+            }
+            if (c[pos] == 0) {
+                return false;
+            }
+        }
+
+        // Check for "//"
+        for (pos = start; pos < (end - 1); pos++) {
+            if (c[pos] == '/') {
+                if (c[pos + 1] == '/') {
+                    return false;
+                }
+            }
+        }
+
+        // Check for ending with "/." or "/.."
+        if (((end - start) >= 2) && (c[end - 1] == '.')) {
+            if ((c[end - 2] == '/') 
+                    || ((c[end - 2] == '.') 
+                    && (c[end - 3] == '/'))) {
+                return false;
+            }
+        }
+
+        // Check for "/./"
+        if (uriCC.indexOf("/./", 0, 3, 0) >= 0) {
+            return false;
+        }
+
+        // Check for "/../"
+        if (uriCC.indexOf("/../", 0, 4, 0) >= 0) {
+            return false;
+        }
 
         return true;
 
