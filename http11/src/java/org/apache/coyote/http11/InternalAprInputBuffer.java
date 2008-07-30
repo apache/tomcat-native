@@ -484,7 +484,8 @@ public class InternalAprInputBuffer implements InputBuffer {
 
             ascbuf[pos] = (char) buf[pos];
 
-            if (buf[pos] == Constants.SP) {
+            // Spec says single SP but it also says be tolerant of HT
+            if (buf[pos] == Constants.SP || buf[pos] == Constants.HT) {
                 space = true;
                 request.method().setChars(ascbuf, start, pos - start);
             }
@@ -493,6 +494,20 @@ public class InternalAprInputBuffer implements InputBuffer {
 
         }
 
+        // Spec says single SP but also says be tolerant of multiple and/or HT
+        while (space) {
+            // Read new bytes if needed
+            if (pos >= lastValid) {
+                if (!fill())
+                    throw new EOFException(sm.getString("iib.eof.error"));
+            }
+            if (buf[pos] == Constants.SP || buf[pos] == Constants.HT) {
+                pos++;
+            } else {
+                space = false;
+            }
+        }
+        
         // Mark the current buffer position
         start = pos;
         int end = 0;
@@ -502,7 +517,6 @@ public class InternalAprInputBuffer implements InputBuffer {
         // Reading the URI
         //
 
-        space = false;
         boolean eol = false;
 
         while (!space) {
@@ -513,7 +527,8 @@ public class InternalAprInputBuffer implements InputBuffer {
                     throw new EOFException(sm.getString("iib.eof.error"));
             }
 
-            if (buf[pos] == Constants.SP) {
+            // Spec says single SP but it also says be tolerant of HT
+            if (buf[pos] == Constants.SP || buf[pos] == Constants.HT) {
                 space = true;
                 end = pos;
             } else if ((buf[pos] == Constants.CR) 
@@ -531,6 +546,20 @@ public class InternalAprInputBuffer implements InputBuffer {
 
         }
 
+        // Spec says single SP but also says be tolerant of multiple and/or HT
+        while (space) {
+            // Read new bytes if needed
+            if (pos >= lastValid) {
+                if (!fill())
+                    throw new EOFException(sm.getString("iib.eof.error"));
+            }
+            if (buf[pos] == Constants.SP || buf[pos] == Constants.HT) {
+                pos++;
+            } else {
+                space = false;
+            }
+        }
+        
         request.unparsedURI().setBytes(buf, start, end - start);
         if (questionPos >= 0) {
             request.queryString().setBytes(buf, questionPos + 1, 
