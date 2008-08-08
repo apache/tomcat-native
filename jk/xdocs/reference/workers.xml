@@ -260,6 +260,17 @@ have information about the cut and couldn't handle it.
 </p>
 </directive>
 
+<directive name="connection_keepalive" default="False" required="false">
+This is interval in seconds used for sending CPING packets over unused
+connection.
+<p>To be able to use this feature <code>prepost_timeout</code> must be
+set to desired timeout value.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.27</b>.
+</p>
+</directive>
+
 <directive name="connection_pool_size" default="see text" required="false">
 This defines the number of connections made to the AJP backend that
 are maintained as a connection pool.

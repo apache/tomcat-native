@@ -59,6 +59,7 @@
 #define SOCKET_TIMEOUT_OF_WORKER    ("socket_timeout")
 #define SOCKET_BUFFER_OF_WORKER     ("socket_buffer")
 #define SOCKET_KEEPALIVE_OF_WORKER  ("socket_keepalive")
+#define CONNECTION_KEEPALIVE_OF_WORKER  ("connection_keepalive")
 #define RECYCLE_TIMEOUT_DEPRECATED  ("recycle_timeout")
 #define LOAD_FACTOR_OF_WORKER       ("lbfactor")
 #define DISTANCE_OF_WORKER          ("distance")
@@ -173,6 +174,7 @@ static const char *unique_properties[] = {
     SOCKET_TIMEOUT_OF_WORKER,
     SOCKET_BUFFER_OF_WORKER,
     SOCKET_KEEPALIVE_OF_WORKER,
+    CONNECTION_KEEPALIVE_OF_WORKER,
     RECYCLE_TIMEOUT_DEPRECATED,
     LOAD_FACTOR_OF_WORKER,
     STICKY_SESSION,
@@ -256,6 +258,7 @@ static const char *supported_properties[] = {
     SOCKET_TIMEOUT_OF_WORKER,
     SOCKET_BUFFER_OF_WORKER,
     SOCKET_KEEPALIVE_OF_WORKER,
+    CONNECTION_KEEPALIVE_OF_WORKER,
     RECYCLE_TIMEOUT_DEPRECATED,
     LOAD_FACTOR_OF_WORKER,
     DISTANCE_OF_WORKER,
@@ -945,6 +948,19 @@ int jk_get_worker_socket_keepalive(jk_map_t *m, const char *wname, int def)
     MAKE_WORKER_PARAM(SOCKET_KEEPALIVE_OF_WORKER);
 
     return jk_map_get_bool(m, buf, def);
+}
+
+int jk_get_worker_connection_keepalive(jk_map_t *m, const char *wname, int def)
+{
+    char buf[1024];
+
+    if (!m || !wname) {
+        return -1;
+    }
+
+    MAKE_WORKER_PARAM(CONNECTION_KEEPALIVE_OF_WORKER);
+
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_cache_timeout(jk_map_t *m, const char *wname, int def)

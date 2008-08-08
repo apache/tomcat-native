@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Added connection_keepalive directive. (mturk)
+      </update>
       <fix>
         Documentation: "val" attribute numbering in status worker
         needs to start with 0 instead of 1. (rjung)

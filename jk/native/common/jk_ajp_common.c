@@ -2486,6 +2486,9 @@ int ajp_init(jk_worker_t *pThis,
             jk_get_worker_prepost_timeout(props, p->name,
                                           AJP_DEF_PREPOST_TIMEOUT);
 
+        p->connection_keepalive =
+            jk_get_worker_connection_keepalive(props, p->name, 0);
+
         p->recovery_opts =
             jk_get_worker_recovery_opts(props, p->name,
                                         AJP_DEF_RECOVERY_OPTS);
@@ -2826,7 +2829,8 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
         jk_shm_unlock();
 
         /* Obtain current time only if needed */
-        if (aw->cache_timeout <= 0) {
+        if (aw->cache_timeout <= 0 &&
+            aw->connection_keepalive <= 0) {
             /* Nothing to do. */
             JK_TRACE_EXIT(l);
             return JK_TRUE;
@@ -2834,7 +2838,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
 
         JK_ENTER_CS(&aw->cs, rc);
         if (rc) {
-            unsigned int n = 0, cnt = 0;
+            unsigned int n = 0, k = 0, cnt = 0;
             int i;
             /* Count open slots */
             for (i = (int)aw->ep_cache_sz - 1; i >= 0; i--) {
@@ -2842,7 +2846,8 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
                     cnt++;
             }
             /* Handle worker cache and recycle timeouts */
-            for (i = (int)aw->ep_cache_sz - 1; i >= 0; i--) {
+            for (i = (int)aw->ep_cache_sz - 1;
+                 i >= 0 && aw->cache_timeout > 0; i--) {
                 /* Skip the closed sockets */
                 if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
                     int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
@@ -2868,11 +2873,46 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
                     break;
                 }
             }
+            /* Handle worker connection keepalive */
+            for (i = (int)aw->ep_cache_sz - 1; i >= 0 &&
+                 aw->connection_keepalive > 0 &&
+                 aw->prepost_timeout > 0; i--) {
+                /* Skip the closed sockets */
+                if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
+                    int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
+                    if (elapsed > aw->connection_keepalive) {
+                        k++;
+                        /* handle cping/cpong.
+                         */
+                        if (ajp_handle_cping_cpong(aw->ep_cache[i],
+                            aw->prepost_timeout, l) == JK_FALSE) {
+                            jk_log(l, JK_LOG_INFO,
+                                   "(%s) failed sending request, "
+                                   "socket %d keepalive cping/cpong "
+                                   "failure (errno=%d)",
+                                   aw->name,
+                                   aw->ep_cache[i]->sd,
+                                   aw->ep_cache[i]->last_errno);
+                            aw->ep_cache[i]->reuse = JK_FALSE;
+                            ajp_reset_endpoint(aw->ep_cache[i], l);
+                        }
+                        else {
+                            now = time(NULL);
+                            aw->ep_cache[i]->last_access = now;
+                        }
+                    }
+                }
+            }
             JK_LEAVE_CS(&aw->cs, rc);
-            if (JK_IS_DEBUG_LEVEL(l))
+            if (n && JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                         "recycled %u sockets in %d seconds from %u pool slots",
                         n, (int)(difftime(time(NULL), now)),
+                        aw->ep_cache_sz);
+            if (k && JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                        "pinged %u sockets in %d seconds from %u pool slots",
+                        k, (int)(difftime(time(NULL), now)),
                         aw->ep_cache_sz);
             JK_TRACE_EXIT(l);
             return JK_TRUE;

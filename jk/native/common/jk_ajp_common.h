@@ -311,6 +311,8 @@ struct ajp_worker
     int connect_timeout;   /* connect cping/cpong delay in ms (0 means disabled)  */
     int reply_timeout;     /* reply timeout delay in ms (0 means disabled) */
     int prepost_timeout;   /* before sending a request cping/cpong timeout delay in ms (0 means disabled) */
+    int connection_keepalive; /* interval for sending cping packets on
+                               * unused connection */
 
     /*
      * Recovery options
