@@ -82,17 +82,12 @@ public class B2CConverter {
     {
         // Set the ByteChunk as input to the Intermediate reader
         iis.setByteChunk( bb );
-        convert(cb, limit);
-    }
-
-    private void convert(CharChunk cb, int limit)
-        throws IOException
-    {
         try {
             // read from the reader
-            int count = 0;
+            int bbLengthBeforeRead  = 0;
             while( limit > 0 ) { 
                 int size = limit < BUFFER_SIZE ? limit : BUFFER_SIZE; 
+                bbLengthBeforeRead = bb.getLength();
                 int cnt=conv.read( result, 0, size );
                 if( cnt <= 0 ) {
                     // End of stream ! - we may be in a bad state
@@ -106,7 +101,7 @@ public class B2CConverter {
 
                 // XXX go directly
                 cb.append( result, 0, cnt );
-                limit -= cnt;
+                limit = limit - (bbLengthBeforeRead - bb.getLength());
             }
         } catch( IOException ex) {
             if( debug>0)
@@ -222,6 +217,14 @@ final class  ReadConvertor extends InputStreamReader {
     /** Reset the buffer
      */
     public  final void recycle() {
+        try {
+            // Must clear super's buffer.
+            while (ready()) {
+                // InputStreamReader#skip(long) will allocate buffer to skip.
+                read();
+            }
+        } catch(IOException ioe){
+        }
     }
 }
 
