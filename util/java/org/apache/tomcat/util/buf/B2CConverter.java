@@ -237,6 +237,7 @@ final class  ReadConvertor extends InputStreamReader {
 */
 final class IntermediateInputStream extends InputStream {
     ByteChunk bc = null;
+    boolean initialized = false;
     
     public IntermediateInputStream() {
     }
@@ -247,15 +248,18 @@ final class IntermediateInputStream extends InputStream {
     }
     
     public  final  int read(byte cbuf[], int off, int len) throws IOException {
+        if (!initialized) return -1;
         int nread = bc.substract(cbuf, off, len);
         return nread;
     }
     
     public  final int read() throws IOException {
+        if (!initialized) return -1;
         return bc.substract();
     }
     
     public int available() throws IOException {
+        if (!initialized) return 0;
         return bc.getLength();
     }
 
@@ -264,6 +268,7 @@ final class IntermediateInputStream extends InputStream {
 
 
     void setByteChunk( ByteChunk mb ) {
+        initialized = (mb!=null);
         bc = mb;
     }
 
