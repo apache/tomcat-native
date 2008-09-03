@@ -93,7 +93,7 @@ Some platforms allow to set timeouts for all operations on TCP sockets.
 This is available for Linux and Windows, other patforms do not support this,
 e.g. Solaris. If your platform supports TCP send and receive timeouts,
 you can set them using the worker attribute <b>socket_timeout</b>.
-You can not set the two wimeouts to different values.
+You can not set the two timeouts to different values.
 </p>
 <p>
 JK will accept this attribute even if your platform does not support
