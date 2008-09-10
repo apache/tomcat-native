@@ -103,6 +103,14 @@ There are extra steps you need to take for configuring Tomcat with IIS 5 and 6. 
 </p>
 </subsection>
 
+<subsection name="IIS 7 notes">
+<p>
+There is a known bug in IIS that may result in incomplete log messages. See <a
+href="https://issues.apache.org/bugzilla/show_bug.cgi?id=45769">bug 45769</a>
+for further details.
+</p>
+</subsection>
+
 <subsection name="Who support ajp protocols ?">
 <p>
 The ajp12 protocol is only available in Tomcat 3.2.x and 3.3.x.
