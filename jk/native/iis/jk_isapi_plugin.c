@@ -1820,7 +1820,7 @@ static int init_jk(char *serverName)
             }
         }
     }
-    if (rc) {
+    if (rc && watchdog_interval) {
         HANDLE wt;
         DWORD  wi;
         wt = CreateThread(NULL, 0, watchdog_thread, NULL, 0, &wi);
