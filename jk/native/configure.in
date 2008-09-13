@@ -105,7 +105,11 @@ AC_ARG_WITH(apxs,
                 WEBSERVER="apache-1.3"
                 APXSCC="`$APXS -q CC`"
                 APXSCFLAGS="`$APXS -q CFLAGS` -DJK_PREFORK"
-                APXS_CPPFLAGS=""
+                APXSCPPFLAGS=""
+                dnl sed magic needed to prepend each token with "-Wl," s.t. libtool
+                dnl detects those arguments correctly as ld flags.
+                dnl Double square brackets needed, because single ones will be removed by autoconf.
+                APXSLDFLAGS="`$APXS -q LDFLAGS_SHLIB | $SED -e 's/\([[^ ]]*\)/-Wl,\1/g'`"
             else
                 WEBSERVER="apache-2.0"
                 APRINCLUDEDIR=""
@@ -117,6 +121,10 @@ AC_ARG_WITH(apxs,
                 APXSCC="`$APXS -q CC`"
                 APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR ${APRINCLUDEDIR}"
                 APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
+                dnl sed magic needed to prepend each token with "-Wl," s.t. libtool
+                dnl detects those arguments correctly as ld flags.
+                dnl Double square brackets needed, because single ones will be removed by autoconf.
+                APXSLDFLAGS="`$APXS -q LDFLAGS | $SED -e 's/\([[^ ]]*\)/-Wl,\1/g'`"
                 APACHE_CONFIG_VARS="`${APXS} -q exp_installbuilddir`/config_vars.mk"
                 LIBTOOL=`$APXS -q LIBTOOL`
             fi
@@ -520,15 +528,14 @@ esac
 AC_SUBST(CFLAGS)
 
 dnl the APXSCFLAGS is given by apxs to the C compiler
-dnl the APXSLDFLAGS is given to the linker (for APRVARS).
-dnl APXSLDFLAGS=""
-dnl APXSCFLAGS=""
+dnl the APXSLDFLAGS is normally empty but APXSCFLAGS is not.
 if ${TEST} -n "${CFLAGS}" ; then
     APXSCFLAGS="${APXSCFLAGS} ${CFLAGS}"
 fi
-dnl the APXSLDFLAGS is normally empty but APXSCFLAGS is not.
+dnl the APXSLDFLAGS is given to the linker (for APRVARS).
 if ${TEST} -n "${LDFLAGS}" ; then
-    APXSLDFLAGS="-Wl,${LDFLAGS}"
+    TMPLDFLAGS="`${ECHO} ${LDFLAGS} | $SED -e 's/\([[^ ]]*\)/-Wl,\1/g'`"
+    APXSLDFLAGS="${APXSLDFLAGS} ${TMPLDFLAGS}"
 fi
 AC_SUBST(APXSCFLAGS)
 AC_SUBST(APXSCPPFLAGS)

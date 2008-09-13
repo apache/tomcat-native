@@ -33,7 +33,7 @@ include ../common/list.mk
 all: mod_jk.so
 
 mod_jk.so:
-	$(APXS) -c -o $@ -Wc,"${APXSCFLAGS} ${JK_INCL}" ${JAVA_INCL} "${APXSLDFLAGS}" mod_jk.c ${APACHE_OBJECTS}
+	$(APXS) -c -o $@ -Wc,"${APXSCFLAGS} ${JK_INCL}" ${JAVA_INCL} ${APXSLDFLAGS} mod_jk.c ${APACHE_OBJECTS}
 
 clean:
 	rm -f *.o *.lo *.a *.la *.so *.so.* *.slo

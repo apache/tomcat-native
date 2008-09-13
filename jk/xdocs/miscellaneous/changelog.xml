@@ -47,6 +47,10 @@
         Added connection_keepalive directive. (mturk)
       </update>
       <fix>
+        Apache: Use correct ld flags provided by apxs when building module.
+        Prevents some crashes on AIX for httpd 1.3 module. (rjung)
+      </fix>
+      <fix>
         Documentation: "val" attribute numbering in status worker
         needs to start with 0 instead of 1. (rjung)
       </fix>

@@ -23,6 +23,7 @@ APACHE_DIR=@APACHE_DIR@
 MKDIR=@MKDIR@
 APXSCFLAGS=@APXSCFLAGS@
 APXSCPPFLAGS=@APXSCPPFLAGS@
+APXSLDFLAGS=@APXSLDFLAGS@
 CC=@CC@
 
 # Defaults
@@ -78,7 +79,7 @@ install_static:
 # APXS will compile every file, this is derived from apxs
 
 mod_jk.la: mod_jk.lo $(APACHE_OBJECTS)
-	$(LIBTOOL) --mode=link ${COMPILE} `${APXS} -q LDFLAGS` -o $@ -module -rpath ${libexecdir} -avoid-version mod_jk.lo $(APACHE_OBJECTS)
+	$(LIBTOOL) --mode=link ${COMPILE} $(APXSLDFLAGS) -o $@ -module -rpath ${libexecdir} -avoid-version mod_jk.lo $(APACHE_OBJECTS)
 
 mod_jk.so: mod_jk.la
 	../scripts/build/instdso.sh SH_LIBTOOL='$(LIBTOOL)' mod_jk.la `pwd`

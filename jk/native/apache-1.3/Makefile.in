@@ -49,7 +49,7 @@ APACHE_CFLAGS=@apache_include@ @APXSCFLAGS@ @APXSCPPFLAGS@ -I${top_srcdir}/commo
 JK_CFLAGS  = $(JK_INCL) $(JAVA_INCL) $(APACHE_CFLAGS)
 COMPILE    = $(CC)
 SH_COMPILE = $(LIBTOOL) --mode=compile $(COMPILE) $(JK_CFLAGS)
-MOD_LINK   = $(LIBTOOL) --mode=link $(CC)
+MOD_LINK   = $(LIBTOOL) --mode=link $(CC) @APXSLDFLAGS@
 
 include ../common/list.mk
 
