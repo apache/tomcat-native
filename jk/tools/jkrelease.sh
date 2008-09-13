@@ -109,7 +109,7 @@ then
     answer="x"
     while [ "$answer" != "y" -a "$answer" != "n" ]
     do
-        echo "Do you want to procede? [y/n]"
+        echo "Do you want to proceed? [y/n]"
         read answer
     done
     if [ "$answer" != "y" ]
