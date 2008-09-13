@@ -32,12 +32,12 @@ include ../common/list.mk
 
 all: mod_jk.la
 
-mod_jk.la: 
-	$(APXS)  -c -o $@ -Wc,"${APXSCFLAGS} ${JK_INCL}" "${JAVA_INCL}" "${APXSLDFLAGS}" mod_jk.c ${APACHE_OBJECTS} 
+mod_jk.la:
+	$(APXS)  -c -o $@ -Wc,"${APXSCFLAGS} ${JK_INCL}" "${JAVA_INCL}" "${APXSLDFLAGS}" mod_jk.c ${APACHE_OBJECTS}
 
 install: mod_jk.la
 	$(APXS) -i mod_jk.la
- 
+
 clean:
 	rm -f *.o *.lo *.a *.la *.so *.so.* *.slo
 	rm -rf .libs

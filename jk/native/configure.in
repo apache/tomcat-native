@@ -103,20 +103,20 @@ AC_ARG_WITH(apxs,
             APA=`${GREP} STANDARD20 ${APXS}`
             if ${TEST} -z "$APA" ; then
                 WEBSERVER="apache-1.3"
-		APXSCC="`$APXS -q CC`"
-		APXSCFLAGS="`$APXS -q CFLAGS` -DJK_PREFORK"
-		APXS_CPPFLAGS=""
+                APXSCC="`$APXS -q CC`"
+                APXSCFLAGS="`$APXS -q CFLAGS` -DJK_PREFORK"
+                APXS_CPPFLAGS=""
             else
                 WEBSERVER="apache-2.0"
-              	APRINCLUDEDIR=""
-              	INCTEMP="`$APXS -q APR_INCLUDEDIR` `$APXS -q APU_INCLUDEDIR`"
-              	for INC in ${INCTEMP}; do
-              	    APRINCLUDEDIR="${APRINCLUDEDIR} -I${INC}"
-              	done
+                APRINCLUDEDIR=""
+                INCTEMP="`$APXS -q APR_INCLUDEDIR` `$APXS -q APU_INCLUDEDIR`"
+                for INC in ${INCTEMP}; do
+                    APRINCLUDEDIR="${APRINCLUDEDIR} -I${INC}"
+                done
                 AC_MSG_RESULT([APRINCLUDEDIR is $APRINCLUDEDIR])
-		APXSCC="`$APXS -q CC`"
-              	APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR ${APRINCLUDEDIR}"
-              	APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
+                APXSCC="`$APXS -q CC`"
+                APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR ${APRINCLUDEDIR}"
+                APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
                 APACHE_CONFIG_VARS="`${APXS} -q exp_installbuilddir`/config_vars.mk"
                 LIBTOOL=`$APXS -q LIBTOOL`
             fi
@@ -134,7 +134,7 @@ AC_ARG_WITH(apxs,
     fi
 ],
 [
-	AC_MSG_RESULT(no apxs given)
+    AC_MSG_RESULT(no apxs given)
 ])
 
 AC_SUBST(APACHE_CONFIG_VARS)
@@ -390,7 +390,7 @@ to the Apache source directory.])],
     AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
 ],
 [
-	AC_MSG_RESULT(no apache given)
+    AC_MSG_RESULT(no apache given)
 ])
 
 AC_SUBST(apache_include)
@@ -409,7 +409,7 @@ AC_ARG_ENABLE(netscape,
     AC_MSG_RESULT([building connector for \"$WEBSERVER\"])
 ],
 [
-	AC_MSG_RESULT(no netscape given)
+    AC_MSG_RESULT(no netscape given)
 ])
 
 dnl Check for enable-jni
@@ -524,11 +524,11 @@ dnl the APXSLDFLAGS is given to the linker (for APRVARS).
 dnl APXSLDFLAGS=""
 dnl APXSCFLAGS=""
 if ${TEST} -n "${CFLAGS}" ; then
-	APXSCFLAGS="${APXSCFLAGS} ${CFLAGS}"
+    APXSCFLAGS="${APXSCFLAGS} ${CFLAGS}"
 fi
-dnl the APXSLDFLAGS is normaly empty but APXSCFLAGS is not.
+dnl the APXSLDFLAGS is normally empty but APXSCFLAGS is not.
 if ${TEST} -n "${LDFLAGS}" ; then
-	APXSLDFLAGS="-Wl,${LDFLAGS}"
+    APXSLDFLAGS="-Wl,${LDFLAGS}"
 fi
 AC_SUBST(APXSCFLAGS)
 AC_SUBST(APXSCPPFLAGS)
@@ -550,9 +550,9 @@ dnl This is a safe default. Could screw up on the security features, but
 dnl oh well, this is what --with-java2 is for.
 
 if ${TEST} -n "${JAVA_HOME}" ; then
-	JAVA_HOME_ENV="${JAVA_HOME}"
+    JAVA_HOME_ENV="${JAVA_HOME}"
 else
-	JAVA_HOME_ENV=""
+    JAVA_HOME_ENV=""
 fi
 JAVA_HOME=""
 JAVA_PLATFORM="1"
@@ -602,34 +602,28 @@ if ${TEST} -z "${JAVA_HOME}" ; then
 
 
     for JAVA_PREFIX in \
-	    /usr/local \
-	    /usr/local/lib \
-    	    /usr \
-    	    /usr/lib \
-            /opt  \
-    	    /
+        /usr/local \
+        /usr/local/lib \
+        /usr \
+        /usr/lib \
+        /opt  \
+        /
     do
         for JAVA_PLATFORM in 3 2 1 ;
         do
 
             for subversion in .9 .8 .7 .6 .5 .4 .3 .2 .1 "" ;
+            do
+                for VARIANT in IBMJava2- java java- jdk jdk-;
                 do
-                    for VARIANT in IBMJava2- java java- jdk jdk-;
-                    do
-                        GUESS="${JAVA_PREFIX}/${VARIANT}1.${JAVA_PLATFORM}${subversion}"
-dnl                        AC_MSG_CHECKING([${GUESS}])
-                        if ${TEST} -d "${GUESS}/bin" \
-                        && ${TEST} -d "${GUESS}/include" ; then
+                    GUESS="${JAVA_PREFIX}/${VARIANT}1.${JAVA_PLATFORM}${subversion}"
+dnl                    AC_MSG_CHECKING([${GUESS}])
+                    if ${TEST} -d "${GUESS}/bin" \
+                    && ${TEST} -d "${GUESS}/include" ; then
 
-                            JAVA_HOME="${GUESS}"
-                            AC_MSG_RESULT([${GUESS}])
-                            break
-                        fi
-
-                    done
-
-                    if ${TEST} -n "${JAVA_HOME}" ; then
-                        break;
+                        JAVA_HOME="${GUESS}"
+                        AC_MSG_RESULT([${GUESS}])
+                        break
                     fi
 
                 done
@@ -647,30 +641,36 @@ dnl                        AC_MSG_CHECKING([${GUESS}])
         done
 
         if ${TEST} -n "${JAVA_HOME}" ; then
-
-            dnl Just to have the messages looking uniformly
-
-            AC_MSG_CHECKING(Java platform)
-            AC_MSG_RESULT([guess ${JAVA_PLATFORM}])
+            break;
         fi
+
+    done
+
+    if ${TEST} -n "${JAVA_HOME}" ; then
+
+        dnl Just to have the messages looking uniformly
+
+        AC_MSG_CHECKING(Java platform)
+        AC_MSG_RESULT([guess ${JAVA_PLATFORM}])
+    fi
 
 
 else
 
-        AC_MSG_CHECKING(Java platform)
+    AC_MSG_CHECKING(Java platform)
 
-        AC_ARG_WITH(java-platform,
-        [AS_HELP_STRING([--with-java-platform=VAL],
-        [Force the Java platform
-         (value is 1 for 1.1.x or 2 for 1.2.x or greater)])],
-        [
-            dnl This requires a bit of tweaking to be handled properly, but
-            dnl the default is good enough
+    AC_ARG_WITH(java-platform,
+    [AS_HELP_STRING([--with-java-platform=VAL],
+    [Force the Java platform
+     (value is 1 for 1.1.x or 2 for 1.2.x or greater)])],
+    [
+        dnl This requires a bit of tweaking to be handled properly, but
+        dnl the default is good enough
 
-            JAVA_PLATFORM="2"
-        ])
+        JAVA_PLATFORM="2"
+    ])
 
-        AC_MSG_RESULT(forced Java ${JAVA_PLATFORM})
+    AC_MSG_RESULT(forced Java ${JAVA_PLATFORM})
 
 fi
 dnl end of JServ ;=)
@@ -694,7 +694,7 @@ AC_ARG_WITH(os-type,
 [
     AC_MSG_CHECKING(os_type directory)
     if ${TEST} -f ${JAVA_HOME}/include/jni_md.h; then
-    	OS=""
+        OS=""
     else
         for f in ${JAVA_HOME}/include/*/jni_md.h; do
             if ${TEST} -f $f; then
@@ -716,7 +716,7 @@ AC_SUBST(OS)
 
 dnl Check that  a WEBSERVER has been given
 if ${TEST} -z "$WEBSERVER" ; then
-	AC_MSG_ERROR(Cannot find the WebServer)
+    AC_MSG_ERROR(Cannot find the WebServer)
 fi
 
 dnl Add common to subdir list
@@ -727,14 +727,14 @@ AC_SUBST(WEBSERVER)
 AM_CONDITIONAL(MAKE_DYNAMIC_APACHE, ${TEST} "${apache_dir_is_src}" = "false")
 
 if ${TEST} "${apache_dir_is_src}" = "false" ; then
-dnl normal apxs handling
-	APACHE20_OEXT=.c
-	LIB_JK_TYPE=mod_jk.so
-	INSTALL_TYPE=install_dynamic
+    dnl normal apxs handling
+    APACHE20_OEXT=.c
+    LIB_JK_TYPE=mod_jk.so
+    INSTALL_TYPE=install_dynamic
 else
-dnl install static library in apache sources.
-	APACHE20_OEXT=.lo
-	INSTALL_TYPE=install_static
+    dnl install static library in apache sources.
+    APACHE20_OEXT=.lo
+    INSTALL_TYPE=install_static
 fi
 AC_SUBST(APACHE20_OEXT)
 AC_SUBST(LIB_JK_TYPE)
@@ -743,16 +743,16 @@ AC_SUBST(INSTALL_TYPE)
 dnl automake needs the path it does not work with $WEBSERVER
 dnl that why useless Makefiles are build.
 AC_OUTPUT([
-	Makefile
-	apache-1.3/Makefile
-	apache-1.3/Makefile.apxs
-	apache-2.0/Makefile
-	apache-2.0/Makefile.apxs
-	common/Makefile
-	common/list.mk
-	common/jk_types.h
-	jni/Makefile
-	])
+    Makefile
+    apache-1.3/Makefile
+    apache-1.3/Makefile.apxs
+    apache-2.0/Makefile
+    apache-2.0/Makefile.apxs
+    common/Makefile
+    common/list.mk
+    common/jk_types.h
+    jni/Makefile
+])
 
 if ${TEST} -n "${WARN_CC}" ; then
     AC_MSG_WARN([Using CC from environment:])

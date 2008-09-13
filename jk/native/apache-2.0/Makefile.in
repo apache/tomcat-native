@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## 
+##
 
 APXS=@APXS@
 OS=@OS@
@@ -36,9 +36,9 @@ include ../common/list.mk
 # Will define libexecdir, LIBTOOL, etc
 include @APACHE_CONFIG_VARS@
 
-# Local settings ( overriding/appending to Apache's ) 
+# Local settings ( overriding/appending to Apache's )
 COMMON=../common
-JK_INCL=-DUSE_APACHE_MD5 -I ${COMMON} 
+JK_INCL=-DUSE_APACHE_MD5 -I ${COMMON}
 JAVA_INCL=-I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/${OS}
 JAVA_LIB=-L ${JAVA_HOME}/jre/lib/${ARCH} -L ${JAVA_HOME}/lib/${ARCH}/native_threads
 CFLAGS=@apache_include@ @CFLAGS@ ${JK_INCL} ${JAVA_INCL} ${APXSCPPFLAGS} ${APXSCFLAGS} ${EXTRA_CFLAGS} ${EXTRA_CPPFLAGS}
@@ -49,7 +49,7 @@ include ../scripts/build/rules.mk
 
 OEXT=.lo
 
-all: Makefile @LIB_JK_TYPE@ 
+all: Makefile @LIB_JK_TYPE@
 install: @INSTALL_TYPE@
 
 Makefile: Makefile.in
