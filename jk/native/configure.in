@@ -108,8 +108,13 @@ AC_ARG_WITH(apxs,
                 APXSCPPFLAGS=""
                 dnl sed magic needed to prepend each token with "-Wl," s.t. libtool
                 dnl detects those arguments correctly as ld flags.
+                dnl Prevent double Wl by first stripping it.
+                dnl Allow space and tab as separators.
                 dnl Double square brackets needed, because single ones will be removed by autoconf.
-                APXSLDFLAGS="`$APXS -q LDFLAGS_SHLIB | $SED -e 's/\([[^ ]]*\)/-Wl,\1/g'`"
+                APXSLDFLAGS="`$APXS -q LDFLAGS_SHLIB | \
+                    $SED -e 's/\([[ 	]]\{1,\}\)-Wl,/\1/g' \
+                         -e 's/^-Wl,//g' \
+                         -e 's/\([[^ 	]]\{1,\}\)/-Wl,\1/g'`"
             else
                 WEBSERVER="apache-2.0"
                 APRINCLUDEDIR=""
@@ -123,8 +128,13 @@ AC_ARG_WITH(apxs,
                 APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
                 dnl sed magic needed to prepend each token with "-Wl," s.t. libtool
                 dnl detects those arguments correctly as ld flags.
+                dnl Prevent double Wl by first stripping it.
+                dnl Allow space and tab as separators.
                 dnl Double square brackets needed, because single ones will be removed by autoconf.
-                APXSLDFLAGS="`$APXS -q LDFLAGS | $SED -e 's/\([[^ ]]*\)/-Wl,\1/g'`"
+                APXSLDFLAGS="`$APXS -q LDFLAGS | \
+                    $SED -e 's/\([[ 	]]\{1,\}\)-Wl,/\1/g' \
+                         -e 's/^-Wl,//g' \
+                         -e 's/\([[^ 	]]\{1,\}\)/-Wl,\1/g'`"
                 APACHE_CONFIG_VARS="`${APXS} -q exp_installbuilddir`/config_vars.mk"
                 LIBTOOL=`$APXS -q LIBTOOL`
             fi
@@ -534,7 +544,15 @@ if ${TEST} -n "${CFLAGS}" ; then
 fi
 dnl the APXSLDFLAGS is given to the linker (for APRVARS).
 if ${TEST} -n "${LDFLAGS}" ; then
-    TMPLDFLAGS="`${ECHO} ${LDFLAGS} | $SED -e 's/\([[^ ]]*\)/-Wl,\1/g'`"
+    dnl sed magic needed to prepend each token with "-Wl," s.t. libtool
+    dnl detects those arguments correctly as ld flags.
+    dnl Prevent double Wl by first stripping it.
+    dnl Allow space and tab as separators.
+    dnl Double square brackets needed, because single ones will be removed by autoconf.
+    TMPLDFLAGS="`${ECHO} ${LDFLAGS} | \
+        $SED -e 's/\([[ 	]]\{1,\}\)-Wl,/\1/g' \
+             -e 's/^-Wl,//g' \
+             -e 's/\([[^ 	]]\{1,\}\)/-Wl,\1/g'`"
     APXSLDFLAGS="${APXSLDFLAGS} ${TMPLDFLAGS}"
 fi
 AC_SUBST(APXSCFLAGS)
