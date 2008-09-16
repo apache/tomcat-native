@@ -1908,6 +1908,7 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->read = NULL;
     s->write = NULL;
     s->flush = NULL;
+    s->done = NULL;
     s->disable_reuse = JK_FALSE;
     s->add_log_items = NULL;
     s->next_vhost = NULL;

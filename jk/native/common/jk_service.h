@@ -291,6 +291,11 @@ struct jk_ws_service
     void (JK_METHOD * flush) (jk_ws_service_t *s);
 
     /*
+     * Done with sending response back to the browser.
+     */
+    void (JK_METHOD * done) (jk_ws_service_t *s);
+
+    /*
      * If set do not reuse socket after each full response
      */
     int disable_reuse;

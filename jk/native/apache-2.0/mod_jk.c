@@ -405,6 +405,16 @@ static void JK_METHOD ws_flush(jk_ws_service_t *s)
 #endif
 }
 
+static void JK_METHOD ws_done(jk_ws_service_t *s)
+{
+#if ! (defined(AS400) && !defined(AS400_UTF8))
+    if (s && s->ws_private) {
+        apache_private_data_t *p = s->ws_private;
+        ap_finalize_request_protocol(p->r);
+    }
+#endif
+}
+
 /*
  * Write a chunk of response data back to the browser.  If the headers
  * haven't yet been sent over, send over default header values (Status =
@@ -652,6 +662,7 @@ static int init_ws_service(apache_private_data_t * private_data,
     s->read = ws_read;
     s->write = ws_write;
     s->flush = ws_flush;
+    s->done = ws_done;
     s->add_log_items = ws_add_log_items;
     s->next_vhost = ws_next_vhost;
     s->vhost_to_text = ws_vhost_to_text;

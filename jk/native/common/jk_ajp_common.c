@@ -1749,6 +1749,9 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
         /* Flush after the last write */
         if (r->flush && !r->flush_packets)
             r->flush(r);
+        /* Done with response */
+        if (r->done)
+            r->done(r);
 
         JK_TRACE_EXIT(l);
         return JK_AJP13_END_RESPONSE;
