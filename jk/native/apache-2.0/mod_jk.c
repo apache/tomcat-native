@@ -2191,7 +2191,10 @@ static const command_rec jk_cmds[] = {
 static apr_status_t jk_cleanup_shmem(void *data)
 {
     /* Force the watchdog thread exit */
-    jk_watchdog_interval = 0;
+    if (jk_watchdog_interval > 0) {
+        jk_watchdog_interval = 0;
+        apr_sleep(apr_time_from_sec(2));
+    }
     jk_shm_close();
     return APR_SUCCESS;
 }
@@ -2791,18 +2794,23 @@ static int open_jklog(server_rec * s, apr_pool_t * p)
 
 static void * APR_THREAD_FUNC jk_watchdog_func(apr_thread_t *thd, void *data)
 {
+    int i;
     jk_server_conf_t *conf = (jk_server_conf_t *)data;
 
     if (JK_IS_DEBUG_LEVEL(conf->log))
         jk_log(conf->log, JK_LOG_DEBUG,
                "Watchdog initialized");
     for (;;) {
-        apr_sleep(apr_time_from_sec(jk_watchdog_interval));
+        for (i = 0; i < jk_watchdog_interval; i++) {
+            apr_sleep(apr_time_from_sec(1));
+            if (!jk_watchdog_interval)
+                break;
+        }
+        if (!jk_watchdog_interval)
+            break;
         if (JK_IS_DEBUG_LEVEL(conf->log))
            jk_log(conf->log, JK_LOG_DEBUG,
                   "Watchdog running");
-        if (!jk_watchdog_interval)
-            break;
         wc_maintain(conf->log);
     }
     return NULL;
