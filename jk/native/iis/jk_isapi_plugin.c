@@ -200,6 +200,7 @@ static DWORD auth_notification_flags = 0;
 static int   use_auth_notification_flags = 1;
 static int reject_unsafe = 0;
 static int watchdog_interval = 0;
+static HANDLE watchdog_handle = NULL;
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -1573,7 +1574,11 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
 
     if (is_inited) {
         is_inited = JK_FALSE;
-
+        if (watchdog_handle) {
+            WaitForSingleObject(watchdog_handle, INFINITE);
+            CloseHandle(watchdog_handle);
+            watchdog_handle = NULL;
+        }
         if (is_mapread) {
             uri_worker_map_free(&uw_map, logger);
             is_mapread = JK_FALSE;
@@ -1655,12 +1660,18 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
 
 static DWORD WINAPI watchdog_thread(void *param)
 {
+    int i;
     if (JK_IS_DEBUG_LEVEL(logger)) {
         jk_log(logger, JK_LOG_DEBUG,
-               "Watchdog thread initialized");
+               "Watchdog thread initialized with %u second interval",
+               watchdog_interval);
     }
     while (is_inited) {
-        Sleep(watchdog_interval * 1000);
+        for (i = 0; i < (watchdog_interval * 10); i++) {
+            if (!is_inited)
+                break;
+            Sleep(100);
+        }
         if (!is_inited)
             break;
         if (JK_IS_DEBUG_LEVEL(logger)) {
@@ -1668,6 +1679,10 @@ static DWORD WINAPI watchdog_thread(void *param)
                    "Watchdog thread running");
         }
         wc_maintain(logger);
+    }
+    if (JK_IS_DEBUG_LEVEL(logger)) {
+        jk_log(logger, JK_LOG_DEBUG,
+               "Watchdog thread finished");
     }
     return 0;
 }
@@ -1820,10 +1835,17 @@ static int init_jk(char *serverName)
             }
         }
     }
-    if (rc && watchdog_interval) {
-        HANDLE wt;
-        DWORD  wi;
-        wt = CreateThread(NULL, 0, watchdog_thread, NULL, 0, &wi);
+    if (rc) {
+        if (watchdog_interval) {
+            DWORD  wi;
+            watchdog_handle = CreateThread(NULL, 0, watchdog_thread,
+                                           NULL, 0, &wi);
+            if (!watchdog_handle) {
+                rc = GetLastError();
+                jk_log(logger, JK_LOG_ERROR, "Error creating Watchdog thread");
+                return rc;
+            }
+        }
         jk_log(logger, JK_LOG_INFO, "%s initialized", (VERSION_STRING) );
     }
     return rc;
