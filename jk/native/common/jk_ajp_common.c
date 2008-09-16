@@ -735,16 +735,15 @@ static void ajp_reset_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 /*
  * Close the endpoint (close pool and close socket)
  */
-
 void ajp_close_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
 
-    if (JK_IS_DEBUG_LEVEL(l))
-        jk_log(l, JK_LOG_DEBUG,
-        "closing endpoint with sd = %u %s",
-         ae->sd, ae->reuse? "" : "(socket shutdown)");
     if (IS_VALID_SOCKET(ae->sd)) {
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "closing endpoint with sd = %u%s",
+                   ae->sd, ae->reuse ? "" : " (socket shutdown)");
         jk_shutdown_socket(ae->sd, l);
         ae->sd = JK_INVALID_SOCKET;
     }
