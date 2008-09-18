@@ -1746,12 +1746,14 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             }
             ae->reuse = JK_TRUE;
         }
-        /* Flush after the last write */
-        if (r->flush && !r->flush_packets)
-            r->flush(r);
-        /* Done with response */
-        if (r->done)
+        if (r->done) {
+            /* Done with response */
             r->done(r);
+        }
+        else if (r->flush && !r->flush_packets) {
+            /* Flush after the last write */
+            r->flush(r);
+        }
 
         JK_TRACE_EXIT(l);
         return JK_AJP13_END_RESPONSE;
