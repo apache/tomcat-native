@@ -50,5 +50,28 @@ undefine([AC_TYPE_NAME])dnl
 undefine([AC_CV_NAME])dnl
 ])
 
-
-
+dnl
+dnl JK_PREFIX_IF_MISSING(variable, prefix)
+dnl
+dnl Prefix all tokens in a variable with "prefix" unless
+dnl it is already there.
+dnl
+AC_DEFUN([JK_PREFIX_IF_MISSING], [
+  jk_new_val=""
+  jk_val_changed=0
+  for i in $$1; do
+    case $i in
+      $2*)
+        jk_new_val="$jk_new_val $i"
+        ;;
+      *)
+        jk_new_val="$jk_new_val $2$i"
+        jk_val_changed=1
+        ;;
+    esac
+  done
+  if test $jk_val_changed = "1"; then
+    AC_MSG_NOTICE(tokens in $1 have been prefixed with '[$2]')
+    $1=$jk_new_val
+  fi
+]) dnl

@@ -106,15 +106,7 @@ AC_ARG_WITH(apxs,
                 APXSCC="`$APXS -q CC`"
                 APXSCFLAGS="`$APXS -q CFLAGS` -DJK_PREFORK"
                 APXSCPPFLAGS=""
-                dnl sed magic needed to prepend each token with "-Wl," s.t. libtool
-                dnl detects those arguments correctly as ld flags.
-                dnl Prevent double Wl by first stripping it.
-                dnl Allow space and tab as separators.
-                dnl Double square brackets needed, because single ones will be removed by autoconf.
-                APXSLDFLAGS="`$APXS -q LDFLAGS_SHLIB | \
-                    $SED -e 's/\([[ 	]]\{1,\}\)-Wl,/\1/g' \
-                         -e 's/^-Wl,//g' \
-                         -e 's/\([[^ 	]]\{1,\}\)/-Wl,\1/g'`"
+                APXSLDFLAGS="`$APXS -q LDFLAGS_SHLIB`"
             else
                 WEBSERVER="apache-2.0"
                 APRINCLUDEDIR=""
@@ -126,15 +118,7 @@ AC_ARG_WITH(apxs,
                 APXSCC="`$APXS -q CC`"
                 APXSCFLAGS="`${APXS} -q CFLAGS` `${APXS} -q EXTRA_CFLAGS` -DHAVE_APR ${APRINCLUDEDIR}"
                 APXSCPPFLAGS="`${APXS} -q EXTRA_CPPFLAGS`"
-                dnl sed magic needed to prepend each token with "-Wl," s.t. libtool
-                dnl detects those arguments correctly as ld flags.
-                dnl Prevent double Wl by first stripping it.
-                dnl Allow space and tab as separators.
-                dnl Double square brackets needed, because single ones will be removed by autoconf.
-                APXSLDFLAGS="`$APXS -q LDFLAGS | \
-                    $SED -e 's/\([[ 	]]\{1,\}\)-Wl,/\1/g' \
-                         -e 's/^-Wl,//g' \
-                         -e 's/\([[^ 	]]\{1,\}\)/-Wl,\1/g'`"
+                APXSLDFLAGS="`$APXS -q LDFLAGS`"
                 APACHE_CONFIG_VARS="`${APXS} -q exp_installbuilddir`/config_vars.mk"
                 LIBTOOL=`$APXS -q LIBTOOL`
             fi
@@ -538,25 +522,21 @@ esac
 AC_SUBST(CFLAGS)
 
 dnl the APXSCFLAGS is given by apxs to the C compiler
-dnl the APXSLDFLAGS is normally empty but APXSCFLAGS is not.
 if ${TEST} -n "${CFLAGS}" ; then
     APXSCFLAGS="${APXSCFLAGS} ${CFLAGS}"
 fi
-dnl the APXSLDFLAGS is given to the linker (for APRVARS).
-if ${TEST} -n "${LDFLAGS}" ; then
-    dnl sed magic needed to prepend each token with "-Wl," s.t. libtool
-    dnl detects those arguments correctly as ld flags.
-    dnl Prevent double Wl by first stripping it.
-    dnl Allow space and tab as separators.
-    dnl Double square brackets needed, because single ones will be removed by autoconf.
-    TMPLDFLAGS="`${ECHO} ${LDFLAGS} | \
-        $SED -e 's/\([[ 	]]\{1,\}\)-Wl,/\1/g' \
-             -e 's/^-Wl,//g' \
-             -e 's/\([[^ 	]]\{1,\}\)/-Wl,\1/g'`"
-    APXSLDFLAGS="${APXSLDFLAGS} ${TMPLDFLAGS}"
-fi
 AC_SUBST(APXSCFLAGS)
 AC_SUBST(APXSCPPFLAGS)
+
+dnl the APXSLDFLAGS is given to the linker (for APRVARS).
+if ${TEST} -n "${LDFLAGS}" ; then
+    APXSLDFLAGS="${APXSLDFLAGS} ${LDFLAGS}"
+fi
+
+dnl Prefix all LDFLAGS with "-Wl,",
+dnl because we pass them to libtool
+JK_PREFIX_IF_MISSING(APXSLDFLAGS, [-Wl,])
+
 AC_SUBST(APXSLDFLAGS)
 
 if ${TEST} -n "${JK_JNI_WORKER}" ; then
