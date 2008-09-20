@@ -2887,6 +2887,30 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
         if (ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_threads) != APR_SUCCESS)
             mpm_threads = 1;
     }
+    if (mpm_threads > 1) {
+#if _MT_CODE
+        /* _MT_CODE  */
+        if (JK_IS_DEBUG_LEVEL(conf->log)) {
+#if !defined(WIN32) && !defined(NETWARE)
+#if USE_FLOCK_LK
+            jk_log(conf->log, JK_LOG_DEBUG,
+                   "Using flock() for locking.");
+#else
+            jk_log(conf->log, JK_LOG_DEBUG,
+                   "Using fcntl() for locking.");
+#endif /* USE_FLOCK_LK */
+#else  /* WIN32 */
+            jk_log(conf->log, JK_LOG_DEBUG,
+                   "Not using locking.");
+#endif
+        }
+#else
+        /* !_MT_CODE */
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+                     "Cannot run prefork mod_jk on threaded server.");
+        return JK_FALSE;
+#endif
+    }
     if (JK_IS_DEBUG_LEVEL(conf->log))
         jk_log(conf->log, JK_LOG_DEBUG,
                "Setting default connection pool max size to %d",
