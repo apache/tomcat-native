@@ -324,13 +324,13 @@ int jk_get_bool_code(const char *v, int def)
     else if (!strcasecmp(v, "off") ||
              *v == 'F' || *v == 'f' ||
              *v == 'N' || *v == 'n' ||
-             *v == '0') {
+            (*v == '0' && *(v + 1) == '\0')) {
         return 0;
     }
     else if (!strcasecmp(v, "on") ||
              *v == 'T' || *v == 't' ||
              *v == 'Y' || *v == 'y' ||
-             *v == '1') {
+            (*v == '1' && *(v + 1) == '\0')) {
         return 1;
     }
     return def;
