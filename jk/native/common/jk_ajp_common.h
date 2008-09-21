@@ -308,9 +308,9 @@ struct ajp_worker
     /*
      * Handle Connection/Reply Timeouts
      */
-    int connect_timeout;   /* connect cping/cpong delay in ms (0 means disabled)  */
-    int reply_timeout;     /* reply timeout delay in ms (0 means disabled) */
-    int prepost_timeout;   /* before sending a request cping/cpong timeout delay in ms (0 means disabled) */
+    int connect_timeout;      /* connect cping/cpong delay in ms (0 means disabled)  */
+    int reply_timeout;        /* reply timeout delay in ms (0 means disabled) */
+    int prepost_timeout;      /* before sending a request cping/cpong timeout delay in ms (0 means disabled) */
     int connection_keepalive; /* interval for sending cping packets on
                                * unused connection */
 
@@ -318,7 +318,7 @@ struct ajp_worker
      * Recovery options
      */
     unsigned int recovery_opts;
-    
+
     /*
      * Public property to enable the number of retry attempts
      * on this worker.
@@ -326,7 +326,7 @@ struct ajp_worker
     int retries;
 
     unsigned int max_packet_size;  /*  Maximum AJP Packet size */
-    
+
     /* 
      * HTTP status that will cause failover (0 means disabled)
      */
