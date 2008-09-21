@@ -2469,9 +2469,6 @@ int ajp_init(jk_worker_t *pThis,
         p->socket_timeout =
             jk_get_worker_socket_timeout(props, p->name, AJP_DEF_SOCKET_TIMEOUT);
 
-        p->socket_buf =
-            jk_get_worker_socket_buffer(props, p->name, 8192);
-
         p->keepalive =
             jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
 
@@ -2504,6 +2501,9 @@ int ajp_init(jk_worker_t *pThis,
 
         p->max_packet_size =
             jk_get_max_packet_size(props, p->name);
+
+        p->socket_buf =
+            jk_get_worker_socket_buffer(props, p->name, p->max_packet_size);
 
         p->http_status_fail_num = jk_get_worker_fail_on_status(props, p->name,
                                      &p->http_status_fail[0],
