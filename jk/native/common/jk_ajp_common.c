@@ -2849,60 +2849,62 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t mstarted, jk_logger_t *l)
                 if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd))
                     cnt++;
             }
-            /* Handle worker cache and recycle timeouts */
-            for (i = (int)aw->ep_cache_sz - 1;
-                 i >= 0 && aw->cache_timeout > 0; i--) {
-                /* Skip the closed sockets */
-                if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
-                    int elapsed = (int)difftime(mstarted, aw->ep_cache[i]->last_access);
-                    if (elapsed > aw->cache_timeout) {
-                        time_t rt = 0;
-                        n++;
-                        if (JK_IS_DEBUG_LEVEL(l))
-                            rt = time(NULL);
-                        aw->ep_cache[i]->reuse = JK_FALSE;
-                        ajp_reset_endpoint(aw->ep_cache[i], l);
-                        if (JK_IS_DEBUG_LEVEL(l))
+            /* Handle worker cache timeouts */
+            if (aw->cache_timeout > 0) {
+                for (i = (int)aw->ep_cache_sz - 1;
+                     i >= 0; i--) {
+                    /* Skip the closed sockets */
+                    if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
+                        int elapsed = (int)difftime(mstarted, aw->ep_cache[i]->last_access);
+                        if (elapsed > aw->cache_timeout) {
+                            time_t rt = 0;
+                            n++;
+                            if (JK_IS_DEBUG_LEVEL(l))
+                                rt = time(NULL);
+                            aw->ep_cache[i]->reuse = JK_FALSE;
+                            ajp_reset_endpoint(aw->ep_cache[i], l);
+                            if (JK_IS_DEBUG_LEVEL(l))
+                                jk_log(l, JK_LOG_DEBUG,
+                                        "cleaning pool slot=%d elapsed %d in %d",
+                                        i, elapsed, (int)(difftime(time(NULL), rt)));
+                        }
+                    }
+                    if (cnt <= aw->ep_mincache_sz + n) {
+                        if (JK_IS_DEBUG_LEVEL(l)) {
                             jk_log(l, JK_LOG_DEBUG,
-                                    "cleaning pool slot=%d elapsed %d in %d",
-                                    i, elapsed, (int)(difftime(time(NULL), rt)));
+                            "reached pool min size %u from %u cache slots",
+                            aw->ep_mincache_sz, aw->ep_cache_sz);
+                        }
+                        break;
                     }
-                }
-                if (cnt <= aw->ep_mincache_sz + n) {
-                    if (JK_IS_DEBUG_LEVEL(l)) {
-                        jk_log(l, JK_LOG_DEBUG,
-                        "reached pool min size %u from %u cache slots",
-                        aw->ep_mincache_sz, aw->ep_cache_sz);
-                    }
-                    break;
                 }
             }
             /* Handle worker connection keepalive */
-            for (i = (int)aw->ep_cache_sz - 1; i >= 0 &&
-                 aw->connection_keepalive > 0 &&
-                 aw->prepost_timeout > 0; i--) {
-                /* Skip the closed sockets */
-                if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
-                    int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
-                    if (elapsed > aw->connection_keepalive) {
-                        k++;
-                        /* handle cping/cpong.
-                         */
-                        if (ajp_handle_cping_cpong(aw->ep_cache[i],
-                            aw->prepost_timeout, l) == JK_FALSE) {
-                            jk_log(l, JK_LOG_INFO,
-                                   "(%s) failed sending request, "
-                                   "socket %d keepalive cping/cpong "
-                                   "failure (errno=%d)",
-                                   aw->name,
-                                   aw->ep_cache[i]->sd,
-                                   aw->ep_cache[i]->last_errno);
-                            aw->ep_cache[i]->reuse = JK_FALSE;
-                            ajp_reset_endpoint(aw->ep_cache[i], l);
-                        }
-                        else {
-                            now = time(NULL);
-                            aw->ep_cache[i]->last_access = now;
+            if (aw->connection_keepalive > 0 && aw->prepost_timeout > 0) {
+                for (i = (int)aw->ep_cache_sz - 1; i >= 0; i--) {
+                    /* Skip the closed sockets */
+                    if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
+                        int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
+                        if (elapsed > aw->connection_keepalive) {
+                            k++;
+                            /* handle cping/cpong.
+                             */
+                            if (ajp_handle_cping_cpong(aw->ep_cache[i],
+                                aw->prepost_timeout, l) == JK_FALSE) {
+                                jk_log(l, JK_LOG_INFO,
+                                       "(%s) failed sending request, "
+                                       "socket %d keepalive cping/cpong "
+                                       "failure (errno=%d)",
+                                       aw->name,
+                                       aw->ep_cache[i]->sd,
+                                       aw->ep_cache[i]->last_errno);
+                                aw->ep_cache[i]->reuse = JK_FALSE;
+                                ajp_reset_endpoint(aw->ep_cache[i], l);
+                            }
+                            else {
+                                now = time(NULL);
+                                aw->ep_cache[i]->last_access = now;
+                            }
                         }
                     }
                 }
