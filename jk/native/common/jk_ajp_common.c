@@ -2794,8 +2794,6 @@ int ajp_get_endpoint(jk_worker_t *pThis,
             return JK_FALSE;
 
         }
-        jk_log(l, JK_LOG_INFO,
-               "can't find free endpoint");
     }
     else {
         JK_LOG_NULL_PARAMS(l);
