@@ -1614,10 +1614,6 @@ static int JK_METHOD init(jk_worker_t *pThis,
     if(p->maintain_time < 0)
         p->maintain_time = 0;
     p->s->last_maintain_time = time(NULL);
-    p->connection_keepalive = jk_get_worker_connection_keepalive(props,
-                                                                 p->name, 0);
-    if(p->connection_keepalive < 0)
-        p->connection_keepalive = 0;
 
     p->lbmethod = jk_get_lb_method(props, p->name);
     p->lblock   = jk_get_lb_lock(props, p->name);
