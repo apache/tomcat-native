@@ -1039,7 +1039,8 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
     }
     ae->last_errno = errno;
     jk_log(l, JK_LOG_INFO,
-           "sendfull returned %d (errno=%d)", rc, ae->last_errno);
+           "sendfull for socket %d returned %d (errno=%d)",
+           ae->sd, rc, ae->last_errno);
     ae->sd = JK_INVALID_SOCKET;
 
     JK_TRACE_EXIT(l);
@@ -1398,11 +1399,11 @@ static int ajp_send_request(jk_endpoint_t *e,
             if (rc == JK_FATAL_ERROR)
                 op->recoverable = JK_FALSE;
             jk_log(l, JK_LOG_INFO,
-                   "(%s) failed sending request (%srecoverable), "
-                   "socket %d (errno=%d)",
+                   "(%s) failed sending request (%srecoverable) "
+                   "(errno=%d)",
                     ae->worker->name,
                     op->recoverable ? "" : "un",
-                    ae->sd, ae->last_errno);
+                    ae->last_errno);
             JK_TRACE_EXIT(l);
             return JK_FATAL_ERROR;
         }
