@@ -2808,6 +2808,7 @@ int ajp_get_endpoint(jk_worker_t *pThis,
 int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
+    time_t mstarted = now;
 
     if (pThis && pThis->worker_private) {
         ajp_worker_t *aw = pThis->worker_private;
@@ -2912,12 +2913,12 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
             if (n && JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                         "recycled %u sockets in %d seconds from %u pool slots",
-                        n, (int)(difftime(time(NULL), now)),
+                        n, (int)(difftime(time(NULL), mstarted)),
                         aw->ep_cache_sz);
             if (k && JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                         "pinged %u sockets in %d seconds from %u pool slots",
-                        k, (int)(difftime(time(NULL), now)),
+                        k, (int)(difftime(time(NULL), mstarted)),
                         aw->ep_cache_sz);
             JK_TRACE_EXIT(l);
             return JK_TRUE;
