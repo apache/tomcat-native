@@ -2476,17 +2476,20 @@ int ajp_init(jk_worker_t *pThis,
             jk_get_worker_cache_timeout(props, p->name,
                                         AJP_DEF_CACHE_TIMEOUT);
 
+        p->ping_timeout =
+            jk_get_worker_ping_timeout(props, p->name, 0);
+
         p->connect_timeout =
             jk_get_worker_connect_timeout(props, p->name,
-                                          AJP_DEF_CONNECT_TIMEOUT);
+                                          p->ping_timeout);
+
+        p->prepost_timeout =
+            jk_get_worker_prepost_timeout(props, p->name,
+                                          p->ping_timeout);
 
         p->reply_timeout =
             jk_get_worker_reply_timeout(props, p->name,
                                         AJP_DEF_REPLY_TIMEOUT);
-
-        p->prepost_timeout =
-            jk_get_worker_prepost_timeout(props, p->name,
-                                          AJP_DEF_PREPOST_TIMEOUT);
 
         p->connection_keepalive =
             jk_get_worker_connection_keepalive(props, p->name, 0);
@@ -2541,6 +2544,10 @@ int ajp_init(jk_worker_t *pThis,
             jk_log(l, JK_LOG_DEBUG,
                    "pool timeout:     %d",
                    p->cache_timeout);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "ping timeout:     %d",
+                   p->ping_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
                    "connect timeout:  %d",
@@ -2880,7 +2887,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t mstarted, jk_logger_t *l)
                 }
             }
             /* Handle worker connection keepalive */
-            if (aw->connection_keepalive > 0 && aw->prepost_timeout > 0) {
+            if (aw->connection_keepalive > 0 && aw->ping_timeout > 0) {
                 for (i = (int)aw->ep_cache_sz - 1; i >= 0; i--) {
                     /* Skip the closed sockets */
                     if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
@@ -2890,7 +2897,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t mstarted, jk_logger_t *l)
                             /* handle cping/cpong.
                              */
                             if (ajp_handle_cping_cpong(aw->ep_cache[i],
-                                aw->prepost_timeout, l) == JK_FALSE) {
+                                aw->ping_timeout, l) == JK_FALSE) {
                                 jk_log(l, JK_LOG_INFO,
                                        "(%s) failed sending request, "
                                        "socket %d keepalive cping/cpong "

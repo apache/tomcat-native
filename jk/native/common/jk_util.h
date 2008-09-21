@@ -86,6 +86,8 @@ int jk_get_worker_reply_timeout(jk_map_t *m, const char *wname, int def);
 
 int jk_get_worker_prepost_timeout(jk_map_t *m, const char *wname, int def);
 
+int jk_get_worker_ping_timeout(jk_map_t *m, const char *wname, int def);
+
 int jk_get_worker_recycle_timeout(jk_map_t *m, const char *wname, int def);
 
 int jk_get_worker_recover_timeout(jk_map_t *m, const char *wname, int def);
