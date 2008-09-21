@@ -192,7 +192,6 @@ struct lb_worker
     int          lbmethod;
     int          lblock;
     int          maintain_time;
-    int          connection_keepalive;
     unsigned int max_packet_size;
     unsigned int next_offset;
 
