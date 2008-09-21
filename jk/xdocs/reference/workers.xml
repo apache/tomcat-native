@@ -260,11 +260,12 @@ have information about the cut and couldn't handle it.
 </p>
 </directive>
 
-<directive name="connection_keepalive" default="False" required="false">
-This is interval in seconds used for sending CPING packets over unused
-connection.
+<directive name="connection_keepalive" default="0" required="false">
+Connections idle for longer than this interval in seconds are probed by
+CPING packets whether they still work. If set to zero (default),
+no such probes will be done.
 <p>To be able to use this feature <code>prepost_timeout</code> must be
-set to desired timeout value.
+set to the desired timeout value.
 </p>
 <p>
 This feature has been added in <b>jk 1.2.27</b>.
