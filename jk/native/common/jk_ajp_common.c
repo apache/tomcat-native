@@ -2803,10 +2803,10 @@ int ajp_get_endpoint(jk_worker_t *pThis,
     return JK_FALSE;
 }
 
-int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
+int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t mstarted, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
-    time_t mstarted = now;
+    time_t now = mstarted;
 
     if (pThis && pThis->worker_private) {
         ajp_worker_t *aw = pThis->worker_private;
@@ -2821,9 +2821,9 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
          * Since it's possible that we come here a few milliseconds
          * before the interval has passed, we allow a little tolerance.
          */
-        delta = (long)difftime(now, aw->s->last_maintain_time) + JK_AJP_MAINTAIN_TOLERANCE;
+        delta = (long)difftime(mstarted, aw->s->last_maintain_time) + JK_AJP_MAINTAIN_TOLERANCE;
         if (delta >= aw->maintain_time) {
-            aw->s->last_maintain_time = now;
+            aw->s->last_maintain_time = mstarted;
             if (aw->s->state == JK_AJP_STATE_OK &&
                 aw->s->used == aw->s->used_snapshot)
                 aw->s->state = JK_AJP_STATE_IDLE;
@@ -2832,7 +2832,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
 
         jk_shm_unlock();
 
-        /* Obtain current time only if needed */
+        /* Do connection pool maintenance only if timeouts or keepalives are set */
         if (aw->cache_timeout <= 0 &&
             aw->connection_keepalive <= 0) {
             /* Nothing to do. */
@@ -2854,7 +2854,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l)
                  i >= 0 && aw->cache_timeout > 0; i--) {
                 /* Skip the closed sockets */
                 if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
-                    int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
+                    int elapsed = (int)difftime(mstarted, aw->ep_cache[i]->last_access);
                     if (elapsed > aw->cache_timeout) {
                         time_t rt = 0;
                         n++;
