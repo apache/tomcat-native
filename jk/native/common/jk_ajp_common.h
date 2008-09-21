@@ -313,7 +313,9 @@ struct ajp_worker
     int prepost_timeout;      /* before sending a request cping/cpong timeout delay in ms (0 means disabled) */
     int connection_keepalive; /* interval for sending cping packets on
                                * unused connection */
-
+    int ping_timeout;         /* generic cping/cpong timeout. Used for keepalive packets or
+                               * as default for boolean valued connect and prepost timeouts.
+                               */
     /*
      * Recovery options
      */
