@@ -260,12 +260,43 @@ have information about the cut and couldn't handle it.
 </p>
 </directive>
 
-<directive name="connection_ping_timeout" default="0" required="false">
+<directive name="connection_ping_interval" default="0" required="false">
 Connections idle for longer than this interval in seconds are probed by
 CPING packets whether they still work. If set to zero (default),
 no such probes will be done.
-<p>To be able to use this feature <code>prepost_timeout</code> must be
-set to the desired timeout value.
+<p>To be able to use this feature <code>ping_timeout</code> must be
+set to the desired timeout value and <code>ping_mode</code> must include
+<code>I</code> flag.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.27</b>.
+</p>
+</directive>
+
+<directive name="ping_timeout" default="10000" required="false">
+Connections idle for longer than this interval in miliseconds are probed by
+CPING packets whether they still work. The usage depend on the
+<code>ping_mode<code> flags used.
+<p>
+This feature has been added in <b>jk 1.2.27</b>.
+</p>
+</directive>
+
+<directive name="ping_mode" default="" required="false">
+Ping mode flags for active connections. The value can
+be combination of the following flags:
+<p><b>C</b> If set the connect ping mode will be used. If
+directive <code>connect_timeout</code> was not set, the
+value of <code>ping_timeout</code> will be used instead.
+</p>
+<p><b>P</b> If set the prepost ping mode will be used. If
+directive <code>prepost_timeout</code> was not set, the
+value of <code>ping_timeout</code> will be used instead.
+</p>
+<p><b>I</b> If set the interval ping mode will be used. If
+directive <code>connection_ping_interval</code> was not set, the
+value of <code>ping_timeout * 10</code> will be used as
+<code>connection_ping_interval</code> value.
 </p>
 <p>
 This feature has been added in <b>jk 1.2.27</b>.

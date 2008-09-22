@@ -212,7 +212,14 @@ extern "C"
 #define AJP_DEF_REPLY_TIMEOUT     (0)   /* NO REPLY TIMEOUT                        */
 #define AJP_DEF_PREPOST_TIMEOUT   (0)   /* NO PREPOST TIMEOUT => NO CPING/CPONG    */
 #define AJP_DEF_RECOVERY_OPTS     (0)   /* NO RECOVERY / NO    */
-#define AJP_DEF_SOCKET_TIMEOUT    (0)  /* No timeout */
+#define AJP_DEF_SOCKET_TIMEOUT    (0)   /* No timeout */
+#define AJP_DEF_PING_TIMEOUT      (10000)  /* Default CPING/CPONG timeout (10 seconds) */
+
+#define AJP_CPING_NONE            (0)   /* Do not send cping packets */
+#define AJP_CPING_CONNECT         (1)   /* Send cping on fresh connection */
+#define AJP_CPING_PREPOST         (2)   /* Send cping before sending request */
+#define AJP_CPING_INTERVAL        (4)   /* Send cping on regular intervals */
+
 
 #define RECOVER_ABORT_IF_TCGETREQUEST    0x0001 /* DON'T RECOVER IF TOMCAT FAILS AFTER RECEIVING REQUEST */
 #define RECOVER_ABORT_IF_TCSENDHEADER    0x0002 /* DON'T RECOVER IF TOMCAT FAILS AFTER SENDING HEADERS */
@@ -316,6 +323,7 @@ struct ajp_worker
     int ping_timeout;         /* generic cping/cpong timeout. Used for keepalive packets or
                                * as default for boolean valued connect and prepost timeouts.
                                */
+    unsigned int ping_mode;   /* Ping mode flags */
     /*
      * Recovery options
      */
@@ -418,6 +426,8 @@ int ajp_connection_tcp_get_message(ajp_endpoint_t * ae,
                                    jk_msg_buf_t *msg, jk_logger_t *l);
 
 int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t now, jk_logger_t *l);
+
+int jk_ajp_get_cping_mode(const char *m, int def);
 
 #ifdef __cplusplus
 }

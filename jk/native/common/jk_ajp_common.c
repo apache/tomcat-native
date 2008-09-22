@@ -362,7 +362,22 @@ int jk_ajp_get_state_code(const char *v)
         return JK_AJP_STATE_DEF;
 }
 
-
+int jk_ajp_get_cping_mode(const char *m, int def)
+{
+    int mv = def;
+    if (!m)
+        return mv;
+    while (*m != '\0') {
+        if (*m == 'C' || *m == 'c')
+            mv |= AJP_CPING_CONNECT;
+        else if (*m == 'P' || *m == 'p')
+            mv |= AJP_CPING_PREPOST;
+        else if (*m == 'I' || *m == 'i')
+            mv |= AJP_CPING_INTERVAL;
+        m++;
+    }
+    return mv;
+}
 
 /*
  * Message structure
@@ -2477,22 +2492,36 @@ int ajp_init(jk_worker_t *pThis,
                                         AJP_DEF_CACHE_TIMEOUT);
 
         p->ping_timeout =
-            jk_get_worker_ping_timeout(props, p->name, 0);
-
+            jk_get_worker_ping_timeout(props, p->name,
+                                       AJP_DEF_PING_TIMEOUT);
+        p->ping_mode =
+            jk_get_worker_ping_mode(props, p->name,
+                                    AJP_CPING_NONE);
+        
         p->connect_timeout =
             jk_get_worker_connect_timeout(props, p->name,
-                                          p->ping_timeout);
+                                          AJP_DEF_CONNECT_TIMEOUT);
 
         p->prepost_timeout =
             jk_get_worker_prepost_timeout(props, p->name,
-                                          p->ping_timeout);
+                                          AJP_DEF_PREPOST_TIMEOUT);
+        if ((p->ping_mode & AJP_CPING_CONNECT) &&
+             p->connect_timeout == AJP_DEF_CONNECT_TIMEOUT)
+            p->connect_timeout = p->ping_timeout;
+
+        if ((p->ping_mode & AJP_CPING_PREPOST) &&
+             p->prepost_timeout == AJP_DEF_PREPOST_TIMEOUT)
+            p->prepost_timeout = p->ping_timeout;
+
+        p->conn_ping_interval =
+            jk_get_worker_conn_ping_interval(props, p->name, 0);
+        if ((p->ping_mode & AJP_CPING_PREPOST) &&
+            p->conn_ping_interval == 0)
+            p->conn_ping_interval = p->ping_timeout / 10;
 
         p->reply_timeout =
             jk_get_worker_reply_timeout(props, p->name,
                                         AJP_DEF_REPLY_TIMEOUT);
-
-        p->conn_ping_interval =
-            jk_get_worker_conn_ping_interval(props, p->name, 0);
 
         p->recovery_opts =
             jk_get_worker_recovery_opts(props, p->name,

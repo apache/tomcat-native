@@ -58,6 +58,7 @@
 #define REPLY_TIMEOUT_OF_WORKER     ("reply_timeout")
 #define SOCKET_TIMEOUT_OF_WORKER    ("socket_timeout")
 #define PING_TIMEOUT_OF_WORKER      ("ping_timeout")
+#define PING_MODE_OF_WORKER         ("ping_mode")
 #define SOCKET_BUFFER_OF_WORKER     ("socket_buffer")
 #define SOCKET_KEEPALIVE_OF_WORKER  ("socket_keepalive")
 #define CONN_PING_INTERVAL_OF_WORKER  ("connection_ping_interval")
@@ -172,6 +173,7 @@ static const char *unique_properties[] = {
     CONNECT_TIMEOUT_OF_WORKER,
     PREPOST_TIMEOUT_OF_WORKER,
     PING_TIMEOUT_OF_WORKER,
+    PING_MODE_OF_WORKER,
     REPLY_TIMEOUT_OF_WORKER,
     SOCKET_TIMEOUT_OF_WORKER,
     SOCKET_BUFFER_OF_WORKER,
@@ -257,6 +259,7 @@ static const char *supported_properties[] = {
     CONNECT_TIMEOUT_OF_WORKER,
     PREPOST_TIMEOUT_OF_WORKER,
     PING_TIMEOUT_OF_WORKER,
+    PING_MODE_OF_WORKER,
     REPLY_TIMEOUT_OF_WORKER,
     SOCKET_TIMEOUT_OF_WORKER,
     SOCKET_BUFFER_OF_WORKER,
@@ -761,7 +764,7 @@ const char *jk_get_worker_redirect(jk_map_t *m, const char *wname, const char *d
     if (!m || !wname) {
         return NULL;
     }
-   MAKE_WORKER_PARAM(REDIRECT_OF_WORKER);
+    MAKE_WORKER_PARAM(REDIRECT_OF_WORKER);
     return jk_map_get_string(m, buf, def);
 }
 
@@ -993,10 +996,8 @@ int jk_get_worker_connect_timeout(jk_map_t *m, const char *wname, int def)
     }
 
     MAKE_WORKER_PARAM(CONNECT_TIMEOUT_OF_WORKER);
-    if ((rv = jk_map_get_bool(m, buf, -1)) == -1)
-        return jk_map_get_int(m, buf, AJP_DEF_CONNECT_TIMEOUT);
-    else
-        return def;
+
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_prepost_timeout(jk_map_t *m, const char *wname, int def)
@@ -1010,10 +1011,7 @@ int jk_get_worker_prepost_timeout(jk_map_t *m, const char *wname, int def)
 
     MAKE_WORKER_PARAM(PREPOST_TIMEOUT_OF_WORKER);
 
-    if ((rv = jk_map_get_bool(m, buf, -1)) == -1)
-        return jk_map_get_int(m, buf, AJP_DEF_PREPOST_TIMEOUT);
-    else
-        return def;
+    return jk_map_get_int(m, buf, def);
 }
 
 int jk_get_worker_ping_timeout(jk_map_t *m, const char *wname, int def)
@@ -1027,6 +1025,21 @@ int jk_get_worker_ping_timeout(jk_map_t *m, const char *wname, int def)
     MAKE_WORKER_PARAM(PING_TIMEOUT_OF_WORKER);
 
     return jk_map_get_int(m, buf, def);
+}
+
+int jk_get_worker_ping_mode(jk_map_t *m, const char *wname, int def)
+{
+    char buf[1024];
+    const char *v;
+
+    if (!m || !wname) {
+        return def;
+    }
+
+    MAKE_WORKER_PARAM(PING_MODE_OF_WORKER);
+
+    v = jk_map_get_string(m, buf, NULL);
+    return jk_ajp_get_cping_mode(v, def);
 }
 
 int jk_get_worker_reply_timeout(jk_map_t *m, const char *wname, int def)
