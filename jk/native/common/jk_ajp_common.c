@@ -2491,8 +2491,8 @@ int ajp_init(jk_worker_t *pThis,
             jk_get_worker_reply_timeout(props, p->name,
                                         AJP_DEF_REPLY_TIMEOUT);
 
-        p->connection_keepalive =
-            jk_get_worker_connection_keepalive(props, p->name, 0);
+        p->conn_ping_interval =
+            jk_get_worker_conn_ping_interval(props, p->name, 0);
 
         p->recovery_opts =
             jk_get_worker_recovery_opts(props, p->name,
@@ -2841,7 +2841,7 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t mstarted, jk_logger_t *l)
 
         /* Do connection pool maintenance only if timeouts or keepalives are set */
         if (aw->cache_timeout <= 0 &&
-            aw->connection_keepalive <= 0) {
+            aw->conn_ping_interval <= 0) {
             /* Nothing to do. */
             JK_TRACE_EXIT(l);
             return JK_TRUE;
@@ -2887,12 +2887,12 @@ int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t mstarted, jk_logger_t *l)
                 }
             }
             /* Handle worker connection keepalive */
-            if (aw->connection_keepalive > 0 && aw->ping_timeout > 0) {
+            if (aw->conn_ping_interval > 0 && aw->ping_timeout > 0) {
                 for (i = (int)aw->ep_cache_sz - 1; i >= 0; i--) {
                     /* Skip the closed sockets */
                     if (aw->ep_cache[i] && IS_VALID_SOCKET(aw->ep_cache[i]->sd)) {
                         int elapsed = (int)difftime(now, aw->ep_cache[i]->last_access);
-                        if (elapsed > aw->connection_keepalive) {
+                        if (elapsed > aw->conn_ping_interval) {
                             k++;
                             /* handle cping/cpong.
                              */

@@ -49,7 +49,7 @@
         This allows filter chain to work properly. (mturk)
       </fix>
       <update>
-        Added connection_keepalive directive. (mturk)
+        Added connection_ping_interval and ping_timeout directives. (mturk)
       </update>
       <fix>
         Apache: Use correct ld flags provided by apxs when building module.

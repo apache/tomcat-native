@@ -260,7 +260,7 @@ have information about the cut and couldn't handle it.
 </p>
 </directive>
 
-<directive name="connection_keepalive" default="0" required="false">
+<directive name="connection_ping_timeout" default="0" required="false">
 Connections idle for longer than this interval in seconds are probed by
 CPING packets whether they still work. If set to zero (default),
 no such probes will be done.
