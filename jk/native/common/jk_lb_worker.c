@@ -117,9 +117,9 @@ static const char *lb_last_log_names[] = {
 
 struct lb_endpoint
 {
-    lb_worker_t *worker;
-
-    jk_endpoint_t endpoint;
+    lb_worker_t     *worker;
+    jk_endpoint_t    endpoint;
+    int             *states;
 };
 typedef struct lb_endpoint lb_endpoint_t;
 
@@ -1020,7 +1020,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
     int recoverable = JK_TRUE;
     int rc = JK_UNSET;
     char *sessionid = NULL;
-    int  *states = NULL;
     int i;
 
     JK_TRACE_ENTER(l);
@@ -1038,13 +1037,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     /* Set returned error to OK */
     *is_error = JK_HTTP_OK;
-    if (!(states = (int *)malloc(num_of_workers * sizeof(int)))) {
-        *is_error = JK_HTTP_SERVER_ERROR;
-        jk_log(l, JK_LOG_ERROR,
-               "Failed allocating private worker state memory");
-        JK_TRACE_EXIT(l);
-        return JK_SERVER_ERROR;
-    }
 
     jk_shm_lock();
     if (p->worker->sequence != p->worker->s->h.sequence)
@@ -1052,7 +1044,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     jk_shm_unlock();
     for (i = 0; i < num_of_workers; i++) {
         /* Copy the shared state info */
-        states[i] = p->worker->lb_workers[i].s->state;
+        p->states[i] = p->worker->lb_workers[i].s->state;
     }
 
     /* set the recovery post, for LB mode */
@@ -1062,7 +1054,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
         jk_log(l, JK_LOG_ERROR,
                "Failed allocating AJP message");
         JK_TRACE_EXIT(l);
-        free(states);
         return JK_SERVER_ERROR;
     }
     if (jk_b_set_buffer_size(s->reco_buf, p->worker->max_packet_size)) {
@@ -1070,7 +1061,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
         jk_log(l, JK_LOG_ERROR,
                "Failed allocating AJP message buffer");
         JK_TRACE_EXIT(l);
-        free(states);
         return JK_SERVER_ERROR;
     }
     jk_b_reset(s->reco_buf);
@@ -1089,7 +1079,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
     while (attempt <= num_of_workers && recoverable == JK_TRUE) {
         lb_sub_worker_t *rec =
-            get_most_suitable_worker(s, p->worker, sessionid, states, l);
+            get_most_suitable_worker(s, p->worker, sessionid, p->states, l);
         rc = JK_FALSE;
         *is_error = JK_HTTP_SERVER_BUSY;
         /* Do not reuse previous worker, because
@@ -1116,7 +1106,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 jk_shm_lock();
             if (rec->s->state == JK_LB_STATE_RECOVER) {
                 rec->s->state  = JK_LB_STATE_PROBE;
-                states[rec->i] = JK_LB_STATE_PROBE;
+                p->states[rec->i] = JK_LB_STATE_PROBE;
             }
             if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                 jk_shm_unlock();
@@ -1149,7 +1139,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_shm_lock();
                 if (rec->s->state != JK_LB_STATE_ERROR) {
                     rec->s->state  = JK_LB_STATE_BUSY;
-                    states[rec->i] = JK_LB_STATE_BUSY;
+                    p->states[rec->i] = JK_LB_STATE_BUSY;
                 }
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_unlock();
@@ -1222,7 +1212,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                  */
                 if (rec->s->state == JK_LB_STATE_BUSY) {
                     rec->s->state  = JK_LB_STATE_OK;
-                    states[rec->i] = JK_LB_STATE_OK;
+                    p->states[rec->i] = JK_LB_STATE_OK;
                 }
                 /* Decrement the busy worker count.
                  * Check if the busy was reset to zero by graceful
@@ -1234,7 +1224,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     rec->s->busy--;
                 if (service_stat == JK_TRUE) {
                     rec->s->state  = JK_LB_STATE_OK;
-                    states[rec->i] = JK_LB_STATE_OK;
+                    p->states[rec->i] = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
                     rc = JK_TRUE;
                     recoverable = JK_UNSET;
@@ -1245,7 +1235,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     * Since this is bad request do not fail over.
                     */
                     rec->s->state  = JK_LB_STATE_OK;
-                    states[rec->i] = JK_LB_STATE_ERROR;
+                    p->states[rec->i] = JK_LB_STATE_ERROR;
                     rec->s->error_time = 0;
                     rc = JK_CLIENT_ERROR;
                     recoverable = JK_FALSE;
@@ -1257,7 +1247,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     * Failing over to another node could help.
                     */
                     rec->s->state  = JK_LB_STATE_OK;
-                    states[rec->i] = JK_LB_STATE_ERROR;
+                    p->states[rec->i] = JK_LB_STATE_ERROR;
                     rec->s->error_time = 0;
                     rc = JK_FALSE;
                 }
@@ -1268,7 +1258,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     * Failing over to another node could help.
                     */
                     rec->s->state  = JK_LB_STATE_OK;
-                    states[rec->i] = JK_LB_STATE_ERROR;
+                    p->states[rec->i] = JK_LB_STATE_ERROR;
                     rec->s->error_time = 0;
                     rc = JK_FALSE;
                 }
@@ -1285,7 +1275,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     else {
                         rec->s->state = JK_LB_STATE_ERROR;
                     }
-                    states[rec->i] = JK_LB_STATE_ERROR;
+                    p->states[rec->i] = JK_LB_STATE_ERROR;
                     rec->s->error_time = time(NULL);
                     rc = JK_FALSE;
                 }
@@ -1302,7 +1292,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                         else {
                             rec->s->state = JK_LB_STATE_ERROR;
                         }
-                        states[rec->i] = JK_LB_STATE_ERROR;
+                        p->states[rec->i] = JK_LB_STATE_ERROR;
                         rec->s->error_time = time(NULL);
                     }
                     else {
@@ -1314,7 +1304,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                          * to other nodes?
                          */
                         rec->s->state  = JK_LB_STATE_OK;
-                        states[rec->i] = JK_LB_STATE_ERROR;
+                        p->states[rec->i] = JK_LB_STATE_ERROR;
                         rec->s->error_time = 0;
                     }
                     rc = JK_FALSE;
@@ -1331,11 +1321,11 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     else {
                         rec->s->state = JK_LB_STATE_ERROR;
                     }
-                    states[rec->i] = JK_LB_STATE_ERROR;
+                    p->states[rec->i] = JK_LB_STATE_ERROR;
                     rec->s->error_time = time(NULL);
                     rc = JK_FALSE;
                 }
-                if (states[rec->i] == JK_LB_STATE_ERROR)
+                if (p->states[rec->i] == JK_LB_STATE_ERROR)
                     jk_log(l, JK_LOG_INFO,
                            "service failed, %sworker %s is in error state",
                            rec->s->state == JK_LB_STATE_ERROR ? "entire " : "",
@@ -1422,8 +1412,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
         lb_add_log_items(s, lb_last_log_names, prec, l);
     }
 
-    /* Free any private memory used */
-    free(states);
     JK_TRACE_EXIT(l);
     return rc;
 }
@@ -1434,7 +1422,7 @@ static int JK_METHOD done(jk_endpoint_t **e, jk_logger_t *l)
 
     if (e && *e && (*e)->endpoint_private) {
         lb_endpoint_t *p = (*e)->endpoint_private;
-
+        free(p->states);
         free(p);
         *e = NULL;
         JK_TRACE_EXIT(l);
@@ -1647,8 +1635,15 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
         p->endpoint.endpoint_private = p;
         p->endpoint.service = service;
         p->endpoint.done = done;
+        p->states = (int *)malloc((p->worker->num_of_workers + 1) * sizeof(int));
+        if (!p->states) {
+            free(p);
+            jk_log(l, JK_LOG_ERROR,
+	               "Failed allocating private worker state memory");
+    	    JK_TRACE_EXIT(l);
+        	return JK_FALSE;
+    	}
         *pend = &p->endpoint;
-
         JK_TRACE_EXIT(l);
         return JK_TRUE;
     }
