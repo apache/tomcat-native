@@ -104,6 +104,10 @@ const char *jk_get_worker_redirect(jk_map_t *m, const char *wname, const char *d
 
 const char *jk_get_worker_secret_key(jk_map_t *m, const char *wname);
 
+const char *jk_get_lb_session_cookie(jk_map_t *m, const char *wname, const char *def);
+
+const char *jk_get_lb_session_path(jk_map_t *m, const char *wname, const char *def);
+
 int jk_get_worker_retries(jk_map_t *m, const char *wname, int def);
 
 int jk_get_is_worker_disabled(jk_map_t *m, const char *wname);

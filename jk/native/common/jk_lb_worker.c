@@ -301,6 +301,8 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
     p->lblock = p->s->lblock;
     p->max_packet_size = p->s->max_packet_size;
     p->sequence = p->s->h.sequence;
+    strncpy(p->session_cookie, p->s->session_cookie, JK_SHM_STR_SIZ);
+    strncpy(p->session_path, p->s->session_path, JK_SHM_STR_SIZ);
 
     for (i = 0; i < p->num_of_workers; i++) {
         lb_sub_worker_t *w = &p->lb_workers[i];
@@ -348,6 +350,8 @@ void jk_lb_push(lb_worker_t * p, jk_logger_t *l)
     p->s->lblock = p->lblock;
     p->s->max_packet_size = p->max_packet_size;
     p->s->h.sequence = p->sequence;
+    strncpy(p->s->session_cookie, p->session_cookie, JK_SHM_STR_SIZ);
+    strncpy(p->s->session_path, p->session_path, JK_SHM_STR_SIZ);
 
     for (i = 0; i < p->num_of_workers; i++) {
         lb_sub_worker_t *w = &p->lb_workers[i];
@@ -468,12 +472,12 @@ static char *get_cookie(jk_ws_service_t *s, const char *name)
 /* Retrieve session id from the cookie or the parameter
  * (parameter first)
  */
-static char *get_sessionid(jk_ws_service_t *s, jk_logger_t *l)
+static char *get_sessionid(jk_ws_service_t *s, lb_worker_t *p, jk_logger_t *l)
 {
     char *val;
-    val = get_path_param(s, JK_PATH_SESSION_IDENTIFIER);
+    val = get_path_param(s, p->session_path);
     if (!val) {
-        val = get_cookie(s, JK_SESSION_IDENTIFIER);
+        val = get_cookie(s, p->session_cookie);
     }
     if (val && !*val) {
         /* TODO: For now only log the empty sessions.
@@ -1070,7 +1074,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         /* Use sessionid only if sticky_session is
          * defined for this load balancer
          */
-        sessionid = get_sessionid(s, l);
+        sessionid = get_sessionid(s, p->worker, l);
     }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
@@ -1605,6 +1609,14 @@ static int JK_METHOD init(jk_worker_t *pThis,
 
     p->lbmethod = jk_get_lb_method(props, p->name);
     p->lblock   = jk_get_lb_lock(props, p->name);
+    strncpy(p->session_cookie,
+            jk_get_lb_session_cookie(props, p->name, JK_SESSION_IDENTIFIER),
+            JK_SHM_STR_SIZ);
+    strncpy(p->session_path,
+            jk_get_lb_session_path(props, p->name, JK_PATH_SESSION_IDENTIFIER),
+            JK_SHM_STR_SIZ);
+    strcppy(p->s->session_cookie, p->session_cookie);
+    strcppy(p->s->session_path, p->session_path);
 
     JK_INIT_CS(&(p->cs), i);
     if (i == JK_FALSE) {

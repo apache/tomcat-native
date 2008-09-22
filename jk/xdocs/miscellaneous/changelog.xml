@@ -43,6 +43,10 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Added session_cookie and session_path for configuring
+        default session identifiers. (mturk)
+      </update>
       <fix>
         <bug>45812</bug>: Add done() service method that
         causes sending EOS bucket for Apache httpd 2.x.

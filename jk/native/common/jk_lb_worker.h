@@ -194,7 +194,10 @@ struct lb_worker
     int          maintain_time;
     unsigned int max_packet_size;
     unsigned int next_offset;
-
+    /* Session cookie */
+    char         session_cookie[JK_SHM_STR_SIZ+1];
+    /* Session path */
+    char         session_path[JK_SHM_STR_SIZ+1];
 };
 typedef struct lb_worker lb_worker_t;
 

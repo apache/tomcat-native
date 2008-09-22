@@ -69,6 +69,9 @@
 #define BALANCE_WORKERS             ("balance_workers")
 #define STICKY_SESSION              ("sticky_session")
 #define STICKY_SESSION_FORCE        ("sticky_session_force")
+#define SESSION_COOKIE_OF_WORKER    ("session_cookie")
+#define SESSION_PATH_OF_WORKER      ("session_path")
+
 #define LOCAL_WORKER_DEPRECATED     ("local_worker")
 #define LOCAL_WORKER_ONLY_DEPRECATED ("local_worker_only")
 #define JVM_ROUTE_OF_WORKER_DEPRECATED ("jvm_route")
@@ -183,6 +186,8 @@ static const char *unique_properties[] = {
     LOAD_FACTOR_OF_WORKER,
     STICKY_SESSION,
     STICKY_SESSION_FORCE,
+    SESSION_COOKIE_OF_WORKER,
+    SESSION_PATH_OF_WORKER,
     LOCAL_WORKER_DEPRECATED,
     LOCAL_WORKER_ONLY_DEPRECATED,
     JVM_ROUTE_OF_WORKER_DEPRECATED,
@@ -272,6 +277,8 @@ static const char *supported_properties[] = {
     BALANCE_WORKERS,
     STICKY_SESSION,
     STICKY_SESSION_FORCE,
+    SESSION_COOKIE_OF_WORKER,
+    SESSION_PATH_OF_WORKER,
     LOCAL_WORKER_DEPRECATED,
     LOCAL_WORKER_ONLY_DEPRECATED,
     JVM_ROUTE_OF_WORKER_DEPRECATED,
@@ -1811,6 +1818,27 @@ int jk_get_worker_libpath(jk_map_t *m, const char *wname, const char **libpath)
 
     return JK_FALSE;
 }
+
+const char *jk_get_lb_session_cookie(jk_map_t *m, const char *wname, const char *def)
+{
+    char buf[1024];
+    if (!m || !wname) {
+        return NULL;
+    }
+    MAKE_WORKER_PARAM(SESSION_COOKIE_OF_WORKER);
+    return jk_map_get_string(m, buf, def);
+}
+
+const char *jk_get_lb_session_path(jk_map_t *m, const char *wname, const char *def)
+{
+    char buf[1024];
+    if (!m || !wname) {
+        return NULL;
+    }
+    MAKE_WORKER_PARAM(SESSION_PATH_OF_WORKER);
+    return jk_map_get_string(m, buf, def);
+}
+
 
 int is_http_status_fail(unsigned int http_status_fail_num,
                         int *http_status_fail, int status)
