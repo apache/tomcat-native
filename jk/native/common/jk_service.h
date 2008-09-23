@@ -87,6 +87,8 @@ struct svc_extension
     int fail_on_status_size;
     /* Dynamically allocated array with one entry per status. */
     int *fail_on_status;
+    /* Use server error pages for responses >= 400. */
+    int use_server_error_pages;
 };
 typedef struct svc_extension svc_extension_t;
 
@@ -245,6 +247,11 @@ struct jk_ws_service
      * JK_TRUE if response headers have been sent back
      */
     int response_started;
+
+    /*
+     * JK_TRUE if response should not be send to the client
+     */
+    int response_blocked;
 
     /*
      * HTTP status sent from container.

@@ -1962,10 +1962,12 @@ void jk_init_ws_service(jk_ws_service_t *s)
     s->flush_packets = JK_FALSE;
     s->flush_header = JK_FALSE;
     s->extension.reply_timeout = -1;
+    s->extension.use_server_error_pages = 0;
     s->extension.activation = NULL;
     s->extension.fail_on_status_size = 0;
     s->extension.fail_on_status = NULL;
     s->response_started = JK_FALSE;
+    s->response_blocked = JK_FALSE;
     s->http_response_status = JK_HTTP_OK;
     s->uw_map = NULL;
     s->start_response = NULL;

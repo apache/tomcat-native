@@ -44,6 +44,11 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Allow forwarding server error pages. This can be done
+        on per-uri basis using new use_server_errors extension.
+        (mturk)
+      </update>
+      <update>
         Added session_cookie and session_path for configuring
         default session identifiers. (mturk)
       </update>

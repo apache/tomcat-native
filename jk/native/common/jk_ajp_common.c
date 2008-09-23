@@ -1656,17 +1656,24 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
                 JK_TRACE_EXIT(l);
                 return JK_STATUS_ERROR;
             }
-            r->start_response(r, res.status, res.msg,
-                              (const char *const *)res.header_names,
-                              (const char *const *)res.header_values,
-                              res.num_headers);
-            if (r->flush && r->flush_header)
-                r->flush(r);
+
+            if (r->extension.use_server_error_pages &&
+                r->http_response_status >= r->extension.use_server_error_pages)
+                r->response_blocked = JK_TRUE;
+
+            if (!r->response_blocked) {
+                r->start_response(r, res.status, res.msg,
+                                  (const char *const *)res.header_names,
+                                  (const char *const *)res.header_values,
+                                  res.num_headers);
+                if (r->flush && r->flush_header)
+                    r->flush(r);
+            }
         }
         return JK_AJP13_SEND_HEADERS;
 
     case JK_AJP13_SEND_BODY_CHUNK:
-        {
+        if (!r->response_blocked) {
             unsigned int len = (unsigned int)jk_b_get_int(msg);
             /*
              * Do a sanity check on len to prevent write reading beyond buffer
@@ -1762,15 +1769,16 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
             }
             ae->reuse = JK_TRUE;
         }
-        if (r->done) {
-            /* Done with response */
-            r->done(r);
+        if (!r->response_blocked) {
+            if (r->done) {
+                /* Done with response */
+                r->done(r);
+            }
+            else if (r->flush && !r->flush_packets) {
+                /* Flush after the last write */
+                r->flush(r);
+            }
         }
-        else if (r->flush && !r->flush_packets) {
-            /* Flush after the last write */
-            r->flush(r);
-        }
-
         JK_TRACE_EXIT(l);
         return JK_AJP13_END_RESPONSE;
         break;
