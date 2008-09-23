@@ -276,7 +276,7 @@ This feature has been added in <b>jk 1.2.27</b>.
 <directive name="ping_timeout" default="10000" required="false">
 Connections idle for longer than this interval in miliseconds are probed by
 CPING packets whether they still work. The usage depend on the
-<code>ping_mode<code> flags used.
+<code>ping_mode</code> flags used.
 <p>
 This feature has been added in <b>jk 1.2.27</b>.
 </p>
