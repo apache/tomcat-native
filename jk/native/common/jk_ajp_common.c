@@ -2841,10 +2841,10 @@ int ajp_get_endpoint(jk_worker_t *pThis,
 int JK_METHOD ajp_maintain(jk_worker_t *pThis, time_t mstarted, jk_logger_t *l)
 {
     JK_TRACE_ENTER(l);
-    time_t now = mstarted;
 
     if (pThis && pThis->worker_private) {
         ajp_worker_t *aw = pThis->worker_private;
+        time_t now = mstarted;
         int rc;
         long delta;
 
