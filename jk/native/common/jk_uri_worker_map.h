@@ -89,6 +89,8 @@ struct rule_extension
     int *fail_on_status;
     /* Temporary storage for the original extension strings. */
     char *fail_on_status_str;
+    /* Use server error pages for responses >= 400. */
+    int use_server_error_pages;
 };
 typedef struct rule_extension rule_extension_t;
 
