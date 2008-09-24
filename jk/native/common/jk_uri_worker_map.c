@@ -44,6 +44,7 @@
 #define JK_UWMAP_EXTENSION_DISABLED       "disabled="
 #define JK_UWMAP_EXTENSION_STOPPED        "stopped="
 #define JK_UWMAP_EXTENSION_FAIL_ON_STATUS "fail_on_status="
+#define JK_UWMAP_EXTENSION_USE_SRV_ERRORS "use_server_errors="
 
 #define IND_THIS(x)                        ((x)[uw_map->index])
 #define IND_NEXT(x)                        ((x)[(uw_map->index+1) % 2])
@@ -583,6 +584,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
         uwr->extensions.fail_on_status_size = 0;
         uwr->extensions.fail_on_status = NULL;
         uwr->extensions.fail_on_status_str = NULL;
+        uwr->extensions.use_server_error_pages = 0;
 
 #ifdef _MT_CODE_PTHREAD
         param = strtok_r(w, ";", &lasts);
@@ -597,6 +599,9 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
 #endif
                 if (!strncmp(param, JK_UWMAP_EXTENSION_REPLY_TIMEOUT, strlen(JK_UWMAP_EXTENSION_REPLY_TIMEOUT))) {
                     uwr->extensions.reply_timeout = atoi(param + strlen(JK_UWMAP_EXTENSION_REPLY_TIMEOUT));
+                }
+                else if (!strncmp(param, JK_UWMAP_EXTENSION_USE_SRV_ERRORS, strlen(JK_UWMAP_EXTENSION_USE_SRV_ERRORS))) {
+                    uwr->extensions.use_server_error_pages = atoi(param + strlen(JK_UWMAP_EXTENSION_USE_SRV_ERRORS));
                 }
                 else if (!strncmp(param, JK_UWMAP_EXTENSION_ACTIVE, strlen(JK_UWMAP_EXTENSION_ACTIVE))) {
                     if (uwr->extensions.active)

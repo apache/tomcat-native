@@ -1651,10 +1651,10 @@ static int JK_METHOD get_endpoint(jk_worker_t *pThis,
         if (!p->states) {
             free(p);
             jk_log(l, JK_LOG_ERROR,
-	               "Failed allocating private worker state memory");
-    	    JK_TRACE_EXIT(l);
-        	return JK_FALSE;
-    	}
+                   "Failed allocating private worker state memory");
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
         *pend = &p->endpoint;
         JK_TRACE_EXIT(l);
         return JK_TRUE;
