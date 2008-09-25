@@ -2365,22 +2365,25 @@ static int jk_handler(request_rec * r)
                     end->done(&end, xconf->log);
                     if (s.content_read < s.content_length ||
                         (s.is_chunked && !s.no_more_chunks)) {
-                        if (JK_IS_DEBUG_LEVEL(xconf->log))
-                           jk_log(xconf->log, JK_LOG_DEBUG,
-                                  "Consuming remaining request data for worker=%s",
-                                  STRNULL_FOR_NULL(worker_name));
                         /*
                          * If the servlet engine didn't consume all of the
                          * request data, consume and discard all further
                          * characters left to read from client
                          */
                         char *buff = apr_palloc(r->pool, 2048);
+                        int consumed = 0;
                         if (buff != NULL) {
                             int rd;
                             while ((rd =
                                     ap_get_client_block(r, buff, 2048)) > 0) {
                                 s.content_read += rd;
+                                consumed += rd;
                             }
+                        }
+                        if (JK_IS_DEBUG_LEVEL(xconf->log)) {
+                           jk_log(xconf->log, JK_LOG_DEBUG,
+                                  "Consumed %d bytes of remaining request data for worker=%s",
+                                  consumed, STRNULL_FOR_NULL(worker_name));
                         }
                     }
                 }
