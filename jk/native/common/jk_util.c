@@ -996,7 +996,6 @@ int jk_get_worker_cache_timeout(jk_map_t *m, const char *wname, int def)
 int jk_get_worker_connect_timeout(jk_map_t *m, const char *wname, int def)
 {
     char buf[1024];
-    int rv;
 
     if (!m || !wname) {
         return -1;
@@ -1010,7 +1009,6 @@ int jk_get_worker_connect_timeout(jk_map_t *m, const char *wname, int def)
 int jk_get_worker_prepost_timeout(jk_map_t *m, const char *wname, int def)
 {
     char buf[1024];
-    int rv;
 
     if (!m || !wname) {
         return -1;
