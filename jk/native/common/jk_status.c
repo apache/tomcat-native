@@ -1333,7 +1333,7 @@ static int search_sub_worker(jk_ws_service_t *s,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    if (*idx)
+    if (idx)
         i = *idx;
     for (; i < lb->num_of_workers; i++) {
         wr = &(lb->lb_workers[i]);
