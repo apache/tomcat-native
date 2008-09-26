@@ -631,7 +631,7 @@ int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                     if (uwr->extensions.fail_on_status_str)
                         jk_log(l, JK_LOG_WARNING,
                                "extension '%s' in uri worker map only allowed once",
-                               JK_UWMAP_EXTENSION_ACTIVE);
+                               JK_UWMAP_EXTENSION_FAIL_ON_STATUS);
                     else
                         uwr->extensions.fail_on_status_str = param + strlen(JK_UWMAP_EXTENSION_FAIL_ON_STATUS);
                 }
