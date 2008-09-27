@@ -25,7 +25,9 @@
  ***************************************************************************/
 
 // This define is needed to include wincrypt,h, needed to get client certificates
+#ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0400
+#endif
 
 #include <httpext.h>
 #include <httpfilt.h>
@@ -113,6 +115,7 @@ static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
 #define BAD_REQUEST     -1
 #define BAD_PATH        -2
 #define MAX_SERVERNAME  128
+#define MAX_INSTANCEID  32
 #define MAX_PACKET_SIZE 65536
 
 char HTML_ERROR_400[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n"
@@ -184,6 +187,7 @@ static jk_map_t *rregexp_map = NULL;
 static jk_logger_t *logger = NULL;
 static char *SERVER_NAME = "SERVER_NAME";
 static char *SERVER_SOFTWARE = "SERVER_SOFTWARE";
+static char *INSTANCE_ID = "INSTANCE_ID";
 static char *CONTENT_TYPE = "Content-Type:text/html\r\n\r\n";
 
 static char extension_uri[INTERNET_MAX_URL_LENGTH] =
@@ -1138,12 +1142,22 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
 {
     /* Initialise jk */
     if (is_inited && !is_mapread) {
-        char serverName[MAX_SERVERNAME];
-        DWORD dwLen = sizeof(serverName);
+        char serverName[MAX_SERVERNAME] = "";
+        char instanceId[MAX_INSTANCEID] = "";
+        DWORD dwLen = MAX_SERVERNAME - MAX_INSTANCEID - 1;
 
         if (pfc->GetServerVariable(pfc, SERVER_NAME, serverName, &dwLen)) {
-            if (dwLen > 0)
+            if (dwLen > 0) {
                 serverName[dwLen - 1] = '\0';
+                dwLen = MAX_INSTANCEID;
+                if (pfc->GetServerVariable(pfc, INSTANCE_ID, instanceId, &dwLen)) {
+                    if (dwLen > 0) {
+                        instanceId[dwLen - 1] = '\0';
+                        StringCbCat(serverName, MAX_SERVERNAME, "_");
+                        StringCbCat(serverName, MAX_SERVERNAME, instanceId);
+                    }
+                }
+            }
             if (init_jk(serverName))
                 is_mapread = JK_TRUE;
         }

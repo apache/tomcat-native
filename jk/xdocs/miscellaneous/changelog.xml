@@ -43,6 +43,13 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>
+        IIS: SERVER_NAME variable can be the same for
+        multiple different server instances if requests
+        are handled according to the ip:port combination.
+        Use INSTANCE_ID variable to which the request
+        belongs instead. (mturk)
+      </fix>
       <update>
         Allow forwarding server error pages. This can be done
         on per-uri basis using new use_server_errors extension.
