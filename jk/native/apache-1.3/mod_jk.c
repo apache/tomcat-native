@@ -2786,7 +2786,7 @@ static int jk_translate(request_rec * r)
             else {
                 rule_extension_t *e;
                 worker = map_uri_to_worker_ext(conf->uw_map, clean_uri,
-                                               NULL, &e, conf->log);
+                                               NULL, &e, NULL, conf->log);
                 ap_set_module_config(r->request_config, &jk_module, e);
             }
 

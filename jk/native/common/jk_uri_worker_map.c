@@ -876,6 +876,7 @@ static int is_nomatch(jk_uri_worker_map_t *uw_map,
 const char *map_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
                                   const char *uri, const char *vhost,
                                   rule_extension_t **extensions,
+                                  int *index,
                                   jk_logger_t *l)
 {
     unsigned int i;
@@ -892,6 +893,8 @@ const char *map_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
         return NULL;
     }
     *extensions = NULL;
+    if (index)
+        *index = -1;
     if (*uri != '/') {
         jk_log(l, JK_LOG_WARNING,
                 "Uri %s is invalid. Uri must start with /", uri);
@@ -913,19 +916,19 @@ const char *map_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
      */
     reject_unsafe = uw_map->reject_unsafe;
     vhost_len = 0;
-/*
- * In case we got a vhost, we prepend a slash
- * and the vhost to the url in order to enable
- * vhost mapping rules especially for IIS.
- */
+    /*
+     * In case we got a vhost, we prepend a slash
+     * and the vhost to the url in order to enable
+     * vhost mapping rules especially for IIS.
+     */
     if (vhost) {
         int off = 0;
-/* Add leading '/' if necessary */
+        /* Add leading '/' if necessary */
         if (vhost[0] != '/') {
             url[0] = '/';
             off = 1;
         }
-/* Size including leading slash. */
+        /* Size including leading slash. */
         vhost_len = strlen(vhost);
         if (vhost_len + off >= JK_MAX_URI_LEN) {
             vhost_len = 0;
@@ -970,16 +973,16 @@ const char *map_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
         jk_log(l, JK_LOG_DEBUG, "Attempting to map URI '%s' from %d maps",
                url, IND_THIS(uw_map->size));
     rv = find_match(uw_map, url, l);
-/* If this doesn't find a match, try without the vhost. */
+    /* If this doesn't find a match, try without the vhost. */
     if (rv < 0 && vhost_len) {
         rv = find_match(uw_map, &url[vhost_len], l);
     }
 
-/* In case we found a match, check for the unmounts. */
+    /* In case we found a match, check for the unmounts. */
     if (rv >= 0 && IND_THIS(uw_map->nosize)) {
-/* Again first including vhost. */
+        /* Again first including vhost. */
         int rc = is_nomatch(uw_map, url, rv, l);
-/* If no unmount was find, try without vhost. */
+        /* If no unmount was find, try without vhost. */
         if (!rc && vhost_len)
             rc = is_nomatch(uw_map, &url[vhost_len], rv, l);
         if (rc) {
@@ -994,6 +997,8 @@ const char *map_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
 
     if (rv >= 0) {
         *extensions = &(IND_THIS(uw_map->maps)[rv]->extensions);
+        if (index)
+            *index = rv;
         JK_TRACE_EXIT(l);
         return IND_THIS(uw_map->maps)[rv]->worker_name;
     }
@@ -1001,12 +1006,23 @@ const char *map_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
     return NULL;
 }
 
+rule_extension_t *get_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
+                                        int index)
+{
+    if (rv >= 0) {
+        return &(IND_THIS(uw_map->maps)[rv]->extensions);
+    }
+    else {
+        return NULL;
+    }
+}
+
 const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                               const char *uri, const char *vhost,
                               jk_logger_t *l)
 {
     rule_extension_t *ext;
-    return map_uri_to_worker_ext(uw_map, uri, vhost, &ext, l);
+    return map_uri_to_worker_do(uw_map, uri, vhost, &ext, NULL, l);
 }
 
 int uri_worker_map_load(jk_uri_worker_map_t *uw_map,

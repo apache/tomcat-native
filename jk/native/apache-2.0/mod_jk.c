@@ -2281,7 +2281,7 @@ static int jk_handler(request_rec * r)
             else {
                 rule_extension_t *e;
                 worker_name = map_uri_to_worker_ext(xconf->uw_map, r->uri,
-                                                    NULL, &e, xconf->log);
+                                                    NULL, &e, NULL, xconf->log);
                 ap_set_module_config(r->request_config, &jk_module, e);
             }
 
@@ -3217,7 +3217,7 @@ static int jk_translate(request_rec * r)
             else {
                 rule_extension_t *e;
                 worker = map_uri_to_worker_ext(conf->uw_map, r->uri,
-                                               NULL, &e, conf->log);
+                                               NULL, &e, NULL, conf->log);
                 ap_set_module_config(r->request_config, &jk_module, e);
             }
 
@@ -3377,7 +3377,7 @@ static int jk_map_to_storage(request_rec * r)
             else {
                 rule_extension_t *e;
                 worker = map_uri_to_worker_ext(conf->uw_map, r->uri,
-                                               NULL, &e, conf->log);
+                                               NULL, &e, NULL, conf->log);
                 ap_set_module_config(r->request_config, &jk_module, e);
             }
 

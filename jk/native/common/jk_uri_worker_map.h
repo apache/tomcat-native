@@ -188,7 +188,11 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
 const char *map_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
                                   const char *uri, const char *vhost,
                                   rule_extension_t **extensions,
+                                  int *index,
                                   jk_logger_t *l);
+
+rule_extension_t *get_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
+                                        int index);
 
 int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
                         jk_logger_t *l);
