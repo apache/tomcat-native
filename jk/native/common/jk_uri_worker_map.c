@@ -1009,8 +1009,8 @@ const char *map_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
 rule_extension_t *get_uri_to_worker_ext(jk_uri_worker_map_t *uw_map,
                                         int index)
 {
-    if (rv >= 0) {
-        return &(IND_THIS(uw_map->maps)[rv]->extensions);
+    if (index >= 0) {
+        return &(IND_THIS(uw_map->maps)[index]->extensions);
     }
     else {
         return NULL;
