@@ -120,6 +120,7 @@ extern char *strdup(const char *str);
 #endif /* _WINDOWS_ */
 #include <sys/timeb.h>
 #include <process.h>
+#include <io.h>
 #else /* WIN32 */
 #include <unistd.h>
 #if defined(NETWARE) && defined(__NOVELL_LIBC__)

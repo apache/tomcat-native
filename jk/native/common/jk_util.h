@@ -45,6 +45,8 @@ int jk_parse_log_level(const char *level);
 
 int jk_open_file_logger(jk_logger_t **l, const char *file, int level);
 
+int jk_attach_file_logger(jk_logger_t **l, int fd, int level);
+
 int jk_close_file_logger(jk_logger_t **l);
 
 int jk_log(jk_logger_t *l,

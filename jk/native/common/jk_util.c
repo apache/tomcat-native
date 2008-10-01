@@ -600,6 +600,39 @@ int jk_open_file_logger(jk_logger_t **l, const char *file, int level)
     return JK_FALSE;
 }
 
+int jk_attach_file_logger(jk_logger_t **l, int fd, int level)
+{
+    if (l && file) {
+
+        jk_logger_t *rc = (jk_logger_t *)malloc(sizeof(jk_logger_t));
+        jk_file_logger_t *p = (jk_file_logger_t *) malloc(sizeof(jk_file_logger_t));
+        if (rc && p) {
+            rc->log = log_to_file;
+            rc->level = level;
+            rc->logger_private = p;
+#if defined(AS400) && !defined(AS400_UTF8)
+            p->logfile = fdopen(fd, "a+, o_ccsid=0");
+#else
+            p->logfile = fdopen(fd, "a+");
+#endif
+            if (p->logfile) {
+                *l = rc;
+                jk_set_time_fmt(rc, NULL);
+                return JK_TRUE;
+            }
+        }
+        if (rc) {
+            free(rc);
+        }
+        if (p) {
+            free(p);
+        }
+
+        *l = NULL;
+    }
+    return JK_FALSE;
+}
+
 int jk_close_file_logger(jk_logger_t **l)
 {
     if (l && *l) {
