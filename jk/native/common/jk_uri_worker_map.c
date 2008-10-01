@@ -1022,7 +1022,7 @@ const char *map_uri_to_worker(jk_uri_worker_map_t *uw_map,
                               jk_logger_t *l)
 {
     rule_extension_t *ext;
-    return map_uri_to_worker_do(uw_map, uri, vhost, &ext, NULL, l);
+    return map_uri_to_worker_ext(uw_map, uri, vhost, &ext, NULL, l);
 }
 
 int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
