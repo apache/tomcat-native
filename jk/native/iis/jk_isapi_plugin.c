@@ -1893,8 +1893,8 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                                 jk_log(logger, JK_LOG_DEBUG, "Forwarding status=%d"
                                        " for worker=%s",
                                        s.http_response_status, worker_name);
-                            lpEcb->dwHttpStatusCode = is_error;
-                            write_error_message(lpEcb, is_error);
+                            lpEcb->dwHttpStatusCode = s.http_response_status;
+                            write_error_message(lpEcb, s.http_response_status);
                         }
                         else {
                             rc = HSE_STATUS_SUCCESS;
