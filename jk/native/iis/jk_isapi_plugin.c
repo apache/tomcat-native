@@ -1881,7 +1881,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                             char error_page_url[INTERNET_MAX_URL_LENGTH] = "";
                             int len_of_error_page;
                             StringCbPrintf(error_page_url, INTERNET_MAX_URL_LENGTH,
-                                           error_page, is_error);                            
+                                           (LPCSTR)error_page, is_error);                            
                             len_of_error_page = (int)strlen(error_page_url);
                             if (!lpEcb->ServerSupportFunction(lpEcb->ConnID,
                                                               HSE_REQ_SEND_URL_REDIRECT_RESP,
