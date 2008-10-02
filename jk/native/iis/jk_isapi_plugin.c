@@ -57,12 +57,6 @@
 #define HAS_CHUNKING "-NO_CHUNKING"
 #endif
 
-#ifdef AUTOMATIC_POOL_SIZE
-#define HAS_AUTO_POOL "-AUTO_POOL"
-#else
-#define HAS_AUTO_POOL "-NO_AUTO_POOL"
-#endif
-
 #ifdef CONFIGURABLE_ERROR_PAGE
 #define HAS_ERROR_PAGE "-ERROR_PAGE"
 #else
@@ -73,13 +67,11 @@
 #define SHM_DEF_NAME   "JKISAPISHMEM"
 #define DEFAULT_WORKER_NAME ("ajp13")
 
-#ifndef AUTOMATIC_POOL_SIZE
 /*
  * This is default value found inside httpd.conf
  * for MaxClients
  */
 #define DEFAULT_WORKER_THREADS  250
-#endif
 
 /*
  * We use special headers to pass values from the filter to the
@@ -328,12 +320,6 @@ static int initialize_extension(void);
 
 static int read_registry_init_data(void);
 
-#ifdef AUTOMATIC_POOL_SIZE
-static int read_registry_pool_thread_limit(size_t *pool_threads);
-
-static int determine_iis_thread_count();
-
-#endif
 static int get_config_parameter(LPVOID src, const char *tag,
                                 char *val, DWORD sz);
 
@@ -2079,113 +2065,10 @@ static DWORD WINAPI watchdog_thread(void *param)
     return 0;
 }
 
-#ifdef AUTOMATIC_POOL_SIZE
-static int read_registry_pool_thread_limit(size_t *pool_threads)
-{
-#define IIS_PARAMETERS_LOCATION ("SYSTEM\\CurrentControlSet\\Services\\InetInfo\\Parameters")
-#define IIS_MAX_POOL_THREADS_KEY ("PoolThreadLimit")
-
-    HKEY hkey;
-    int rc = JK_FALSE;
-    DWORD regPtl;
-
-    JK_TRACE_ENTER(logger);
-    if (JK_IS_DEBUG_LEVEL(logger)) {
-        jk_log(logger, JK_LOG_DEBUG, "Checking registry for PoolThreadLimit override." );
-    }
-    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-        IIS_PARAMETERS_LOCATION, (DWORD) 0, KEY_READ, &hkey);
-
-    if (ERROR_SUCCESS != rc) {
-        if (JK_IS_DEBUG_LEVEL(logger)) {
-            jk_log(logger, JK_LOG_DEBUG, "Unable to open registry for reading." );
-        }
-        JK_TRACE_EXIT(logger);
-        return JK_FALSE;
-    }
-
-    if (get_registry_config_number(hkey, IIS_MAX_POOL_THREADS_KEY, &regPtl )) {
-        (*pool_threads) = (unsigned)regPtl;
-        if (JK_IS_DEBUG_LEVEL(logger)) {
-            jk_log(logger, JK_LOG_DEBUG, "PoolThreadLimit override of %d located in registry.",
-                   (*pool_threads) );
-        }
-        rc = JK_TRUE;
-    } else {
-        if (JK_IS_DEBUG_LEVEL(logger)) {
-            jk_log(logger, JK_LOG_DEBUG, "PoolThreadLimit setting not found in registry." );
-        }
-        rc = JK_FALSE;
-    }
-
-    RegCloseKey( hkey );
-
-    JK_TRACE_EXIT(logger);
-    return rc;
-}
-
-static int determine_iis_thread_count()
-{
-#define CACHE_SIZE_WORKSTATION 10
-    OSVERSIONINFOEX verinfo;
-    size_t cache_size;
-
-    JK_TRACE_ENTER(logger);
-    if (JK_IS_DEBUG_LEVEL(logger)) {
-        jk_log(logger, JK_LOG_DEBUG, "Attempting to set connection_pool_size to suit current OS settings." );
-    }
-
-    /* Check the type of OS we're using */
-    ZeroMemory(&verinfo, sizeof(OSVERSIONINFOEX));
-    verinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-    if (GetVersionEx((LPOSVERSIONINFO)(&verinfo))) {
-        /* For Server OSes, determine PoolThreadLimit */
-        if (verinfo.wProductType == VER_NT_DOMAIN_CONTROLLER || verinfo.wProductType == VER_NT_SERVER) {
-            if (JK_IS_DEBUG_LEVEL(logger)) {
-                jk_log(logger, JK_LOG_DEBUG, "Current OS detected as Server OS - will try to detect PoolThreadLimit" );
-            }
-
-            /* Check in the registry first for an override */
-            if (!read_registry_pool_thread_limit( &cache_size )) {
-                /* Otherwise, Calculate default cache size as 2*MB RAM, capped at 256 */
-                MEMORYSTATUS memstat;
-                GlobalMemoryStatus(&memstat);
-                cache_size = 2 * memstat.dwTotalPhys / (1024*1024);
-                if (cache_size > 256 )
-                    cache_size = 256;
-                if (JK_IS_DEBUG_LEVEL(logger)) {
-                    jk_log(logger, JK_LOG_DEBUG, "PoolThreadLimit not in registry - "
-                           "calculating default connection_pool_size of MIN(2*MB,256) as %u",
-                           cache_size );
-                }
-            }
-        } else {
-            /* We have a Workstation/Pro version running PWS */
-            if (JK_IS_DEBUG_LEVEL(logger)) {
-                jk_log(logger, JK_LOG_DEBUG, "Current OS is a Workstation/Pro - "
-                       "using PWS connection_pool_size of %d",
-                       CACHE_SIZE_WORKSTATION );
-            }
-            cache_size = CACHE_SIZE_WORKSTATION;
-        }
-    } else {
-        /* Assume Workstation - something is probably wrong here */
-        jk_log(logger, JK_LOG_WARNING, "Unable to detect current OS - assuming Workstation/Pro - "
-               "using PWS connection_pool_size of %d", CACHE_SIZE_WORKSTATION );
-        cache_size = CACHE_SIZE_WORKSTATION;
-    }
-    JK_TRACE_EXIT(logger);
-    return (int)cache_size;
-}
-#endif
-
 static int init_jk(char *serverName)
 {
     char shm_name[MAX_PATH];
     int rc = JK_FALSE;
-#ifdef AUTOMATIC_POOL_SIZE
-    int def_cache_size;
-#endif
 
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
@@ -2205,18 +2088,7 @@ static int init_jk(char *serverName)
         }
     }
 
-#ifdef AUTOMATIC_POOL_SIZE
-    def_cache_size = determine_iis_thread_count();
-    if (JK_IS_DEBUG_LEVEL(logger)) {
-        jk_log(logger, JK_LOG_DEBUG, "Setting default connection_pool_size to %d",
-               def_cache_size );
-    }
-    jk_set_worker_def_cache_size(def_cache_size);
-    jk_log(logger, JK_LOG_INFO, "Using a default of %d connections per pool",
-           def_cache_size);
-#else
     jk_set_worker_def_cache_size(DEFAULT_WORKER_THREADS);
-#endif
 
     /* Logging the initialization type: registry or properties file in virtual dir
      */
@@ -2256,6 +2128,8 @@ static int init_jk(char *serverName)
         jk_log(logger, JK_LOG_DEBUG, "Using query header %s.", QUERY_HEADER_NAME);
         jk_log(logger, JK_LOG_DEBUG, "Using worker header %s.", WORKER_HEADER_NAME);
         jk_log(logger, JK_LOG_DEBUG, "Using translate header %s.", TOMCAT_TRANSLATE_HEADER_NAME);
+        jk_log(logger, JK_LOG_DEBUG, "Using a default of %d connections per pool.",
+                                     DEFAULT_WORKER_THREADS);
     }
 
     if (rewrite_rule_file[0] && jk_map_alloc(&rewrite_map)) {
