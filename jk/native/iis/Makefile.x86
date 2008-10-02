@@ -111,7 +111,7 @@ LINK32_OBJS= \
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
 
-CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\common" /I "pcre" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "JK_ISAPI" /D "ISAPI_EXPORTS" /D "HAS_PCRE" /D "PCRE_STATIC" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\isapi_redirector_src" /FD /c 
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "..\common" /I "pcre" /I "$(JAVA_HOME)\include" /I "$(JAVA_HOME)\include\win32" $(CFLAGS) /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "JK_ISAPI" /D "ISAPI_EXPORTS" /D "HAS_PCRE" /D "PCRE_STATIC" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\isapi_redirector_src" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<

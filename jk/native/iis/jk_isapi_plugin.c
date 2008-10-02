@@ -1878,16 +1878,21 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                         }
                         /** Try to redirect the client to a page explaining the ISAPI redirector is down */
                         if (error_page) {
-                            int len_of_error_page = (int)strlen(error_page);
+                            char error_page_url[INTERNET_MAX_URL_LENGTH] = "";
+                            int len_of_error_page;
+                            StringCbPrintf(error_page_url, INTERNET_MAX_URL_LENGTH,
+                                           error_page, is_error);                            
+                            len_of_error_page = (int)strlen(error_page_url);
                             if (!lpEcb->ServerSupportFunction(lpEcb->ConnID,
                                                               HSE_REQ_SEND_URL_REDIRECT_RESP,
-                                                              error_page,
+                                                              error_page_url,
                                                               (LPDWORD)&len_of_error_page,
                                                               (LPDWORD)NULL)) {
                                 jk_log(logger, JK_LOG_ERROR,
-                                       "HttpExtensionProc error, Error page redirect failed with %d (0x%08x)",
-                                       GetLastError(), GetLastError());
+                                       "HttpExtensionProc error, Error page '%s' redirect failed with %d (0x%08x)",
+                                       error_page_url, GetLastError(), GetLastError());
                                 lpEcb->dwHttpStatusCode = is_error;
+                                write_error_message(lpEcb, is_error);
                             }
                         }
                         else {
