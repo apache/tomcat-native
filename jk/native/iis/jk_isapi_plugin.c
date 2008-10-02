@@ -51,15 +51,35 @@
 
 #include <strsafe.h>
 
-#define VERSION_STRING "Jakarta/ISAPI/" JK_EXPOSED_VERSION
+#ifdef ALLOW_CHUNKING
+#define HAS_CHUNKING "-CHUNKING"
+#else
+#define HAS_CHUNKING "-NO_CHUNKING"
+#endif
+
+#ifdef AUTOMATIC_POOL_SIZE
+#define HAS_AUTO_POOL "-AUTO_POOL"
+#else
+#define HAS_AUTO_POOL "-NO_AUTO_POOL"
+#endif
+
+#ifdef CONFIGURABLE_ERROR_PAGE
+#define HAS_ERROR_PAGE "-ERROR_PAGE"
+#else
+#define HAS_ERROR_PAGE "-NO_ERROR_PAGE"
+#endif
+
+#define VERSION_STRING "Jakarta/ISAPI/" JK_EXPOSED_VERSION HAS_CHUNKING HAS_AUTO_POOL HAS_ERROR_PAGE
 #define SHM_DEF_NAME   "JKISAPISHMEM"
 #define DEFAULT_WORKER_NAME ("ajp13")
 
+#ifndef AUTOMATIC_POOL_SIZE
 /*
  * This is default value found inside httpd.conf
  * for MaxClients
  */
 #define DEFAULT_WORKER_THREADS  250
+#endif
 
 /*
  * We use special headers to pass values from the filter to the
@@ -75,17 +95,25 @@
 #define WORKER_HEADER_NAME_BASE           ("TOMCATWORKER")
 #define TOMCAT_TRANSLATE_HEADER_NAME_BASE ("TOMCATTRANSLATE")
 #define CONTENT_LENGTH                    ("CONTENT_LENGTH:")
+
+/* The HTTP_ form of the header for use in ExtensionProc */
+#define HTTP_HEADER_PREFIX       "HTTP_"
+#define HTTP_HEADER_PREFIX_LEN   5
+
 /* The template used to construct our unique headers
  * from the base name and module instance
  */
-#define HEADER_TEMPLATE      ("%s%p:")
-#define HTTP_HEADER_TEMPLATE ("HTTP_%s%p")
+#define HEADER_TEMPLATE      "%s%p:"
+#define HTTP_HEADER_TEMPLATE HTTP_HEADER_PREFIX "%s%p"
 
 static char URI_HEADER_NAME[MAX_PATH];
 static char QUERY_HEADER_NAME[MAX_PATH];
 static char WORKER_HEADER_NAME[MAX_PATH];
 static char TOMCAT_TRANSLATE_HEADER_NAME[MAX_PATH];
 
+/* The variants of the special headers after IIS adds
+ * "HTTP_" to the front of them
+ */
 static char HTTP_URI_HEADER_NAME[MAX_PATH];
 static char HTTP_QUERY_HEADER_NAME[MAX_PATH];
 static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
@@ -103,14 +131,45 @@ static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
 #define SHM_SIZE_TAG                ("shm_size")
 #define WORKER_MOUNT_RELOAD_TAG     ("worker_mount_reload")
 #define STRIP_SESSION_TAG           ("strip_session")
+#ifndef AUTOMATIC_AUTH_NOTIFICATION
 #define AUTH_COMPLETE_TAG           ("auth_complete")
+#endif
 #define REJECT_UNSAFE_TAG           ("reject_unsafe")
 #define WATCHDOG_INTERVAL_TAG       ("watchdog_interval")
+#define ENABLE_CHUNKED_ENCODING_TAG ("enable_chunked_encoding")
+#ifdef CONFIGURABLE_ERROR_PAGE
+#define ERROR_PAGE_TAG              ("error_page")
+#endif
 
+/* HTTP standard headers */
+#define TRANSFER_ENCODING_CHUNKED_HEADER_COMPLETE     ("Transfer-Encoding: chunked")
+#define TRANSFER_ENCODING_CHUNKED_HEADER_COMPLETE_LEN (26)
+#define TRANSFER_ENCODING_HEADER_NAME                 ("Transfer-Encoding")
+#define TRANSFER_ENCODING_HEADER_NAME_LEN             (17)
+#define TRANSFER_ENCODING_IDENTITY_VALUE              ("identity")
+#define TRANSFER_ENCODING_CHUNKED_VALUE               ("chunked")
+#define TRANSFER_ENCODING_CHUNKED_VALUE_LEN           (7)
+
+#define CONTENT_LENGTH_HEADER_NAME                    ("Content-Length")
+#define CONTENT_LENGTH_HEADER_NAME_LEN                (14)
+
+#define CONNECTION_HEADER_NAME      ("Connection")
+#define CONNECTION_CLOSE_VALUE      ("Close")
 
 #define TRANSLATE_HEADER            ("Translate:")
 #define TRANSLATE_HEADER_NAME       ("Translate")
 #define TRANSLATE_HEADER_NAME_LC    ("translate")
+
+/* HTTP protocol CRLF */
+#define CRLF                        ("\r\n")
+#define CRLF_LEN                    (2)
+
+/* Transfer-Encoding: chunked content trailer */
+#define CHUNKED_ENCODING_TRAILER     ("0\r\n\r\n")
+#define CHUNKED_ENCODING_TRAILER_LEN (5)
+
+/* Hex of chunk length (one char per byte) + CRLF + terminator. */
+#define CHUNK_HEADER_BUFFER_SIZE     (sizeof(unsigned int)*2+CRLF_LEN+1)
 
 #define BAD_REQUEST     -1
 #define BAD_PATH        -2
@@ -193,18 +252,24 @@ static char *CONTENT_TYPE = "Content-Type:text/html\r\n\r\n";
 static char extension_uri[INTERNET_MAX_URL_LENGTH] =
     "/jakarta/isapi_redirect.dll";
 static char log_file[MAX_PATH * 2];
-static int log_level = JK_LOG_DEF_LEVEL;
+static int  log_level = JK_LOG_DEF_LEVEL;
 static char worker_file[MAX_PATH * 2];
 static char worker_mount_file[MAX_PATH * 2] = {0};
 static int  worker_mount_reload = JK_URIMAP_DEF_RELOAD;
 static char rewrite_rule_file[MAX_PATH * 2] = {0};
 static size_t shm_config_size = 0;
-static int strip_session = 0;
-static DWORD auth_notification_flags = 0;
-static int   use_auth_notification_flags = 1;
-static int reject_unsafe = 0;
-static int watchdog_interval = 0;
+static int  strip_session = 0;
+#ifndef AUTOMATIC_AUTH_NOTIFICATION
+static int  use_auth_notification_flags = 1;
+#endif
+static int  chunked_encoding_enabled = JK_FALSE;
+static int  reject_unsafe = 0;
+static int  watchdog_interval = 0;
 static HANDLE watchdog_handle = NULL;
+#ifdef CONFIGURABLE_ERROR_PAGE
+static char error_page_buf[INTERNET_MAX_URL_LENGTH] = {0};
+static char *error_page = NULL;
+#endif
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -221,6 +286,7 @@ struct isapi_private_data_t
     jk_pool_t p;
 
     unsigned int bytes_read_so_far;
+    int chunk_content;          /* Whether we're responding with Transfer-Encoding: chunked content */
     LPEXTENSION_CONTROL_BLOCK lpEcb;
 };
 
@@ -229,6 +295,15 @@ struct isapi_log_data_t {
     char uri[INTERNET_MAX_URL_LENGTH];
     char query[INTERNET_MAX_URL_LENGTH];
 };
+
+typedef struct iis_info_t iis_info_t;
+struct iis_info_t {
+    int major;                  /* The major version */
+    int minor;                  /* The minor version */
+    DWORD filter_notify_event;  /* The primary filter SF_NOTIFY_* event */
+};
+
+static iis_info_t iis_info;
 
 static int JK_METHOD start_response(jk_ws_service_t *s,
                                     int status,
@@ -242,6 +317,8 @@ static int JK_METHOD iis_read(jk_ws_service_t *s,
 
 static int JK_METHOD iis_write(jk_ws_service_t *s, const void *b, unsigned int l);
 
+static int JK_METHOD iis_done(jk_ws_service_t *s);
+
 static int init_ws_service(isapi_private_data_t * private_data,
                            jk_ws_service_t *s, char **worker_name);
 
@@ -251,6 +328,12 @@ static int initialize_extension(void);
 
 static int read_registry_init_data(void);
 
+#ifdef AUTOMATIC_POOL_SIZE
+static int read_registry_pool_thread_limit(size_t *pool_threads);
+
+static int determine_iis_thread_count();
+
+#endif
 static int get_config_parameter(LPVOID src, const char *tag,
                                 char *val, DWORD sz);
 
@@ -262,7 +345,7 @@ static int get_registry_config_parameter(HKEY hkey,
                                          const char *tag, char *b, DWORD sz);
 
 static int get_registry_config_number(HKEY hkey, const char *tag,
-                                         int *val);
+                                      int *val);
 
 
 static int get_server_value(LPEXTENSION_CONTROL_BLOCK lpEcb,
@@ -274,7 +357,9 @@ static int base64_encode_cert_len(int len);
 static int base64_encode_cert(char *encoded,
                               const char *string, int len);
 
-static int get_auth_flags();
+static int get_iis_info(iis_info_t *info);
+
+static int isapi_write_client(isapi_private_data_t *p, const char *buf, unsigned int write_length);
 
 static char x2c(const char *what)
 {
@@ -541,7 +626,7 @@ static void write_error_response(PHTTP_FILTER_CONTEXT pfc, char *status,
     pfc->ServerSupportFunction(pfc,
                                SF_REQ_SEND_RESPONSE_HEADER,
                                status, 0, 0);
-    pfc->WriteClient(pfc, msg, &len, 0);
+    pfc->WriteClient(pfc, msg, &len, HSE_IO_SYNC);
 }
 
 static void write_error_message(LPEXTENSION_CONTROL_BLOCK lpEcb, int err)
@@ -555,7 +640,7 @@ static void write_error_message(LPEXTENSION_CONTROL_BLOCK lpEcb, int err)
                                      (LPDWORD)CONTENT_TYPE);
         len = (DWORD)(sizeof(HTML_ERROR_500) - 1);
         lpEcb->WriteClient(lpEcb->ConnID,
-                           HTML_ERROR_500, &len, 0);
+                           HTML_ERROR_500, &len, HSE_IO_SYNC);
     }
     else if (err == 503) {
         lpEcb->ServerSupportFunction(lpEcb->ConnID,
@@ -565,7 +650,7 @@ static void write_error_message(LPEXTENSION_CONTROL_BLOCK lpEcb, int err)
                                      (LPDWORD)CONTENT_TYPE);
         len = (DWORD)(sizeof(HTML_ERROR_503) - 1);
         lpEcb->WriteClient(lpEcb->ConnID,
-                           HTML_ERROR_503, &len, 0);
+                           HTML_ERROR_503, &len, HSE_IO_SYNC);
     }
     else {
         return;
@@ -580,8 +665,6 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
                                     const char *const *header_values,
                                     unsigned int num_of_headers)
 {
-    static char crlf[3] = { (char)13, (char)10, '\0' };
-
     JK_TRACE_ENTER(logger);
     if (status < 100 || status > 1000) {
         jk_log(logger, JK_LOG_ERROR,
@@ -595,11 +678,18 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
         int rv = JK_TRUE;
         isapi_private_data_t *p = s->ws_private;
         if (!s->response_started) {
-            char *status_str;
-            DWORD status_str_len;
+            char *status_str = NULL;
             char *headers_str = NULL;
-            BOOL keep_alive = FALSE;
+            BOOL keep_alive = FALSE;     /* Whether the downstream or us can supply content length */
+            BOOL rc;
+            size_t i, len_of_headers = 0;
+
             s->response_started = JK_TRUE;
+
+            if (JK_IS_DEBUG_LEVEL(logger)) {
+                jk_log(logger, JK_LOG_DEBUG, "Starting response for URI '%s' (protocol %s)",
+                       s->req_uri, s->protocol);
+            }
 
             /*
              * Create the status line
@@ -609,44 +699,132 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
             }
             status_str = (char *)malloc((6 + strlen(reason)));
             StringCbPrintf(status_str, 6 + strlen(reason), "%d %s", status, reason);
-            status_str_len = (DWORD)strlen(status_str);
+
+            if (chunked_encoding_enabled) {
+                /* Check if we've got an HTTP/1.1 response */
+                if (!strcasecmp(s->protocol, "HTTP/1.1")) {
+                    keep_alive = TRUE;
+                    /* Chunking only when HTTP/1.1 client and enabled */
+                    p->chunk_content = JK_TRUE;
+                }
+            }
 
             /*
              * Create response headers string
              */
-            if (num_of_headers) {
-                size_t i, len_of_headers = 0;
-                for (i = 0, len_of_headers = 0; i < num_of_headers; i++) {
-                    len_of_headers += strlen(header_names[i]);
-                    len_of_headers += strlen(header_values[i]);
-                    len_of_headers += 4;   /* extra for colon, space and crlf */
-                }
 
-                len_of_headers += 3;       /* crlf and terminating null char */
-                headers_str = (char *)malloc(len_of_headers);
-                headers_str[0] = '\0';
+            /* Calculate length of headers block */
+            for (i = 0; i < num_of_headers; i++) {
+                len_of_headers += strlen(header_names[i]);
+                len_of_headers += strlen(header_values[i]);
+                len_of_headers += 4;   /* extra for colon, space and crlf */
+            }
 
+            if (p->chunk_content) {
                 for (i = 0; i < num_of_headers; i++) {
-                    StringCbCat(headers_str, len_of_headers, header_names[i]);
-                    StringCbCat(headers_str, len_of_headers, ": ");
-                    StringCbCat(headers_str, len_of_headers, header_values[i]);
-                    StringCbCat(headers_str, len_of_headers, crlf);
+                    /* Check the downstream response to see whether
+                     * it's appropriate the chunk the response content
+                     * and whether it supports keeping the connection open.
+
+                     * This implements the rules for HTTP/1.1 message length determination
+                     * with the exception of multipart/byteranges media types.
+                     * http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4
+                     */
+                    if (!strcasecmp(CONTENT_LENGTH_HEADER_NAME, header_names[i])) {
+                        p->chunk_content = JK_FALSE;
+                        if (JK_IS_DEBUG_LEVEL(logger))
+                            jk_log(logger, JK_LOG_DEBUG, "Response specifies Content-Length" );
+                    }
+                    else if (!strcasecmp(CONNECTION_HEADER_NAME, header_names[i])
+                            && !strcasecmp(CONNECTION_CLOSE_VALUE, header_values[i])) {
+                        keep_alive = FALSE;
+                        p->chunk_content = JK_FALSE;
+                        if (JK_IS_DEBUG_LEVEL(logger))
+                            jk_log(logger, JK_LOG_DEBUG, "Response specifies Connection: Close" );
+                    }
+                    else if (!strcasecmp(TRANSFER_ENCODING_HEADER_NAME, header_names[i])
+                            && !strcasecmp(TRANSFER_ENCODING_IDENTITY_VALUE, header_values[i])) {
+                        /* HTTP states that this must include 'chunked' as the last value.
+                            * 'identity' is the same as absence of the header */
+                        p->chunk_content = JK_FALSE;
+                        if (JK_IS_DEBUG_LEVEL(logger))
+                            jk_log(logger, JK_LOG_DEBUG, "Response specifies Transfer-Encoding" );
+                    }
                 }
-                StringCbCat(headers_str, len_of_headers, crlf);
+
+                /* Provide room in the buffer for the Transfer-Encoding header if we use it. */
+                len_of_headers += TRANSFER_ENCODING_CHUNKED_HEADER_COMPLETE_LEN + 2;
+            }
+
+            /* Allocate and init the headers string */
+            len_of_headers += 3;       /* crlf and terminating null char */
+            headers_str = (char *)malloc(len_of_headers);
+            headers_str[0] = '\0';
+
+            /* Copy headers into headers block for sending */
+            for (i = 0; i < num_of_headers; i++) {
+                StringCbCat(headers_str, len_of_headers, header_names[i]);
+                StringCbCat(headers_str, len_of_headers, ": ");
+                StringCbCat(headers_str, len_of_headers, header_values[i]);
+                StringCbCat(headers_str, len_of_headers, CRLF);
+            }
+
+            if (p->chunk_content) {
+                /* Configure the response if chunked encoding is used */
+                if (JK_IS_DEBUG_LEVEL(logger))
+                    jk_log(logger, JK_LOG_DEBUG, "Using Transfer-Encoding: chunked");
+
+                /** We will supply the transfer-encoding to allow IIS to keep the connection open */
+                keep_alive = TRUE;
+
+                /* Indicate to the client that the content will be chunked
+                - We've already reserved space for this */
+                StringCbCat(headers_str, len_of_headers, TRANSFER_ENCODING_CHUNKED_HEADER_COMPLETE);
+                StringCbCat(headers_str, len_of_headers, CRLF);
+            }
+
+            /* Terminate the headers */
+            StringCbCat(headers_str, len_of_headers, CRLF);
+
+            if (JK_IS_DEBUG_LEVEL(logger))
+                jk_log(logger, JK_LOG_DEBUG, "%ssing Keep-Alive", (keep_alive ? "U" : "Not u"));
+
+            if (keep_alive) {
+                HSE_SEND_HEADER_EX_INFO hi;
+
+                /* Fill in the response */
+                hi.pszStatus = status_str;
+                hi.pszHeader = headers_str;
+                hi.cchStatus = (DWORD)strlen(status_str);
+                hi.cchHeader = (DWORD)strlen(headers_str);
+
+                /*
+                 * Using the extended form of the API means we have to get this right,
+                 * i.e. IIS won't keep connections open if there's a Content-Length and close them if there isn't.
+                 */
+                hi.fKeepConn = keep_alive;
+
+                /* Send the response to the client */
+                rc = p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID,
+                                                      HSE_REQ_SEND_RESPONSE_HEADER_EX,
+                                                      &hi,
+                                                      NULL, NULL);
             }
             else {
-                headers_str = crlf;
+                DWORD status_str_len = strlen(status_str);
+                /* Old style response - forces Connection: close if Tomcat response doesn't
+                   specify necessary details to allow keep alive */
+                rc = p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID,
+                                                      HSE_REQ_SEND_RESPONSE_HEADER,
+                                                      status_str,
+                                                      &status_str_len,
+                                                      (LPDWORD)headers_str);
             }
 
-            if (!p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID,
-                                                 HSE_REQ_SEND_RESPONSE_HEADER,
-                                                 status_str,
-                                                 &status_str_len,
-                                                 (LPDWORD)headers_str)) {
-
+            if (!rc) {
                 jk_log(logger, JK_LOG_ERROR,
-                       "HSE_REQ_SEND_RESPONSE_HEADER failed with error=%08x",
-                       GetLastError());
+                       "HSE_REQ_SEND_RESPONSE_HEADER%s failed with error=%d (0x%08x)",
+                       (keep_alive ? "_EX" : ""), GetLastError(), GetLastError());
                 rv = JK_FALSE;
             }
             if (headers_str)
@@ -724,7 +902,7 @@ static int JK_METHOD iis_read(jk_ws_service_t *s,
                 }
                 else {
                     jk_log(logger, JK_LOG_ERROR,
-                           "ReadClient failed with %08x", GetLastError());
+                           "ReadClient failed with %d (0x%08x)", GetLastError(), GetLastError());
                     JK_TRACE_EXIT(logger);
                     return JK_FALSE;
                 }
@@ -739,37 +917,224 @@ static int JK_METHOD iis_read(jk_ws_service_t *s,
     return JK_FALSE;
 }
 
+/*
+ * Writes a buffer to the ISAPI response.
+ */
+static int isapi_write_client(isapi_private_data_t *p, const char *buf, unsigned int write_length)
+{
+    unsigned int written = 0;
+    DWORD try_to_write = 0;
+
+    JK_TRACE_ENTER(logger);
+
+    if (JK_IS_DEBUG_LEVEL(logger))
+        jk_log(logger, JK_LOG_DEBUG, "Writing %d bytes of data to client", write_length);
+
+    while (written < write_length) {
+        try_to_write = write_length - written;
+        if (!p->lpEcb->WriteClient(p->lpEcb->ConnID,
+                                   (LPVOID)(buf + written), &try_to_write, HSE_IO_SYNC)) {
+            jk_log(logger, JK_LOG_ERROR,
+                   "WriteClient failed with %d (0x%08x)", GetLastError(), GetLastError());
+            JK_TRACE_EXIT(logger);
+            return JK_FALSE;
+        }
+        written += try_to_write;
+        if (JK_IS_DEBUG_LEVEL(logger))
+            jk_log(logger, JK_LOG_DEBUG, "Wrote %d bytes of data successfully", try_to_write);
+    }
+    JK_TRACE_EXIT(logger);
+    return JK_TRUE;
+}
+
+/*
+ * Write content to the response.
+ * If chunked encoding has been enabled and the client supports it
+ *(and it's appropriate for the response), then this will write a
+ * single "Transfer-Encoding: chunked" chunk
+ */
 static int JK_METHOD iis_write(jk_ws_service_t *s, const void *b, unsigned int l)
 {
     JK_TRACE_ENTER(logger);
 
+    if (!l) {
+        JK_TRACE_EXIT(logger);
+        return JK_TRUE;
+    }
+
     if (s && s->ws_private && b) {
         isapi_private_data_t *p = s->ws_private;
+        const char *buf = (const char *)b;
 
-        if (l) {
-            unsigned int written = 0;
-            char *buf = (char *)b;
+        if (!p) {
+            JK_TRACE_EXIT(logger);
+            return JK_FALSE;
+        }
 
-            if (!s->response_started) {
-                start_response(s, 200, NULL, NULL, NULL, 0);
+        if (!s->response_started) {
+            start_response(s, 200, NULL, NULL, NULL, 0);
+        }
+
+        if (p->chunk_content == JK_FALSE) {
+            if (isapi_write_client(p, buf, l) == JK_FALSE) {
+                JK_TRACE_EXIT(logger);
+                return JK_FALSE;
             }
+        }
+        else {
+            char chunk_header[CHUNK_HEADER_BUFFER_SIZE];
 
-            while (written < l) {
-                DWORD try_to_write = l - written;
-                if (!p->lpEcb->WriteClient(p->lpEcb->ConnID,
-                                           buf + written, &try_to_write, 0)) {
-                    jk_log(logger, JK_LOG_ERROR,
-                           "WriteClient failed with %08x", GetLastError());
+            /* Construct chunk header : HEX CRLF*/
+            StringCbPrintf(chunk_header, CHUNK_HEADER_BUFFER_SIZE, "%X%s", l, CRLF);
+
+            if (iis_info.major >= 6) {
+                HSE_RESPONSE_VECTOR response_vector;
+                HSE_VECTOR_ELEMENT response_elements[3];
+
+                response_elements[0].ElementType = HSE_VECTOR_ELEMENT_TYPE_MEMORY_BUFFER;
+                response_elements[0].pvContext = chunk_header;
+                response_elements[0].cbOffset = 0;
+                response_elements[0].cbSize = strlen(chunk_header);
+
+                response_elements[1].ElementType = HSE_VECTOR_ELEMENT_TYPE_MEMORY_BUFFER;
+                response_elements[1].pvContext = (PVOID)buf;
+                response_elements[1].cbOffset = 0;
+                response_elements[1].cbSize = l;
+
+                response_elements[2].ElementType = HSE_VECTOR_ELEMENT_TYPE_MEMORY_BUFFER;
+                response_elements[2].pvContext = CRLF;
+                response_elements[2].cbOffset = 0;
+                response_elements[2].cbSize = CRLF_LEN;
+
+                response_vector.dwFlags = HSE_IO_SYNC;
+                response_vector.pszStatus = NULL;
+                response_vector.pszHeaders = NULL;
+                response_vector.nElementCount = 3;
+                response_vector.lpElementArray = response_elements;
+
+                if (JK_IS_DEBUG_LEVEL(logger))
+                    jk_log(logger, JK_LOG_DEBUG,
+                           "Using vector write for chunk encoded %d byte chunk", l);
+
+                if (!p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID,
+                    HSE_REQ_VECTOR_SEND,
+                    &response_vector,
+                    (LPDWORD)NULL,
+                    (LPDWORD)NULL)) {
+                        jk_log(logger, JK_LOG_ERROR,
+                               "Vector write of chunk encoded response failed with %d (0x%08x)",
+                               GetLastError(), GetLastError());
+                        JK_TRACE_EXIT(logger);
+                        return JK_FALSE;
+                }
+            } else {
+                /* Write chunk header */
+                if (JK_IS_DEBUG_LEVEL(logger))
+                    jk_log(logger, JK_LOG_DEBUG,
+                    "Using chunked encoding - writing chunk header for %d byte chunk", l);
+
+                if (!isapi_write_client(p, chunk_header, (unsigned int)strlen(chunk_header))) {
+                    jk_log(logger, JK_LOG_ERROR, "WriteClient for chunk header failed");
                     JK_TRACE_EXIT(logger);
                     return JK_FALSE;
                 }
-                written += try_to_write;
+
+                /* Write chunk body (or simple body block) */
+                if (JK_IS_DEBUG_LEVEL(logger)) {
+                    jk_log(logger, JK_LOG_DEBUG, "Writing %s of size %d",
+                           (p->chunk_content ? "chunk body" : "simple response"), l);
+                }
+                if (!isapi_write_client(p, buf, l)) {
+                    jk_log(logger, JK_LOG_ERROR, "WriteClient for response body chunk failed");
+                    JK_TRACE_EXIT(logger);
+                    return JK_FALSE;
+                }
+                /* Write chunk trailer */
+                if (JK_IS_DEBUG_LEVEL(logger)) {
+                    jk_log(logger, JK_LOG_DEBUG, "Using chunked encoding - writing chunk trailer");
+                }
+
+                if (!isapi_write_client(p, CRLF, CRLF_LEN)) {
+                    jk_log(logger, JK_LOG_ERROR, "WriteClient for chunk trailer failed");
+                    JK_TRACE_EXIT(logger);
+                    return JK_FALSE;
+                }
             }
         }
 
         JK_TRACE_EXIT(logger);
         return JK_TRUE;
 
+    }
+
+    JK_LOG_NULL_PARAMS(logger);
+    JK_TRACE_EXIT(logger);
+    return JK_FALSE;
+}
+
+/**
+ * In the case of a Transfer-Encoding: chunked response, this will write the terminator chunk.
+ */
+static int JK_METHOD iis_done(jk_ws_service_t *s)
+{
+    JK_TRACE_ENTER(logger);
+
+    if (s && s->ws_private) {
+        isapi_private_data_t *p = s->ws_private;
+
+        if (p->chunk_content == JK_FALSE) {
+            JK_TRACE_EXIT(logger);
+            return JK_TRUE;
+        }
+
+        /* Write last chunk + terminator */
+        if (iis_info.major >= 6) {
+            HSE_RESPONSE_VECTOR response_vector;
+            HSE_VECTOR_ELEMENT response_elements[1];
+
+            response_elements[0].ElementType = HSE_VECTOR_ELEMENT_TYPE_MEMORY_BUFFER;
+            response_elements[0].pvContext = CHUNKED_ENCODING_TRAILER;
+            response_elements[0].cbOffset = 0;
+            response_elements[0].cbSize = CHUNKED_ENCODING_TRAILER_LEN;
+
+            /* HSE_IO_FINAL_SEND lets IIS process the response to the client before we return */
+            response_vector.dwFlags = HSE_IO_SYNC | HSE_IO_FINAL_SEND;
+            response_vector.pszStatus = NULL;
+            response_vector.pszHeaders = NULL;
+            response_vector.nElementCount = 1;
+            response_vector.lpElementArray = response_elements;
+
+            if (JK_IS_DEBUG_LEVEL(logger))
+                jk_log(logger, JK_LOG_DEBUG,
+                       "Using vector write to terminate chunk encoded response.");
+
+            if (!p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID,
+                                                 HSE_REQ_VECTOR_SEND,
+                                                 &response_vector,
+                                                 (LPDWORD)NULL,
+                                                 (LPDWORD)NULL)) {
+                    jk_log(logger, JK_LOG_ERROR,
+                           "Vector termination of chunk encoded response failed with %d (0x%08x)",
+                           GetLastError(), GetLastError());
+                    JK_TRACE_EXIT(logger);
+                    return JK_FALSE;
+            }
+        }
+        else {
+            if (JK_IS_DEBUG_LEVEL(logger))
+                jk_log(logger, JK_LOG_DEBUG, "Terminating chunk encoded response");
+
+            if (!isapi_write_client(p, CHUNKED_ENCODING_TRAILER, CHUNKED_ENCODING_TRAILER_LEN)) {
+                jk_log(logger, JK_LOG_ERROR,
+                       "WriteClient for chunked response terminator failed with %d (0x%08x)",
+                       GetLastError(), GetLastError());
+                JK_TRACE_EXIT(logger);
+                return JK_FALSE;
+            }
+        }
+
+        JK_TRACE_EXIT(logger);
+        return JK_TRUE;
     }
 
     JK_LOG_NULL_PARAMS(logger);
@@ -790,22 +1155,13 @@ BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
     if (!is_inited) {
         rv = initialize_extension();
     }
-    if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
-        pVer->dwFlags = SF_NOTIFY_ORDER_HIGH |
-                        SF_NOTIFY_SECURE_PORT |
-                        SF_NOTIFY_NONSECURE_PORT |
-                        SF_NOTIFY_PREPROC_HEADERS |
-                        SF_NOTIFY_LOG |
-                        SF_NOTIFY_AUTH_COMPLETE;
-    }
-    else {
-        pVer->dwFlags = SF_NOTIFY_ORDER_HIGH |
-                        SF_NOTIFY_SECURE_PORT |
-                        SF_NOTIFY_NONSECURE_PORT |
-                        SF_NOTIFY_PREPROC_HEADERS;
-    }
+    pVer->dwFlags = SF_NOTIFY_ORDER_HIGH |
+                    SF_NOTIFY_SECURE_PORT |
+                    SF_NOTIFY_NONSECURE_PORT |
+                    SF_NOTIFY_LOG |
+                    iis_info.filter_notify_event;
 
-    StringCbCopy(pVer->lpszFilterDesc, SF_MAX_FILTER_DESC_LEN, VERSION_STRING);
+    StringCbCopy(pVer->lpszFilterDesc, SF_MAX_FILTER_DESC_LEN, (VERSION_STRING));
     return rv;
 }
 
@@ -1165,7 +1521,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         if (!is_mapread)
             is_inited = JK_FALSE;
     }
-    if (!is_inited && !is_mapread) {
+    if (!is_inited) {
         /* In case the initialization failed
          * return error. This will make entire IIS
          * unusable like with Apache servers
@@ -1173,7 +1529,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
          SetLastError(ERROR_INVALID_FUNCTION);
          return SF_STATUS_REQ_ERROR;
     }
-    if (auth_notification_flags == dwNotificationType) {
+    if (iis_info.filter_notify_event == dwNotificationType) {
         char uri[INTERNET_MAX_URL_LENGTH];
         char snuri[INTERNET_MAX_URL_LENGTH] = "/";
         char Host[INTERNET_MAX_URL_LENGTH] = "";
@@ -1195,7 +1551,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         DWORD szPort = sizeof(Port);
         DWORD szTranslate = sizeof(Translate);
 
-        if (auth_notification_flags == SF_NOTIFY_AUTH_COMPLETE) {
+        if (iis_info.filter_notify_event == SF_NOTIFY_AUTH_COMPLETE) {
             GetHeader =
                 ((PHTTP_FILTER_AUTH_COMPLETE_INFO) pvNotification)->GetHeader;
             SetHeader =
@@ -1447,7 +1803,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             }
         }
     }
-    else if (is_inited && (dwNotificationType == SF_NOTIFY_LOG)) {
+    else if (dwNotificationType == SF_NOTIFY_LOG) {
         if (pfc->pFilterContext) {
             isapi_log_data_t *ld = (isapi_log_data_t *)pfc->pFilterContext;
             HTTP_FILTER_LOG  *pl = (HTTP_FILTER_LOG *)pvNotification;
@@ -1463,7 +1819,7 @@ BOOL WINAPI GetExtensionVersion(HSE_VERSION_INFO * pVer)
 {
     pVer->dwExtensionVersion = MAKELONG(HSE_VERSION_MINOR, HSE_VERSION_MAJOR);
 
-    StringCbCopy(pVer->lpszExtensionDesc, HSE_MAX_EXT_DLL_NAME_LEN, VERSION_STRING);
+    StringCbCopy(pVer->lpszExtensionDesc, HSE_MAX_EXT_DLL_NAME_LEN, (VERSION_STRING));
 
 
     if (!is_inited) {
@@ -1510,6 +1866,7 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
 
         private_data.bytes_read_so_far = 0;
         private_data.lpEcb = lpEcb;
+        private_data.chunk_content = JK_FALSE;
 
         s.ws_private = &private_data;
         s.pool = &private_data.p;
@@ -1543,8 +1900,28 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                             jk_log(logger, JK_LOG_ERROR,
                                    "service() failed with http error %d", is_error);
                         }
-                        lpEcb->dwHttpStatusCode = is_error;
-                        write_error_message(lpEcb, is_error);
+#ifdef CONFIGURABLE_ERROR_PAGE
+                        /** Try to redirect the client to a page explaining the ISAPI redirector is down */
+                        if (error_page) {
+                            int len_of_error_page = (int)strlen(error_page);
+                            if (!lpEcb->ServerSupportFunction(lpEcb->ConnID,
+                                                              HSE_REQ_SEND_URL_REDIRECT_RESP,
+                                                              error_page,
+                                                              (LPDWORD)&len_of_error_page,
+                                                              (LPDWORD)NULL)) {
+                                jk_log(logger, JK_LOG_ERROR,
+                                       "HttpExtensionProc error, Error page redirect failed with %d (0x%08x)",
+                                       GetLastError(), GetLastError());
+                                lpEcb->dwHttpStatusCode = is_error;
+                            }
+                        }
+                        else {
+#endif
+                            lpEcb->dwHttpStatusCode = is_error;
+                            write_error_message(lpEcb, is_error);
+#ifdef CONFIGURABLE_ERROR_PAGE
+                        }
+#endif
                     }
                     e->done(&e, logger);
                 }
@@ -1652,6 +2029,7 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
         StringCbPrintf(WORKER_HEADER_NAME, MAX_PATH, HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
         StringCbPrintf(TOMCAT_TRANSLATE_HEADER_NAME, MAX_PATH, HEADER_TEMPLATE, TOMCAT_TRANSLATE_HEADER_NAME_BASE, hInst);
 
+        /* Construct the HTTP_ headers that will be seen in ExtensionProc */
         StringCbPrintf(HTTP_URI_HEADER_NAME, MAX_PATH, HTTP_HEADER_TEMPLATE, URI_HEADER_NAME_BASE, hInst);
         StringCbPrintf(HTTP_QUERY_HEADER_NAME, MAX_PATH, HTTP_HEADER_TEMPLATE, QUERY_HEADER_NAME_BASE, hInst);
         StringCbPrintf(HTTP_WORKER_HEADER_NAME, MAX_PATH, HTTP_HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
@@ -1701,17 +2079,120 @@ static DWORD WINAPI watchdog_thread(void *param)
     return 0;
 }
 
+#ifdef AUTOMATIC_POOL_SIZE
+static int read_registry_pool_thread_limit(size_t *pool_threads)
+{
+#define IIS_PARAMETERS_LOCATION ("SYSTEM\\CurrentControlSet\\Services\\InetInfo\\Parameters")
+#define IIS_MAX_POOL_THREADS_KEY ("PoolThreadLimit")
+
+    HKEY hkey;
+    int rc = JK_FALSE;
+    DWORD regPtl;
+
+    JK_TRACE_ENTER(logger);
+    if (JK_IS_DEBUG_LEVEL(logger)) {
+        jk_log(logger, JK_LOG_DEBUG, "Checking registry for PoolThreadLimit override." );
+    }
+    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+        IIS_PARAMETERS_LOCATION, (DWORD) 0, KEY_READ, &hkey);
+
+    if (ERROR_SUCCESS != rc) {
+        if (JK_IS_DEBUG_LEVEL(logger)) {
+            jk_log(logger, JK_LOG_DEBUG, "Unable to open registry for reading." );
+        }
+        JK_TRACE_EXIT(logger);
+        return JK_FALSE;
+    }
+
+    if (get_registry_config_number(hkey, IIS_MAX_POOL_THREADS_KEY, &regPtl )) {
+        (*pool_threads) = (unsigned)regPtl;
+        if (JK_IS_DEBUG_LEVEL(logger)) {
+            jk_log(logger, JK_LOG_DEBUG, "PoolThreadLimit override of %d located in registry.",
+                   (*pool_threads) );
+        }
+        rc = JK_TRUE;
+    } else {
+        if (JK_IS_DEBUG_LEVEL(logger)) {
+            jk_log(logger, JK_LOG_DEBUG, "PoolThreadLimit setting not found in registry." );
+        }
+        rc = JK_FALSE;
+    }
+
+    RegCloseKey( hkey );
+
+    JK_TRACE_EXIT(logger);
+    return rc;
+}
+
+static int determine_iis_thread_count()
+{
+#define CACHE_SIZE_WORKSTATION 10
+    OSVERSIONINFOEX verinfo;
+    size_t cache_size;
+
+    JK_TRACE_ENTER(logger);
+    if (JK_IS_DEBUG_LEVEL(logger)) {
+        jk_log(logger, JK_LOG_DEBUG, "Attempting to set connection_pool_size to suit current OS settings." );
+    }
+
+    /* Check the type of OS we're using */
+    ZeroMemory(&verinfo, sizeof(OSVERSIONINFOEX));
+    verinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    if (GetVersionEx((LPOSVERSIONINFO)(&verinfo))) {
+        /* For Server OSes, determine PoolThreadLimit */
+        if (verinfo.wProductType == VER_NT_DOMAIN_CONTROLLER || verinfo.wProductType == VER_NT_SERVER) {
+            if (JK_IS_DEBUG_LEVEL(logger)) {
+                jk_log(logger, JK_LOG_DEBUG, "Current OS detected as Server OS - will try to detect PoolThreadLimit" );
+            }
+
+            /* Check in the registry first for an override */
+            if (!read_registry_pool_thread_limit( &cache_size )) {
+                /* Otherwise, Calculate default cache size as 2*MB RAM, capped at 256 */
+                MEMORYSTATUS memstat;
+                GlobalMemoryStatus(&memstat);
+                cache_size = 2 * memstat.dwTotalPhys / (1024*1024);
+                if (cache_size > 256 )
+                    cache_size = 256;
+                if (JK_IS_DEBUG_LEVEL(logger)) {
+                    jk_log(logger, JK_LOG_DEBUG, "PoolThreadLimit not in registry - "
+                           "calculating default connection_pool_size of MIN(2*MB,256) as %u",
+                           cache_size );
+                }
+            }
+        } else {
+            /* We have a Workstation/Pro version running PWS */
+            if (JK_IS_DEBUG_LEVEL(logger)) {
+                jk_log(logger, JK_LOG_DEBUG, "Current OS is a Workstation/Pro - "
+                       "using PWS connection_pool_size of %d",
+                       CACHE_SIZE_WORKSTATION );
+            }
+            cache_size = CACHE_SIZE_WORKSTATION;
+        }
+    } else {
+        /* Assume Workstation - something is probably wrong here */
+        jk_log(logger, JK_LOG_WARNING, "Unable to detect current OS - assuming Workstation/Pro - "
+               "using PWS connection_pool_size of %d", CACHE_SIZE_WORKSTATION );
+        cache_size = CACHE_SIZE_WORKSTATION;
+    }
+    JK_TRACE_EXIT(logger);
+    return (int)cache_size;
+}
+#endif
+
 static int init_jk(char *serverName)
 {
     char shm_name[MAX_PATH];
     int rc = JK_FALSE;
+#ifdef AUTOMATIC_POOL_SIZE
+    int def_cache_size;
+#endif
 
     if (!jk_open_file_logger(&logger, log_file, log_level)) {
         logger = NULL;
     }
     StringCbCopy(shm_name, MAX_PATH, SHM_DEF_NAME);
 
-    jk_log(logger, JK_LOG_INFO, "Starting %s", VERSION_STRING );
+    jk_log(logger, JK_LOG_INFO, "Starting %s", (VERSION_STRING));
 
     if (*serverName) {
         size_t i;
@@ -1724,11 +2205,23 @@ static int init_jk(char *serverName)
         }
     }
 
+#ifdef AUTOMATIC_POOL_SIZE
+    def_cache_size = determine_iis_thread_count();
+    if (JK_IS_DEBUG_LEVEL(logger)) {
+        jk_log(logger, JK_LOG_DEBUG, "Setting default connection_pool_size to %d",
+               def_cache_size );
+    }
+    jk_set_worker_def_cache_size(def_cache_size);
+    jk_log(logger, JK_LOG_INFO, "Using a default of %d connections per pool",
+           def_cache_size);
+#else
     jk_set_worker_def_cache_size(DEFAULT_WORKER_THREADS);
+#endif
 
     /* Logging the initialization type: registry or properties file in virtual dir
      */
     if (JK_IS_DEBUG_LEVEL(logger)) {
+        jk_log(logger, JK_LOG_DEBUG, "Detected IIS version %d.%d", iis_info.major, iis_info.minor);
         if (using_ini_file) {
             jk_log(logger, JK_LOG_DEBUG, "Using ini file %s.", ini_file_name);
         }
@@ -1745,7 +2238,20 @@ static int init_jk(char *serverName)
         jk_log(logger, JK_LOG_DEBUG, "Using rewrite rule file %s.",
                rewrite_rule_file);
         jk_log(logger, JK_LOG_DEBUG, "Using uri select %d.", uri_select_option);
+        jk_log(logger, JK_LOG_DEBUG, "Using%s chunked encoding.", (chunked_encoding_enabled ? "" : " no"));
 
+        jk_log(logger, JK_LOG_DEBUG, "Using notification event %s (0x%08x)",
+               (iis_info.filter_notify_event == SF_NOTIFY_AUTH_COMPLETE) ?
+               "SF_NOTIFY_AUTH_COMPLETE" :
+               ((iis_info.filter_notify_event == SF_NOTIFY_PREPROC_HEADERS) ?
+               "SF_NOTIFY_PREPROC_HEADERS" : "UNKNOWN"),
+               iis_info.filter_notify_event);
+
+#ifdef CONFIGURABLE_ERROR_PAGE
+        if (error_page) {
+            jk_log(logger, JK_LOG_DEBUG, "Using error page '%s'.", error_page);
+        }
+#endif
         jk_log(logger, JK_LOG_DEBUG, "Using uri header %s.", URI_HEADER_NAME);
         jk_log(logger, JK_LOG_DEBUG, "Using query header %s.", QUERY_HEADER_NAME);
         jk_log(logger, JK_LOG_DEBUG, "Using worker header %s.", WORKER_HEADER_NAME);
@@ -1855,12 +2361,11 @@ static int init_jk(char *serverName)
             watchdog_handle = CreateThread(NULL, 0, watchdog_thread,
                                            NULL, 0, &wi);
             if (!watchdog_handle) {
-                rc = GetLastError();
-                jk_log(logger, JK_LOG_ERROR, "Error creating Watchdog thread");
-                return rc;
+                jk_log(logger, JK_LOG_EMERG, "Error %d (0x%08x) creating Watchdog thread",
+                       GetLastError(), GetLastError());
             }
         }
-        jk_log(logger, JK_LOG_INFO, "%s initialized", (VERSION_STRING) );
+        jk_log(logger, JK_LOG_INFO, "%s initialized", (VERSION_STRING));
     }
     return rc;
 }
@@ -1869,7 +2374,9 @@ static int initialize_extension(void)
 {
 
     if (read_registry_init_data()) {
-        auth_notification_flags = get_auth_flags();
+        if (get_iis_info(&iis_info) != JK_TRUE) {
+            jk_log(logger, JK_LOG_ERROR, "Could not retrieve IIS version from registry");
+        }
         is_inited = JK_TRUE;
     }
     return is_inited;
@@ -1944,9 +2451,20 @@ static int read_registry_init_data(void)
     shm_config_size = (size_t) get_config_int(src, SHM_SIZE_TAG, 0);
     worker_mount_reload = get_config_int(src, WORKER_MOUNT_RELOAD_TAG, JK_URIMAP_DEF_RELOAD);
     strip_session = get_config_bool(src, STRIP_SESSION_TAG, JK_FALSE);
+#ifndef AUTOMATIC_AUTH_NOTIFICATION
     use_auth_notification_flags = get_config_int(src, AUTH_COMPLETE_TAG, 1);
+#endif
     reject_unsafe = get_config_bool(src, REJECT_UNSAFE_TAG, JK_FALSE);
     watchdog_interval = get_config_int(src, WATCHDOG_INTERVAL_TAG, 0);
+#ifdef ALLOW_CHUNKING
+    chunked_encoding_enabled = get_config_bool(src, ENABLE_CHUNKED_ENCODING_TAG, JK_FALSE);
+#endif
+#ifdef CONFIGURABLE_ERROR_PAGE
+    if (get_config_parameter(src, ERROR_PAGE_TAG, error_page_buf, sizeof(error_page_buf))) {
+        error_page = error_page_buf;
+    }
+#endif
+
     if (using_ini_file) {
         jk_map_free(&map);
     }
@@ -2035,7 +2553,7 @@ static int get_registry_config_number(HKEY hkey,
         return JK_FALSE;
     }
 
-    *val = data;
+    *val = (int)data;
 
     return JK_TRUE;
 }
@@ -2052,6 +2570,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
     s->start_response = start_response;
     s->read  = iis_read;
     s->write = iis_write;
+    s->done  = iis_done;
 
     if (!(huge_buf = jk_pool_alloc(&private_data->p, MAX_PACKET_SIZE))) {
         JK_TRACE_EXIT(logger);
@@ -2195,7 +2714,6 @@ static int init_ws_service(isapi_private_data_t * private_data,
         if (cnt) {
             char *headers_buf = huge_buf;
             unsigned int i;
-            size_t len_of_http_prefix = strlen("HTTP_");
             BOOL need_content_length_header = (s->content_length == 0);
 
             cnt -= 2;           /* For our two special headers:
@@ -2216,12 +2734,13 @@ static int init_ws_service(isapi_private_data_t * private_data,
             for (i = 0, tmp = headers_buf; *tmp && i < cnt;) {
                 int real_header = JK_TRUE;
 
-                /* Skipp the HTTP_ prefix to the beginning of th header name */
-                tmp += len_of_http_prefix;
+                /* Skip the HTTP_ prefix to the beginning of the header name */
+                tmp += HTTP_HEADER_PREFIX_LEN;
 
                 if (!strnicmp(tmp, URI_HEADER_NAME, strlen(URI_HEADER_NAME))
                     || !strnicmp(tmp, WORKER_HEADER_NAME,
                                  strlen(WORKER_HEADER_NAME))) {
+                    /* Skip redirector headers */
                     real_header = JK_FALSE;
                 }
                 else if (!strnicmp(tmp, QUERY_HEADER_NAME,
@@ -2258,7 +2777,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
                 *tmp = '\0';
                 tmp++;
 
-                /* Skip all the WS chars after the ':' to the beginning of th header value */
+                /* Skip all the WS chars after the ':' to the beginning of the header value */
                 while (' ' == *tmp || '\t' == *tmp || '\v' == *tmp) {
                     tmp++;
                 }
@@ -2273,7 +2792,7 @@ static int init_ws_service(isapi_private_data_t * private_data,
                 *tmp = '\0';
                 tmp++;
 
-                /* skipp CR LF */
+                /* skip CR LF */
                 while (*tmp == '\n' || *tmp == '\r') {
                     tmp++;
                 }
@@ -2409,29 +2928,45 @@ static int base64_encode_cert(char *encoded,
     return (int)(p - encoded);
 }
 
-static int get_auth_flags()
+/**
+* Determine version info and the primary notification event
+*/
+static int get_iis_info(iis_info_t* iis_info)
 {
     HKEY hkey;
     long rc;
-    int maj, sz;
-    int rv = SF_NOTIFY_PREPROC_HEADERS;
-    int use_auth = JK_FALSE;
-    /* Retreive the IIS version Major */
+    int rv = JK_FALSE;
+
+    iis_info->major = 0;
+    iis_info->minor = 0;
+    iis_info->filter_notify_event = SF_NOTIFY_PREPROC_HEADERS;
+
+    /* Retrieve the IIS version Major/Minor */
     rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
                       W3SVC_REGISTRY_KEY, (DWORD) 0, KEY_READ, &hkey);
-    if (ERROR_SUCCESS != rc) {
-        return rv;
-    }
-    sz = sizeof(int);
-    rc = RegQueryValueEx(hkey, "MajorVersion", NULL, NULL,
-                         (LPBYTE) & maj, &sz);
-    if (ERROR_SUCCESS != rc) {
-        CloseHandle(hkey);
-        return rv;
+    if (ERROR_SUCCESS == rc) {
+        if (get_registry_config_number(hkey, "MajorVersion", &iis_info->major) == JK_TRUE) {
+#ifdef AUTOMATIC_AUTH_NOTIFICATION
+            if (iis_info->major > 4)
+#else
+            if (use_auth_notification_flags && iis_info->major > 4)
+#endif
+                iis_info->filter_notify_event = SF_NOTIFY_AUTH_COMPLETE;
+            if (get_registry_config_number(hkey, "MinorVersion", &iis_info->minor) == JK_TRUE) {
+
+#ifdef AUTOMATIC_AUTH_NOTIFICATION
+                /* SF_NOTIFY_AUTH_COMPLETE causes redirect failures
+                 * (ERROR_INVALID_PARAMETER) on IIS 5.1 with OPTIONS/PUT
+                 * and is only available from IIS 5+
+                 */
+                if (iis_info->major == 5 && iis_info->minor == 1) {
+                    iis_info->filter_notify_event = SF_NOTIFY_PREPROC_HEADERS;
+                }
+#endif
+                rv = JK_TRUE;
+            }
+        }
     }
     CloseHandle(hkey);
-    if (use_auth_notification_flags && maj > 4)
-        rv = SF_NOTIFY_AUTH_COMPLETE;
-
     return rv;
 }
