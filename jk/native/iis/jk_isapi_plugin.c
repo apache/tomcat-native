@@ -51,19 +51,13 @@
 
 #include <strsafe.h>
 
-#ifdef ALLOW_CHUNKING
+#ifdef ISAPI_ALLOW_CHUNKING
 #define HAS_CHUNKING "-CHUNKING"
 #else
-#define HAS_CHUNKING "-NO_CHUNKING"
+#define HAS_CHUNKING ""
 #endif
 
-#ifdef CONFIGURABLE_ERROR_PAGE
-#define HAS_ERROR_PAGE "-ERROR_PAGE"
-#else
-#define HAS_ERROR_PAGE "-NO_ERROR_PAGE"
-#endif
-
-#define VERSION_STRING "Jakarta/ISAPI/" JK_EXPOSED_VERSION HAS_CHUNKING HAS_AUTO_POOL HAS_ERROR_PAGE
+#define VERSION_STRING "Jakarta/ISAPI/" JK_EXPOSED_VERSION HAS_CHUNKING HAS_AUTO_POOL
 #define SHM_DEF_NAME   "JKISAPISHMEM"
 #define DEFAULT_WORKER_NAME ("ajp13")
 
@@ -129,9 +123,7 @@ static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
 #define REJECT_UNSAFE_TAG           ("reject_unsafe")
 #define WATCHDOG_INTERVAL_TAG       ("watchdog_interval")
 #define ENABLE_CHUNKED_ENCODING_TAG ("enable_chunked_encoding")
-#ifdef CONFIGURABLE_ERROR_PAGE
 #define ERROR_PAGE_TAG              ("error_page")
-#endif
 
 /* HTTP standard headers */
 #define TRANSFER_ENCODING_CHUNKED_HEADER_COMPLETE     ("Transfer-Encoding: chunked")
@@ -258,10 +250,8 @@ static int  chunked_encoding_enabled = JK_FALSE;
 static int  reject_unsafe = 0;
 static int  watchdog_interval = 0;
 static HANDLE watchdog_handle = NULL;
-#ifdef CONFIGURABLE_ERROR_PAGE
 static char error_page_buf[INTERNET_MAX_URL_LENGTH] = {0};
 static char *error_page = NULL;
-#endif
 
 #define URI_SELECT_OPT_PARSED       0
 #define URI_SELECT_OPT_UNPARSED     1
@@ -1886,7 +1876,6 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                             jk_log(logger, JK_LOG_ERROR,
                                    "service() failed with http error %d", is_error);
                         }
-#ifdef CONFIGURABLE_ERROR_PAGE
                         /** Try to redirect the client to a page explaining the ISAPI redirector is down */
                         if (error_page) {
                             int len_of_error_page = (int)strlen(error_page);
@@ -1902,12 +1891,9 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                             }
                         }
                         else {
-#endif
                             lpEcb->dwHttpStatusCode = is_error;
                             write_error_message(lpEcb, is_error);
-#ifdef CONFIGURABLE_ERROR_PAGE
                         }
-#endif
                     }
                     e->done(&e, logger);
                 }
@@ -2119,11 +2105,9 @@ static int init_jk(char *serverName)
                "SF_NOTIFY_PREPROC_HEADERS" : "UNKNOWN"),
                iis_info.filter_notify_event);
 
-#ifdef CONFIGURABLE_ERROR_PAGE
         if (error_page) {
             jk_log(logger, JK_LOG_DEBUG, "Using error page '%s'.", error_page);
         }
-#endif
         jk_log(logger, JK_LOG_DEBUG, "Using uri header %s.", URI_HEADER_NAME);
         jk_log(logger, JK_LOG_DEBUG, "Using query header %s.", QUERY_HEADER_NAME);
         jk_log(logger, JK_LOG_DEBUG, "Using worker header %s.", WORKER_HEADER_NAME);
@@ -2330,14 +2314,12 @@ static int read_registry_init_data(void)
 #endif
     reject_unsafe = get_config_bool(src, REJECT_UNSAFE_TAG, JK_FALSE);
     watchdog_interval = get_config_int(src, WATCHDOG_INTERVAL_TAG, 0);
-#ifdef ALLOW_CHUNKING
+#ifdef ISAPI_ALLOW_CHUNKING
     chunked_encoding_enabled = get_config_bool(src, ENABLE_CHUNKED_ENCODING_TAG, JK_FALSE);
 #endif
-#ifdef CONFIGURABLE_ERROR_PAGE
     if (get_config_parameter(src, ERROR_PAGE_TAG, error_page_buf, sizeof(error_page_buf))) {
         error_page = error_page_buf;
     }
-#endif
 
     if (using_ini_file) {
         jk_map_free(&map);
