@@ -602,7 +602,7 @@ int jk_open_file_logger(jk_logger_t **l, const char *file, int level)
 
 int jk_attach_file_logger(jk_logger_t **l, int fd, int level)
 {
-    if (l && file) {
+    if (l && fd >= 0) {
 
         jk_logger_t *rc = (jk_logger_t *)malloc(sizeof(jk_logger_t));
         jk_file_logger_t *p = (jk_file_logger_t *) malloc(sizeof(jk_file_logger_t));
