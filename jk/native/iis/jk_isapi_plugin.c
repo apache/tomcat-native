@@ -612,28 +612,42 @@ static void write_error_response(PHTTP_FILTER_CONTEXT pfc, char *status,
 static void write_error_message(LPEXTENSION_CONTROL_BLOCK lpEcb, int err)
 {
     DWORD len;
-    if (err = 500) {
-        lpEcb->ServerSupportFunction(lpEcb->ConnID,
-                                     HSE_REQ_SEND_RESPONSE_HEADER,
-                                     "500 Internal Server Error",
-                                     0,
-                                     (LPDWORD)CONTENT_TYPE);
-        len = (DWORD)(sizeof(HTML_ERROR_500) - 1);
-        lpEcb->WriteClient(lpEcb->ConnID,
-                           HTML_ERROR_500, &len, HSE_IO_SYNC);
+    char status[MAX_PATH];
+
+    if (error_page) {
+        char error_page_url[INTERNET_MAX_URL_LENGTH] = "";
+        int len_of_error_page;
+        StringCbPrintf(error_page_url, INTERNET_MAX_URL_LENGTH,
+                       (LPCSTR)error_page, err);
+        len_of_error_page = (int)strlen(error_page_url);
+        if (!lpEcb->ServerSupportFunction(lpEcb->ConnID,
+                                          HSE_REQ_SEND_URL_REDIRECT_RESP,
+                                          error_page_url,
+                                          (LPDWORD)&len_of_error_page,
+                                          (LPDWORD)NULL)) {
+            lpEcb->dwHttpStatusCode = err;
+        }
+        else {
+            return;
+        }
     }
-    else if (err == 503) {
-        lpEcb->ServerSupportFunction(lpEcb->ConnID,
-                                     HSE_REQ_SEND_RESPONSE_HEADER,
-                                     "503 Service Unavailable",
-                                     0,
-                                     (LPDWORD)CONTENT_TYPE);
+    lpEcb->dwHttpStatusCode = err;
+
+    StringCbPrintf(status, MAX_PATH, "%s %s", err, status_reason(err));
+    lpEcb->ServerSupportFunction(lpEcb->ConnID,
+                                 HSE_REQ_SEND_RESPONSE_HEADER,
+                                 status,
+                                 0,
+                                 (LPDWORD)CONTENT_TYPE);
+    if (err == 503) {
         len = (DWORD)(sizeof(HTML_ERROR_503) - 1);
         lpEcb->WriteClient(lpEcb->ConnID,
                            HTML_ERROR_503, &len, HSE_IO_SYNC);
     }
     else {
-        return;
+        len = (DWORD)(sizeof(HTML_ERROR_500) - 1);
+        lpEcb->WriteClient(lpEcb->ConnID,
+                           HTML_ERROR_500, &len, HSE_IO_SYNC);
     }
 }
 
@@ -1873,11 +1887,22 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                     int is_error = JK_HTTP_SERVER_ERROR;
                     int result;
                     if ((result = e->service(e, &s, logger, &is_error)) > 0) {
-                        rc = HSE_STATUS_SUCCESS;
-                        lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
-                        if (JK_IS_DEBUG_LEVEL(logger))
-                            jk_log(logger, JK_LOG_DEBUG,
-                                   "service() returned OK");
+                        if (s.extension.use_server_error_pages &&
+                            s.http_response_status >= s.extension.use_server_error_pages) {
+                            if (JK_IS_DEBUG_LEVEL(logger))
+                                jk_log(logger, JK_LOG_DEBUG, "Forwarding status=%d"
+                                       " for worker=%s",
+                                       s.http_response_status, worker_name);
+                            lpEcb->dwHttpStatusCode = is_error;
+                            write_error_message(lpEcb, is_error);
+                        }
+                        else {
+                            rc = HSE_STATUS_SUCCESS;
+                            lpEcb->dwHttpStatusCode = HTTP_STATUS_OK;
+                            if (JK_IS_DEBUG_LEVEL(logger))
+                                jk_log(logger, JK_LOG_DEBUG,
+                                       "service() returned OK");
+                        }
                     }
                     else {
                         if ((result == JK_CLIENT_ERROR) && (is_error == JK_HTTP_OK)) {
@@ -1888,29 +1913,8 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
                             jk_log(logger, JK_LOG_ERROR,
                                    "service() failed with http error %d", is_error);
                         }
-                        /** Try to redirect the client to a page explaining the ISAPI redirector is down */
-                        if (error_page) {
-                            char error_page_url[INTERNET_MAX_URL_LENGTH] = "";
-                            int len_of_error_page;
-                            StringCbPrintf(error_page_url, INTERNET_MAX_URL_LENGTH,
-                                           (LPCSTR)error_page, is_error);                            
-                            len_of_error_page = (int)strlen(error_page_url);
-                            if (!lpEcb->ServerSupportFunction(lpEcb->ConnID,
-                                                              HSE_REQ_SEND_URL_REDIRECT_RESP,
-                                                              error_page_url,
-                                                              (LPDWORD)&len_of_error_page,
-                                                              (LPDWORD)NULL)) {
-                                jk_log(logger, JK_LOG_ERROR,
-                                       "HttpExtensionProc error, Error page '%s' redirect failed with %d (0x%08x)",
-                                       error_page_url, GetLastError(), GetLastError());
-                                lpEcb->dwHttpStatusCode = is_error;
-                                write_error_message(lpEcb, is_error);
-                            }
-                        }
-                        else {
-                            lpEcb->dwHttpStatusCode = is_error;
-                            write_error_message(lpEcb, is_error);
-                        }
+                        lpEcb->dwHttpStatusCode = is_error;
+                        write_error_message(lpEcb, is_error);
                     }
                     e->done(&e, logger);
                 }
