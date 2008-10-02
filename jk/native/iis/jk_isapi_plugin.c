@@ -79,6 +79,7 @@
 #define URI_HEADER_NAME_BASE              ("TOMCATURI")
 #define QUERY_HEADER_NAME_BASE            ("TOMCATQUERY")
 #define WORKER_HEADER_NAME_BASE           ("TOMCATWORKER")
+#define WORKER_HEADER_INDEX_BASE          ("TOMCATWORKERIDX")
 #define TOMCAT_TRANSLATE_HEADER_NAME_BASE ("TOMCATTRANSLATE")
 #define CONTENT_LENGTH                    ("CONTENT_LENGTH:")
 
@@ -96,6 +97,7 @@ static char URI_HEADER_NAME[MAX_PATH];
 static char QUERY_HEADER_NAME[MAX_PATH];
 static char WORKER_HEADER_NAME[MAX_PATH];
 static char TOMCAT_TRANSLATE_HEADER_NAME[MAX_PATH];
+static char WORKER_HEADER_INDEX[MAX_PATH];
 
 /* The variants of the special headers after IIS adds
  * "HTTP_" to the front of them
@@ -103,6 +105,7 @@ static char TOMCAT_TRANSLATE_HEADER_NAME[MAX_PATH];
 static char HTTP_URI_HEADER_NAME[MAX_PATH];
 static char HTTP_QUERY_HEADER_NAME[MAX_PATH];
 static char HTTP_WORKER_HEADER_NAME[MAX_PATH];
+static char HTTP_WORKER_HEADER_INDEX[MAX_PATH];
 
 #define REGISTRY_LOCATION       ("Software\\Apache Software Foundation\\Jakarta Isapi Redirector\\1.0")
 #define W3SVC_REGISTRY_KEY      ("SYSTEM\\CurrentControlSet\\Services\\W3SVC\\Parameters")
@@ -210,7 +213,8 @@ char HTML_ERROR_503[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Tr
                         huge_buf,                           \
                         huge_buf_sz)) {                     \
         (place) = atoi(huge_buf);                           \
-        if (0 == (place)) {                                 \
+        if (((place) == 0) && (errno == EINVAL ||           \
+                               errno == ERANGE)) {          \
             (place) = def;                                  \
         }                                                   \
     } else {                                                \
@@ -1512,6 +1516,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         char Port[INTERNET_MAX_URL_LENGTH] = "";
         char Translate[INTERNET_MAX_URL_LENGTH];
         char squery[INTERNET_MAX_URL_LENGTH] = "";
+        char swindex[MAX_INSTANCEID] = "";
         BOOL(WINAPI * GetHeader)
             (struct _HTTP_FILTER_CONTEXT * pfc, LPSTR lpszName,
              LPVOID lpvBuffer, LPDWORD lpdwSize);
@@ -1553,6 +1558,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         SetHeader(pfc, URI_HEADER_NAME, NULL);
         SetHeader(pfc, QUERY_HEADER_NAME, NULL);
         SetHeader(pfc, WORKER_HEADER_NAME, NULL);
+        SetHeader(pfc, WORKER_HEADER_INDEX, NULL);
         SetHeader(pfc, TOMCAT_TRANSLATE_HEADER_NAME, NULL);
 
         if (!GetHeader(pfc, "url", (LPVOID) uri, (LPDWORD) & sz)) {
@@ -1564,6 +1570,8 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
         if (strlen(uri)) {
             int rc;
             const char *worker = NULL;
+            rule_extension_t *extensions;
+            int worker_index = -1;
             query = strchr(uri, '?');
             if (query) {
                 *query++ = '\0';
@@ -1610,10 +1618,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
             }
             if (szHost > 0) {
                 StringCbCat(snuri, INTERNET_MAX_URL_LENGTH, Host);
-                worker = map_uri_to_worker(uw_map, uri, snuri, logger);
+                worker = map_uri_to_worker_ext(uw_map, uri, snuri,
+                                               &extensions, &worker_index, logger);
             }
             else {
-                worker = map_uri_to_worker(uw_map, uri, NULL, logger);
+                worker = map_uri_to_worker_ext(uw_map, uri, NULL,
+                                               &extensions, &worker_index, logger);
             }
             /*
              * Check if somebody is feading us with his own TOMCAT data headers.
@@ -1715,10 +1725,12 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                         rregex_rewrite(forwardURI);
                 }
 
+                itoa(worker_index, swindex, 10);
                 if (!AddHeader(pfc, URI_HEADER_NAME, forwardURI) ||
                     ((strlen(squery) > 0)
                      ? !AddHeader(pfc, QUERY_HEADER_NAME, squery) : FALSE) ||
                     !AddHeader(pfc, WORKER_HEADER_NAME, (LPSTR)worker) ||
+                    !AddHeader(pfc, WORKER_HEADER_INDEX, swindex) ||
                     !SetHeader(pfc, "url", extension_uri)) {
                     jk_log(logger, JK_LOG_ERROR,
                            "error while adding request headers");
@@ -2004,12 +2016,14 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
         StringCbPrintf(URI_HEADER_NAME, MAX_PATH, HEADER_TEMPLATE, URI_HEADER_NAME_BASE, hInst);
         StringCbPrintf(QUERY_HEADER_NAME, MAX_PATH, HEADER_TEMPLATE, QUERY_HEADER_NAME_BASE, hInst);
         StringCbPrintf(WORKER_HEADER_NAME, MAX_PATH, HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
+        StringCbPrintf(WORKER_HEADER_INDEX, MAX_PATH, HEADER_TEMPLATE, WORKER_HEADER_INDEX_BASE, hInst);
         StringCbPrintf(TOMCAT_TRANSLATE_HEADER_NAME, MAX_PATH, HEADER_TEMPLATE, TOMCAT_TRANSLATE_HEADER_NAME_BASE, hInst);
 
         /* Construct the HTTP_ headers that will be seen in ExtensionProc */
         StringCbPrintf(HTTP_URI_HEADER_NAME, MAX_PATH, HTTP_HEADER_TEMPLATE, URI_HEADER_NAME_BASE, hInst);
         StringCbPrintf(HTTP_QUERY_HEADER_NAME, MAX_PATH, HTTP_HEADER_TEMPLATE, QUERY_HEADER_NAME_BASE, hInst);
         StringCbPrintf(HTTP_WORKER_HEADER_NAME, MAX_PATH, HTTP_HEADER_TEMPLATE, WORKER_HEADER_NAME_BASE, hInst);
+        StringCbPrintf(HTTP_WORKER_HEADER_INDEX, MAX_PATH, HTTP_HEADER_TEMPLATE, WORKER_HEADER_INDEX_BASE, hInst);
 
     break;
     case DLL_PROCESS_DETACH:
@@ -2116,6 +2130,7 @@ static int init_jk(char *serverName)
         jk_log(logger, JK_LOG_DEBUG, "Using uri header %s.", URI_HEADER_NAME);
         jk_log(logger, JK_LOG_DEBUG, "Using query header %s.", QUERY_HEADER_NAME);
         jk_log(logger, JK_LOG_DEBUG, "Using worker header %s.", WORKER_HEADER_NAME);
+        jk_log(logger, JK_LOG_DEBUG, "Using worker index %s.", WORKER_HEADER_INDEX);
         jk_log(logger, JK_LOG_DEBUG, "Using translate header %s.", TOMCAT_TRANSLATE_HEADER_NAME);
         jk_log(logger, JK_LOG_DEBUG, "Using a default of %d connections per pool.",
                                      DEFAULT_WORKER_THREADS);
@@ -2423,6 +2438,8 @@ static int init_ws_service(isapi_private_data_t * private_data,
                            jk_ws_service_t *s, char **worker_name)
 {
     char *huge_buf = NULL;   /* should be enough for all */
+    int worker_index = -1;
+    rule_extension_t *e;
 
     DWORD huge_buf_sz;
 
@@ -2441,9 +2458,11 @@ static int init_ws_service(isapi_private_data_t * private_data,
     GET_SERVER_VARIABLE_VALUE(HTTP_WORKER_HEADER_NAME, (*worker_name));
     GET_SERVER_VARIABLE_VALUE(HTTP_URI_HEADER_NAME, s->req_uri);
     GET_SERVER_VARIABLE_VALUE(HTTP_QUERY_HEADER_NAME, s->query_string);
+    GET_SERVER_VARIABLE_VALUE_INT(HTTP_WORKER_HEADER_INDEX, worker_index, -1);
 
     if (JK_IS_DEBUG_LEVEL(logger)) {
-        jk_log(logger, JK_LOG_DEBUG, "Reading extension header %s: %s", HTTP_WORKER_HEADER_NAME, (*worker_name) );
+        jk_log(logger, JK_LOG_DEBUG, "Reading extension header %s: %s", HTTP_WORKER_HEADER_NAME, (*worker_name));
+        jk_log(logger, JK_LOG_DEBUG, "Reading extension header %s: %d", HTTP_WORKER_HEADER_INDEX, worker_index);
         jk_log(logger, JK_LOG_DEBUG, "Reading extension header %s: %s", HTTP_URI_HEADER_NAME, s->req_uri);
         jk_log(logger, JK_LOG_DEBUG, "Reading extension header %s: %s", HTTP_QUERY_HEADER_NAME, s->query_string);
     }
@@ -2473,6 +2492,23 @@ static int init_ws_service(isapi_private_data_t * private_data,
 
     s->method = private_data->lpEcb->lpszMethod;
     s->content_length = (jk_uint64_t)private_data->lpEcb->cbTotalBytes;
+
+    e = get_uri_to_worker_ext(uw_map, worker_index);
+    if (e) {
+        if (JK_IS_DEBUG_LEVEL(logger))
+            jk_log(logger, JK_LOG_DEBUG, "Applying service extensions" );
+        s->extension.reply_timeout = e->reply_timeout;
+        s->extension.use_server_error_pages = e->use_server_error_pages;
+        if (e->activation) {
+            s->extension.activation = jk_pool_alloc(s->pool, e->activation_size * sizeof(int));
+            memcpy(s->extension.activation, e->activation, e->activation_size * sizeof(int));
+        }
+        if (e->fail_on_status_size > 0) {
+            s->extension.fail_on_status_size = e->fail_on_status_size;
+            s->extension.fail_on_status = jk_pool_alloc(s->pool, e->fail_on_status_size * sizeof(int));
+            memcpy(s->extension.fail_on_status, e->fail_on_status, e->fail_on_status_size * sizeof(int));
+        }
+    }
 
     s->uw_map = uw_map;
     /*
