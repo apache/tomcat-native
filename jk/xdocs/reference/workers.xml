@@ -725,14 +725,21 @@ For those it has a <a href="#Load Balancing Directives">different meaning</a>.</
 The maximum number of times that the worker will send a request to Tomcat
 in case of a communication error. Each retry will be done over another
 connection. The first time already gets counted, so retries=2 means
-one retry after error. If the value is greater than the default value, on
-each additional retry an extra wait of 100ms will be inserted.
+one retry after error. Before a retry, the worker waits for a configurable
+sleeping time.
 <p>
 See also the attribute <b>recovery_options</b> for a more fine-grained control
-of retries.
+of retries and <b>retry_wait</b> for the sleep time configuration.
 </p>
 <p>
 Until version <b>1.2.16</b> the default value was 3.
+</p>
+</directive>
+
+<directive name="retry_wait" workers="AJP,SUB" default="100" required="false">
+The amount of time in milliseconds the worker sleeps before doing any retry.
+<p>
+This features has been added in <b>jk 1.2.27</b>.
 </p>
 </directive>
 

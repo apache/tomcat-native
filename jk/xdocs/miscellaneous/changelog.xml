@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <add>
+        AJP13: Add a configurable retry wait time. (rjung)
+      </add>
       <update>
         Documentation: Enhance description of connection_pool_size. (rjung)
       </update>
