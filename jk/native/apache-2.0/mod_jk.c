@@ -2820,7 +2820,8 @@ static void * APR_THREAD_FUNC jk_watchdog_func(apr_thread_t *thd, void *data)
 
     if (JK_IS_DEBUG_LEVEL(conf->log))
         jk_log(conf->log, JK_LOG_DEBUG,
-               "Watchdog initialized");
+               "Watchdog thread initialized with %d second interval",
+               jk_watchdog_interval);
     for (;;) {
         for (i = 0; i < jk_watchdog_interval; i++) {
             apr_sleep(apr_time_from_sec(1));
@@ -2831,7 +2832,7 @@ static void * APR_THREAD_FUNC jk_watchdog_func(apr_thread_t *thd, void *data)
             break;
         if (JK_IS_DEBUG_LEVEL(conf->log))
            jk_log(conf->log, JK_LOG_DEBUG,
-                  "Watchdog running");
+                  "Watchdog thread running");
         wc_maintain(conf->log);
     }
     return NULL;
@@ -2862,8 +2863,9 @@ static void jk_child_init(apr_pool_t * pconf, server_rec * s)
 #if APR_HAS_THREADS
         rv = apr_thread_create(&wdt, NULL, jk_watchdog_func, conf, pconf);
         if (rv != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
-                     "mod_jk: could not init JK watchdog thread");
+            jk_log(conf->log, JK_LOG_ERROR,
+                   "Could not init watchdog thread, error=%d", rv);
+            jk_watchdog_interval = 0;
         }
         apr_thread_detach(wdt);
 #endif

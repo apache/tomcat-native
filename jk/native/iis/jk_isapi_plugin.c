@@ -2579,6 +2579,8 @@ static int read_registry_init_data(void)
 #endif
     reject_unsafe = get_config_bool(src, REJECT_UNSAFE_TAG, JK_FALSE);
     watchdog_interval = get_config_int(src, WATCHDOG_INTERVAL_TAG, 0);
+    if (watchdog_interval < 0)
+        watchdog_interval = 0;
 #ifdef ISAPI_ALLOW_CHUNKING
     chunked_encoding_enabled = get_config_bool(src, ENABLE_CHUNKED_ENCODING_TAG, JK_FALSE);
 #endif
