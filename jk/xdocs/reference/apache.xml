@@ -36,10 +36,10 @@ configuration and once in every &lt;VirtualHost&gt; elements. Exceptions from th
 explicitely listed in the table below.
 </p>
 <p>
-Values are inherited from the main server to the virtual hosts. 
+Most values are inherited from the main server to the virtual hosts.
 Since version 1.2.20 they can be overwritten in the virtual hosts.
-Exceptions from this rule are
-again explicitely listed in the table below.
+Exceptions from this rule are again explicitely listed in the table below.
+See especially JkMountCopy.
 </p>
 <p><b>Waring: If Apache httpd and Tomcat are configured to serve content from
 the same filing system location then care must be taken to ensure that httpd is
@@ -57,7 +57,7 @@ Here are the all directives supported by Apache:
 The name of a worker file for the Tomcat servlet containers.
 <br/>
 This directive is only allowed once. It must be put into
- the global part of the configuration.
+the global part of the configuration.
 <br/>
 If you don't use the JkWorkerProperty directives, then you must
 define your workers with a valid JkWorkersFile. There is no default
@@ -83,7 +83,7 @@ Shared memory file name. Used only on unix platforms.
 The shm file is used by balancer and status workers.
 <br/>
 This directive is only allowed once. It must be put into
- the global part of the configuration.
+the global part of the configuration.
 <br/>
 The default value is logs/jk-runtime-status.
 It is highly recommended that the shm file be placed on a local
@@ -104,7 +104,7 @@ during runtime by status workers.</li>
 Size of the shared memory file name.
 <br/>
 This directive is only allowed once. It must be put into
- the global part of the configuration.
+the global part of the configuration.
 <br/>
 The default value depends on the platform. It is usually less than 64KB.
 </p></attribute>
@@ -137,7 +137,10 @@ It is allowed in the global configuration and in VirtualHost.
 You can also use it inside Location with a different syntax.
 Inside Location, one omits the first argument (path),
 which gets inherited from the Location.
-For inheritance rules, see: JkMountCopy.
+<br/>
+By default JkMount entries are not inherited from the global
+server to other VirtualHosts or between VirtualHosts.
+For the complete inheritance rules, see: JkMountCopy.
 </p></attribute>
 <attribute name="JkUnMount" required="false"><p>
 An exclusion mount point from a context to a Tomcat worker.
@@ -168,7 +171,7 @@ There is no default value.
 </p></attribute>
 <attribute name="JkMountCopy" required="false"><p>
 If this directive is set to "On" in some virtual server,
-the mounts from the global server will be copied to the
+the mounts from the global server will be copied to this
 virtual server, more precisely all mounts defined by JkMount
 or JkUnMount. The Mounts defined by JkMountFile and JkAutoAlias
 will only be inherited, if the VirtualHost does not define
@@ -180,7 +183,8 @@ you can set JkMountCopy to 'All' in the main server.
 This directive is only allowed inside VirtualHost (with value "On")
 and in the global server (with value "All").
 <br/>
-The default is Off.
+The default is Off, so no mounts will be inherited from the global
+server to any VirtualHost.
 <br/>
 Starting with version 1.2.26 you can also set it to "All" in the
 global virtual server. This will switch the default to On.
@@ -346,7 +350,6 @@ We'll discuss here the mod_jk directive types.
 Take a look at <a href="workers.html">Workers documentation</a> for detailed description.
 
 <source>
-  
   JkWorkersFile     /etc/httpd/conf/workers.properties
 </source>
 
@@ -429,7 +432,7 @@ To enable request logging for a virtual host just add a JkRequestLogFormat confi
 The syntax of the format string is similar to the Apache LogFormat command, 
 here is a list of the available request log format options:
 </p>
-                       
+
 <p>
 <attributes name="Options">
   <attribute name="%b" required="false">Bytes sent, excluding HTTP headers (CLF format)</attribute>
@@ -461,7 +464,7 @@ You can also log mod_jk information using the Apache standard module <b>mod_log_
 The module sets several notes in the Apache httpd notes table.
 Most of them are are only useful in combination with a load balancer worker.
 </p>
-                       
+
 <p>
 <attributes name="Note">
   <attribute name="JK_WORKER_NAME" required="false">Name of the worker selected by the URI mapping</attribute>
