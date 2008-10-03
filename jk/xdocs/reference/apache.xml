@@ -196,15 +196,25 @@ The default value is JK_WORKER_NAME.
 </p></attribute>
 <attribute name="JkWatchdogInterval" required="false"><p>
 This directive configures the watchdog thread interval in seconds.
-The workers are maintained periodically on this interval.
-If you set this directive to "0", watchdog thread will not be
-created and standard on request maintenance will be applied.
+The workers are maintained periodically by a background thread
+running periodically every watchdog_interval seconds. Worker maintenance
+checks for idle connections, corrects load status and is able
+to detect backend health status.
+<br/>
+The maintenance only happens, if since the last maintenance at
+least <a href="workers.html"><code>worker.maintain</code></a>
+seconds have passed. So setting the JkWatchdogInterval
+much smaller than <code>worker.maintain</code> is not useful.
 <br/>
 The default value is 0 seconds, meaning the watchdog thread
-will not be created inside each child process.
+will not be created, and the maintenance is done in combination
+with normal requests instead.
+<br/>
+This directive is only allowed once. It must be put into
+the global part of the configuration.
 <br/>
 This directive has been added in version 1.2.27 of mod_jk.
-It is available only for httpd 2.0 and above using APR libraries
+It is available only for httpd 2.x and above using APR libraries
 including thread support.
 </p></attribute>
 <attribute name="JkLogFile" required="false"><p>
@@ -356,7 +366,7 @@ Take a look at <a href="workers.html">Workers documentation</a> for detailed des
 </source>
 
 <p>
-Since JK 1.2.3 for Apache 2.0 and JK 1.2.16 for Apache 1.3 this can also
+Since JK 1.2.3 for Apache 2.x and JK 1.2.16 for Apache 1.3 this can also
 be used for piped logging:
 </p>
 

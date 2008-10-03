@@ -179,6 +179,26 @@ or any string starting with "F" or "f". The default value is false.
 </p>
 <p>This directive has been added in version 1.2.24</p>
 </attribute>
+<attribute name="watchdog_interval" required="false"><p>
+A DWORD value representing the watchdog thread interval in seconds.
+The workers are maintained periodically by a background thread
+running periodically every watchdog_interval seconds. Worker maintenance
+checks for idle connections, corrects load status and is able
+to detect backend health status.
+</p>
+<p>
+The maintenance only happens, if since the last maintenance at
+least <a href="workers.html"><code>worker.maintain</code></a>
+seconds have passed. So setting the watchdog_interval
+much smaller than <code>worker.maintain</code> is not useful.
+</p>
+<p>
+The default value is 0 seconds, meaning the watchdog thread
+will not be created, and the maintenance is done in combination
+with normal requests instead.
+</p>
+<p>This directive has been added in version 1.2.27</p>
+</attribute>
 </attributes>
 </section> 
 <section name="Using a properties file for configuration">
