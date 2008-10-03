@@ -932,43 +932,43 @@ static int status_mime_int(const char *mime)
 
 static jk_uint32_t status_cmd_props(int cmd)
 {
-  jk_uint32_t props = 0;
+    jk_uint32_t props = 0;
 
-  if (cmd == JK_STATUS_CMD_LIST ||
-      cmd == JK_STATUS_CMD_SHOW)
-      props |= JK_STATUS_CMD_PROP_REFRESH |
-               JK_STATUS_CMD_PROP_SWITCH_RO |
-               JK_STATUS_CMD_PROP_LINK_HELP |
-               JK_STATUS_CMD_PROP_LEGEND;
-  if (cmd == JK_STATUS_CMD_LIST ||
-      cmd == JK_STATUS_CMD_SHOW ||
-      cmd == JK_STATUS_CMD_VERSION)
-      props |= JK_STATUS_CMD_PROP_DUMP_LINK;
-  if (cmd == JK_STATUS_CMD_LIST ||
-      cmd == JK_STATUS_CMD_SHOW ||
-      cmd == JK_STATUS_CMD_VERSION ||
-      cmd == JK_STATUS_CMD_DUMP)
-      props |= JK_STATUS_CMD_PROP_HEAD |
-               JK_STATUS_CMD_PROP_FMT;
-  if (cmd == JK_STATUS_CMD_SHOW ||
-      cmd == JK_STATUS_CMD_VERSION ||
-      cmd == JK_STATUS_CMD_DUMP)
-      props |= JK_STATUS_CMD_PROP_BACK_LIST;
-  if (cmd == JK_STATUS_CMD_SHOW ||
-      cmd == JK_STATUS_CMD_EDIT ||
-      cmd == JK_STATUS_CMD_VERSION ||
-      cmd == JK_STATUS_CMD_DUMP)
-      props |= JK_STATUS_CMD_PROP_BACK_LINK;
-  if (cmd != JK_STATUS_CMD_EDIT &&
-      cmd != JK_STATUS_CMD_UPDATE &&
-      cmd != JK_STATUS_CMD_RESET &&
-      cmd != JK_STATUS_CMD_RECOVER)
-      props |= JK_STATUS_CMD_PROP_READONLY;
-  if (cmd != JK_STATUS_CMD_LIST &&
-      cmd != JK_STATUS_CMD_VERSION &&
-      cmd != JK_STATUS_CMD_DUMP)
-      props |= JK_STATUS_CMD_PROP_CHECK_WORKER;
-      
+    if (cmd == JK_STATUS_CMD_LIST ||
+        cmd == JK_STATUS_CMD_SHOW)
+        props |= JK_STATUS_CMD_PROP_REFRESH |
+                 JK_STATUS_CMD_PROP_SWITCH_RO |
+                 JK_STATUS_CMD_PROP_LINK_HELP |
+                 JK_STATUS_CMD_PROP_LEGEND;
+    if (cmd == JK_STATUS_CMD_LIST ||
+        cmd == JK_STATUS_CMD_SHOW ||
+        cmd == JK_STATUS_CMD_VERSION)
+        props |= JK_STATUS_CMD_PROP_DUMP_LINK;
+    if (cmd == JK_STATUS_CMD_LIST ||
+        cmd == JK_STATUS_CMD_SHOW ||
+        cmd == JK_STATUS_CMD_VERSION ||
+        cmd == JK_STATUS_CMD_DUMP)
+        props |= JK_STATUS_CMD_PROP_HEAD |
+                 JK_STATUS_CMD_PROP_FMT;
+    if (cmd == JK_STATUS_CMD_SHOW ||
+        cmd == JK_STATUS_CMD_VERSION ||
+        cmd == JK_STATUS_CMD_DUMP)
+        props |= JK_STATUS_CMD_PROP_BACK_LIST;
+    if (cmd == JK_STATUS_CMD_SHOW ||
+        cmd == JK_STATUS_CMD_EDIT ||
+        cmd == JK_STATUS_CMD_VERSION ||
+        cmd == JK_STATUS_CMD_DUMP)
+        props |= JK_STATUS_CMD_PROP_BACK_LINK;
+    if (cmd != JK_STATUS_CMD_EDIT &&
+        cmd != JK_STATUS_CMD_UPDATE &&
+        cmd != JK_STATUS_CMD_RESET &&
+        cmd != JK_STATUS_CMD_RECOVER)
+        props |= JK_STATUS_CMD_PROP_READONLY;
+    if (cmd != JK_STATUS_CMD_LIST &&
+        cmd != JK_STATUS_CMD_VERSION &&
+        cmd != JK_STATUS_CMD_DUMP)
+        props |= JK_STATUS_CMD_PROP_CHECK_WORKER;
+
     return props;
 }
 
@@ -1340,7 +1340,7 @@ static int search_sub_worker(jk_ws_service_t *s,
         if (idx) {
             if (jk_wildchar_match(wr->name, sub_worker, 0) == 0) {
                 *idx = i + 1;
-                break;    
+                break;
             }
         }
         else if (strcmp(sub_worker, wr->name) == 0)
@@ -1818,7 +1818,7 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
             jk_printf(s, " time_to_recover_min=%d", rs_min);
             jk_printf(s, " time_to_recover_max=%d", rs_max);
         }
-        else 
+        else
             jk_printf(s, " map_count=%d", map_count);
         jk_puts(s, "\n");
 
@@ -3853,7 +3853,7 @@ static int reset_worker(jk_ws_service_t *s,
             JK_TRACE_EXIT(l);
             return JK_FALSE;
         }
-    
+
         if (!sub_worker || !sub_worker[0]) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
