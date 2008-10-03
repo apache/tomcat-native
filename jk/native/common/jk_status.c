@@ -1788,7 +1788,7 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
         jk_printf(s, " prepost_timeout=%d", aw->prepost_timeout);
         jk_printf(s, " reply_timeout=%d", aw->reply_timeout);
         jk_printf(s, " retries=%d", aw->retries);
-        jk_printf(s, " connection_keepalive=%d", aw->conn_ping_interval);
+        jk_printf(s, " connection_ping_interval=%d", aw->conn_ping_interval);
         jk_printf(s, " recovery_options=%u", aw->recovery_opts);
         jk_printf(s, " max_packet_size=%u", aw->max_packet_size);
         if (lb) {
