@@ -164,30 +164,252 @@ static char HTTP_WORKER_HEADER_INDEX[MAX_PATH];
 #define MAX_INSTANCEID  32
 #define MAX_PACKET_SIZE 65536
 
-char HTML_ERROR_400[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n"
-                                "<HTML><HEAD><TITLE>Bad request!</TITLE></HEAD>\n"
-                                "<BODY><H1>Bad request!</H1>\n<P>"
-                                "Your browser (or proxy) sent a request that "
-                                "this server could not understand.</P></BODY></HTML>";
+char HTML_ERROR_HEAD[] =        "<!--\n"
+                                "  Licensed to the Apache Software Foundation (ASF) under one or more\n"
+                                "  contributor license agreements.  See the NOTICE file distributed with\n"
+                                "  this work for additional information regarding copyright ownership.\n"
+                                "  The ASF licenses this file to You under the Apache License, Version 2.0\n"
+                                "  (the \"License\"); you may not use this file except in compliance with\n"
+                                "  the License.  You may obtain a copy of the License at\n\n"
+                                "      http://www.apache.org/licenses/LICENSE-2.0\n\n"
+                                "  Unless required by applicable law or agreed to in writing, software\n"
+                                "  distributed under the License is distributed on an \"AS IS\" BASIS,\n"
+                                "  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n"
+                                "  See the License for the specific language governing permissions and\n"
+                                "  limitations under the License.\n"
+                                "  -->\n"
+                                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n"
+                                "\"http://www.w3c.org/TR/REC-html40/loose.dtd\">\n"
+                                "<HTML>\n<HEAD>\n"
+                                "<META http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">\n"
+                                "<STYLE TYPE=\"text/css\">\n"
+                                "    body {\n"
+                                "       color: #000000;\n"
+                                "       background-color: #FFFFFF;\n"
+                                "       font-family: Verdana, Tahoma, Arial, Helvetica, sans-serif;\n"
+                                "       font-size: 9pt;\n"
+                                "       margin: 10px 10px;\n"
+                                "    }\n"
+                                "    p#footer {\n"
+                                "       text-align: right;\n"
+                                "       font-size: 80%;\n"
+                                "    }\n"
+                                "</STYLE>\n";
 
-char HTML_ERROR_404[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n"
-                                "<HTML><HEAD><TITLE>Object not found!</TITLE></HEAD>\n"
-                                "<BODY><H1>The requested URL was not found on this server"
-                                "</H1>\n<P>If you entered the URL manually please check your"
-                                "spelling and try again.</P></BODY></HTML>";
+#define HTML_ERROR_BODY_FMT     "<TITLE>%s!</TITLE>\n</HEAD>\n<BODY>\n<H1>%s!</H1>\n<P>\n%s\n</P>\n"
 
-char HTML_ERROR_500[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n"
-                                "<HTML><HEAD><TITLE>Server error!</TITLE></HEAD>\n"
-                                "<BODY><H1>Internal server error!</H1>\n<P>"
-                                "The server encountered an internal error and was "
-                                "unable to complete your request.</P></BODY></HTML>";
+char HTML_ERROR_TAIL[] =        "<P>\n<BR/>&nbsp;<BR/>&nbsp;<BR/>&nbsp;<BR/>&nbsp;\n"
+                                VERSION_STRING "\n"
+                                "<BR/>&nbsp;\n"
+                                "<HR/>\n"
+                                "<P id=\"footer\">\n"
+                                "Copyright &copy; 1999-2008 Apache Software Foundation<BR/>\n"
+                                "All Rights Reserved\n"
+                                "</P>\n</BODY>\n</HTML>\n";
 
-char HTML_ERROR_503[] =         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n"
-                                "<HTML><HEAD><TITLE>Service unavailable!</TITLE></HEAD>\n"
-                                "<BODY><H1>Service temporary unavailable!</H1>\n<P>"
-                                "The server is temporarily unable to service your "
-                                "request due to maintenance downtime or capacity problems. "
-                                "Please try again later.</P></BODY></HTML>";
+static struct error_reasons {
+    int status;
+    const char *reason;
+    const char *title;
+    const char *description;
+} error_reasons[] = {
+    { 100,
+      "Continue",
+      NULL,
+      NULL
+    },
+    { 101,
+      "Switching Protocols",
+      NULL,
+      NULL
+    },
+    { 200,
+      "OK",
+      NULL,
+      NULL
+    },
+    { 201,
+      "Created",
+      NULL,
+      NULL
+    },
+    { 202,
+      "Accepted",
+      NULL,
+      NULL
+    },
+    { 203,
+      "Non-Authoritative Information",
+      NULL,
+      NULL
+    },
+    { 204,
+      "No Content",
+      NULL,
+      NULL
+    },
+    { 205,
+      "Reset Content",
+      NULL,
+      NULL
+    },
+    { 206,
+      "Partial Content",
+      NULL,
+      NULL
+    },
+    { 300,
+      "Multiple Choices",
+      NULL,
+      NULL
+    },
+    { 301,
+      "Moved Permanently",
+      NULL,
+      NULL
+    },
+    { 302,
+      "Moved Temporarily",
+      NULL,
+      NULL
+    },
+    { 303,
+      "See Other",
+      NULL,
+      NULL
+    },
+    { 304,
+      "Not Modified",
+      NULL,
+      NULL
+    },
+    { 305,
+      "Use Proxy",
+      NULL,
+      NULL
+    },
+    { 400,
+      "Bad Request",
+      "Bad Request",
+      "Your browser (or proxy) sent a request that "
+      "this server could not understand."
+    },
+    { 401,
+      "Unauthorized",
+      NULL,
+      NULL
+    },
+    { 402,
+      "Payment Required",
+      NULL,
+      NULL
+    },
+    { 403,
+      "Forbidden",
+      NULL,
+      NULL
+    },
+    { 404,
+      "Not Found",
+      "The requested URL was not found on this server",
+      "If you entered the URL manually please check your"
+      "spelling and try again."
+    },
+    { 405,
+      "Method Not Allowed",
+      NULL,
+      NULL
+    },
+    { 406,
+      "Not Acceptable",
+      NULL,
+      NULL
+    },
+    { 407,
+      "Proxy Authentication Required",
+      NULL,
+      NULL
+    },
+    { 408,
+      "Request Timeout",
+      NULL,
+      NULL
+    },
+    { 409,
+      "Conflict",
+      NULL,
+      NULL
+    },
+    { 410,
+      "Gone",
+      NULL,
+      NULL
+    },
+    { 411,
+      "Length Required",
+      NULL,
+      NULL
+    },
+    { 412,
+      "Precondition Failed",
+      NULL,
+      NULL
+    },
+    { 413,
+      "Request Entity Too Large",
+      NULL,
+      NULL
+    },
+    { 414,
+      "Request-URI Too Long",
+      NULL,
+      NULL
+    },
+    { 415,
+      "Unsupported Media Type",
+      NULL,
+      NULL
+    },
+    { 500,
+      "Internal Server Error",
+      NULL,
+      "The server encountered an internal error and was "
+      "unable to complete your request."
+    },
+    { 501,
+      "Not Implemented",
+      NULL,
+      NULL
+    },
+    { 502,
+      "Bad Gateway",
+      NULL,
+      NULL
+    },
+    { 503,
+      "Service Unavailable",
+      "Service Temporary Unavailable",
+      "The server is temporarily unable to service your "
+      "request due to maintenance downtime or capacity problems. "
+      "Please try again later."
+    },
+    { 504,
+      "Gateway Timeout",
+      NULL,
+      NULL
+    },
+    { 505,
+      "HTTP Version Not Supported",
+      NULL,
+      NULL
+    },
+    { 0,
+      NULL,
+      NULL,
+      NULL
+    }
+};
+
 
 
 #define STRNULL_FOR_NULL(x) ((x) ? (x) : "(null)")
@@ -484,59 +706,54 @@ static BYTE *c2x(unsigned int what, BYTE *where)
     return where;
 }
 
-static char *status_reason(int status)
+static const char *status_reason(int status)
 {
-    static struct reasons {
-        int status;
-        char *reason;
-    } *r, reasons[] = {
-        { 100, "Continue" },
-        { 101, "Switching Protocols" },
-        { 200, "OK" },
-        { 201, "Created" },
-        { 202, "Accepted" },
-        { 203, "Non-Authoritative Information" },
-        { 204, "No Content" },
-        { 205, "Reset Content" },
-        { 206, "Partial Content" },
-        { 300, "Multiple Choices" },
-        { 301, "Moved Permanently" },
-        { 302, "Moved Temporarily" },
-        { 303, "See Other" },
-        { 304, "Not Modified" },
-        { 305, "Use Proxy" },
-        { 400, "Bad Request" },
-        { 401, "Unauthorized" },
-        { 402, "Payment Required" },
-        { 403, "Forbidden" },
-        { 404, "Not Found" },
-        { 405, "Method Not Allowed" },
-        { 406, "Not Acceptable" },
-        { 407, "Proxy Authentication Required" },
-        { 408, "Request Timeout" },
-        { 409, "Conflict" },
-        { 410, "Gone" },
-        { 411, "Length Required" },
-        { 412, "Precondition Failed" },
-        { 413, "Request Entity Too Large" },
-        { 414, "Request-URI Too Long" },
-        { 415, "Unsupported Media Type" },
-        { 500, "Internal Server Error" },
-        { 501, "Not Implemented" },
-        { 502, "Bad Gateway" },
-        { 503, "Service Unavailable" },
-        { 504, "Gateway Timeout" },
-        { 505, "HTTP Version Not Supported" },
-        { 000, NULL}
-    };
+    struct error_reasons *r;
 
-    r = reasons;
-    while (r->status <= status)
+    r = error_reasons;
+    while (r->status <= status) {
         if (r->status == status)
             return r->reason;
         else
             r++;
+    }
     return "No Reason";
+}
+
+static const char *status_title(int status)
+{
+    struct error_reasons *r;
+
+    r = error_reasons;
+    while (r->status <= status) {
+        if (r->status == status) {
+            if (r->title)
+                return r->title;
+            else
+                return r->reason;
+        }
+        else
+            r++;
+    }
+    return "Unknown Error";
+}
+
+static const char *status_description(int status)
+{
+    struct error_reasons *r;
+
+    r = error_reasons;
+    while (r->status <= status) {
+        if (r->status == status) {
+            if (r->description)
+                return r->description;
+            else
+                return r->reason;
+        }
+        else
+            r++;
+    }
+    return "Unknown Error";
 }
 
 static int escape_url(const char *path, char *dest, int destsize)
@@ -596,23 +813,37 @@ static int uri_is_web_inf(const char *uri)
     return JK_FALSE;
 }
 
-static void write_error_response(PHTTP_FILTER_CONTEXT pfc, char *status,
-                                 char *msg)
+static void write_error_response(PHTTP_FILTER_CONTEXT pfc, int err)
 {
-    DWORD len = (DWORD)strlen(msg);
+    char status[MAX_PATH];
+    char body[8192] = "";
+    DWORD len;
 
     /* reject !!! */
     pfc->AddResponseHeaders(pfc, CONTENT_TYPE, 0);
+    StringCbPrintf(status, MAX_PATH, "%d %s", err, status_reason(err));
     pfc->ServerSupportFunction(pfc,
                                SF_REQ_SEND_RESPONSE_HEADER,
                                status, 0, 0);
-    pfc->WriteClient(pfc, msg, &len, HSE_IO_SYNC);
+    len = (DWORD)(sizeof(HTML_ERROR_HEAD) - 1);
+    pfc->WriteClient(pfc, HTML_ERROR_HEAD, &len,
+                     HSE_IO_SYNC);
+    StringCbPrintf(body, sizeof(body), HTML_ERROR_BODY_FMT,
+                   status_reason(err), status_title(err),
+                   status_description(err));
+    len = (DWORD)(strlen(body));
+    pfc->WriteClient(pfc, body, &len,
+                     HSE_IO_SYNC);
+    len = (DWORD)(sizeof(HTML_ERROR_TAIL) - 1);
+    pfc->WriteClient(pfc, HTML_ERROR_TAIL, &len,
+                     HSE_IO_SYNC);
 }
 
 static void write_error_message(LPEXTENSION_CONTROL_BLOCK lpEcb, int err)
 {
     DWORD len;
     char status[MAX_PATH];
+    char body[8192] = "";
 
     if (error_page) {
         char error_page_url[INTERNET_MAX_URL_LENGTH] = "";
@@ -633,22 +864,29 @@ static void write_error_message(LPEXTENSION_CONTROL_BLOCK lpEcb, int err)
     }
     lpEcb->dwHttpStatusCode = err;
 
-    StringCbPrintf(status, MAX_PATH, "%s %s", err, status_reason(err));
+    StringCbPrintf(status, MAX_PATH, "%d %s", err, status_reason(err));
     lpEcb->ServerSupportFunction(lpEcb->ConnID,
                                  HSE_REQ_SEND_RESPONSE_HEADER,
                                  status,
                                  0,
                                  (LPDWORD)CONTENT_TYPE);
-    if (err == 503) {
-        len = (DWORD)(sizeof(HTML_ERROR_503) - 1);
-        lpEcb->WriteClient(lpEcb->ConnID,
-                           HTML_ERROR_503, &len, HSE_IO_SYNC);
-    }
-    else {
-        len = (DWORD)(sizeof(HTML_ERROR_500) - 1);
-        lpEcb->WriteClient(lpEcb->ConnID,
-                           HTML_ERROR_500, &len, HSE_IO_SYNC);
-    }
+    /* First write the HEAD */
+    len = (DWORD)(sizeof(HTML_ERROR_HEAD) - 1);
+    lpEcb->WriteClient(lpEcb->ConnID,
+                       HTML_ERROR_HEAD, &len,
+                       HSE_IO_SYNC);
+    StringCbPrintf(body, sizeof(body), HTML_ERROR_BODY_FMT,
+                   status_reason(err), status_title(err),
+                   status_description(err));
+    len = (DWORD)(strlen(body));
+    lpEcb->WriteClient(lpEcb->ConnID,
+                       body, &len,
+                       HSE_IO_SYNC);
+    len = (DWORD)(sizeof(HTML_ERROR_TAIL) - 1);
+    lpEcb->WriteClient(lpEcb->ConnID,
+                       HTML_ERROR_TAIL, &len,
+                       HSE_IO_SYNC);
+
 }
 
 
@@ -1597,16 +1835,14 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                 jk_log(logger, JK_LOG_ERROR,
                        "[%s] contains one or more invalid escape sequences.",
                        uri);
-                write_error_response(pfc, "400 Bad Request",
-                                     HTML_ERROR_400);
+                write_error_response(pfc, 400);
                 return SF_STATUS_REQ_FINISHED;
             }
             else if (rc == BAD_PATH) {
                 jk_log(logger, JK_LOG_EMERG,
                        "[%s] contains forbidden escape sequences.",
                        uri);
-                write_error_response(pfc, "404 Not Found",
-                                     HTML_ERROR_404);
+                write_error_response(pfc, 404);
                 return SF_STATUS_REQ_FINISHED;
             }
             getparents(uri);
@@ -1657,8 +1893,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                            "Somebody tries to hack into the site!!!",
                            uri);
 
-                    write_error_response(pfc, "404 Not Found",
-                                         HTML_ERROR_404);
+                    write_error_response(pfc, 404);
                     return SF_STATUS_REQ_FINISHED;
                 }
 
@@ -1686,8 +1921,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                         jk_log(logger, JK_LOG_ERROR,
                                "[%s] re-encoding request exceeds maximum buffer size.",
                                uri);
-                        write_error_response(pfc, "400 Bad Request",
-                                             HTML_ERROR_400);
+                        write_error_response(pfc, 400);
                         return SF_STATUS_REQ_FINISHED;
                     }
                     if (JK_IS_DEBUG_LEVEL(logger))
@@ -1701,8 +1935,7 @@ DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc,
                         jk_log(logger, JK_LOG_ERROR,
                                "[%s] re-encoding request exceeds maximum buffer size.",
                                uri);
-                        write_error_response(pfc, "400 Bad Request",
-                                             HTML_ERROR_400);
+                        write_error_response(pfc, 400);
                         return SF_STATUS_REQ_FINISHED;
                     }
                     if (JK_IS_DEBUG_LEVEL(logger))
