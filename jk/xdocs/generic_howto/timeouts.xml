@@ -152,9 +152,11 @@ running every 60 seconds, that checks the idle status of all connections.
 The 60 seconds interval
 can be adjusted with the global attribute worker.maintain. We do not
 recommend to change this value, because it has a lot of side effects.
-The maintenance task only runs, if requests get processed. So if your web
-server has processes that do not receive any requests for a long
-time, there is no way to close the idle connections in its pool.
+Until version 1.2.26, the maintenance task only runs, if requests get
+processed. So if your web server has processes that do not receive any
+requests for a long time, there is no way to close the idle connections
+in its pool. Starting with version 1.2.27 you can configure an independant
+watchdog thread when using Apache 2.x with threaded APR or IIS.
 </p>
 <p>
 The maximum connection pool size can be configured with the
