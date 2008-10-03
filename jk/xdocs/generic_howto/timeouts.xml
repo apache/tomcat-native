@@ -162,10 +162,15 @@ attribute <b>connection_pool_size</b>. We generally do not recommend
 to use this attribute in combination with Apache httpd. For
 Apache httpd we automatically detect the number of threads per
 process and set the maximum pool size to this value. For IIS we use
-a default value of 250, for the Sun Web Server the default is "1".
-We recommend adjusting this value for IIS and the Sun Web Server
+a default value of 250 (before version 1.2.20: 10),
+for the Sun Web Server the default is "1".
+We strongly recommend adjusting this value for IIS and the Sun Web Server
 to the number of requests one web server process should
-be able to send to a backend in parallel.
+be able to send to a backend in parallel. You should measure how many connections
+you need during peak hours without performance problems, and then add some
+percentage depending on your growth rate etc. Finally you should check,
+whether your web server processes are able to use at least as many threads,
+as you configured as the pool size.
 </p>
 <p>
 The JK attribute <b>connection_pool_minsize</b> defines,

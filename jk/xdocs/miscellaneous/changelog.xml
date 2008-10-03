@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Documentation: Enhance description of connection_pool_size. (rjung)
+      </update>
       <fix>
         IIS: SERVER_NAME variable can be the same for
         multiple different server instances if requests

@@ -310,12 +310,21 @@ It will limit the number of those connection that each web server child
 process can made.
 <p>
 Connection pool size property is only used for multi threaded
-web servers such as Apache 2.0 (worker), IIS and Netscape. The connection_pool_size property
-should reflect the number of threads per child process. JK will discover
-the number of threads per child process on Apache 2 web server with worker-mpm and set
-its default value to match the ThreadsPerChild Apache directive. For IIS the default
-value is 250. For other web servers than Apache or IIS the default value is 1
-and you should adjust it manually.
+web servers such as Apache, IIS and Netscape/Sun. The connection_pool_size property
+needs to reflect the number of requests one web server process should
+be able to send to a backend in parallel. Usually this is the same as
+the number of threads per web server process. JK will discover
+this number for the Apache web server automatically and set the pool size to
+this value. For IIS the default value is 250 (before version 1.2.20: 10),
+for Netscape/Sun the default value is 1.
+</p>
+<p>We strongly recommend adjusting this value for IIS and the Netscape/Sun
+to the number of requests one web server process should
+be able to send to a backend in parallel. You should measure how many connections
+you need during peak activity without performance problems, and then add some
+percentage depending on your growth rate. Finally you should check,
+whether your web server processes are able to use at least as many threads,
+as you configured as the pool size.
 </p>
 <warn>Do not use connection_pool_size with values higher then 1 on <b>Apache 2.x prefork</b> or <b>Apache 1.3.x</b>!</warn>
 </directive>
