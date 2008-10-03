@@ -49,6 +49,9 @@
       <update>
         Documentation: Enhance description of connection_pool_size. (rjung)
       </update>
+      <update>
+        Refactor error page generation for isapi plugin. (mturk)
+      </update>
       <fix>
         IIS: SERVER_NAME variable can be the same for
         multiple different server instances if requests
@@ -56,24 +59,30 @@
         Use INSTANCE_ID variable to which the request
         belongs instead. (mturk)
       </fix>
-      <update>
+      <add>
         Allow forwarding server error pages. This can be done
         on per-uri basis using new use_server_errors extension.
         (mturk)
-      </update>
-      <update>
+      </add>
+      <add>
         Added session_cookie and session_path for configuring
         default session identifiers. (mturk)
+      </add>
+      <update>
+        Use max_packet_size also as TCP send and receive buffer size. (mturk)
       </update>
-      <fix>
+      <update>
+        Do not allow Apache to start in multi-threaded mode if mod_jk
+         was only build for single threaded server (prefork). (mturk)
+      <update>
         <bug>45812</bug>: Add done() service method that
         causes sending EOS bucket for Apache httpd 2.x.
         This allows filter chain to work properly. (mturk)
       </fix>
-      <update>
+      <add>
         Added connection_ping_interval, ping_timeout and ping_mode directives.
         (mturk)
-      </update>
+      </add>
       <fix>
         Apache: Use correct ld flags provided by apxs when building module.
         Prevents some crashes on AIX for httpd 1.3 module. (rjung)
@@ -98,9 +107,13 @@
         Add info to docs, that variables sent via JkEnvVar
         are not listed in request.getAttributeNames(). (rjung)
       </update>
+      <add>
+        Add watchdog background thread for Apache 2.x and IIS
+        doing internal maintenance (idle connection checks, backend probing).
+        See JkWatchdogInternal (Apache) and watchdog_interval (IIS). (mturk)
+      </add>
       <update>
-        Add JkWatchdogInterval directive for Apache 2.0
-        that allows unattended maintenance of the workers. (mturk)
+        Change log level of some messages from error to info. (mturk)
       </update>
       <fix>
         Fix docs for worker attribute "secret". (rjung)
@@ -122,20 +135,20 @@
         <bug>44738</bug>: Fix merging of JkOption ForwardURI* between virtual hosts.
         Patch contributed by Toshihiro Sasajima. (rjung)
       </fix>
-      <update>
+      <add>
         URI Map: Add extension attributes to uri worker map.
         Allowed are reply_timeout, active/disabled/stopped
         and fail_on_status.
-        Usage currently only implemented for httpd. (rjung)
-      </update>
+        Usage currently only implemented for httpd and IIS. (rjung+mturk)
+      </add>
       <fix>
         URI Map: Make dynamic reloading atomic and free memory
         not needed any longer. (rjung)
       </fix>
-      <update>
+      <add>
         Configure: Don't use post httpd 2.2.0 API functions when building
         with new --enable-api-compatibility configure switch. (rjung)
-      </update>
+      </add>
       <fix>
         Apache: JkAutoAlias does not work in combination with JkMountCopy
         if there are no JkMount in virtual host. (rjung)
@@ -143,22 +156,22 @@
       <update>
         LB: Optimize state macros to improve performance. (rjung)
       </update>
-      <update>
+      <add>
         Apache: Allow dynamic setting of reply timeout using the environment
         variable JK_REPLY_TIMEOUT. (rjung)
-      </update>
-      <update>
+      </add>
+      <add>
         Status: Add manageability for ajp parameters of ajp
         workers and ajp lb members. (rjung)
-      </update>
+      </add>
       <update>
         Status: Change parameter names of update action to
         make them more easily distinguishable from other parameters. (rjung)
       </update>
-      <update>
-        Status: Add non ajp worker statistics also for
+      <add>
+        Status: Add ajp worker statistics also for
         workers, that are not lb members. (rjung)
-      </update>
+      </add>
       <update>
         AJP: Refactor factories, move ajp13/ajp14 common parts into
         ajp_factory. (rjung)
