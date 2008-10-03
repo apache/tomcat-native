@@ -1182,6 +1182,11 @@ static const char *jk_set_mount_file_reload(cmd_parms * cmd,
 static const char *jk_set_watchdog_interval(cmd_parms * cmd,
                                             void *dummy, const char *watchdog_interval)
 {
+    const char *err_string = ap_check_cmd_context(cmd, GLOBAL_ONLY);
+    if (err_string != NULL) {
+        return err_string;
+    }
+
 #if APR_HAS_THREADS
     jk_watchdog_interval = atoi(watchdog_interval);
     if (jk_watchdog_interval < 0) {
