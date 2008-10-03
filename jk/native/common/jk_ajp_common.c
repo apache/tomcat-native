@@ -2097,7 +2097,8 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
     ajp_worker_t *aw;
     int log_error;
     int rc = JK_UNSET;
-    char *msg;
+    char *msg = "";
+    int retry_wait;
 
     JK_TRACE_ENTER(l);
 
@@ -2200,7 +2201,21 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
         aw->s->state = JK_AJP_STATE_PROBE;
     if (aw->s->busy > aw->s->max_busy)
         aw->s->max_busy = aw->s->busy;
+    retry_wait = p->worker->retry_wait;
     for (i = 0; i < aw->retries; i++) {
+        /*
+         * ajp_send_request() already locally handles
+         * reconnecting and broken connection detection.
+         * So if we already failed in it, wait a bit before
+         * retrying the same backend.
+         */
+        if (i > 0 && retry_wait >= 0) {
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "retry %d, sleeping for %d ms before retrying",
+                       i, retry_wait);
+            jk_sleep(retry_wait);
+        }
         /*
          * We're using op->request which hold initial request
          * if Tomcat is stopped or restarted, we will pass op->request
@@ -2303,9 +2318,6 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 *is_error = JK_HTTP_SERVER_BUSY;
                 msg = "because of response status";
                 rc = err;
-                if (i >= JK_RETRIES) {
-                    jk_sleep(JK_SLEEP_DEF);
-                }
             }
             /* This should only be the cases err == JK_FALSE */
             else {
@@ -2317,10 +2329,6 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 *is_error = JK_HTTP_BAD_GATEWAY;
                 msg = "";
                 rc = JK_FALSE;
-                /* Check for custom retries */
-                if (i >= JK_RETRIES) {
-                    jk_sleep(JK_SLEEP_DEF);
-                }
             }
         }
         else {
@@ -2549,6 +2557,10 @@ int ajp_init(jk_worker_t *pThis,
         p->socket_buf =
             jk_get_worker_socket_buffer(props, p->name, p->max_packet_size);
 
+        p->retry_wait =
+            jk_get_worker_retry_wait(props, p->name,
+                                     JK_SLEEP_DEF);
+
         p->http_status_fail_num = jk_get_worker_fail_on_status(props, p->name,
                                      &p->http_status_fail[0],
                                      JK_MAX_HTTP_STATUS_FAILS);
@@ -2613,6 +2625,10 @@ int ajp_init(jk_worker_t *pThis,
             jk_log(l, JK_LOG_DEBUG,
                    "max packet size:  %d",
                     p->max_packet_size);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "retry wait time:  %d",
+                    p->retry_wait);
         }
         /*
          *  Need to initialize secret here since we could return from inside

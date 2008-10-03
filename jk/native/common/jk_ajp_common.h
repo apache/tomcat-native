@@ -318,12 +318,12 @@ struct ajp_worker
     int connect_timeout;      /* connect cping/cpong delay in ms (0 means disabled)  */
     int reply_timeout;        /* reply timeout delay in ms (0 means disabled) */
     int prepost_timeout;      /* before sending a request cping/cpong timeout delay in ms (0 means disabled) */
-    int conn_ping_interval;   /* interval for sending cping packets on
+    int conn_ping_interval;   /* interval for sending keepalive cping packets on
                                * unused connection */
     int ping_timeout;         /* generic cping/cpong timeout. Used for keepalive packets or
                                * as default for boolean valued connect and prepost timeouts.
                                */
-    unsigned int ping_mode;   /* Ping mode flags */
+    unsigned int ping_mode;   /* Ping mode flags (which types of cpings should be used) */
     /*
      * Recovery options
      */
@@ -336,6 +336,8 @@ struct ajp_worker
     int retries;
 
     unsigned int max_packet_size;  /*  Maximum AJP Packet size */
+
+    int retry_wait;                /*  Number of milliseconds to sleep before doing a retry */
 
     /* 
      * HTTP status that will cause failover (0 means disabled)

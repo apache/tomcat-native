@@ -98,6 +98,8 @@ int jk_get_worker_recover_timeout(jk_map_t *m, const char *wname, int def);
 
 int jk_get_worker_max_reply_timeouts(jk_map_t *m, const char *wname, int def);
 
+int jk_get_worker_retry_wait(jk_map_t *m, const char *wname, int def);
+
 const char *jk_get_worker_route(jk_map_t *m, const char *wname, const char *def);
 
 const char *jk_get_worker_domain(jk_map_t *m, const char *wname, const char *def);
