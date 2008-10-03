@@ -2199,6 +2199,7 @@ BOOL WINAPI TerminateFilter(DWORD dwFlags)
 
     if (is_inited) {
         is_inited = JK_FALSE;
+        watchdog_interval = 0;
         if (watchdog_handle) {
             WaitForSingleObject(watchdog_handle, INFINITE);
             CloseHandle(watchdog_handle);
@@ -2294,13 +2295,13 @@ static DWORD WINAPI watchdog_thread(void *param)
                "Watchdog thread initialized with %u second interval",
                watchdog_interval);
     }
-    while (is_inited) {
+    while (watchdog_interval) {
         for (i = 0; i < (watchdog_interval * 10); i++) {
-            if (!is_inited)
+            if (!watchdog_interval)
                 break;
             Sleep(100);
         }
-        if (!is_inited)
+        if (!watchdog_interval)
             break;
         if (JK_IS_DEBUG_LEVEL(logger)) {
             jk_log(logger, JK_LOG_DEBUG,
@@ -2486,6 +2487,7 @@ static int init_jk(char *serverName)
             if (!watchdog_handle) {
                 jk_log(logger, JK_LOG_EMERG, "Error %d (0x%08x) creating Watchdog thread",
                        GetLastError(), GetLastError());
+                watchdog_interval = 0;
             }
         }
         jk_log(logger, JK_LOG_INFO, "%s initialized", (VERSION_STRING));
