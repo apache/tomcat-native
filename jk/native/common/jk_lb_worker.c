@@ -1332,9 +1332,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 }
                 if (p->states[rec->i] == JK_LB_STATE_ERROR)
                     jk_log(l, JK_LOG_INFO,
-                           "service failed, %sworker %s is in error state",
-                           rec->s->state == JK_LB_STATE_ERROR ? "entire " : "",
-                           rec->name);
+                           "service failed, worker %s is in %serror state",
+                           rec->name,
+                           rec->s->state == JK_LB_STATE_ERROR ? "" : "local ");
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_unlock();
             }
@@ -1607,6 +1607,7 @@ static int JK_METHOD init(jk_worker_t *pThis,
     if(p->maintain_time < 0)
         p->maintain_time = 0;
     p->s->last_maintain_time = time(NULL);
+    p->s->last_reset = p->s->last_maintain_time;
 
     p->lbmethod = jk_get_lb_method(props, p->name);
     p->lblock   = jk_get_lb_lock(props, p->name);

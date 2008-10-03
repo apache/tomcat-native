@@ -244,7 +244,7 @@
                                            "<th>State</th>" \
                                            "<th>Acc</th>" \
                                            "<th>Err</th><th>CE</th><th>RE</th>" \
-                                           "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th>" \
+                                           "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th><th>LR</th>" \
                                            "</tr>\n"
 #define JK_STATUS_SHOW_AJP_ROW             "<tr>" \
                                            "<td>%s</td>" \
@@ -254,6 +254,7 @@
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
+                                           "<td>%d</td>" \
                                            "<td>%d</td>" \
                                            "<td>%d</td>" \
                                            "</tr>\n"
@@ -286,7 +287,7 @@
                                            "<th>Err</th><th>CE</th><th>RE</th>" \
                                            "<th>Wr</th><th>Rd</th><th>Busy</th><th>Max</th>" \
                                            "<th>" JK_STATUS_ARG_LBM_TEXT_ROUTE "</th>" \
-                                           "<th>RR</th><th>Cd</th><th>Rs</th>" \
+                                           "<th>RR</th><th>Cd</th><th>Rs</th><th>LR</th>" \
                                            "</tr>\n"
 #define JK_STATUS_SHOW_MEMBER_ROW          "<td>%s</td>" \
                                            "<td>%s</td>" \
@@ -307,6 +308,7 @@
                                            "<td>%s</td>" \
                                            "<td>%s</td>" \
                                            "<td>%d/%d</td>" \
+                                           "<td>%d</td>" \
                                            "</tr>\n"
 #define JK_STATUS_SHOW_MEMBER_CONF_HEAD    "<tr>" \
                                            "<th>Name</th><th>Type</th>" \
@@ -1693,7 +1695,8 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
                       wr->redirect ? (*wr->redirect ? wr->redirect : "&nbsp;") : "&nbsp",
                       wr->domain ? (*wr->domain ? wr->domain : "&nbsp;") : "&nbsp",
                       rs_min,
-                      rs_max);
+                      rs_max,
+                      (int)difftime(now, aw->s->last_reset));
         else
             jk_printf(s, JK_STATUS_SHOW_AJP_ROW,
                       jk_ajp_get_state(aw, l),
@@ -1704,7 +1707,8 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
                       status_strfsize(aw->s->transferred, buf_wr),
                       status_strfsize(aw->s->readed, buf_rd),
                       aw->s->busy,
-                      aw->s->max_busy);
+                      aw->s->max_busy,
+                      (int)difftime(now, aw->s->last_reset));
 
     }
     else if (mime == JK_STATUS_MIME_XML) {
@@ -1763,6 +1767,8 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
         }
         else
             jk_print_xml_att_int(s, off+2, "map_count", map_count);
+        jk_print_xml_att_long(s, off+2, "last_reset_at", (long)aw->s->last_reset);
+        jk_print_xml_att_int(s, off+2, "last_reset_ago", (int)difftime(now, aw->s->last_reset));
         /* Terminate the tag */
         jk_print_xml_stop_elt(s, off, 1);
 
@@ -1820,6 +1826,8 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
         }
         else
             jk_printf(s, " map_count=%d", map_count);
+        jk_printf(s, " last_reset_at=%ld", (long)aw->s->last_reset);
+        jk_printf(s, " last_reset_ago=%d", (int)difftime(now, aw->s->last_reset));
         jk_puts(s, "\n");
 
     }
@@ -1873,6 +1881,8 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
         }
         else
             jk_print_prop_att_int(s, w, name, "map_count", map_count);
+        jk_print_prop_att_long(s, w, name, "last_reset_at", (long)aw->s->last_reset);
+        jk_print_prop_att_int(s, w, name, "last_reset_ago", (int)difftime(now, aw->s->last_reset));
 
     }
     JK_TRACE_EXIT(l);
@@ -2057,7 +2067,7 @@ static void display_worker_lb(jk_ws_service_t *s,
 
         if (!hide_lb_summary) {
             jk_puts(s, "<table><tr>"
-                    "<th>Good</th><th>Degraded</th><th>Bad/Stopped</th><th>Busy</th><th>Max Busy</th><th>Next Maintenance</th><th>[");
+                    "<th>Good</th><th>Degraded</th><th>Bad/Stopped</th><th>Busy</th><th>Max Busy</th><th>Next Maintenance</th><th>Last Reset</th><th>[");
             status_write_uri(s, p, "Hide", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
                              NULL, NULL, JK_STATUS_ARG_OPTION_NO_LB_SUMMARY, 0, NULL, l);
             jk_puts(s, "]</th></tr>\n<tr>");
@@ -2067,6 +2077,7 @@ static void display_worker_lb(jk_ws_service_t *s,
             jk_printf(s, "<td>%d</td>", lb->s->busy);
             jk_printf(s, "<td>%d</td>", lb->s->max_busy);
             jk_printf(s, "<td>%d/%d</td>", ms_min, ms_max);
+            jk_printf(s, "<td>%d</td>", (int)difftime(now, lb->s->last_reset));
             jk_puts(s, "<td></td></tr>\n</table>\n\n");
         }
     }
@@ -2091,6 +2102,8 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_print_xml_att_int(s, 4, "map_count", map_count);
         jk_print_xml_att_int(s, 4, "time_to_maintenance_min", ms_min);
         jk_print_xml_att_int(s, 4, "time_to_maintenance_max", ms_max);
+        jk_print_xml_att_long(s, 4, "last_reset_at", (long)lb->s->last_reset);
+        jk_print_xml_att_int(s, 4, "last_reset_ago", (int)difftime(now, lb->s->last_reset));
         jk_print_xml_stop_elt(s, 2, 0);
 
     }
@@ -2115,6 +2128,8 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_printf(s, " map_count=%d", map_count);
         jk_printf(s, " time_to_maintenance_min=%d", ms_min);
         jk_printf(s, " time_to_maintenance_max=%d", ms_max);
+        jk_printf(s, " last_reset_at=%ld", (long)lb->s->last_reset);
+        jk_printf(s, " last_reset_ago=%d", (int)difftime(now, lb->s->last_reset));
         jk_puts(s, "\n");
 
     }
@@ -2138,6 +2153,8 @@ static void display_worker_lb(jk_ws_service_t *s,
         jk_print_prop_att_int(s, w, name, "map_count", map_count);
         jk_print_prop_att_int(s, w, name, "time_to_maintenance_min", ms_min);
         jk_print_prop_att_int(s, w, name, "time_to_maintenance_max", ms_max);
+        jk_print_prop_att_long(s, w, name, "last_reset_at", (long)lb->s->last_reset);
+        jk_print_prop_att_int(s, w, name, "last_reset_ago", (int)difftime(now, lb->s->last_reset));
 
     }
 
@@ -3372,6 +3389,7 @@ static void display_legend(jk_ws_service_t *s,
             "<tr><th>RR</th><td>Route redirect</td></tr>\n"
             "<tr><th>Cd</th><td>Cluster domain</td></tr>\n"
             "<tr><th>Rs</th><td>Recovery scheduled in app. min/max seconds</td></tr>\n"
+            "<tr><th>LR</th><td>Seconds since last reset of statistics counters</td></tr>\n"
             "</tbody>\n"
             "</table>\n");
     }
@@ -3840,6 +3858,7 @@ static int reset_worker(jk_ws_service_t *s,
     lb_worker_t *lb = NULL;
     lb_sub_worker_t *wr = NULL;
     ajp_worker_t *aw = NULL;
+    time_t now = 0;
 
     JK_TRACE_ENTER(l);
     fetch_worker_and_sub_worker(p, "resetting", &worker, &sub_worker, l);
@@ -3848,6 +3867,7 @@ static int reset_worker(jk_ws_service_t *s,
         return JK_FALSE;
     }
 
+    now = time(NULL);
     if (jw->type == JK_LB_WORKER_TYPE) {
         if (check_valid_lb(s, p, jw, worker, &lb, 0, l) == JK_FALSE) {
             JK_TRACE_EXIT(l);
@@ -3860,6 +3880,7 @@ static int reset_worker(jk_ws_service_t *s,
                        "Status worker '%s' %s lb worker '%s' with all sub workers",
                        w->name, "resetting", lb->name);
             lb->s->max_busy = 0;
+            lb->s->last_reset = now;
             for (i = 0; i < lb->num_of_workers; i++) {
                 wr = &(lb->lb_workers[i]);
                 aw = (ajp_worker_t *)wr->worker->worker_private;
@@ -3874,6 +3895,7 @@ static int reset_worker(jk_ws_service_t *s,
                 aw->s->transferred      = 0;
                 aw->s->readed           = 0;
                 aw->s->max_busy         = 0;
+                aw->s->last_reset       = now;
             }
             JK_TRACE_EXIT(l);
             return JK_TRUE;
@@ -3900,6 +3922,7 @@ static int reset_worker(jk_ws_service_t *s,
             aw->s->transferred      = 0;
             aw->s->readed           = 0;
             aw->s->max_busy         = 0;
+            aw->s->last_reset       = now;
             JK_TRACE_EXIT(l);
             return JK_TRUE;
         }
@@ -3919,6 +3942,7 @@ static int reset_worker(jk_ws_service_t *s,
             aw->s->transferred      = 0;
             aw->s->readed           = 0;
             aw->s->max_busy         = 0;
+            aw->s->last_reset       = now;
             JK_TRACE_EXIT(l);
             return JK_TRUE;
         }

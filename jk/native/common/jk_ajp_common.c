@@ -2576,6 +2576,7 @@ int ajp_init(jk_worker_t *pThis,
         if(p->maintain_time < 0)
             p->maintain_time = 0;
         p->s->last_maintain_time = time(NULL);
+        p->s->last_reset = p->s->last_maintain_time;
 
         if (JK_IS_DEBUG_LEVEL(l)) {
 

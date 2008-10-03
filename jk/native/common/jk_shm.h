@@ -94,7 +94,7 @@ struct jk_shm_ajp_worker
     volatile int busy;
     /* Maximum number of busy channels */
     volatile int max_busy;
-    volatile time_t  error_time;
+    volatile time_t error_time;
     /* Number of bytes read from remote */
     volatile jk_uint64_t readed;
     /* Number of bytes transferred to remote */
@@ -109,7 +109,9 @@ struct jk_shm_ajp_worker
     volatile jk_uint32_t  reply_timeouts;
     /* Number of client errors */
     volatile jk_uint32_t  client_errors;
-    volatile time_t  last_maintain_time;
+    /* Last reset time */
+    volatile time_t last_reset;
+    volatile time_t last_maintain_time;
 };
 typedef struct jk_shm_ajp_worker jk_shm_ajp_worker_t;
 
@@ -139,7 +141,7 @@ struct jk_shm_lb_sub_worker
     /* Current lb value  */
     volatile jk_uint64_t lb_value;
     /* Statistical data */
-    volatile time_t  error_time;
+    volatile time_t error_time;
     /* Number of times the worker was elected - snapshot during maintenance */
     volatile jk_uint64_t  elected_snapshot;
     /* Number of non 200 responses */
@@ -164,7 +166,9 @@ struct jk_shm_lb_worker
     int     lbmethod;
     int     lblock;
     unsigned int max_packet_size;
-    volatile time_t  last_maintain_time;
+    /* Last reset time */
+    volatile time_t last_reset;
+    volatile time_t last_maintain_time;
     /* Session cookie */
     char    session_cookie[JK_SHM_STR_SIZ+1];
     /* Session path */

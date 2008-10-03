@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Status: Add display of seconds since last statistics reset. (rjung)
+      </update>
       <add>
         AJP13: Add a configurable retry wait time. (rjung)
       </add>
