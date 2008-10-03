@@ -374,6 +374,10 @@ int jk_ajp_get_cping_mode(const char *m, int def)
             mv |= AJP_CPING_PREPOST;
         else if (*m == 'I' || *m == 'i')
             mv |= AJP_CPING_INTERVAL;
+        else if (*m == 'A' || *m == 'a') {
+            mv = AJP_CPING_CONNECT | AJP_CPING_PREPOST | AJP_CPING_INTERVAL;
+            break;
+        }
         m++;
     }
     return mv;
@@ -1005,7 +1009,7 @@ void jk_ajp_push(ajp_worker_t * aw, jk_logger_t *l)
  * @param msg      message to send
  * @param l        logger
  * @return         JK_FATAL_ERROR: endpoint contains unknown protocol
- *                 JK_FALSE: other failure 
+ *                 JK_FALSE: other failure
  *                 JK_TRUE: success
  * @remark         Always closes socket in case of
  *                 a socket error, or JK_FATAL_ERROR
@@ -1066,7 +1070,7 @@ int ajp_connection_tcp_send_message(ajp_endpoint_t * ae,
  * @param ae       endpoint
  * @param msg      message to send
  * @param l        logger
- * @return         JK_FALSE: failure 
+ * @return         JK_FALSE: failure
  *                 JK_TRUE: success
  * @remark         Always closes socket in case of
  *                 a socket error
@@ -2504,7 +2508,7 @@ int ajp_init(jk_worker_t *pThis,
         p->ping_mode =
             jk_get_worker_ping_mode(props, p->name,
                                     AJP_CPING_NONE);
-        
+
         p->connect_timeout =
             jk_get_worker_connect_timeout(props, p->name,
                                           AJP_DEF_CONNECT_TIMEOUT);
@@ -2512,6 +2516,7 @@ int ajp_init(jk_worker_t *pThis,
         p->prepost_timeout =
             jk_get_worker_prepost_timeout(props, p->name,
                                           AJP_DEF_PREPOST_TIMEOUT);
+
         if ((p->ping_mode & AJP_CPING_CONNECT) &&
              p->connect_timeout == AJP_DEF_CONNECT_TIMEOUT)
             p->connect_timeout = p->ping_timeout;
@@ -2522,7 +2527,7 @@ int ajp_init(jk_worker_t *pThis,
 
         p->conn_ping_interval =
             jk_get_worker_conn_ping_interval(props, p->name, 0);
-        if ((p->ping_mode & AJP_CPING_PREPOST) &&
+        if ((p->ping_mode & AJP_CPING_INTERVAL) &&
             p->conn_ping_interval == 0)
             p->conn_ping_interval = p->ping_timeout / 10;
 
