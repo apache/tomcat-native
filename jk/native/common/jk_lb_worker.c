@@ -282,7 +282,7 @@ void reset_lb_values(lb_worker_t *p, jk_logger_t *l)
 }
 
 /* Syncing config values from shm */
-void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
+void jk_lb_pull(lb_worker_t *p, jk_logger_t *l)
 {
     unsigned int i = 0;
 
@@ -331,7 +331,7 @@ void jk_lb_pull(lb_worker_t * p, jk_logger_t *l)
 }
 
 /* Syncing config values to shm */
-void jk_lb_push(lb_worker_t * p, jk_logger_t *l)
+void jk_lb_push(lb_worker_t *p, jk_logger_t *l)
 {
     unsigned int i = 0;
 
@@ -491,7 +491,7 @@ static char *get_sessionid(jk_ws_service_t *s, lb_worker_t *p, jk_logger_t *l)
     return val;
 }
 
-static void close_workers(lb_worker_t * p, int num_of_workers, jk_logger_t *l)
+static void close_workers(lb_worker_t *p, int num_of_workers, jk_logger_t *l)
 {
     int i = 0;
     for (i = 0; i < num_of_workers; i++) {
@@ -823,7 +823,7 @@ static int find_bysession_route(jk_ws_service_t *s,
 }
 
 static int find_failover_worker(jk_ws_service_t *s,
-                                lb_worker_t * p,
+                                lb_worker_t *p,
                                 int *states,
                                 jk_logger_t *l)
 {
@@ -843,7 +843,7 @@ static int find_failover_worker(jk_ws_service_t *s,
 }
 
 static int find_best_worker(jk_ws_service_t *s,
-                            lb_worker_t * p,
+                            lb_worker_t *p,
                             int *states,
                             jk_logger_t *l)
 {
@@ -857,7 +857,7 @@ static int find_best_worker(jk_ws_service_t *s,
 }
 
 static lb_sub_worker_t *get_most_suitable_worker(jk_ws_service_t *s,
-                                                 lb_worker_t * p,
+                                                 lb_worker_t *p,
                                                  char *sessionid,
                                                  int *states,
                                                  jk_logger_t *l)
@@ -1227,6 +1227,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 if (rec->s->busy)
                     rec->s->busy--;
                 if (service_stat == JK_TRUE) {
+                    /*
+                     * Successful request.
+                     */
                     rec->s->state  = JK_LB_STATE_OK;
                     p->states[rec->i] = JK_LB_STATE_OK;
                     rec->s->error_time = 0;
@@ -1235,9 +1238,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 }
                 else if (service_stat == JK_CLIENT_ERROR) {
                     /*
-                    * Client error !!!
-                    * Since this is bad request do not fail over.
-                    */
+                     * Client error !!!
+                     * Since this is bad request do not fail over.
+                     */
                     rec->s->state  = JK_LB_STATE_OK;
                     p->states[rec->i] = JK_LB_STATE_ERROR;
                     rec->s->error_time = 0;
@@ -1246,10 +1249,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 }
                 else if (service_stat == JK_SERVER_ERROR) {
                     /*
-                    * Internal JK server error
-                    * Don't mark the node as bad.
-                    * Failing over to another node could help.
-                    */
+                     * Internal JK server error.
+                     * Don't mark the node as bad.
+                     * Failing over to another node could help.
+                     */
                     rec->s->state  = JK_LB_STATE_OK;
                     p->states[rec->i] = JK_LB_STATE_ERROR;
                     rec->s->error_time = 0;
@@ -1257,10 +1260,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 }
                 else if (service_stat == JK_STATUS_ERROR) {
                     /*
-                    * Status code configured as service is down.
-                    * Don't mark the node as bad.
-                    * Failing over to another node could help.
-                    */
+                     * Status code configured as service is down.
+                     * Don't mark the node as bad.
+                     * Failing over to another node could help.
+                     */
                     rec->s->state  = JK_LB_STATE_OK;
                     p->states[rec->i] = JK_LB_STATE_ERROR;
                     rec->s->error_time = 0;
@@ -1268,10 +1271,10 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 }
                 else if (service_stat == JK_STATUS_FATAL_ERROR) {
                     /*
-                    * Status code configured as service is down.
-                    * Mark the node as bad.
-                    * Failing over to another node could help.
-                    */
+                     * Status code configured as service is down.
+                     * Mark the node as bad.
+                     * Failing over to another node could help.
+                     */
                     rec->s->errors++;
                     if (rec->s->busy) {
                         rec->s->state = JK_LB_STATE_OK;
@@ -1301,11 +1304,9 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     }
                     else {
                         /*
-                         * XXX: if we want to be able to failover
-                         * to other nodes after a reply timeout,
-                         * but we do not put the timeout node into error,
-                         * how can we make sure, that we actually fail over
-                         * to other nodes?
+                         * Put lb member into local error,
+                         * so that we will not use it during
+                         * fail over attempts.
                          */
                         rec->s->state  = JK_LB_STATE_OK;
                         p->states[rec->i] = JK_LB_STATE_ERROR;
@@ -1348,8 +1349,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
             }
             else {
                 /*
-                * Error is not recoverable - break with an error.
-                */
+                 * Error is not recoverable - break with an error.
+                 */
                 if (rc == JK_CLIENT_ERROR)
                     jk_log(l, JK_LOG_INFO,
                            "unrecoverable error %d, request failed."
@@ -1541,7 +1542,7 @@ static int JK_METHOD validate(jk_worker_t *pThis,
                 /* Update domain names if route contains period '.' */
                 for (i = 0; i < num_of_workers; i++) {
                     if (!p->lb_workers[i].domain[0]) {
-                        char * id_domain = strchr(p->lb_workers[i].route, '.');
+                        char *id_domain = strchr(p->lb_workers[i].route, '.');
                         if (id_domain) {
                             *id_domain = '\0';
                             strcpy(p->lb_workers[i].domain, p->lb_workers[i].route);
