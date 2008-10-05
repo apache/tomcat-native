@@ -47,7 +47,8 @@
         Status: Allow showing only a single member for a load balancer. (rjung)
       </update>
       <update>
-        Status: Add display of seconds since last statistics reset. (rjung)
+        Status: Add display of seconds since last statistics reset and access and
+        transfer rates. (rjung)
       </update>
       <add>
         AJP13: Add a configurable retry_interval time. (rjung)
