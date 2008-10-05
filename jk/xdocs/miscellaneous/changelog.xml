@@ -77,7 +77,8 @@
       <update>
         Do not allow Apache to start in multi-threaded mode if mod_jk
          was only build for single threaded server (prefork). (mturk)
-      <update>
+      </update>
+      <fix>
         <bug>45812</bug>: Add done() service method that
         causes sending EOS bucket for Apache httpd 2.x.
         This allows filter chain to work properly. (mturk)
