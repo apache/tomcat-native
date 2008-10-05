@@ -2212,6 +2212,11 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                        "retry %d, sleeping for %d ms before retrying",
                        i, retry_interval);
             jk_sleep(retry_interval);
+            /* Pull shared memory if something changed during sleep */
+            jk_shm_lock();
+            if (aw->sequence != aw->s->h.sequence)
+                jk_ajp_pull(aw, l);
+            jk_shm_unlock();
         }
         /*
          * We're using op->request which hold initial request
