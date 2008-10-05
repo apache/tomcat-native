@@ -189,6 +189,7 @@ struct lb_worker
     int          recover_wait_time;
     int          max_reply_timeouts;
     int          retries;
+    int          retry_interval;
     int          lbmethod;
     int          lblock;
     int          maintain_time;

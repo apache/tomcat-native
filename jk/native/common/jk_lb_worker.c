@@ -1016,7 +1016,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                              jk_logger_t *l, int *is_error)
 {
     lb_endpoint_t *p;
-    int attempt = 1;
+    int attempt = 0;
     lb_sub_worker_t *prec = NULL;
     int num_of_workers;
     int first = 1;
@@ -1025,6 +1025,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     int rc = JK_UNSET;
     char *sessionid = NULL;
     int i;
+    int retry;
 
     JK_TRACE_ENTER(l);
 
@@ -1081,9 +1082,31 @@ static int JK_METHOD service(jk_endpoint_t *e,
                "service sticky_session=%d id='%s'",
                p->worker->sticky_session, sessionid ? sessionid : "empty");
 
-    while (attempt <= num_of_workers && recoverable == JK_TRUE) {
-        lb_sub_worker_t *rec =
-            get_most_suitable_worker(s, p->worker, sessionid, p->states, l);
+    while (recoverable == JK_TRUE) {
+        lb_sub_worker_t *rec;
+        if (attempt >= num_of_workers) {
+            retry++;
+            if (retry > p->worker->retries) {
+                /* Done with retrying */
+                break;
+            }
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "retry %d, sleeping for %d ms before retrying",
+                       retry, p->worker->retry_interval);
+            jk_sleep(p->worker->retry_interval);
+            /* Pull shared memory if something changed during sleep */
+            jk_shm_lock();
+            if (p->worker->sequence != p->worker->s->h.sequence)
+                jk_lb_pull(p->worker, l);
+            jk_shm_unlock();
+            for (i = 0; i < num_of_workers; i++) {
+                /* Copy the shared state info */
+                p->states[i] = p->worker->lb_workers[i].s->state;
+            }
+            attempt = 0;
+        }
+        rec = get_most_suitable_worker(s, p->worker, sessionid, p->states, l);
         rc = JK_FALSE;
         *is_error = JK_HTTP_SERVER_BUSY;
         /* Do not reuse previous worker, because
@@ -1594,8 +1617,11 @@ static int JK_METHOD init(jk_worker_t *pThis,
 
     p->retries = jk_get_worker_retries(props, p->name,
                                        JK_RETRIES);
+    p->retry_interval =
+            jk_get_worker_retry_interval(props, p->name,
+                                        JK_SLEEP_DEF);
     p->recover_wait_time = jk_get_worker_recover_timeout(props, p->name,
-                                                            WAIT_BEFORE_RECOVER);
+                                                         WAIT_BEFORE_RECOVER);
     if (p->recover_wait_time < 1)
         p->recover_wait_time = 1;
     p->max_reply_timeouts = jk_get_worker_max_reply_timeouts(props, p->name,
