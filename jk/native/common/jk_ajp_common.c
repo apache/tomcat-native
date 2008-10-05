@@ -2835,7 +2835,7 @@ int ajp_get_endpoint(jk_worker_t *pThis,
             }
             if (!ae) {
                 /* No connected cache entry found.
-                 * Use the last free one.
+                 * Use the first free one.
                  */
                 for (slot = 0; slot < aw->ep_cache_sz; slot++) {
                     if (aw->ep_cache[slot]) {
