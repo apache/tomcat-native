@@ -2832,7 +2832,7 @@ int ajp_get_endpoint(jk_worker_t *pThis,
             /* Try to find connected socket cache entry */
             for (slot = 0; slot < aw->ep_cache_sz; slot++) {
                 if (aw->ep_cache[slot] &&
-                    IS_VALID_SOCKET(aw->ep_cache[slot]->sd))) {
+                    IS_VALID_SOCKET(aw->ep_cache[slot]->sd)) {
                     ae = aw->ep_cache[slot];
                     aw->ep_cache[slot] = NULL;
                     break;
