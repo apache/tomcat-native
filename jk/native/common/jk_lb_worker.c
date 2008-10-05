@@ -1025,7 +1025,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
     int rc = JK_UNSET;
     char *sessionid = NULL;
     int i;
-    int retry;
+    int retry = 0;
 
     JK_TRACE_ENTER(l);
 
@@ -1086,7 +1086,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         lb_sub_worker_t *rec;
         if (attempt >= num_of_workers) {
             retry++;
-            if (retry > p->worker->retries) {
+            if (retry >= p->worker->retries) {
                 /* Done with retrying */
                 break;
             }
