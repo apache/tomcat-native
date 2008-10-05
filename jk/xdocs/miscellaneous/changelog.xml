@@ -44,6 +44,9 @@
   <subsection name="Native">
     <changelog>
       <update>
+        Status: Allow showing only a single member for a load balancer. (rjung)
+      </update>
+      <update>
         Status: Add display of seconds since last statistics reset. (rjung)
       </update>
       <add>

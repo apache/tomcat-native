@@ -1892,6 +1892,7 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
 static void display_worker_lb(jk_ws_service_t *s,
                               status_endpoint_t *p,
                               lb_worker_t *lb,
+                              lb_sub_worker_t *swr,
                               jk_logger_t *l)
 {
     int cmd;
@@ -2163,6 +2164,11 @@ static void display_worker_lb(jk_ws_service_t *s,
         if (mime == JK_STATUS_MIME_HTML) {
 
             jk_puts(s, "<h4>Balancer Members [");
+            if (swr) {
+                status_write_uri(s, p, "Show All Members", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
+                                 name, "", 0, 0, "", l);
+                jk_puts(s, "]&nbsp;&nbsp;[");
+            }
             if (single) {
                 status_write_uri(s, p, "Hide", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
                                  NULL, NULL, JK_STATUS_ARG_OPTION_NO_MEMBERS, 0, "", l);
@@ -2178,33 +2184,39 @@ static void display_worker_lb(jk_ws_service_t *s,
                 status_write_uri(s, p, "Hide", JK_STATUS_CMD_UNKNOWN, JK_STATUS_MIME_UNKNOWN,
                                  NULL, NULL, JK_STATUS_ARG_OPTION_NO_AJP_CONF, 0, NULL, l);
                 jk_puts(s, "]</td></tr>");
-                for (j = 0; j < lb->num_of_workers; j++) {
-                    lb_sub_worker_t *wr = &(lb->lb_workers[j]);
-                    jk_worker_t *jw = (jk_worker_t *)wr->worker;
+                if (swr) {
+                    jk_worker_t *jw = (jk_worker_t *)swr->worker;
                     ajp_worker_t *aw = (ajp_worker_t *)jw->worker_private;
                     display_worker_ajp_conf_details(s, p, aw, 1, jw->type, l);
                 }
+                else
+                    for (j = 0; j < lb->num_of_workers; j++) {
+                        lb_sub_worker_t *wr = &(lb->lb_workers[j]);
+                        jk_worker_t *jw = (jk_worker_t *)wr->worker;
+                        ajp_worker_t *aw = (ajp_worker_t *)jw->worker_private;
+                        display_worker_ajp_conf_details(s, p, aw, 1, jw->type, l);
+                    }
                 jk_puts(s, "</table>\n<br/>\n");
             }
             jk_puts(s, "<table>" JK_STATUS_SHOW_MEMBER_HEAD);
 
         }
 
-        for (j = 0; j < lb->num_of_workers; j++) {
-            lb_sub_worker_t *wr = &(lb->lb_workers[j]);
-            const char *sub_name = wr->name;
-            ajp_worker_t *aw = (ajp_worker_t *)wr->worker->worker_private;
+        if (swr) {
+            const char *sub_name = swr->name;
+            ajp_worker_t *aw = (ajp_worker_t *)swr->worker->worker_private;
 
             if (mime == JK_STATUS_MIME_HTML) {
                 jk_puts(s, "<tr>\n<td>");
+                jk_puts(s, "S");
                 if (!read_only) {
-                    jk_puts(s, "[");
+                    jk_puts(s, "|");
                     status_write_uri(s, p, "E", JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
                                      name, sub_name, 0, 0, "", l);
                     jk_puts(s, "|");
                     status_write_uri(s, p, "R", JK_STATUS_CMD_RESET, JK_STATUS_MIME_UNKNOWN,
                                      name, sub_name, 0, 0, "", l);
-                    if (wr->s->state == JK_LB_STATE_ERROR) {
+                    if (swr->s->state == JK_LB_STATE_ERROR) {
                         jk_puts(s, "|");
                         status_write_uri(s, p, "T", JK_STATUS_CMD_RECOVER, JK_STATUS_MIME_UNKNOWN,
                                          name, sub_name, 0, 0, "", l);
@@ -2213,8 +2225,35 @@ static void display_worker_lb(jk_ws_service_t *s,
                 }
                 jk_puts(s, "&nbsp;</td>");
             }
-            display_worker_ajp_details(s, p, aw, wr, lb, ms_min, ms_max, 0, l);
-        }
+            display_worker_ajp_details(s, p, aw, swr, lb, ms_min, ms_max, 0, l);
+        } else
+            for (j = 0; j < lb->num_of_workers; j++) {
+                lb_sub_worker_t *wr = &(lb->lb_workers[j]);
+                const char *sub_name = wr->name;
+                ajp_worker_t *aw = (ajp_worker_t *)wr->worker->worker_private;
+
+                if (mime == JK_STATUS_MIME_HTML) {
+                    jk_puts(s, "<tr>\n<td>");
+                    status_write_uri(s, p, "S", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
+                                 name, sub_name, 0, 0, "", l);
+                    if (!read_only) {
+                        jk_puts(s, "|");
+                        status_write_uri(s, p, "E", JK_STATUS_CMD_EDIT, JK_STATUS_MIME_UNKNOWN,
+                                         name, sub_name, 0, 0, "", l);
+                        jk_puts(s, "|");
+                        status_write_uri(s, p, "R", JK_STATUS_CMD_RESET, JK_STATUS_MIME_UNKNOWN,
+                                         name, sub_name, 0, 0, "", l);
+                        if (wr->s->state == JK_LB_STATE_ERROR) {
+                            jk_puts(s, "|");
+                            status_write_uri(s, p, "T", JK_STATUS_CMD_RECOVER, JK_STATUS_MIME_UNKNOWN,
+                                             name, sub_name, 0, 0, "", l);
+                        }
+                        jk_puts(s, "]");
+                    }
+                    jk_puts(s, "&nbsp;</td>");
+                }
+                display_worker_ajp_details(s, p, aw, wr, lb, ms_min, ms_max, 0, l);
+            }
 
         if (mime == JK_STATUS_MIME_HTML) {
 
@@ -2357,6 +2396,7 @@ static void display_worker_ajp(jk_ws_service_t *s,
 static void display_worker(jk_ws_service_t *s,
                            status_endpoint_t *p,
                            jk_worker_t *jw,
+                           lb_sub_worker_t *swr,
                            jk_logger_t *l)
 {
     status_worker_t *w = p->worker;
@@ -2369,7 +2409,7 @@ static void display_worker(jk_ws_service_t *s,
                 jk_log(l, JK_LOG_DEBUG,
                        "Status worker '%s' %s lb worker '%s'",
                        w->name, "displaying", lb->name);
-            display_worker_lb(s, p, lb, l);
+            display_worker_lb(s, p, lb, swr, l);
         }
         else {
             jk_log(l, JK_LOG_WARNING,
@@ -3553,7 +3593,7 @@ static void list_workers_type(jk_ws_service_t *s,
         }
         if ((list_lb && jw->type == JK_LB_WORKER_TYPE) ||
             (!list_lb && jw->type != JK_LB_WORKER_TYPE)) {
-            display_worker(s, p, jw, l);
+            display_worker(s, p, jw, NULL, l);
         }
     }
 
@@ -3612,6 +3652,7 @@ static int show_worker(jk_ws_service_t *s,
     const char *worker;
     const char *sub_worker;
     jk_worker_t *jw = NULL;
+    lb_sub_worker_t *wr = NULL;
 
     JK_TRACE_ENTER(l);
     fetch_worker_and_sub_worker(p, "showing", &worker, &sub_worker, l);
@@ -3619,7 +3660,14 @@ static int show_worker(jk_ws_service_t *s,
         JK_TRACE_EXIT(l);
         return JK_FALSE;
     }
-    display_worker(s, p, jw, l);
+    if (sub_worker && sub_worker[0]) {
+        if(search_sub_worker(s, p, jw, worker, &wr, sub_worker,
+                             NULL, l) == JK_FALSE) {
+            JK_TRACE_EXIT(l);
+            return JK_FALSE;
+        }
+    }
+    display_worker(s, p, jw, wr, l);
 
     JK_TRACE_EXIT(l);
     return JK_TRUE;
