@@ -86,7 +86,7 @@
 #define ACTIVATION_OF_WORKER        ("activation")
 #define WORKER_RECOVER_TIME         ("recover_time")
 #define MAX_REPLY_TIMEOUTS_OF_WORKER ("max_reply_timeouts")
-#define RETRY_WAIT_OF_WORKER        ("retry_wait")
+#define RETRY_INTERVAL_OF_WORKER    ("retry_interval")
 #define WORKER_MAX_PACKET_SIZE      ("max_packet_size")
 #define STYLE_SHEET_OF_WORKER       ("css")
 #define NAMESPACE_OF_WORKER         ("ns")
@@ -202,7 +202,7 @@ static const char *unique_properties[] = {
     ACTIVATION_OF_WORKER,
     WORKER_RECOVER_TIME,
     MAX_REPLY_TIMEOUTS_OF_WORKER,
-    RETRY_WAIT_OF_WORKER,
+    RETRY_INTERVAL_OF_WORKER,
     WORKER_MAX_PACKET_SIZE,
     STYLE_SHEET_OF_WORKER,
     READ_ONLY_OF_WORKER,
@@ -295,7 +295,7 @@ static const char *supported_properties[] = {
     ACTIVATION_OF_WORKER,
     WORKER_RECOVER_TIME,
     MAX_REPLY_TIMEOUTS_OF_WORKER,
-    RETRY_WAIT_OF_WORKER,
+    RETRY_INTERVAL_OF_WORKER,
     WORKER_MAX_PACKET_SIZE,
     STYLE_SHEET_OF_WORKER,
     NAMESPACE_OF_WORKER,
@@ -970,7 +970,7 @@ int jk_get_worker_max_reply_timeouts(jk_map_t *m, const char *wname, int def)
     return jk_map_get_int(m, buf, def);
 }
 
-int jk_get_worker_retry_wait(jk_map_t *m, const char *wname, int def)
+int jk_get_worker_retry_interval(jk_map_t *m, const char *wname, int def)
 {
     char buf[1024];
 
@@ -978,7 +978,7 @@ int jk_get_worker_retry_wait(jk_map_t *m, const char *wname, int def)
         return -1;
     }
 
-    MAKE_WORKER_PARAM(RETRY_WAIT_OF_WORKER);
+    MAKE_WORKER_PARAM(RETRY_INTERVAL_OF_WORKER);
 
     return jk_map_get_int(m, buf, def);
 }

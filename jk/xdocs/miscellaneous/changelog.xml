@@ -47,7 +47,7 @@
         Status: Add display of seconds since last statistics reset. (rjung)
       </update>
       <add>
-        AJP13: Add a configurable retry wait time. (rjung)
+        AJP13: Add a configurable retry_interval time. (rjung)
       </add>
       <update>
         Documentation: Enhance description of connection_pool_size. (rjung)

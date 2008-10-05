@@ -337,7 +337,7 @@ struct ajp_worker
 
     unsigned int max_packet_size;  /*  Maximum AJP Packet size */
 
-    int retry_wait;                /*  Number of milliseconds to sleep before doing a retry */
+    int retry_interval;            /*  Number of milliseconds to sleep before doing a retry */
 
     /* 
      * HTTP status that will cause failover (0 means disabled)

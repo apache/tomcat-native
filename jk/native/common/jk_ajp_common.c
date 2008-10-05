@@ -2095,7 +2095,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
     int log_error;
     int rc = JK_UNSET;
     char *msg = "";
-    int retry_wait;
+    int retry_interval;
 
     JK_TRACE_ENTER(l);
 
@@ -2198,7 +2198,7 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
         aw->s->state = JK_AJP_STATE_PROBE;
     if (aw->s->busy > aw->s->max_busy)
         aw->s->max_busy = aw->s->busy;
-    retry_wait = p->worker->retry_wait;
+    retry_interval = p->worker->retry_interval;
     for (i = 0; i < aw->retries; i++) {
         /*
          * ajp_send_request() already locally handles
@@ -2206,12 +2206,12 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
          * So if we already failed in it, wait a bit before
          * retrying the same backend.
          */
-        if (i > 0 && retry_wait >= 0) {
+        if (i > 0 && retry_interval >= 0) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_DEBUG,
                        "retry %d, sleeping for %d ms before retrying",
-                       i, retry_wait);
-            jk_sleep(retry_wait);
+                       i, retry_interval);
+            jk_sleep(retry_interval);
         }
         /*
          * We're using op->request which hold initial request
@@ -2554,8 +2554,8 @@ int ajp_init(jk_worker_t *pThis,
         p->socket_buf =
             jk_get_worker_socket_buffer(props, p->name, p->max_packet_size);
 
-        p->retry_wait =
-            jk_get_worker_retry_wait(props, p->name,
+        p->retry_interval =
+            jk_get_worker_retry_interval(props, p->name,
                                      JK_SLEEP_DEF);
 
         p->http_status_fail_num = jk_get_worker_fail_on_status(props, p->name,
@@ -2625,8 +2625,8 @@ int ajp_init(jk_worker_t *pThis,
                     p->max_packet_size);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "retry wait time:  %d",
-                    p->retry_wait);
+                   "retry interval:   %d",
+                    p->retry_interval);
         }
         /*
          *  Need to initialize secret here since we could return from inside

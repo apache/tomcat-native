@@ -1095,7 +1095,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             ajp_worker_t *aw = (ajp_worker_t *)rec->worker->worker_private;
             jk_endpoint_t *end = NULL;
             int retry = 0;
-            int retry_wait = JK_LB_MIN_RETRY_WAIT;
+            int retry_interval = JK_LB_MIN_RETRY_INTERVAL;
 
             if (!s->route)
                 s->route = rec->route;
@@ -1117,12 +1117,12 @@ static int JK_METHOD service(jk_endpoint_t *e,
 
             while ((!(r=rec->worker->get_endpoint(rec->worker, &end, l)) || !end) && (retry < p->worker->retries)) {
                 retry++;
-                retry_wait *=2;
+                retry_interval *=2;
 
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_lock();
-                if (retry_wait > JK_LB_MAX_RETRY_WAIT)
-                    retry_wait = JK_LB_MAX_RETRY_WAIT;
+                if (retry_interval > JK_LB_MAX_RETRY_INTERVAL)
+                    retry_interval = JK_LB_MAX_RETRY_INTERVAL;
                 if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                     jk_shm_unlock();
 
@@ -1130,8 +1130,8 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_log(l, JK_LOG_DEBUG,
                            "could not get free endpoint for worker"
                            " (retry %d, sleeping for %d ms)",
-                           retry, retry_wait);
-                jk_sleep(retry_wait);
+                           retry, retry_interval);
+                jk_sleep(retry_interval);
             }
             if (!r || !end) {
                 /* If we can not get the endpoint
