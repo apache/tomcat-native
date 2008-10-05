@@ -1363,10 +1363,8 @@ static int ajp_send_request(jk_endpoint_t *e,
     op->recoverable = JK_TRUE;
 
     /*
-     * First try to reuse open connections...
+     * First try to check open connections...
      */
-    if (!IS_VALID_SOCKET(ae->sd))
-        ajp_next_connection(ae, l);
     while (IS_VALID_SOCKET(ae->sd)) {
         int err = JK_FALSE;
         if (jk_is_socket_connected(ae->sd, l) == JK_FALSE) {
@@ -1446,9 +1444,8 @@ static int ajp_send_request(jk_endpoint_t *e,
                    ae->worker->name, err_conn, err_cping, err_send);
         else if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
-                   "(%s) all endpoints are disconnected, "
-                   "detected by connect check (%d), cping (%d), send (%d)",
-                   ae->worker->name, err_conn, err_cping, err_send);
+                   "(%s) all endpoints are disconnected.",
+                   ae->worker->name);
         /* Connect to the backend.
          */
         if (ajp_connect_to_endpoint(ae, l) != JK_TRUE) {
@@ -2827,11 +2824,25 @@ int ajp_get_endpoint(jk_worker_t *pThis,
         JK_ENTER_CS(&aw->cs, rc);
         if (rc) {
             unsigned int slot;
+            /* Try to find connected socket cache entry */
             for (slot = 0; slot < aw->ep_cache_sz; slot++) {
-                if (aw->ep_cache[slot]) {
+                if (aw->ep_cache[slot] &&
+                    IS_VALID_SOCKET(aw->ep_cache[slot]->sd))) {
                     ae = aw->ep_cache[slot];
                     aw->ep_cache[slot] = NULL;
                     break;
+                }
+            }
+            if (!ae) {
+                /* No connected cache entry found.
+                 * Use the last free one.
+                 */
+                for (slot = 0; slot < aw->ep_cache_sz; slot++) {
+                    if (aw->ep_cache[slot]) {
+                        ae = aw->ep_cache[slot];
+                        aw->ep_cache[slot] = NULL;
+                        break;
+                    }
                 }
             }
             JK_LEAVE_CS(&aw->cs, rc);
