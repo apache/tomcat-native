@@ -248,12 +248,12 @@
                                            "</tr>\n"
 #define JK_STATUS_SHOW_AJP_ROW             "<tr>" \
                                            "<td>%s</td>" \
-                                           "<td>%" JK_UINT64_T_FMT "</td>" \
+                                           "<td>%" JK_UINT64_T_FMT " (%d/sec)</td>" \
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
-                                           "<td>%s</td>" \
-                                           "<td>%s</td>" \
+                                           "<td>%s (%s/sec)</td>" \
+                                           "<td>%s (%s/sec)</td>" \
                                            "<td>%d</td>" \
                                            "<td>%d</td>" \
                                            "<td>%d</td>" \
@@ -296,12 +296,12 @@
                                            "<td>%d</td>" \
                                            "<td>%" JK_UINT64_T_FMT "</td>" \
                                            "<td>%" JK_UINT64_T_FMT "</td>" \
-                                           "<td>%" JK_UINT64_T_FMT "</td>" \
+                                           "<td>%" JK_UINT64_T_FMT " (%d/sec)</td>" \
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
                                            "<td>%" JK_UINT32_T_FMT "</td>" \
-                                           "<td>%s</td>" \
-                                           "<td>%s</td>" \
+                                           "<td>%s (%s/sec)</td>" \
+                                           "<td>%s (%s/sec)</td>" \
                                            "<td>%d</td>" \
                                            "<td>%d</td>" \
                                            "<td>%s</td>" \
@@ -660,7 +660,7 @@ static char *status_strfsize(jk_uint64_t size, char *buf)
     unsigned int remain, siz;
 
     if (size < 973) {
-        if (sprintf(buf, "%3d ", (int) size) < 0)
+        if (sprintf(buf, "%d ", (int) size) < 0)
             return strcpy(buf, "****");
         return buf;
     }
@@ -681,7 +681,7 @@ static char *status_strfsize(jk_uint64_t size, char *buf)
         }
         if (remain >= 512)
             ++siz;
-        if (sprintf(buf, "%3d%c", siz, *o) < 0)
+        if (sprintf(buf, "%d%c", siz, *o) < 0)
             return strcpy(buf, "****");
         return buf;
     } while (1);
@@ -1635,7 +1635,9 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
 {
     char buf[32];
     char buf_rd[32];
+    char buf_rd_sec[32];
     char buf_wr[32];
+    char buf_wr_sec[32];
     int mime;
     const char *arg;
     time_t now = time(NULL);
@@ -1674,6 +1676,7 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
 
     if (mime == JK_STATUS_MIME_HTML) {
 
+        int delta = (int)difftime(now, aw->s->last_reset);
         if (lb)
             jk_printf(s, JK_STATUS_SHOW_MEMBER_ROW,
                       sub_name,
@@ -1684,11 +1687,14 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
                       wr->lb_mult,
                       wr->s->lb_value,
                       aw->s->used,
+                      delta > 0 ? (int)(aw->s->used / delta) : -1,
                       wr->s->errors,
                       aw->s->client_errors,
                       aw->s->reply_timeouts,
                       status_strfsize(aw->s->transferred, buf_wr),
+                      delta > 0 ? status_strfsize(aw->s->transferred / delta, buf_wr_sec) : "-",
                       status_strfsize(aw->s->readed, buf_rd),
+                      delta > 0 ? status_strfsize(aw->s->readed / delta , buf_rd_sec) : "-",
                       aw->s->busy,
                       aw->s->max_busy,
                       wr->route,
@@ -1696,19 +1702,23 @@ static void display_worker_ajp_details(jk_ws_service_t *s,
                       wr->domain ? (*wr->domain ? wr->domain : "&nbsp;") : "&nbsp",
                       rs_min,
                       rs_max,
-                      (int)difftime(now, aw->s->last_reset));
-        else
+                      delta);
+        else {
             jk_printf(s, JK_STATUS_SHOW_AJP_ROW,
                       jk_ajp_get_state(aw, l),
                       aw->s->used,
+                      delta > 0 ? (int)(aw->s->used / delta) : -1,
                       aw->s->errors,
                       aw->s->client_errors,
                       aw->s->reply_timeouts,
                       status_strfsize(aw->s->transferred, buf_wr),
+                      delta > 0 ? status_strfsize(aw->s->transferred / delta, buf_wr_sec) : "-",
                       status_strfsize(aw->s->readed, buf_rd),
+                      delta > 0 ? status_strfsize(aw->s->readed / delta , buf_rd_sec) : "-",
                       aw->s->busy,
                       aw->s->max_busy,
-                      (int)difftime(now, aw->s->last_reset));
+                      delta);
+        }
 
     }
     else if (mime == JK_STATUS_MIME_XML) {
@@ -3422,8 +3432,8 @@ static void display_legend(jk_ws_service_t *s,
             "<tr><th>Err</th><td>Number of failed requests</td></tr>\n"
             "<tr><th>CE</th><td>Number of client errors</td></tr>\n"
             "<tr><th>RE</th><td>Number of reply timeouts (decayed)</td></tr>\n"
-            "<tr><th>Wr</th><td>Number of bytes transferred/min</td></tr>\n"
-            "<tr><th>Rd</th><td>Number of bytes read/min</td></tr>\n"
+            "<tr><th>Wr</th><td>Number of bytes transferred</td></tr>\n"
+            "<tr><th>Rd</th><td>Number of bytes read</td></tr>\n"
             "<tr><th>Busy</th><td>Current number of busy connections</td></tr>\n"
             "<tr><th>Max</th><td>Maximum number of busy connections</td></tr>\n"
             "<tr><th>RR</th><td>Route redirect</td></tr>\n"
