@@ -1146,7 +1146,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_shm_unlock();
                 jk_log(l, JK_LOG_INFO,
                        "could not get free endpoint for worker %s (%d retries)",
-                       rec->name, retry);
+                       rec->name, ge_retry);
             }
             else {
                 int service_stat = JK_UNSET;
