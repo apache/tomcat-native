@@ -81,6 +81,7 @@ static time_t jk_workers_modified_time = 0;
 static time_t jk_workers_access_time = 0;
 #if defined (WIN32)
 static HANDLE jk_shm_map = NULL;
+static HANDLE jk_shm_hlock = NULL;
 #endif
 
 /* Calculate needed shm size */
@@ -150,6 +151,7 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
 {
     int rc;
     int attached = 0;
+    char lkname[MAX_PATH];
     JK_TRACE_ENTER(l);
     if (jk_shmem.hdr) {
         if (JK_IS_DEBUG_LEVEL(l))
@@ -178,6 +180,19 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
             JK_TRACE_EXIT(l);
             return -1;
         }
+        sprintf(lkname, "Global\\%s_MUTEX", fname);
+        if (attached) {
+            jk_shm_hlock = OpenMutex(MUTEX_ALL_ACCESS, FALSE, lkname);
+        }
+        else {
+            jk_shm_hlock = CreateMutex(NULL, FALSE, lkname);            
+        }
+        if (jk_shm_hlock == NULL || jk_shm_hlock == INVALID_HANDLE_VALUE) {
+            CloseHandle(jk_shm_map);
+            jk_shm_map = NULL;
+            JK_TRACE_EXIT(l);
+            return -1;
+        }
         jk_shmem.hdr = (jk_shm_header_t *)MapViewOfFile(jk_shm_map,
                                                         FILE_MAP_ALL_ACCESS,
                                                         0,
@@ -192,6 +207,10 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
         if (jk_shm_map) {
             CloseHandle(jk_shm_map);
             jk_shm_map = NULL;
+        }
+        if (jk_shm_hlock) {
+            CloseHandle(jk_shm_hlock);
+            jk_shm_hlock = NULL;
         }
 #endif
         JK_TRACE_EXIT(l);
@@ -270,6 +289,10 @@ void jk_shm_close()
     if (jk_shmem.hdr) {
         int rc;
 #if defined (WIN32)
+        if (jk_shm_hlock) {
+            CloseHandle(jk_shm_hlock);
+            jk_shm_hlock = NULL;
+        }
         if (jk_shm_map) {
             --jk_shmem.hdr->h.data.childs;
             UnmapViewOfFile(jk_shmem.hdr);
@@ -707,9 +730,19 @@ int jk_shm_lock()
 {
     int rc;
     JK_ENTER_CS(&(jk_shmem.cs), rc);
+#if defined (WIN32)
+    if (rc == JK_TRUE && jk_shm_hlock != NULL) {
+        DWORD rv = WaitForSingleObject(jk_shm_hlock, INFINITE);
+        if (rv == WAIT_OBJECT_0 || rv == WAIT_ABANDONED)
+            rc = JK_TRUE;
+        else
+            rc = JK_FALSE;         
+    }
+#else    
     if (rc == JK_TRUE && jk_shmem.fd_lock != -1) {
         JK_ENTER_LOCK(jk_shmem.fd_lock, rc);
     }
+#endif
     return rc;
 }
 
@@ -717,9 +750,16 @@ int jk_shm_unlock()
 {
     int rc;
     JK_LEAVE_CS(&(jk_shmem.cs), rc);
+#if defined (WIN32)
+    if (rc == JK_TRUE && jk_shm_hlock != NULL) {
+        if (!ReleaseMutex(jk_shm_hlock))
+            rc = JK_FALSE;         
+    }
+#else    
     if (rc == JK_TRUE && jk_shmem.fd_lock != -1) {
         JK_LEAVE_LOCK(jk_shmem.fd_lock, rc);
     }
+#endif
     return rc;
 }
 
