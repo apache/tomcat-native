@@ -110,6 +110,7 @@
 #define JK_STATUS_ARG_AJP_PREPOST_TO       "vapt"
 #define JK_STATUS_ARG_AJP_REPLY_TO         "vart"
 #define JK_STATUS_ARG_AJP_RETRIES          "var"
+#define JK_STATUS_ARG_AJP_RETRY_INT        "vari"
 #define JK_STATUS_ARG_AJP_REC_OPTS         "varo"
 #define JK_STATUS_ARG_AJP_MAX_PK_SZ        "vamps"
 #define JK_STATUS_ARG_AJP_CPING_INT        "vacpi"
@@ -120,6 +121,7 @@
 #define JK_STATUS_ARG_AJP_TEXT_PREPOST_TO  "Prepost Timeout"
 #define JK_STATUS_ARG_AJP_TEXT_REPLY_TO    "Reply Timeout"
 #define JK_STATUS_ARG_AJP_TEXT_RETRIES     "Retries"
+#define JK_STATUS_ARG_AJP_TEXT_RETRY_INT   "Retry Interval"
 #define JK_STATUS_ARG_AJP_TEXT_REC_OPTS    "Recovery Options"
 #define JK_STATUS_ARG_AJP_TEXT_MAX_PK_SZ   "Max Packet Size"
 #define JK_STATUS_ARG_AJP_TEXT_CPING_INT   "Connection Ping Interval"
@@ -197,7 +199,7 @@
                                            "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">" \
                                            "<head><title>JK Status Manager</title>"
 
-#define JK_STATUS_COPYRIGHT                "Copyright &#169; 1999-2007, The Apache Software Foundation<br />" \
+#define JK_STATUS_COPYRIGHT                "Copyright &#169; 1999-2008, The Apache Software Foundation<br />" \
                                            "Licensed under the <a href=\"http://www.apache.org/licenses/LICENSE-2.0\">" \
                                            "Apache License, Version 2.0</a>."
 
@@ -2290,6 +2292,7 @@ static void display_worker_lb(jk_ws_service_t *s,
                 jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_PREPOST_TO, "\">", JK_STATUS_ARG_AJP_TEXT_PREPOST_TO, "</option>\n", NULL);
                 jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_REPLY_TO, "\">", JK_STATUS_ARG_AJP_TEXT_REPLY_TO, "</option>\n", NULL);
                 jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_RETRIES, "\">", JK_STATUS_ARG_AJP_TEXT_RETRIES, "</option>\n", NULL);
+                jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_RETRY_INT, "\">", JK_STATUS_ARG_AJP_TEXT_RETRY_INT, "</option>\n", NULL);
                 jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_CPING_INT, "\">", JK_STATUS_ARG_AJP_TEXT_CPING_INT, "</option>\n", NULL);
                 jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_REC_OPTS, "\">", JK_STATUS_ARG_AJP_TEXT_REC_OPTS, "</option>\n", NULL);
                 jk_putv(s, "<option value=\"", JK_STATUS_ARG_AJP_MAX_PK_SZ, "\">", JK_STATUS_ARG_AJP_TEXT_MAX_PK_SZ, "</option>\n", NULL);
@@ -2658,6 +2661,10 @@ static void form_member(jk_ws_service_t *s,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_AJP_RETRIES, "\" type=\"text\" ", NULL);
     jk_printf(s, "value=\"%d\"/></td></tr>\n", aw->retries);
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_AJP_TEXT_RETRY_INT,
+            ":</td><td><input name=\"",
+            JK_STATUS_ARG_AJP_RETRY_INT, "\" type=\"text\" ", NULL);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", aw->retry_interval);
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_AJP_TEXT_CPING_INT,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_AJP_CPING_INT, "\" type=\"text\" ", NULL);
@@ -2722,6 +2729,8 @@ static void form_all_members(jk_ws_service_t *s,
             aname=JK_STATUS_ARG_AJP_TEXT_REPLY_TO;
         else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRIES))
             aname=JK_STATUS_ARG_AJP_TEXT_RETRIES;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRY_INT))
+            aname=JK_STATUS_ARG_AJP_TEXT_RETRY_INT;
         else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CPING_INT))
             aname=JK_STATUS_ARG_AJP_TEXT_CPING_INT;
         else if (!strcmp(attribute, JK_STATUS_ARG_AJP_REC_OPTS))
@@ -2832,6 +2841,10 @@ static void form_all_members(jk_ws_service_t *s,
             else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRIES)) {
                 jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
                 jk_printf(s, "value=\"%d\"/>\n", aw->retries);
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRY_INT)) {
+                jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
+                jk_printf(s, "value=\"%d\"/>\n", aw->retry_interval);
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CPING_INT)) {
                 jk_printf(s, "<input name=\"" JK_STATUS_ARG_MULT_VALUE_BASE "%d\" type=\"text\"", i);
@@ -3132,6 +3145,9 @@ static int commit_member(jk_ws_service_t *s,
     if (set_int_if_changed(p, aw->name, "retries", JK_STATUS_ARG_AJP_RETRIES,
                            1, INT_MAX, &aw->retries, lb_name, l))
         rc |= 4;
+    if (set_int_if_changed(p, aw->name, "retry_interval", JK_STATUS_ARG_AJP_RETRY_INT,
+                           1, INT_MAX, &aw->retry_interval, lb_name, l))
+        rc |= 4;
     if (set_int_if_changed(p, aw->name, "connection_ping_interval", JK_STATUS_ARG_AJP_CPING_INT,
                            1, INT_MAX, &aw->conn_ping_interval, lb_name, l))
         rc |= 4;
@@ -3197,6 +3213,8 @@ static void commit_all_members(jk_ws_service_t *s,
             aname=JK_STATUS_ARG_AJP_TEXT_REPLY_TO;
         else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRIES))
             aname=JK_STATUS_ARG_AJP_TEXT_RETRIES;
+        else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRY_INT))
+            aname=JK_STATUS_ARG_AJP_TEXT_RETRY_INT;
         else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CPING_INT))
             aname=JK_STATUS_ARG_AJP_TEXT_CPING_INT;
         else if (!strcmp(attribute, JK_STATUS_ARG_AJP_REC_OPTS))
@@ -3285,6 +3303,11 @@ static void commit_all_members(jk_ws_service_t *s,
             else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRIES)) {
                 if (set_int_if_changed(p, aw->name, "retries", vname,
                                        1, INT_MAX, &aw->retries, name, l))
+                    sync_needed = JK_TRUE;
+            }
+            else if (!strcmp(attribute, JK_STATUS_ARG_AJP_RETRY_INT)) {
+                if (set_int_if_changed(p, aw->name, "retry_interval", vname,
+                                       1, INT_MAX, &aw->retry_interval, name, l))
                     sync_needed = JK_TRUE;
             }
             else if (!strcmp(attribute, JK_STATUS_ARG_AJP_CPING_INT)) {
