@@ -75,6 +75,7 @@
 #define JK_STATUS_ARG_OPTION_NO_AJP_CONF   0x0100
 
 #define JK_STATUS_ARG_LB_RETRIES           ("vlr")
+#define JK_STATUS_ARG_LB_RETRY_INT         ("vlri")
 #define JK_STATUS_ARG_LB_RECOVER_TIME      ("vlt")
 #define JK_STATUS_ARG_LB_MAX_REPLY_TIMEOUTS ("vlx")
 #define JK_STATUS_ARG_LB_STICKY            ("vls")
@@ -83,6 +84,7 @@
 #define JK_STATUS_ARG_LB_LOCK              ("vll")
 
 #define JK_STATUS_ARG_LB_TEXT_RETRIES      "Retries"
+#define JK_STATUS_ARG_LB_TEXT_RETRY_INT    "Retry Interval"
 #define JK_STATUS_ARG_LB_TEXT_RECOVER_TIME "Recover Wait Time"
 #define JK_STATUS_ARG_LB_TEXT_MAX_REPLY_TIMEOUTS "Max Reply Timeouts"
 #define JK_STATUS_ARG_LB_TEXT_STICKY       "Sticky Sessions"
@@ -2499,6 +2501,10 @@ static void form_worker(jk_ws_service_t *s,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LB_RETRIES, "\" type=\"text\" ", NULL);
     jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->retries);
+    jk_putv(s, "<tr><td>", JK_STATUS_ARG_LB_TEXT_RETRY_INT,
+            ":</td><td><input name=\"",
+            JK_STATUS_ARG_LB_RETRY_INT, "\" type=\"text\" ", NULL);
+    jk_printf(s, "value=\"%d\"/></td></tr>\n", lb->retry_interval);
     jk_putv(s, "<tr><td>", JK_STATUS_ARG_LB_TEXT_RECOVER_TIME,
             ":</td><td><input name=\"",
             JK_STATUS_ARG_LB_RECOVER_TIME, "\" type=\"text\" ", NULL);
@@ -2912,6 +2918,15 @@ static void commit_worker(jk_ws_service_t *s,
                "Status worker '%s' setting 'retries' for lb worker '%s' to '%i'",
                w->name, name, i);
         lb->retries = i;
+        sync_needed = JK_TRUE;
+    }
+    i = status_get_int(p, JK_STATUS_ARG_LB_RETRY_INT,
+                       lb->retry_interval, l);
+    if (i != lb->retry_interval && i > 0) {
+        jk_log(l, JK_LOG_INFO,
+               "Status worker '%s' setting 'retry_interval' for lb worker '%s' to '%i'",
+               w->name, name, i);
+        lb->retry_interval = i;
         sync_needed = JK_TRUE;
     }
     i = status_get_int(p, JK_STATUS_ARG_LB_RECOVER_TIME,
