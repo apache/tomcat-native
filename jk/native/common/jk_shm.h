@@ -86,6 +86,7 @@ struct jk_shm_ajp_worker
     int prepost_timeout;
     unsigned int recovery_opts;
     int retries;
+    int retry_interval;
     unsigned int max_packet_size;
     /* current error state (runtime) of the worker */
     volatile int state;
@@ -163,6 +164,7 @@ struct jk_shm_lb_worker
     int     recover_wait_time;
     int     max_reply_timeouts;
     int     retries;
+    int     retry_interval;
     int     lbmethod;
     int     lblock;
     unsigned int max_packet_size;

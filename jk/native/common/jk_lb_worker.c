@@ -297,6 +297,7 @@ void jk_lb_pull(lb_worker_t *p, jk_logger_t *l)
     p->recover_wait_time = p->s->recover_wait_time;
     p->max_reply_timeouts = p->s->max_reply_timeouts;
     p->retries = p->s->retries;
+    p->retry_interval = p->s->retry_interval;
     p->lbmethod = p->s->lbmethod;
     p->lblock = p->s->lblock;
     p->max_packet_size = p->s->max_packet_size;
@@ -346,6 +347,7 @@ void jk_lb_push(lb_worker_t *p, jk_logger_t *l)
     p->s->recover_wait_time = p->recover_wait_time;
     p->s->max_reply_timeouts = p->max_reply_timeouts;
     p->s->retries = p->retries;
+    p->s->retry_interval = p->retry_interval;
     p->s->lbmethod = p->lbmethod;
     p->s->lblock = p->lblock;
     p->s->max_packet_size = p->max_packet_size;

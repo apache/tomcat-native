@@ -976,6 +976,7 @@ void jk_ajp_pull(ajp_worker_t * aw, jk_logger_t *l)
     aw->prepost_timeout = aw->s->prepost_timeout;
     aw->recovery_opts = aw->s->recovery_opts;
     aw->retries = aw->s->retries;
+    aw->retry_interval = aw->s->retry_interval;
     aw->max_packet_size = aw->s->max_packet_size;
     aw->sequence = aw->s->h.sequence;
 
@@ -998,6 +999,7 @@ void jk_ajp_push(ajp_worker_t * aw, jk_logger_t *l)
     aw->s->prepost_timeout = aw->prepost_timeout;
     aw->s->recovery_opts = aw->recovery_opts;
     aw->s->retries = aw->retries;
+    aw->s->retry_interval = aw->retry_interval;
     aw->s->max_packet_size = aw->max_packet_size;
     aw->s->h.sequence = aw->sequence;
 
