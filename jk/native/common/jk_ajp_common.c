@@ -2235,16 +2235,20 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
             rc = JK_CLIENT_ERROR;
             log_error = JK_FALSE;
             e->recoverable = JK_FALSE;
-
-              /* This doesn't make sense, because we already set reuse */
-              /* to JK_FALSE at the beginning of service() and only set it to true again after */
-              /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
-#if 0
+            /* Ajp message set reuse to TRUE in END_REQUEST message
+             * However due to client bad request if the recovery
+             * RECOVER_ABORT_IF_CLIENTERROR is set the physical connection
+             * will be closed and application in Tomcat can catch that
+             * generated exception, knowing the client aborted the
+             * connection. This AJP protocol limitation, where we
+             * should actually send some packet informing the backend
+             * that client broke the connection in a middle of
+             * request/response cycle.
+             */
             if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
                 /* Mark the endpoint for shutdown */
                 p->reuse = JK_FALSE;
             }
-#endif
         }
         else if (err == JK_FATAL_ERROR) {
             *is_error = JK_HTTP_SERVER_BUSY;
@@ -2276,15 +2280,10 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 log_error = JK_FALSE;
                 e->recoverable = JK_FALSE;
                 op->recoverable = JK_FALSE;
-                  /* This doesn't make sense, because we already set reuse */
-                  /* to JK_FALSE at the beginning of service() and only set it to true again after */
-                  /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
-#if 0
                 if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
                     /* Mark the endpoint for shutdown */
                     p->reuse = JK_FALSE;
                 }
-#endif
             }
             else if (err == JK_CLIENT_WR_ERROR) {
                 /* XXX: Is this correct to log this as 200? */
@@ -2295,15 +2294,10 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
                 log_error = JK_FALSE;
                 e->recoverable = JK_FALSE;
                 op->recoverable = JK_FALSE;
-                  /* This doesn't make sense, because we already set reuse */
-                  /* to JK_FALSE at the beginning of service() and only set it to true again after */
-                  /* the whole response has beend received (callback JK_AJP13_END_RESPONSE). */
-#if 0
                 if (aw->recovery_opts & RECOVER_ABORT_IF_CLIENTERROR) {
                     /* Mark the endpoint for shutdown */
                     p->reuse = JK_FALSE;
                 }
-#endif
             }
             else if (err == JK_FATAL_ERROR) {
                 *is_error = JK_HTTP_SERVER_ERROR;
