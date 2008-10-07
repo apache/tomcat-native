@@ -121,10 +121,6 @@ extern "C"
 #define JK_NOTE_LB_LAST_ACTIVATION   ("JK_LB_LAST_ACTIVATION")
 #define JK_NOTE_LB_LAST_STATE        ("JK_LB_LAST_STATE")
 
-/* Minimal time in ms to wait between get_endpoint retries for balanced workers */
-#define JK_LB_MIN_RETRY_INTERVAL     (25)
-/* Maximal time in ms to wait between get_endpoint retries for balanced workers */
-#define JK_LB_MAX_RETRY_INTERVAL     (100)
 /* Time to wait before retry. */
 #define WAIT_BEFORE_RECOVER   (60)
 /* We accept doing global maintenance if we are */
