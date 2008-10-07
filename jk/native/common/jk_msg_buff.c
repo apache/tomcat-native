@@ -275,8 +275,10 @@ unsigned char *jk_b_get_string(jk_msg_buf_t *msg)
     int start = msg->pos;
 
     if ((size == 0xFFFF) || (size + start > msg->maxlen)) {
-        /* TODO: return NULL and deal with that in the code */
-        return (unsigned char *)"ERROR";
+        /* Error of overflow in AJP packet.
+         * The complete message is probably invalid.
+         */
+        return NULL;
     }
 
     msg->pos += size;
