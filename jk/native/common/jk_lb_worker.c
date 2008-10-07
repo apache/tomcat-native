@@ -1119,8 +1119,6 @@ static int JK_METHOD service(jk_endpoint_t *e,
             int is_service_error = JK_HTTP_OK;
             ajp_worker_t *aw = (ajp_worker_t *)rec->worker->worker_private;
             jk_endpoint_t *end = NULL;
-            int ge_retry = 0;
-            int ge_retry_interval = aw->retry_interval;
 
             if (!s->route)
                 s->route = rec->route;
@@ -1140,21 +1138,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
             if (p->worker->lblock == JK_LB_LOCK_PESSIMISTIC)
                 jk_shm_unlock();
 
-            while ((!(r=rec->worker->get_endpoint(rec->worker, &end, l)) || !end) &&
-                        (ge_retry < aw->retries)) {
-                ge_retry++;
-                if (JK_IS_DEBUG_LEVEL(l))
-                    jk_log(l, JK_LOG_DEBUG,
-                           "could not get free endpoint for worker"
-                           " (retry %d, sleeping for %d ms)",
-                           ge_retry, ge_retry_interval);
-                jk_sleep(ge_retry_interval);
-                /* Pull shared memory if something changed during sleep */
-                jk_shm_lock();
-                if (p->worker->sequence != p->worker->s->h.sequence)
-                    jk_lb_pull(p->worker, l);
-                jk_shm_unlock();
-            }
+            r = rec->worker->get_endpoint(rec->worker, &end, l);
             if (!r || !end) {
                 /* If we can not get the endpoint
                  * mark the worker as busy rather then
@@ -1171,7 +1155,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     jk_shm_unlock();
                 jk_log(l, JK_LOG_INFO,
                        "could not get free endpoint for worker %s (%d retries)",
-                       rec->name, ge_retry);
+                       rec->name, retry);
             }
             else {
                 int service_stat = JK_UNSET;

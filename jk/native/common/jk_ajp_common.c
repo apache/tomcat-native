@@ -2815,62 +2815,70 @@ int ajp_get_endpoint(jk_worker_t *pThis,
     if (pThis && pThis->worker_private && je) {
         ajp_worker_t *aw = pThis->worker_private;
         ajp_endpoint_t *ae = NULL;
-        time_t now = 0;
         int rc;
-        /* Obtain current time only if needed */
-        if (aw->cache_timeout > 0)
-            now = time(NULL);
-        *je = NULL;
+        int retry = 0;
 
-        JK_ENTER_CS(&aw->cs, rc);
-        if (rc) {
-            unsigned int slot;
-            /* Try to find connected socket cache entry */
-            for (slot = 0; slot < aw->ep_cache_sz; slot++) {
-                if (aw->ep_cache[slot] &&
-                    IS_VALID_SOCKET(aw->ep_cache[slot]->sd)) {
-                    ae = aw->ep_cache[slot];
-                    aw->ep_cache[slot] = NULL;
-                    break;
-                }
-            }
-            if (!ae) {
-                /* No connected cache entry found.
-                 * Use the first free one.
-                 */
+        *je = NULL;
+        /* Obtain current time only if needed */
+        while (retry < aw->retries) {
+
+            JK_ENTER_CS(&aw->cs, rc);
+            if (rc) {
+                unsigned int slot;
+                /* Try to find connected socket cache entry */
                 for (slot = 0; slot < aw->ep_cache_sz; slot++) {
-                    if (aw->ep_cache[slot]) {
+                    if (aw->ep_cache[slot] &&
+                        IS_VALID_SOCKET(aw->ep_cache[slot]->sd)) {
                         ae = aw->ep_cache[slot];
                         aw->ep_cache[slot] = NULL;
                         break;
                     }
                 }
-            }
-            JK_LEAVE_CS(&aw->cs, rc);
-            if (ae) {
-                ae->last_access = now;
-                *je = &ae->endpoint;
-                if (JK_IS_DEBUG_LEVEL(l))
-                    jk_log(l, JK_LOG_DEBUG,
-                           "acquired connection pool slot=%u",
-                           slot);
-                JK_TRACE_EXIT(l);
-                return JK_TRUE;
+                if (!ae) {
+                    /* No connected cache entry found.
+                     * Use the first free one.
+                     */
+                    for (slot = 0; slot < aw->ep_cache_sz; slot++) {
+                        if (aw->ep_cache[slot]) {
+                            ae = aw->ep_cache[slot];
+                            aw->ep_cache[slot] = NULL;
+                            break;
+                        }
+                    }
+                }
+                JK_LEAVE_CS(&aw->cs, rc);
+                if (ae) {
+                    if (aw->cache_timeout > 0)
+                        ae->last_access = time(NULL);
+                    *je = &ae->endpoint;
+                    if (JK_IS_DEBUG_LEVEL(l))
+                        jk_log(l, JK_LOG_DEBUG,
+                               "acquired connection pool slot=%u",
+                               slot);
+                    JK_TRACE_EXIT(l);
+                    return JK_TRUE;
+                }
+                else {
+                    retry++;
+                    if (JK_IS_DEBUG_LEVEL(l))
+                        jk_log(l, JK_LOG_DEBUG,
+                               "could not get free endpoint for worker %s"
+                               " (retry %d, sleeping for %d ms)",
+                               aw->name, retry, aw->retry_interval);
+                    jk_sleep(aw->retry_interval);
+                }
             }
             else {
-                jk_log(l, JK_LOG_WARNING,
-                        "Unable to get the free endpoint for worker %s from %u slots",
-                        aw->name, aw->ep_cache_sz);
+               jk_log(l, JK_LOG_ERROR,
+                      "locking thread (errno=%d)", errno);
+                JK_TRACE_EXIT(l);
+                return JK_FALSE;
+
             }
         }
-        else {
-           jk_log(l, JK_LOG_ERROR,
-                  "locking thread (errno=%d)",
-                  errno);
-            JK_TRACE_EXIT(l);
-            return JK_FALSE;
-
-        }
+        jk_log(l, JK_LOG_WARNING,
+                "Unable to get the free endpoint for worker %s from %u slots",
+                aw->name, aw->ep_cache_sz);
     }
     else {
         JK_LOG_NULL_PARAMS(l);
