@@ -532,10 +532,9 @@ This feature has been added in <b>jk 1.2.13</b>.
 <directive name="retries" default="2" required="false">
 <warn>This directive also exists for normal workers.
 For those it has a <a href="#Advanced Worker Directives">different meaning</a>.</warn>
-If the load balancer can not get a free connection for a member worker
-from the pool, it will try again a number of times given by <b>retries</b>.
-Before each retry, it will make a small pause, starting with 50 milliseconds
-and doubling before each retry until a maximum of 100 milliseconds.
+If the load balancer can not get a valid member worker or in case of failover,
+it will try again a number of times given by <b>retries</b>.
+Before each retry, it will make a pause define by <b>retry_interval</b> directive.
 <p>
 Until version <b>1.2.16</b> the default value was 3.
 </p>
