@@ -334,7 +334,11 @@ This directive is only allowed inside VirtualHost.
 The default is Off.
 <br/>
 This directive has been introduced in version 1.2.21.
-</p></attribute>
+<br/>With version 1.2.27 and later this directive can have optional
+seddion ID identifier. If not specified it defaults to
+<code>;jsessionid</code>.
+</p>
+</attribute>
 
 </attributes>
 </section>

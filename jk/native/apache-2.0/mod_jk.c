@@ -206,6 +206,7 @@ typedef struct
     int exclude_options;
 
     int strip_session;
+    char *strip_session_name;
     /*
      * Environment variables support
      */
@@ -1335,18 +1336,29 @@ static const char *jk_set_auto_alias(cmd_parms * cmd,
 /*
  * JkStripSession directive handling
  *
- * JkStripSession On/Off
+ * JkStripSession On/Off [session path identifier]
  */
 
-static const char *jk_set_strip_session(cmd_parms * cmd, void *dummy, int flag)
+static const char *jk_set_strip_session(cmd_parms * cmd, void *dummy,
+                                        const char *flag, const char *name)
 {
     server_rec *s = cmd->server;
     jk_server_conf_t *conf =
         (jk_server_conf_t *) ap_get_module_config(s->module_config,
                                                   &jk_module);
 
-    /* Set up our value */
-    conf->strip_session = flag ? JK_TRUE : JK_FALSE;
+    if (strcasecmp(flag, "on") && strcasecmp(flag, "off")) {
+        return "JkStripSession must be On or Off";
+    }
+    else {
+        conf->strip_session = strcasecmp(flag, "off") ? JK_TRUE : JK_FALSE;
+    }
+
+    /* Check for optional path value */
+    if (name)
+        conf->strip_session_name = apr_pstrdup(cmd->pool, name);
+    else
+        conf->strip_session_name = apr_pstrdup(cmd->pool, JK_PATH_SESSION_IDENTIFIER);
 
     return NULL;
 }
@@ -2086,8 +2098,8 @@ static const command_rec jk_cmds[] = {
      * JkStripSession specifies if mod_jk should strip the ;jsessionid
      * from the unmapped urls
      */
-    AP_INIT_FLAG("JkStripSession", jk_set_strip_session, NULL, RSRC_CONF,
-                 "Should the server strip the jsessionid from unmapped URLs"),
+    AP_INIT_TAKE12("JkStripSession", jk_set_strip_session, NULL, RSRC_CONF,
+                   "Should the server strip the jsessionid from unmapped URLs"),
 
     /*
      * JkLogFile & JkLogLevel specifies to where should the plugin log
@@ -2663,9 +2675,10 @@ static void *merge_jk_config(apr_pool_t * p, void *basev, void *overridesv)
     }
     if (overrides->mount_file_reload == JK_UNSET)
         overrides->mount_file_reload = base->mount_file_reload;
-    if (overrides->strip_session == JK_UNSET)
+    if (overrides->strip_session == JK_UNSET) {
         overrides->strip_session = base->strip_session;
-
+        overrides->strip_session_name = base->strip_session_name;
+    }
     return overrides;
 }
 
@@ -3406,10 +3419,11 @@ static int jk_map_to_storage(request_rec * r)
                     jk_log(conf->log, JK_LOG_DEBUG,
                            "no match for %s found",
                            r->uri);
-                if (conf->strip_session == JK_TRUE) {
+                if (conf->strip_session == JK_TRUE &&
+                    conf->strip_session_name) {
                     char *jsessionid;
                     if (r->uri) {
-                        jsessionid = strstr(r->uri, JK_PATH_SESSION_IDENTIFIER);
+                        jsessionid = strstr(r->uri, conf->strip_session_name);
                         if (jsessionid) {
                             if (JK_IS_DEBUG_LEVEL(conf->log))
                                 jk_log(conf->log, JK_LOG_DEBUG,
@@ -3419,7 +3433,7 @@ static int jk_map_to_storage(request_rec * r)
                         }
                     }
                     if (r->filename) {
-                        jsessionid = strstr(r->filename, JK_PATH_SESSION_IDENTIFIER);
+                        jsessionid = strstr(r->filename, conf->strip_session_name);
                         if (jsessionid)
                             *jsessionid = '\0';
                     }
