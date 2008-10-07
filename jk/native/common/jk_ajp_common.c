@@ -1588,6 +1588,14 @@ static int ajp_send_request(jk_endpoint_t *e,
             if ((len = ajp_read_into_msg_buff(ae, s, op->post, len, l)) < 0) {
                 /* the browser stop sending data, no need to recover */
                 op->recoverable = JK_FALSE;
+                /* Send an empty POST message since per AJP protocol
+                 * spec whenever we have content lenght the message
+                 * packet must be followed with initial POST packet.
+                 * Size zero will be handled as error in container.
+                 */
+                jk_b_reset(op->post);
+                jk_b_append_int(op->post, 0);
+                ajp_connection_tcp_send_message(ae, op->post, l);
                 JK_TRACE_EXIT(l);
                 return JK_CLIENT_RD_ERROR;
             }
