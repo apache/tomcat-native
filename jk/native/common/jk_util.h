@@ -70,6 +70,8 @@ int jk_get_worker_cache_size(jk_map_t *m, const char *wname, int def);
 
 int jk_get_worker_cache_size_min(jk_map_t *m, const char *wname, int def);
 
+int jk_get_worker_cache_acquire_timeout(jk_map_t *m, const char *wname, int def);
+
 int jk_get_worker_socket_timeout(jk_map_t *m, const char *wname, int def);
 
 int jk_get_worker_socket_buffer(jk_map_t *m, const char *wname, int def);

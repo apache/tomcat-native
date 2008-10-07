@@ -52,6 +52,7 @@
 #define CACHE_OF_WORKER_MIN         ("connection_pool_minsize")
 #define CACHE_TIMEOUT_DEPRECATED    ("cache_timeout")
 #define CACHE_TIMEOUT_OF_WORKER     ("connection_pool_timeout")
+#define CACHE_ACQUIRE_OF_WORKER     ("connection_acquire_timeout")
 #define RECOVERY_OPTS_OF_WORKER     ("recovery_options")
 #define CONNECT_TIMEOUT_OF_WORKER   ("connect_timeout")
 #define PREPOST_TIMEOUT_OF_WORKER   ("prepost_timeout")
@@ -173,6 +174,7 @@ static const char *unique_properties[] = {
     CACHE_OF_WORKER_MIN,
     CACHE_TIMEOUT_DEPRECATED,
     CACHE_TIMEOUT_OF_WORKER,
+    CACHE_ACQUIRE_OF_WORKER,
     RECOVERY_OPTS_OF_WORKER,
     CONNECT_TIMEOUT_OF_WORKER,
     PREPOST_TIMEOUT_OF_WORKER,
@@ -262,6 +264,7 @@ static const char *supported_properties[] = {
     CACHE_OF_WORKER_MIN,
     CACHE_TIMEOUT_DEPRECATED,
     CACHE_TIMEOUT_OF_WORKER,
+    CACHE_ACQUIRE_OF_WORKER,
     RECOVERY_OPTS_OF_WORKER,
     CONNECT_TIMEOUT_OF_WORKER,
     PREPOST_TIMEOUT_OF_WORKER,
@@ -928,6 +931,18 @@ int jk_get_worker_cache_size_min(jk_map_t *m, const char *wname, int def)
     }
 
     MAKE_WORKER_PARAM(CACHE_OF_WORKER_MIN);
+    return jk_map_get_int(m, buf, def);
+}
+
+int jk_get_worker_cache_acquire_timeout(jk_map_t *m, const char *wname, int def)
+{
+    char buf[1024];
+
+    if (!m || !wname) {
+        return -1;
+    }
+
+    MAKE_WORKER_PARAM(CACHE_ACQUIRE_OF_WORKER);
     return jk_map_get_int(m, buf, def);
 }
 

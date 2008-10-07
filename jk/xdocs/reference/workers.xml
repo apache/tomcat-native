@@ -356,6 +356,16 @@ finish having many unused ajp13 threads on the Tomcat side.
 </p>
 </directive>
 
+<directive name="connection_acquire_timeout" default="retries*retry_interval" required="false">
+Timeout the worker will wait for a free socket in cache before giving up.
+<p>
+Its default value is <b>retries * retry_interval</b>.
+</p>
+<p>
+This feature has been added in <b>jk 1.2.27</b>.
+</p>
+</directive>
+
 <directive name="lbfactor" default="1" required="false">
 Only used for a member worker of a load balancer.
 <p>

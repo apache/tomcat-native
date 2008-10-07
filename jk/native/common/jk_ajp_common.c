@@ -2454,8 +2454,8 @@ static int ajp_create_endpoint_cache(ajp_worker_t *p, int proto, jk_logger_t *l)
     }
     if (JK_IS_DEBUG_LEVEL(l))
         jk_log(l, JK_LOG_DEBUG,
-                "setting connection pool size to %u with min %u",
-                p->ep_cache_sz, p->ep_mincache_sz);
+                "setting connection pool size to %u with min %u and acquire timeout %d",
+                p->ep_cache_sz, p->ep_mincache_sz, p->cache_acquire_timeout);
     for (i = 0; i < p->ep_cache_sz; i++) {
         p->ep_cache[i] = (ajp_endpoint_t *)calloc(1, sizeof(ajp_endpoint_t));
         if (!p->ep_cache[i]) {
@@ -2557,8 +2557,9 @@ int ajp_init(jk_worker_t *pThis,
 
         p->retry_interval =
             jk_get_worker_retry_interval(props, p->name,
-                                     JK_SLEEP_DEF);
-
+                                         JK_SLEEP_DEF);
+        p->cache_acquire_timeout = jk_get_worker_cache_acquire_timeout(props,
+                                     p->name, p->retries * p->retry_interval);
         p->http_status_fail_num = jk_get_worker_fail_on_status(props, p->name,
                                      &p->http_status_fail[0],
                                      JK_MAX_HTTP_STATUS_FAILS);
@@ -2819,8 +2820,8 @@ int ajp_get_endpoint(jk_worker_t *pThis,
         int retry = 0;
 
         *je = NULL;
-        /* Obtain current time only if needed */
-        while (retry < aw->retries) {
+        /* Loop until cache_acquire_timeout interval elapses */
+        while ((retry * JK_SLEEP_DEF) < aw->cache_acquire_timeout) {
 
             JK_ENTER_CS(&aw->cs, rc);
             if (rc) {
@@ -2853,8 +2854,8 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                     *je = &ae->endpoint;
                     if (JK_IS_DEBUG_LEVEL(l))
                         jk_log(l, JK_LOG_DEBUG,
-                               "acquired connection pool slot=%u",
-                               slot);
+                               "acquired connection pool slot=%u after %d retries",
+                               slot, retry);
                     JK_TRACE_EXIT(l);
                     return JK_TRUE;
                 }
@@ -2864,8 +2865,8 @@ int ajp_get_endpoint(jk_worker_t *pThis,
                         jk_log(l, JK_LOG_DEBUG,
                                "could not get free endpoint for worker %s"
                                " (retry %d, sleeping for %d ms)",
-                               aw->name, retry, aw->retry_interval);
-                    jk_sleep(aw->retry_interval);
+                               aw->name, retry, JK_SLEEP_DEF);
+                    jk_sleep(JK_SLEEP_DEF);
                 }
             }
             else {
