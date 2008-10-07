@@ -286,6 +286,7 @@ struct ajp_worker
     unsigned int ep_cache_sz;
     unsigned int ep_mincache_sz;
     unsigned int ep_maxcache_sz;
+    int cache_acquire_timeout;
     ajp_endpoint_t **ep_cache;
 
     int proto;              /* PROTOCOL USED AJP13/AJP14 */
