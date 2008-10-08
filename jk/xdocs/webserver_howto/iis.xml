@@ -324,7 +324,7 @@ but by default static content is left to be served by IIS.
 <p>
 Each context also has a commented out setting to have Tomcat handle all requests to the context. 
 You can rename this file (so it won't be overwritten the next time Tomcat is started) and 
-uncomment this setting or make other customizations. 
+uncomment this setting or make other customisations. 
 </p>
 <p>
 You may also use this file as is in your worker_mount_file setting.
@@ -376,7 +376,7 @@ This requires a change to the uriworkermap.properties :
 As you can see the second configuration is more explicit, it actually instruct the redirector 
 to redirect only requests to resources under /examples/servlet/ and resources under /examples/ 
 whose name ends with .jsp. 
-This is similar to what is automically written to the uriworkermap.properties-auto file for each context.
+This is similar to what is automatically written to the uriworkermap.properties-auto file for each context.
 </p>
 
 <p>
@@ -447,7 +447,7 @@ As you can see the <b>examples</b> context is served by <b>worker1</b> while the
 </p>
 
 <p>
-More informations on using and configuring workers in the <a href="../generic_howto/workers.html">Workers HowTo</a>
+More information on using and configuring workers in the <a href="../generic_howto/workers.html">Workers HowTo</a>
 and in the <a href="../reference/workers.html">worker.properties configuration reference</a>.
 </p>
 
@@ -509,7 +509,7 @@ Note: These steps assume your <b>worker_mount_file</b> setting points to an unmo
 <b>uriworkermap.properties</b> file.<br/>
 Results may be misleading if <b>worker_mount_file</b> points to a modified <b>uriworkermap.properties</b>
 or the <b>uriworkermap.properties-auto</b> file.<br/>
-It is also assumed that the <b>"/examples" context</b> works correcly if you access Tomcat directly.
+It is also assumed that the <b>"/examples" context</b> works correctly if you access Tomcat directly.
 </p>
 
 <subsection name="Win98">
@@ -548,7 +548,7 @@ If the last line contains:
   GET "/examples/jsp/index.html HTTP/1.1" 404
 </source>
 <p> 
-then the ISAPI redirector is not recognizing that it should be handling requests for the "/examples" context. 
+then the ISAPI redirector is not recognising that it should be handling requests for the "/examples" context. 
 Check the following:
 </p>
 <ul>
@@ -561,7 +561,7 @@ Check the worker_file setting for typos, name and data.
 <li>
 Check the worker_mount_file setting typos, name and data.
 </li>
-If these are set correctly, the ISAPI redirector should recognize that it should handle requests for the "/examples" context.
+If these are set correctly, the ISAPI redirector should recognise that it should handle requests for the "/examples" context.
 </ul>
 
 <p>If the last line contains something like:
@@ -572,7 +572,7 @@ If these are set correctly, the ISAPI redirector should recognize that it should
 </source>
 
 <p>
-then the ISAPI redirector is recognizing that it should handle the request, 
+then the ISAPI redirector is recognising that it should handle the request, 
 but is not successful at getting Tomcat to service the request.
 </p>
 
@@ -675,7 +675,7 @@ If the page fails to appear, examine the last line in the IIS server log file in
 
 <p>
 The last line should contain something like: GET "/jakarta/isapi_redirect.dll HTTP1.1", 
-which indicates the ISAPI redirector is recognizing that it should handle the request.
+which indicates the ISAPI redirector is recognising that it should handle the request.
 </p>
 
 <p>
