@@ -33,12 +33,12 @@
 <p>
 Most of the directives are allowed once in the global part of the Apache httpd
 configuration and once in every &lt;VirtualHost&gt; elements. Exceptions from this rule are
-explicitely listed in the table below.
+explicitly listed in the table below.
 </p>
 <p>
 Most values are inherited from the main server to the virtual hosts.
 Since version 1.2.20 they can be overwritten in the virtual hosts.
-Exceptions from this rule are again explicitely listed in the table below.
+Exceptions from this rule are again explicitly listed in the table below.
 See especially JkMountCopy.
 </p>
 <p><b>Waring: If Apache httpd and Tomcat are configured to serve content from
@@ -307,7 +307,7 @@ It was "ForwardURICompatUnparsed" in version 1.2.23 and
 <attribute name="JkEnvVar" required="false"><p>
 Adds a name and an optional default value of environment variable
 that should be sent to servlet-engine as a request attribute.
-If the default value is not given explicitely, the variable
+If the default value is not given explicitly, the variable
 will only be send, if it is set during runtime.
 <br/>
 The default is empty, so no additional variables will be sent.
@@ -335,7 +335,7 @@ The default is Off.
 <br/>
 This directive has been introduced in version 1.2.21.
 <br/>With version 1.2.27 and later this directive can have optional
-seddion ID identifier. If not specified it defaults to
+session ID identifier. If not specified it defaults to
 <code>;jsessionid</code>.
 </p>
 </attribute>
@@ -614,7 +614,7 @@ can block several well known URL encoding attacks. By default, this option
 is not set.
 </p>
 <p>
-You can also realize such a check with mod_rewrite, which is more powerful
+You can also realise such a check with mod_rewrite, which is more powerful
 but also slightly more complicated.
 
 <source>  
@@ -764,7 +764,7 @@ This directive exists only since version 1.2.22.
 The directive <b>JkEnvVar</b> allows you to forward environment variables
 from Apache server to Tomcat engine.
 You can add a default value as a second parameter to the directive.
-If the default value is not given explicitely, the variable
+If the default value is not given explicitly, the variable
 will only be send, if it is set during runtime.
 <br/>
 The variables can be retrieved on the Tomcat side as request attributes
@@ -824,7 +824,7 @@ context, but all .gif files that belongs to that context are not served.
 </source>
 <p>
 JkUnMount takes precedence over JkMount directives, meaning that the JK
-will first try to mount and then checks, if there is an exclusiond defined by a
+will first try to mount and then checks, if there is an exclusion defined by a
 JkUnMount. A JkUnMount overrides a JkMount only, if the worker names in the
 JkMount and in the JkUnMount are the same.
 </p>
@@ -919,7 +919,7 @@ it defines an exclusion in the same way JkUnMount does.
 If the mount point uri starts with minus sign '-'
 the mount point will only be disabled. A disabled mount can be reenabled
 by deleting the minus sign and waiting for the JkMountFile to reload.
-An exclusion can be disabled by prefixing it with a mninus sign.
+An exclusion can be disabled by prefixing it with a minus sign.
 </p>
 <source>
   # Sample uriworkermap.properties file

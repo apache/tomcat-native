@@ -81,7 +81,7 @@ The lines in the file define properties. The general format is
 <p><strong>&lt;name&gt;=&lt;value&gt;</strong></p>
 <p>
 </p>
-Dots are used as part of the name to represent a configuration hierarchie.
+Dots are used as part of the name to represent a configuration hierarchy.
 <p>
 Invalid directives will be logged during web server startup and prevent the web server
 from working properly. Some directives have been deprecated. Although they will
@@ -89,7 +89,7 @@ still work, you should replace them by their
 <a href="#Deprecated Worker Directives">successors</a>.
 </p>
 <p>
-Some directives are allowed multiple times. This will be explicitely
+Some directives are allowed multiple times. This will be explicitly
 noted in the tables below.
 </p>
 <p>
@@ -178,7 +178,7 @@ from a template to real workers.
 The directive "reference" allows to copy configurations between workers
 in a hierarchical way. If worker castor sets <b>worker.castor.reference=worker.pollux</b>
 then it inherits all properties of <b>pollux</b>, except for the ones that
-are explicitely set for <b>castor</b>.
+are explicitly set for <b>castor</b>.
 </p>
 <p>
 Please note, that the value of the directive is not only the name of the referred worker,
@@ -274,7 +274,7 @@ This feature has been added in <b>jk 1.2.27</b>.
 </directive>
 
 <directive name="ping_timeout" default="10000" required="false">
-Connections idle for longer than this interval in miliseconds are probed by
+Connections idle for longer than this interval in milliseconds are probed by
 CPING packets whether they still work. The usage depend on the
 <code>ping_mode</code> flags used.
 <p>
@@ -420,7 +420,7 @@ The overall result is that workers managed by the same lb worker are load-balanc
 Tomcat process death will not "kill" the entire site.
 </p>
 <warn>
-If you want to use session stickyness, you must set different jvmRoute attributes
+If you want to use session stickiness, you must set different jvmRoute attributes
 in the Engine element in Tomcat's server.xml. Furthermore the names of the workers
 which are managed by the balancer have to be equal to the jvmRoute of the Tomcat
 instance they connect with.
@@ -458,7 +458,7 @@ instances of Tomcat.
 Specifies whether requests with SESSION ID's for workers that are in error state
 should be rejected. If sticky_session_force is set to <b>True</b> or <b>1</b>
 and the worker that matches that SESSION ID is in error state, client will
-recieve 500 (Server Error). If set to <b>False</b> or <b>0</b> failover on
+receive 500 (Server Error). If set to <b>False</b> or <b>0</b> failover on
 another worker will be issued with loosing client session. This directive is
 used only when you set <b>sticky_session=True</b>.
 <p>
@@ -468,7 +468,7 @@ This feature has been added in <b>jk 1.2.9</b>.
 
 <directive name="method" default="Request" required="false">
 Specifies what method load balancer is using for electing the best worker.
-Please note, that session stickyness and perfect load balancing are
+Please note, that session stickiness and perfect load balancing are
 conflicting targets, especially when the number
 of sessions is small, or the usage of sessions is extremely varying
 For huge numbers of sessions this usually is not a problem.
@@ -518,7 +518,7 @@ The Session method has been added in <b>jk 1.2.20</b>.
 </directive>
 
 <directive name="lock" default="Optimistic" required="false">
-Specifies what lock method the load balancer will use for synchronizing
+Specifies what lock method the load balancer will use for synchronising
 shared memory runtime data.
 If lock is set to <b>O[ptimistic]</b> balancer will not use shared memory lock
 to find the best worker. If set to <b>P[essimistic]</b> balancer will use
@@ -641,14 +641,14 @@ This feature has been added in <b>jk 1.2.20</b>.
 </p>
 </directive>
 <directive name="ns" default="jk:" required="false">
-This directive can be used to customize the XML output from the
+This directive can be used to customise the XML output from the
 status worker. If set to <b>-</b> no namespace will be used.
 <p>
 This feature has been added in <b>jk 1.2.20</b>.
 </p>
 </directive>
 <directive name="xmlns" default="" required="false">
-This directive can be used to customize the XML output from the
+This directive can be used to customise the XML output from the
 status worker. If set to <b>-</b> no xmlns will be used.
 <p>
 Default value is set to xmlns:jk=&quot;http://tomcat.apache.org&quot;
@@ -658,7 +658,7 @@ This feature has been added in <b>jk 1.2.20</b>.
 </p>
 </directive>
 <directive name="doctype" default="" required="false">
-This directive can be used to customize the XML output from the
+This directive can be used to customise the XML output from the
 status worker. This value will be inserted to the output xml
 after the xml header.
 <p>
@@ -899,7 +899,7 @@ of the corresponding Tomcat instance. If you want to include a worker correspond
 to a Tomcat instance into several load balancers with different balancing configuration
 (e.g. disabled, stopped) you can use this attribute.
 <p>
-Define a seperate worker per lb and per Tomcat instance with an arbitrary worker name and 
+Define a separate worker per lb and per Tomcat instance with an arbitrary worker name and 
 set the route attribute of the worker equal to the jvmRoute of the target Tomcat instance.
 </p>
 <p>
@@ -952,7 +952,7 @@ Set to the name of the preferred failover worker. If worker matching
 SESSION ID is in error state then the redirect worker will be used instead.
 It will be used even if being disabled, thus offering hot standby.
 <p>
-If you explicitely set a route via the "route" attribute, you must set "redirect"
+If you explicitly set a route via the "route" attribute, you must set "redirect"
 to this route of the preferred failover worker and not to its name.
 </p>
 <p>
@@ -1034,7 +1034,7 @@ This feature has been added in <b>jk 1.2.9</b>.
 <warn>This directive has been deprecated since 1.2.19.</warn>
 If set to <b>True</b> or <b>1</b> the worker will be stopped if member
 of load balancer. The flag is needed for stop complete traffic of a sticky session
-worker. It is only usefull, when you have a cluster that replicated the sessions.
+worker. It is only useful, when you have a cluster that replicated the sessions.
 This flag can be changed at runtime using status worker.
 <p>
 This feature has been added in <b>jk 1.2.11</b>.
@@ -1048,7 +1048,7 @@ of the corresponding Tomcat instance. If you want to include a worker correspond
 to a Tomcat instance into several load balancers with different balancing configuration
 (e.g. disabled, stopped) you can use this attribute.
 <p>
-Define a seperate worker per lb and per Tomcat instance with an arbitrary worker name and 
+Define a separate worker per lb and per Tomcat instance with an arbitrary worker name and 
 set the jvm_route attribute of the worker equal to the jvmRoute of the target Tomcat instance.
 </p>
 <p>

@@ -136,7 +136,7 @@ except edit, update and maintain. Even if you navigate through one of those, the
 will start again as soon as you come back to one of the other actions.
 </p>
 <p>
-Many parts of the HTML page can be minimized, if they are not interesting for you. There are a couple
+Many parts of the HTML page can be minimised, if they are not interesting for you. There are a couple
 of "Hide" links, which will collapse parts of the information. The feature exists for the following
 blocks of information:
 <ul>
@@ -165,7 +165,7 @@ blocks of information:
 <b>AJP Configuration</b>: Do not show configuration data for ajp workers load balancer members
 </li>
 </ul>
-The last three minimization features have been added in version 1.2.27.
+The last three minimisation features have been added in version 1.2.27.
 </p>
 </subsection>
 
@@ -179,7 +179,7 @@ The Apache module mod_jk makes use of the internal Apache httpd infrastructure c
 virtual hosts. The downside of this is, that the status worker can only show URL maps, for
 the virtual host it is defined in. It is not able to reach the configuration objects
 for other virtual hosts. Of course you can define a status worker in any virtual host you
-are using. All information presented apart from the URL maps will be the same, independant
+are using. All information presented apart from the URL maps will be the same, independent
 of the virtual host the status worker has been called in.
 </p>
 </subsection>
@@ -229,10 +229,10 @@ and then allow special groups of people to use them
 </p>
 </subsection>
 
-<subsection name="Output Customization">
+<subsection name="Output Customisation">
 <br/>
 <p>
-There are a couple of attributes for the workers.properties entries, which allow to customize
+There are a couple of attributes for the workers.properties entries, which allow to customise
 various aspects of the output of the status worker.
 </p>
 <p>
@@ -250,13 +250,13 @@ of the status worker output pages does not include any class attributes. If you 
 stylesheet or improvements to the HTML layout, please contact us on the tomcat developers list.
 </p>
 <p>
-The properties output format can be customized via the attribute <b>prefix</b>. The names of all
+The properties output format can be customised via the attribute <b>prefix</b>. The names of all
 properties the status worker does output, will begin with this prefix. The default is "worker".
 </p>
 <p>
 Several attributes influence the format when writing XML output.
 The attribute <b>ns</b> allows to set a namespace prefix, that will be used for every status worker+element.
-The default is "jk:". Setting it to "-" disables the namesspace prefix.
+The default is "jk:". Setting it to "-" disables the namespace prefix.
 </p>
 <p>
 With the attribute xmlns you can map the prefix to a namespace URL. The default value
@@ -302,7 +302,7 @@ web server is configured such that it sends the user names with the request, the
 will check, if the name attached with the request is contained in it's "user" list.
 </p>
 <p>
-The user list can be split over multiple occurences of the "user" attribute.
+The user list can be split over multiple occurrences of the "user" attribute.
 </p>
 <p>
 By default, the user names are matched case sensitively. Starting with version 1.2.21 you can set
@@ -314,12 +314,12 @@ the attribute <b>user_case_insensitive</b> to "True". Then the comparison will b
 <br/>
 <p>
 For load balancing workers the status worker shows some interesting overview information.
-It categorizes the members of the load balancer into the classes "good", "bad" and degraded".
+It categorises the members of the load balancer into the classes "good", "bad" and degraded".
 This feature can be combined with external escalation procedures. Depending on your global
-system design and your operating practises your preferred categorization might vary.
+system design and your operating practises your preferred categorisation might vary.
 </p>
 <p>
-The categorization is based on the activation state of the workers (active, disabled or stopped),
+The categorisation is based on the activation state of the workers (active, disabled or stopped),
 which is a pure configuration state, and the runtime state
 (OK or ERR with possible substates idle, busy, recovering, probing, and forced recovery)
 which only depends on the runtime situation.
@@ -338,7 +338,7 @@ can't be sure. This state has been called N/A before version 1.2.24.
 </li>
 <li>
 <b>ERROR (recovering)</b>: The worker was in error state for some time and is now
-marked for recovery. The next request suitable for thi worker will use it.
+marked for recovery. The next request suitable for this worker will use it.
 </li>
 <li>
 <b>ERROR (probing)</b>: After setting the worker to recovering, we received a request
@@ -371,7 +371,7 @@ with logical "or", if you combine a configuration and a runtime state with a dot
 </p>
 <p>
 The status worker first tries to match against the "bad" definitions, if this doesn't succeed
-it tries to macth against "good", and finally it choses "degarded", if no "bad" or "good" match
+it tries to match against "good", and finally it chooses "degraded", if no "bad" or "good" match
 can be found.
 </p>
 </subsection>
@@ -455,7 +455,7 @@ by default no options are activated. The following options exist:
 <b>0x0080</b>: hide load balancer status summary
 </li>
 <li>
-<b>0x0100</b>: hide configuraton for ajp and load balancer member workers
+<b>0x0100</b>: hide configuration for ajp and load balancer member workers
 </li>
 </ul>
 Values 0x0040-0x0100 have been added in version 1.2.27.

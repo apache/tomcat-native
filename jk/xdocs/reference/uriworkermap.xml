@@ -173,7 +173,7 @@ reloaded dynamically, you can use this to temporarily disable request forwarding
 An rule gets disabled, if it is suffixed with '-':
 <source>
   # We are not in maintenance.
-  # The maintenance rule got defined someahere else.
+  # The maintenance rule got defined somewhere else.
   -/*=maintenance
 </source>
 Exclusion rules can get disabled as well, then the rule starts with '-!'.
@@ -224,7 +224,7 @@ The rules is that the url must be prefixed with the host name.
 </p>
 <p>
 Note that /mysecondapp/* will be mapped to all virtual hosts present.
-In  case one needs to prevent the mappings to some particular virual host then
+In  case one needs to prevent the mappings to some particular virtual host then
 the exclusion rule must be used
 <source>
   # Make sure the myapp is accessible by all virtual hosts

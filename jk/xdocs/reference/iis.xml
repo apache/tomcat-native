@@ -133,7 +133,7 @@ PUT HTTP method.
 <p>This directive has been added in version 1.2.21</p>
 </attribute>
 <attribute name="uri_select" required="false"><p>
-A string value which influences, how URIs are decoded and reencoded
+A string value which influences, how URIs are decoded and re-encoded
 between IIS and Tomcat. You should leave this at it's default value,
 unless you have a very good reason to change it.
 </p>
@@ -151,15 +151,15 @@ URI will not work.
 </p>
 <p>
 If the value is "escaped", the forwarded URI
-will be the reencoded form of the URI used by "parsed".
+will be the re-encoded form of the URI used by "parsed".
 Explicit path components like ".." will already be resolved.
 This will not work in combination with URL encoded session IDs.
 </p>
 <p>
 If the value is "proxy", the forwarded URI
-will be a partially reencoded form of the URI used by "parsed".
+will be a partially re-encoded form of the URI used by "parsed".
 Explicit path components like ".." will already be resolved.
-and problematic are reencoded.
+and problematic are re-encoded.
 </p>
 <p>The default value since version 1.2.24 is "proxy". Before it was "parsed".</p>
 </attribute>
@@ -204,7 +204,7 @@ with normal requests instead.
 <section name="Using a properties file for configuration">
 <p>
 The ISAPI redirector can read it's configuration from a properties file instead of the registry. 
-This has the advantage that you can use multiple ISAPI redirectors with independant configurations on the same server.
+This has the advantage that you can use multiple ISAPI redirectors with independent configurations on the same server.
 The redirector will check for the properties file during initialisation, and use it in preference to the registry if present.
 </p>
 <p>
@@ -249,8 +249,8 @@ worker_mount_file=c:\tomcat\conf\uriworkermap.properties
 
 <section name="Using a simple rewrite rules">
 <p>
-The ISAPI redirector with version 1.2.16 can do a simple URL rewriting. Althought not
-as powerfull as Apache Httpd's mod_rewrite, it allows a simple exchange of request uris
+The ISAPI redirector with version 1.2.16 can do a simple URL rewriting. Although not
+as powerful as Apache Httpd's mod_rewrite, it allows a simple exchange of request URIs
 </p>
 <p>
 The rule is in the form rewritten=real-url.
