@@ -234,8 +234,8 @@ static jk_worker_env_t worker_env;
 static apr_global_mutex_t *jk_log_lock = NULL;
 static char *jk_shm_file = NULL;
 static size_t jk_shm_size = 0;
-static int jk_watchdog_interval = 0;
-static int jk_watchdog_done = 0;
+static volatile int jk_watchdog_interval = 0;
+static volatile int jk_watchdog_running  = 0;
 
 /*
  * Worker stuff
@@ -2212,7 +2212,7 @@ static apr_status_t jk_cleanup_shmem(void *data)
     /* Force the watchdog thread exit */
     if (jk_watchdog_interval > 0) {
         jk_watchdog_interval = 0;
-        while (!jk_watchdog_done)
+        while (jk_watchdog_running)
             apr_sleep(apr_time_from_sec(1));
     }
     jk_shm_close();
@@ -2849,9 +2849,12 @@ static void * APR_THREAD_FUNC jk_watchdog_func(apr_thread_t *thd, void *data)
         if (JK_IS_DEBUG_LEVEL(conf->log))
            jk_log(conf->log, JK_LOG_DEBUG,
                   "Watchdog thread running");
+        jk_watchdog_running = 1;
         wc_maintain(conf->log);
+        if (!jk_watchdog_interval)
+            break;
     }
-    jk_watchdog_done = 1;
+    jk_watchdog_running = 0;
     return NULL;
 }
 
