@@ -25,7 +25,7 @@
 <title>Workers HowTo</title>
 <author email="hgomez@apache.org">Henri Gomez</author>
 <author email="shachor@il.ibm.com">Gal Shachor</author>
-<author email="mturk@apache.org">Mladen Tur</author>
+<author email="mturk@apache.org">Mladen Turk</author>
 <date>$Date$</date>
 </properties>
 <body>
@@ -64,7 +64,7 @@ explains how to work with it.
 
 <p>
 This document was originally part of <b>Tomcat: A Minimalistic User's Guide</b> written by Gal Shachor, 
-but has been split off for organizational reasons. 
+but has been split off for organisational reasons. 
 </p>
 </section>
 
@@ -308,7 +308,7 @@ web servers use the:</p>
 <p>
 You can define "macros" in the property files. 
 These macros let you define properties and later on use them while 
-constructing other properties and it's very usefull when you want to
+constructing other properties and it's very useful when you want to
 change your Java Home, Tomcat Home or OS path separator
 </p>
 
@@ -330,7 +330,7 @@ change your Java Home, Tomcat Home or OS path separator
 Workers can reference configurations of other workers.
 If worker "x" references worker "y", then it inherits all
 configuration parameters from "y", except for the ones
-that have explicitely been set for "x".
+that have explicitly been set for "x".
 </p>
 
 <source>

@@ -30,7 +30,7 @@
 <section name="Introduction">
 <p>
   This document describes the configuration files used by JK on the
-  Web Server side for the 'impatients':
+  Web Server side for the 'impatient':
     <ul>
     <li>
     <b>workers.properties</b> is a mandatory file used by the webserver and which
@@ -68,7 +68,7 @@
 
 <section name="Minimum Apache web server configuration">
 <p>
-   Here is a minimun informations about Apache configuration, a 
+   Here is a minimum information about Apache configuration, a 
    complete documentation is available in <a href="apache.html">Apache HowTo</a>.
 </p>
 <p>
@@ -146,7 +146,7 @@
 	A complete documentation is available in <a href="iis.html">IIS HowTo</a>.
 </p>
 <todo>
-More informations to be added!
+More information to be added!
 </todo>
 </section>
 
@@ -154,7 +154,7 @@ More informations to be added!
 <p>
 	A complete documentation is available in <a href="nes.html">Netscape/iPlanet HowTo</a>.
 <todo>
-More informations to be added?
+More information to be added?
 </todo>
 </p>
 </section>

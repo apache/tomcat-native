@@ -30,7 +30,7 @@
 <section name="Introduction"> 
 <br/>
 <p>Setting communication timeouts is very important to improve the
-communication process. They help to detect problems and stabilize
+communication process. They help to detect problems and stabilise
 a distributed system. JK can use several different timeout types, which
 can be individually configured. For historical reasons, all of them are
 disabled by default. This HowTo explains their use and gives
@@ -48,7 +48,7 @@ be counterproductive.
 </warn>
 <warn>
 Long Garbage Collection pauses on the backend do not make a good
-fit with some timeouts. Try to optimize your Java memory and GC settings.
+fit with some timeouts. Try to optimise your Java memory and GC settings.
 </warn>
 </section>
 
@@ -66,7 +66,7 @@ The test packets will be answered by the backend very fast with a minimal amount
 needed processing resources. A positive answer tells us, that the backend can be reached
 and is actively processing requests. It does not detect, if some context is deployed
 and working. The benefit of CPing/CPong is a fast detection of a communication
-problem with the backend. The downside is a slightly increased laterncy.
+problem with the backend. The downside is a slightly increased latency.
 </p>
 <p>
 The worker attribute <b>connect_timeout</b> sets the wait timeout for CPong during
@@ -90,7 +90,7 @@ are between 5000 and 10000 milliseconds. Remember: don't use extremely small val
 <subsection name="Low-Level TCP Timeouts">
 <p>
 Some platforms allow to set timeouts for all operations on TCP sockets.
-This is available for Linux and Windows, other patforms do not support this,
+This is available for Linux and Windows, other platforms do not support this,
 e.g. Solaris. If your platform supports TCP send and receive timeouts,
 you can set them using the worker attribute <b>socket_timeout</b>.
 You can not set the two timeouts to different values.
@@ -155,7 +155,7 @@ recommend to change this value, because it has a lot of side effects.
 Until version 1.2.26, the maintenance task only runs, if requests get
 processed. So if your web server has processes that do not receive any
 requests for a long time, there is no way to close the idle connections
-in its pool. Starting with version 1.2.27 you can configure an independant
+in its pool. Starting with version 1.2.27 you can configure an independent
 watchdog thread when using Apache 2.x with threaded APR or IIS.
 </p>
 <p>
@@ -176,7 +176,7 @@ as you configured as the pool size.
 </p>
 <p>
 The JK attribute <b>connection_pool_minsize</b> defines,
-how many idle connections remain when the pool gets shrinked.
+how many idle connections remain when the pool gets shrunken.
 By default this is half of the maximum pool size.
 </p>
 </subsection>
@@ -238,16 +238,16 @@ long running downloads. You would not be able to set an effective global
 reply timeout, because downloads could last for many minutes.
 Most applications though have limited processing time before starting
 to return the response. For those applications you could set an explicit
-reply timeout. Applications that do not harmonize with reply timeouts
+reply timeout. Applications that do not harmonise with reply timeouts
 are batch type applications, data warehouse and reporting applications
 which are expected to observe long processing times.
 </p>
 <warn>
 If JK aborts waiting for a response, because a reply timeout fired,
 there is no way to stop processing on the backend. Although you free
-processing ressources in your web server, the request
+processing resources in your web server, the request
 will continue to run on the backend - without any way to send back a
-result once the reply timout fired.
+result once the reply timeout fired.
 </warn>
 <p>
 JK uses the worker attribute <b>reply_timeout</b> to set reply timeouts.
