@@ -2221,7 +2221,7 @@ static void display_worker_lb(jk_ws_service_t *s,
             ajp_worker_t *aw = (ajp_worker_t *)swr->worker->worker_private;
 
             if (mime == JK_STATUS_MIME_HTML) {
-                jk_puts(s, "<tr>\n<td>");
+                jk_puts(s, "<tr>\n<td>[");
                 jk_puts(s, "S");
                 if (!read_only) {
                     jk_puts(s, "|");
@@ -2235,8 +2235,8 @@ static void display_worker_lb(jk_ws_service_t *s,
                         status_write_uri(s, p, "T", JK_STATUS_CMD_RECOVER, JK_STATUS_MIME_UNKNOWN,
                                          name, sub_name, 0, 0, "", l);
                     }
-                    jk_puts(s, "]");
                 }
+                jk_puts(s, "]");
                 jk_puts(s, "&nbsp;</td>");
             }
             display_worker_ajp_details(s, p, aw, swr, lb, ms_min, ms_max, 0, l);
@@ -2247,7 +2247,7 @@ static void display_worker_lb(jk_ws_service_t *s,
                 ajp_worker_t *aw = (ajp_worker_t *)wr->worker->worker_private;
 
                 if (mime == JK_STATUS_MIME_HTML) {
-                    jk_puts(s, "<tr>\n<td>");
+                    jk_puts(s, "<tr>\n<td>[");
                     status_write_uri(s, p, "S", JK_STATUS_CMD_SHOW, JK_STATUS_MIME_UNKNOWN,
                                  name, sub_name, 0, 0, "", l);
                     if (!read_only) {
@@ -2262,8 +2262,8 @@ static void display_worker_lb(jk_ws_service_t *s,
                             status_write_uri(s, p, "T", JK_STATUS_CMD_RECOVER, JK_STATUS_MIME_UNKNOWN,
                                              name, sub_name, 0, 0, "", l);
                         }
-                        jk_puts(s, "]");
                     }
+                    jk_puts(s, "]");
                     jk_puts(s, "&nbsp;</td>");
                 }
                 display_worker_ajp_details(s, p, aw, wr, lb, ms_min, ms_max, 0, l);
