@@ -2455,7 +2455,7 @@ static int init_jk(char *serverName)
                     jk_log(logger, JK_LOG_WARNING,
                            "The optimal shared memory size can now be determined automatically.");
                     jk_log(logger, JK_LOG_WARNING,
-                           "You can remove the JkShmSize directive if you want to use the optimal size.");
+                           "You can remove the shm_size attribute if you want to use the optimal size.");
                 }
                 if ((rv = jk_shm_open(shm_name, shm_config_size, logger)) != 0)
                     jk_log(logger, JK_LOG_ERROR,
