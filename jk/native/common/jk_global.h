@@ -117,6 +117,7 @@ extern char *strdup(const char *str);
 #include <winsock2.h>
 #include <mswsock.h>
 #include <ws2tcpip.h>
+#include <mstcpip.h>
 #endif /* _WINDOWS_ */
 #include <sys/timeb.h>
 #include <process.h>

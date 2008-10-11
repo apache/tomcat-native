@@ -448,6 +448,29 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
         jk_log(l, JK_LOG_DEBUG,
                "socket TCP_NODELAY set to On");
     if (keepalive) {
+#if defined(WIN32) && !defined(NETWARE)
+        DWORD dw;
+        struct tcp_keepalive ka = { 0 }, ks = { 0 };
+        if (timeout)
+            ka.keepalivetime = timeout * 10000;
+        else
+            ka.keepalivetime = 60 * 10000; /* 10 minutes */
+        ka.keepaliveinterval = 1000;
+        ka.onoff = 1;
+        if (WSAIoctl(sd, SIO_KEEPALIVE_VALS, &ka, sizeof(ka),
+                     &ks, sizeof(ks), &dw, NULL, NULL)) {
+            JK_GET_SOCKET_ERRNO();
+            jk_log(l, JK_LOG_ERROR,
+                   "failed setting SIO_KEEPALIVE_VALS (errno=%d)", errno);
+            jk_close_socket(sd, l);
+            JK_TRACE_EXIT(l);
+            return JK_INVALID_SOCKET;                                                
+        }
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "socket SO_KEEPALIVE set to %d seconds",
+                   ka.keepalivetime / 1000);
+#else
         set = 1;
         if (setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE, (SET_TYPE)&set,
                        sizeof(set))) {
@@ -461,6 +484,7 @@ jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
         if (JK_IS_DEBUG_LEVEL(l))
             jk_log(l, JK_LOG_DEBUG,
                    "socket SO_KEEPALIVE set to On");
+#endif
     }
 
     if (sock_buf > 0) {
