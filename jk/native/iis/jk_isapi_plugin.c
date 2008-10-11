@@ -1071,7 +1071,7 @@ static int JK_METHOD start_response(jk_ws_service_t *s,
                                                       NULL, NULL);
             }
             else {
-                DWORD status_str_len = strlen(status_str);
+                DWORD status_str_len = (DWORD)strlen(status_str);
                 /* Old style response - forces Connection: close if Tomcat response doesn't
                    specify necessary details to allow keep alive */
                 rc = p->lpEcb->ServerSupportFunction(p->lpEcb->ConnID,
