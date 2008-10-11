@@ -471,6 +471,7 @@ static struct error_reasons {
         (place) = def;                                      \
   } } while(0)
 
+static char dll_file_path[MAX_PATH];
 static char ini_file_name[MAX_PATH];
 static int using_ini_file = JK_FALSE;
 static int is_inited = JK_FALSE;
@@ -2273,18 +2274,33 @@ BOOL WINAPI DllMain(HINSTANCE hInst,    // Instance Handle of the DLL
                     LPVOID lpReserved)  // Reserved parameter for future use
 {
     BOOL fReturn = TRUE;
-    char drive[_MAX_DRIVE];
-    char dir[_MAX_DIR];
     char fname[MAX_PATH];
-    char file_name[MAX_PATH];
 
     UNREFERENCED_PARAMETER(lpReserved);
 
     switch (ulReason) {
     case DLL_PROCESS_ATTACH:
-        if (GetModuleFileName(hInst, file_name, sizeof(file_name))) {
-            _splitpath(file_name, drive, dir, fname, NULL);
-            _makepath(ini_file_name, drive, dir, fname, ".properties");
+        if (GetModuleFileName(hInst, fname, sizeof(fname))) {
+            char *p = strrchr(fname, '.');
+            if (p) {
+                *p = '\0';
+                StringCbCopy(ini_file_name, MAX_PATH, fname);
+                StringCbCat(ini_file_name, MAX_PATH, ".properties");
+            }
+            else {
+                /* Cannot obtain file name ? */
+                fReturn = JK_FALSE;
+            }
+            if ((p = strrchr(fname, '\\'))) {
+                *(p++) = '\0';
+                StringCbCopy(dll_file_path, MAX_PATH, fname);
+                SetEnvironmentVariable("JKISAPI_PATH", dll_file_path);
+                SetEnvironmentVariable("JKISAPI_NAME", p);
+            }
+            else {
+                /* Cannot obtain file name ? */
+                fReturn = JK_FALSE;
+            }
         }
         else {
             fReturn = JK_FALSE;
