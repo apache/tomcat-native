@@ -2102,13 +2102,24 @@ DWORD WINAPI HttpExtensionProc(LPEXTENSION_CONTROL_BLOCK lpEcb)
 
     /* Initialise jk */
     if (is_inited && !is_mapread) {
-        char serverName[MAX_SERVERNAME] = { 0 };
-        DWORD dwLen = sizeof(serverName);
-        if (lpEcb->
-            GetServerVariable(lpEcb->ConnID, SERVER_NAME, serverName,
-                              &dwLen)) {
-            if (dwLen > 0)
+        char serverName[MAX_SERVERNAME] = "";
+        char instanceId[MAX_INSTANCEID] = "";
+
+        DWORD dwLen = MAX_SERVERNAME - MAX_INSTANCEID - 1;
+        if (lpEcb->GetServerVariable(lpEcb->ConnID,
+                    SERVER_NAME, serverName, &dwLen)) {
+            if (dwLen > 0) {
                 serverName[dwLen - 1] = '\0';
+                dwLen = MAX_INSTANCEID;
+                if (lpEcb->GetServerVariable(lpEcb->ConnID,
+                            INSTANCE_ID, instanceId, &dwLen)) {
+                    if (dwLen > 0) {
+                        instanceId[dwLen - 1] = '\0';
+                        StringCbCat(serverName, MAX_SERVERNAME, "_");
+                        StringCbCat(serverName, MAX_SERVERNAME, instanceId);
+                    }
+                }
+            }
             if (init_jk(serverName))
                 is_mapread = JK_TRUE;
         }
