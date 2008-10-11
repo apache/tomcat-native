@@ -302,8 +302,9 @@ static struct error_reasons {
     },
     { 401,
       "Unauthorized",
-      NULL,
-      NULL
+      "Access is denied due to invalid credentials",
+      "You do not have permission to view this directory or "
+      "page using the credentials that you supplied."
     },
     { 402,
       "Payment Required",
@@ -312,8 +313,9 @@ static struct error_reasons {
     },
     { 403,
       "Forbidden",
-      NULL,
-      NULL
+      "Access is denied",
+      "You do not have permission to view this directory or page "
+      "using the credentials that you supplied."
     },
     { 404,
       "Not Found",
@@ -323,58 +325,70 @@ static struct error_reasons {
     },
     { 405,
       "Method Not Allowed",
-      NULL,
-      NULL
+      "HTTP method used to access this page is not allowed",
+      "The page you are looking for cannot be displayed because an "
+      "invalid method (HTTP method) was used to attempt access."
     },
     { 406,
       "Not Acceptable",
-      NULL,
-      NULL
+      "Client browser does not accept the MIME type of the requested page",
+      "The page you are looking for cannot be opened by your browser "
+      "because it has a file name extension that your browser "
+      "does not accept."
     },
     { 407,
       "Proxy Authentication Required",
       NULL,
-      NULL
+      "The client must first authenticate itself with the proxy"
     },
     { 408,
       "Request Timeout",
       NULL,
-      NULL
+      "The client did not produce a request within the time "
+      "that the server was prepared to wait."
     },
     { 409,
       "Conflict",
       NULL,
-      NULL
+      "The request could not be completed due to a conflict with "
+      "the current state of the resource."
     },
     { 410,
       "Gone",
       NULL,
-      NULL
+      "The requested resource is no longer available at the "
+      "server and no forwarding address is known."
     },
     { 411,
       "Length Required",
       NULL,
-      NULL
+      "The server refuses to accept the request without a "
+      "defined Content-Length."
     },
     { 412,
       "Precondition Failed",
       NULL,
-      NULL
+      "The precondition given in one or more of the request "
+      "header fields evaluated to false when it was tested on the server."
     },
     { 413,
       "Request Entity Too Large",
       NULL,
-      NULL
+      "The HTTP method does not allow the data transmitted, "
+      "or the data volume exceeds the capacity limit."
     },
     { 414,
       "Request-URI Too Long",
-      NULL,
-      NULL
+      "Submitted URI too large",
+      "The length of the requested URL exceeds the capacity limit "
+      "for this server. The request cannot be processed."
     },
     { 415,
       "Unsupported Media Type",
       NULL,
-      NULL
+      "The server is refusing to service the request because the "
+      "entity of the request is in a format not supported by the "
+      "requested resource for the requested method."
     },
     { 500,
       "Internal Server Error",
@@ -385,12 +399,16 @@ static struct error_reasons {
     { 501,
       "Not Implemented",
       NULL,
-      NULL
+      "The server does not support the functionality required "
+      "to fulfill the request."
     },
     { 502,
       "Bad Gateway",
       NULL,
-      NULL
+      "There is a problem with the page you are looking for, "
+      "and it cannot be displayed. When the Web server (while "
+      "acting as a gateway or proxy) contacted the upstream content "
+      "server, it received an invalid response from the content server."
     },
     { 503,
       "Service Unavailable",
@@ -402,12 +420,14 @@ static struct error_reasons {
     { 504,
       "Gateway Timeout",
       NULL,
-      NULL
+      "The server, while acting as a gateway or proxy, "
+      "did not receive a timely response from the upstream server"
     },
     { 505,
       "HTTP Version Not Supported",
       NULL,
-      NULL
+      "The server does not support, or refuses to support, the "
+      "HTTP protocol version that was used in the request message."
     },
     { 0,
       NULL,
