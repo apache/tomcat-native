@@ -273,6 +273,22 @@ worker_mount_file=c:\tomcat\conf\uriworkermap.properties
         </li>
     </ul>
 </p>
+<p>Starting with version 1.2.27 two environment variables are
+dynamically added to the environment that can be used inside
+<code>.properties</code> files.
+    <ul>
+        <li>JKISAPI_PATH - Full path to the ISAPI Redirector.
+        </li>
+        <li>JKISAPI_NAME - Name of the ISAPI Redirector dll without extension
+        </li>
+    </ul>    
+</p>
+<p><source>
+
+# Use the logs in the installation path of ISAPI Redirector
+log_file=$(ISAPI_PATH)\$(ISAPI_NAME).log
+
+</source</p>
 </section>
 
 <section name="Using a simple rewrite rules">
