@@ -288,7 +288,7 @@ dynamically added to the environment that can be used inside
 # Use the logs in the installation path of ISAPI Redirector
 log_file=$(ISAPI_PATH)\$(ISAPI_NAME).log
 
-</source</p>
+</source></p>
 </section>
 
 <section name="Using a simple rewrite rules">
