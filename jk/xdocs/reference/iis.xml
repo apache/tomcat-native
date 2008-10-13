@@ -199,6 +199,34 @@ with normal requests instead.
 </p>
 <p>This directive has been added in version 1.2.27</p>
 </attribute>
+<attribute name="error_page" required="false"><p>
+A string value representing the error page url redirection when
+backend returns non-200 response. This directive can be used
+to customise the error messages returned from backend server.
+</p>
+<p>The url must point to a valid server url and can contain
+format string number <code>(%d)</code> that can be used to
+separate the pages by error number. The redirect url in that
+case is formatted by replacing <code>%d</code> from
+<code>error_page</code> to returned error number.
+</p>
+<p>This directive has been added in version 1.2.27</p>
+</attribute>
+<attribute name="enable_chunked_encoding" required="false"><p>
+A string value representing a boolean. If it is set to true,
+chunked encoding is supported by the server.
+</p>
+<p>
+A true value can be represented by the string "1" or any string starting
+with the letters "T" or "t". A false value will be assumed for "0"
+or any string starting with "F" or "f". The default value is false.
+</p>
+<warn>This option is considered experimental and its support
+must be compile time enabled. Use <code>isapi_redirect.dll</code>
+with chunked support enabled.
+</warn>
+<p>This directive has been added in version 1.2.27</p>
+</attribute>
 </attributes>
 </section> 
 <section name="Using a properties file for configuration">
