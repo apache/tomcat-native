@@ -172,8 +172,9 @@ static int nb_connect(jk_sock_t sd, struct sockaddr *addr, int timeout, jk_logge
         FD_ZERO(&efdset);
         FD_SET(sd, &efdset);
 
-        tv.tv_sec  = timeout;
-        tv.tv_usec = 0;
+        tv.tv_sec = timeout / 1000;
+        tv.tv_usec = (timeout % 1000) * 1000;
+
         rc = select((int)sd + 1, NULL, &wfdset, &efdset, &tv);
         if (JK_IS_SOCKET_ERROR(rc) || rc == 0) {
             rc = WSAGetLastError();
@@ -235,8 +236,8 @@ static int nb_connect(jk_sock_t sd, struct sockaddr *addr, int timeout, jk_logge
 
         FD_ZERO(&wfdset);
         FD_SET(sd, &wfdset);
-        tv.tv_sec  = timeout;
-        tv.tv_usec = 0;
+        tv.tv_sec = timeout / 1000;
+        tv.tv_usec = (timeout % 1000) * 1000;
         rc = select(sd + 1, NULL, &wfdset, NULL, &tv);
         if (rc <= 0) {
             /* Save errno */
@@ -413,7 +414,8 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
  * @remark          Cares about errno
  */
 jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
-                         int timeout, int sock_buf, jk_logger_t *l)
+                         int timeout, int connect_timeout,
+                         int sock_buf, jk_logger_t *l)
 {
     char buf[32];
     jk_sock_t sd;
@@ -578,7 +580,7 @@ iSeries when Unix98 is required at compil time */
 #if (_XOPEN_SOURCE >= 520) && defined(AS400)
     ((struct sockaddr *)addr)->sa_len = sizeof(struct sockaddr_in);
 #endif
-    ret = nb_connect(sd, (struct sockaddr *)addr, timeout, l);
+    ret = nb_connect(sd, (struct sockaddr *)addr, connect_timeout, l);
 #if defined(WIN32) || (defined(NETWARE) && defined(__NOVELL_LIBC__))
     if (JK_IS_SOCKET_ERROR(ret)) {
         JK_GET_SOCKET_ERRNO();

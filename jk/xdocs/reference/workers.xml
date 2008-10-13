@@ -248,6 +248,15 @@ and retry again. If set to zero (default) JK will wait for an infinite amount of
 on all socket operations.
 </directive>
 
+<directive name="socket_connect_timeout" default="socket_timeout" required="false">
+Socket connect timeout in milliseconds used for the communication channel between JK and remote host.
+If the remote host does not respond inside the timeout specified, JK will generate an error,
+and retry again.
+<p>
+This feature has been added in <b>jk 1.2.27</b>.
+</p>
+</directive>
+
 <directive name="socket_keepalive" default="False" required="false">
 This directive should be used when you have a firewall between your webserver
 and the Tomcat engine, who tend to drop inactive connections. This flag will tell the Operating System

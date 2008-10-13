@@ -43,6 +43,11 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>
+        Added socket_connect_timeout directive for setting the
+        connect timeout for the socket. This enables to have low
+        connection timeout but higher operational timeouts. (mturk)
+      </update>
       <fix>Always send initial POST packet even if the client
         disconnected after sending request but before providing
         POST data. In that case or in case the client broke the

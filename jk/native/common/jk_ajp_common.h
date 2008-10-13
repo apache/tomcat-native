@@ -306,6 +306,7 @@ struct ajp_worker
      * Handle Socket Timeouts
      */
     int socket_timeout;
+    int socket_connect_timeout;
     int keepalive;
     int socket_buf;
     /*

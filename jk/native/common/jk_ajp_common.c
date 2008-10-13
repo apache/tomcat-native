@@ -913,6 +913,7 @@ int ajp_connect_to_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
     ae->sd = jk_open_socket(&ae->worker->worker_inet_addr,
                             ae->worker->keepalive,
                             ae->worker->socket_timeout,
+                            ae->worker->socket_connect_timeout,
                             ae->worker->socket_buf, l);
 
     if (!IS_VALID_SOCKET(ae->sd)) {
@@ -2509,6 +2510,10 @@ int ajp_init(jk_worker_t *pThis,
         p->socket_timeout =
             jk_get_worker_socket_timeout(props, p->name, AJP_DEF_SOCKET_TIMEOUT);
 
+        p->socket_connect_timeout =
+            jk_get_worker_socket_connect_timeout(props, p->name,
+                                                 p->socket_timeout * 1000);
+
         p->keepalive =
             jk_get_worker_socket_keepalive(props, p->name, JK_FALSE);
 
@@ -2591,51 +2596,55 @@ int ajp_init(jk_worker_t *pThis,
                    "setting endpoint options:",
                    p->keepalive);
             jk_log(l, JK_LOG_DEBUG,
-                   "keepalive:        %d",
+                   "keepalive:              %d",
                    p->keepalive);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "timeout:          %d",
+                   "socket timeout:         %d",
                    p->socket_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "buffer size:      %d",
+                   "socket connect timeout: %d",
+                   p->socket_connect_timeout);
+
+            jk_log(l, JK_LOG_DEBUG,
+                   "buffer size:            %d",
                    p->socket_buf);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "pool timeout:     %d",
+                   "pool timeout:           %d",
                    p->cache_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "ping timeout:     %d",
+                   "ping timeout:           %d",
                    p->ping_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "connect timeout:  %d",
+                   "connect timeout:        %d",
                    p->connect_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "reply timeout:    %d",
+                   "reply timeout:          %d",
                    p->reply_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "prepost timeout:  %d",
+                   "prepost timeout:        %d",
                    p->prepost_timeout);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "recovery options: %d",
+                   "recovery options:       %d",
                    p->recovery_opts);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "retries:          %d",
+                   "retries:                %d",
                     p->retries);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "max packet size:  %d",
+                   "max packet size:        %d",
                     p->max_packet_size);
 
             jk_log(l, JK_LOG_DEBUG,
-                   "retry interval:   %d",
+                   "retry interval:         %d",
                     p->retry_interval);
         }
         /*

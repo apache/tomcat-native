@@ -41,7 +41,8 @@ extern "C"
 int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *l);
 
 jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
-                         int timeout, int sock_buf, jk_logger_t *l);
+                         int timeout, int connect_timeout,
+                         int sock_buf, jk_logger_t *l);
 
 int jk_close_socket(jk_sock_t sd, jk_logger_t *l);
 

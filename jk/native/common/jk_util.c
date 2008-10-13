@@ -58,6 +58,7 @@
 #define PREPOST_TIMEOUT_OF_WORKER   ("prepost_timeout")
 #define REPLY_TIMEOUT_OF_WORKER     ("reply_timeout")
 #define SOCKET_TIMEOUT_OF_WORKER    ("socket_timeout")
+#define SOCKET_CONNECT_TIMEOUT_OF_WORKER ("socket_connect_timeout")
 #define PING_TIMEOUT_OF_WORKER      ("ping_timeout")
 #define PING_MODE_OF_WORKER         ("ping_mode")
 #define SOCKET_BUFFER_OF_WORKER     ("socket_buffer")
@@ -182,6 +183,7 @@ static const char *unique_properties[] = {
     PING_MODE_OF_WORKER,
     REPLY_TIMEOUT_OF_WORKER,
     SOCKET_TIMEOUT_OF_WORKER,
+    SOCKET_CONNECT_TIMEOUT_OF_WORKER,
     SOCKET_BUFFER_OF_WORKER,
     SOCKET_KEEPALIVE_OF_WORKER,
     CONN_PING_INTERVAL_OF_WORKER,
@@ -272,6 +274,7 @@ static const char *supported_properties[] = {
     PING_MODE_OF_WORKER,
     REPLY_TIMEOUT_OF_WORKER,
     SOCKET_TIMEOUT_OF_WORKER,
+    SOCKET_CONNECT_TIMEOUT_OF_WORKER,
     SOCKET_BUFFER_OF_WORKER,
     SOCKET_KEEPALIVE_OF_WORKER,
     CONN_PING_INTERVAL_OF_WORKER,
@@ -955,6 +958,19 @@ int jk_get_worker_socket_timeout(jk_map_t *m, const char *wname, int def)
     }
 
     MAKE_WORKER_PARAM(SOCKET_TIMEOUT_OF_WORKER);
+
+    return jk_map_get_int(m, buf, def);
+}
+
+int jk_get_worker_socket_connect_timeout(jk_map_t *m, const char *wname, int def)
+{
+    char buf[1024];
+
+    if (!m || !wname) {
+        return -1;
+    }
+
+    MAKE_WORKER_PARAM(SOCKET_CONNECT_TIMEOUT_OF_WORKER);
 
     return jk_map_get_int(m, buf, def);
 }
