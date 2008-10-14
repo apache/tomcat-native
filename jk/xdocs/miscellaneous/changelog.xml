@@ -43,6 +43,19 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <update>IIS: Optionally allow chunked encoding for responses.
+        At the moment only usable, if build with ISAPI_ALLOW_CHUNKING
+        defined. Based on patch by Tim Whittington. (rjung)
+      </update>
+      <update>IIS: Optionally use raw headers instead of CGI
+        headers. Fixes problem "underscore=dash" problem in
+        header names. At the moment only available, if build with USE_RAW_HEADERS
+        defined. (rjung)
+      </update>
+      <update>IIS: Optionally improve IIS 5.1 compatibility.
+        At the moment only available, if build with AUTOMATIC_AUTH_NOTIFICATION
+        defined. Based on patch by Tim Whittington. (rjung)
+      </update>
       <fix>IIS: Fix memory corruption due to parallel initialization
         by multiple threads. (rjung)
       </fix>
