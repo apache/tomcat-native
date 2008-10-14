@@ -137,7 +137,8 @@ then
        echo "No Revision found at '$JK_SVN_URL'"
        exit 3
     fi
-    JK_DIST=${JK_CVST}-${tag}-dev-${JK_REV}-src
+    JK_SUFFIX=${JK_REV}
+    JK_DIST=${JK_CVST}-${tag}-dev-${JK_SUFFIX}-src
 elif [ -n "$branch" ]
 then
     JK_BRANCH=`echo $branch | sed -e 's#/#__#g'`
@@ -148,7 +149,8 @@ then
        echo "No Revision found at '$JK_SVN_URL'"
        exit 3
     fi
-    JK_DIST=${JK_CVST}-${tag}-dev-${JK_BRANCH}-${JK_REV}-src
+    JK_SUFFIX=${JK_BRANCH}-${JK_REV}
+    JK_DIST=${JK_CVST}-${tag}-dev-${JK_SUFFIX}-src
 elif [ -n "$local_dir" ]
 then
     JK_SVN_URL="$local_dir"
@@ -158,12 +160,14 @@ then
        echo "No Revision found at '$JK_SVN_URL'"
        exit 3
     fi
-    JK_DIST=${JK_CVST}-${tag}-dev-local-`date +%Y%m%d%H%M%S`-${JK_REV}-src
+    JK_SUFFIX=local-`date +%Y%m%d%H%M%S`-${JK_REV}
+    JK_DIST=${JK_CVST}-${tag}-dev-${JK_SUFFIX}-src
 else
     JK_VER=$tag
     JK_TAG=`echo $tag | sed -e 's#^#JK_#' -e 's#\.#_#g'`
     JK_BRANCH=`echo $tag | sed -e 's#^#jk#' -e 's#\.[0-9][0-9]*$##' -e 's#$#.x#'`
     JK_SVN_URL="${SVNROOT}/${SVNPROJ}/tags/${JK_BRANCH}/${JK_TAG}"
+    JK_SUFFIX=''
     JK_DIST=${JK_CVST}-${JK_VER}-src
 fi
 
@@ -188,6 +192,13 @@ done
 cd ${JK_DIST}.tmp/jk/xdocs
 ant
 cd ../../..
+
+# Update version information
+file=${JK_DIST}.tmp/jk/native/common/jk_version.h
+cp -p $file $file.orig
+sed -e 's/^#define JK_REVISION .*/#define JK_REVISION "-'$JK_SUFFIX'"/' \
+  $file.orig > $file
+rm $file.orig
 
 # Copying things into the source distribution
 copy_files ${JK_DIST}.tmp $JK_DIST "$COPY_TOP"
