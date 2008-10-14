@@ -29,13 +29,16 @@
 #define JK_VERFIX       27
 #define JK_VERSTRING    "1.2.27"
 
+/* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
+#define JK_VERISRELEASE 0
 /* Beta number */
 #define JK_VERBETA      0
 #define JK_BETASTRING   "0"
-/* set JK_VERISRELEASE to 1 when release (do not forget to commit!) */
-#define JK_VERISRELEASE 0
+/* Release candidate */
 #define JK_VERRC        0
 #define JK_RCSTRING     "0"
+/* Source Control Revision as a suffix, e.g. "-r12345" */
+#define JK_REVISION ""
 
 /************** END OF AREA TO MODIFY BEFORE RELEASING *************/
 
@@ -52,23 +55,18 @@
 /* Build JK_EXPOSED_VERSION and JK_VERSION */
 #define JK_EXPOSED_VERSION_INT PACKAGE "/" JK_VERSTRING
 
-#if ( JK_VERISRELEASE == 1 )
-#define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT
+#if (JK_VERBETA != 0)
+#define JK_EXPOSED_VERSION JK_EXPOSED_VERSION_INT "-beta-" JK_BETASTRING
 #else
-#define JK_RELEASE_STR  JK_EXPOSED_VERSION_INT "-dev"
-#endif
-
-#if ( JK_VERBETA == 0 )
-#define JK_EXPOSED_VERSION JK_RELEASE_STR
 #undef JK_VERBETA
 #define JK_VERBETA 255
-#else
-#define JK_EXPOSED_VERSION JK_RELEASE_STR "-beta-" JK_BETASTRING
-#endif
-
 #if (JK_VERRC != 0)
-#undef JK_EXPOSED_VERSION
-#define JK_EXPOSED_VERSION JK_RELEASE_STR "-rc-" JK_RCSTRING
+#define JK_EXPOSED_VERSION JK_EXPOSED_VERSION_INT "-rc-" JK_RCSTRING
+#elif (JK_VERISRELEASE == 1)
+#define JK_EXPOSED_VERSION JK_EXPOSED_VERSION_INT
+#else
+#define JK_EXPOSED_VERSION JK_EXPOSED_VERSION_INT "-dev" JK_REVISION
+#endif
 #endif
 
 #define JK_MAKEVERSION(major, minor, fix, beta) (((major) << 24) + ((minor) << 16) + ((fix) << 8) + (beta))
