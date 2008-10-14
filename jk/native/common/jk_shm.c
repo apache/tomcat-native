@@ -242,7 +242,7 @@ int jk_shm_open(const char *fname, size_t sz, jk_logger_t *l)
         if (jk_shmem.hdr->h.data.childs > 1) {
             if (JK_IS_DEBUG_LEVEL(l)) {
                 jk_log(l, JK_LOG_DEBUG,
-                       "Reseting the shared memory for child %d",
+                       "Resetting the shared memory for child %d",
                        jk_shmem.hdr->h.data.childs);
             }
         }
@@ -562,7 +562,7 @@ static int do_shm_open(const char *fname, int attached,
         if (nchild > 1) {
             if (JK_IS_DEBUG_LEVEL(l)) {
                 jk_log(l, JK_LOG_DEBUG,
-                       "Reseting the shared memory for child %d",
+                       "Resetting the shared memory for child %d",
                        nchild);
             }
         }

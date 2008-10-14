@@ -43,6 +43,9 @@
   <br />
   <subsection name="Native">
     <changelog>
+      <fix>IIS: Fix memory corruption due to parallel initialization
+        by multiple threads. (rjung)
+      </fix>
       <update>
         Added socket_connect_timeout directive for setting the
         connect timeout for the socket. This enables to have low
