@@ -269,7 +269,8 @@ For the precise meaning of the activation states see the description of
 <p>
 The extension <code>fail_on_status</code> can be used in any rule:
 <source>
-  # Stop forwarding only for member1 of loadbalancer
+  # Send 503 instead of 404 and 500,
+  # and if we get a 503 also set the worker to error
   /myapp=myworker;fail_on_status=-404,-500,503
 </source>
 Multiple status codes must be separated by commas.
