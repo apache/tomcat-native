@@ -101,6 +101,8 @@ static void init_workers_on_other_threads(void *init_d)
         worker_env.uri_to_worker = uw_map;
         if (wc_open(init_map, &worker_env, logger)) {
             init_on_other_thread_is_ok = JK_TRUE;
+            uri_worker_map_ext(uw_map, logger);
+            uri_worker_map_switch(uw_map, logger);
         }
         else {
             jk_log(logger, JK_LOG_EMERG,

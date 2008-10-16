@@ -46,8 +46,11 @@
 #define JK_UWMAP_EXTENSION_FAIL_ON_STATUS "fail_on_status="
 #define JK_UWMAP_EXTENSION_USE_SRV_ERRORS "use_server_errors="
 
+#define IND_SWITCH(x)                      (((x)+1) % 2)
 #define IND_THIS(x)                        ((x)[uw_map->index])
-#define IND_NEXT(x)                        ((x)[(uw_map->index+1) % 2])
+#define IND_NEXT(x)                        ((x)[IND_SWITCH(uw_map->index)])
+
+#define STRNULL_FOR_NULL(x) ((x) ? (x) : "(null)")
 
 static const char *uri_worker_map_source_type[] = {
     "unknown",
@@ -155,6 +158,42 @@ static void worker_qsort(jk_uri_worker_map_t *uw_map)
          sizeof(uri_worker_record_t *), worker_compare );
 
 }
+
+/* Dump the map contents - only call if debug log is active. */
+static void uri_worker_map_dump(jk_uri_worker_map_t *uw_map,
+                                const char *reason, jk_logger_t *l)
+{
+    JK_TRACE_ENTER(l);
+    if (uw_map) {
+        int i, j, off, k;
+        uri_worker_record_t *uwr = NULL;
+        char buf[32];
+        jk_log(l, JK_LOG_DEBUG, "uri map dump %s: index=%d file='%s' reject_unsafe=%d "
+               "reload=%d modified=%d checked=%d",
+               reason, uw_map->index, STRNULL_FOR_NULL(uw_map->fname), uw_map->reject_unsafe,
+               uw_map->reload, uw_map->modified, uw_map->checked);
+        for(i=0;i<=1;i++) {
+            jk_log(l, JK_LOG_DEBUG, "generation %d: size=%d nosize=%d capacity=%d",
+                   i, uw_map->size[i], uw_map->nosize[i], uw_map->capacity[i], uw_map->maps[i]);
+        }
+
+        off = uw_map->index;
+        for(i=0;i<=1;i++) {
+            k = (i + off) % 2;
+            for (j = 0; j < uw_map->size[k]; j++) {
+                uwr = uw_map->maps[k][j];
+                jk_log(l, JK_LOG_DEBUG, "%s (%d) map #%d: uri=%s worker=%s context=%s "
+                       "source=%s type=%s len=%d",
+                       i ? "NEXT" : "THIS", i, j,
+                       STRNULL_FOR_NULL(uwr->uri), STRNULL_FOR_NULL(uwr->worker_name),
+                       STRNULL_FOR_NULL(uwr->context), STRNULL_FOR_NULL(uri_worker_map_get_source(uwr,l)),
+                       STRNULL_FOR_NULL(uri_worker_map_get_match(uwr,buf,l)), uwr->context_len);
+            }
+        }
+    }
+    JK_TRACE_EXIT(l);
+}
+
 
 int uri_worker_map_alloc(jk_uri_worker_map_t **uw_map_p,
                          jk_map_t *init_data, jk_logger_t *l)
@@ -430,6 +469,26 @@ static void extract_fail_on_status(jk_uri_worker_map_t *uw_map,
 
 }
 
+void uri_worker_map_switch(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
+{
+    int new_index;
+
+    JK_TRACE_ENTER(l);
+
+    if (uw_map) {
+        new_index = IND_SWITCH(uw_map->index);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG,
+                   "Switching uri worker map from index %d to index %d",
+                   uw_map->index, new_index);
+        uw_map->index = new_index;
+        jk_reset_pool(&(IND_NEXT(uw_map->p_dyn)));
+    }
+
+    JK_TRACE_EXIT(l);
+
+}
+
 void uri_worker_map_ext(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
 {
     unsigned int i;
@@ -510,14 +569,15 @@ void uri_worker_map_ext(jk_uri_worker_map_t *uw_map, jk_logger_t *l)
             extract_fail_on_status(uw_map, uwr, l);
         }
     }
-    uw_map->index = (uw_map->index + 1) % 2;
-    jk_reset_pool(&(IND_NEXT(uw_map->p_dyn)));
+    if (JK_IS_DEBUG_LEVEL(l))
+        uri_worker_map_dump(uw_map, "after extension stripping", l);
 
     JK_TRACE_EXIT(l);
     return;
 
 }
 
+/* Add new entry to NEXT generation */
 int uri_worker_map_add(jk_uri_worker_map_t *uw_map,
                        const char *puri, const char *worker,
                        unsigned int source_type, jk_logger_t *l)
@@ -762,6 +822,8 @@ int uri_worker_map_open(jk_uri_worker_map_t *uw_map,
             jk_close_pool(&uw_map->p_dyn[1]);
             jk_close_pool(&uw_map->p);
         }
+        else if (JK_IS_DEBUG_LEVEL(l))
+            uri_worker_map_dump(uw_map, "after map open", l);
     }
 
     JK_TRACE_EXIT(l);
@@ -1076,6 +1138,8 @@ int uri_worker_map_load(jk_uri_worker_map_t *uw_map,
             }
         }
         uw_map->checked = time(NULL);
+        if (JK_IS_DEBUG_LEVEL(l))
+            uri_worker_map_dump(uw_map, "after file load", l);
         rc = JK_TRUE;
     }
     jk_map_free(&map);
@@ -1117,6 +1181,7 @@ int uri_worker_map_update(jk_uri_worker_map_t *uw_map,
         }
         rc = uri_worker_map_load(uw_map, l);
         uri_worker_map_ext(uw_map, l);
+        uri_worker_map_switch(uw_map, l);
         JK_LEAVE_CS(&(uw_map->cs), rc);
         jk_log(l, JK_LOG_INFO,
                "Reloaded urimaps from %s", uw_map->fname);

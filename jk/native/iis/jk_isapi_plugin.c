@@ -2538,6 +2538,7 @@ static int init_jk(char *serverName)
                     rc = JK_TRUE;
                 }
                 uri_worker_map_ext(uw_map, logger);
+                uri_worker_map_switch(uw_map, logger);
             }
             else
                 jk_log(logger, JK_LOG_EMERG,

@@ -3100,6 +3100,7 @@ static int jk_post_config(apr_pool_t * pconf,
                         if (sconf->mount_file) {
                             sconf->uw_map->fname = sconf->mount_file;
                             sconf->uw_map->reload = sconf->mount_file_reload;
+                            uri_worker_map_switch(sconf->uw_map, sconf->log);
                             uri_worker_map_load(sconf->uw_map, sconf->log);
                         }
                     }
@@ -3147,13 +3148,17 @@ static int jk_post_config(apr_pool_t * pconf,
             conf->was_initialized = JK_TRUE;
             if (init_jk(pconf, conf, s) == JK_FALSE)
                 return HTTP_INTERNAL_SERVER_ERROR;
-            if (conf->uw_map)
+            if (conf->uw_map) {
                 uri_worker_map_ext(conf->uw_map, conf->log);
+                uri_worker_map_switch(conf->uw_map, conf->log);
+            }
             for (srv = s; srv; srv = srv->next) {
                 jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                                    &jk_module);
-                if (conf->uw_map != sconf->uw_map && sconf->uw_map)
+                if (conf->uw_map != sconf->uw_map && sconf->uw_map) {
                     uri_worker_map_ext(sconf->uw_map, sconf->log);
+                    uri_worker_map_switch(sconf->uw_map, sconf->log);
+                }
             }
 
         }

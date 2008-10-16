@@ -2622,6 +2622,7 @@ static void jk_init(server_rec * s, ap_pool * p)
                 if (sconf->mount_file) {
                     sconf->uw_map->fname = sconf->mount_file;
                     sconf->uw_map->reload = sconf->mount_file_reload;
+                    uri_worker_map_switch(sconf->uw_map, sconf->log);
                     uri_worker_map_load(sconf->uw_map, sconf->log);
                 }
             }
@@ -2734,13 +2735,17 @@ static void jk_init(server_rec * s, ap_pool * p)
                       "Error in creating the workers."
                       " Please consult your mod_jk log file '%s'.", conf->log_file);
     }
-    if (conf->uw_map)
+    if (conf->uw_map) {
         uri_worker_map_ext(conf->uw_map, conf->log);
+        uri_worker_map_switch(conf->uw_map, conf->log);
+    }
     for (srv = s; srv; srv = srv->next) {
         jk_server_conf_t *sconf = (jk_server_conf_t *)ap_get_module_config(srv->module_config,
                                                                            &jk_module);
-        if (conf->uw_map != sconf->uw_map && sconf->uw_map)
+        if (conf->uw_map != sconf->uw_map && sconf->uw_map) {
             uri_worker_map_ext(sconf->uw_map, sconf->log);
+            uri_worker_map_switch(sconf->uw_map, sconf->log);
+        }
     }
 
 }
