@@ -53,10 +53,16 @@ how to enable the uriworkermap file.
 The main features supported by the uriworkermap file are
 <ul>
 <li>
+Support for comments in the rule file.
+</li>
+<li>
 Exact and wildchar matches, shortcuts to map a directory and all including content.
 </li>
 <li>
-Exclusion rules, disabling of rules an defined preferences behaviour.
+Exclusion rules, disabling of rules and rule priorities.
+</li>
+<li>
+Rule extensions, modifying worker behaviour per rule.
 </li>
 <li>
 Virtual host integration: uri mapping rules can be expressed per virtual host.
@@ -68,9 +74,6 @@ New versions are automatically reloaded without web server restarts.
 </li>
 <li>
 Integration with the status worker.
-</li>
-<li>
-Support for comments in the rule file.
 </li>
 </ul>
 The following sections describe these aspects in more detail.
@@ -133,7 +136,7 @@ The pattern 'X|Y' is exactly equivalent to the two maps 'X' and 'XY'.
 </subsection>
 </section>
 
-<section name="Exclusion, Disabling and Preferences">
+<section name="Exclusion, Disabling and Priorities">
 <br/>
 
 <subsection name="Exclusions and rule disabling">
@@ -170,7 +173,7 @@ More complex patterns in exclusion worker names are not allowed.
 Rule disabling comes into play, if your web server merges rules from various sources,
 and you want to disable any rule defined previously. Since the uriworkermap file gets
 reloaded dynamically, you can use this to temporarily disable request forwarding:
-An rule gets disabled, if it is suffixed with '-':
+A rule gets disabled, if it is suffixed with '-':
 <source>
   # We are not in maintenance.
   # The maintenance rule got defined somewhere else.
@@ -180,7 +183,7 @@ Exclusion rules can get disabled as well, then the rule starts with '-!'.
 </p>
 </subsection>
 
-<subsection name="Mapping preferences">
+<subsection name="Mapping priorities">
 <br/>
 <p>
 The most restrictive URI pattern is applied first. More precisely the URI patterns are
@@ -200,6 +203,100 @@ have been applied.
 There is no defined behaviour, for the following configuration conflict:
 using literally the same URI pattern in the same defining source but with
 different worker targets.
+</p>
+</subsection>
+</section>
+
+<section name="Rule extensions">
+<br/>
+
+<subsection name="Syntax">
+<br/>
+<p>
+Rule extensions are additional attributes, that can be attached to any rule.
+They are added at the end of the rule, each extension separated by a semicolon:
+<source>
+  # This is an extension example,
+  # setting a reply_timeout of 1 minute
+  # only for this mapping.
+  /myapp=myworker;reply_timeout=60000
+  #
+  # This is an example using multiple extensions
+  /myapp=myloadbalancer;reply_timeout=60000;stopped=member1
+</source>
+Attributes set via rule extensions always overwrite conflicting
+configurations in the worker definition file.
+</p>
+</subsection>
+<subsection name="Extension reply_timeout">
+<br/>
+<p>
+The extension <code>reply_timeout</code> sets a reply timeout for a single mapping rule.
+<source>
+  # Setting a reply_timeout of 1 minute
+  # only for this mapping.
+  /myapp=myworker;reply_timeout=60000
+</source>
+It overrides any <code>reply_timeout</code> defined for the worker. The extension allows
+to set a reasonable default reply timeout to the worker, and a more relaxed
+reply timeout to URLs, which are known to start time intensive tasks.
+For a general description of reply timeouts see the
+<a href="../generic_howto/timeouts.html#Reply Timeout">timeouts</a> documentation.
+</p>
+</subsection>
+<subsection name="Extensions active/disabled/stopped">
+<br/>
+<p>
+The extensions <code>active</code>, <code>disabled</code>, and <code>stopped</code>
+can be used in a load balancer mapping rule to set selected members
+of the load balancer into a special activation state.
+<source>
+  # Stop forwarding only for member1 of loadbalancer
+  /myapp=myloadbalancer;stopped=member1
+</source>
+Multiple members must be separated by commas or white space:
+<source>
+  # Stop forwarding for member01 and member02 of loadbalancer
+  # Disable forwarding for member21 and member22 of loadbalancer
+  /myapp=myloadbalancer;stopped=member01,member02;disabled=member21,member22
+</source>
+For the precise meaning of the activation states see the description of
+<a href="../reference/workers.html#Advanced Worker Directives">activation</a>.
+</p>
+</subsection>
+<subsection name="Extension fail_on_status">
+<br/>
+<p>
+The extension <code>fail_on_status</code> can be used in any rule:
+<source>
+  # Stop forwarding only for member1 of loadbalancer
+  /myapp=myworker;fail_on_status=-404,-500,503
+</source>
+Multiple status codes must be separated by commas.
+For the precise meaning of the attribute see the description of
+<a href="../reference/workers.html#Advanced Worker Directives">fail_on_status</a>.
+</p>
+</subsection>
+<subsection name="Extension use_server_errors">
+<br/>
+<p>
+The extension <code>use_server_errors</code> allows to let the web server
+send an error page, instead of the backend (e.g. Tomcat) error page.
+This is useful, if one wants to send customized error pages, but those are
+not part of all web applications. They can then be put onto the web server.
+</p>
+<p>
+The value of <code>use_server_errors</code> is a positive number.
+Any request send to the backend, that returns with an http status
+code bigger or equal to <code>use_server_errors</code>, will
+be answered to the client with the error page of the web server
+for this status code.
+<source>
+  # Use web server error page for all errors
+  /myapp=myworker;use_server_errors=400
+  # Use web server error page only for technical errors
+  /myotherapp=myworker;use_server_errors=500
+</source>
 </p>
 </subsection>
 </section>
