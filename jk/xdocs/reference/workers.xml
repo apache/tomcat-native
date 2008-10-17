@@ -307,6 +307,8 @@ directive <code>connection_ping_interval</code> was not set, the
 value of <code>ping_timeout * 10</code> will be used as
 <code>connection_ping_interval</code> value.
 </p>
+<p><b>A</b> If set all of the mode above will be used.
+</p>
 <p>
 This feature has been added in <b>jk 1.2.27</b>.
 </p>
