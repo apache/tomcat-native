@@ -2728,7 +2728,6 @@ static void jk_init(server_rec * s, ap_pool * p)
         jk_log(conf->log, JK_LOG_INFO,
                "%s initialized",
                JK_EXPOSED_VERSION);
-        return;
     }
     else {
         jk_error_exit(APLOG_MARK, APLOG_EMERG | APLOG_NOERRNO, s, p,
