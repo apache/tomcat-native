@@ -1958,7 +1958,19 @@ static int ajp_get_reply(jk_endpoint_t *e,
             return JK_TRUE;
         }
         else if (JK_AJP13_SEND_HEADERS == rc) {
-            headeratclient = JK_TRUE;
+            if (headeratclient == JK_FALSE)
+                headeratclient = JK_TRUE;
+            else {
+                /* Backend send headers twice?
+                 * This is protocol violation
+                 */
+                jk_log(l, JK_LOG_ERROR,
+                       "(%s) Tomcat already send headers",
+                        p->worker->name);
+                op->recoverable = JK_FALSE;
+                JK_TRACE_EXIT(l);
+                return JK_FALSE;
+            }
         }
         else if (JK_STATUS_ERROR == rc || JK_STATUS_FATAL_ERROR == rc) {
             jk_log(l, JK_LOG_INFO,
