@@ -809,7 +809,8 @@ int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t 
         if (JK_IS_SOCKET_ERROR(rd)) {
             jk_shutdown_socket(sd, l);
             JK_TRACE_EXIT(l);
-            return (errno > 0) ? -errno : errno;
+            rd = (errno > 0) ? -errno : errno
+            return (rd == 0) ? JK_SOCKET_EOF : rd;
         }
         else if (rd == 0) {
             jk_shutdown_socket(sd, l);
