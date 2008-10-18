@@ -40,6 +40,10 @@ void jk_b_reset(jk_msg_buf_t *msg)
 {
     msg->len = 4;
     msg->pos = 4;
+    if (msg->buf && msg->maxlen) {
+        /* Clear the message buffer */
+        memset(msg->buf, 0, msg->maxlen);
+    }
 }
 
 int jk_b_append_long(jk_msg_buf_t *msg, unsigned long val)
@@ -105,7 +109,7 @@ jk_msg_buf_t *jk_b_new(jk_pool_t *p)
     if (!msg) {
         return NULL;
     }
-
+    memset(msg, 0, sizeof(jk_msg_buf_t));
     msg->pool = p;
 
     return msg;

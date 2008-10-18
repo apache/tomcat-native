@@ -2159,7 +2159,6 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
         JK_TRACE_EXIT(l);
         return JK_SERVER_ERROR;
     }
-    jk_b_reset(op->reply);
 
     op->post = jk_b_new(&(p->pool));
     if (!op->post) {
@@ -2211,6 +2210,9 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
         aw->s->max_busy = aw->s->busy;
     retry_interval = p->worker->retry_interval;
     for (i = 0; i < aw->retries; i++) {
+        /* Reset reply message buffer for each retry */
+        jk_b_reset(op->reply);
+
         /*
          * ajp_send_request() already locally handles
          * reconnecting and broken connection detection.
