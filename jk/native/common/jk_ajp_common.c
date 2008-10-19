@@ -2060,13 +2060,14 @@ static void ajp_update_stats(jk_endpoint_t *e, ajp_worker_t *aw, int rc, jk_logg
     aw->s->transferred += e->wr;
     if (aw->s->busy)
         aw->s->busy--;
-    if (rc != JK_TRUE) {
+    if (rc == JK_TRUE || rc == JK_CLIENT_ERROR) {
+        aw->s->state = JK_AJP_STATE_OK;
+    }
+    else {
         aw->s->state = JK_AJP_STATE_ERROR;
         aw->s->errors++;
         aw->s->error_time = time(NULL);
     }
-    else
-        aw->s->state = JK_AJP_STATE_OK;
 }
 
 /*
@@ -2395,8 +2396,6 @@ static int JK_METHOD ajp_service(jk_endpoint_t *e,
     jk_log(l, JK_LOG_ERROR,
            "(%s) connecting to tomcat failed.",
            aw->name);
-
-/* XXX: Do we need to fix rc or is_error before returning? */
 
     ajp_update_stats(e, aw, rc, l);
     JK_TRACE_EXIT(l);
