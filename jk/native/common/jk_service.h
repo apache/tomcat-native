@@ -65,6 +65,9 @@ struct jk_worker_env
 
     /* Virtual server handled - "*" is all virtual */
     char *virtual;
+    
+    /* Optional APR pool used for configuration */
+    void *pool;
 };
 typedef struct jk_worker_env jk_worker_env_t;
 

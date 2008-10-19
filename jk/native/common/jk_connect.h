@@ -38,7 +38,7 @@ extern "C"
 
 #define JK_SOCKET_EOF      (-2)
 
-int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *l);
+int jk_resolve(const char *host, int port, struct sockaddr_in *rc, void *pool, jk_logger_t *l);
 
 jk_sock_t jk_open_socket(struct sockaddr_in *addr, int keepalive,
                          int timeout, int connect_timeout,

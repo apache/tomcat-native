@@ -2719,6 +2719,7 @@ static void jk_init(server_rec * s, ap_pool * p)
     worker_env.uri_to_worker = conf->uw_map;
     worker_env.virtual = "*";       /* for now */
     worker_env.server_name = (char *)ap_get_server_version();
+    worker_env.pool = NULL;
 
     if (wc_open(jk_worker_properties, &worker_env, conf->log)) {
 #if MODULE_MAGIC_NUMBER >= 19980527

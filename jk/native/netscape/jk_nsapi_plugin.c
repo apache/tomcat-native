@@ -99,6 +99,8 @@ static void init_workers_on_other_threads(void *init_d)
         uw_map->reload = JK_URIMAP_DEF_RELOAD;
         uw_map->reject_unsafe = jk_map_get_bool(init_map, "worker." REJECT_UNSAFE_TAG, JK_FALSE);
         worker_env.uri_to_worker = uw_map;
+        worker_env.pool = NULL;
+
         if (wc_open(init_map, &worker_env, logger)) {
             init_on_other_thread_is_ok = JK_TRUE;
             uri_worker_map_ext(uw_map, logger);

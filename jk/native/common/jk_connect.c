@@ -316,7 +316,8 @@ in_addr_t jk_inet_addr(const char * addrstr)
  * @return         JK_FALSE: some kind of error occured
  *                 JK_TRUE: success
  */
-int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *l)
+int jk_resolve(const char *host, int port, struct sockaddr_in *rc,
+               void *pool, jk_logger_t *l)
 {
     int x;
     struct in_addr laddr;
@@ -342,7 +343,7 @@ int jk_resolve(const char *host, int port, struct sockaddr_in *rc, jk_logger_t *
         apr_sockaddr_t *remote_sa, *temp_sa;
         char *remote_ipaddr;
 
-        if (!jk_apr_pool) {
+        if (!(jk_apr_pool = (apr_pool_t *)pool)) {
             if (apr_pool_create(&jk_apr_pool, NULL) != APR_SUCCESS) {
                 JK_TRACE_EXIT(l);
                 return JK_FALSE;

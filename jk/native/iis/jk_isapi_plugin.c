@@ -2533,6 +2533,7 @@ static int init_jk(char *serverName)
 
                 worker_env.uri_to_worker = uw_map;
                 worker_env.server_name = serverName;
+                worker_env.pool = NULL;
 
                 if (wc_open(workers_map, &worker_env, logger)) {
                     rc = JK_TRUE;

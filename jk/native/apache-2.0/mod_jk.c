@@ -3011,6 +3011,7 @@ static int init_jk(apr_pool_t * pconf, jk_server_conf_t * conf,
 #else
     worker_env.server_name = (char *)ap_get_server_version();
 #endif
+    worker_env.pool = pconf;
 
     if (wc_open(jk_worker_properties, &worker_env, conf->log)) {
         ap_add_version_component(pconf, JK_EXPOSED_VERSION);

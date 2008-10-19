@@ -2453,7 +2453,7 @@ int ajp_validate(jk_worker_t *pThis,
 
 /* XXX: Why do we only resolve, if port > 1024 ? */
         if (p->port > 1024) {
-            if (jk_resolve(p->host, p->port, &p->worker_inet_addr, l)) {
+            if (jk_resolve(p->host, p->port, &p->worker_inet_addr, we->pool, l)) {
                 JK_TRACE_EXIT(l);
                 return JK_TRUE;
             }
