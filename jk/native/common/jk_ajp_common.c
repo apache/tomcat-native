@@ -1586,8 +1586,11 @@ static int ajp_send_request(jk_endpoint_t *e,
             if (ae->left_bytes_to_send < (jk_uint64_t)AJP13_MAX_SEND_BODY_SZ) {
                 len = (int)ae->left_bytes_to_send;
             }
-            if ((len = ajp_read_into_msg_buff(ae, s, op->post, len, l)) < 0) {
-                /* the browser stop sending data, no need to recover */
+            if ((len = ajp_read_into_msg_buff(ae, s, op->post, len, l)) <= 0) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "(%s) browser stop sending data, no need to recover",
+                            ae->worker->name);
                 op->recoverable = JK_FALSE;
                 /* Send an empty POST message since per AJP protocol
                  * spec whenever we have content lenght the message
@@ -1606,6 +1609,10 @@ static int ajp_send_request(jk_endpoint_t *e,
                 jk_b_copy(op->post, s->reco_buf);
                 s->reco_status = RECO_FILLED;
             }
+            if (JK_IS_DEBUG_LEVEL(l))
+                jk_log(l, JK_LOG_DEBUG,
+                       "(%s) sending %d bytes of request body",
+                        ae->worker->name, len);                
 
             s->content_read = (jk_uint64_t)len;
             rc = ajp_connection_tcp_send_message(ae, op->post, l);
