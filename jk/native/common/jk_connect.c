@@ -661,6 +661,7 @@ int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l)
 {
     char dummy[512];
     int rc = 0;
+    int rd = 0;
     int save_errno;
     fd_set rs;
     struct timeval tv;
@@ -674,11 +675,16 @@ int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l)
     }
 
     save_errno = errno;
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG, "About to shutdown socket %d", sd);
+
     /* Shut down the socket for write, which will send a FIN
      * to the peer.
      */
     if (shutdown(sd, SHUT_WR)) {
         rc = jk_close_socket(sd, l);
+        if (JK_IS_DEBUG_LEVEL(l))
+            jk_log(l, JK_LOG_DEBUG, "Failed sending SHUT_WR for socket %d", sd);
         errno = save_errno;
         JK_TRACE_EXIT(l);
         return rc;
@@ -707,6 +713,8 @@ int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l)
 #else
                 rc = read(sd, &dummy[0], sizeof(dummy));
 #endif
+                if (rc > 0)
+                    rd += rc;
             } while (JK_IS_SOCKET_ERROR(rc) && (errno == EINTR || errno == EAGAIN));
 
             if (rc <= 0)
@@ -718,6 +726,9 @@ int jk_shutdown_socket(jk_sock_t sd, jk_logger_t *l)
     } while (difftime(time(NULL), start) < MAX_SECS_TO_LINGER);
 
     rc = jk_close_socket(sd, l);
+    if (JK_IS_DEBUG_LEVEL(l))
+        jk_log(l, JK_LOG_DEBUG, "Shutdown socket %d and read %d lingering bytes",
+               sd, rd);
     errno = save_errno;
     JK_TRACE_EXIT(l);
     return rc;
@@ -804,7 +815,7 @@ int jk_tcp_socket_recvfull(jk_sock_t sd, unsigned char *b, int len, jk_logger_t 
 #else
             rd = read(sd, (char *)b + rdlen, len - rdlen);
 #endif
-        } while (JK_IS_SOCKET_ERROR(rd) && (errno == EINTR || errno == EAGAIN));
+        } while (JK_IS_SOCKET_ERROR(rd) && errno == EINTR);
 
         if (JK_IS_SOCKET_ERROR(rd)) {
             jk_shutdown_socket(sd, l);
