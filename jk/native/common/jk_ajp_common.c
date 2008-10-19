@@ -2060,8 +2060,12 @@ static void ajp_update_stats(jk_endpoint_t *e, ajp_worker_t *aw, int rc, jk_logg
     aw->s->transferred += e->wr;
     if (aw->s->busy)
         aw->s->busy--;
-    if (rc == JK_TRUE || rc == JK_CLIENT_ERROR) {
+    if (rc == JK_TRUE) {
         aw->s->state = JK_AJP_STATE_OK;
+    }
+    else if (rc == JK_CLIENT_ERROR) {
+        aw->s->state = JK_AJP_STATE_OK;
+        aw->s->client_errors++;
     }
     else {
         aw->s->state = JK_AJP_STATE_ERROR;
