@@ -1400,14 +1400,18 @@ static int JK_METHOD service(jk_endpoint_t *e,
                      * Somebody set them all to disabled?
                      */
                     jk_log(l, JK_LOG_ERROR,
-                           "All tomcat instances failed, no more workers left for recovery");
+                           "All tomcat instances failed, no more workers "
+                           "left for recovery (attempt=%d, retry=%d)",
+                           attempt, retry);
                     *is_error = JK_HTTP_SERVER_BUSY;
                     rc = JK_FALSE;
                 }
             }
             else {
                 jk_log(l, JK_LOG_ERROR,
-                       "All tomcat instances failed, no more workers left");
+                       "All tomcat instances failed, no more workers "
+                       "left (attempt=%d, retry=%d)",
+                       attempt, retry);
                 *is_error = JK_HTTP_SERVER_BUSY;
                 rc = JK_FALSE;
             }
