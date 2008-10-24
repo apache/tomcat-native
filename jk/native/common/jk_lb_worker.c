@@ -1399,7 +1399,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                     /* No workers in error state.
                      * Somebody set them all to disabled?
                      */
-                    jk_log(l, JK_LOG_ERROR,
+                    jk_log(l, JK_LOG_INFO,
                            "All tomcat instances failed, no more workers "
                            "left for recovery (attempt=%d, retry=%d)",
                            attempt, retry);
@@ -1408,7 +1408,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
                 }
             }
             else {
-                jk_log(l, JK_LOG_ERROR,
+                jk_log(l, JK_LOG_INFO,
                        "All tomcat instances failed, no more workers "
                        "left (attempt=%d, retry=%d)",
                        attempt, retry);
@@ -1418,10 +1418,14 @@ static int JK_METHOD service(jk_endpoint_t *e,
         }
         attempt++;
     }
-    if ( recoverable == JK_TRUE ) {
+    if (recoverable == JK_TRUE) {
         jk_log(l, JK_LOG_INFO,
                "All tomcat instances are busy or in error state");
         /* rc and http error must be set above */
+    }
+    if (rc == JK_FALSE) {
+        jk_log(l, JK_LOG_INFO,
+               "All tomcat instances failed, no more workers left");
     }
     if (prec && s->add_log_items) {
         lb_add_log_items(s, lb_last_log_names, prec, l);
