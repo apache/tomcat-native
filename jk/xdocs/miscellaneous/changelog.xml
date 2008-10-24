@@ -282,8 +282,8 @@
         web server specific code to our generic jk_init_ws_service() function. (rjung)
       </update>
       <fix>
-        <bug>36385</bug>: Add missing prepost cping/cpong directly after connect
-        in case prepost cping is used, but no connect cping. (rjung)
+        <bug>36385</bug>: Add missing prepost CPing/CPong directly after connect
+        in case prepost CPing is used, but no connect CPing. (rjung)
       </fix>
       <update>
         <bug>37322</bug>: Apache: Enhance robustness of message formating

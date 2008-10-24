@@ -58,8 +58,12 @@ fit with some timeouts. Try to optimise your Java memory and GC settings.
 <p>
 CPing/CPong is our notion for using small test packets to check the
 status of backend connections. JK can use such test packets directly after establishing
-a new backend connection and also directly before each request gets send to a backend.
-The maximum waiting time for a CPong answer to a CPing can be configured.
+a new backend connection (connect mode) and also directly before each request gets
+send to a backend (prepost mode).
+Starting with version 1.2.27 it can also be used when a connection was idle
+for a long time (interval mode).
+The maximum waiting time (timeout) for a CPong answer to a CPing and the idle
+time in interval mode can be configured.
 </p>
 <p>
 The test packets will be answered by the backend very fast with a minimal amount of
@@ -69,21 +73,64 @@ and working. The benefit of CPing/CPong is a fast detection of a communication
 problem with the backend. The downside is a slightly increased latency.
 </p>
 <p>
-The worker attribute <b>connect_timeout</b> sets the wait timeout for CPong during
-connection establishment. By default the value is "0", which disables CPing/CPong during
-connection establishment. Since JK usually uses persistent connections, opening new connections
-is a rare event. We therefore recommend using <b>connect_timeout</b>. Its value is given
-in milliseconds. Depending on your network latency and stability, good values often
-are between 5000 and 15000 milliseconds. Remember: don't use extremely small values.
+The worker attribute <b>ping_mode</b> can be set to a combination of characters
+to determine, in which situations test packets are used:
+<ul>
+<li><b>C</b>: connect mode, timeout <b>ping_timeout</b> overwritten by <b>connect_timeout</b></li>
+<li><b>P</b>: prepost mode, timeout <b>ping_timeout</b> overwritten by <b>prepost_timeout</b></li>
+<li><b>I</b>: interval mode, timeout <b>ping_timeout</b>, idle time <b>connection_ping_interval</b></li>
+<li><b>A</b>: all modes</li>
+</ul>
 </p>
 <p>
-The worker attribute <b>prepost_timeout</b> sets the wait timeout for CPong before
-request forwarding. By default the value is "0", which disables CPing/CPong before
-request forwarding. Activating this type of CPing/CPong adds a small latency to each
+Multiple values must be concatenated without any separator characters.
+We recommend using all CPing tests. If your application is very latency sensitive, then
+you should only use the combination of connect and interval mode.
+</p>
+<p>
+Activating the CPing probing via <b>ping_mode</b> has been added in version 1.2.27.
+For older versions only the connect and prepost modes exist and must be activated by
+explicitely setting <b>connect_timeout</b> and <b>prepost_timeout</b>.
+</p>
+<p>
+The worker attribute <b>ping_timeout</b> sets the default wait timeout
+in milliseconds for CPong for all modes. By default the value is "10000"
+milliseconds. The value only gets used, if you activate CPing/Cpong probes
+via <b>ping_mode</b>. The default value should be fine, except if you experience
+very long Java garbage collection pauses.
+Depending on your network latency and stability, good custom values
+often are between 5000 and 15000 milliseconds.
+You can overwrite the timeout used for connect and prepost mode with
+<b>connect_timeout</b> and <b>prepost_timeout</b>.
+Remember: don't use extremely small values.
+</p>
+<p>
+The worker attribute <b>connect_timeout</b> sets the wait timeout
+in milliseconds for CPong during connection establishment. You can use it
+if you want to overwrite the general timeout set with <b>ping_timeout</b>.
+To use connect mode CPing, you need to enable it via <b>ping_mode</b>.
+Since JK usually uses persistent connections, opening new connections is a
+rare event. We therefore recommend activating connect mode.
+Depending on your network latency and stability, good values often
+are between 5000 and 15000 milliseconds.
+Remember: don't use extremely small values.
+</p>
+<p>
+The worker attribute <b>prepost_timeout</b> sets the wait timeout
+in milliseconds for CPong before request forwarding. You can use it
+if you want to overwrite the general timeout set with <b>ping_timeout</b>.
+To use prepost mode CPing, you need to enable it via <b>ping_mode</b>.
+Activating this type of CPing/CPong adds a small latency to each
 request. Usually this is small enough and the benefit of CPing/CPong is more important.
-In general we also recommend using <b>prepost_timeout</b>. Its value is given
-in milliseconds. Depending on your network latency and stability, good values often
-are between 5000 and 10000 milliseconds. Remember: don't use extremely small values.
+So in general we also recommend using <b>prepost_timeout</b>.
+Depending on your network latency and stability, good values often
+are between 5000 and 10000 milliseconds.
+Remember: don't use extremely small values.
+</p>
+<p>
+Until version 1.2.27 <b>ping_mode</b> and <b>ping_timeout</b> did not
+exist and to enable connect or prepost mode CPing you had to set <b>connect_timeout</b>
+respectively <b>prepost_timeout</b> to some reasonable positive value.
 </p>
 </subsection>
 
@@ -111,6 +158,16 @@ platforms, there is no good way to recover from such a timeout, once it fired.
 For JK there is no way to decide, if this timeout fired because of real network
 problems, or only because it didn't receive an answer packet from a backend in time.
 So remember: don't use extremely small values.
+</p>
+<p>
+For the general case of connection establishment you can use
+<b>socket_connect_timeout</b>. It takes a millisecond value and works
+on most platforms, even if <b>socket_timeout</b> is not supported.
+We recommend using <b>socket_connect_timeout</b> because in some network
+failure situations failure detection during connection establishment
+can take several minutes due to TCP retransmits. Depending on the quality
+of your network a timeout somewhere between 1000 and 5000 milliseconds
+should be fine.
 </p>
 </subsection>
 

@@ -269,45 +269,73 @@ have information about the cut and couldn't handle it.
 </p>
 </directive>
 
-<directive name="connection_ping_interval" default="0" required="false">
-Connections idle for longer than this interval in seconds are probed by
-CPING packets whether they still work. If set to zero (default),
-no such probes will be done.
-<p>To be able to use this feature <code>ping_timeout</code> must be
-set to the desired timeout value and <code>ping_mode</code> must include
-<code>I</code> flag.
+<directive name="ping_mode" default="" required="false">
+This flag determines, under which conditions established
+connections are probed to ensure they are still working.
+The probe is done with an empty AJP13 packet (CPing) and
+expects to receive an appropriate answer (CPong) within
+some timeout.
+<p>
+The value of the flag can be any combination of the following
+flags (multiple values are combined without any separators):
+</p>
+<p><b>C</b> (connect): If set, the connection will
+be probed once after connecting to the backend. The timeout
+can be set by <code>connect_timeout</code>. If it is not set,
+the value of <code>ping_timeout</code> will be used instead.
+</p>
+<p><b>P</b> (prepost): If set, the connection will
+be probed before sending each request to the backend. The timeout
+can be set by <code>prepost_timeout</code>. If it is not set,
+the value of <code>ping_timeout</code> will be used instead.
+</p>
+<p><b>I</b> (interval): If set, the connection will
+be probed during the regular internal maintenance cycle,
+but only if it is idle longer than
+<code>connection_ping_interval</code>. The timeout
+can be set by <code>ping_timeout</code>.
+</p>
+<p><b>A</b> If set, all of the above probes will be used.
 </p>
 <p>
-This feature has been added in <b>jk 1.2.27</b>.
+This feature has been added in <b>jk 1.2.27</b>. Connect and
+prepost probing were already available via <code>connect_timeout</code>
+and <code>prepost_timeout</code> since version <b>jk 1.2.6</b>.
 </p>
 </directive>
 
 <directive name="ping_timeout" default="10000" required="false">
-Connections idle for longer than this interval in milliseconds are probed by
-CPING packets whether they still work. The usage depend on the
-<code>ping_mode</code> flags used.
+Timeout in milliseconds used when waiting for the CPong answer of a
+CPing connection probe. The activation of the probes is done via
+<code>ping_mode</code>. The timeouts for <code>ping_mode</code>
+connect and prepost can be overwritten individually via
+<code>connect_timeout</code> and <code>prepost_timeout</code>.
+<p>
+For compatibility reasons, CPing/CPong is also used, whenever
+<code>connect_timeout</code> or <code>prepost_timeout</code> are set,
+even if <code>ping_mode</code> is empty.
+</p>
 <p>
 This feature has been added in <b>jk 1.2.27</b>.
 </p>
 </directive>
 
-<directive name="ping_mode" default="" required="false">
-Ping mode flags for active connections. The value can
-be combination of the following flags:
-<p><b>C</b> If set the connect ping mode will be used. If
-directive <code>connect_timeout</code> was not set, the
-value of <code>ping_timeout</code> will be used instead.
-</p>
-<p><b>P</b> If set the prepost ping mode will be used. If
-directive <code>prepost_timeout</code> was not set, the
-value of <code>ping_timeout</code> will be used instead.
-</p>
-<p><b>I</b> If set the interval ping mode will be used. If
+The usage depend on the <code>ping_mode</code> flags used.
 directive <code>connection_ping_interval</code> was not set, the
-value of <code>ping_timeout * 10</code> will be used as
+value of <code>(ping_timeout/1000) * 10</code> will be used as
 <code>connection_ping_interval</code> value.
-</p>
-<p><b>A</b> If set all of the mode above will be used.
+
+<directive name="connection_ping_interval" default="0 / (ping_timeout/1000)*10" required="false">
+When using interval connection probing, connections idle for longer than this
+interval in seconds are probed by CPing packets whether they still work.
+<p>Interval probing can be activated either by <code>ping_mode</code>,
+or by setting <code>connection_ping_interval</code> to some value bigger
+than zero. If you activate interval probing via <code>ping_mode</code>,
+then the default value of <code>connection_ping_interval</code> is
+<code>(ping_timeout/1000) * 10</code>. Note that <code>ping_timeout</code>
+is in milliseconds, and <code>connection_ping_interval</code> in seconds,
+so in absolute terms the default <code>connection_ping_interval</code> is
+10 times <code>ping_timeout</code>.
 </p>
 <p>
 This feature has been added in <b>jk 1.2.27</b>.
