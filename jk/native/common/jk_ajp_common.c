@@ -2571,9 +2571,14 @@ int ajp_init(jk_worker_t *pThis,
         p->conn_ping_interval =
             jk_get_worker_conn_ping_interval(props, p->name, 0);
         if ((p->ping_mode & AJP_CPING_INTERVAL) &&
-            p->conn_ping_interval == 0)
-            p->conn_ping_interval = p->ping_timeout / 10;
-
+            p->conn_ping_interval == 0) {
+            /* XXX: Ping timeot is in miliseconds
+             * and ping_interval is in seconds.
+             * Use 10 times larger value fo ping interval
+             * (ping_timeout / 1000) * 10
+             */
+            p->conn_ping_interval = p->ping_timeout / 100;
+        }
         p->reply_timeout =
             jk_get_worker_reply_timeout(props, p->name,
                                         AJP_DEF_REPLY_TIMEOUT);
