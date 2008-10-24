@@ -305,18 +305,28 @@ const char *wc_get_name_for_type(int type, jk_logger_t *l)
 void wc_maintain(jk_logger_t *l)
 {
     static time_t last_maintain = 0;
+    static int    running_maintain = 0;
     int sz = jk_map_size(worker_map);
 
     JK_TRACE_ENTER(l);
 
     if (sz > 0 && worker_maintain_time > 0) {
         int i;
-        time_t now;
+
         JK_ENTER_CS(&worker_lock, i);
-        now = time(NULL);
-        if (difftime(now, last_maintain) >= worker_maintain_time) {
-            last_maintain = now;
+        if (running_maintain) {
+            /* Already in maintain */
             JK_LEAVE_CS(&worker_lock, i);
+            JK_TRACE_EXIT(l);
+            return;
+        }
+        if (difftime(time(NULL), last_maintain) >= worker_maintain_time) {
+            /* Set the maintain run flag so other threads skip
+             * the maintain until we are finished.
+             */
+            running_maintain = 1;
+            JK_LEAVE_CS(&worker_lock, i);
+
             for (i = 0; i < sz; i++) {
                 jk_worker_t *w = jk_map_value_at(worker_map, i);
                 if (w && w->maintain) {
@@ -324,9 +334,13 @@ void wc_maintain(jk_logger_t *l)
                         jk_log(l, JK_LOG_DEBUG,
                                "Maintaining worker %s",
                                jk_map_name_at(worker_map, i));
-                    w->maintain(w, now, l);
+                    w->maintain(w, time(NULL), l);
                 }
             }
+            JK_ENTER_CS(&worker_lock, i);
+            last_maintain = time(NULL);
+            running_maintain = 0;
+            JK_LEAVE_CS(&worker_lock, i);
         }
         else {
             JK_LEAVE_CS(&worker_lock, i);
