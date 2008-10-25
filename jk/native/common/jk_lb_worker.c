@@ -1424,7 +1424,7 @@ static int JK_METHOD service(jk_endpoint_t *e,
         /* rc and http error must be set above */
     }
     if (rc == JK_FALSE) {
-        jk_log(l, JK_LOG_INFO,
+        jk_log(l, JK_LOG_ERROR,
                "All tomcat instances failed, no more workers left");
     }
     if (prec && s->add_log_items) {
