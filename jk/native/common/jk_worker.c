@@ -310,41 +310,42 @@ void wc_maintain(jk_logger_t *l)
 
     JK_TRACE_ENTER(l);
 
-    if (sz > 0 && worker_maintain_time > 0) {
+    /* Only proceed if all of the below hold true:
+     * - there are workers
+     * - maintenance wasn't disabled by configuration
+     * - time since last maintenance is big enough
+     */
+    if (sz > 0 && worker_maintain_time > 0 &&
+        difftime(time(NULL), last_maintain) >= worker_maintain_time) {
         int i;
-
         JK_ENTER_CS(&worker_lock, i);
-        if (running_maintain) {
+        if (running_maintain ||
+            difftime(time(NULL), last_maintain) < worker_maintain_time) {
             /* Already in maintain */
             JK_LEAVE_CS(&worker_lock, i);
             JK_TRACE_EXIT(l);
             return;
         }
-        if (difftime(time(NULL), last_maintain) >= worker_maintain_time) {
-            /* Set the maintain run flag so other threads skip
-             * the maintain until we are finished.
-             */
-            running_maintain = 1;
-            JK_LEAVE_CS(&worker_lock, i);
+        /* Set the maintain run flag so other threads skip
+         * the maintain until we are finished.
+         */
+        running_maintain = 1;
+        JK_LEAVE_CS(&worker_lock, i);
 
-            for (i = 0; i < sz; i++) {
-                jk_worker_t *w = jk_map_value_at(worker_map, i);
-                if (w && w->maintain) {
-                    if (JK_IS_DEBUG_LEVEL(l))
-                        jk_log(l, JK_LOG_DEBUG,
-                               "Maintaining worker %s",
-                               jk_map_name_at(worker_map, i));
-                    w->maintain(w, time(NULL), l);
-                }
+        for (i = 0; i < sz; i++) {
+            jk_worker_t *w = jk_map_value_at(worker_map, i);
+            if (w && w->maintain) {
+                if (JK_IS_DEBUG_LEVEL(l))
+                    jk_log(l, JK_LOG_DEBUG,
+                           "Maintaining worker %s",
+                           jk_map_name_at(worker_map, i));
+                w->maintain(w, time(NULL), l);
             }
-            JK_ENTER_CS(&worker_lock, i);
-            last_maintain = time(NULL);
-            running_maintain = 0;
-            JK_LEAVE_CS(&worker_lock, i);
         }
-        else {
-            JK_LEAVE_CS(&worker_lock, i);
-        }
+        JK_ENTER_CS(&worker_lock, i);
+        last_maintain = time(NULL);
+        running_maintain = 0;
+        JK_LEAVE_CS(&worker_lock, i);
     }
     JK_TRACE_EXIT(l);
 }
