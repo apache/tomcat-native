@@ -746,6 +746,7 @@ static void ajp_reset_endpoint(ajp_endpoint_t * ae, jk_logger_t *l)
     if (IS_VALID_SOCKET(ae->sd) && !ae->reuse) {
         jk_shutdown_socket(ae->sd, l);
         ae->sd = JK_INVALID_SOCKET;
+        ae->last_op = JK_AJP13_END_RESPONSE;
     }
     jk_reset_pool(&(ae->pool));
     JK_TRACE_EXIT(l);
@@ -1365,6 +1366,17 @@ static int ajp_send_request(jk_endpoint_t *e,
     /* Up to now, we can recover */
     op->recoverable = JK_TRUE;
 
+    /* Check if the previous request really ended
+     */
+    if (ae->last_op != JK_AJP13_END_RESPONSE) {
+        jk_log(l, JK_LOG_INFO,
+                "(%s) did not receive END_RESPONSE, "
+                "closing socket %d",
+                ae->worker->name, ae->sd);
+        jk_shutdown_socket(ae->sd, l);
+        ae->sd = JK_INVALID_SOCKET;
+        ae->last_op = JK_AJP13_END_RESPONSE;
+    }
     /*
      * First try to check open connections...
      */
@@ -1654,6 +1666,13 @@ static int ajp_process_callback(jk_msg_buf_t *msg,
         {
             int rc;
             jk_res_data_t res;
+            if (ae->last_op == JK_AJP13_SEND_HEADERS) {
+                /* Do not send anything to the client.
+                 * Backend already send us the headers.
+                 */
+                JK_TRACE_EXIT(l);
+                return JK_AJP13_ERROR;
+            }
             if (!ajp_unmarshal_response(msg, &res, ae, l)) {
                 jk_log(l, JK_LOG_ERROR,
                        "ajp_unmarshal_response failed");
@@ -1958,7 +1977,7 @@ static int ajp_get_reply(jk_endpoint_t *e,
         }
 
         rc = ajp_process_callback(op->reply, op->post, p, s, l);
-
+        p->last_op = rc;
         /* no more data to be sent, fine we have finish here */
         if (JK_AJP13_END_RESPONSE == rc) {
             JK_TRACE_EXIT(l);
@@ -2508,6 +2527,7 @@ static int ajp_create_endpoint_cache(ajp_worker_t *p, int proto, jk_logger_t *l)
         p->ep_cache[i]->proto = proto;
         p->ep_cache[i]->endpoint.service = ajp_service;
         p->ep_cache[i]->endpoint.done    = ajp_done;
+        p->ep_cache[i]->last_op = JK_AJP13_END_RESPONSE;
     }
 
     JK_TRACE_EXIT(l);

@@ -372,6 +372,8 @@ struct ajp_endpoint
        handled by this endpoint */
     time_t last_access;
     int last_errno;
+    /* Last operation performed via this endpoint */
+    int last_op;
 };
 
 /*
