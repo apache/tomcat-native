@@ -457,7 +457,7 @@ static void extract_fail_on_status(jk_uri_worker_map_t *uw_map,
     cnt = 0;
 #ifdef _MT_CODE_PTHREAD
     for (status = strtok_r(status, ", ", &lasts);
-         status; status = strtok_r(NULL, "&", &lasts)) {
+         status; status = strtok_r(NULL, ", ", &lasts)) {
 #else
     for (status = strtok(status, ", "); status; status = strtok(NULL, ", ")) {
 #endif
