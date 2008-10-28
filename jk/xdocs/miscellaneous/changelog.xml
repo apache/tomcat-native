@@ -43,36 +43,75 @@
   <br />
   <subsection name="Native">
     <changelog>
-      <update>IIS: Optionally allow chunked encoding for responses.
+      <fix>
+        <bug>46109</bug>: Decay reply_timeouts even when lb method is
+        busyness. Also reset reply_timeouts during forced recovery. (rjung)
+      </fix>
+      <update>
+        AJP13: Recycle connection if previous request didn't complete. (mturk)
+      </update>
+      <update>
+        Maintain should not run multiple times in parallel. (mturk)
+      </update>
+      <fix>
+        Apache: Fix small memory leak during restart. (mturk)
+      </fix>
+      <update>
+        Improve signal handling during socket shutdown. (mturk)
+      </update>
+      <add>
+        URI Map: Add debug dump function for uri worker map. (rjung)
+      </add>
+      <update>
+        Add revision number to version info for non-release builds. (rjung)
+      </update>
+      <add>
+        IIS: Optionally allow chunked encoding for responses.
         At the moment only usable, if build with ISAPI_ALLOW_CHUNKING
         defined. Based on patch by Tim Whittington. (rjung)
-      </update>
-      <update>IIS: Optionally use raw headers instead of CGI
+      </add>
+      <update>
+        IIS: Optionally use raw headers instead of CGI
         headers. Fixes problem "underscore=dash" problem in
         header names. At the moment only available, if build with USE_RAW_HEADERS
         defined. (rjung)
       </update>
-      <update>IIS: Optionally improve IIS 5.1 compatibility.
+      <update>
+        IIS: Optionally improve IIS 5.1 compatibility.
         At the moment only available, if build with AUTOMATIC_AUTH_NOTIFICATION
         defined. Based on patch by Tim Whittington. (rjung)
       </update>
-      <fix>IIS: Fix memory corruption due to parallel initialization
+      <fix>
+        IIS: Fix memory corruption due to parallel initialization
         by multiple threads. (rjung)
       </fix>
       <update>
+        Windows: Use non-default socket keepalive interval. (mturk)
+      </update>
+      <add>
+        IIS: Add environment variables JKISAPI_PATH and JKISAPI_NAME. (mturk)
+      </add>
+      <add>
         Added socket_connect_timeout directive for setting the
         connect timeout for the socket. This enables to have low
         connection timeout but higher operational timeouts. (mturk)
-      </update>
-      <fix>Always send initial POST packet even if the client
+      </add>
+      <fix>
+        AJP13: Always send initial POST packet even if the client
         disconnected after sending request but before providing
         POST data. In that case or in case the client broke the
         connection in a middle of read send an zero size packet
         informing container about broken client connection. (mturk) 
       </fix>
-      <update>
-        Added connection_acquire_timeout directive for setting the
+      <add>
+        AJP13: Added connection_acquire_timeout directive for setting the
         absolute timeout the worker will wait for a free endpoint. (mturk)
+      </add>
+      <update>
+        Apache: Allow to set path parameter used when doing JkStripSession. (mturk)
+      </update>
+      <update>
+        Refactor retries implementation and change semantics of retries attributes. (mturk)
       </update>
       <update>
         Status: Allow showing only a single member for a load balancer. (rjung)
@@ -88,7 +127,7 @@
         Documentation: Enhance description of connection_pool_size. (rjung)
       </update>
       <update>
-        Refactor error page generation for isapi plugin. (mturk)
+        IIS: Refactor error page generation. (mturk)
       </update>
       <fix>
         IIS: SERVER_NAME variable can be the same for
@@ -110,8 +149,8 @@
         Use max_packet_size also as TCP send and receive buffer size. (mturk)
       </update>
       <update>
-        Do not allow Apache to start in multi-threaded mode if mod_jk
-         was only build for single threaded server (prefork). (mturk)
+        Apache: Do not allow Apache to start in multi-threaded mode if mod_jk
+        was only build for single threaded server (prefork). (mturk)
       </update>
       <fix>
         <bug>45812</bug>: Add done() service method that
@@ -137,13 +176,13 @@
       <fix>
         <bug>45026</bug>: For Apache httpd 2.x add "Unknown Reason"
         as the reason phrase, if we get an empty one from the backend.
-        Otherwise httpd 2.x returns status 500.
+        Otherwise httpd 2.x returns status 500. (rjung)
       </fix>
       <fix>
-        Fix Cygwin build. (rjung)
+        Build: Fix Cygwin build. (rjung)
       </fix>
       <update>
-        Add info to docs, that variables sent via JkEnvVar
+        Documenation: Add info to docs, that variables sent via JkEnvVar
         are not listed in request.getAttributeNames(). (rjung)
       </update>
       <add>
@@ -155,14 +194,14 @@
         Change log level of some messages from error to info. (mturk)
       </update>
       <fix>
-        Fix docs for worker attribute "secret". (rjung)
+        Documenation: Fix docs for worker attribute "secret". (rjung)
       </fix>
       <update>
         Detect correct plugin name for various web servers via additional
         preprocessor defines. (rjung)
       </update>
       <fix>
-        Do not put loadbalancer node in error state if there is opened
+        LB: Do not put loadbalancer node in error state if there is opened
         channel. This fixes the bug when new connection fails due to
         busyness, causing opened connections fail stickyness.
         This brings back per-node busy counter and private state array
