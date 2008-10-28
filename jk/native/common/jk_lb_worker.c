@@ -567,6 +567,7 @@ static int force_recovery(lb_worker_t *p,
     unsigned int i;
     int forced = 0;
     lb_sub_worker_t *w = NULL;
+    ajp_worker_t *aw = NULL;
     JK_TRACE_ENTER(l);
 
     for (i = 0; i < p->num_of_workers; i++) {
@@ -574,8 +575,10 @@ static int force_recovery(lb_worker_t *p,
         if (w->s->state == JK_LB_STATE_ERROR) {
             if (JK_IS_DEBUG_LEVEL(l))
                 jk_log(l, JK_LOG_INFO,
-                       "worker %s is marked for recovery",
+                       "worker %s is marked for forced recovery",
                        w->name);
+            aw = (ajp_worker_t *)w->worker->worker_private;
+            aw->s->reply_timeouts = 0;
             w->s->state = JK_LB_STATE_FORCE;
             forced++;
         }
@@ -595,18 +598,20 @@ static jk_uint64_t decay_load(lb_worker_t *p,
 {
     unsigned int i;
     jk_uint64_t curmax = 0;
+    lb_sub_worker_t *w;
+    ajp_worker_t *aw;
 
     JK_TRACE_ENTER(l);
-    if (p->lbmethod != JK_LB_METHOD_BUSYNESS) {
-        for (i = 0; i < p->num_of_workers; i++) {
-            lb_sub_worker_t *w = &p->lb_workers[i];
-            ajp_worker_t *aw = (ajp_worker_t *)w->worker->worker_private;
+    for (i = 0; i < p->num_of_workers; i++) {
+        w = &p->lb_workers[i];
+        if (p->lbmethod != JK_LB_METHOD_BUSYNESS) {
             w->s->lb_value >>= exponent;
             if (w->s->lb_value > curmax) {
                 curmax = w->s->lb_value;
             }
-            aw->s->reply_timeouts >>= exponent;
         }
+        aw = (ajp_worker_t *)w->worker->worker_private;
+        aw->s->reply_timeouts >>= exponent;
     }
     JK_TRACE_EXIT(l);
     return curmax;
