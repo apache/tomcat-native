@@ -972,7 +972,7 @@ In order to use another variable than <b>JK_WORKER_NAME</b>, you can set the nam
 of this variable via the <b>JkWorkerIndicator</b> directive.
 </p>
 <p>
-Finally you can define exclusions from mod_jk forwards by setting the environment
+You can also define exclusions from mod_jk forwards by setting the environment
 variable <b>no-jk</b>.
 </p>
 <source>
@@ -990,7 +990,10 @@ variable <b>no-jk</b>.
     SetEnvIf REQUEST_URI ^/apps/([^/]*)/static no-jk
   &lt;/Location&gt;
 </source>
-
+<p>
+Finally, starting with version 1.2.27 you can use the environment variable
+<b>JK_REPLY_TIMEOUT</b> to dynamically set a reply timeout.
+</p>
 </subsection>
  </section>
 </body>
