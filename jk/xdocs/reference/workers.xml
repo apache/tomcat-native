@@ -999,6 +999,23 @@ This feature has been added in <b>jk 1.2.9</b>.
 </p>
 </directive>
 
+<directive name="session_cookie" workers="LB" default="JSESSIONID" required="false">
+The name of the cookie that contains the routing identifier needed for session stickyness.
+The routing identifier is everything after a "." character in the value of the cookie.
+<p>
+This feature has been added in <b>jk 1.2.27</b>.
+</p>
+</directive>
+
+<directive name="session_path" workers="LB" default=";jsessionid" required="false">
+The name of the path parameter that contains the routing identifier needed for
+session stickyness. The routing identifier is everything after a "." character in the value
+of the path parameter.
+<p>
+This feature has been added in <b>jk 1.2.27</b>.
+</p>
+</directive>
+
 </advanceddirectives>
 </subsection>
 
