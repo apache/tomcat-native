@@ -18,7 +18,7 @@ Last modified at [$Date$]
 
 Release:
 
-    1.2.27  : in development
+    1.2.27  : released October 28, 2008
     1.2.26  : released December 21, 2007
     1.2.25  : released August 7, 2007
     1.2.24  : released July 27, 2007, withdrawn August 2, 2007
@@ -44,16 +44,16 @@ Release:
     1.2.4   : released May 27, 2003
     1.2.3   : released May 16, 2003
     1.2.2   : released December 17, 2002
-    
+
 
 
 RELEASE SHOWSTOPPERS:
 
-    
-    
- 
+
+
+
 RELEASE NON-SHOWSTOPPERS BUT WOULD BE REAL NICE TO WRAP THESE UP:
-    
+
 
 
 
