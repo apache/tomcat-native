@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="20081001.html">
+
+  &project;
+
+  <properties>
+    <author email="dev.AT.tomcat.DOT.apache.DOT.org">Apache Tomcat Connectors Project</author>
+    <title>2008 News and Status</title>
+  </properties>
+
+<body>
+
+<section name="2008 News &amp; Status">
+<br />
+<subsection name="28 October - JK-1.2.27 released">
+<a name="20081028.1"></a>
+<br />
+<p>The Apache Tomcat team is proud to announce the immediate availability
+of Tomcat Connectors 1.2.27. This is a stable release adding lots of new features
+and some bug fixes.
+</p><p>
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+<p>If you find any bugs while using this release, please fill in the
+<a href="https://issues.apache.org/bugzilla/enter_bug.cgi?product=Tomcat%20Connectors">Bugzilla</a>
+Bug Report.
+</p>
+<p>
+The most important new features in this version are:
+</p>
+<h3>Watchdog Thread for Periodic Tasks</h3>
+<p>
+The connector has to run some periodic tasks independant of
+request processing. Examples are probing or closing down idle backend
+connections, adjusting load numbers and recovering workers from error state.
+</p>
+<p>
+Before version 1.2.27 these tasks were done inside the request processing loop.
+When a new request came in and the task was due, the thread handling the
+request first executed the internal task and then handled the request.
+If there were no requests coming in, the tasks would not run. If any of
+the tasks took unexpectedly long, the response time of the request waiting
+for the finishing of the task went up.
+</p>
+<p>
+Starting with this release you can configure a separate watchdog thread inside
+the web server to run all those tasks independantly of request processing.
+This new feature is avaliable for the connector when used with Apache httpd 2.x
+or with Microsoft IIS. To keep the behaviour of the new version consistent
+with previous releases, this feature is turned off by default.
+You can activate the watchdog thread via
+<a href="../reference/apache.html"><code>JkWatchdogInterval</code></a>
+for Apache or
+<a href="../reference/iis.html"><code>watchdog_interval</code></a>
+for IIS.
+</p>
+<h3>Connection Probing</h3>
+<p>
+In previous releases connection probing (checking whether connections still work)
+could only be done immediately after a new connection was established and
+directly before sending each request. Since we now have the watchdog
+thread available, we also added a periodic probing option, which you
+can activate with the worker attribute
+<a href="../reference/workers.html"><code>ping_mode</code></a>.
+This will also be useful as a protection against the infamous firewall
+idle connection drop.
+</p>
+<p>
+The older attributes <code>connect_timeout</code> and <code>prepost_timeout</code>
+still exist and work the same way they did in previous releases.
+Since there are now three different probing options, we recommend to migrate
+your configuration to the newer attributes <code>ping_mode</code>,
+<code>ping_timeout</code> and <code>connection_ping_interval</code>.
+</p>
+<h3>Mount Extensions</h3>
+<p>
+Usually one defines workers and mounts for the connector.
+A worker defines a backend we want to talk to and the configuration parameters of the
+communication, connection pools etc. The mounts define which URIs we want to forward to
+which worker (so we also call a mount an URI map rule).
+In version 1.2.27 you can overwrite certain worker parameter per mount.
+</p>
+<p>
+One easy to understand example is reply timeouts. Until this release you had to specify
+a reply timeout for the whole worker. But reply times depend a lot on the type of
+request. So normally you want to define a general reply timeout and
+for some special URLs you need to relax the reply timeout, because you know those
+URLs take much longer to process (like e.g. reporting or other compute intensive tasks).
+</p>
+<p>
+Another possible case is the activation status. You might use a load balancer worker to
+forward requests to certain webapps in a farm of Tomcat nodes. If you wanted
+to update some webapp on one node, you previously had to stop forwarding requests for
+all webapps on this Tomcat node. What was not possible until now, was stopping forwarding
+requests restricted to the webapp and the node you wanted to update.
+</p>
+<p>
+Starting with this release, you can add so-called
+<a href="../reference/uriworkermap.html#Rule extensions">rule extensions</a>
+to your uriworkermap file to influence worker parameters per mount. This will
+work for all Apache versions and for IIS. Remember, that
+the uriworkermap file automatically gets reloaded after changes without web server
+restart.
+</p>
+<h3>Improved IIS support</h3>
+<p>
+We improved IIS support im various ways. It is now possible to use
+multiple IIS 6 application pools with the ISAPI redirector.
+</p>
+<p>
+Furthermore some improvements were added as compile time features.
+The most notable one is chunked encoding support, which was a major
+refactoring and is therefore still considered experimental. You can
+download binaries with and without chunked encoding support. In future
+versions, chunked encoding will likely be availabe in all builds.
+</p>
+<p>
+Another new feature is an elegant way of configuring error page redirects.
+All new features are documented on the documentation page about
+<a href="../reference/iis.html">configuring IIS</a>.
+</p>
+<h3>Enhanced Status Worker</h3>
+<p>
+The
+<a href="../reference/status.html">status worker</a>
+now can also manage and show statistics for AJP workers that
+are not part of a load balancer. Other improvements are the new <code>dump</code>
+action, the integration of the new configuration attributes, showing average
+request and transfer rates since the last statistics reset and the ability to
+display only a single member of a load balancer.
+</p>
+<p>
+Unfortunately we had to change
+<a href="../reference/status.html#Data Parameters for the standard Update Action">some request parameters</a>
+used for the <code>update</code> action of the status worker.
+</p>
+<h3>Miscellaneous Improvements</h3>
+<p>
+Further enhancements are:
+<ul>
+<li>
+Configurable session stickyness indicator: cookie name and URL path
+parameter name can be freely chosen instead of the servlet spec compliant
+<code>JSESSIONID</code> and <code>;jsessionid</code>.
+</li>
+<li>
+Automatically determining the size of the shared memory segment needed
+to accommodate all workers.
+</li>
+<li>
+New connection establishment timeout <code>socket_connect_timeout</code>.
+</li>
+<li>
+New timeout <code>connection_acquire_timeout</code> for acquiring a free connection from
+the pool.
+</li>
+<li>
+Improved retry handling by adjusting the meaning of the attribute <code>retries</code> for
+AJP workers and for load balancers and by adding the new <code>retry_interval</code>.
+</li>
+<li>
+Allowing the web server to provide error pages instead of Tomcat.
+</li>
+</ul>
+</p>
+</subsection>
+</section>
+</body>
+</document>

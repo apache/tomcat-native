@@ -45,6 +45,16 @@ manual is described in more detail below.</p>
 <section name="Headlines">
 <br />
 <ul>
+<li><a href="news/20081001.html#28 October - JK-1.2.27 released">28 October 2008 - <b>JK-1.2.27 released</b></a>
+<p>The Apache Tomcat team is proud to announce the immediate availability
+of Tomcat Connectors 1.2.27 Stable. This release contains interesting <a href="news/20081001.html#28 October - JK-1.2.27 released">improvements</a>.
+</p>
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.27/tomcat-connectors-1.2.27-src.tar.gz">JK 1.2.27 release sources</a>
+ | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.27/tomcat-connectors-1.2.27-src.tar.gz.asc">PGP signature</a>
+</p>
+<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
+</p>
+</li>
 <li><a href="news/20070301.html#20071221.1">21 December 2007 - <b>JK-1.2.26 released</b></a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Tomcat Connectors 1.2.26 Stable.
@@ -61,106 +71,6 @@ of Tomcat Connectors 1.2.25 Stable.
 </p>
 <p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.25/tomcat-connectors-1.2.25-src.tar.gz">JK 1.2.25 release sources</a>
  | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.25/tomcat-connectors-1.2.25-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-<li><a href="news/20070301.html#20070727.1">27 July 2007 - <b>JK-1.2.24 released</b></a>
-<p><b>This release has been withdrawn.</b>
-</p>
-</li>
-<li><a href="news/20070301.html#20070518.1">18 May 2007 - <b>JK-1.2.23 released</b></a>
-<p>The Apache Tomcat team is proud to announce the immediate availability
-of Tomcat Connectors 1.2.23 Stable.
-</p>
-<p>This version addresses the security flaw:
-<br />
-<a href="http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2007-1860"><b>CVE-2007-1860</b></a>
-A double encoded ".." in a URL can be used to access URLs on the AJP backend,
-for which no mod_jk forwarding rule exists (patch for CVE-2007-0450 was insufficient).
-</p><p>
-This version fixes the problem by using ForwardURICompatUnparsed
-as the default for the forwarding JkOption.
-You can similarly fix the problem for all previous versions of mod_jk by setting
-"JkOption ForwardURICompatUnparsed".
-If you upgrade to version 1.2.23 please ensure, that you do not have
-a different forwarding option in your existing configuration.
-We highly recommend, that you are consulting the
-<a href="reference/apache.html#Forwarding">forwarding documentation</a>,
-especially concerning the implications for interaction with mod_rewrite.
-</p><p>
-Please note that this issue only affects configurations,
-which use a prefix forwarding rule like "/myapp/*" or "/myapp/*.jsp"
-to restrict access to the context "/myapp". The issue will allow 
-malicious URLs to reach "/otherapp" or "/otherapp/*.jsp" as well.
-</p><p>
-The Tomcat Project thanks Kazu Nambo for his responsible reporting of this 
-vulnerability.
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.23/tomcat-connectors-1.2.23-src.tar.gz">JK 1.2.23 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.23/tomcat-connectors-1.2.23-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-<li><a href="news/20070301.html#20070417.1">17 April 2007 - <b>JK-1.2.22 released</b></a>
-<p>The Apache Tomcat team is proud to announce the immediate availability
-of Tomcat Connectors 1.2.22 Stable.
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.22/tomcat-connectors-1.2.22-src.tar.gz">JK 1.2.22 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.22/tomcat-connectors-1.2.22-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-<li><a href="news/20070301.html#20070301.1">1 March 2007 - <b>JK-1.2.21 released</b></a>
-<p>The Apache Tomcat team is proud to announce the immediate availability
-of Tomcat Connectors 1.2.21 Stable.
-</p>
-<p>This version addresses the security flaw:
-<br />
-<a href="http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2007-0774"><b>CVE-2007-0774</b></a>
-A Long URL Stack Overflow Vulnerability exists in the URI handler for the mod_jk library.
-When parsing a long URL request, the URI worker map routine performs an
-unsafe memory copy. This results in a stack overflow condition which can
-be leveraged execute arbitrary code.
-</p><p>
-Please note this issue only affected versions 1.2.19 and 1.2.20 of the
-JK Apache Tomcat Connector and not previous versions.
-Tomcat 5.5.20 and Tomcat 4.1.34
-included a vulnerable version in their source packages.
-<strong>No </strong>other source code releases <strong> and no binary packages</strong>
-of Tomcat were affected.
-</p><p>
-The Apache Tomcat project recommends that all users who have built mod_jk from source apply the patch or upgrade to the latest level and rebuild. Providers of mod_jk-based modules in pre-compiled form will be able to determine if this vulnerability applies to their builds. That determination has no bearing on any other builds of mod_jk, and mod_jk users are urged to exercise caution and apply patches or upgrade unless they have specific instructions from the provider of their module.
-</p><p>
-The Tomcat Project thanks an anonymous researcher working with 
-TippingPoint (www.tippingpoint.com) and the Zero Day Initiative 
-(www.zerodayintiative.com) for their responsible reporting of this 
-vulnerability.
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.21/tomcat-connectors-1.2.21-src.tar.gz">JK 1.2.21 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.21/tomcat-connectors-1.2.21-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-<li><a href="news/20060101.html#20061210.1">10 December 2006 - <b>JK-1.2.20 released</b></a>
-<p>The Apache Tomcat team is proud to announce the immediate availability
-of Tomcat Connectors 1.2.20 Stable.
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.20/tomcat-connectors-1.2.20-src.tar.gz">JK 1.2.20 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.20/tomcat-connectors-1.2.20-src.tar.gz.asc">PGP signature</a>
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
-</p>
-</li>
-<li><a href="news/20060101.html#20060917.1">17 September 2006 - <b>JK-1.2.19 released</b></a>
-<p>The Apache Tomcat team is proud to announce the immediate availability
-of Tomcat Connectors 1.2.19 Stable.
-</p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.19/tomcat-connectors-1.2.19-src.tar.gz">JK 1.2.19 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/source/jk-1.2.19/tomcat-connectors-1.2.19-src.tar.gz.asc">PGP signature</a>
 </p>
 <p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/jk/binaries/">binaries</a> for selected platforms.
 </p>
