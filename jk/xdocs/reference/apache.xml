@@ -41,10 +41,14 @@ Since version 1.2.20 they can be overwritten in the virtual hosts.
 Exceptions from this rule are again explicitly listed in the table below.
 See especially JkMountCopy.
 </p>
-<p><b>Warning: If Apache httpd and Tomcat are configured to serve content from
+<warn>
+Warning: If Apache httpd and Tomcat are configured to serve content from
 the same filing system location then care must be taken to ensure that httpd is
 not able to serve inappropriate content such as the contents of the WEB-INF
-directory or JSP source code.</b> This could occur if the httpd DocumentRoot
+directory or JSP source code.
+</warn>
+<p>
+This could occur if the httpd DocumentRoot
 overlaps with a Tomcat Host's appBase or the docBase of any Context. It could
 also occur when using the httpd Alias directive with a Tomcat Host's appBase or
 the docBase of any Context.
