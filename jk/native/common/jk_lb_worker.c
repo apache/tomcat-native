@@ -73,9 +73,9 @@ static const char *lb_state_type[] = {
     JK_LB_STATE_TEXT_IDLE,
     JK_LB_STATE_TEXT_OK,
     JK_LB_STATE_TEXT_RECOVER,
+    JK_LB_STATE_TEXT_FORCE,
     JK_LB_STATE_TEXT_BUSY,
     JK_LB_STATE_TEXT_ERROR,
-    JK_LB_STATE_TEXT_FORCE,
     JK_LB_STATE_TEXT_PROBE,
     "unknown",
     NULL
@@ -206,12 +206,12 @@ int jk_lb_get_state_code(const char *v)
         return JK_LB_STATE_OK;
     else if  (*v == 'r' || *v == 'R' || *v == '2')
         return JK_LB_STATE_RECOVER;
-    else if  (*v == 'b' || *v == 'B' || *v == '3')
-        return JK_LB_STATE_BUSY;
-    else if  (*v == 'e' || *v == 'E' || *v == '4')
-        return JK_LB_STATE_ERROR;
-    else if  (*v == 'f' || *v == 'F' || *v == '5')
+    else if  (*v == 'f' || *v == 'F' || *v == '3')
         return JK_LB_STATE_FORCE;
+    else if  (*v == 'b' || *v == 'B' || *v == '4')
+        return JK_LB_STATE_BUSY;
+    else if  (*v == 'e' || *v == 'E' || *v == '5')
+        return JK_LB_STATE_ERROR;
     else if  (*v == 'p' || *v == 'P' || *v == '6')
         return JK_LB_STATE_PROBE;
     else

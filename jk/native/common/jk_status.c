@@ -719,23 +719,23 @@ static int status_rate(lb_sub_worker_t *wr, status_worker_t *w,
     }
     switch (state)
     {
-    case JK_LB_STATE_OK:
-        mask &= JK_STATUS_MASK_OK;
-        break;
     case JK_LB_STATE_IDLE:
         mask &= JK_STATUS_MASK_IDLE;
         break;
-    case JK_LB_STATE_BUSY:
-        mask &= JK_STATUS_MASK_BUSY;
-        break;
-    case JK_LB_STATE_ERROR:
-        mask &= JK_STATUS_MASK_ERROR;
+    case JK_LB_STATE_OK:
+        mask &= JK_STATUS_MASK_OK;
         break;
     case JK_LB_STATE_RECOVER:
         mask &= JK_STATUS_MASK_RECOVER;
         break;
     case JK_LB_STATE_FORCE:
         mask &= JK_STATUS_MASK_RECOVER;
+        break;
+    case JK_LB_STATE_BUSY:
+        mask &= JK_STATUS_MASK_BUSY;
+        break;
+    case JK_LB_STATE_ERROR:
+        mask &= JK_STATUS_MASK_ERROR;
         break;
     case JK_LB_STATE_PROBE:
         mask &= JK_STATUS_MASK_RECOVER;
