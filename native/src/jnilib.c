@@ -59,11 +59,11 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
     tcn_global_vm = vm;
 
     /* Before doing anything else check if we have a valid
-     * APR version. We need version 1.2.1 as minimum.
+     * APR version. We need version 1.3.3 as minimum.
      */
     apr_version(&apv);
     apvn = apv.major * 1000 + apv.minor * 100 + apv.patch;
-    if (apvn < 1201) {
+    if (apvn < 1303) {
         tcn_Throw(env, "Unupported APR version (%s)",
                   apr_version_string());
         return JNI_ERR;
@@ -276,11 +276,7 @@ TCN_IMPLEMENT_CALL(jint, Library, version)(TCN_STDARGS, jint what)
             return TCN_PATCH_VERSION;
         break;
         case 0x04:
-#ifdef TCN_IS_DEV_VERSION
-            return 1;
-#else
-            return 0;
-#endif
+            return TCN_IS_DEV_VERSION;
         break;
         case 0x11:
             return apv.major;

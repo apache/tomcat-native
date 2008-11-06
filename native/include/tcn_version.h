@@ -66,16 +66,16 @@ extern "C" {
  * Minor API changes that do not cause binary compatibility problems.
  * Should be reset to 0 when upgrading TCN_MAJOR_VERSION
  */
-#define TCN_MINOR_VERSION       1
+#define TCN_MINOR_VERSION       2
 
 /** patch level */
-#define TCN_PATCH_VERSION       16
+#define TCN_PATCH_VERSION       0
 
 /**
  *  This symbol is defined for internal, "development" copies of TCN. This
  *  symbol will be #undef'd for releases.
  */
-#undef TCN_IS_DEV_VERSION
+#define TCN_IS_DEV_VERSION      1
 
 
 /** The formatted string of APU's version */
@@ -86,7 +86,7 @@ extern "C" {
      TCN_IS_DEV_STRING
 
 /** Internal: string form of the "is dev" flag */
-#ifdef TCN_IS_DEV_VERSION
+#if TCN_IS_DEV_VERSION
 #define TCN_IS_DEV_STRING "-dev"
 #else
 #define TCN_IS_DEV_STRING ""
