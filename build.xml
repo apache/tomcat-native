@@ -22,20 +22,35 @@
     -->
     <property file="${user.home}/.ant.properties" />
     <property file="${user.home}/build.properties" />
-    <property file="build.properties" />
     <property file=".ant.properties" />
+    <property file="build.properties" />
+    <property file="build.properties.default"/>
 
     <!-- Initialization properties -->
-    <property name="name" value="Tomcat Native"/>
-    <property name="title" value="Tomcat Native Library"/>
-    <property name="version" value="1.0.0"/>
-    <property name="version.number" value="100"/>
-    <property name="project" value="tomcat-native"/>
+    <property name="project"               value="tomcat-native" />
+    <property name="name"                  value="Tomcat Native" />
+    <property name="title"                 value="Tomcat Native Library"/>
+    <property name="year"                  value="2008" />
+    <property name="version.major"         value="1" />
+    <property name="version.minor"         value="1" />
+    <property name="version.build"         value="0" />
+    <property name="version.patch"         value="0" />
+    <property name="version.suffix"        value="-dev" />
+
+    <property name="junit.home"            value="/usr/local/junit3.8"/>
+    <property name="junit.jar"             value="${junit.home}/junit.jar"/>
+    <property name="test.runner"           value="junit.textui.TestRunner"/>
+
+    <property name="version"               value="${version.major}.${version.minor}.${version.build}${version.suffix}" />
+    <property name="version.number"        value="${version.major}.${version.minor}.${version.build}.${version.patch}" />
+    <property name="version.major.minor"   value="${version.major}.${version.minor}" />
+
+    <property name="final.name"            value="${project}-${version}" />
+
     <property name="build.dir" value="./dist"/>
     <property name="build.src" value="${build.dir}/src"/>
     <property name="build.dest" value="${build.dir}/classes"/>
     <property name="src.dir" value="."/>
-    <property name="final.name" value="${project}-${version}"/>
     <property name="dist.root" value="./dist"/>
     <property name="ant.home" value="."/>
 
@@ -46,15 +61,13 @@
     <property name="docs.src" value="./xdocs"/>
     <property name="docs.dest" value="${dist.root}/doc"/>
     <property name="docs.dest.print" value="${dist.root}/doc/printable"/>
-    <property name="test.runner" value="junit.textui.TestRunner"/>
     <property name="test.dir" value="${build.dest}/test"/>
     <property name="examples.dir" value="${build.dest}/examples"/>
-    <property name="junit.home" value="/usr/local/junit3.8"/>
-    <property name="junit.jar" value="${junit.home}/junit.jar"/>
+
     <property name="tc.library.path" value="${basedir}/native/.libs"/>
 
-      <!-- The base directory for component sources -->
-      <property name="source.home"             value="java"/>
+    <!-- The base directory for component sources -->
+    <property name="source.home"             value="java"/>
 
     <!-- Build classpath -->
     <path id="classpath">
