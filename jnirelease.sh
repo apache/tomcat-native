@@ -52,7 +52,7 @@ fi
 # and JKJNIVER by the version like 1.1.0
 # DON't forget to update native/include/tcn_version.h
 # and native/os/win32/libtcnative.rc
-# #define TCN_VERISON "1.1.14"
+# #define TCN_VERSION "1.1.14"
 # FILEVERSION 1,1,14,0
 # PRODUCTVERSION 1,1,14,0
 JKJNIEXT="tags/other/TOMCAT_NATIVE_1_1_15"
