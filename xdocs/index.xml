@@ -58,10 +58,10 @@ manual is described in more detail below.</p>
 <li><a href="news/2008.html#20080910.1">10 September 2008 - <b>TC-Native-1.1.15 released</b></a>
 <p>The Apache Tomcat team is proud to announce the immediate availability of Tomcat Native 1.1.15 Stable.
 </p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/native/tomcat-native-1.1.15-src.tar.gz">TC-native 1.1.15 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/native/tomcat-native-1.1.15-src.tar.gz.asc">PGP signature</a>
+<p>Download the <a href="http://archive.apache.org/dist/tomcat/tomcat-connectors/native/1.1.15/source/tomcat-native-1.1.15-src.tar.gz">TC-native 1.1.15 release sources</a>
+ | <a href="http://archive.apache.org/dist/tomcat/tomcat-connectors/native/1.1.15/source/tomcat-native-1.1.15-src.tar.gz.asc">PGP signature</a>
 </p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/native/1.1.15/binaries/">binaries</a> for selected platforms.
+<p>Download the <a href="http://archive.apache.org/dist/tomcat/tomcat-connectors/native/1.1.15/binaries/">binaries</a> for selected platforms.
 </p>
 </li>
 
@@ -69,8 +69,8 @@ manual is described in more detail below.</p>
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Tomcat Native 1.1.14 Stable.
 </p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/native/tomcat-native-1.1.14-src.tar.gz">TC-native 1.1.14 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/native/tomcat-native-1.1.14-src.tar.gz.asc">PGP signature</a>
+<p>Download the <a href="http://archive.apache.org/dist/tomcat/tomcat-connectors/native/1.1.14/source/tomcat-native-1.1.14-src.tar.gz">TC-native 1.1.14 release sources</a>
+ | <a href="http://archive.apache.org/dist/tomcat/tomcat-connectors/native/1.1.14/source/tomcat-native-1.1.14-src.tar.gz.asc">PGP signature</a>
 </p>
 <p>Download the <a href="http://tomcat.heanet.ie/native/">binaries</a> for selected platforms.
 </p>
@@ -80,8 +80,8 @@ of Tomcat Native 1.1.14 Stable.
 <p>The Apache Tomcat team is proud to announce the immediate availability
 of Tomcat Native 1.1.13 Stable.
 </p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/native/tomcat-native-1.1.13-src.tar.gz">TC-native 1.1.13 release sources</a>
- | <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/native/tomcat-native-1.1.13-src.tar.gz.asc">PGP signature</a>
+<p>Download the <a href="ttp://archive.apache.org/dist/tomcat/tomcat-connectors/native/1.1.13/source/tomcat-native-1.1.13-src.tar.gz">TC-native 1.1.13 release sources</a>
+ | <a href="ttp://archive.apache.org/dist/tomcat/tomcat-connectors/native/1.1.13/source/tomcat-native-1.1.13-src.tar.gz.asc">PGP signature</a>
 </p>
 <p>Download the <a href="http://tomcat.heanet.ie/native/">binaries</a> for selected platforms.
 </p>
