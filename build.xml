@@ -170,7 +170,8 @@ limitations under the License.--&gt;">
             destdir="${build.dest}/java"
             debug="${debug}"
             deprecation="${deprecation}"
-            optimize="${optimize}">
+            optimize="${optimize}"
+            encoding="ISO-8859-1">
             <classpath refid="classpath"/>
         </javac>
         <copy todir="${build.dest}/java" filtering="yes">
@@ -188,7 +189,8 @@ limitations under the License.--&gt;">
                destdir="${build.home}/classes"
                  debug="${compile.debug}"
            deprecation="${compile.deprecation}"
-              optimize="${compile.optimize}">
+              optimize="${compile.optimize}"
+              encoding="ISO-8859-1">
           <classpath refid="classpath"/>
         </javac>
         <copy    todir="${build.home}/classes" filtering="on">
@@ -224,7 +226,8 @@ limitations under the License.--&gt;">
             destdir="${build.dest}/examples"
             debug="${debug}"
             deprecation="${deprecation}"
-            optimize="${optimize}">
+            optimize="${optimize}"
+            encoding="ISO-8859-1">
             <classpath refid="examples.classpath"/>
         </javac>
         <copy todir="${build.dest}/examples" filtering="yes">
@@ -275,8 +278,8 @@ limitations under the License.--&gt;">
             destdir="${build.dest}/test"
             debug="on"
             deprecation="${deprecation}"
-            optimize="${optimize}">
-
+            optimize="${optimize}"
+            encoding="ISO-8859-1">
             <classpath refid="test.classpath"/>
         </javac>
     </target>
@@ -319,8 +322,8 @@ limitations under the License.--&gt;">
             destdir="${build.dest}/examples"
             debug="${debug}"
             deprecation="${deprecation}"
-            optimize="${optimize}">
-
+            optimize="${optimize}"
+            encoding="ISO-8859-1">
             <classpath refid="examples.classpath"/>
         </javac>
     </target>
