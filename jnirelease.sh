@@ -105,12 +105,6 @@ JKJNIDIST=tomcat-native-${JKJNIVER}-src
 
 rm -rf ${JKJNIDIST}
 
-#
-# XXX FIXME: we still need
-# examples test build.xml build.properties.default
-# which are gone in tcnative trunk at the moment
-#
-
 svn export $SVNBASE/${JKJNIEXT} ${JKJNIDIST}
 if [ $? -ne 0 ]; then
     echo "svn export failed"
