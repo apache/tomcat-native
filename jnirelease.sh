@@ -20,7 +20,7 @@
 apr_src_dir=`pwd`/srclib/apr
 JKJNIEXT=""
 JKJNIVER=""
-SVNBASE=https://svn.apache.org/repos/asf/tomcat/connectors/
+SVNBASE=https://svn.apache.org/repos/asf/tomcat/native/
 
 for o
 do
@@ -104,32 +104,37 @@ echo "Using version        : \`${JKJNIVER}'"
 JKJNIDIST=tomcat-native-${JKJNIVER}-src
 
 rm -rf ${JKJNIDIST}
-mkdir -p ${JKJNIDIST}/jni
-for i in native java xdocs examples test build.xml build.properties.sample
+
+#
+# XXX FIXME: we still need
+# examples test build.xml build.properties.default
+# which are gone in tcnative trunk at the moment
+#
+
+svn export $SVNBASE/${JKJNIEXT} ${JKJNIDIST}
+if [ $? -ne 0 ]; then
+    echo "svn export failed"
+    exit 1
+fi
+
+# Clean up unused stuff
+for i in jnirelease.sh
 do
-    svn export $SVNBASE/${JKJNIEXT}/jni/${i} ${JKJNIDIST}/jni/${i}
-    if [ $? -ne 0 ]; then
-        echo "svn export ${i} failed"
-        exit 1
-    fi
+    rm -rf ${JKJNIDIST}/${i}
 done
 
 top="`pwd`"
-cd ${JKJNIDIST}/jni/xdocs
+cd ${JKJNIDIST}/xdocs
 ant
-$EXPTOOL $EXPOPTS ../build/docs/miscellaneous/printer/changelog.html > ../../CHANGELOG.txt 2>/dev/null
+$EXPTOOL $EXPOPTS ../build/docs/miscellaneous/printer/changelog.html > ../CHANGELOG.txt 2>/dev/null
 cd "$top"
-rm -rf ${JKJNIDIST}/jni/xdocs
-
-svn cat $SVNBASE/${JKJNIEXT}/KEYS > ${JKJNIDIST}/KEYS
-svn cat $SVNBASE/${JKJNIEXT}/LICENSE > ${JKJNIDIST}/LICENSE
-svn cat $SVNBASE/${JKJNIEXT}/NOTICE > ${JKJNIDIST}/NOTICE
-svn cat $SVNBASE/${JKJNIEXT}/jni/NOTICE.txt > ${JKJNIDIST}/NOTICE.txt
-svn cat $SVNBASE/${JKJNIEXT}/jni/README.txt > ${JKJNIDIST}/README.txt
+rm -rf ${JKJNIDIST}/xdocs
+mv ${JKJNIDIST}/build/docs ${JKJNIDIST}/docs
+rm -rf ${JKJNIDIST}/build
 
 #
 # Prebuild
-cd ${JKJNIDIST}/jni/native
+cd ${JKJNIDIST}/native
 ./buildconf --with-apr=$apr_src_dir
 cd "$top"
 # Create source distribution
@@ -138,12 +143,11 @@ tar -cf - ${JKJNIDIST} | gzip -c9 > ${JKJNIDIST}.tar.gz
 # Create Win32 source distribution
 JKWINDIST=tomcat-native-${JKJNIVER}-win32-src
 rm -rf ${JKWINDIST}
-mkdir -p ${JKWINDIST}/jni
-svn export --native-eol CRLF $SVNBASE/${JKJNIEXT}/jni/native ${JKWINDIST}/jni/native
+mkdir -p ${JKWINDIST}
+svn export --native-eol CRLF $SVNBASE/${JKJNIEXT}/native ${JKWINDIST}/native
 svn cat $SVNBASE/${JKJNIEXT}/KEYS > ${JKWINDIST}/KEYS
 svn cat $SVNBASE/${JKJNIEXT}/LICENSE > ${JKWINDIST}/LICENSE
 svn cat $SVNBASE/${JKJNIEXT}/NOTICE > ${JKWINDIST}/NOTICE
-svn cat $SVNBASE/${JKJNIEXT}/jni/NOTICE.txt > ${JKWINDIST}/NOTICE.txt
-svn cat $SVNBASE/${JKJNIEXT}/jni/README.txt > ${JKWINDIST}/README.txt
+svn cat $SVNBASE/${JKJNIEXT}/README.txt > ${JKWINDIST}/README.txt
 cp ${JKJNIDIST}/CHANGELOG.txt ${JKWINDIST}/
 zip -9rqyo ${JKWINDIST}.zip ${JKWINDIST}
