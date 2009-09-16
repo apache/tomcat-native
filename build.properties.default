@@ -28,3 +28,34 @@ junit.home = /usr/local/java/junit3.8.1
 
 # The pathname of the "junit.jar" JAR file
 junit.jar = ${junit.home}/junit.jar
+
+# ----- Default Base Path for Dependent Packages -----
+# Please note this path must be absolute, not relative,
+# as it is referenced with different working directory
+# contexts by the various build scripts.
+base.path=/usr/share/java
+#base.path=C:/path/to/the/repository
+#base.path=/usr/local
+
+compile.source=1.4
+compile.target=1.4
+compile.debug=off
+compile.deprecation=on
+compile.optimize=on
+
+base-tomcat.loc=http://archive.apache.org/dist/tomcat
+base-sf.loc=http://downloads.sourceforge.net
+
+# ----- Tomcat native Java sources -----
+tomcat.version=6.0.20
+tomcat.home=${base.path}/tomcat-${tomcat.version}
+tomcat.tar.gz=${tomcat.home}/tomcat.tar.gz
+tomcat.loc=${base-tomcat.loc}/tomcat-6/v${tomcat.version}/src/apache-tomcat-${tomcat.version}-src.tar.gz
+tomcat.src=${base.path}/apache-tomcat-${tomcat.version}-src
+
+# ----- JUnit Unit Test Suite, version 3.7 or later -----
+junit.home=${base.path}/junit3.8.2
+junit.lib=${junit.home}
+junit.jar=${junit.lib}/junit.jar
+junit.loc=${base-sf.loc}/junit/junit3.8.2.zip
+
