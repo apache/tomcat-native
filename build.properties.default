@@ -15,7 +15,7 @@
 #  limitations under the License.
 #
 
-# ----- Vesion Control Flags -----
+# ----- Version Control Flags -----
 version.major=2
 version.minor=0
 version.build=0
