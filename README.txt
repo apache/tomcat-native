@@ -13,8 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-This directory contains both the native and java-side code for
-Tomcat Native Library.
+This directory contains the native code for the Tomcat Native Library.
+The Java code is part of the Tomcat source code. All classes
+are located in the org.apache.tomcat.jni package.
 
 Building
 ========
