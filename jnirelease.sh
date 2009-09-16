@@ -20,7 +20,7 @@
 apr_src_dir=`pwd`/srclib/apr
 JKJNIEXT=""
 JKJNIVER=""
-SVNBASE=https://svn.apache.org/repos/asf/tomcat/native/
+SVNBASE=https://svn.apache.org/repos/asf/tomcat/native
 
 for o
 do
@@ -55,7 +55,7 @@ else
     echo ""
     echo "Problem finding apr source in: \`$apr_src_dir'"
     echo "Use:"
-    echo "  --with-apr=<directory>" 
+    echo "  --with-apr=<directory>"
     echo ""
     exit 1
 fi
@@ -64,7 +64,7 @@ if [ "x$JKJNIEXT" = "x" ]; then
     echo ""
     echo "Unknown SVN version"
     echo "Use:"
-    echo "  --ver=<version>|trunk" 
+    echo "  --ver=<version>|<branch>|trunk"
     echo ""
     exit 1
 fi
@@ -91,13 +91,25 @@ if [ ! -x "$EXPTOOL" ]; then
     exit 1
 fi
 
-echo "Using SVN repo       : \`$SVNBASE/${JKJNIEXT}'"
+echo $JKJNIEXT | egrep -e 'x$' > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    USE_BRANCH=1
+else
+    USE_BRANCH=0
+fi
+
+JKJNISVN=$SVNBASE/${JKJNIEXT}
 if [ "x$JKJNIEXT" = "xtrunk" ]; then
-    JKJNIVER=`svn info $SVNBASE | awk '$1 == "Revision:" {print $2}'`
+    JKJNIVER=`svn info ${JKJNISVN} | awk '$1 == "Revision:" {print $2}'`
+elif [ $USE_BRANCH -eq 1 ]; then
+    JKJNIBRANCH=${JKJNIEXT}
+    JKJNISVN=$SVNBASE/branches/${JKJNIBRANCH}
+    JKJNIVER=${JKJNIBRANCH}-`svn info ${JKJNISVN} | awk '$1 == "Revision:" {print $2}'`
 else
     JKJNIVER=$JKJNIEXT
-    JKJNIEXT="tags/other/TOMCAT_NATIVE_`echo $JKJNIVER | sed 's/\./_/g'`"
+    JKJNISVN="${SVNBASE}/tags/TOMCAT_NATIVE_`echo $JKJNIVER | sed 's/\./_/g'`"
 fi
+echo "Using SVN repo       : \`${JKJNISVN}'"
 echo "Using version        : \`${JKJNIVER}'"
 
 
@@ -105,7 +117,7 @@ JKJNIDIST=tomcat-native-${JKJNIVER}-src
 
 rm -rf ${JKJNIDIST}
 
-svn export $SVNBASE/${JKJNIEXT} ${JKJNIDIST}
+svn export ${JKJNISVN} ${JKJNIDIST}
 if [ $? -ne 0 ]; then
     echo "svn export failed"
     exit 1
@@ -138,10 +150,10 @@ tar -cf - ${JKJNIDIST} | gzip -c9 > ${JKJNIDIST}.tar.gz
 JKWINDIST=tomcat-native-${JKJNIVER}-win32-src
 rm -rf ${JKWINDIST}
 mkdir -p ${JKWINDIST}
-svn export --native-eol CRLF $SVNBASE/${JKJNIEXT}/native ${JKWINDIST}/native
-svn cat $SVNBASE/${JKJNIEXT}/KEYS > ${JKWINDIST}/KEYS
-svn cat $SVNBASE/${JKJNIEXT}/LICENSE > ${JKWINDIST}/LICENSE
-svn cat $SVNBASE/${JKJNIEXT}/NOTICE > ${JKWINDIST}/NOTICE
-svn cat $SVNBASE/${JKJNIEXT}/README.txt > ${JKWINDIST}/README.txt
+svn export --native-eol CRLF ${JKJNISVN}/native ${JKWINDIST}/native
+svn cat ${JKJNISVN}/KEYS > ${JKWINDIST}/KEYS
+svn cat ${JKJNISVN}/LICENSE > ${JKWINDIST}/LICENSE
+svn cat ${JKJNISVN}/NOTICE > ${JKWINDIST}/NOTICE
+svn cat ${JKJNISVN}/README.txt > ${JKWINDIST}/README.txt
 cp ${JKJNIDIST}/CHANGELOG.txt ${JKWINDIST}/
 zip -9rqyo ${JKWINDIST}.zip ${JKWINDIST}
