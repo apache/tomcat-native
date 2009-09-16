@@ -22,13 +22,6 @@ version.build=0
 version.patch=0
 version.suffix=-dev
 
-# The directory containing your binary distribution of JUnit,
-# version 3.8 or later
-junit.home = /usr/local/java/junit3.8.1
-
-# The pathname of the "junit.jar" JAR file
-junit.jar = ${junit.home}/junit.jar
-
 # ----- Default Base Path for Dependent Packages -----
 # Please note this path must be absolute, not relative,
 # as it is referenced with different working directory
@@ -47,15 +40,23 @@ base-tomcat.loc=http://archive.apache.org/dist/tomcat
 base-sf.loc=http://downloads.sourceforge.net
 
 # ----- Tomcat native Java sources -----
+# The Tomcat 6 version we use for getting the Java sources
 tomcat.version=6.0.20
-tomcat.home=${base.path}/tomcat-${tomcat.version}
-tomcat.tar.gz=${tomcat.home}/tomcat.tar.gz
-tomcat.loc=${base-tomcat.loc}/tomcat-6/v${tomcat.version}/src/apache-tomcat-${tomcat.version}-src.tar.gz
+# The directory containing your source distribution of Tomcat
+# It will be automatically downloaded if it doesn't exist
 tomcat.src=${base.path}/apache-tomcat-${tomcat.version}-src
+#tomcat.src=/usr/local/apache-tomcat-${tomcat.version}-src
+# The URL used to download Tomcat if needed
+tomcat.loc=${base-tomcat.loc}/tomcat-6/v${tomcat.version}/src/apache-tomcat-${tomcat.version}-src.tar.gz
 
-# ----- JUnit Unit Test Suite, version 3.7 or later -----
-junit.home=${base.path}/junit3.8.2
-junit.lib=${junit.home}
-junit.jar=${junit.lib}/junit.jar
-junit.loc=${base-sf.loc}/junit/junit3.8.2.zip
-
+# ----- JUnit Unit Test Suite, version 3.8 or later -----
+# The JUnit version we will use
+junit.version=3.8.2
+# The directory containing your binary distribution of JUnit
+# It will be automatically downloaded if it doesn't exist
+junit.home=${base.path}/junit${junit.version}
+#junit.home = /usr/local/java/junit3.8.1
+# The pathname of the "junit.jar" JAR file
+junit.jar=${junit.home}/junit.jar
+# The URL used to download JUnit if needed
+junit.loc=${base-sf.loc}/junit/junit${junit.version}.zip
