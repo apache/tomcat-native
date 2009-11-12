@@ -575,6 +575,11 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
      *  ssl->state = SSL_ST_ACCEPT
      *  SSL_do_handshake()
      */
+    
+    /* Toggle the renegotiation state to allow the new
+     * handshake to proceed.
+     */
+    con->reneg_state = RENEG_ALLOW;      
     retVal = SSL_renegotiate(con->ssl);
     if (retVal <= 0)
         return APR_EGENERAL;
@@ -603,6 +608,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
         } else
             break;
     }
+    con->reneg_state = RENEG_REJECT;
    
     if (SSL_get_state(con->ssl) != SSL_ST_OK) {
         return APR_EGENERAL;
