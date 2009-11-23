@@ -28,12 +28,10 @@
     <menu name="Links">
         <item name="Docs Home"                  href="../index.html"/>
     </menu>
-    <menu name="Miscellaneous Documentation">
-        <item name="Changelog"                  href="../miscellaneous/changelog.html"/>
-    </menu>
 
     <menu name="News">
         <item name="2008"                       href="../news/2008.html"/>
+        <item name="2009"                       href="../news/2009.html"/>
     </menu>
     
 </body>
