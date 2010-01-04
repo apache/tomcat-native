@@ -30,10 +30,7 @@
 
 <section name="Preface">
   <p>
-  This is the Changelog for Tomcat Native. This changelog
-  does not contain all updates and fixes to the Tomcat Native (yet).
-  It should contain fixes made only after December 19th 2007, when the
-  new documentation project for  Tomcat Native was started.
+  This is the Changelog for Tomcat Native 2.0.
   </p>
 </section>
 <section name="Changes between 1.1 and 2.0.0">
