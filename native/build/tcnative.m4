@@ -33,10 +33,10 @@ AC_DEFUN(TCN_FIND_APR,[
   sapr_version="`echo $sapr_pversion|sed -e 's/\([a-z]*\)$/.\1/'`"
   tc_save_IFS=$IFS; IFS=.; set $sapr_version; IFS=$tc_save_IFS
   if test "${1}" -lt "1"; then
-    AC_MSG_ERROR(You need APR version 1.2.1 or newer installed.)
+    AC_MSG_ERROR(You need APR version 1.3.3 or newer installed.)
   else
     if test "${2}" -lt "2"; then
-      AC_MSG_ERROR(You need APR version 1.2.1 or newer installed.)
+      AC_MSG_ERROR(You need APR version 1.3.3 or newer installed.)
     fi
   fi
 
@@ -365,14 +365,11 @@ yes|'')
 #include <stdio.h>
 #include <openssl/opensslv.h>
 int main() {
-        if ((OPENSSL_VERSION_NUMBER >= 0x0090701fL &&
-         OPENSSL_VERSION_NUMBER < 0x00908000L) ||
-         OPENSSL_VERSION_NUMBER >= 0x0090801fL)
+        if (OPENSSL_VERSION_NUMBER >= 0x009080bfL)
             return (0);
     printf("\n\nFound   OPENSSL_VERSION_NUMBER %#010x\n",
         OPENSSL_VERSION_NUMBER);
-    printf("Require OPENSSL_VERSION_NUMBER 0x0090701f or greater (0.9.7a)\n"
-           "Require OPENSSL_VERSION_NUMBER 0x0090801f or greater (0.9.8a)\n\n");
+    printf("Require OPENSSL_VERSION_NUMBER 0x009080bf or greater (0.9.8k)\n\n");
         return (1);
 }
         ],
