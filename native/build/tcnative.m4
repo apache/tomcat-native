@@ -32,16 +32,9 @@ AC_DEFUN(TCN_FIND_APR,[
   fi
   sapr_version="`echo $sapr_pversion|sed -e 's/\([a-z]*\)$/.\1/'`"
   tc_save_IFS=$IFS; IFS=.; set $sapr_version; IFS=$tc_save_IFS
-  if test "${1}" -lt "1"; then
+  decimal_apr_version=`printf %02d%02d%03d ${1} ${2} ${3}`
+  if test "${decimal_apr_version}" -lt "0101003"; then
     AC_MSG_ERROR(You need APR version 1.3.3 or newer installed.)
-  else
-    if test "${2}" -lt "3"; then
-      AC_MSG_ERROR(You need APR version 1.3.3 or newer installed.)
-    else
-      if test "${3}" -lt "3"; then
-        AC_MSG_ERROR(You need APR version 1.3.3 or newer installed.)
-      fi
-    fi
   fi
 
   APR_BUILD_DIR="`$apr_config --installbuilddir`"
