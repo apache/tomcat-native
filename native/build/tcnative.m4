@@ -38,7 +38,7 @@ AC_DEFUN(TCN_FIND_APR,[
     if test "${2}" -lt "3"; then
       AC_MSG_ERROR(You need APR version 1.3.3 or newer installed.)
     else
-      if test "${2}" -lt "3"; then
+      if test "${3}" -lt "3"; then
         AC_MSG_ERROR(You need APR version 1.3.3 or newer installed.)
       fi
     fi
