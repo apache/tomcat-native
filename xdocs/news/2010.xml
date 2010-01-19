@@ -32,10 +32,10 @@
 <section name="2010 News &amp; Status">
 <br />
 <a name="20100101.1">
-<h3>DD MMM - TC-Native-2.2.0 released</h3>
+<h3>DD MMM - TC-Native-2.0.0 released</h3>
 </a>
 <p>The Apache Tomcat team is proud to announce the immediate availability
-of Tomcat Native 2.2.0. This is a stable release adding some bug fixes.
+of Tomcat Native 2.0.0. This is a stable release adding some bug fixes.
 </p><p>
  Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
