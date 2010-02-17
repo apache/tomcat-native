@@ -36,6 +36,27 @@
   new documentation project for Tomcat Native was started.
   </p>
 </section>
+<section name="Changes between 1.1.19 and 1.1.20">
+  <changelog>
+    <fix>
+      <bug>48584</bug>: Prevent crashing JVM on shutdown. (mturk)
+    </fix>
+  </changelog>
+</section>
+<section name="Changes between 1.1.18 and 1.1.19">
+  <changelog>
+    <fix>
+      Update windows resource files to correct version. (mturk)
+    </fix>
+    <fix>
+      <bug>48129</bug>: Fix build with OpenSSL 1.0.0-beta3.
+      Patch provided by Tomas Mraz. (mturk, rjung)
+    </fix>
+    <update>
+      Add detection of the Mac OS X JVM. (rjung)
+    </update>
+  </changelog>
+</section>
 <section name="Changes between 1.1.17 and 1.1.18">
   <changelog>
     <fix>
