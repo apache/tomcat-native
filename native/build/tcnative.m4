@@ -33,8 +33,8 @@ AC_DEFUN(TCN_FIND_APR,[
   sapr_version="`echo $sapr_pversion|sed -e 's/\([a-z]*\)$/.\1/'`"
   tc_save_IFS=$IFS; IFS=.; set $sapr_version; IFS=$tc_save_IFS
   decimal_apr_version=`printf %02d%02d%03d ${1} ${2} ${3}`
-  if test "${decimal_apr_version}" -lt "0101003"; then
-    AC_MSG_ERROR(You need APR version 1.3.3 or newer installed.)
+  if test "${decimal_apr_version}" -lt "0104002"; then
+    AC_MSG_ERROR(Found APR $sapr_version. You need version 1.4.2 or newer installed.)
   fi
 
   APR_BUILD_DIR="`$apr_config --installbuilddir`"
@@ -58,7 +58,7 @@ dnl TCN_JDK
 dnl
 dnl Detection of JDK location and Java Platform (1.2, 1.3, 1.4, 1.5, 1.6)
 dnl result goes in JAVA_HOME / JAVA_PLATFORM (2 -> 1.2 and higher)
-dnl 
+dnl
 dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [TCN_FIND_JDK],
@@ -81,13 +81,13 @@ AC_DEFUN(
 
       # This stuff works if the command line parameter --with-java-home was
       # specified, so it takes priority rightfully.
-  
+
       tempval=${withval}
 
       if test ! -d "${tempval}" ; then
           AC_MSG_ERROR(Not a directory: ${tempval})
       fi
-  
+
       JAVA_HOME=${tempval}
       AC_MSG_RESULT(${JAVA_HOME})
     ],
@@ -208,7 +208,7 @@ AC_DEFUN(
 
         JAVA_OS = ${tempval}
       ],
-      [   
+      [
         AC_MSG_CHECKING(os_type directory)
         JAVA_OS=NONE
         if test -f ${JAVA_HOME}/${JAVA_INC}/jni_md.h; then
@@ -261,7 +261,7 @@ AC_DEFUN(
   ])
 
 dnl TCN_HELP_STRING(LHS, RHS)
-dnl Autoconf 2.50 can not handle substr correctly.  It does have 
+dnl Autoconf 2.50 can not handle substr correctly.  It does have
 dnl AC_HELP_STRING, so let's try to call it if we can.
 dnl Note: this define must be on one line so that it can be properly returned
 dnl as the help string.
@@ -351,7 +351,7 @@ case "$use_openssl" in
         saved_libs="$LIBS"
         CFLAGS="$CFLAGS $TCN_OPENSSL_INC"
         LIBS="$LIBS $TCN_OPENSSL_LIBS"
-         
+
 AC_ARG_ENABLE(openssl-version-check,
 [AC_HELP_STRING([--enable-openssl-version-check],
         [Check OpenSSL Version @<:@default=yes@:>@])])
