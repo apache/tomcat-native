@@ -196,9 +196,8 @@ TCN_IMPLEMENT_CALL(jlong, Socket, create)(TCN_STDARGS, jint family,
         TCN_THROW_IF_ERR(apr_socket_create(&s,
                          f, t, protocol, c), a);
     }
-    apr_pool_cleanup_register(c, (const void *)a,
-                              sp_socket_cleanup,
-                              apr_pool_cleanup_null);
+    apr_pool_pre_cleanup_register(c, (const void *)a,
+                                  sp_socket_cleanup);
 
 #ifdef TCN_DO_STATISTICS
     sp_created++;
@@ -391,9 +390,8 @@ TCN_IMPLEMENT_CALL(jlong, Socket, accept)(TCN_STDARGS, jlong sock)
         TCN_THROW_IF_ERR(apr_socket_accept(&n, s->sock, p), n);
 
         a->pool = p;
-        apr_pool_cleanup_register(a->pool, (const void *)a,
-                                  sp_socket_cleanup,
-                                  apr_pool_cleanup_null);
+        apr_pool_pre_cleanup_register(a->pool, (const void *)a,
+                                      sp_socket_cleanup);
 
     }
     else {
