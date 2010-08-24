@@ -65,9 +65,16 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
     apr_version(&apv);
     apvn = apv.major * 1000 + apv.minor * 100 + apv.patch;
     if (apvn < 1400) {
+#if defined(HAVE_POOL_PRE_CLEANUP) && defined(HAVE_POLLSET_WAKEUP)
+        /* Althugh not 1.4.x, APR has required functionality.
+         * Note that this is compile time definition, and we
+         * presume the required API's are present in the custom APR.
+         */
+#else
         tcn_Throw(env, "Unupported APR version (%s)",
                   apr_version_string());
         return JNI_ERR;
+#endif
     }
 
 
