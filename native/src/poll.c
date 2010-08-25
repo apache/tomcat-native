@@ -108,6 +108,13 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
     UNREFERENCED(o);
     TCN_ASSERT(pool != 0);
 
+#if defined(APR_POLLSET_WAKEABLE)
+    /* By default all pollsets are wakeable.
+     * XXX: See if wee need to define that in Java API when calling this
+     *      method.
+     */
+    f |= APR_POLLSET_WAKEABLE;
+#endif
     if (f & APR_POLLSET_THREADSAFE) {
         apr_status_t rv = apr_pollset_create(&pollset, (apr_uint32_t)size, p, f);
         if (rv == APR_ENOTIMPL)
@@ -435,3 +442,27 @@ TCN_IMPLEMENT_CALL(jint, Poll, pollset)(TCN_STDARGS, jlong pollset,
         (*e)->SetLongArrayRegion(e, set, 0, p->nelts * 2, p->set);
     return (jint)p->nelts;
 }
+
+#if defined(APR_POLLSET_WAKEABLE)
+
+TCN_IMPLEMENT_CALL(jint, Poll, interrupt)(TCN_STDARGS, jlong pollset)
+{
+    tcn_pollset_t *p = J2P(pollset,  tcn_pollset_t *);
+
+    UNREFERENCED(o);
+    TCN_ASSERT(pollset != 0);
+
+    return (jint)apr_pollset_wakeup(p->pollset);
+}
+#else
+
+TCN_IMPLEMENT_CALL(jint, Poll, interrupt)(TCN_STDARGS, jlong pollset)
+{
+
+    UNREFERENCED_STDARGS;
+    UNREFERENCED(pollset);
+
+    return APR_ENOTIMPL;
+}
+
+#endif

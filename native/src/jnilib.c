@@ -25,6 +25,7 @@
 #include "apr_file_io.h"
 #include "apr_mmap.h"
 #include "apr_atomic.h"
+#include "apr_poll.h"
 
 #include "tcn_version.h"
 
@@ -424,6 +425,11 @@ TCN_IMPLEMENT_CALL(jboolean, Library, has)(TCN_STDARGS, jint what)
         break;
         case 20:
 #if APR_O_NONBLOCK_INHERITED
+            rv = JNI_TRUE;
+#endif
+        break;
+        case 21:
+#if defined(APR_POLLSET_WAKEABLE)
             rv = JNI_TRUE;
 #endif
         break;
