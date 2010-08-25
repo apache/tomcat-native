@@ -42,6 +42,7 @@ typedef struct tcn_pollset {
     apr_pollfd_t  *socket_set;
     apr_interval_time_t *socket_ttl;
     apr_interval_time_t max_ttl;
+    jboolean       wakeable;
 #ifdef TCN_DO_STATISTICS
     int sp_added;
     int sp_max_count;
@@ -105,6 +106,7 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
     apr_pollset_t *pollset = NULL;
     tcn_pollset_t *tps = NULL;
     apr_uint32_t f = (apr_uint32_t)flags;
+    apr_pollset_method_e method = APR_POLLSET_DEFAULT;
     UNREFERENCED(o);
     TCN_ASSERT(pool != 0);
 
@@ -116,7 +118,8 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
     f |= APR_POLLSET_WAKEABLE;
 #endif
     if (f & APR_POLLSET_THREADSAFE) {
-        apr_status_t rv = apr_pollset_create(&pollset, (apr_uint32_t)size, p, f);
+        apr_status_t rv = apr_pollset_create_ex(&pollset, (apr_uint32_t)size,
+                                                p, f, method);
         if (rv == APR_ENOTIMPL)
             f &= ~APR_POLLSET_THREADSAFE;
         else if (rv != APR_SUCCESS) {
@@ -125,9 +128,36 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
         }
     }
     if (pollset == NULL) {
-        TCN_THROW_IF_ERR(apr_pollset_create(&pollset,
-                         (apr_uint32_t)size, p, f), pollset);
+        apr_status_t rv = apr_pollset_create_ex(&pollset, (apr_uint32_t)size,
+                                                p, f, method);
+#if defined(APR_POLLSET_WAKEABLE)
+        /* If case we fallback to select provider remove the
+         * APR_POLLSET_WAKEABLE which causes size + 1 elements
+         * and try again if APR_EINVAL is returned.
+         */
+        if (rv == APR_EINVAL)
+            f &= ~APR_POLLSET_WAKEABLE;
+        else if (rv != APR_SUCCESS) {
+            tcn_ThrowAPRException(e, rv);
+            goto cleanup;
+        }
+#else
+        if (rv != APR_SUCCESS) {
+            tcn_ThrowAPRException(e, rv);
+            goto cleanup;
+        }
+#endif
     }
+#if defined(APR_POLLSET_WAKEABLE)
+    if (pollset == NULL) {
+        apr_status_t rv = apr_pollset_create_ex(&pollset, (apr_uint32_t)size,
+                                                p, f, method);
+        if (rv != APR_SUCCESS) {
+            tcn_ThrowAPRException(e, rv);
+            goto cleanup;
+        }
+    }
+#endif
     tps = apr_pcalloc(p, sizeof(tcn_pollset_t));
     TCN_CHECK_ALLOCATED(tps);
     tps->pollset = pollset;
@@ -141,6 +171,12 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
     tps->nalloc = size;
     tps->pool   = p;
     tps->max_ttl = J2T(ttl);
+#if defined(APR_POLLSET_WAKEABLE)
+    if (f & APR_POLLSET_WAKEABLE)
+        tps->wakeable = JNI_TRUE;
+    else
+#endif
+    tps->wakeable = JNI_FALSE;
 #ifdef TCN_DO_STATISTICS
     sp_created++;
     apr_pool_cleanup_register(p, (const void *)tps,
@@ -441,6 +477,15 @@ TCN_IMPLEMENT_CALL(jint, Poll, pollset)(TCN_STDARGS, jlong pollset,
     if (p->nelts)
         (*e)->SetLongArrayRegion(e, set, 0, p->nelts * 2, p->set);
     return (jint)p->nelts;
+}
+
+TCN_IMPLEMENT_CALL(jboolean, Poll, wakeable)(TCN_STDARGS, jlong pollset)
+{
+
+    tcn_pollset_t *p = J2P(pollset,  tcn_pollset_t *);
+    UNREFERENCED_STDARGS;
+
+    return p->wakeable;
 }
 
 #if defined(APR_POLLSET_WAKEABLE)
