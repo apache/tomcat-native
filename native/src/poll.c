@@ -106,7 +106,7 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
     apr_pollset_t *pollset = NULL;
     tcn_pollset_t *tps = NULL;
     apr_uint32_t f = (apr_uint32_t)flags;
-    apr_pollset_method_e method = APR_POLLSET_DEFAULT;
+
     UNREFERENCED(o);
     TCN_ASSERT(pool != 0);
 
@@ -118,8 +118,8 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
     f |= APR_POLLSET_WAKEABLE;
 #endif
     if (f & APR_POLLSET_THREADSAFE) {
-        apr_status_t rv = apr_pollset_create_ex(&pollset, (apr_uint32_t)size,
-                                                p, f, method);
+        apr_status_t rv = apr_pollset_create(&pollset, (apr_uint32_t)size,
+                                             p, f);
         if (rv == APR_ENOTIMPL)
             f &= ~APR_POLLSET_THREADSAFE;
         else if (rv != APR_SUCCESS) {
@@ -128,8 +128,8 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
         }
     }
     if (pollset == NULL) {
-        apr_status_t rv = apr_pollset_create_ex(&pollset, (apr_uint32_t)size,
-                                                p, f, method);
+        apr_status_t rv = apr_pollset_create(&pollset, (apr_uint32_t)size,
+                                             p, f);
 #if defined(APR_POLLSET_WAKEABLE)
         /* If case we fallback to select provider remove the
          * APR_POLLSET_WAKEABLE which causes size + 1 elements
@@ -150,8 +150,8 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
     }
 #if defined(APR_POLLSET_WAKEABLE)
     if (pollset == NULL) {
-        apr_status_t rv = apr_pollset_create_ex(&pollset, (apr_uint32_t)size,
-                                                p, f, method);
+        apr_status_t rv = apr_pollset_create(&pollset, (apr_uint32_t)size,
+                                             p, f);
         if (rv != APR_SUCCESS) {
             tcn_ThrowAPRException(e, rv);
             goto cleanup;
