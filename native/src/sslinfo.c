@@ -318,7 +318,7 @@ TCN_IMPLEMENT_CALL(jstring, SSLSocket, getInfoS)(TCN_STDARGS, jlong sock,
         break;
         case SSL_INFO_CIPHER_DESCRIPTION:
             {
-                const SSL_CIPHER *cipher = SSL_get_current_cipher(s->ssl);
+                SSL_CIPHER *cipher = SSL_get_current_cipher(s->ssl);
                 if (cipher) {
                     char buf[256];
                     char *desc = SSL_CIPHER_description(cipher, buf, 256);
@@ -543,7 +543,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, getInfoI)(TCN_STDARGS, jlong sock,
                 break;
                 default:
                     rv = APR_EINVAL;
-                break;                    
+                break;
            }
            X509_free(xs);
         }
