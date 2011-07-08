@@ -70,17 +70,17 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
             /* APR versions below 1.4.3 are known to have
              * faulty wakeup code on windows platform
              */
-            tcn_Throw(env, "Unupported APR version (%s)",
+            tcn_Throw(env, "Unsupported APR version %s: this tcnative requires at least 1.4.3",
                       apr_version_string());
             return JNI_ERR;
         }
 #if defined(HAVE_POOL_PRE_CLEANUP) && defined(HAVE_POLLSET_WAKEUP)
-        /* Althugh not 1.4.x, APR has required functionality.
+        /* Although not 1.4.x, APR has required functionality.
          * Note that this is compile time definition, and we
          * presume the required API's are present in the custom APR.
          */
 #else
-        tcn_Throw(env, "Unupported APR version (%s)",
+        tcn_Throw(env, "Unsupported APR version %s: this tcnative requires at least 1.4.3",
                   apr_version_string());
         return JNI_ERR;
 #endif
