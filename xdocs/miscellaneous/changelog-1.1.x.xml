@@ -36,6 +36,31 @@
   new documentation project for Tomcat Native was started.
   </p>
 </section>
+<section name="Changes between 1.1.20 and 1.1.21">
+  <changelog>
+    <fix>
+      Support arbitrary protocol combinations of SSLv2, SSLv3 and TLSv1. (rjung)
+    </fix>
+    <fix>
+      <bug>51437</bug>: Try loading certificate in DER format if PEM was invalid. (mturk)
+    </fix>
+    <fix>
+      <bug>49557</bug>: index erro in the loop to get the env info in the proc.create function. (kkolinko, jfclere)
+    </fix>
+    <fix>
+      <bug>49851</bug>: JNI Registry.deleteKey and Registry.deleteValue corrupt Windows registry. (jfclere)
+    </fix>
+    <fix>
+      <bug>48253</bug>: adding dynamic locking callbacks for openssl engines. (jfclere)
+    </fix>
+    <update>
+      Make the non blocking write really no blocking. (jfclere)
+    </update>
+    <update>
+      Add support for unsafe legacy renegotiation. (mturk)
+    </update>
+  </changelog>
+</section>
 <section name="Changes between 1.1.19 and 1.1.20">
   <changelog>
     <fix>
