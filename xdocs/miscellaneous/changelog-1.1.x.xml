@@ -59,6 +59,9 @@
     <update>
       Add support for unsafe legacy renegotiation. (mturk)
     </update>
+    <update>
+      <bug>50570</bug>: Allow explicit use of FIPS mode in APR lifecycle listener. Based upon a patch from Chris Beckey. (schultz)
+    </update>
   </changelog>
 </section>
 <section name="Changes between 1.1.19 and 1.1.20">
