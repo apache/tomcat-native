@@ -22,18 +22,24 @@ AC_DEFUN(TCN_FIND_APR,[
 
   dnl use the find_apr.m4 script to locate APR. sets apr_found and apr_config
   APR_FIND_APR(,,1,[1])
-  if test "$apr_found" = "no"; then
+  if test "$apr_found" = "no"
+  then
     AC_MSG_ERROR(APR could not be located. Please use the --with-apr option.)
   fi
 
   sapr_pversion="`$apr_config --version`"
-  if test -z "$sapr_pversion"; then
+  if test -z "$sapr_pversion"
+  then
     AC_MSG_ERROR(APR config could not be located. Please use the --with-apr option.)
   fi
   sapr_version="`echo $sapr_pversion|sed -e 's/\([a-z]*\)$/.\1/'`"
-  tc_save_IFS=$IFS; IFS=.; set $sapr_version; IFS=$tc_save_IFS
+  tc_save_IFS=$IFS
+  IFS=.
+  set $sapr_version
+  IFS=$tc_save_IFS
   decimal_apr_version=`printf %02d%02d%03d ${1} ${2} ${3}`
-  if test "${decimal_apr_version}" -lt "0104003"; then
+  if test "${decimal_apr_version}" -lt "0104003"
+  then
     AC_MSG_ERROR(Found APR $sapr_version. You need version 1.4.3 or newer installed.)
   fi
   AC_MSG_NOTICE(APR $sapr_version detected.)
@@ -286,7 +292,8 @@ AC_DEFUN(TCN_FIND_APR_FEATURE,[
   AC_CHECK_LIB(apr-1, $1,[chk_result=1])
   CFLAGS="$saved_cflags"
   LIBS="$saved_libs"
-  if test "$chk_result" != "0"; then
+  if test "$chk_result" != "0"
+  then
     APR_ADDTO(CFLAGS, [-DHAVE_$2])
   fi
 ])
