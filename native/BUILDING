@@ -19,10 +19,12 @@
   configure --with-apr=apr_install_location --with-ssl=openssl_install_location
   make
 
-  Building from the cvs tree:
+  Building from the svn tree:
   sh buildconf --with-apr=apr_source_location.
   configure --with-apr=apr_install_location --with-ssl=openssl_install_location
   make
+
+  Note that version 1.2.x requires at least apr-1.4.x
 
   Testing the build:
   The make should produce a .so file named libtcnative-1.so.
