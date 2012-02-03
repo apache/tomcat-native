@@ -223,6 +223,7 @@ TCN_IMPLEMENT_CALL(jint, File, stat)(TCN_STDARGS, jobject finfo,
     TCN_ALLOC_CSTRING(fname);
     apr_status_t rv;
     apr_finfo_t info;
+    memset(&info, 0, sizeof(info));
 
     UNREFERENCED(o);
 
@@ -242,6 +243,7 @@ TCN_IMPLEMENT_CALL(jobject, File, getStat)(TCN_STDARGS, jstring fname,
     TCN_ALLOC_CSTRING(fname);
     apr_status_t rv;
     apr_finfo_t info;
+    memset(&info, 0, sizeof(info));
     jobject finfo = NULL;
 
     UNREFERENCED(o);
@@ -265,6 +267,7 @@ TCN_IMPLEMENT_CALL(jint, File, infoGet)(TCN_STDARGS, jobject finfo,
     apr_file_t *f = J2P(file, apr_file_t *);
     apr_status_t rv;
     apr_finfo_t info;
+    memset(&info, 0, sizeof(info));
 
     UNREFERENCED(o);
 
@@ -281,6 +284,7 @@ TCN_IMPLEMENT_CALL(jobject, File, getInfo)(TCN_STDARGS, jint wanted, jlong file)
     apr_file_t *f = J2P(file, apr_file_t *);
     apr_status_t rv;
     apr_finfo_t  info;
+    memset(&info, 0, sizeof(info));
 
     UNREFERENCED(o);
 
@@ -303,6 +307,7 @@ TCN_IMPLEMENT_CALL(jint, Directory, read)(TCN_STDARGS, jobject finfo,
     apr_dir_t *d = J2P(dir, apr_dir_t *);
     apr_status_t rv;
     apr_finfo_t info;
+    memset(&info, 0, sizeof(info));
 
     UNREFERENCED(o);
 
