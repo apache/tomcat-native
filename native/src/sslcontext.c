@@ -138,6 +138,9 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
      */
     SSL_CTX_set_options(c->ctx, SSL_OP_SINGLE_DH_USE);
 
+    /** To get back the tomcat wrapper from CTX */
+    SSL_CTX_set_app_data(c->ctx, (char *)c);
+
 #ifdef SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION
     /*
      * Disallow a session from being resumed during a renegotiation,

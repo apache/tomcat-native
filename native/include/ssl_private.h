@@ -254,6 +254,11 @@ struct tcn_ssl_ctxt_t {
     int             verify_depth;
     int             verify_mode;
     tcn_pass_cb_t   *cb_data;
+
+    /* for client: send request NPN.
+     * for server: accept requested NPN.
+     */
+    char *npn;
 };
 
   
@@ -281,6 +286,14 @@ typedef struct {
     } reneg_state;
     apr_socket_t   *sock;
     apr_pollset_t  *pollset;
+
+    /* Used in NPN negotiation */
+    char *npn;
+
+    /* Tls ticket extension, for client side use */
+    char *receivedTicket;
+    int receivedTicketLen;
+
 } tcn_ssl_conn_t;
 
 

@@ -156,6 +156,8 @@ static tcn_ssl_conn_t *ssl_create(JNIEnv *env, tcn_ssl_ctxt_t *ctx, apr_pool_t *
     SSL_set_verify_result(ssl, X509_V_OK);
     SSL_rand_seed(ctx->rand_file);
 
+    //SSL_set_session_ticket_ext_cb(ssl, ssl_ticket_cb, con);
+
 #ifdef TCN_DO_STATISTICS
     ssl_created++;
 #endif
@@ -338,6 +340,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, handshake)(TCN_STDARGS, jlong sock)
                     if (!APR_STATUS_IS_EAGAIN(os) &&
                         !APR_STATUS_IS_EINTR(os)) {
                         con->shutdown_type = SSL_SHUTDOWN_TYPE_UNCLEAN;
+                        ERR_print_errors(con->ctx->bio_os);
                         return os == APR_SUCCESS ? APR_EGENERAL : os;
                     }
                 break;
@@ -356,7 +359,9 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, handshake)(TCN_STDARGS, jlong sock)
         /*
         * Check for failed client authentication
         */
-        if ((vr = SSL_get_verify_result(con->ssl)) != X509_V_OK) {
+        if (con->ctx->verify_mode != SSL_VERIFY_NONE &&
+	    (vr = SSL_get_verify_result(con->ssl)) != X509_V_OK) {
+            
             if (SSL_VERIFY_ERROR_IS_OPTIONAL(vr) &&
                 con->ctx->verify_mode == SSL_CVERIFY_OPTIONAL_NO_CA) {
                 /* TODO: Log optionalNoCA */
