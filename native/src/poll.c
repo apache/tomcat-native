@@ -358,7 +358,7 @@ TCN_IMPLEMENT_CALL(jint, Poll, poll)(TCN_STDARGS, jlong pollset,
 #ifdef TCN_DO_STATISTICS
                 p->sp_eintr++;
 #endif
-                continue;
+                /* Pass it to the caller - interrupt() was called */
             }
             TCN_ERROR_WRAP(rv);
 #ifdef TCN_DO_STATISTICS
