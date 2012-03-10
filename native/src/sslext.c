@@ -436,20 +436,38 @@ TCN_IMPLEMENT_CALL(jint, SSLExt, debug)(TCN_STDARGS, jlong tcsock)
     return 0;
 }
 
-TCN_IMPLEMENT_CALL( jint, SSLExt, sslSetMode)(TCN_STDARGS, jlong tcsock, jint jmode)
+TCN_IMPLEMENT_CALL( jlong, SSLExt, sslSetMode)(TCN_STDARGS, jlong tcsock, jlong jmode)
 {
     tcn_socket_t *s = J2P(tcsock, tcn_socket_t *);
     tcn_ssl_conn_t *tcssl = (tcn_ssl_conn_t *)s->opaque;
-    int mode = SSL_get_mode(tcssl->ssl);
+    return (jlong) SSL_set_mode(tcssl->ssl, (long) jmode);
+}
 
-    mode |= jmode;
-    SSL_set_mode(tcssl->ssl, mode);
+TCN_IMPLEMENT_CALL( jlong, SSLExt, sslCtxSetMode)(TCN_STDARGS, jlong tc_ssl_ctx, jlong jmode)
+{
+    tcn_ssl_ctxt_t *sslctx = J2P(tc_ssl_ctx, tcn_ssl_ctxt_t *);
+    
+    return (jlong) SSL_CTX_set_mode(sslctx->ctx, (long) jmode);
+}
 
-    return mode;
+TCN_IMPLEMENT_CALL( jstring, SSLExt, sslErrReasonErrorString)(TCN_STDARGS)
+{
+    const char * err = ERR_reason_error_string(ERR_get_error());
+    jstring res = 0;
+
+    if (err != 0) {
+        res = AJP_TO_JSTRING(err);
+    }
+
+    return res;
 }
 
 #else
 
+TCN_IMPLEMENT_CALL( jstring, SSLExt, sslErrReasonErrorString)(TCN_STDARGS)
+{
+    return 0;
+}
 /* OpenSSL is not supported.
  * Create empty stubs.
  */
@@ -482,9 +500,13 @@ TCN_IMPLEMENT_CALL( jint, SSLExt, setTicketKeys)(TCN_STDARGS, jlong tc_ssl_ctx,
     return (jint) -APR_ENOTIMPL;
 }
 
-TCN_IMPLEMENT_CALL( jint, SSLExt, sslSetMode)(TCN_STDARGS, jlong tc_ssl_ctx,
-        jint mode) {
-    return (jint) -APR_ENOTIMPL;
+TCN_IMPLEMENT_CALL( jlong, SSLExt, sslSetMode)(TCN_STDARGS, jlong tc_ssl_ctx,
+        jlong mode) {
+    return (jlong) -APR_ENOTIMPL;
+}
+
+TCN_IMPLEMENT_CALL( jlong, SSLExt, sslCtxSetMode)(TCN_STDARGS, jlong tc_ssl_ctx, jint jmode)
+            return (jlong) -APR_ENOTIMPL;
 }
 
 #endif
