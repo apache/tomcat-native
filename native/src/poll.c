@@ -100,7 +100,7 @@ void sp_poll_dump_statistics()
 
 TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
                                         jlong pool, jint flags,
-                                        jlong ttl)
+                                        jlong default_timeout)
 {
     apr_pool_t *p = J2P(pool, apr_pool_t *);
     apr_pollset_t *pollset = NULL;
@@ -166,12 +166,12 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
     TCN_CHECK_ALLOCATED(tps->set);
     tps->socket_set = apr_palloc(p, size * sizeof(apr_pollfd_t));
     TCN_CHECK_ALLOCATED(tps->socket_set);
-    tps->socket_last_active = apr_palloc(p, size * sizeof(apr_interval_time_t));
+    tps->socket_last_active = apr_palloc(p, size * sizeof(apr_time_t));
     TCN_CHECK_ALLOCATED(tps->socket_last_active);
     tps->nelts  = 0;
     tps->nalloc = size;
     tps->pool   = p;
-    tps->default_timeout = J2T(ttl);
+    tps->default_timeout = J2T(default_timeout);
 #if defined(APR_POLLSET_WAKEABLE)
     if (f & APR_POLLSET_WAKEABLE)
         tps->wakeable = JNI_TRUE;
