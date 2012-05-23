@@ -495,7 +495,7 @@ TCN_IMPLEMENT_CALL(jint, Poll, interrupt)(TCN_STDARGS, jlong pollset)
 {
     tcn_pollset_t *p = J2P(pollset,  tcn_pollset_t *);
 
-    UNREFERENCED(o);
+    UNREFERENCED_STDARGS;
     TCN_ASSERT(pollset != 0);
 
     return (jint)apr_pollset_wakeup(p->pollset);
