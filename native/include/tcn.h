@@ -25,6 +25,7 @@
 
 #include "apr.h"
 #include "apr_general.h"
+#include "apr_lib.h"
 #include "apr_pools.h"
 #include "apr_portable.h"
 #include "apr_network_io.h"
@@ -151,6 +152,8 @@ typedef struct {
     char         *jsbbuff;
     char         *jrbbuff;
     tcn_nlayer_t *net;
+    apr_time_t          last_active;
+    apr_interval_time_t timeout;
 } tcn_socket_t;
 
 /* Private helper functions */
