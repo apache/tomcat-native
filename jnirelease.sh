@@ -123,18 +123,11 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Clean up unused stuff
-for i in jnirelease.sh
-do
-    rm -rf ${JKJNIDIST}/${i}
-done
-
 top="`pwd`"
 cd ${JKJNIDIST}/xdocs
 ant
 $EXPTOOL $EXPOPTS ../build/docs/miscellaneous/printer/changelog.html > ../CHANGELOG.txt 2>/dev/null
 cd "$top"
-rm -rf ${JKJNIDIST}/xdocs
 mv ${JKJNIDIST}/build/docs ${JKJNIDIST}/docs
 rm -rf ${JKJNIDIST}/build
 
