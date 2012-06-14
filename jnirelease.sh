@@ -151,7 +151,6 @@ JKWINDIST=tomcat-native-${JKJNIVER}-win32-src
 rm -rf ${JKWINDIST}
 mkdir -p ${JKWINDIST}
 svn export --native-eol CRLF ${JKJNISVN}/native ${JKWINDIST}/native
-svn cat ${JKJNISVN}/KEYS > ${JKWINDIST}/KEYS
 svn cat ${JKJNISVN}/LICENSE > ${JKWINDIST}/LICENSE
 svn cat ${JKJNISVN}/NOTICE > ${JKWINDIST}/NOTICE
 svn cat ${JKJNISVN}/README.txt > ${JKWINDIST}/README.txt
