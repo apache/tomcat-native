@@ -81,6 +81,34 @@ struct CRYPTO_dynlock_value {
     R |= SSL_TMP_KEY_INIT_DH(2048);             \
     R |= SSL_TMP_KEY_INIT_DH(4096)
 
+#ifdef DEBUG
+#define DEBUG_LOG(fmt, args...) printf(fmt, ##args)
+#define DEBUG_FLUSH()           fflush(stdout)
+#else
+#define DEBUG_LOG(fmr, args...)
+#define DEBUG_FLUSH()
+#endif
+
+/*
+ * Tests for support of a particular SSL_OP_* option.
+ *
+ * This is used in the hasOp JNI function defined below.
+ */
+#define TCN_SSL_TEST_OP_SUPPORT(option, options, supported)             \
+  DEBUG_LOG("= Checking for "  #option ", which is %#08lx:\n", option); \
+  if (option == (options & option)) {                                   \
+    DEBUG_LOG("  supported |= %#08lx\n", option);                       \
+    supported |= (options & option);                                    \
+    DEBUG_LOG("  options ^= %#08lx\n", option);                         \
+    options ^= option;                                                  \
+    DEBUG_LOG("  supported now = %#08lx\n", supported);                 \
+    DEBUG_LOG("  options now = %#08lx\n", options);                     \
+  }                                                                     \
+  DEBUG_FLUSH();                                                        \
+  /* we can bail out immediately if our work is done */                 \
+  if(!options) return JNI_TRUE;
+
+
 static int ssl_tmp_key_init_rsa(int bits, int idx)
 {
     if (!(SSL_temp_keys[idx] =
@@ -944,11 +972,130 @@ TCN_IMPLEMENT_CALL(jstring, SSL, getLastError)(TCN_STDARGS)
 
 TCN_IMPLEMENT_CALL(jboolean, SSL, hasOp)(TCN_STDARGS, jint op)
 {
-#ifdef SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION
-    if (op & SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)
-        return JNI_TRUE;
+    jint options   = op;
+    jint supported = 0;
+    /*
+      TCN_SSL_TEST_OP_SUPPORT moves bits from 'options' to 'supported'
+      as they are tested. After all checks, 'options' should be 0x00
+      and 'supported' should be == op. If options != 0x00 then we failed
+      to test an option. If supported != op then we don't support all
+      requested options.
+    */
+
+    DEBUG_LOG("=== Starting hasOp: support=%d, options=%#08lx, op=%#08lx\n", supported, options, op);
+
+#ifdef SSL_OP_ALL
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_ALL, options, supported)
 #endif
-    return JNI_FALSE;
+
+#ifdef SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION, options, supported)
+#endif
+
+#ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_CIPHER_SERVER_PREFERENCE, options, supported)
+#endif
+
+#ifdef SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS, options, supported)
+#endif
+
+#ifdef SSL_OP_EPHEMERAL_RSA
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_EPHEMERAL_RSA, options, supported)
+#endif
+
+#ifdef SSL_OP_LEGACY_SERVER_CONNECT
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_LEGACY_SERVER_CONNECT, options, supported)
+#endif
+
+#ifdef SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER, options, supported)
+#endif
+
+#ifdef SSL_OP_MICROSOFT_SESS_ID_BUG
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_MICROSOFT_SESS_ID_BUG, options, supported)
+#endif
+
+#ifdef SSL_OP_MSIE_SSLV2_RSA_PADDING
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_MSIE_SSLV2_RSA_PADDING, options, supported)
+#endif
+
+#ifdef SSL_OP_NETSCAPE_CA_DN_BUG
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_NETSCAPE_CA_DN_BUG, options, supported)
+#endif
+
+#ifdef SSL_OP_NETSCAPE_CHALLENGE_BUG
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_NETSCAPE_CHALLENGE_BUG, options, supported)
+#endif
+
+#ifdef SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG, options, supported)
+#endif
+
+#ifdef SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG, options, supported)
+#endif
+
+#ifdef SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION, options, supported)
+#endif
+
+#ifdef SSL_OP_NO_SSLv2
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_NO_SSLv2, options, supported)
+#endif
+
+#ifdef SSL_OP_NO_SSLv3
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_NO_SSLv3, options, supported)
+#endif
+
+#ifdef SSL_OP_NO_TICKET
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_NO_TICKET, options, supported)
+#endif
+
+#ifdef SSL_OP_NO_TLSv1
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_NO_TLSv1, options, supported)
+#endif
+
+#ifdef SSL_OP_PKCS1_CHECK_1
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_PKCS1_CHECK_1, options, supported)
+#endif
+
+#ifdef SSL_OP_PKCS1_CHECK_2
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_PKCS1_CHECK_2, options, supported)
+#endif
+
+#ifdef SSL_OP_SINGLE_DH_USE
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_SINGLE_DH_USE, options, supported)
+#endif
+
+#ifdef SSL_OP_SSLEAY_080_CLIENT_DH_BUG
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_SSLEAY_080_CLIENT_DH_BUG, options, supported)
+#endif
+
+#ifdef SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG, options, supported)
+#endif
+
+#ifdef SSL_OP_TLS_BLOCK_PADDING_BUG
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_TLS_BLOCK_PADDING_BUG, options, supported)
+#endif
+
+#ifdef SSL_OP_TLS_D5_BUG
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_TLS_D5_BUG, options, supported)
+#endif
+
+#ifdef SSL_OP_TLS_ROLLBACK_BUG
+     TCN_SSL_TEST_OP_SUPPORT(SSL_OP_TLS_ROLLBACK_BUG, options, supported)
+#endif
+
+    DEBUG_LOG("req=%#08lx left=%#08lx discovered=%#08lx\n", op, options, supported);
+    DEBUG_FLUSH();
+    if(options) {
+        tcn_Throw(e, "Unsupported OpenSSL options to check: %#08lx", options);
+        return (jint)APR_EINVAL;
+    }
+
+    return supported == op ? JNI_TRUE : JNI_FALSE;
 }
 
 #else
