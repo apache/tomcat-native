@@ -693,8 +693,8 @@ void SSL_callback_handshake(const SSL *ssl, int where, int rc)
      * read. */
     if ((where & SSL_CB_ACCEPT_LOOP) && con->reneg_state == RENEG_REJECT) {
         int state = SSL_get_state(ssl);
-        
-        if (state == SSL3_ST_SR_CLNT_HELLO_A 
+
+        if (state == SSL3_ST_SR_CLNT_HELLO_A
             || state == SSL23_ST_SR_CLNT_HELLO_A) {
             con->reneg_state = RENEG_ABORT;
             /* XXX: rejecting client initiated renegotiation
@@ -708,5 +708,5 @@ void SSL_callback_handshake(const SSL *ssl, int where, int rc)
     }
 
 }
- 
+
 #endif

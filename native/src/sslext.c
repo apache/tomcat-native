@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/** SSL extensions - used for specialized taks - distributed session reuse, 
+/** SSL extensions - used for specialized taks - distributed session reuse,
  *  NPN, etc. TODO: also add SNI.
  *
  * @author Costin Manolache
@@ -446,7 +446,7 @@ TCN_IMPLEMENT_CALL( jlong, SSLExt, sslSetMode)(TCN_STDARGS, jlong tcsock, jlong 
 TCN_IMPLEMENT_CALL( jlong, SSLExt, sslCtxSetMode)(TCN_STDARGS, jlong tc_ssl_ctx, jlong jmode)
 {
     tcn_ssl_ctxt_t *sslctx = J2P(tc_ssl_ctx, tcn_ssl_ctxt_t *);
-    
+
     return (jlong) SSL_CTX_set_mode(sslctx->ctx, (long) jmode);
 }
 
@@ -534,7 +534,7 @@ TCN_IMPLEMENT_CALL(jint, SSLExt, setSNI)(TCN_STDARGS, jlong tcsock,
 }
 #endif
 
-#ifdef  OPENSSL_NPN_NEGOTIATED 
+#ifdef  OPENSSL_NPN_NEGOTIATED
 /* See ssl_client_socket_openssl.cc
  tools/flip_server/spdy_ssl.cc
  */
@@ -592,7 +592,7 @@ TCN_IMPLEMENT_CALL(jint, SSLExt, setNPN)(TCN_STDARGS, jlong tc_ssl_ctx,
     return 0;
 }
 
-/** Only valid after handshake 
+/** Only valid after handshake
  */
 TCN_IMPLEMENT_CALL(jint, SSLExt, getNPN)(TCN_STDARGS, jlong tcsock, jbyteArray buf)
 {

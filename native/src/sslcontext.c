@@ -438,7 +438,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setVerify)(TCN_STDARGS, jlong ctx,
             X509_STORE_set_flags(c->store, 0);
         }
         else {
-            /* XXX: See if this is fatal */ 
+            /* XXX: See if this is fatal */
         }
     }
 
