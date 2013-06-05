@@ -461,7 +461,7 @@ TCN_IMPLEMENT_CALL(jint, Socket, send)(TCN_STDARGS, jlong sock,
         ss = (*s->net->send)(s->opaque, (const char *)sb, &nbytes);
         free(sb);
     }
-    if (ss == APR_SUCCESS)
+    if (ss == APR_SUCCESS || ((APR_STATUS_IS_EAGAIN(ss) || ss == TCN_EAGAIN) && nbytes > 0))
         return (jint)nbytes;
     else {
         TCN_ERROR_WRAP(ss);
@@ -534,7 +534,7 @@ TCN_IMPLEMENT_CALL(jint, Socket, sendb)(TCN_STDARGS, jlong sock,
         sent += wr;
     }
 
-    if (ss == APR_SUCCESS)
+    if (ss == APR_SUCCESS || ((APR_STATUS_IS_EAGAIN(ss) || ss == TCN_EAGAIN) && sent > 0))
         return (jint)sent;
     else {
         TCN_ERROR_WRAP(ss);
@@ -568,7 +568,7 @@ TCN_IMPLEMENT_CALL(jint, Socket, sendib)(TCN_STDARGS, jlong sock,
 
     ss = (*s->net->send)(s->opaque, bytes + offset, &nbytes);
 
-    if (ss == APR_SUCCESS)
+    if (ss == APR_SUCCESS || ((APR_STATUS_IS_EAGAIN(ss) || ss == TCN_EAGAIN) && nbytes > 0))
         return (jint)nbytes;
     else {
         TCN_ERROR_WRAP(ss);
@@ -605,7 +605,7 @@ TCN_IMPLEMENT_CALL(jint, Socket, sendbb)(TCN_STDARGS, jlong sock,
             break;
         sent += wr;
     }
-    if (ss == APR_SUCCESS)
+    if (ss == APR_SUCCESS || ((APR_STATUS_IS_EAGAIN(ss) || ss == TCN_EAGAIN) && sent > 0))
         return (jint)sent;
     else {
         TCN_ERROR_WRAP(ss);
@@ -636,7 +636,7 @@ TCN_IMPLEMENT_CALL(jint, Socket, sendibb)(TCN_STDARGS, jlong sock,
 
     ss = (*s->net->send)(s->opaque, s->jsbbuff + offset, &nbytes);
 
-    if (ss == APR_SUCCESS)
+    if (ss == APR_SUCCESS || ((APR_STATUS_IS_EAGAIN(ss) || ss == TCN_EAGAIN) && nbytes > 0))
         return (jint)nbytes;
     else {
         TCN_ERROR_WRAP(ss);
@@ -674,7 +674,7 @@ TCN_IMPLEMENT_CALL(jint, Socket, sendv)(TCN_STDARGS, jlong sock,
     for (i = 0; i < nvec; i++) {
         (*e)->ReleaseByteArrayElements(e, ba[i], vec[i].iov_base, JNI_ABORT);
     }
-    if (ss == APR_SUCCESS)
+    if (ss == APR_SUCCESS || ((APR_STATUS_IS_EAGAIN(ss) || ss == TCN_EAGAIN) && written > 0))
         return (jint)written;
     else {
         TCN_ERROR_WRAP(ss);
