@@ -68,7 +68,7 @@ dnl result goes in JAVA_HOME / JAVA_PLATFORM (2 -> 1.2 and higher)
 dnl
 dnl --------------------------------------------------------------------------
 AC_DEFUN([TCN_FIND_JAVA],[
-  AC_ARG_WITH(java,[  --with-java-home=DIR     Specify the location of your JDK installation],[
+  AC_ARG_WITH(java-home,[  --with-java-home=DIR     Specify the location of your JDK installation],[
     AC_MSG_CHECKING([JAVA_HOME])
     if test -d "$withval"
     then
