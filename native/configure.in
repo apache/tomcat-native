@@ -107,9 +107,7 @@ dnl
 dnl  Find the JVM related information
 dnl
 NEED_JNI_MD=yes
-TCN_FIND_JDK
-TCN_SABLEVM
-TCN_J9VM
+TCN_FIND_JAVA
 
 dnl MAC OS X does not used include but Headers
 if test -d ${JAVA_HOME}/Headers; then
