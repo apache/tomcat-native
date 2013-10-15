@@ -101,7 +101,7 @@ manual is described in more detail below.</p>
   <p>
     On all the POSIX systems (Linux, Solaris, HP-UX, AIX etc...) a well-known
     configure and make is used to build tc-native.<br/>
-    In the jni/native runs:<br/>
+    In the jni/native runs:
   </p>
     <source>./configure --help</source>
     <p>to read the description of all the parameters.</p>
@@ -131,8 +131,7 @@ manual is described in more detail below.</p>
             --with-ssl=yes \
             --prefix=$CATALINA_HOME</source>
   <p>
-    <br/>
-    To build the libraries and install them:<br/>
+    To build the libraries and install them:
   </p>
   <source>make &amp;&amp; make install</source>
   <p>
@@ -210,8 +209,7 @@ INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
   </p>
 
   <source wrapped="true"
-    >set PATH=%PATH;C:\cygwin\home\support\tomcat-native-current-win32-src\jni\native\Debug;C:\cygwin\home\support\tomcat-native-current-win32-src\jni\apr\Debug;C:\OpenSSL\lib\VC
-  </source>
+    >set PATH=%PATH;C:\cygwin\home\support\tomcat-native-current-win32-src\jni\native\Debug;C:\cygwin\home\support\tomcat-native-current-win32-src\jni\apr\Debug;C:\OpenSSL\lib\VC</source>
   <p>
     Start tomcat and check for the messages like this ones:
   </p>
