@@ -54,7 +54,7 @@
     <li>FIPS 140-2 support for TLS/SSL (if supported by linked OpenSSL library)</li>
   </ul>
 
-</p>
+
 <p>Select one of the links from the navigation menu (to the left) to drill
 down to the more detailed documentation that is available. Each available
 manual is described in more detail below.</p>
@@ -207,7 +207,7 @@ manual is described in more detail below.</p>
   <p>
     Edit $CATALINA_BASE\bin\setenv.bat (creating the file if necessary) and add
     the path to the tc-native libraries, apr and OpenSSL to PATH. For example:
-  <p>
+  </p>
 
   <pre style="white-space:pre-wrap; word-wrap:break-word;">
     set PATH=%PATH;C:\cygwin\home\support\tomcat-native-current-win32-src\jni\native\Debug;C:\cygwin\home\support\tomcat-native-current-win32-src\jni\apr\Debug;C:\OpenSSL\lib\VC
@@ -223,7 +223,7 @@ manual is described in more detail below.</p>
     Feb 8, 2010 2:48:18 PM org.apache.coyote.http11.Http11AprProtocol init
     INFO: Initializing Coyote HTTP/1.1 on http-8080
   </pre>
-  </p>
+
 </subsection>
 
 </section>
