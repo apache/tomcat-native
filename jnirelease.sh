@@ -24,7 +24,8 @@ SVNBASE=https://svn.apache.org/repos/asf/tomcat/native
 
 # Set the environment variable that stops OSX including storing extended
 # attributes in tar archives etc with a file starting with ._
-export COPYFILE_DISABLE=1
+COPYFILE_DISABLE=1
+export COPYFILE_DISABLE
 
 for o
 do
