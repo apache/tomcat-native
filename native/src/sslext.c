@@ -69,6 +69,7 @@ TCN_IMPLEMENT_CALL(jbyteArray, SSLExt, getSessionData)(TCN_STDARGS, jlong tcsock
     return javaBytes;
 }
 
+#ifdef SSL_F_SSL_SET_SESSION_TICKET_EXT
 TCN_IMPLEMENT_CALL(jint, SSLExt, getTicket)(TCN_STDARGS, jlong tcsock, jbyteArray buf)
 {
     tcn_socket_t *s = J2P(tcsock, tcn_socket_t *);
@@ -96,6 +97,18 @@ TCN_IMPLEMENT_CALL(jint, SSLExt, setTicket)(TCN_STDARGS, jlong tcsock, jbyteArra
     SSL_set_session_ticket_ext(tcssl->ssl, requestedTicket, len);
     return 0;
 }
+#else  /* ifdef SSL_F_SSL_SET_SESSION_TICKET_EXT */
+TCN_IMPLEMENT_CALL(jint, SSLExt, getTicket)(TCN_STDARGS, jlong tcsock, jbyteArray buf)
+{
+  return 0; /* Unsupported function */
+}
+
+TCN_IMPLEMENT_CALL(jint, SSLExt, setTicket)(TCN_STDARGS, jlong tcsock, jbyteArray buf,
+        jint len)
+{
+  return 0;
+}
+#endif /* ifdef SSL_F_SSL_SET_SESSION_TICKET_EXT */
 
 TCN_IMPLEMENT_CALL(jint, SSLExt, setTicketKeys)(TCN_STDARGS, jlong tc_ssl_ctx, jbyteArray buf, jint len)
 {
