@@ -530,8 +530,8 @@ TCN_IMPLEMENT_CALL(jint, SSLExt, setSNI)(TCN_STDARGS, jlong tcsock, jbyteArray b
 {
     tcn_socket_t *s = J2P(tcsock, tcn_socket_t *);
     tcn_ssl_conn_t *tcssl = (tcn_ssl_conn_t *)s->opaque;
-    unsigned char bytes[TCN_BUFFER_SZ];
-    const unsigned char *bytesp = &bytes[0];
+    signed char bytes[TCN_BUFFER_SZ];
+    const signed char *bytesp = &bytes[0];
 
     if (len > TCN_BUFFER_SZ) {
         return -1;
