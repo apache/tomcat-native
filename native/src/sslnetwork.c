@@ -408,7 +408,7 @@ ssl_socket_recv(apr_socket_t *sock, char *buf, apr_size_t *len)
 
             i = SSL_get_error(con->ssl, s);
             /* Special case if the "close notify" alert send by peer */
-            if (s == 0 && (con->ssl->shutdown & SSL_RECEIVED_SHUTDOWN)) {
+            if (s == 0 && (SSL_get_shutdown(con->ssl) & SSL_RECEIVED_SHUTDOWN)) {
                 *len = 0;
                 return APR_EOF;
             }
@@ -633,7 +633,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
     if (SSL_get_state(con->ssl) != SSL_ST_OK) {
         return APR_EGENERAL;
     }
-    con->ssl->state = SSL_ST_ACCEPT;
+    SSL_set_state(con->ssl, SSL_ST_ACCEPT);
 
     ecode = SSL_ERROR_WANT_READ;
     while (ecode == SSL_ERROR_WANT_READ) {
