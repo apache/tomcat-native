@@ -48,7 +48,7 @@
     </fix>
     <fix>
       Remove superfluous semicolons after close-braces to eliminate compiler
-      warnings. (cshultz)
+      warnings. (schultz)
     </fix>
     <fix>
       <bug>57653</bug>: Fix crash when multiple events for same socket are
