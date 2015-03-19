@@ -58,7 +58,7 @@
       Enable building with OpenSSL 1.0.2 onwards. (billbarker)
     </fix>
     <update>
-      Use OpenSSL 1.0.1l with Windows binaries. (markt)
+      Use OpenSSL 1.0.1m with Windows binaries. (markt)
     </update>
   </changelog>
 </section>

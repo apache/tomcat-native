@@ -366,15 +366,17 @@ TCN_IMPLEMENT_CALL(jint, Poll, poll)(TCN_STDARGS, jlong pollset,
                least, multiple pairs have been observed. In this case do not try
                and remove socket from the pollset for a second time else a crash
                will result. */ 
-            if (remove && s->pe) {
-                apr_pollset_remove(p->pollset, fd);
-                APR_RING_REMOVE(s->pe, link);
-                APR_RING_INSERT_TAIL(&p->dead_ring, s->pe, tcn_pfde_t, link);
-                s->pe = NULL;
-                p->nelts--;
+            if (remove) {
+                if (s->pe) {
+                    apr_pollset_remove(p->pollset, fd);
+                    APR_RING_REMOVE(s->pe, link);
+                    APR_RING_INSERT_TAIL(&p->dead_ring, s->pe, tcn_pfde_t, link);
+                    s->pe = NULL;
+                    p->nelts--;
 #ifdef TCN_DO_STATISTICS
-                p->sp_removed++;
+                    p->sp_removed++;
 #endif
+                }
             }
             else {
                 /* Update last active with the current time
