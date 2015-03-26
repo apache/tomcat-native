@@ -177,12 +177,10 @@ static char *lookup_ssl_cert_dn(X509_NAME *xsname, int dnidx)
 
     for (i = 0; info_cert_dn_rec[i].fid != 0; i++) {
         if (info_cert_dn_rec[i].fid == dnidx) {
-            for (j = 0; j < sk_X509_NAME_ENTRY_num((STACK_OF(X509_NAME_ENTRY) *)
-                                                   (xsname->entries)); j++) {
-                xsne = sk_X509_NAME_ENTRY_value((STACK_OF(X509_NAME_ENTRY) *)
-                                                (xsname->entries), j);
 
-                n =OBJ_obj2nid((ASN1_OBJECT *)X509_NAME_ENTRY_get_object(xsne));
+            for (j = 0; j < X509_NAME_entry_count(xsname); j++) {
+                xsne = X509_NAME_get_entry(xsname, j);
+                n = OBJ_obj2nid((ASN1_OBJECT *)X509_NAME_ENTRY_get_object(xsne));
                 if (n == info_cert_dn_rec[i].nid && idx-- == 0) {
                     result = malloc(xsne->value->length + 1);
                     memcpy(result, xsne->value->data,
