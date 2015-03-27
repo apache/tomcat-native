@@ -180,15 +180,16 @@ static char *lookup_ssl_cert_dn(X509_NAME *xsname, int dnidx)
 
             for (j = 0; j < X509_NAME_entry_count(xsname); j++) {
                 xsne = X509_NAME_get_entry(xsname, j);
-                n = OBJ_obj2nid((ASN1_OBJECT *)X509_NAME_ENTRY_get_object(xsne));
+                n = OBJ_obj2nid(X509_NAME_ENTRY_get_object(xsne));
                 if (n == info_cert_dn_rec[i].nid && idx-- == 0) {
-                    result = malloc(xsne->value->length + 1);
-                    memcpy(result, xsne->value->data,
-                                   xsne->value->length);
-                    result[xsne->value->length] = '\0';
+                    ASN1_STRING *adata = X509_NAME_ENTRY_get_data(xsne);
+                    int len = ASN1_STRING_length(adata);
+                    result = malloc(len + 1);
+                    memcpy(result, ASN1_STRING_data(adata), len);
+                    result[len] = '\0';
 
 #if APR_CHARSET_EBCDIC
-                    ap_xlate_proto_from_ascii(result, xsne->value->length);
+                    ap_xlate_proto_from_ascii(result, len);
 #endif /* APR_CHARSET_EBCDIC */
                     break;
                 }
