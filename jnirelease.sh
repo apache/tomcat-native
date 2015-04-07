@@ -27,7 +27,7 @@ apr_src_dir=`pwd`/native/srclib/apr
 JKJNIEXT=""
 JKJNIVER=""
 SVNBASE=https://svn.apache.org/repos/asf/tomcat/native
-TCTRUNK_SVNBASE=https://svn.apache.org/repos/asf/tomcat/trunk
+TCTRUNK_SVNBASE=https://svn.apache.org/repos/asf/tomcat/tc8.0.x/trunk
 
 # Set the environment variable that stops OSX storing extended
 # attributes in tar archives etc. with a file starting with ._
