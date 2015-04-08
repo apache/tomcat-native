@@ -256,10 +256,11 @@ struct tcn_ssl_ctxt_t {
     int             verify_mode;
     tcn_pass_cb_t   *cb_data;
 
-    /* for client: send request NPN.
-     * for server: accept requested NPN.
+    /* for client: List of protocols to request via ALPN.
+     * for server: List of protocols to accept via ALPN.
      */
-    char *npn;
+    char *alpn;
+    int alpnlen;
 };
 
   

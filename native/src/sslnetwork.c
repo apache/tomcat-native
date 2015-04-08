@@ -686,6 +686,26 @@ TCN_IMPLEMENT_CALL(void, SSLSocket, setVerify)(TCN_STDARGS,
     SSL_set_verify(con->ssl, verify, NULL);
 }
 
+TCN_IMPLEMENT_CALL(jint, SSLSocket, getALPN)(TCN_STDARGS, jlong sock, jbyteArray buf)
+{
+    const unsigned char *alpn;
+    unsigned alpn_len;
+    tcn_socket_t *s = J2P(sock, tcn_socket_t *);
+    tcn_ssl_conn_t *tcssl = (tcn_ssl_conn_t *)s->opaque;
+    int bufLen = (*e)->GetArrayLength(e, buf);
+    
+    SSL_get0_alpn_selected(tcssl->ssl, &alpn, &alpn_len);
+    
+    if (alpn_len == 0 || bufLen < alpn_len) {
+        return 0;
+    }
+    int len = alpn_len;
+    (*e)->SetByteArrayRegion(e, buf, 0, len, alpn);
+    
+    return len;
+}
+
+
 #else
 /* OpenSSL is not supported.
  * Create empty stubs.
@@ -712,6 +732,13 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
 {
     UNREFERENCED_STDARGS;
     UNREFERENCED(sock);
+    return (jint)APR_ENOTIMPL;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSLSocket, getALPN)(TCN_STDARGS, jlong sock, jbyteArray buf)
+{
+    UNREFERENCED(sock);
+    UNREFERENCED(buf);
     return (jint)APR_ENOTIMPL;
 }
 
