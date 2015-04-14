@@ -367,6 +367,7 @@ static void ssl_thread_lock(int mode, int type,
     }
 }
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
 static unsigned long ssl_thread_id(void)
 {
     /* OpenSSL needs this to return an unsigned long.  On OS/390, the pthread
@@ -386,12 +387,15 @@ static unsigned long ssl_thread_id(void)
     return (unsigned long)(apr_os_thread_current());
 #endif
 }
+#endif
 
 static apr_status_t ssl_thread_cleanup(void *data)
 {
     UNREFERENCED(data);
     CRYPTO_set_locking_callback(NULL);
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
     CRYPTO_set_id_callback(NULL);
+#endif
     CRYPTO_set_dynlock_create_callback(NULL);
     CRYPTO_set_dynlock_lock_callback(NULL);
     CRYPTO_set_dynlock_destroy_callback(NULL);
@@ -492,7 +496,9 @@ static void ssl_thread_setup(apr_pool_t *p)
                                 APR_THREAD_MUTEX_DEFAULT, p);
     }
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
     CRYPTO_set_id_callback(ssl_thread_id);
+#endif
     CRYPTO_set_locking_callback(ssl_thread_lock);
 
     /* Set up dynamic locking scaffolding for OpenSSL to use at its
