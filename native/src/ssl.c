@@ -53,11 +53,15 @@ struct CRYPTO_dynlock_value {
  * Handle the Temporary RSA Keys and DH Params
  */
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
 #define SSL_TMP_KEY_FREE(type, idx)                     \
     if (SSL_temp_keys[idx]) {                           \
         type##_free((type *)SSL_temp_keys[idx]);        \
         SSL_temp_keys[idx] = NULL;                      \
     } else (void)(0)
+#else
+#define SSL_TMP_KEY_FREE(type, idx)    SSL_temp_keys[idx] = NULL
+#endif
 
 #define SSL_TMP_KEYS_FREE(type) \
     SSL_TMP_KEY_FREE(type, SSL_TMP_KEY_##type##_512);   \
@@ -315,7 +319,11 @@ static apr_status_t ssl_init_cleanup(void *data)
 #if OPENSSL_VERSION_NUMBER >= 0x00907001
     CRYPTO_cleanup_all_ex_data();
 #endif
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
     ERR_remove_state(0);
+#else
+    ERR_remove_thread_state(NULL);
+#endif
 
     /* Don't call ERR_free_strings here; ERR_load_*_strings only
      * actually load the error strings once per process due to static
@@ -367,7 +375,6 @@ static void ssl_thread_lock(int mode, int type,
     }
 }
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
 static unsigned long ssl_thread_id(void)
 {
     /* OpenSSL needs this to return an unsigned long.  On OS/390, the pthread
@@ -387,7 +394,6 @@ static unsigned long ssl_thread_id(void)
     return (unsigned long)(apr_os_thread_current());
 #endif
 }
-#endif
 
 static apr_status_t ssl_thread_cleanup(void *data)
 {
