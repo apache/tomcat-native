@@ -261,10 +261,6 @@ struct tcn_ssl_ctxt_t {
      */
     char            *alpn;
     int             alpnlen;
-    
-    /* References to Java SSLContext class used by SNI callbacks */
-    JNIEnv          *jnienv;
-    jobject         java_object;
 };
 
   

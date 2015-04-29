@@ -62,12 +62,37 @@ static apr_status_t ssl_context_cleanup(void *data)
     return APR_SUCCESS;
 }
 
+static jclass    ssl_context_class;
+static jmethodID sni_java_callback;
+
 /* Callback used when OpenSSL receives a client hello with a Server Name
  * Indication extension.
  */
 int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
 {
-    printf("SNI callback received");
+    // Get the JNI environment for this callback
+    JavaVM *javavm = tcn_get_java_vm();
+    JNIEnv *env;
+    (*javavm)->AttachCurrentThread(javavm, (void **)&env, NULL);
+    
+    // Get the host name presented by the client
+    const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+    
+    // Convert parameters ready for the method call
+    jstring hostname = (*env)->NewStringUTF(env, servername);
+    jlong original_ssl_context = P2J(c->ctx);
+ 
+    // Make the call
+    jlong new_ssl_context = (*env)->CallStaticLongMethod(env,
+                                                            ssl_context_class,
+                                                            sni_java_callback,
+                                                            original_ssl_context,
+                                                            hostname);
+
+    if (original_ssl_context != new_ssl_context) {
+        SSL_set_SSL_CTX(ssl, J2P(new_ssl_context, SSL_CTX *));
+    }
+ 
     return SSL_TLSEXT_ERR_OK;
 }
  
@@ -206,9 +231,14 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     SSL_CTX_set_default_passwd_cb_userdata(c->ctx, (void *)(&tcn_password_callback));
     SSL_CTX_set_info_callback(c->ctx, SSL_callback_handshake);
     
-    /* Set Server Name Indication (SNI) callback */
-    c->jnienv      = e;
-    c->java_object = o;
+    /* Cache Java side SNI callback if not already cached */
+    if (ssl_context_class == 0) {
+        ssl_context_class = (*e)->NewGlobalRef(e, o);
+        sni_java_callback = (*e)->GetStaticMethodID(e, ssl_context_class,
+                                                    "sniCallBack", "(JLjava/lang/String;)J");
+    }
+
+    /* Set up OpenSSL call back if SNI is provided by the client */
     SSL_CTX_set_tlsext_servername_callback(c->ctx, ssl_callback_ServerNameIndication);
     SSL_CTX_set_tlsext_servername_arg(c->ctx, c);
 
