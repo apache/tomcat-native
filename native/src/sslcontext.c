@@ -62,6 +62,15 @@ static apr_status_t ssl_context_cleanup(void *data)
     return APR_SUCCESS;
 }
 
+/* Callback used when OpenSSL receives a client hello with a Server Name
+ * Indication extension.
+ */
+int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
+{
+    printf("SNI callback received");
+    return SSL_TLSEXT_ERR_OK;
+}
+ 
 /* Initialize server context */
 TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
                                             jint protocol, jint mode)
@@ -69,7 +78,6 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     apr_pool_t *p = J2P(pool, apr_pool_t *);
     tcn_ssl_ctxt_t *c = NULL;
     SSL_CTX *ctx = NULL;
-    UNREFERENCED(o);
 
     if (protocol == SSL_PROTOCOL_TLSV1_2) {
 #ifdef SSL_OP_NO_TLSv1_2
@@ -197,6 +205,13 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     SSL_CTX_set_default_passwd_cb(c->ctx, (pem_password_cb *)SSL_password_callback);
     SSL_CTX_set_default_passwd_cb_userdata(c->ctx, (void *)(&tcn_password_callback));
     SSL_CTX_set_info_callback(c->ctx, SSL_callback_handshake);
+    
+    /* Set Server Name Indication (SNI) callback */
+    c->jnienv      = e;
+    c->java_object = o;
+    SSL_CTX_set_tlsext_servername_callback(c->ctx, ssl_callback_ServerNameIndication);
+    SSL_CTX_set_tlsext_servername_arg(c->ctx, c);
+
     /*
      * Let us cleanup the ssl context when the pool is destroyed
      */
@@ -684,8 +699,6 @@ int cb_server_alpn(SSL *ssl,
     int i;
     unsigned short splen;
 
-    printf("inlen [%d]\n", inlen);
-    
     if (inlen == 0) {
         // Client specified an empty protocol list. Nothing to negotiate.
         return SSL_TLSEXT_ERR_ALERT_FATAL;
@@ -713,8 +726,6 @@ int cb_server_alpn(SSL *ssl,
         return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
     
-    printf("A\n");
-
     proposed_protos = apr_array_make(con->pool, 0, sizeof(char *));
     for (i = 0; i < tcsslctx->alpnlen; /**/) {
         unsigned int plen = tcsslctx->alpn[i++];
@@ -727,8 +738,6 @@ int cb_server_alpn(SSL *ssl,
         i += plen;
     }
     
-    printf("E\n");
-
     if (proposed_protos->nelts <= 0) {
         // Should never happen. The server did not specify any protocols.
         return SSL_TLSEXT_ERR_ALERT_FATAL;
@@ -743,8 +752,6 @@ int cb_server_alpn(SSL *ssl,
             *out = (const unsigned char*)proto;
         }
     }
-
-    printf("F\n");
 
     size_t len = strlen((const char*)*out);
     if (len > 255) {

@@ -259,8 +259,12 @@ struct tcn_ssl_ctxt_t {
     /* for client: List of protocols to request via ALPN.
      * for server: List of protocols to accept via ALPN.
      */
-    char *alpn;
-    int alpnlen;
+    char            *alpn;
+    int             alpnlen;
+    
+    /* References to Java SSLContext class used by SNI callbacks */
+    JNIEnv          *jnienv;
+    jobject         java_object;
 };
 
   
