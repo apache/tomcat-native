@@ -70,6 +70,8 @@ static jmethodID sni_java_callback;
  */
 int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
 {
+    // TODO: Is it better to cache the JNIEnv* during the call to handshake?
+    
     // Get the JNI environment for this callback
     JavaVM *javavm = tcn_get_java_vm();
     JNIEnv *env;
@@ -232,7 +234,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     SSL_CTX_set_info_callback(c->ctx, SSL_callback_handshake);
     
     /* Cache Java side SNI callback if not already cached */
-    if (ssl_context_class == 0) {
+    if (ssl_context_class == NULL) {
         ssl_context_class = (*e)->NewGlobalRef(e, o);
         sni_java_callback = (*e)->GetStaticMethodID(e, ssl_context_class,
                                                     "sniCallBack", "(JLjava/lang/String;)J");
