@@ -720,7 +720,10 @@ void SSL_callback_handshake(const SSL *ssl, int where, int rc)
         int state = SSL_get_state(ssl);
 
         if (state == SSL3_ST_SR_CLNT_HELLO_A
-            || state == SSL23_ST_SR_CLNT_HELLO_A) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+            || state == SSL23_ST_SR_CLNT_HELLO_A
+#endif
+            ) {
             con->reneg_state = RENEG_ABORT;
             /* XXX: rejecting client initiated renegotiation
              */
