@@ -75,17 +75,20 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
     // Get the JNI environment for this callback
     JavaVM *javavm = tcn_get_java_vm();
     JNIEnv *env;
+    const char *servername;
+    jstring hostname;
+    jlong original_ssl_context, new_ssl_context;
     (*javavm)->AttachCurrentThread(javavm, (void **)&env, NULL);
     
     // Get the host name presented by the client
-    const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+    servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
     
     // Convert parameters ready for the method call
-    jstring hostname = (*env)->NewStringUTF(env, servername);
-    jlong original_ssl_context = P2J(c->ctx);
+    hostname = (*env)->NewStringUTF(env, servername);
+    original_ssl_context = P2J(c->ctx);
  
     // Make the call
-    jlong new_ssl_context = (*env)->CallStaticLongMethod(env,
+    new_ssl_context = (*env)->CallStaticLongMethod(env,
                                                             ssl_context_class,
                                                             sni_java_callback,
                                                             original_ssl_context,
@@ -730,6 +733,7 @@ int cb_server_alpn(SSL *ssl,
     apr_array_header_t *proposed_protos;
     int i;
     unsigned short splen;
+    size_t len;
 
     if (inlen == 0) {
         // Client specified an empty protocol list. Nothing to negotiate.
@@ -785,7 +789,7 @@ int cb_server_alpn(SSL *ssl,
         }
     }
 
-    size_t len = strlen((const char*)*out);
+    len = strlen((const char*)*out);
     if (len > 255) {
         // Agreed protocol name too long
         return SSL_TLSEXT_ERR_ALERT_FATAL;
