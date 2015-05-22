@@ -241,15 +241,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     EVP_Digest((const unsigned char *)SSL_DEFAULT_VHOST_NAME,
                (unsigned long)((sizeof SSL_DEFAULT_VHOST_NAME) - 1),
                &(c->context_id[0]), NULL, EVP_sha1(), NULL);
-    if (mode) {
-#ifdef HAVE_ECC
-        /* Set default (nistp256) elliptic curve for ephemeral ECDH keys */
-        EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-        SSL_CTX_set_tmp_ecdh(c->ctx, ecdh);
-        EC_KEY_free(ecdh);
-#endif
-        SSL_CTX_set_tmp_dh_callback(c->ctx,  SSL_callback_tmp_DH);
-    }
+
     /* Set default Certificate verification level
      * and depth for the Client Authentication
      */
@@ -701,6 +693,12 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     const char *key_file, *cert_file;
     const char *p;
     char err[256];
+#ifdef HAVE_ECC
+    EC_GROUP *ecparams;
+    int nid;
+    EC_KEY *eckey = NULL;
+#endif
+    DH *dhparams;
 
     UNREFERENCED(o);
     TCN_ASSERT(ctx != 0);
@@ -769,6 +767,42 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
         rv = JNI_FALSE;
         goto cleanup;
     }
+
+    /*
+     * Try to read DH parameters from the (first) SSLCertificateFile
+     */
+    /* XXX Does this also work for pkcs12 or only for PEM files?
+     * If only for PEM files move above to the PEM handling */
+    if ((dhparams = SSL_dh_GetParamFromFile(cert_file))) {
+        SSL_CTX_set_tmp_dh(c->ctx, dhparams);
+    }
+
+#ifdef HAVE_ECC
+    /*
+     * Similarly, try to read the ECDH curve name from SSLCertificateFile...
+     */
+    /* XXX Does this also work for pkcs12 or only for PEM files?
+     * If only for PEM files move above to the PEM handling */
+    if ((ecparams = SSL_ec_GetParamFromFile(cert_file)) &&
+        (nid = EC_GROUP_get_curve_name(ecparams)) &&
+        (eckey = EC_KEY_new_by_curve_name(nid))) {
+        SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
+    }
+    /*
+     * ...otherwise, configure NIST P-256 (required to enable ECDHE)
+     */
+    else {
+#if defined(SSL_CTX_set_ecdh_auto)
+        SSL_CTX_set_ecdh_auto(c->ctx, 1);
+#else
+        eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+        SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
+#endif
+    }
+    EC_KEY_free(eckey);
+#endif
+    SSL_CTX_set_tmp_dh_callback(c->ctx, SSL_callback_tmp_DH);
+
 cleanup:
     TCN_FREE_CSTRING(cert);
     TCN_FREE_CSTRING(key);

@@ -157,7 +157,12 @@ int SSL_password_callback(char *buf, int bufsiz, int verify,
     return (int)strlen(buf);
 }
 
-DH *SSL_dh_get_param_from_file(const char *file)
+/*  _________________________________________________________________
+**
+**  Custom (EC)DH parameter support
+**  _________________________________________________________________
+*/
+DH *SSL_dh_GetParamFromFile(const char *file)
 {
     DH *dh = NULL;
     BIO *bio;
@@ -168,6 +173,20 @@ DH *SSL_dh_get_param_from_file(const char *file)
     BIO_free(bio);
     return dh;
 }
+
+#ifdef HAVE_ECC
+EC_GROUP *SSL_ec_GetParamFromFile(const char *file)
+{
+    EC_GROUP *group = NULL;
+    BIO *bio;
+
+    if ((bio = BIO_new_file(file, "r")) == NULL)
+        return NULL;
+    group = PEM_read_bio_ECPKParameters(bio, NULL, NULL, NULL);
+    BIO_free(bio);
+    return (group);
+}
+#endif
 
 /*
  * Grab well-defined DH parameters from OpenSSL, see <openssl/bn.h>

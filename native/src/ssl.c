@@ -995,30 +995,6 @@ TCN_IMPLEMENT_CALL(void, SSL, setPassword)(TCN_STDARGS, jstring password)
     TCN_FREE_CSTRING(password);
 }
 
-// Commented out but might get reused later
-#if 0
-TCN_IMPLEMENT_CALL(jboolean, SSL, loadDSATempKey)(TCN_STDARGS, jint idx,
-                                                  jstring file)
-{
-    jboolean r = JNI_FALSE;
-    TCN_ALLOC_CSTRING(file);
-    DH *dh;
-    UNREFERENCED(o);
-
-    if (!J2S(file))
-        return JNI_FALSE;
-    /* Removed */
-    SSL_TMP_KEY_FREE(DSA, idx);
-    if ((dh = SSL_dh_get_param_from_file(J2S(file)))) {
-        /* Removed */
-        SSL_temp_keys[idx] = dh;
-        r = JNI_TRUE;
-    }
-    TCN_FREE_CSTRING(file);
-    return r;
-}
-#endif
-
 TCN_IMPLEMENT_CALL(jstring, SSL, getLastError)(TCN_STDARGS)
 {
     char buf[256];
