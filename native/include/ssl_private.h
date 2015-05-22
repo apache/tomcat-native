@@ -216,8 +216,6 @@
 #define HAVE_ECC              1
 #endif
 
-extern void *SSL_temp_keys[SSL_TMP_KEY_MAX];
-
 typedef struct {
     /* client can have any number of cert/key pairs */
     const char  *cert_file;
@@ -319,7 +317,6 @@ void        SSL_BIO_close(BIO *);
 void        SSL_BIO_doref(BIO *);
 DH         *SSL_dh_get_tmp_param(int);
 DH         *SSL_dh_get_param_from_file(const char *);
-RSA        *SSL_callback_tmp_RSA(SSL *, int, int);
 DH         *SSL_callback_tmp_DH(SSL *, int, int);
 void        SSL_callback_handshake(const SSL *, int, int);
 int         SSL_CTX_use_certificate_chain(SSL_CTX *, const char *, int);

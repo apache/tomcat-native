@@ -34,7 +34,6 @@ static char *ssl_global_rand_file = NULL;
 extern apr_pool_t *tcn_global_pool;
 
 ENGINE *tcn_ssl_engine = NULL;
-void *SSL_temp_keys[SSL_TMP_KEY_MAX];
 tcn_pass_cb_t tcn_password_callback;
 
 /* Global reference to the pool used by the dynamic mutexes */
@@ -47,43 +46,6 @@ struct CRYPTO_dynlock_value {
     int line;
     apr_thread_mutex_t *mutex;
 };
-
-
-/*
- * Handle the Temporary RSA Keys and DH Params
- */
-
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
-#define SSL_TMP_KEY_FREE(type, idx)                     \
-    if (SSL_temp_keys[idx]) {                           \
-        type##_free((type *)SSL_temp_keys[idx]);        \
-        SSL_temp_keys[idx] = NULL;                      \
-    } else (void)(0)
-#else
-#define SSL_TMP_KEY_FREE(type, idx)    SSL_temp_keys[idx] = NULL
-#endif
-
-#define SSL_TMP_KEYS_FREE(type) \
-    SSL_TMP_KEY_FREE(type, SSL_TMP_KEY_##type##_512);   \
-    SSL_TMP_KEY_FREE(type, SSL_TMP_KEY_##type##_1024);  \
-    SSL_TMP_KEY_FREE(type, SSL_TMP_KEY_##type##_2048);  \
-    SSL_TMP_KEY_FREE(type, SSL_TMP_KEY_##type##_4096)
-
-#define SSL_TMP_KEY_INIT_RSA(bits) \
-    ssl_tmp_key_init_rsa(bits, SSL_TMP_KEY_RSA_##bits)
-
-#define SSL_TMP_KEY_INIT_DH(bits)  \
-    ssl_tmp_key_init_dh(bits, SSL_TMP_KEY_DH_##bits)
-
-#define SSL_TMP_KEYS_INIT(R)                    \
-    SSL_temp_keys[SSL_TMP_KEY_RSA_2048] = NULL; \
-    SSL_temp_keys[SSL_TMP_KEY_RSA_4096] = NULL; \
-    R |= SSL_TMP_KEY_INIT_RSA(512);             \
-    R |= SSL_TMP_KEY_INIT_RSA(1024);            \
-    R |= SSL_TMP_KEY_INIT_DH(512);              \
-    R |= SSL_TMP_KEY_INIT_DH(1024);             \
-    R |= SSL_TMP_KEY_INIT_DH(2048);             \
-    R |= SSL_TMP_KEY_INIT_DH(4096)
 
 /*
  * supported_ssl_opts is a bitmask that contains all supported SSL_OP_*
@@ -231,44 +193,6 @@ static const jint supported_ssl_opts = 0
 #endif
      | 0;
 
-static int ssl_tmp_key_init_rsa(int bits, int idx)
-{
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
-    if (!(SSL_temp_keys[idx] =
-          RSA_generate_key(bits, RSA_F4, NULL, NULL))) {
-#ifdef OPENSSL_FIPS
-        /**
-         * With FIPS mode short RSA keys cannot be
-         * generated.
-         */
-        if (bits < 1024)
-            return 0;
-        else
-#endif
-        return 1;
-    }
-    else {
-        return 0;
-    }
-#else
-    return 0;
-#endif
-}
-
-static int ssl_tmp_key_init_dh(int bits, int idx)
-{
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
-    if (!(SSL_temp_keys[idx] =
-          SSL_dh_get_tmp_param(bits)))
-        return 1;
-    else
-        return 0;
-#else
-    return 0;
-#endif
-}
-
-
 TCN_IMPLEMENT_CALL(jint, SSL, version)(TCN_STDARGS)
 {
     UNREFERENCED_STDARGS;
@@ -299,8 +223,6 @@ static apr_status_t ssl_init_cleanup(void *data)
                          tcn_password_callback.cb.obj);
     }
 
-    SSL_TMP_KEYS_FREE(RSA);
-    SSL_TMP_KEYS_FREE(DH);
     /*
      * Try to kill the internals of the SSL library.
      */
@@ -646,7 +568,6 @@ static int ssl_rand_make(const char *file, int len, int base64)
 
 TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
 {
-    int r = 0;
     TCN_ALLOC_CSTRING(engine);
 
     UNREFERENCED(o);
@@ -722,13 +643,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     /* For SSL_get_app_data2() at request time */
     SSL_init_app_data2_idx();
 
-    SSL_TMP_KEYS_INIT(r);
-    if (r) {
-        TCN_FREE_CSTRING(engine);
-        ssl_init_cleanup(NULL);
-        tcn_ThrowAPRException(e, APR_ENOTIMPL);
-        return APR_ENOTIMPL;
-    }
     /*
      * Let us cleanup the ssl library when the library is unloaded
      */
@@ -1081,28 +995,8 @@ TCN_IMPLEMENT_CALL(void, SSL, setPassword)(TCN_STDARGS, jstring password)
     TCN_FREE_CSTRING(password);
 }
 
-TCN_IMPLEMENT_CALL(jboolean, SSL, generateRSATempKey)(TCN_STDARGS, jint idx)
-{
-    int r = 1;
-    UNREFERENCED_STDARGS;
-    SSL_TMP_KEY_FREE(RSA, idx);
-    switch (idx) {
-        case SSL_TMP_KEY_RSA_512:
-            r = SSL_TMP_KEY_INIT_RSA(512);
-        break;
-        case SSL_TMP_KEY_RSA_1024:
-            r = SSL_TMP_KEY_INIT_RSA(1024);
-        break;
-        case SSL_TMP_KEY_RSA_2048:
-            r = SSL_TMP_KEY_INIT_RSA(2048);
-        break;
-        case SSL_TMP_KEY_RSA_4096:
-            r = SSL_TMP_KEY_INIT_RSA(4096);
-        break;
-    }
-    return r ? JNI_FALSE : JNI_TRUE;
-}
-
+// Commented out but might get reused later
+#if 0
 TCN_IMPLEMENT_CALL(jboolean, SSL, loadDSATempKey)(TCN_STDARGS, jint idx,
                                                   jstring file)
 {
@@ -1113,14 +1007,17 @@ TCN_IMPLEMENT_CALL(jboolean, SSL, loadDSATempKey)(TCN_STDARGS, jint idx,
 
     if (!J2S(file))
         return JNI_FALSE;
+    /* Removed */
     SSL_TMP_KEY_FREE(DSA, idx);
     if ((dh = SSL_dh_get_param_from_file(J2S(file)))) {
+        /* Removed */
         SSL_temp_keys[idx] = dh;
         r = JNI_TRUE;
     }
     TCN_FREE_CSTRING(file);
     return r;
 }
+#endif
 
 TCN_IMPLEMENT_CALL(jstring, SSL, getLastError)(TCN_STDARGS)
 {

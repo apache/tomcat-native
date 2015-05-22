@@ -248,7 +248,6 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         SSL_CTX_set_tmp_ecdh(c->ctx, ecdh);
         EC_KEY_free(ecdh);
 #endif
-        SSL_CTX_set_tmp_rsa_callback(c->ctx, SSL_callback_tmp_RSA);
         SSL_CTX_set_tmp_dh_callback(c->ctx,  SSL_callback_tmp_DH);
     }
     /* Set default Certificate verification level
