@@ -189,34 +189,6 @@ EC_GROUP *SSL_ec_GetParamFromFile(const char *file)
 #endif
 
 /*
- * Grab well-defined DH parameters from OpenSSL, see <openssl/bn.h>
- * (get_rfc*) for all available primes.
- */
-#define make_get_dh(rfc,size,gen) \
-static DH *get_dh##size(void) \
-{ \
-    DH *dh; \
-    if (!(dh = DH_new())) { \
-        return NULL; \
-    } \
-    dh->p = get_##rfc##_prime_##size(NULL); \
-    BN_dec2bn(&dh->g, #gen); \
-    if (!dh->p || !dh->g) { \
-        DH_free(dh); \
-        return NULL; \
-    } \
-    return dh; \
-}
-
-/*
- * Prepare DH parameters from 1024 to 4096 bits, in 1024-bit increments
- */
-make_get_dh(rfc2409, 1024, 2)
-make_get_dh(rfc3526, 2048, 2)
-make_get_dh(rfc3526, 3072, 2)
-make_get_dh(rfc3526, 4096, 2)
-
-/*
  * Hand out standard DH parameters, based on the authentication strength
  */
 DH *SSL_callback_tmp_DH(SSL *ssl, int export, int keylen)
@@ -239,14 +211,7 @@ DH *SSL_callback_tmp_DH(SSL *ssl, int export, int keylen)
     if ((type == EVP_PKEY_RSA) || (type == EVP_PKEY_DSA)) {
         keylen = EVP_PKEY_bits(pkey);
     }
-    if (keylen >= 4096)
-        return get_dh4096();
-    else if (keylen >= 3072)
-        return get_dh3072();
-    else if (keylen >= 2048)
-        return get_dh2048();
-    else
-        return get_dh1024();
+    return SSL_get_dh_params(keylen);
 }
 
 /*

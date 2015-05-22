@@ -333,6 +333,7 @@ int         SSL_password_prompt(tcn_pass_cb_t *);
 int         SSL_password_callback(char *, int, int, void *);
 void        SSL_BIO_close(BIO *);
 void        SSL_BIO_doref(BIO *);
+DH         *SSL_get_dh_params(unsigned keylen);
 DH         *SSL_dh_GetParamFromFile(const char *);
 #ifdef HAVE_ECC
 EC_GROUP   *SSL_ec_GetParamFromFile(const char *);
