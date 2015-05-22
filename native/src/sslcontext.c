@@ -891,7 +891,7 @@ TCN_IMPLEMENT_CALL(jint, SSLContext, setALPN)(TCN_STDARGS, jlong ctx,
     tcn_ssl_ctxt_t *sslctx = J2P(ctx, tcn_ssl_ctxt_t *);
 
     sslctx->alpn = apr_pcalloc(sslctx->pool, len);
-    (*e)->GetByteArrayRegion(e, buf, 0, len, &sslctx->alpn[0]);
+    (*e)->GetByteArrayRegion(e, buf, 0, len, (jbyte *)&sslctx->alpn[0]);
     sslctx->alpnlen = len;
 
     if (sslctx->mode == SSL_MODE_SERVER) {

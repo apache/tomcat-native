@@ -700,7 +700,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, getALPN)(TCN_STDARGS, jlong sock, jbyteArray
         return 0;
     }
     int len = alpn_len;
-    (*e)->SetByteArrayRegion(e, buf, 0, len, alpn);
+    (*e)->SetByteArrayRegion(e, buf, 0, len, (jbyte *)alpn);
 
     return len;
 }
