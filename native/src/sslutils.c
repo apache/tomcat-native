@@ -270,7 +270,7 @@ static DH *get_dh(int idx)
             dh->p = BN_bin2bn(dh2048_p, sizeof(dh2048_p), NULL);
         break;
         case SSL_TMP_KEY_DH_4096:
-            dh->p = BN_bin2bn(dh4096_p, sizeof(dh2048_p), NULL);
+            dh->p = BN_bin2bn(dh4096_p, sizeof(dh4096_p), NULL);
         break;
     }
     dh->g = BN_bin2bn(dhxxx2_g, sizeof(dhxxx2_g), NULL);
