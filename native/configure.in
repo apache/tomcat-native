@@ -210,7 +210,7 @@ dnl
 dnl Prep all the flags and stuff for compilation and export to other builds
 dnl
 APR_ADDTO(TCNATIVE_LIBS, [$LIBS])
-APR_ADDTO(TCNATIVE_LIBS, [$APR_LIBS])
+APR_ADDTO(TCNATIVE_LIBS, [$APR_LIBTOOL_LIBS])
 APR_ADDTO(TCNATIVE_LDFLAGS, [$LDFLAGS])
 
 # Link libkstat for Solaris

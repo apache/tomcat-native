@@ -51,11 +51,13 @@ AC_DEFUN(TCN_FIND_APR,[
   APR_BUILD_DIR="`cd $APR_BUILD_DIR && pwd`"
 
   APR_INCLUDES="`$apr_config --includes`"
-  APR_LIBS="`$apr_config --link-libtool --libs`"
+  APR_LIBTOOL_LIBS="`$apr_config --link-libtool --libs`"
+  APR_LIBS="`$apr_config --link-ld --libs`"
   APR_SO_EXT="`$apr_config --apr-so-ext`"
   APR_LIB_TARGET="`$apr_config --apr-lib-target`"
 
   AC_SUBST(APR_INCLUDES)
+  AC_SUBST(APR_LIBTOOL_LIBS)
   AC_SUBST(APR_LIBS)
   AC_SUBST(APR_BUILD_DIR)
 ])
@@ -287,7 +289,7 @@ AC_DEFUN(TCN_FIND_APR_FEATURE,[
   saved_cflags="$CFLAGS"
   saved_libs="$LIBS"
   CFLAGS="$CFLAGS $APR_INCLUDES"
-  LIBS="$LIBS -lapr-1"
+  LIBS="$LIBS $APR_LIBS"
   chk_result=0
   AC_CHECK_LIB(apr-1, $1,[chk_result=1])
   CFLAGS="$saved_cflags"
