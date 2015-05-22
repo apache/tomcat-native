@@ -818,7 +818,6 @@ int cb_server_alpn(SSL *ssl,
     apr_array_header_t *client_protos;
     apr_array_header_t *proposed_protos;
     int i;
-    unsigned short splen;
     size_t len;
 
     if (inlen == 0) {

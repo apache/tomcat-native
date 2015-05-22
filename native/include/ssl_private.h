@@ -299,13 +299,6 @@ typedef struct {
     apr_socket_t   *sock;
     apr_pollset_t  *pollset;
 
-    /* Used in NPN negotiation */
-    char *npn;
-
-    /* Tls ticket extension, for client side use */
-    char *receivedTicket;
-    int receivedTicketLen;
-
 } tcn_ssl_conn_t;
 
 
