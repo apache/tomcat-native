@@ -827,6 +827,7 @@ int cb_server_alpn(SSL *ssl,
 
     client_protos = apr_array_make(con->pool , 0, sizeof(char *));
     for (i = 0; i < inlen; /**/) {
+        /* Grab length of next item from leading length byte */
         unsigned int plen = in[i++];
         if (plen + i > inlen) {
             // The protocol name extends beyond the declared length
@@ -849,6 +850,7 @@ int cb_server_alpn(SSL *ssl,
 
     proposed_protos = apr_array_make(con->pool, 0, sizeof(char *));
     for (i = 0; i < tcsslctx->alpnlen; /**/) {
+        /* Grab length of next item from leading length byte */
         unsigned int plen = tcsslctx->alpn[i++];
         if (plen + i > tcsslctx->alpnlen) {
             // The protocol name extends beyond the declared length
@@ -886,12 +888,12 @@ int cb_server_alpn(SSL *ssl,
 }
 
 TCN_IMPLEMENT_CALL(jint, SSLContext, setALPN)(TCN_STDARGS, jlong ctx,
-                                          jbyteArray buf, jint len)
+                                              jbyteArray buf, jint len)
 {
     tcn_ssl_ctxt_t *sslctx = J2P(ctx, tcn_ssl_ctxt_t *);
 
     sslctx->alpn = apr_pcalloc(sslctx->pool, len);
-    (*e)->GetByteArrayRegion(e, buf, 0, len, (jbyte *)&sslctx->alpn[0]);
+    (*e)->GetByteArrayRegion(e, buf, 0, len, (jbyte *)sslctx->alpn);
     sslctx->alpnlen = len;
 
     if (sslctx->mode == SSL_MODE_SERVER) {
