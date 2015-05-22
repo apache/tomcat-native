@@ -333,7 +333,6 @@ int         SSL_password_prompt(tcn_pass_cb_t *);
 int         SSL_password_callback(char *, int, int, void *);
 void        SSL_BIO_close(BIO *);
 void        SSL_BIO_doref(BIO *);
-DH         *SSL_dh_get_tmp_param(int);
 DH         *SSL_dh_get_param_from_file(const char *);
 DH         *SSL_callback_tmp_DH(SSL *, int, int);
 void        SSL_callback_handshake(const SSL *, int, int);
