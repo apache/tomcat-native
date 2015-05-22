@@ -75,15 +75,10 @@
  * Define IDs for the temporary RSA keys and DH params
  */
 
-#define SSL_TMP_KEY_RSA_512     (0)
-#define SSL_TMP_KEY_RSA_1024    (1)
-#define SSL_TMP_KEY_RSA_2048    (2)
-#define SSL_TMP_KEY_RSA_4096    (3)
-#define SSL_TMP_KEY_DH_512      (4)
-#define SSL_TMP_KEY_DH_1024     (5)
-#define SSL_TMP_KEY_DH_2048     (6)
-#define SSL_TMP_KEY_DH_4096     (7)
-#define SSL_TMP_KEY_MAX         (8)
+#define SSL_TMP_KEY_DH_512      (1)
+#define SSL_TMP_KEY_DH_1024     (2)
+#define SSL_TMP_KEY_DH_2048     (3)
+#define SSL_TMP_KEY_DH_4096     (4)
 
 #define SSL_CRT_FORMAT_UNDEF    (0)
 #define SSL_CRT_FORMAT_ASN1     (1)
