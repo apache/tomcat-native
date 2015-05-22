@@ -40,10 +40,12 @@
 #endif
 
 /* OpenSSL headers */
+#include <openssl/opensslv.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/x509.h>
 #include <openssl/pem.h>
+#include <openssl/pkcs12.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
@@ -200,11 +202,19 @@
     || (errnum == X509_V_ERR_CERT_UNTRUSTED) \
     || (errnum == X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE))
 
-
-
 #define SSL_DEFAULT_PASS_PROMPT "Some of your private key files are encrypted for security reasons.\n"  \
                                 "In order to read them you have to provide the pass phrases.\n"         \
                                 "Enter password :"
+
+#define OCSP_STATUS_OK        0
+#define OCSP_STATUS_REVOKED   1
+#define OCSP_STATUS_UNKNOWN   2
+
+
+/* ECC: make sure we have at least 1.0.0 */
+#if !defined(OPENSSL_NO_EC) && defined(TLSEXT_ECPOINTFORMAT_uncompressed)
+#define HAVE_ECC              1
+#endif
 
 extern void *SSL_temp_keys[SSL_TMP_KEY_MAX];
 
@@ -317,4 +327,5 @@ void        SSL_callback_handshake(const SSL *, int, int);
 int         SSL_CTX_use_certificate_chain(SSL_CTX *, const char *, int);
 int         SSL_callback_SSL_verify(int, X509_STORE_CTX *);
 int         SSL_rand_seed(const char *file);
+
 #endif /* SSL_PRIVATE_H */

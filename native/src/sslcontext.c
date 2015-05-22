@@ -71,7 +71,7 @@ static jmethodID sni_java_callback;
 int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
 {
     // TODO: Is it better to cache the JNIEnv* during the call to handshake?
-    
+
     // Get the JNI environment for this callback
     JavaVM *javavm = tcn_get_java_vm();
     JNIEnv *env;
@@ -79,14 +79,14 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
     jstring hostname;
     jlong original_ssl_context, new_ssl_context;
     (*javavm)->AttachCurrentThread(javavm, (void **)&env, NULL);
-    
+
     // Get the host name presented by the client
     servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-    
+
     // Convert parameters ready for the method call
     hostname = (*env)->NewStringUTF(env, servername);
     original_ssl_context = P2J(c->ctx);
- 
+
     // Make the call
     new_ssl_context = (*env)->CallStaticLongMethod(env,
                                                             ssl_context_class,
@@ -97,10 +97,10 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
     if (original_ssl_context != new_ssl_context) {
         SSL_set_SSL_CTX(ssl, J2P(new_ssl_context, SSL_CTX *));
     }
- 
+
     return SSL_TLSEXT_ERR_OK;
 }
- 
+
 /* Initialize server context */
 TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
                                             jint protocol, jint mode)
@@ -141,6 +141,15 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
             ctx = SSL_CTX_new(SSLv3_server_method());
         else
             ctx = SSL_CTX_new(SSLv3_method());
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) && !defined(OPENSSL_NO_SSL2)
+    } else if (protocol == SSL_PROTOCOL_SSLV2) {
+        if (mode == SSL_MODE_CLIENT)
+            ctx = SSL_CTX_new(SSLv2_client_method());
+        else if (mode == SSL_MODE_SERVER)
+            ctx = SSL_CTX_new(SSLv2_server_method());
+        else
+            ctx = SSL_CTX_new(SSLv2_method());
+#endif
 #ifndef OPENSSL_NO_SSL2
     } else if (protocol == SSL_PROTOCOL_SSLV2) {
         if (mode == SSL_MODE_CLIENT)
@@ -159,12 +168,21 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         /* requested but not supported */
 #endif
     } else {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
         if (mode == SSL_MODE_CLIENT)
-            ctx = SSL_CTX_new(SSLv23_client_method());
+                ctx = SSL_CTX_new(SSLv23_client_method());
         else if (mode == SSL_MODE_SERVER)
-            ctx = SSL_CTX_new(SSLv23_server_method());
+                ctx = SSL_CTX_new(SSLv23_server_method());
         else
-            ctx = SSL_CTX_new(SSLv23_method());
+                ctx = SSL_CTX_new(SSLv23_method());
+#else
+        if (mode == SSL_MODE_CLIENT)
+                ctx = SSL_CTX_new(TLS_client_method());
+        else if (mode == SSL_MODE_SERVER)
+                ctx = SSL_CTX_new(TLS_server_method());
+        else
+                ctx = SSL_CTX_new(TLS_method());
+#endif
     }
 
     if (!ctx) {
@@ -204,6 +222,9 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
      * Configure additional context ingredients
      */
     SSL_CTX_set_options(c->ctx, SSL_OP_SINGLE_DH_USE);
+#ifdef HAVE_ECC
+    SSL_CTX_set_options(c->ctx, SSL_OP_SINGLE_ECDH_USE);
+#endif
 
     /** To get back the tomcat wrapper from CTX */
     SSL_CTX_set_app_data(c->ctx, (char *)c);
@@ -221,6 +242,12 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
                (unsigned long)((sizeof SSL_DEFAULT_VHOST_NAME) - 1),
                &(c->context_id[0]), NULL, EVP_sha1(), NULL);
     if (mode) {
+#ifdef HAVE_ECC
+        /* Set default (nistp256) elliptic curve for ephemeral ECDH keys */
+        EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+        SSL_CTX_set_tmp_ecdh(c->ctx, ecdh);
+        EC_KEY_free(ecdh);
+#endif
         SSL_CTX_set_tmp_rsa_callback(c->ctx, SSL_callback_tmp_RSA);
         SSL_CTX_set_tmp_dh_callback(c->ctx,  SSL_callback_tmp_DH);
     }
@@ -235,7 +262,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     SSL_CTX_set_default_passwd_cb(c->ctx, (pem_password_cb *)SSL_password_callback);
     SSL_CTX_set_default_passwd_cb_userdata(c->ctx, (void *)(&tcn_password_callback));
     SSL_CTX_set_info_callback(c->ctx, SSL_callback_handshake);
-    
+
     /* Cache Java side SNI callback if not already cached */
     if (ssl_context_class == NULL) {
         ssl_context_class = (*e)->NewGlobalRef(e, o);
@@ -591,6 +618,53 @@ static X509 *load_pem_cert(tcn_ssl_ctxt_t *c, const char *file)
     return cert;
 }
 
+static int ssl_load_pkcs12(tcn_ssl_ctxt_t *c, const char *file,
+                           EVP_PKEY **pkey, X509 **cert, STACK_OF(X509) **ca)
+{
+    const char *pass;
+    char        buff[PEM_BUFSIZE];
+    int         len, rc = 0;
+    PKCS12     *p12;
+    BIO        *in;
+    tcn_pass_cb_t *cb_data = c->cb_data;
+
+    if ((in = BIO_new(BIO_s_file())) == 0)
+        return 0;
+    if (BIO_read_filename(in, file) <= 0) {
+        BIO_free(in);
+        return 0;
+    }
+    p12 = d2i_PKCS12_bio(in, 0);
+    if (p12 == 0) {
+        /* Error loading PKCS12 file */
+        goto cleanup;
+    }
+    /* See if an empty password will do */
+    if (PKCS12_verify_mac(p12, "", 0) || PKCS12_verify_mac(p12, 0, 0)) {
+        pass = "";
+    }
+    else {
+        if (!cb_data)
+            cb_data = &tcn_password_callback;
+        len = SSL_password_callback(buff, PEM_BUFSIZE, 0, cb_data);
+        if (len < 0) {
+            /* Passpharse callback error */
+            goto cleanup;
+        }
+        if (!PKCS12_verify_mac(p12, buff, len)) {
+            /* Mac verify error (wrong password?) in PKCS12 file */
+            goto cleanup;
+        }
+        pass = buff;
+    }
+    rc = PKCS12_parse(p12, pass, pkey, cert, ca);
+cleanup:
+    if (p12 != 0)
+        PKCS12_free(p12);
+    BIO_free(in);
+    return rc;
+}
+
 TCN_IMPLEMENT_CALL(void, SSLContext, setRandom)(TCN_STDARGS, jlong ctx,
                                                 jstring file)
 {
@@ -614,6 +688,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     TCN_ALLOC_CSTRING(key);
     TCN_ALLOC_CSTRING(password);
     const char *key_file, *cert_file;
+    const char *p;
     char err[256];
 
     UNREFERENCED(o);
@@ -634,24 +709,35 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     cert_file = J2S(cert);
     if (!key_file)
         key_file = cert_file;
-    if (!key_file) {
+    if (!key_file || !cert_file) {
         tcn_Throw(e, "No Certificate file specified or invalid file format");
         rv = JNI_FALSE;
         goto cleanup;
     }
-    if ((c->keys[idx] = load_pem_key(c, key_file)) == NULL) {
-        ERR_error_string(ERR_get_error(), err);
-        tcn_Throw(e, "Unable to load certificate key %s (%s)",
-                  key_file, err);
-        rv = JNI_FALSE;
-        goto cleanup;
+    if ((p = strrchr(cert_file, '.')) != NULL && strcmp(p, ".pkcs12") == 0) {
+        if (!ssl_load_pkcs12(c, cert_file, &c->keys[idx], &c->certs[idx], 0)) {
+            ERR_error_string(ERR_get_error(), err);
+            tcn_Throw(e, "Unable to load certificate %s (%s)",
+                      cert_file, err);
+            rv = JNI_FALSE;
+            goto cleanup;
+        }
     }
-    if ((c->certs[idx] = load_pem_cert(c, cert_file)) == NULL) {
-        ERR_error_string(ERR_get_error(), err);
-        tcn_Throw(e, "Unable to load certificate %s (%s)",
-                  cert_file, err);
-        rv = JNI_FALSE;
-        goto cleanup;
+    else {
+        if ((c->keys[idx] = load_pem_key(c, key_file)) == NULL) {
+            ERR_error_string(ERR_get_error(), err);
+            tcn_Throw(e, "Unable to load certificate key %s (%s)",
+                      key_file, err);
+            rv = JNI_FALSE;
+            goto cleanup;
+        }
+        if ((c->certs[idx] = load_pem_cert(c, cert_file)) == NULL) {
+            ERR_error_string(ERR_get_error(), err);
+            tcn_Throw(e, "Unable to load certificate %s (%s)",
+                      cert_file, err);
+            rv = JNI_FALSE;
+            goto cleanup;
+        }
     }
     if (SSL_CTX_use_certificate(c->ctx, c->certs[idx]) <= 0) {
         ERR_error_string(ERR_get_error(), err);
@@ -739,7 +825,7 @@ int cb_server_alpn(SSL *ssl,
         // Client specified an empty protocol list. Nothing to negotiate.
         return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
-    
+
     client_protos = apr_array_make(con->pool , 0, sizeof(char *));
     for (i = 0; i < inlen; /**/) {
         unsigned int plen = in[i++];
@@ -756,12 +842,12 @@ int cb_server_alpn(SSL *ssl,
         // Server supported protocol names not set.
         return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
-    
+
     if (tcsslctx->alpnlen == 0) {
         // Server supported protocols is an empty list
         return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
-    
+
     proposed_protos = apr_array_make(con->pool, 0, sizeof(char *));
     for (i = 0; i < tcsslctx->alpnlen; /**/) {
         unsigned int plen = tcsslctx->alpn[i++];
@@ -773,12 +859,12 @@ int cb_server_alpn(SSL *ssl,
         APR_ARRAY_PUSH(proposed_protos, char*) = apr_pstrndup(con->pool, (const char *)tcsslctx->alpn+i, plen);
         i += plen;
     }
-    
+
     if (proposed_protos->nelts <= 0) {
         // Should never happen. The server did not specify any protocols.
         return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
-    
+
     /* Now select the most preferred protocol from the proposals. */
     *out = APR_ARRAY_IDX(proposed_protos, 0, const unsigned char *);
     for (i = 1; i < proposed_protos->nelts; ++i) {
@@ -794,7 +880,7 @@ int cb_server_alpn(SSL *ssl,
         // Agreed protocol name too long
         return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
-    
+
     *outlen = (unsigned char)len;
 
     return SSL_TLSEXT_ERR_OK;
@@ -804,11 +890,11 @@ TCN_IMPLEMENT_CALL(jint, SSLContext, setALPN)(TCN_STDARGS, jlong ctx,
                                           jbyteArray buf, jint len)
 {
     tcn_ssl_ctxt_t *sslctx = J2P(ctx, tcn_ssl_ctxt_t *);
-    
+
     sslctx->alpn = apr_pcalloc(sslctx->pool, len);
     (*e)->GetByteArrayRegion(e, buf, 0, len, &sslctx->alpn[0]);
     sslctx->alpnlen = len;
-    
+
     if (sslctx->mode == SSL_MODE_SERVER) {
         SSL_CTX_set_alpn_select_cb(sslctx->ctx, cb_server_alpn, sslctx);
     } else {

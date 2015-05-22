@@ -693,15 +693,15 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, getALPN)(TCN_STDARGS, jlong sock, jbyteArray
     tcn_socket_t *s = J2P(sock, tcn_socket_t *);
     tcn_ssl_conn_t *tcssl = (tcn_ssl_conn_t *)s->opaque;
     int bufLen = (*e)->GetArrayLength(e, buf);
-    
+
     SSL_get0_alpn_selected(tcssl->ssl, &alpn, &alpn_len);
-    
+
     if (alpn_len == 0 || bufLen < alpn_len) {
         return 0;
     }
     int len = alpn_len;
     (*e)->SetByteArrayRegion(e, buf, 0, len, alpn);
-    
+
     return len;
 }
 

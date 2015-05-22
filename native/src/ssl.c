@@ -53,11 +53,15 @@ struct CRYPTO_dynlock_value {
  * Handle the Temporary RSA Keys and DH Params
  */
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
 #define SSL_TMP_KEY_FREE(type, idx)                     \
     if (SSL_temp_keys[idx]) {                           \
         type##_free((type *)SSL_temp_keys[idx]);        \
         SSL_temp_keys[idx] = NULL;                      \
     } else (void)(0)
+#else
+#define SSL_TMP_KEY_FREE(type, idx)    SSL_temp_keys[idx] = NULL
+#endif
 
 #define SSL_TMP_KEYS_FREE(type) \
     SSL_TMP_KEY_FREE(type, SSL_TMP_KEY_##type##_512);   \
@@ -229,20 +233,39 @@ static const jint supported_ssl_opts = 0
 
 static int ssl_tmp_key_init_rsa(int bits, int idx)
 {
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
     if (!(SSL_temp_keys[idx] =
-          RSA_generate_key(bits, RSA_F4, NULL, NULL)))
+          RSA_generate_key(bits, RSA_F4, NULL, NULL))) {
+#ifdef OPENSSL_FIPS
+        /**
+         * With FIPS mode short RSA keys cannot be
+         * generated.
+         */
+        if (bits < 1024)
+            return 0;
+        else
+#endif
         return 1;
-    else
+    }
+    else {
         return 0;
+    }
+#else
+    return 0;
+#endif
 }
 
 static int ssl_tmp_key_init_dh(int bits, int idx)
 {
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
     if (!(SSL_temp_keys[idx] =
           SSL_dh_get_tmp_param(bits)))
         return 1;
     else
         return 0;
+#else
+    return 0;
+#endif
 }
 
 
@@ -292,7 +315,11 @@ static apr_status_t ssl_init_cleanup(void *data)
     ENGINE_cleanup();
 #endif
     CRYPTO_cleanup_all_ex_data();
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
     ERR_remove_state(0);
+#else
+    ERR_remove_thread_state(NULL);
+#endif
 
     /* Don't call ERR_free_strings here; ERR_load_*_strings only
      * actually load the error strings once per process due to static
@@ -368,7 +395,9 @@ static apr_status_t ssl_thread_cleanup(void *data)
 {
     UNREFERENCED(data);
     CRYPTO_set_locking_callback(NULL);
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
     CRYPTO_set_id_callback(NULL);
+#endif
     CRYPTO_set_dynlock_create_callback(NULL);
     CRYPTO_set_dynlock_lock_callback(NULL);
     CRYPTO_set_dynlock_destroy_callback(NULL);
@@ -430,6 +459,8 @@ static struct CRYPTO_dynlock_value *ssl_dyn_create_function(const char *file,
 static void ssl_dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
                            const char *file, int line)
 {
+
+
     if (mode & CRYPTO_LOCK) {
         apr_thread_mutex_lock(l->mutex);
     }
@@ -467,7 +498,9 @@ static void ssl_thread_setup(apr_pool_t *p)
                                 APR_THREAD_MUTEX_DEFAULT, p);
     }
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
     CRYPTO_set_id_callback(ssl_thread_id);
+#endif
     CRYPTO_set_locking_callback(ssl_thread_lock);
 
     /* Set up dynamic locking scaffolding for OpenSSL to use at its
@@ -606,9 +639,9 @@ static int ssl_rand_make(const char *file, int len, int base64)
         BIO_write(out, buf, len);
         num -= len;
     }
-    BIO_flush(out);
+    r = BIO_flush(out);
     BIO_free_all(out);
-    return 1;
+    return r > 0 ? 1 : 0;
 }
 
 TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
