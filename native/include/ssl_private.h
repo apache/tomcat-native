@@ -269,6 +269,11 @@ struct tcn_ssl_ctxt_t {
     /* for client: List of protocols to request via ALPN.
      * for server: List of protocols to accept via ALPN.
      */
+    /* member alpn is array of protocol strings encoded as a list of bytes
+     * of length alpnlen, each protocol string is prepended with a byte
+     * containing the protocol string length (max 255), then follows the
+     * protocol string itself.
+     */
     char            *alpn;
     int             alpnlen;
 };
