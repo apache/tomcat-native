@@ -690,6 +690,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, getALPN)(TCN_STDARGS, jlong sock, jbyteArray
 {
     const unsigned char *alpn;
     unsigned alpn_len;
+    int len;
     tcn_socket_t *s = J2P(sock, tcn_socket_t *);
     tcn_ssl_conn_t *tcssl = (tcn_ssl_conn_t *)s->opaque;
     int bufLen = (*e)->GetArrayLength(e, buf);
@@ -699,7 +700,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, getALPN)(TCN_STDARGS, jlong sock, jbyteArray
     if (alpn_len == 0 || bufLen < alpn_len) {
         return 0;
     }
-    int len = alpn_len;
+    len = (int)alpn_len;
     (*e)->SetByteArrayRegion(e, buf, 0, len, (jbyte *)alpn);
 
     return len;
