@@ -704,7 +704,6 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, getALPN)(TCN_STDARGS, jlong sock, jbyteArray
     return len;
 }
 
-
 #else
 /* OpenSSL is not supported.
  * Create empty stubs.

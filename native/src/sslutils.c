@@ -30,14 +30,13 @@
 extern int WIN32_SSL_password_prompt(tcn_pass_cb_t *data);
 #endif
 
-#ifdef HAVE_OPENSSL_OCSP
+#ifdef HAVE_OCSP_STAPLING
 #include <openssl/bio.h>
 #include <openssl/ocsp.h>
 /* defines with the values as seen by the asn1parse -dump openssl command */
 #define ASN1_SEQUENCE 0x30
 #define ASN1_OID      0x06
 #define ASN1_STRING   0x86
-#pragma message("Using OCSP")
 static int ssl_verify_OCSP(int ok, X509_STORE_CTX *ctx);
 static int ssl_ocsp_request(X509 *cert, X509 *issuer);
 #endif
@@ -553,7 +552,7 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
         SSL_set_verify_result(ssl, X509_V_OK);
     }
 
-#ifdef HAVE_OPENSSL_OCSP
+#ifdef HAVE_OCSP_STAPLING
     /* First perform OCSP validation if possible */
     if (ok) {
         /* If there was an optional verification error, it's not
@@ -651,7 +650,7 @@ void SSL_callback_handshake(const SSL *ssl, int where, int rc)
 
 }
 
-#ifdef HAVE_OPENSSL_OCSP
+#ifdef HAVE_OCSP_STAPLING
 
 /* Function that is used to do the OCSP verification */
 static int ssl_verify_OCSP(int ok, X509_STORE_CTX *ctx)
@@ -1158,5 +1157,5 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer)
     return OCSP_STATUS_UNKNOWN;
 }
 
-#endif /* HAS_OCSP_ENABLED */
+#endif /* HAVE_OCSP_STAPLING */
 #endif /* HAVE_OPENSSL  */

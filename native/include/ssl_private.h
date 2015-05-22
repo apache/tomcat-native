@@ -201,16 +201,38 @@
                                 "In order to read them you have to provide the pass phrases.\n"         \
                                 "Enter password :"
 
+#define SSL_CIPHERS_ALWAYS_DISABLED         ("!aNULL:!eNULL:!EXP:")
+
+#if defined(SSL_OP_NO_TLSv1_1)
+#define HAVE_TLSV1_1
+#endif
+
+#if defined(SSL_OP_NO_TLSv1_2)
+#define HAVE_TLSV1_2
+#endif
+
+/**
+ * The following features all depend on TLS extension support.
+ * Within this block, check again for features (not version numbers).
+ */
+#if !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name)
+
+#define HAVE_TLSEXT
+
+/* ECC */
+#if !defined(OPENSSL_NO_EC) && defined(TLSEXT_ECPOINTFORMAT_uncompressed)
+#define HAVE_ECC
+#endif
+
+/* OCSP stapling */
+#if !defined(OPENSSL_NO_OCSP) && defined(SSL_CTX_set_tlsext_status_cb)
+#define HAVE_OCSP_STAPLING
 #define OCSP_STATUS_OK        0
 #define OCSP_STATUS_REVOKED   1
 #define OCSP_STATUS_UNKNOWN   2
-
-#define SSL_CIPHERS_ALWAYS_DISABLED         ("!aNULL:!eNULL:!EXP:")
-
-/* ECC: make sure we have at least 1.0.0 */
-#if !defined(OPENSSL_NO_EC) && defined(TLSEXT_ECPOINTFORMAT_uncompressed)
-#define HAVE_ECC              1
 #endif
+
+#endif /* !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name) */
 
 typedef struct {
     /* client can have any number of cert/key pairs */
