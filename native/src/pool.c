@@ -50,7 +50,6 @@ cleanup:
     return P2J(n);
 }
 
-#if defined(HAVE_POOL_UNMANAGED)
 TCN_IMPLEMENT_CALL(jlong, Pool, unmanaged)(TCN_STDARGS)
 {
     apr_pool_t *n;
@@ -60,13 +59,6 @@ TCN_IMPLEMENT_CALL(jlong, Pool, unmanaged)(TCN_STDARGS)
 cleanup:
     return P2J(n);
 }
-#else
-TCN_IMPLEMENT_CALL(jlong, Pool, unmanaged)(TCN_STDARGS)
-{
-    UNREFERENCED_STDARGS;
-    return 0;
-}
-#endif
 
 TCN_IMPLEMENT_CALL(void, Pool, clear)(TCN_STDARGS, jlong pool)
 {
