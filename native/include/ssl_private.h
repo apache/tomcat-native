@@ -71,15 +71,6 @@
 #define SSL_AIDX_DSA     (1)
 #define SSL_AIDX_MAX     (2)
 
-/*
- * Define IDs for the temporary RSA keys and DH params
- */
-
-#define SSL_TMP_KEY_DH_512      (1)
-#define SSL_TMP_KEY_DH_1024     (2)
-#define SSL_TMP_KEY_DH_2048     (3)
-#define SSL_TMP_KEY_DH_4096     (4)
-
 #define SSL_CRT_FORMAT_UNDEF    (0)
 #define SSL_CRT_FORMAT_ASN1     (1)
 #define SSL_CRT_FORMAT_TEXT     (2)
