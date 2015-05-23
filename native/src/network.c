@@ -222,6 +222,11 @@ TCN_IMPLEMENT_CALL(void, Socket, destroy)(TCN_STDARGS, jlong sock)
     UNREFERENCED_STDARGS;
     TCN_ASSERT(sock != 0);
 
+    if (!tcn_global_pool) {
+        /* Socket will be destroyed by the cleanup
+         */
+        return;
+    }
     as = s->sock;
     s->sock = NULL;
     apr_pool_cleanup_kill(s->pool, s, sp_socket_cleanup);

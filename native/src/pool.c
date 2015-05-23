@@ -69,7 +69,8 @@ TCN_IMPLEMENT_CALL(void, Pool, destroy)(TCN_STDARGS, jlong pool)
     apr_pool_t *p = J2P(pool, apr_pool_t *);
     UNREFERENCED_STDARGS;
     TCN_ASSERT(pool != 0);
-    apr_pool_destroy(p);
+    if (tcn_global_pool)
+        apr_pool_destroy(p);
 }
 
 TCN_IMPLEMENT_CALL(jlong, Pool, parentGet)(TCN_STDARGS, jlong pool)
