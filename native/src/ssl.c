@@ -28,7 +28,6 @@ static char *ssl_global_rand_file = NULL;
 extern apr_pool_t *tcn_global_pool;
 
 ENGINE *tcn_ssl_engine = NULL;
-void *SSL_temp_keys[SSL_TMP_KEY_MAX];
 tcn_pass_cb_t tcn_password_callback;
 
 /* Global reference to the pool used by the dynamic mutexes */
@@ -41,43 +40,6 @@ struct CRYPTO_dynlock_value {
     int line;
     apr_thread_mutex_t *mutex;
 };
-
-
-/*
- * Handle the Temporary RSA Keys and DH Params
- */
-
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
-#define SSL_TMP_KEY_FREE(type, idx)                     \
-    if (SSL_temp_keys[idx]) {                           \
-        type##_free((type *)SSL_temp_keys[idx]);        \
-        SSL_temp_keys[idx] = NULL;                      \
-    } else (void)(0)
-#else
-#define SSL_TMP_KEY_FREE(type, idx)    SSL_temp_keys[idx] = NULL
-#endif
-
-#define SSL_TMP_KEYS_FREE(type) \
-    SSL_TMP_KEY_FREE(type, SSL_TMP_KEY_##type##_512);   \
-    SSL_TMP_KEY_FREE(type, SSL_TMP_KEY_##type##_1024);  \
-    SSL_TMP_KEY_FREE(type, SSL_TMP_KEY_##type##_2048);  \
-    SSL_TMP_KEY_FREE(type, SSL_TMP_KEY_##type##_4096)
-
-#define SSL_TMP_KEY_INIT_RSA(bits) \
-    ssl_tmp_key_init_rsa(bits, SSL_TMP_KEY_RSA_##bits)
-
-#define SSL_TMP_KEY_INIT_DH(bits)  \
-    ssl_tmp_key_init_dh(bits, SSL_TMP_KEY_DH_##bits)
-
-#define SSL_TMP_KEYS_INIT(R)                    \
-    SSL_temp_keys[SSL_TMP_KEY_RSA_2048] = NULL; \
-    SSL_temp_keys[SSL_TMP_KEY_RSA_4096] = NULL; \
-    R |= SSL_TMP_KEY_INIT_RSA(512);             \
-    R |= SSL_TMP_KEY_INIT_RSA(1024);            \
-    R |= SSL_TMP_KEY_INIT_DH(512);              \
-    R |= SSL_TMP_KEY_INIT_DH(1024);             \
-    R |= SSL_TMP_KEY_INIT_DH(2048);             \
-    R |= SSL_TMP_KEY_INIT_DH(4096)
 
 /*
  * supported_ssl_opts is a bitmask that contains all supported SSL_OP_*
@@ -225,43 +187,78 @@ static const jint supported_ssl_opts = 0
 #endif
      | 0;
 
-static int ssl_tmp_key_init_rsa(int bits, int idx)
+/*
+ * Grab well-defined DH parameters from OpenSSL, see the get_rfc*
+ * functions in <openssl/bn.h> for all available primes.
+ */
+static DH *make_dh_params(BIGNUM *(*prime)(BIGNUM *), const char *gen)
 {
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
-    if (!(SSL_temp_keys[idx] =
-          RSA_generate_key(bits, RSA_F4, NULL, NULL))) {
-#ifdef OPENSSL_FIPS
-        /**
-         * With FIPS mode short RSA keys cannot be
-         * generated.
-         */
-        if (bits < 1024)
-            return 0;
-        else
-#endif
-        return 1;
+    DH *dh = DH_new();
+
+    if (!dh) {
+        return NULL;
     }
-    else {
-        return 0;
+    dh->p = prime(NULL);
+    BN_dec2bn(&dh->g, gen);
+    if (!dh->p || !dh->g) {
+        DH_free(dh);
+        return NULL;
     }
-#else
-    return 0;
-#endif
+    return dh;
 }
 
-static int ssl_tmp_key_init_dh(int bits, int idx)
+/* Storage and initialization for DH parameters. */
+static struct dhparam {
+    BIGNUM *(*const prime)(BIGNUM *); /* function to generate... */
+    DH *dh;                           /* ...this, used for keys.... */
+    const unsigned int min;           /* ...of length >= this. */
+} dhparams[] = {
+    { get_rfc3526_prime_8192, NULL, 6145 },
+    { get_rfc3526_prime_6144, NULL, 4097 },
+    { get_rfc3526_prime_4096, NULL, 3073 },
+    { get_rfc3526_prime_3072, NULL, 2049 },
+    { get_rfc3526_prime_2048, NULL, 1025 },
+    { get_rfc2409_prime_1024, NULL, 0 }
+};
+
+static void init_dh_params(void)
 {
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
-    if (!(SSL_temp_keys[idx] =
-          SSL_dh_get_tmp_param(bits)))
-        return 1;
-    else
-        return 0;
-#else
-    return 0;
-#endif
+    unsigned n;
+
+    for (n = 0; n < sizeof(dhparams)/sizeof(dhparams[0]); n++)
+        dhparams[n].dh = make_dh_params(dhparams[n].prime, "2");
 }
 
+static void free_dh_params(void)
+{
+    unsigned n;
+
+    /* DH_free() is a noop for a NULL parameter, so these are harmless
+     * in the (unexpected) case where these variables are already
+     * NULL. */
+    for (n = 0; n < sizeof(dhparams)/sizeof(dhparams[0]); n++) {
+        DH_free(dhparams[n].dh);
+        dhparams[n].dh = NULL;
+    }
+}
+
+/* Hand out the same DH structure though once generated as we leak
+ * memory otherwise and freeing the structure up after use would be
+ * hard to track and in fact is not needed at all as it is safe to
+ * use the same parameters over and over again security wise (in
+ * contrast to the keys itself) and code safe as the returned structure
+ * is duplicated by OpenSSL anyway. Hence no modification happens
+ * to our copy. */
+DH *SSL_get_dh_params(unsigned keylen)
+{
+    unsigned n;
+
+    for (n = 0; n < sizeof(dhparams)/sizeof(dhparams[0]); n++)
+        if (keylen >= dhparams[n].min)
+            return dhparams[n].dh;
+
+    return NULL; /* impossible to reach. */
+}
 
 TCN_IMPLEMENT_CALL(jint, SSL, version)(TCN_STDARGS)
 {
@@ -293,8 +290,8 @@ static apr_status_t ssl_init_cleanup(void *data)
                          tcn_password_callback.cb.obj);
     }
 
-    SSL_TMP_KEYS_FREE(RSA);
-    SSL_TMP_KEYS_FREE(DH);
+    free_dh_params();
+
     /*
      * Try to kill the internals of the SSL library.
      */
@@ -644,7 +641,6 @@ static int ssl_rand_make(const char *file, int len, int base64)
 
 TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
 {
-    int r = 0;
     TCN_ALLOC_CSTRING(engine);
 
     UNREFERENCED(o);
@@ -722,13 +718,8 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     /* For SSL_get_app_data2() at request time */
     SSL_init_app_data2_idx();
 
-    SSL_TMP_KEYS_INIT(r);
-    if (r) {
-        TCN_FREE_CSTRING(engine);
-        ssl_init_cleanup(NULL);
-        tcn_ThrowAPRException(e, APR_ENOTIMPL);
-        return APR_ENOTIMPL;
-    }
+    init_dh_params();
+
     /*
      * Let us cleanup the ssl library when the library is unloaded
      */
@@ -1079,47 +1070,6 @@ TCN_IMPLEMENT_CALL(void, SSL, setPassword)(TCN_STDARGS, jstring password)
         tcn_password_callback.password[SSL_MAX_PASSWORD_LEN-1] = '\0';
     }
     TCN_FREE_CSTRING(password);
-}
-
-TCN_IMPLEMENT_CALL(jboolean, SSL, generateRSATempKey)(TCN_STDARGS, jint idx)
-{
-    int r = 1;
-    UNREFERENCED_STDARGS;
-    SSL_TMP_KEY_FREE(RSA, idx);
-    switch (idx) {
-        case SSL_TMP_KEY_RSA_512:
-            r = SSL_TMP_KEY_INIT_RSA(512);
-        break;
-        case SSL_TMP_KEY_RSA_1024:
-            r = SSL_TMP_KEY_INIT_RSA(1024);
-        break;
-        case SSL_TMP_KEY_RSA_2048:
-            r = SSL_TMP_KEY_INIT_RSA(2048);
-        break;
-        case SSL_TMP_KEY_RSA_4096:
-            r = SSL_TMP_KEY_INIT_RSA(4096);
-        break;
-    }
-    return r ? JNI_FALSE : JNI_TRUE;
-}
-
-TCN_IMPLEMENT_CALL(jboolean, SSL, loadDSATempKey)(TCN_STDARGS, jint idx,
-                                                  jstring file)
-{
-    jboolean r = JNI_FALSE;
-    TCN_ALLOC_CSTRING(file);
-    DH *dh;
-    UNREFERENCED(o);
-
-    if (!J2S(file))
-        return JNI_FALSE;
-    SSL_TMP_KEY_FREE(DSA, idx);
-    if ((dh = SSL_dh_get_param_from_file(J2S(file)))) {
-        SSL_temp_keys[idx] = dh;
-        r = JNI_TRUE;
-    }
-    TCN_FREE_CSTRING(file);
-    return r;
 }
 
 TCN_IMPLEMENT_CALL(jstring, SSL, getLastError)(TCN_STDARGS)

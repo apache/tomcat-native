@@ -145,8 +145,6 @@ static tcn_ssl_conn_t *ssl_create(JNIEnv *env, tcn_ssl_ctxt_t *ctx, apr_pool_t *
         /*
          *  Configure callbacks for SSL connection
          */
-        SSL_set_tmp_rsa_callback(ssl, SSL_callback_tmp_RSA);
-        SSL_set_tmp_dh_callback(ssl,  SSL_callback_tmp_DH);
         SSL_set_session_id_context(ssl, &(ctx->context_id[0]),
                                    sizeof ctx->context_id);
     }

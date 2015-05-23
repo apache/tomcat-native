@@ -65,20 +65,6 @@
 #define SSL_AIDX_DSA     (1)
 #define SSL_AIDX_MAX     (2)
 
-/*
- * Define IDs for the temporary RSA keys and DH params
- */
-
-#define SSL_TMP_KEY_RSA_512     (0)
-#define SSL_TMP_KEY_RSA_1024    (1)
-#define SSL_TMP_KEY_RSA_2048    (2)
-#define SSL_TMP_KEY_RSA_4096    (3)
-#define SSL_TMP_KEY_DH_512      (4)
-#define SSL_TMP_KEY_DH_1024     (5)
-#define SSL_TMP_KEY_DH_2048     (6)
-#define SSL_TMP_KEY_DH_4096     (7)
-#define SSL_TMP_KEY_MAX         (8)
-
 #define SSL_CRT_FORMAT_UNDEF    (0)
 #define SSL_CRT_FORMAT_ASN1     (1)
 #define SSL_CRT_FORMAT_TEXT     (2)
@@ -204,13 +190,10 @@
 #define OCSP_STATUS_REVOKED   1
 #define OCSP_STATUS_UNKNOWN   2
 
-
 /* ECC: make sure we have at least 1.0.0 */
 #if !defined(OPENSSL_NO_EC) && defined(TLSEXT_ECPOINTFORMAT_uncompressed)
 #define HAVE_ECC              1
 #endif
-
-extern void *SSL_temp_keys[SSL_TMP_KEY_MAX];
 
 typedef struct {
     /* client can have any number of cert/key pairs */
@@ -299,9 +282,11 @@ int         SSL_password_prompt(tcn_pass_cb_t *);
 int         SSL_password_callback(char *, int, int, void *);
 void        SSL_BIO_close(BIO *);
 void        SSL_BIO_doref(BIO *);
-DH         *SSL_dh_get_tmp_param(int);
-DH         *SSL_dh_get_param_from_file(const char *);
-RSA        *SSL_callback_tmp_RSA(SSL *, int, int);
+DH         *SSL_get_dh_params(unsigned keylen);
+DH         *SSL_dh_GetParamFromFile(const char *);
+#ifdef HAVE_ECC
+EC_GROUP   *SSL_ec_GetParamFromFile(const char *);
+#endif
 DH         *SSL_callback_tmp_DH(SSL *, int, int);
 void        SSL_callback_handshake(const SSL *, int, int);
 int         SSL_CTX_use_certificate_chain(SSL_CTX *, const char *, int);
