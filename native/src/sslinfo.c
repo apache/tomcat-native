@@ -15,9 +15,6 @@
  */
 
 /** SSL info wrapper
- *
- * @author Mladen Turk
- * @version $Id$
  */
 
 #include "tcn.h"

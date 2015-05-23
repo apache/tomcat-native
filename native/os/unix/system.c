@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-/*
- *
- * @author Mladen Turk
- * @version $Id$
- */
-
 #include "apr.h"
 #include "apr_pools.h"
 #include "apr_network_io.h"

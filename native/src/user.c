@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-/*
- *
- * @author Mladen Turk
- * @version $Id$
- */
- 
 #include "tcn.h"
 #include "apr_user.h"
 #include "apr_network_io.h"

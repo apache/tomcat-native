@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-/*
- *
- * @author Mladen Turk
- * @version $Id$
- */
- 
 #include "tcn.h"
 
 extern int tcn_parent_pid;

@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-/*
- *
- * @author Mladen Turk
- * @version $Id$
- */
-
 #include "tcn.h"
 
 #ifdef TCN_DO_STATISTICS

@@ -24,8 +24,6 @@ import junit.textui.TestRunner;
 /**
  * A basic test suite that tests File IO.
  * 
- * @author Mladen Turk
- * @version $Id$
  * @see org.apache.tomcat.jni
  */
 public class FileTestSuite

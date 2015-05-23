@@ -21,9 +21,6 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /** Echo server example
- *
- * @author Mladen Turk
- * @version $Id$
  */
 
 public class Echo {

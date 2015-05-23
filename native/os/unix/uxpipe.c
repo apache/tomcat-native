@@ -15,9 +15,6 @@
  */
 
 /** UNIX AF_LOCAL network wrapper
- *
- * @author Mladen Turk
- * @version $Id$
  */
 
 
