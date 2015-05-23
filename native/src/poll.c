@@ -109,9 +109,10 @@ TCN_IMPLEMENT_CALL(jlong, Poll, create)(TCN_STDARGS, jint size,
 
     if (f & APR_POLLSET_THREADSAFE) {
         apr_status_t rv = apr_pollset_create(&pollset, (apr_uint32_t)size, p, f);
-        if (rv == APR_ENOTIMPL)
-            f &= ~APR_POLLSET_THREADSAFE;
-        else if (rv != APR_SUCCESS) {
+        /* Pass the ENOTIMPL to java, as described in javadocs. Java must clean the
+           flag, will know it's not supported.
+        */
+        if (rv != APR_SUCCESS) {
             tcn_ThrowAPRException(e, rv);
             goto cleanup;
         }
