@@ -652,7 +652,7 @@ TCN_IMPLEMENT_CALL(jint, Socket, sendibb)(TCN_STDARGS, jlong sock,
         return (jint)nbytes;
     else {
         TCN_ERROR_WRAP(ss);
-        return -(jint)nbytes;
+        return -(jint)ss;
     }
 }
 
