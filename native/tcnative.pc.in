@@ -25,6 +25,6 @@ Name: Tomcat native Java
 Description: Companion Native Java library
 Version: @TCNATIVE_DOTTED_VERSION@
 # assume that tcnative requires libapr of same major version
-Requires: apr-@TCNATIVE_MAJOR_VERSION@
+Requires: apr-1
 Libs: -L${libdir} -l@TCNATIVE_LIBNAME@ @TCNATIVE_EXPORT_LIBS@
 Cflags: -I${includedir}
