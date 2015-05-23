@@ -31,8 +31,8 @@
     <property name="name"                  value="Tomcat Native" />
     <property name="title"                 value="Tomcat Native Library"/>
     <property name="year"                  value="2015" />
-    <property name="version.major"         value="2" />
-    <property name="version.minor"         value="0" />
+    <property name="version.major"         value="1" />
+    <property name="version.minor"         value="2" />
     <property name="version.build"         value="0" />
     <property name="version.patch"         value="0" />
     <property name="version.suffix"        value="-dev" />
@@ -54,8 +54,8 @@
     <property name="dist.root" value="./dist"/>
     <property name="ant.home" value="."/>
 
-    <property name="compile.source" value="1.4"/>
-    <property name="compile.target" value="1.4"/>
+    <property name="compile.source" value="1.8"/>
+    <property name="compile.target" value="1.8"/>
     <property name="compile.debug" value="off"/>
     <property name="compile.optimize" value="on"/>
     <property name="compile.deprecation" value="on"/>
@@ -153,10 +153,6 @@
     <target name="download" description="Download needed dependencies">
 
       <mkdir dir="${base.path}"/>
-      <antcall target="downloadgz">
-        <param name="sourcefile" value="${tomcat.loc}"/>
-        <param name="destfile" value="${tomcat.src}"/>
-      </antcall>
 
       <antcall target="downloadzip">
         <param name="sourcefile" value="${junit.loc}"/>
@@ -215,12 +211,6 @@ limitations under the License.--&gt;">
             <format property="TODAY" pattern="MMM d yyyy" locale="en"/>
             <format property="TSTAMP" pattern="hh:mm:ss"/>
         </tstamp>
-        <!-- Copy Java sources from Tomcat source download -->
-        <copy todir="${src.dir}/java" preservelastmodified="true">
-            <fileset dir="${base.path}/apache-tomcat-${tomcat.version}-src/java">
-                <include name="org/apache/tomcat/jni/"/>
-            </fileset>
-        </copy>
         <!-- Copy static resource files -->
         <filter token="VERSION" value="${version}"/>
         <filter token="VERSION_NUMBER" value="${version.number}"/>

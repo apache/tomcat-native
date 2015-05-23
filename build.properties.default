@@ -16,8 +16,8 @@
 #
 
 # ----- Version Control Flags -----
-version.major=2
-version.minor=0
+version.major=1
+version.minor=2
 version.build=0
 version.patch=0
 version.suffix=-dev
@@ -30,24 +30,14 @@ base.path=/usr/share/java
 #base.path=C:/path/to/the/repository
 #base.path=/usr/local
 
-compile.source=1.4
-compile.target=1.4
+compile.source=1.8
+compile.target=1.8
 compile.debug=off
 compile.deprecation=on
 compile.optimize=on
 
 base-tomcat.loc=http://archive.apache.org/dist/tomcat
 base-sf.loc=http://downloads.sourceforge.net
-
-# ----- Tomcat native Java sources -----
-# The Tomcat 6 version we use for getting the Java sources
-tomcat.version=6.0.20
-# The directory containing your source distribution of Tomcat
-# It will be automatically downloaded if it doesn't exist
-tomcat.src=${base.path}/apache-tomcat-${tomcat.version}-src
-#tomcat.src=/usr/local/apache-tomcat-${tomcat.version}-src
-# The URL used to download Tomcat if needed
-tomcat.loc=${base-tomcat.loc}/tomcat-6/v${tomcat.version}/src/apache-tomcat-${tomcat.version}-src.tar.gz
 
 # ----- JUnit Unit Test Suite, version 3.8 or later -----
 # The JUnit version we will use
