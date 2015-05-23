@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-/*
- *
- * @author Mladen Turk
- * @version $Id$
- */
-
 #include "tcn.h"
 
 extern apr_pool_t *tcn_global_pool;

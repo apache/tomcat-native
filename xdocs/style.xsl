@@ -17,8 +17,6 @@
 -->
 <!-- Content Stylesheet for "tomcat-docs" Documentation -->
 
-<!-- $Id: style.xsl 572120 2007-09-02 19:32:11Z markt $ -->
-
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   version="3.0">
 

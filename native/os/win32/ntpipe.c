@@ -15,9 +15,6 @@
  */
 
 /** NT Pipes network wrapper
- *
- * @author Mladen Turk
- * @version $Id$
  */
 
 

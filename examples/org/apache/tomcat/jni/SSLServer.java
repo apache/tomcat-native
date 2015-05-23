@@ -20,9 +20,6 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /** SSL Server server example
- *
- * @author Mladen Turk
- * @version $Id$
  */
 
 public class SSLServer {

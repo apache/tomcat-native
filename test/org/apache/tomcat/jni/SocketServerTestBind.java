@@ -31,8 +31,6 @@ import java.util.*;
 /**
  * A basic test suite that tests Socket Server feature.
  * 
- * @author Jean-Frederic Clere
- * @version $Id$
  * @see org.apache.tomcat.jni
  */
 public class SocketServerTestBind extends TestCase {

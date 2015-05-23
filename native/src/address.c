@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-/*
- *
- * @author Mladen Turk
- * @version $Id$
- */
-
 #include "tcn.h"
 
 TCN_IMPLEMENT_CALL(jlong, Address, info)(TCN_STDARGS,
