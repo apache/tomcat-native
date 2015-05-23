@@ -304,7 +304,6 @@ typedef struct {
     } reneg_state;
     apr_socket_t   *sock;
     apr_pollset_t  *pollset;
-
 } tcn_ssl_conn_t;
 
 
