@@ -216,6 +216,14 @@ static apr_status_t do_add(tcn_pollset_t *p, tcn_socket_t *s,
 #endif
         return APR_ENOMEM;
     }
+    if (s->pe != NULL) {
+        /* Socket is already added to the pollset.
+         */
+#ifdef TCN_DO_STATISTICS
+        p->sp_equals++;
+#endif
+        return APR_EEXIST;
+    }
     if (timeout == TCN_NO_SOCKET_TIMEOUT) {
         timeout = p->default_timeout;
     }
@@ -246,6 +254,7 @@ static apr_status_t do_add(tcn_pollset_t *p, tcn_socket_t *s,
     }
     else {
         APR_RING_INSERT_TAIL(&p->poll_ring, elem, tcn_pfde_t, link);
+        s->pe = elem;
     }
     return rv;
 }
@@ -275,44 +284,21 @@ TCN_IMPLEMENT_CALL(jint, Poll, addWithTimeout)(TCN_STDARGS, jlong pollset,
     return (jint) do_add(p, s, (apr_int16_t)reqevents, J2T(socket_timeout));
 }
 
-static apr_status_t do_remove(tcn_pollset_t *p, const apr_pollfd_t *fd)
-{
-    apr_status_t rv;
-    tcn_pfde_t  *ep;
-
-    rv = apr_pollset_remove(p->pollset, fd);
-    APR_RING_FOREACH(ep, &p->poll_ring, tcn_pfde_t, link)
-    {
-        if (fd->desc.s == ep->fd.desc.s) {
-            APR_RING_REMOVE(ep, link);
-            APR_RING_INSERT_TAIL(&p->dead_ring, ep, tcn_pfde_t, link);
-            p->nelts--;
-#ifdef TCN_DO_STATISTICS
-            p->sp_removed++;
-#endif
-            break;
-        }
-    }
-    return rv;
-}
-
-static void update_last_active(tcn_pollset_t *p, const apr_pollfd_t *fd, apr_time_t t)
-{
-    tcn_socket_t *s = (tcn_socket_t *)fd->client_data;
-    TCN_ASSERT(s != 0);
-    s->last_active = t;
-}
-
 TCN_IMPLEMENT_CALL(jint, Poll, remove)(TCN_STDARGS, jlong pollset,
                                        jlong socket)
 {
     apr_pollfd_t fd;
+    apr_status_t rv;
     tcn_pollset_t *p = J2P(pollset,  tcn_pollset_t *);
-    tcn_socket_t *s  = J2P(socket, tcn_socket_t *);
+    tcn_socket_t  *s = J2P(socket, tcn_socket_t *);
 
     UNREFERENCED_STDARGS;
     TCN_ASSERT(socket != 0);
 
+    if (s->pe == NULL) {
+        /* Already removed */
+        return APR_NOTFOUND;
+    }
     fd.desc_type   = APR_POLL_SOCKET;
     fd.desc.s      = s->sock;
     fd.client_data = s;
@@ -321,7 +307,15 @@ TCN_IMPLEMENT_CALL(jint, Poll, remove)(TCN_STDARGS, jlong pollset,
     p->sp_remove++;
 #endif
 
-    return (jint)do_remove(p, &fd);
+    rv = apr_pollset_remove(p->pollset, &fd);
+    APR_RING_REMOVE(s->pe, link);
+    APR_RING_INSERT_TAIL(&p->dead_ring, s->pe, tcn_pfde_t, link);
+    s->pe = NULL;
+    p->nelts--;
+#ifdef TCN_DO_STATISTICS
+    p->sp_removed++;
+#endif
+    return rv;
 }
 
 
@@ -350,8 +344,7 @@ TCN_IMPLEMENT_CALL(jint, Poll, poll)(TCN_STDARGS, jlong pollset,
         APR_RING_FOREACH(ep, &p->poll_ring, tcn_pfde_t, link)
         {
             apr_interval_time_t socket_timeout = 0;
-            tcn_socket_t *s;
-            s = (tcn_socket_t *)ep->fd.client_data;
+            tcn_socket_t *s = (tcn_socket_t *)ep->fd.client_data;
             if (s->timeout == TCN_NO_SOCKET_TIMEOUT) {
                 socket_timeout = p->default_timeout;
             }
@@ -402,12 +395,33 @@ TCN_IMPLEMENT_CALL(jint, Poll, poll)(TCN_STDARGS, jlong pollset,
         if (!remove)
             now = apr_time_now();
         for (i = 0; i < num; i++) {
+            tcn_socket_t *s = (tcn_socket_t *)fd->client_data;
             p->set[i*2+0] = (jlong)(fd->rtnevents);
-            p->set[i*2+1] = P2J(fd->client_data);
-            if (remove)
-                do_remove(p, fd);
-            else
-                update_last_active(p, fd, now);
+            p->set[i*2+1] = P2J(s);
+            /* If a socket is registered for multiple events and the poller has
+               multiple events to return it may do as a single pair in this
+               array or as multiple pairs depending on implementation. On OSX at
+               least, multiple pairs have been observed. In this case do not try
+               and remove socket from the pollset for a second time else a crash
+               will result. */ 
+            if (remove) {
+                if (s->pe) {
+                    apr_pollset_remove(p->pollset, fd);
+                    APR_RING_REMOVE(s->pe, link);
+                    APR_RING_INSERT_TAIL(&p->dead_ring, s->pe, tcn_pfde_t, link);
+                    s->pe = NULL;
+                    p->nelts--;
+#ifdef TCN_DO_STATISTICS
+                    p->sp_removed++;
+#endif
+                }
+            }
+            else {
+                /* Update last active with the current time
+                 * after the poll call.
+                 */
+                s->last_active = now;
+            }
             fd ++;
         }
         (*e)->SetLongArrayRegion(e, set, 0, num * 2, p->set);
@@ -443,31 +457,35 @@ TCN_IMPLEMENT_CALL(jint, Poll, maintain)(TCN_STDARGS, jlong pollset,
         }
         if ((now - s->last_active) >= timeout) {
             p->set[num++] = P2J(s);
-            APR_RING_REMOVE(ep, link);
-            APR_RING_INSERT_TAIL(&p->dead_ring, ep, tcn_pfde_t, link);
-            p->nelts--;
+            if (remove) {
+                APR_RING_REMOVE(ep, link);
+                APR_RING_INSERT_TAIL(&p->dead_ring, ep, tcn_pfde_t, link);
+                s->pe = NULL;
+                p->nelts--;
 #ifdef TCN_DO_STATISTICS
-            p->sp_removed++;
+                p->sp_removed++;
 #endif
+            }
         }
     }
-    if (remove && num) {
+    if (num) {
 #ifdef TCN_DO_STATISTICS
-         p->sp_maintained += num;
-         p->sp_max_maintained = TCN_MAX(p->sp_max_maintained, num);
+        p->sp_maintained += num;
+        p->sp_max_maintained = TCN_MAX(p->sp_max_maintained, num);
 #endif
-        for (i = 0; i < num; i++) {
-            apr_pollfd_t fd;
-            tcn_socket_t *s = J2P(p->set[i], tcn_socket_t *);
-            fd.desc_type    = APR_POLL_SOCKET;
-            fd.desc.s       = s->sock;
-            fd.client_data  = s;
-            fd.reqevents    = APR_POLLIN | APR_POLLOUT;
-            apr_pollset_remove(p->pollset, &fd);
+        if (remove) {
+            for (i = 0; i < num; i++) {
+                apr_pollfd_t fd;
+                tcn_socket_t *s = J2P(p->set[i], tcn_socket_t *);
+                fd.desc_type    = APR_POLL_SOCKET;
+                fd.desc.s       = s->sock;
+                fd.client_data  = s;
+                fd.reqevents    = APR_POLLIN | APR_POLLOUT;
+                apr_pollset_remove(p->pollset, &fd);
+            }
         }
-    }
-    if (num)
         (*e)->SetLongArrayRegion(e, set, 0, num, p->set);
+    }
     return (jint)num;
 }
 
@@ -505,7 +523,7 @@ TCN_IMPLEMENT_CALL(jint, Poll, pollset)(TCN_STDARGS, jlong pollset,
     }
     if (n > 0)
         (*e)->SetLongArrayRegion(e, set, 0, n, p->set);
-    return n;
+    return n / 2;
 }
 
 TCN_IMPLEMENT_CALL(jboolean, Poll, wakeable)(TCN_STDARGS, jlong pollset)
