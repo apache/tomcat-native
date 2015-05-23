@@ -43,15 +43,16 @@ int tcn_parent_pid = 0;
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     JNIEnv *env;
+    void   *ppe;
     apr_version_t apv;
     int apvn;
 
     UNREFERENCED(reserved);
-    if ((*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_4)) {
+    if ((*vm)->GetEnv(vm, &ppe, JNI_VERSION_1_4)) {
         return JNI_ERR;
     }
     tcn_global_vm = vm;
-
+    env           = (JNIEnv *)ppe;
     /* Before doing anything else check if we have a valid
      * APR version.
      */
@@ -96,13 +97,15 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
 {
     JNIEnv *env;
+    void   *ppe;
 
     UNREFERENCED(reserved);
 
-    if ((*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_2)) {
+    if ((*vm)->GetEnv(vm, &ppe, JNI_VERSION_1_2)) {
         return;
     }
     if (tcn_global_pool) {
+        env  = (JNIEnv *)ppe;
         TCN_UNLOAD_CLASS(env, jString_class);
         TCN_UNLOAD_CLASS(env, jFinfo_class);
         TCN_UNLOAD_CLASS(env, jAinfo_class);
