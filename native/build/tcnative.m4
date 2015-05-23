@@ -411,3 +411,20 @@ then
     APR_ADDTO(CFLAGS, [-DHAVE_OPENSSL])
 fi
 ])
+
+dnl
+dnl TCN_FIND_APR_FEATURE: figure out if APR feature is suipported
+dnl
+AC_DEFUN(TCN_FIND_APR_FEATURE,[
+  saved_cflags="$CFLAGS"
+  saved_libs="$LIBS"
+  CFLAGS="$CFLAGS $APR_INCLUDES"
+  LIBS="$LIBS -lapr-1"
+  chk_result=0
+  AC_CHECK_LIB(apr-1, $1,[chk_result=1])
+  CFLAGS="$saved_cflags"
+  LIBS="$saved_libs"
+  if test "$chk_result" != "0"; then
+    APR_ADDTO(CFLAGS, [-DHAVE_$2])
+  fi
+])
