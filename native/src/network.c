@@ -757,7 +757,7 @@ TCN_IMPLEMENT_CALL(jint, Socket, recv)(TCN_STDARGS, jlong sock,
     else {
         jbyte *bytes = (*e)->GetByteArrayElements(e, buf, NULL);
         ss = (*s->net->recv)(s->opaque, (char*)(bytes + offset), &nbytes);
-        if ( ss == APR_SUCCESS) {
+        if (ss == APR_SUCCESS) {
             (*e)->ReleaseByteArrayElements(e, buf, bytes, nbytes ? 0 : JNI_ABORT);
         } else {
             (*e)->ReleaseByteArrayElements(e, buf, bytes, JNI_ABORT);
