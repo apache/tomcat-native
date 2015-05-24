@@ -149,6 +149,17 @@ AC_ARG_ENABLE(openssl,
   esac
 ])
 
+AC_ARG_ENABLE(insecure-export-ciphers,
+[AS_HELP_STRING([--enable-insecure-export-ciphers],[allow including insecure export and null ciphers in the cipher string (default is disabled=not allowed)])],
+[
+  case "${enableval}" in
+    yes )
+       APR_ADDTO(CFLAGS, [-DHAVE_EXPORT_CIPHERS])
+       AC_MSG_WARN([Enabling insecure export and null cipher support])
+       ;;
+  esac
+])
+
 if $use_openssl ; then
   TCN_CHECK_SSL_TOOLKIT
 fi
