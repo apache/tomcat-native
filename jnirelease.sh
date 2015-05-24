@@ -24,15 +24,18 @@
 # Default place to look for apr source.  Can be overridden with
 #   --with-apr=[directory]
 apr_src_dir=`pwd`/native/srclib/apr
-JKJNIEXT=""
-JKJNIVER=""
 SVNBASE=https://svn.apache.org/repos/asf/tomcat/native
-TCTRUNK_SVNBASE=https://svn.apache.org/repos/asf/tomcat/tc8.0.x/trunk
+TCJAVA_SVNBASE=https://svn.apache.org/repos/asf/tomcat/tc8.0.x/trunk
 
 # Set the environment variable that stops OSX storing extended
 # attributes in tar archives etc. with a file starting with ._
 COPYFILE_DISABLE=1
 export COPYFILE_DISABLE
+
+JKJNIEXT=""
+JKJNIVER=""
+JKJNIREL=""
+JKJNIFORCE=""
 
 for o
 do
@@ -41,6 +44,10 @@ do
        *) a='' ;;
     esac
     case "$o" in
+        -f )
+            JKJNIFORCE=1
+            shift
+            ;;
         --ver*=*    )
             JKJNIEXT="$a"
             shift
@@ -76,7 +83,7 @@ if [ "x$JKJNIEXT" = "x" ]; then
     echo ""
     echo "Unknown SVN version"
     echo "Use:"
-    echo "  --ver=<tagged-version>|trunk"
+    echo "  --ver=<tagged-version>|1.1.x|trunk|."
     echo ""
     exit 1
 fi
@@ -124,14 +131,23 @@ else
   exit 1
 fi
 
-JKJNISVN=$SVNBASE/${JKJNIEXT}
 if [ "x$JKJNIEXT" = "xtrunk" ]; then
-    i="`svn info`"
-    JKJNIVER=`echo "$i" | awk '$1 == "Revision:" {print $2}'`
-    JKJNISVN=`echo "$i" | awk '$1 == "URL:" {print $2}'`
+    JKJNISVN="${SVNBASE}/trunk"
+    JKJNIVER=`svn info $JKJNISVN | awk '$1 == "Revision:" {print $2}'`
+    JKJNIVER="$JKJNIEXT-$JKJNIVER"
+elif [ "x$JKJNIEXT" = "x1.1.x" ]; then
+    JKJNISVN="${SVNBASE}/branches/$JKJNIEXT"
+    JKJNIVER=`svn info $JKJNISVN | awk '$1 == "Revision:" {print $2}'`
+    JKJNIVER="$JKJNIEXT-$JKJNIVER"
+elif [ "x$JKJNIEXT" = "x." ]; then
+    JKJNISVN="."
+    JKJNIVER=`svn info $JKJNISVN | awk '$1 == "Revision:" {print $2}'`
+    JKJNIEXT=`svn info $JKJNISVN | awk '$1 == "URL:" {print $2}' | sed -e 's#.*/##'`
+    JKJNIVER="checkout-$JKJNIEXT-$JKJNIVER"
 else
+    JKJNISVN="${SVNBASE}/tags/TOMCAT_NATIVE_`echo $JKJNIEXT | sed 's/\./_/g'`"
     JKJNIVER=$JKJNIEXT
-    JKJNISVN="${SVNBASE}/tags/TOMCAT_NATIVE_`echo $JKJNIVER | sed 's/\./_/g'`"
+    JKJNIREL=1
 fi
 echo "Using SVN repo       : \`${JKJNISVN}'"
 echo "Using version        : \`${JKJNIVER}'"
@@ -141,17 +157,22 @@ externals_path=java/org/apache/tomcat
 jni_externals=`svn propget svn:externals $JKJNISVN/$externals_path | \
     grep $externals_path/jni | \
     sed -e 's#.*@##' -e 's# .*##'`
-jni_last_changed=`svn info --xml $TCTRUNK_SVNBASE/$externals_path/jni | \
+jni_last_changed=`svn info --xml $TCJAVA_SVNBASE/$externals_path/jni | \
     tr "\n" " " | \
     sed -e 's#.*commit  *revision="##' -e 's#".*##'`
 if [ "x$jni_externals" != "x$jni_last_changed" ]; then
-  echo "WARNING: svn:externals for jni in $externals_path is '$jni_externals',"
-  echo "         last changed revision in TC trunk is '$jni_last_changed'."
-  echo "         If you want to correct, cancel script now and run"
-  echo "         'svn propedit svn:externals' on $externals_path to fix"
-  echo "         the revision number."
-  sleep 3
-  exit 1
+    echo "WARNING: svn:externals for jni in $externals_path is '$jni_externals',"
+    echo "         last changed revision in TC trunk is '$jni_last_changed'."
+    echo "         Either correct now by running"
+    echo "         'svn propedit svn:externals' on $externals_path to fix"
+    echo "         or run this script with -f (force)"
+    if [ "X$JKJNIFORCE" = "X1" ]
+    then
+        sleep 3
+        echo "FORCED run chosen"
+    else
+        exit 1
+    fi
 fi
 
 JKJNIDIST=tomcat-native-${JKJNIVER}-src
@@ -169,24 +190,35 @@ do
 done
 
 # check the release if release.
-if [ "x$JKJNIEXT" = "xtrunk" ]; then
-   echo "Not a release"
+if [ "x$JKJNIREL" = "x1" ]; then
+     grep TCN_IS_DEV_VERSION ${JKJNIDIST}/jni/native/include/tcn_version.h | grep 0
+     if [ $? -ne 0 ]; then
+         echo "Check: ${JKJNIDIST}/jni/native/include/tcn_version.h says -dev"
+         echo "Check TCN_IS_DEV_VERSION - Aborting"
+         exit 1
+     fi
+     WIN_VERSION=`grep TCN_VERSION ${JKJNIDIST}/jni/native/os/win32/libtcnative.rc | grep define | awk ' { print $3 } '`
+     if [ "x\"$JKJNIVER\"" != "x$WIN_VERSION" ]; then
+         echo "Check: ${JKJNIDIST}/jni/native/os/win32/libtcnative.rc says $WIN_VERSION (FILEVERSION, PRODUCTVERSION, TCN_VERSION)"
+         echo "Must be $JKJNIVER - Aborting"
+         exit 1
+     fi
 else
-   grep TCN_IS_DEV_VERSION ${JKJNIDIST}/jni/native/include/tcn_version.h | grep 0
-   if [ $? -ne 0 ]; then
-     echo "Check: ${JKJNIDIST}/jni/native/include/tcn_version.h it says -dev"
-     exit 1
-   fi
-   WIN_VERSION=`grep TCN_VERSION ${JKJNIDIST}/jni/native/os/win32/libtcnative.rc | grep define | awk ' { print $3 } '`
-   if [ "x\"$JKJNIVER\"" != "x$WIN_VERSION" ]; then
-     echo "Check: ${JKJNIDIST}/jni/native/os/win32/libtcnative.rc says $WIN_VERSION (FILEVERSION, PRODUCTVERSION, TCN_VERSION)"
-     exit 1
-   fi
+     echo "Not a release"
 fi
 
 top="`pwd`"
 cd ${JKJNIDIST}/jni/xdocs
+
+# Make docs
 ant
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "ant (building docs failed)"
+    echo ""
+    exit 1
+fi
+
 $EXPTOOL $EXPOPTS ../build/docs/miscellaneous/changelog.html > ../../CHANGELOG.txt 2>/dev/null
 if [ $? -ne 0 ]; then
     echo ""
@@ -212,14 +244,15 @@ do
         exit 1
     fi
 done
-#
-# Prebuild
+
+# Prebuild (create configure)
 cd ${JKJNIDIST}/jni/native
 ./buildconf --with-apr=$apr_src_dir || exit 1
+
 cd "$top"
 # Create source distribution
 tar -cf - ${JKJNIDIST} | gzip -c9 > ${JKJNIDIST}.tar.gz || exit 1
-#
+
 # Create Win32 source distribution
 JKWINDIST=tomcat-native-${JKJNIVER}-win32-src
 rm -rf ${JKWINDIST}
@@ -234,8 +267,11 @@ do
         exit 1
     fi
 done
+
 top="`pwd`"
 cd ${JKWINDIST}/jni/xdocs
+
+# Make docs
 ant
 if [ $? -ne 0 ]; then
     echo ""
@@ -243,6 +279,7 @@ if [ $? -ne 0 ]; then
     echo ""
     exit 1
 fi
+
 cd "$top"
 cp ${JKJNIDIST}/CHANGELOG.txt ${JKWINDIST}
 
@@ -254,4 +291,5 @@ do
     $PERL ${JKWINDIST}/jni/native/build/lineends.pl --cr ${JKWINDIST}/${i}
 done
 $PERL ${JKWINDIST}/jni/native/build/lineends.pl --cr ${JKWINDIST}/CHANGELOG.txt
+
 zip -9rqyo ${JKWINDIST}.zip ${JKWINDIST}
