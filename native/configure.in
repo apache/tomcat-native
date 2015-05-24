@@ -225,7 +225,6 @@ case $host in
 esac
 
 TCN_FIND_APR_FEATURE([apr_pool_pre_cleanup_register],[POOL_PRE_CLEANUP])
-TCN_FIND_APR_FEATURE([apr_pool_create_unmanaged_ex],[POOL_UNMANAGED])
 TCN_FIND_APR_FEATURE([apr_pollset_wakeup],[POLLSET_WAKEUP])
 
 AC_SUBST(TCNATIVE_EXPORT_LIBS)
