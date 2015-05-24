@@ -1,0 +1,94 @@
+================================================================================
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+================================================================================
+
+
+            Apache Tomcat Native Library
+
+                        TODO
+
+
+SSL Renegotiation
+-----------------
+
+It is unclear to me, what the current state is. It looks like we support
+the unsafe legacy reneg whenever the OpenSSL used during build time
+supports it. There is no configuration option to switch it off during
+runtime. Right?
+
+Is it correct, that client initiated reneg is not supported and thus the
+known attacks will not work even with old OpenSSL?
+
+Should we add a remark about this topic to the docs?
+
+
+Java Tests and Examples
+-----------------------
+
+- "ant run-echo": what is the expected behaviour of this example.
+  I couldn't get it to do something understandable.
+  Document the example in the README.txt.
+
+- "ant run-ssl-server": Could't we include a test certificate in the
+  distribution?
+
+- "ant run-ssl-server": What should the test produce, if run successfully?
+  Document the example in the README.txt.
+
+- "ant run-local-server": Creates a unix socket "\\.\PIPE\test" in the
+  examples directory, then waits. How is the test expected to work?
+  And the file name doesn't seem to be appropriate for Unix.
+  Document the example in the README.txt.
+
+
+Java Classes Source Distribution
+--------------------------------
+
+Check on how to handle the test and examples classes.
+I think they have no other home.
+
+Furthermore some of the Java files do not exist inside TC:
+- Apr.java, apr.properties, jni/Buffer.java and jni/Thread.java
+I don't know their purpose and whether we can delete them.
+
+
+Releasing
+---------
+
+- Document how to release.
+
+- Add info about updating config.guess and config.sub from 
+
+http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD
+http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD
+
+- ZIP download seems to have group write permissions set
+  (at least after I extract it on Solaris).
+  It's a bit strange that permissions differ between the
+  tar and zip archives.
+
+- OCSP enabled Windows binary
+  - Document build
+  - Use consistent naming
+    (1.1.22 used ...win32-ocsp..., 1.1.24 used ...ocsp-win32...)
+
+
+Trunk
+-----
+
+Change release layout when releasing trunk: don't insert
+the additional "jni" directory, instead keep layout in sync
+between svn and source distribution.
