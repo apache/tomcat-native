@@ -58,27 +58,9 @@
 #define RAND_MAX INT_MAX
 #endif
 
-#define SSL_ALGO_UNKNOWN (0)
-#define SSL_ALGO_RSA     (1<<0)
-#define SSL_ALGO_DSA     (1<<1)
-#define SSL_ALGO_ALL     (SSL_ALGO_RSA|SSL_ALGO_DSA)
-
 #define SSL_AIDX_RSA     (0)
 #define SSL_AIDX_DSA     (1)
 #define SSL_AIDX_MAX     (2)
-
-#define SSL_CRT_FORMAT_UNDEF    (0)
-#define SSL_CRT_FORMAT_ASN1     (1)
-#define SSL_CRT_FORMAT_TEXT     (2)
-#define SSL_CRT_FORMAT_PEM      (3)
-#define SSL_CRT_FORMAT_NETSCAPE (4)
-#define SSL_CRT_FORMAT_PKCS12   (5)
-#define SSL_CRT_FORMAT_SMIME    (6)
-#define SSL_CRT_FORMAT_ENGINE   (7)
-/* XXX this stupid macro helps us to avoid
- * adding yet another param to load_*key()
- */
-#define SSL_KEY_FORMAT_IISSGC   (8)
 
 /*
  * Define the SSL options
