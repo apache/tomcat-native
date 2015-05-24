@@ -27,7 +27,7 @@ Group: System Environment/Libraries
 URL: http://apr.apache.org/
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildPrereq: autoconf, libtool, doxygen, apr-devel >= 0:{version}-{release}, openssl >= 0.9.7
+BuildPrereq: autoconf, libtool, doxygen, apr-devel >= 0:{version}-{release}, openssl >= 0.9.8
 
 %description
 The mission of the Tomcat Native Library (TCN) is to provide a
@@ -37,7 +37,7 @@ contains additional utility interfaces for Java.
 %package devel
 Group: Development/Libraries
 Summary: Tomcat Native development kit
-Requires: tcnative = %{version}-%{release}, apr-devel >= 0:{version}-{release}, openssl-devel >= 0.9.7
+Requires: tcnative = %{version}-%{release}, apr-devel >= 0:{version}-{release}, openssl-devel >= 0.9.8
 
 %description devel
 The mission of the Tomcat Native Library (TCN) is to provide a

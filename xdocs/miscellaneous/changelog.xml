@@ -49,6 +49,9 @@
       The APIs SSL.generateRSATempKey() and SSL.loadDSATempKey()
       are no longer supported. (rjung)
     </update>
+    <update>
+      Require minimum version 0.9.8m of OpenSSL. (rjung)
+    </update>
     <fix>
       Use APR pool pre-cleanup API if available to reduce
       possibility of JVM core on shutdown. (mturk, rjung)

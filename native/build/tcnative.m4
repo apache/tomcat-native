@@ -370,14 +370,11 @@ yes|'')
 #include <stdio.h>
 #include <openssl/opensslv.h>
 int main() {
-        if ((OPENSSL_VERSION_NUMBER >= 0x0090701fL &&
-         OPENSSL_VERSION_NUMBER < 0x00908000L) ||
-         OPENSSL_VERSION_NUMBER >= 0x0090801fL)
+        if (OPENSSL_VERSION_NUMBER >= 0x009080dfL)
             return (0);
     printf("\n\nFound   OPENSSL_VERSION_NUMBER %#010x\n",
         OPENSSL_VERSION_NUMBER);
-    printf("Require OPENSSL_VERSION_NUMBER 0x0090701f or greater (0.9.7a)\n"
-           "Require OPENSSL_VERSION_NUMBER 0x0090801f or greater (0.9.8a)\n\n");
+    printf("Require OPENSSL_VERSION_NUMBER 0x009080df or greater (0.9.8m)\n\n");
         return (1);
 }
         ],
