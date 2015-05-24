@@ -89,10 +89,6 @@ http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HE
 Trunk
 -----
 
-Trunk isn't really maintained. A lot of merges
-need to be done. AFAIK the trunk native classes
-contain some additions, so we can't simply remove trunk.
-
 Change release layout when releasing trunk: don't insert
 the additional "jni" directory, instead keep layout in sync
 between svn and source distribution.
