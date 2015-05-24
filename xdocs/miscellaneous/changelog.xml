@@ -51,6 +51,10 @@
       Add Pool.unmanaged() API. (mturk)
     </add>
     <update>
+      APIs SSL.generateRSATempKey() and SSL.loadDSATempKey()
+      have been removed. (rjung)
+    </update>
+    <update>
       The minimum required APR version is 1.4.3.
     </update>
     <update>
