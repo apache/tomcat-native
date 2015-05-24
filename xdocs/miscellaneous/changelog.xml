@@ -31,11 +31,31 @@
 
 <section name="Preface">
   <p>
-  This is the Changelog for Tomcat Native 2.0.
+  This is the Changelog for Tomcat Native 1.2.
   </p>
 </section>
-<section name="Changes between 1.1 and 2.0.0">
+<section name="Changes between 1.1 and 1.2.0">
   <changelog>
+    <add>
+      Add support for TLS extension ALPN. (markt)
+    </add>
+    <add>
+      Add support for TLS extension SNI (Server Name Indication).
+      (markt)
+    </add>
+    <add>
+      Support wakeable pollsets and add Poll.interrupt() API.
+      (mturk)
+    </add>
+    <add>
+      Add Pool.unmanaged() API. (mturk)
+    </add>
+    <update>
+      The minimum required APR version is 1.4.3.
+    </update>
+    <update>
+      The minimum required OpenSSL version is 1.0.2.
+    </update>
   </changelog>
 </section>
 </body>
