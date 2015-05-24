@@ -301,18 +301,40 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     TCN_ALLOC_CSTRING(ciphers);
     jboolean rv = JNI_TRUE;
+#ifndef HAVE_EXPORT_CIPHERS
+    size_t len;
+    char *buf;
+#endif
 
     UNREFERENCED(o);
     TCN_ASSERT(ctx != 0);
     if (!J2S(ciphers))
         return JNI_FALSE;
-    
+
+#ifndef HAVE_EXPORT_CIPHERS
+    /*
+     *  Always disable NULL and export ciphers,
+     *  no matter what was given in the config.
+     */
+    len = strlen(J2S(ciphers)) + strlen(SSL_CIPHERS_ALWAYS_DISABLED) + 1;
+    buf = malloc(len * sizeof(char *));
+    if (buf == NULL)
+        return JNI_FALSE;
+    memcpy(buf, SSL_CIPHERS_ALWAYS_DISABLED, strlen(SSL_CIPHERS_ALWAYS_DISABLED));
+    memcpy(buf + strlen(SSL_CIPHERS_ALWAYS_DISABLED), J2S(ciphers), strlen(J2S(ciphers)));
+    buf[len - 1] = '\0';
+    if (!SSL_CTX_set_cipher_list(c->ctx, buf)) {
+#else
     if (!SSL_CTX_set_cipher_list(c->ctx, J2S(ciphers))) {
+#endif
         char err[256];
         ERR_error_string(ERR_get_error(), err);
         tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
         rv = JNI_FALSE;
     }
+#ifndef HAVE_EXPORT_CIPHERS
+    free(buf);
+#endif
     TCN_FREE_CSTRING(ciphers);
     return rv;
 }

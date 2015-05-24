@@ -39,6 +39,12 @@
 <section name="Changes between 1.1.33 and 1.1.34">
   <changelog>
     <update>
+      Unconditionally disable export Ciphers. Use the
+      configure flag --enable-insecure-export-ciphers
+      for a custom build supporting those insecure ciphers.
+      (rjung)
+    </update>
+    <update>
       Improve ephemeral key handling for DH and ECDH.
       Parameter strength is by default derived from the
       certificate key strength. It can be overwritten

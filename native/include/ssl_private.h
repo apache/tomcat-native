@@ -175,6 +175,8 @@
 #define OCSP_STATUS_REVOKED   1
 #define OCSP_STATUS_UNKNOWN   2
 
+#define SSL_CIPHERS_ALWAYS_DISABLED         ("!aNULL:!eNULL:!EXP:")
+
 /* ECC: make sure we have at least 1.0.0 */
 #if !defined(OPENSSL_NO_EC) && defined(TLSEXT_ECPOINTFORMAT_uncompressed)
 #define HAVE_ECC              1
