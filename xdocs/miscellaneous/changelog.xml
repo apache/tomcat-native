@@ -55,9 +55,6 @@
       have been removed. (rjung)
     </update>
     <update>
-      Unconditionally disable export Ciphers. (rjung)
-    </update>
-    <update>
       The minimum required APR version is 1.4.3.
     </update>
     <update>
