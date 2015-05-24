@@ -64,13 +64,15 @@ manual is described in more detail below.</p>
 <section name="Headlines">
 <ul>
 
-<li><a href="news/2010.html#20100101.1">DD MMM YYYY - <b>TC-Native-2.0.0 released</b></a>
-<p>The Apache Tomcat team is proud to announce the immediate availability of Tomcat Native 2.0.0 Stable.
+<li><a href="news/2015.html#20150101.1">DD MMM YYYY - <b>TC-Native-1.2.0 released</b></a>
+<p>The Apache Tomcat team is proud to announce the immediate availability of Tomcat Native 1.2.0 Stable.
 </p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/native/2.0.0/source/tomcat-native-2.0.0-src.tar.gz">TC-native 2.0.0 release sources</a>
- | <a href="hhttp://www.apache.org/dist/tomcat/tomcat-connectors/native/2.0.0/source/tomcat-native-2.0.0-src.tar.gz.asc">PGP signature</a>
+<p>
+ The sources and the binaries for selected platforms are available from the
+ <a href="../download-native.cgi">Download page</a>.
 </p>
-<p>Download the <a href="http://www.apache.org/dist/tomcat/tomcat-connectors/native/2.0.0/binaries/">binaries</a> for selected platforms.
+<p>
+ Please see the <a href="miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
 </p>
 </li>
 </ul>
@@ -189,11 +191,11 @@ export LD_LIBRARY_PATH</source>
    Start tomcat and check for the messages like this ones:
   </p>
    <source wrapped="true"
->Feb 8, 2010 12:27:41 PM org.apache.catalina.core.AprLifecycleListener init
+>Feb 8, 2015 12:27:41 PM org.apache.catalina.core.AprLifecycleListener init
 INFO: Loaded APR based Apache Tomcat Native library 2.x.y.
-Feb 8, 2010 12:27:41 PM org.apache.catalina.core.AprLifecycleListener init
+Feb 8, 2015 12:27:41 PM org.apache.catalina.core.AprLifecycleListener init
 INFO: APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true].
-Feb 8, 2010 12:27:41 PM org.apache.coyote.http11.Http11AprProtocol init
+Feb 8, 2015 12:27:41 PM org.apache.coyote.http11.Http11AprProtocol init
 INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
   <p>
     Refer to the tomcat documentation to configure the connectors
@@ -214,11 +216,11 @@ INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
     Start tomcat and check for the messages like this ones:
   </p>
   <source wrapped="true"
->Feb 8, 2010 2:48:17 PM org.apache.catalina.core.AprLifecycleListener init
+>Feb 8, 2015 2:48:17 PM org.apache.catalina.core.AprLifecycleListener init
 INFO: Loaded APR based Apache Tomcat Native library 2.x.y.
-Feb 8, 2010 2:48:17 PM org.apache.catalina.core.AprLifecycleListener init
+Feb 8, 2015 2:48:17 PM org.apache.catalina.core.AprLifecycleListener init
 INFO: APR capabilities: IPv6 [false], sendfile [true], accept filters [false], random [true].
-Feb 8, 2010 2:48:18 PM org.apache.coyote.http11.Http11AprProtocol init
+Feb 8, 2015 2:48:18 PM org.apache.coyote.http11.Http11AprProtocol init
 INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
 
 </subsection>

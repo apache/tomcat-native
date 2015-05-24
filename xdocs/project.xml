@@ -30,12 +30,11 @@
     </menu>
 
     <menu name="Miscellaneous Documentation">
-        <item name="Changelog-1.1.x"            href="miscellaneous/changelog-1.1.x.html"/>
-        <item name="Changelog-2.x"              href="miscellaneous/changelog.html"/>
+        <item name="Changelog"                  href="miscellaneous/changelog.html"/>
     </menu>
 
     <menu name="News">
-        <item name="2010"                       href="news/2010.html"/>
+        <item name="2015"                       href="news/2015.html"/>
     </menu>
 
 </body>
