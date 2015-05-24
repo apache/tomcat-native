@@ -241,7 +241,14 @@ int SSL_CTX_use_certificate_chain(SSL_CTX *ctx, const char *file,
     }
 
     /* free a perhaps already configured extra chain */
+#if OPENSSL_VERSION_NUMBER >= 0x1000100fL
     SSL_CTX_clear_extra_chain_certs(ctx);
+#else
+    if (ctx->extra_certs != NULL) {
+        sk_X509_pop_free(ctx->extra_certs, X509_free);
+        ctx->extra_certs = NULL;
+    }
+#endif
 
     /* create new extra chain by loading the certs */
     n = 0;

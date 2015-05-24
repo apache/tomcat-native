@@ -642,7 +642,11 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
     if (SSL_get_state(con->ssl) != SSL_ST_OK) {
         return APR_EGENERAL;
     }
+#if OPENSSL_VERSION_NUMBER >= 0x1000100fL
     SSL_set_state(con->ssl, SSL_ST_ACCEPT);
+#else
+    con->ssl->state = SSL_ST_ACCEPT;
+#endif
 
     apr_socket_timeout_get(con->sock, &timeout);
     ecode = SSL_ERROR_WANT_READ;
