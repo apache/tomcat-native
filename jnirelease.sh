@@ -122,13 +122,13 @@ if [ ! -x "$EXPTOOL" ]; then
 fi
 PERL="`which perl 2>/dev/null || type perl 2>&1`"
 if [ -x "$PERL" ]; then
-  echo "Using $PERL"
+    echo "Using $PERL"
 else
-  echo ""
-  echo "Cannot find perl"
-  echo "Make sure you have perl in the PATH"
-  echo ""
-  exit 1
+    echo ""
+    echo "Cannot find perl"
+    echo "Make sure you have perl in the PATH"
+    echo ""
+    exit 1
 fi
 
 if [ "x$JKJNIEXT" = "xtrunk" ]; then
@@ -186,25 +186,26 @@ do
         echo ""
         echo "svn export ${i} failed"
         echo ""
+        exit 1
     fi
 done
 
 # check the release if release.
 if [ "x$JKJNIREL" = "x1" ]; then
-     grep TCN_IS_DEV_VERSION ${JKJNIDIST}/jni/native/include/tcn_version.h | grep 0
-     if [ $? -ne 0 ]; then
-         echo "Check: ${JKJNIDIST}/jni/native/include/tcn_version.h says -dev"
-         echo "Check TCN_IS_DEV_VERSION - Aborting"
-         exit 1
-     fi
-     WIN_VERSION=`grep TCN_VERSION ${JKJNIDIST}/jni/native/os/win32/libtcnative.rc | grep define | awk ' { print $3 } '`
-     if [ "x\"$JKJNIVER\"" != "x$WIN_VERSION" ]; then
-         echo "Check: ${JKJNIDIST}/jni/native/os/win32/libtcnative.rc says $WIN_VERSION (FILEVERSION, PRODUCTVERSION, TCN_VERSION)"
-         echo "Must be $JKJNIVER - Aborting"
-         exit 1
-     fi
+    grep TCN_IS_DEV_VERSION ${JKJNIDIST}/jni/native/include/tcn_version.h | grep 0
+    if [ $? -ne 0 ]; then
+        echo "Check: ${JKJNIDIST}/jni/native/include/tcn_version.h says -dev"
+        echo "Check TCN_IS_DEV_VERSION - Aborting"
+        exit 1
+    fi
+    WIN_VERSION=`grep TCN_VERSION ${JKJNIDIST}/jni/native/os/win32/libtcnative.rc | grep define | awk ' { print $3 } '`
+    if [ "x\"$JKJNIVER\"" != "x$WIN_VERSION" ]; then
+        echo "Check: ${JKJNIDIST}/jni/native/os/win32/libtcnative.rc says $WIN_VERSION (FILEVERSION, PRODUCTVERSION, TCN_VERSION)"
+        echo "Must be $JKJNIVER - Aborting"
+        exit 1
+    fi
 else
-     echo "Not a release"
+    echo "Not a release"
 fi
 
 top="`pwd`"
