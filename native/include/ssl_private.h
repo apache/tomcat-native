@@ -60,7 +60,8 @@
 
 #define SSL_AIDX_RSA     (0)
 #define SSL_AIDX_DSA     (1)
-#define SSL_AIDX_MAX     (2)
+#define SSL_AIDX_ECC     (3)
+#define SSL_AIDX_MAX     (4)
 
 /*
  * Define the SSL options
@@ -212,8 +213,6 @@ struct tcn_ssl_ctxt_t {
     X509_STORE      *crl;
     /* pointer to the context verify store */
     X509_STORE      *store;
-    const char      *cert_files[SSL_AIDX_MAX];
-    const char      *key_files[SSL_AIDX_MAX];
     X509            *certs[SSL_AIDX_MAX];
     EVP_PKEY        *keys[SSL_AIDX_MAX];
 
