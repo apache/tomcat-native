@@ -43,7 +43,7 @@ AC_DEFUN(TCN_FIND_APR,[
     AC_MSG_ERROR(Found APR $sapr_version. You need APR version 1.2.1 or newer installed. For optimal performance version 1.3.0 or newer is needed.)
   elif test "${decimal_apr_version}" -lt "0103000"
   then
-    AC_MSG_ERROR(Found APR $sapr_version. For optimal performance version 1.3.0 or newer is needed.)
+    AC_MSG_WARN(Found APR $sapr_version. For optimal performance version 1.3.0 or newer is needed.)
   fi
   AC_MSG_NOTICE(APR $sapr_version detected.)
 
