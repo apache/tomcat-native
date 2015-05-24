@@ -38,9 +38,39 @@
 </section>
 <section name="Changes between 1.1.33 and 1.1.34">
   <changelog>
+    <update>
+      Improve ephemeral key handling for DH and ECDH.
+      Parameter strength is by default derived from the
+      certificate key strength. It can be overwritten
+      by embedding custom parameters in the certificate
+      file configured with <code>SSLCertificateFile</code>. (rjung)
+    </update>
+    <fix>
+      Use APR pool pre-cleanup API if available to reduce
+      possibility of JVM core on shutdown. (mturk, rjung)
+    </fix>
+    <add>
+      Add feature check for APR pre-cleanup API. (mturk, rjung)
+    </add>
+    <fix>
+      Don't destroy pools explicitly if we are inside an
+      apr_terminate call. (mturk, rjung)
+    </fix>
+    <fix>
+      Fix a small memory leak if Socket.recv() is used with
+      big buffers and recv() gets an error. (costin, rjung)
+    </fix>
+    <fix>
+      Pass back error to JVM if a threadsafe poller should be
+      created but the underlying APR library was build without
+      thread support. (costin, rjung)
+    </fix>
     <fix>
       Fix compilation failures with master branch of OpenSSL. Replace access
-      to OpenSSL internals by accessor functions. (rjung)
+      to OpenSSL internals by accessor functions. (billbarker, rjung)
+    </fix>
+    <fix>
+      Let OpenSSL master handle thread IDs itself. (billbarker)
     </fix>
   </changelog>
 </section>
