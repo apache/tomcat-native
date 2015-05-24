@@ -19,7 +19,6 @@
 echo "buildconf: checking installation..."
 
 # any python
-# XXX WHAT IS PrintPath ???
 python=`build/PrintPath python`
 if test -z "$python"; then
 echo "buildconf: python not found."
@@ -55,7 +54,6 @@ fi
 # output is multiline from 1.5 onwards
 
 # Require libtool 1.4 or newer
-# XXX WHAT IS PrintPath ???
 libtool=`build/PrintPath glibtool libtool libtool15 libtool14`
 lt_pversion=`$libtool --version 2>/dev/null|sed -e 's/([^)]*)//g;s/^[^0-9]*//;s/[- ].*//g;q'`
 if test -z "$lt_pversion"; then
