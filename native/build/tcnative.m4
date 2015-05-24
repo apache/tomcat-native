@@ -21,26 +21,31 @@ dnl
 AC_DEFUN(TCN_FIND_APR,[
 
   dnl use the find_apr.m4 script to locate APR. sets apr_found and apr_config
-  APR_FIND_APR(,,,[1])
-  if test "$apr_found" = "no"; then
+  APR_FIND_APR(,,1,[1])
+  if test "$apr_found" = "no"
+  then
     AC_MSG_ERROR(APR could not be located. Please use the --with-apr option.)
   fi
 
   sapr_pversion="`$apr_config --version`"
-  if test -z "$sapr_pversion"; then
+  if test -z "$sapr_pversion"
+  then
     AC_MSG_ERROR(APR config could not be located. Please use the --with-apr option.)
   fi
   sapr_version="`echo $sapr_pversion|sed -e 's/\([a-z]*\)$/.\1/'`"
-  tc_save_IFS=$IFS; IFS=.; set $sapr_version; IFS=$tc_save_IFS
-  if test "${1}" -lt "1"; then
-    AC_MSG_ERROR(You need APR version 1.2.1 or newer installed. For optimal performance version 1.3.0 or newer is needed.)
-  else
-    if test "${2}" -lt "2"; then
-      AC_MSG_ERROR(You need APR version 1.2.1 or newer installed. For optimal performance version 1.3.0 or newer is needed.)
-    elif test "${2}" -lt "3"; then
-      AC_MSG_WARN(For optimal performance you need APR version 1.3.0 or newer installed.)
-    fi
+  tc_save_IFS=$IFS
+  IFS=.
+  set $sapr_version
+  IFS=$tc_save_IFS
+  decimal_apr_version=`printf %02d%02d%03d ${1} ${2} ${3}`
+  if test "${decimal_apr_version}" -lt "0102001"
+  then
+    AC_MSG_ERROR(Found APR $sapr_version. You need APR version 1.2.1 or newer installed. For optimal performance version 1.3.0 or newer is needed.)
+  elif test "${decimal_apr_version}" -lt "0103000"
+  then
+    AC_MSG_ERROR(Found APR $sapr_version. For optimal performance version 1.3.0 or newer is needed.)
   fi
+  AC_MSG_NOTICE(APR $sapr_version detected.)
 
   APR_BUILD_DIR="`$apr_config --installbuilddir`"
 
@@ -49,11 +54,13 @@ AC_DEFUN(TCN_FIND_APR,[
   APR_BUILD_DIR="`cd $APR_BUILD_DIR && pwd`"
 
   APR_INCLUDES="`$apr_config --includes`"
-  APR_LIBS="`$apr_config --link-libtool --libs`"
+  APR_LIBTOOL_LIBS="`$apr_config --link-libtool --libs`"
+  APR_LIBS="`$apr_config --link-ld --libs`"
   APR_SO_EXT="`$apr_config --apr-so-ext`"
   APR_LIB_TARGET="`$apr_config --apr-lib-target`"
 
   AC_SUBST(APR_INCLUDES)
+  AC_SUBST(APR_LIBTOOL_LIBS)
   AC_SUBST(APR_LIBS)
   AC_SUBST(APR_BUILD_DIR)
 ])
@@ -63,7 +70,7 @@ dnl TCN_JDK
 dnl
 dnl Detection of JDK location and Java Platform (1.2, 1.3, 1.4, 1.5, 1.6)
 dnl result goes in JAVA_HOME / JAVA_PLATFORM (2 -> 1.2 and higher)
-dnl 
+dnl
 dnl --------------------------------------------------------------------------
 AC_DEFUN(
   [TCN_FIND_JDK],
@@ -269,7 +276,7 @@ AC_DEFUN(
   ])
 
 dnl TCN_HELP_STRING(LHS, RHS)
-dnl Autoconf 2.50 can not handle substr correctly.  It does have 
+dnl Autoconf 2.50 can not handle substr correctly.  It does have
 dnl AC_HELP_STRING, so let's try to call it if we can.
 dnl Note: this define must be on one line so that it can be properly returned
 dnl as the help string.
@@ -365,14 +372,14 @@ AC_ARG_ENABLE(openssl-version-check,
         [Check OpenSSL Version @<:@default=yes@:>@])])
 case "$enable_openssl_version_check" in
 yes|'')
-        AC_MSG_CHECKING(OpenSSL library version)
+        AC_MSG_CHECKING(OpenSSL library version >= 0.9.8m)
         AC_TRY_RUN([
 #include <stdio.h>
 #include <openssl/opensslv.h>
 int main() {
         if (OPENSSL_VERSION_NUMBER >= 0x009080dfL)
             return (0);
-    printf("\n\nFound   OPENSSL_VERSION_NUMBER %#010x\n",
+    printf("\n\nFound   OPENSSL_VERSION_NUMBER %#010x (" OPENSSL_VERSION_TEXT ")\n",
         OPENSSL_VERSION_NUMBER);
     printf("Require OPENSSL_VERSION_NUMBER 0x009080df or greater (0.9.8m)\n\n");
         return (1);
@@ -416,12 +423,13 @@ AC_DEFUN(TCN_FIND_APR_FEATURE,[
   saved_cflags="$CFLAGS"
   saved_libs="$LIBS"
   CFLAGS="$CFLAGS $APR_INCLUDES"
-  LIBS="$LIBS -lapr-1"
+  LIBS="$LIBS $APR_LIBS"
   chk_result=0
   AC_CHECK_LIB(apr-1, $1,[chk_result=1])
   CFLAGS="$saved_cflags"
   LIBS="$saved_libs"
-  if test "$chk_result" != "0"; then
+  if test "$chk_result" != "0"
+  then
     APR_ADDTO(CFLAGS, [-DHAVE_$2])
   fi
 ])
