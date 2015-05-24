@@ -45,6 +45,10 @@
       by embedding custom parameters in the certificate
       file configured with <code>SSLCertificateFile</code>. (rjung)
     </update>
+    <update>
+      The APIs SSL.generateRSATempKey() and SSL.loadDSATempKey()
+      are no longer supported. (rjung)
+    </update>
     <fix>
       Use APR pool pre-cleanup API if available to reduce
       possibility of JVM core on shutdown. (mturk, rjung)

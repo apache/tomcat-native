@@ -1072,6 +1072,24 @@ TCN_IMPLEMENT_CALL(void, SSL, setPassword)(TCN_STDARGS, jstring password)
     TCN_FREE_CSTRING(password);
 }
 
+/* No longer supported */
+TCN_IMPLEMENT_CALL(jboolean, SSL, generateRSATempKey)(TCN_STDARGS, jint idx)
+{
+    UNREFERENCED_STDARGS;
+    UNREFERENCED(idx);
+    return JNI_FALSE;
+}
+
+/* No longer supported */
+TCN_IMPLEMENT_CALL(jboolean, SSL, loadDSATempKey)(TCN_STDARGS, jint idx,
+                                                  jstring file)
+{
+    UNREFERENCED_STDARGS;
+    UNREFERENCED(idx);
+    UNREFERENCED(file);
+    return JNI_FALSE;
+}
+
 TCN_IMPLEMENT_CALL(jstring, SSL, getLastError)(TCN_STDARGS)
 {
     char buf[256];
