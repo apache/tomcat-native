@@ -179,7 +179,7 @@ JKJNIDIST=tomcat-native-${JKJNIVER}-src
 
 rm -rf ${JKJNIDIST}
 mkdir -p ${JKJNIDIST}
-svn export ${JKJNISVN} ${JKJNIDIST}
+svn export --force ${JKJNISVN} ${JKJNIDIST}
 if [ $? -ne 0 ]; then
     echo ""
     echo "svn export failed"
@@ -246,7 +246,7 @@ tar -cf - ${JKJNIDIST} | gzip -c9 > ${JKJNIDIST}.tar.gz || exit 1
 JKWINDIST=tomcat-native-${JKJNIVER}-win32-src
 rm -rf ${JKWINDIST}
 mkdir -p ${JKWINDIST}
-svn export --native-eol CRLF ${JKJNISVN} ${JKWINDIST}
+svn export --force --native-eol CRLF ${JKJNISVN} ${JKWINDIST}
 if [ $? -ne 0 ]; then
     echo ""
     echo "svn export failed"
