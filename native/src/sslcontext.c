@@ -106,6 +106,11 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     tcn_ssl_ctxt_t *c = NULL;
     SSL_CTX *ctx = NULL;
 
+    if (protocol == SSL_PROTOCOL_NONE) {
+        tcn_Throw(e, "No SSL protocols requested");
+        goto init_failed;
+    }
+
     if (protocol == SSL_PROTOCOL_TLSV1_2) {
 #ifdef HAVE_TLSV1_2
         if (mode == SSL_MODE_CLIENT)
@@ -138,24 +143,8 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
             ctx = SSL_CTX_new(SSLv3_server_method());
         else
             ctx = SSL_CTX_new(SSLv3_method());
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) && !defined(OPENSSL_NO_SSL2)
     } else if (protocol == SSL_PROTOCOL_SSLV2) {
-        if (mode == SSL_MODE_CLIENT)
-            ctx = SSL_CTX_new(SSLv2_client_method());
-        else if (mode == SSL_MODE_SERVER)
-            ctx = SSL_CTX_new(SSLv2_server_method());
-        else
-            ctx = SSL_CTX_new(SSLv2_method());
-#endif
-#ifndef OPENSSL_NO_SSL2
-    } else if (protocol == SSL_PROTOCOL_SSLV2) {
-        if (mode == SSL_MODE_CLIENT)
-            ctx = SSL_CTX_new(SSLv2_client_method());
-        else if (mode == SSL_MODE_SERVER)
-            ctx = SSL_CTX_new(SSLv2_server_method());
-        else
-            ctx = SSL_CTX_new(SSLv2_method());
-#endif
+        /* requested but not supported */
 #ifndef HAVE_TLSV1_2
     } else if (protocol & SSL_PROTOCOL_TLSV1_2) {
         /* requested but not supported */
@@ -201,8 +190,8 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     if (c->bio_os != NULL)
         BIO_set_fp(c->bio_os, stderr, BIO_NOCLOSE | BIO_FP_TEXT);
     SSL_CTX_set_options(c->ctx, SSL_OP_ALL);
-    if (!(protocol & SSL_PROTOCOL_SSLV2))
-        SSL_CTX_set_options(c->ctx, SSL_OP_NO_SSLv2);
+    /* always disable SSLv2, as per RFC 6176 */
+    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
     if (!(protocol & SSL_PROTOCOL_SSLV3))
         SSL_CTX_set_options(c->ctx, SSL_OP_NO_SSLv3);
     if (!(protocol & SSL_PROTOCOL_TLSV1))
