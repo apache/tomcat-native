@@ -3,3 +3,9 @@ Copyright 2002-2015 The Apache Software Foundation
 
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
+
+This software contains code derived from netty-native
+developed by the Netty project
+(http://netty.io, https://github.com/netty/netty-tcnative/)
+and from finagle-native developed at Twitter
+(https://github.com/twitter/finagle).
