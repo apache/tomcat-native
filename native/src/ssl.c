@@ -1115,6 +1115,610 @@ TCN_IMPLEMENT_CALL(jboolean, SSL, hasOp)(TCN_STDARGS, jint op)
     return op == (op & supported_ssl_opts) ? JNI_TRUE : JNI_FALSE;
 }
 
+/*** Begin Twitter 1:1 API addition ***/
+TCN_IMPLEMENT_CALL(jint, SSL, getLastErrorNumber)(TCN_STDARGS) {
+    UNREFERENCED_STDARGS;
+    return ERR_get_error();
+}
+
+static void ssl_info_callback(const SSL *ssl, int where, int ret) {
+    int *handshakeCount = NULL;
+    if (0 != (where & SSL_CB_HANDSHAKE_START)) {
+        handshakeCount = (int*) SSL_get_app_data3(ssl);
+        if (handshakeCount != NULL) {
+            ++(*handshakeCount);
+        }
+    }
+}
+
+TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
+                                                   jlong ctx /* tcn_ssl_ctxt_t * */,
+                                                   jboolean server) {
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+    int *handshakeCount = malloc(sizeof(int));
+    SSL *ssl;
+
+    UNREFERENCED_STDARGS;
+
+    TCN_ASSERT(ctx != 0);
+    ssl = SSL_new(c->ctx);
+    if (ssl == NULL) {
+        tcn_ThrowException(e, "cannot create new ssl");
+        return 0;
+    }
+
+    /* Store the handshakeCount in the SSL instance. */
+    *handshakeCount = 0;
+    SSL_set_app_data3(ssl, handshakeCount);
+
+    /* Add callback to keep track of handshakes. */
+    SSL_CTX_set_info_callback(c->ctx, ssl_info_callback);
+
+    if (server) {
+        SSL_set_accept_state(ssl);
+    } else {
+        SSL_set_connect_state(ssl);
+    }
+
+    /* Setup verify and seed */
+    SSL_set_verify_result(ssl, X509_V_OK);
+    SSL_rand_seed(c->rand_file);
+
+    /* Store for later usage in SSL_callback_SSL_verify */
+    SSL_set_app_data2(ssl, c);
+    return P2J(ssl);
+}
+
+TCN_IMPLEMENT_CALL(void, SSL, setBIO)(TCN_STDARGS,
+                                      jlong ssl /* SSL * */,
+                                      jlong rbio /* BIO * */,
+                                      jlong wbio /* BIO * */) {
+    UNREFERENCED_STDARGS;
+    SSL_set_bio(J2P(ssl, SSL *), J2P(rbio, BIO *), J2P(wbio, BIO *));
+    return;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, getError)(TCN_STDARGS,
+                                       jlong ssl /* SSL * */,
+                                       jint ret) {
+    UNREFERENCED_STDARGS;
+    return SSL_get_error(J2P(ssl, SSL*), ret);
+}
+
+/* How much did SSL write into this BIO? */
+TCN_IMPLEMENT_CALL(jint /* nbytes */, SSL, pendingWrittenBytesInBIO)(TCN_STDARGS,
+                                                                     jlong bio /* BIO * */) {
+    UNREFERENCED_STDARGS;
+
+    return BIO_ctrl_pending(J2P(bio, BIO *));
+}
+
+/* How much is available for reading in the given SSL struct? */
+TCN_IMPLEMENT_CALL(jint, SSL, pendingReadableBytesInSSL)(TCN_STDARGS, jlong ssl /* SSL * */) {
+    UNREFERENCED_STDARGS;
+
+    return SSL_pending(J2P(ssl, SSL *));
+}
+
+/* Write wlen bytes from wbuf into bio */
+TCN_IMPLEMENT_CALL(jint /* status */, SSL, writeToBIO)(TCN_STDARGS,
+                                                       jlong bio /* BIO * */,
+                                                       jlong wbuf /* char* */,
+                                                       jint wlen /* sizeof(wbuf) */) {
+    UNREFERENCED_STDARGS;
+
+    return BIO_write(J2P(bio, BIO *), J2P(wbuf, void *), wlen);
+
+}
+
+/* Read up to rlen bytes from bio into rbuf */
+TCN_IMPLEMENT_CALL(jint /* status */, SSL, readFromBIO)(TCN_STDARGS,
+                                                        jlong bio /* BIO * */,
+                                                        jlong rbuf /* char * */,
+                                                        jint rlen /* sizeof(rbuf) - 1 */) {
+    UNREFERENCED_STDARGS;
+
+    return BIO_read(J2P(bio, BIO *), J2P(rbuf, void *), rlen);
+}
+
+/* Write up to wlen bytes of application data to the ssl BIO (encrypt) */
+TCN_IMPLEMENT_CALL(jint /* status */, SSL, writeToSSL)(TCN_STDARGS,
+                                                       jlong ssl /* SSL * */,
+                                                       jlong wbuf /* char * */,
+                                                       jint wlen /* sizeof(wbuf) */) {
+    UNREFERENCED_STDARGS;
+
+    return SSL_write(J2P(ssl, SSL *), J2P(wbuf, void *), wlen);
+}
+
+/* Read up to rlen bytes of application data from the given SSL BIO (decrypt) */
+TCN_IMPLEMENT_CALL(jint /* status */, SSL, readFromSSL)(TCN_STDARGS,
+                                                        jlong ssl /* SSL * */,
+                                                        jlong rbuf /* char * */,
+                                                        jint rlen /* sizeof(rbuf) - 1 */) {
+    UNREFERENCED_STDARGS;
+
+    return SSL_read(J2P(ssl, SSL *), J2P(rbuf, void *), rlen);
+}
+
+/* Get the shutdown status of the engine */
+TCN_IMPLEMENT_CALL(jint /* status */, SSL, getShutdown)(TCN_STDARGS,
+                                                        jlong ssl /* SSL * */) {
+    UNREFERENCED_STDARGS;
+
+    return SSL_get_shutdown(J2P(ssl, SSL *));
+}
+
+/* Called when the peer closes the connection */
+TCN_IMPLEMENT_CALL(void, SSL, setShutdown)(TCN_STDARGS,
+                                           jlong ssl /* SSL * */,
+                                           jint mode) {
+    UNREFERENCED_STDARGS;
+
+    SSL_set_shutdown(J2P(ssl, SSL *), mode);
+}
+
+/* Free the SSL * and its associated internal BIO */
+TCN_IMPLEMENT_CALL(void, SSL, freeSSL)(TCN_STDARGS,
+                                       jlong ssl /* SSL * */) {
+    SSL *ssl_ = J2P(ssl, SSL *);
+    int *handshakeCount = SSL_get_app_data3(ssl_);
+
+    UNREFERENCED_STDARGS;
+
+    if (handshakeCount != NULL) {
+        free(handshakeCount);
+    }
+    SSL_free(ssl_);
+}
+
+/* Make a BIO pair (network and internal) for the provided SSL * and return the network BIO */
+TCN_IMPLEMENT_CALL(jlong, SSL, makeNetworkBIO)(TCN_STDARGS,
+                                               jlong ssl /* SSL * */) {
+    SSL *ssl_ = J2P(ssl, SSL *);
+    BIO *internal_bio;
+    BIO *network_bio;
+
+    UNREFERENCED(o);
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        goto fail;
+    }
+
+    if (BIO_new_bio_pair(&internal_bio, 0, &network_bio, 0) != 1) {
+        tcn_ThrowException(e, "BIO_new_bio_pair failed");
+        goto fail;
+    }
+
+    SSL_set_bio(ssl_, internal_bio, internal_bio);
+
+    return P2J(network_bio);
+ fail:
+    return 0;
+}
+
+/* Free a BIO * (typically, the network BIO) */
+TCN_IMPLEMENT_CALL(void, SSL, freeBIO)(TCN_STDARGS,
+                                       jlong bio /* BIO * */) {
+    BIO *bio_;
+    UNREFERENCED_STDARGS;
+
+    bio_ = J2P(bio, BIO *);
+    BIO_free(bio_);
+}
+
+/* Send CLOSE_NOTIFY to peer */
+TCN_IMPLEMENT_CALL(jint /* status */, SSL, shutdownSSL)(TCN_STDARGS,
+                                                        jlong ssl /* SSL * */) {
+    UNREFERENCED_STDARGS;
+
+    return SSL_shutdown(J2P(ssl, SSL *));
+}
+
+/* Read which cipher was negotiated for the given SSL *. */
+TCN_IMPLEMENT_CALL(jstring, SSL, getCipherForSSL)(TCN_STDARGS,
+                                                  jlong ssl /* SSL * */)
+{
+    UNREFERENCED_STDARGS;
+
+    return AJP_TO_JSTRING(SSL_get_cipher(J2P(ssl, SSL*)));
+}
+
+/* Read which protocol was negotiated for the given SSL *. */
+TCN_IMPLEMENT_CALL(jstring, SSL, getVersion)(TCN_STDARGS,
+                                                  jlong ssl /* SSL * */)
+{
+    UNREFERENCED_STDARGS;
+
+    return AJP_TO_JSTRING(SSL_get_version(J2P(ssl, SSL*)));
+}
+
+/* Is the handshake over yet? */
+TCN_IMPLEMENT_CALL(jint, SSL, isInInit)(TCN_STDARGS,
+                                        jlong ssl /* SSL * */) {
+    SSL *ssl_ = J2P(ssl, SSL *);
+
+    UNREFERENCED(o);
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return 0;
+    } else {
+        return SSL_in_init(ssl_);
+    }
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, doHandshake)(TCN_STDARGS,
+                                           jlong ssl /* SSL * */) {
+    SSL *ssl_ = J2P(ssl, SSL *);
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return 0;
+    }
+
+    UNREFERENCED(o);
+
+    return SSL_do_handshake(ssl_);
+}
+
+/* Read which protocol was negotiated for the given SSL *. */
+TCN_IMPLEMENT_CALL(jstring, SSL, getNextProtoNegotiated)(TCN_STDARGS,
+                                                         jlong ssl /* SSL * */) {
+    SSL *ssl_ = J2P(ssl, SSL *);
+    const unsigned char *proto;
+    unsigned int proto_len;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return NULL;
+    }
+
+    UNREFERENCED(o);
+
+    SSL_get0_next_proto_negotiated(ssl_, &proto, &proto_len);
+    return tcn_new_stringn(e, proto, proto_len);
+}
+
+/*** End Twitter API Additions ***/
+
+/*** Apple API Additions ***/
+
+TCN_IMPLEMENT_CALL(jstring, SSL, getAlpnSelected)(TCN_STDARGS,
+                                                         jlong ssl /* SSL * */) {
+    /* Looks fishy we have the same in sslnetwork.c, it set by socket/connection */
+    SSL *ssl_ = J2P(ssl, SSL *);
+    const unsigned char *proto;
+    unsigned int proto_len;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return NULL;
+    }
+
+    UNREFERENCED(o);
+
+    SSL_get0_alpn_selected(ssl_, &proto, &proto_len);
+    return tcn_new_stringn(e, proto, proto_len);
+}
+
+TCN_IMPLEMENT_CALL(jobjectArray, SSL, getPeerCertChain)(TCN_STDARGS,
+                                                  jlong ssl /* SSL * */)
+{
+    STACK_OF(X509) *sk;
+    int len;
+    int i;
+    X509 *cert;
+    int length;
+    unsigned char *buf;
+    jobjectArray array;
+    jbyteArray bArray;
+
+    SSL *ssl_ = J2P(ssl, SSL *);
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return NULL;
+    }
+
+    UNREFERENCED(o);
+
+    // Get a stack of all certs in the chain.
+    sk = SSL_get_peer_cert_chain(ssl_);
+
+    len = sk_X509_num(sk);
+    if (len <= 0) {
+        /* No peer certificate chain as no auth took place yet, or the auth was not successful. */
+        return NULL;
+    }
+    /* Create the byte[][] array that holds all the certs */
+    array = (*e)->NewObjectArray(e, len, byteArrayClass, NULL);
+
+    for(i = 0; i < len; i++) {
+        cert = (X509*) sk_X509_value(sk, i);
+
+        buf = NULL;
+        length = i2d_X509(cert, &buf);
+        if (length < 0) {
+            OPENSSL_free(buf);
+            /* In case of error just return an empty byte[][] */
+            return (*e)->NewObjectArray(e, 0, byteArrayClass, NULL);
+        }
+        bArray = (*e)->NewByteArray(e, length);
+        (*e)->SetByteArrayRegion(e, bArray, 0, length, (jbyte*) buf);
+        (*e)->SetObjectArrayElement(e, array, i, bArray);
+
+        /*
+         * Delete the local reference as we not know how long the chain is and local references are otherwise
+         * only freed once jni method returns.
+         */
+        (*e)->DeleteLocalRef(e, bArray);
+
+        OPENSSL_free(buf);
+    }
+    return array;
+}
+
+TCN_IMPLEMENT_CALL(jbyteArray, SSL, getPeerCertificate)(TCN_STDARGS,
+                                                  jlong ssl /* SSL * */)
+{
+    X509 *cert;
+    int length;
+    unsigned char *buf = NULL;
+    jbyteArray bArray;
+
+    SSL *ssl_ = J2P(ssl, SSL *);
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return NULL;
+    }
+
+    UNREFERENCED(o);
+
+    /* Get a stack of all certs in the chain */
+    cert = SSL_get_peer_certificate(ssl_);
+    if (cert == NULL) {
+        return NULL;
+    }
+
+    length = i2d_X509(cert, &buf);
+
+    bArray = (*e)->NewByteArray(e, length);
+    (*e)->SetByteArrayRegion(e, bArray, 0, length, (jbyte*) buf);
+
+    /*
+     * We need to free the cert as the reference count is incremented by one and it is not destroyed when the
+     * session is freed.
+     * See https://www.openssl.org/docs/ssl/SSL_get_peer_certificate.html
+     */
+    X509_free(cert);
+
+    OPENSSL_free(buf);
+
+    return bArray;
+}
+
+TCN_IMPLEMENT_CALL(jstring, SSL, getErrorString)(TCN_STDARGS, jlong number)
+{
+    char buf[256];
+    UNREFERENCED(o);
+    ERR_error_string(number, buf);
+    return tcn_new_string(e, buf);
+}
+
+TCN_IMPLEMENT_CALL(jlong, SSL, getTime)(TCN_STDARGS, jlong ssl)
+{
+    const SSL *ssl_ = J2P(ssl, SSL *);
+    const SSL_SESSION *session;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return 0;
+    }
+
+    UNREFERENCED(o);
+
+    session  = SSL_get_session(ssl_);
+    if (session) {
+        return SSL_get_time(session);
+    } else {
+        tcn_ThrowException(e, "ssl session is null");
+        return 0;
+    }
+}
+
+TCN_IMPLEMENT_CALL(void, SSL, setVerify)(TCN_STDARGS, jlong ssl,
+                                                jint level, jint depth)
+{
+    tcn_ssl_ctxt_t *c;
+    int verify;
+    SSL *ssl_ = J2P(ssl, SSL *);
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return;
+    }
+
+    c = SSL_get_app_data2(ssl_);
+
+    verify = SSL_VERIFY_NONE;
+
+    UNREFERENCED(o);
+    TCN_ASSERT(ctx != 0);
+    c->verify_mode = level;
+
+    if (c->verify_mode == SSL_CVERIFY_UNSET)
+        c->verify_mode = SSL_CVERIFY_NONE;
+    if (depth > 0)
+        c->verify_depth = depth;
+    /*
+     *  Configure callbacks for SSL context
+     */
+    if (c->verify_mode == SSL_CVERIFY_REQUIRE)
+        verify |= SSL_VERIFY_PEER_STRICT;
+    if ((c->verify_mode == SSL_CVERIFY_OPTIONAL) ||
+        (c->verify_mode == SSL_CVERIFY_OPTIONAL_NO_CA))
+        verify |= SSL_VERIFY_PEER;
+    if (!c->store) {
+        if (SSL_CTX_set_default_verify_paths(c->ctx)) {
+            c->store = SSL_CTX_get_cert_store(c->ctx);
+            X509_STORE_set_flags(c->store, 0);
+        }
+        else {
+            /* XXX: See if this is fatal */
+        }
+    }
+
+    SSL_set_verify(ssl_, verify, SSL_callback_SSL_verify);
+}
+
+TCN_IMPLEMENT_CALL(void, SSL, setOptions)(TCN_STDARGS, jlong ssl,
+                                                 jint opt)
+{
+    SSL *ssl_ = J2P(ssl, SSL *);
+
+    UNREFERENCED_STDARGS;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return;
+    }
+
+#ifndef SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION
+    /* Clear the flag if not supported */
+    if (opt & 0x00040000) {
+        opt &= ~0x00040000;
+    }
+#endif
+    SSL_set_options(ssl_, opt);
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, getOptions)(TCN_STDARGS, jlong ssl)
+{
+    SSL *ssl_ = J2P(ssl, SSL *);
+
+    UNREFERENCED_STDARGS;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return 0;
+    }
+
+    return SSL_get_options(ssl_);
+}
+
+TCN_IMPLEMENT_CALL(jobjectArray, SSL, getCiphers)(TCN_STDARGS, jlong ssl)
+{
+    STACK_OF(SSL_CIPHER) *sk;
+    int len;
+    jobjectArray array;
+    SSL_CIPHER *cipher;
+    const char *name;
+    int i;
+    jstring c_name;
+    SSL *ssl_ = J2P(ssl, SSL *);
+
+    UNREFERENCED_STDARGS;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return NULL;
+    }
+
+    sk = SSL_get_ciphers(ssl_);
+    len = sk_SSL_CIPHER_num(sk);
+
+    if (len <= 0) {
+        /* No peer certificate chain as no auth took place yet, or the auth was not successful. */
+        return NULL;
+    }
+
+    /* Create the byte[][] array that holds all the certs */
+    array = (*e)->NewObjectArray(e, len, stringClass, NULL);
+
+    for (i = 0; i < len; i++) {
+        cipher = (SSL_CIPHER*) sk_SSL_CIPHER_value(sk, i);
+        name = SSL_CIPHER_get_name(cipher);
+
+        c_name = (*e)->NewStringUTF(e, name);
+        (*e)->SetObjectArrayElement(e, array, i, c_name);
+    }
+    return array;
+}
+
+TCN_IMPLEMENT_CALL(jboolean, SSL, setCipherSuites)(TCN_STDARGS, jlong ssl,
+                                                         jstring ciphers)
+{
+    jboolean rv = JNI_TRUE;
+    SSL *ssl_ = J2P(ssl, SSL *);
+    TCN_ALLOC_CSTRING(ciphers);
+
+    UNREFERENCED_STDARGS;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return JNI_FALSE;
+    }
+
+    UNREFERENCED(o);
+    if (!J2S(ciphers)) {
+        return JNI_FALSE;
+    }
+    if (!SSL_set_cipher_list(ssl_, J2S(ciphers))) {
+        char err[256];
+        ERR_error_string(ERR_get_error(), err);
+        tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
+        rv = JNI_FALSE;
+    }
+    TCN_FREE_CSTRING(ciphers);
+    return rv;
+}
+
+TCN_IMPLEMENT_CALL(jbyteArray, SSL, getSessionId)(TCN_STDARGS, jlong ssl)
+{
+
+    int len;
+    const char *session_id;
+    const SSL_SESSION *session;
+    jbyteArray bArray;
+    SSL *ssl_ = J2P(ssl, SSL *);
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return NULL;
+    }
+    UNREFERENCED(o);
+    session = SSL_get_session(ssl_);
+    session_id = SSL_SESSION_get_id(session, &len);
+
+    if (len == 0 || session_id == NULL) {
+        return NULL;
+    }
+
+    bArray = (*e)->NewByteArray(e, len);
+    (*e)->SetByteArrayRegion(e, bArray, 0, len, (jbyte*) session_id);
+    return bArray;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, getHandshakeCount)(TCN_STDARGS, jlong ssl)
+{
+    int *handshakeCount = NULL;
+    SSL *ssl_ = J2P(ssl, SSL *);
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return -1;
+    }
+    UNREFERENCED(o);
+
+    handshakeCount = SSL_get_app_data3(ssl_);
+    if (handshakeCount != NULL) {
+        return *handshakeCount;
+    }
+    return 0;
+}
+
+/*** End Apple API Additions ***/
+
 #else
 /* OpenSSL is not supported.
  * Create empty stubs.

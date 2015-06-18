@@ -92,7 +92,7 @@ void SSL_set_app_data2(SSL *ssl, void *arg)
 }
 
 
-void *SSL_get_app_data3(SSL *ssl)
+void *SSL_get_app_data3(const SSL *ssl)
 {
     return SSL_get_ex_data(ssl, SSL_app_data3_idx);
 }
