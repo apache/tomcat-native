@@ -33,6 +33,10 @@ tcn_pass_cb_t tcn_password_callback;
 /* Global reference to the pool used by the dynamic mutexes */
 static apr_pool_t *dynlockpool = NULL;
 
+/* From netty-tcnative */
+static jclass byteArrayClass;
+static jclass stringClass;
+
 /* Dynamic lock structure */
 struct CRYPTO_dynlock_value {
     apr_pool_t *pool;
@@ -637,6 +641,10 @@ static int ssl_rand_make(const char *file, int len, int base64)
 
 TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
 {
+    int r = 0;
+    jclass clazz;
+    jclass sClazz;
+
     TCN_ALLOC_CSTRING(engine);
 
     UNREFERENCED(o);
@@ -709,8 +717,8 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
      * low entropy seed.
      */
     SSL_rand_seed(NULL);
-    /* For SSL_get_app_data2() at request time */
-    SSL_init_app_data2_idx();
+    /* For SSL_get_app_data2() and SSL_get_app_data3() at request time */
+    SSL_init_app_data2_3_idx();
 
     init_dh_params();
 
@@ -721,6 +729,15 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
                               ssl_init_cleanup,
                               apr_pool_cleanup_null);
     TCN_FREE_CSTRING(engine);
+
+    /* Cache the byte[].class for performance reasons */
+    clazz = (*e)->FindClass(e, "[B");
+    byteArrayClass = (jclass) (*e)->NewGlobalRef(e, clazz);
+
+    /* Cache the String.class for performance reasons */
+    sClazz = (*e)->FindClass(e, "java/lang/String");
+    stringClass = (jclass) (*e)->NewGlobalRef(e, sClazz);
+
     return (jint)APR_SUCCESS;
 }
 
@@ -887,7 +904,7 @@ static int jbs_free(BIO *bi)
 
 static int jbs_write(BIO *b, const char *in, int inl)
 {
-    jint ret = 0;
+    jint ret = -1;
     if (b->init && in != NULL) {
         BIO_JAVA *j = (BIO_JAVA *)b->ptr;
         JNIEnv   *e = NULL;
@@ -895,12 +912,18 @@ static int jbs_write(BIO *b, const char *in, int inl)
         tcn_get_java_env(&e);
         jb = (*e)->NewByteArray(e, inl);
         if (!(*e)->ExceptionOccurred(e)) {
+            BIO_clear_retry_flags(b);
             (*e)->SetByteArrayRegion(e, jb, 0, inl, (jbyte *)in);
             ret = (*e)->CallIntMethod(e, j->cb.obj,
                                       j->cb.mid[0], jb);
             (*e)->ReleaseByteArrayElements(e, jb, (jbyte *)in, JNI_ABORT);
             (*e)->DeleteLocalRef(e, jb);
         }
+    }
+    /* From netty-tc-native, in the AF we were returning 0 */
+    if (ret == 0) {
+        BIO_set_retry_write(b);
+        ret = -1;
     }
     return ret;
 }
@@ -915,12 +938,16 @@ static int jbs_read(BIO *b, char *out, int outl)
         tcn_get_java_env(&e);
         jb = (*e)->NewByteArray(e, outl);
         if (!(*e)->ExceptionOccurred(e)) {
+            BIO_clear_retry_flags(b);
             ret = (*e)->CallIntMethod(e, j->cb.obj,
                                       j->cb.mid[1], jb);
             if (ret > 0) {
                 jbyte *jout = (*e)->GetPrimitiveArrayCritical(e, jb, NULL);
                 memcpy(out, jout, ret);
                 (*e)->ReleasePrimitiveArrayCritical(e, jb, jout, 0);
+            } else if (outl != 0) {
+                ret = -1;
+                BIO_set_retry_read(b);
             }
             (*e)->DeleteLocalRef(e, jb);
         }
@@ -968,7 +995,16 @@ static int jbs_gets(BIO *b, char *out, int outl)
 
 static long jbs_ctrl(BIO *b, int cmd, long num, void *ptr)
 {
-    return 0;
+    int ret = 0;
+    switch (cmd) {
+        case BIO_CTRL_FLUSH:
+            ret = 1;
+            break;
+        default:
+            ret = 0;
+            break;
+    }
+    return ret;
 }
 
 static BIO_METHOD jbs_methods = {
