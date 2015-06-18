@@ -203,6 +203,9 @@
 
 #endif /* !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name) */
 
+#define MAX_ALPN_NPN_PROTO_SIZE 65535
+#define SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL            1
+
 typedef struct {
     /* client can have any number of cert/key pairs */
     const char  *cert_file;
@@ -259,6 +262,20 @@ struct tcn_ssl_ctxt_t {
      */
     char            *alpn;
     int             alpnlen;
+    /* Add from netty-tcnative */
+    /* certificate verifier callback */
+    jobject verifier;
+    jmethodID verifier_method;
+
+    unsigned char   *next_proto_data;
+    unsigned int    next_proto_len;
+    int             next_selector_failure_behavior;
+
+    /* Holds the alpn protocols, each of them prefixed with the len of the protocol */
+    unsigned char   *alpn_proto_data;
+    unsigned int    alpn_proto_len;
+    int             alpn_selector_failure_behavior;
+    /* End add from netty-tcnative */
 };
 
   
@@ -313,5 +330,9 @@ void        SSL_callback_handshake(const SSL *, int, int);
 int         SSL_CTX_use_certificate_chain(SSL_CTX *, const char *, int);
 int         SSL_callback_SSL_verify(int, X509_STORE_CTX *);
 int         SSL_rand_seed(const char *file);
+int         SSL_callback_next_protos(SSL *, const unsigned char **, unsigned int *, void *);
+int         SSL_callback_select_next_proto(SSL *, unsigned char **, unsigned char *, const unsigned char *, unsigned int,void *);
+int         SSL_callback_alpn_select_proto(SSL *, const unsigned char **, unsigned char *, const unsigned char *, unsigned int, void *);
+
 
 #endif /* SSL_PRIVATE_H */
