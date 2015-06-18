@@ -1241,4 +1241,248 @@ TCN_IMPLEMENT_CALL(jboolean, SSL, hasOp)(TCN_STDARGS, jint op)
     UNREFERENCED(op);
     return JNI_FALSE;
 }
+
+/*** Begin Twitter 1:1 API addition ***/
+TCN_IMPLEMENT_CALL(jint, SSL, getLastErrorNumber)(TCN_STDARGS) {
+  UNREFERENCED(o);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jlong, SSL, newSSL)(TCN_STDARGS, jlong ssl_ctx) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl_ctx);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(void, SSL, setBIO)(TCN_STDARGS, jlong ssl, jlong rbio, jlong wbio) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  UNREFERENCED(rbio);
+  UNREFERENCED(wbio);
+  tcn_ThrowException(e, "Not implemented");
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, pendingWrittenBytesInBIO)(TCN_STDARGS, jlong bio) {
+  UNREFERENCED(o);
+  UNREFERENCED(bio);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, pendingReadableBytesInSSL)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, writeToBIO)(TCN_STDARGS, jlong bio, jlong wbuf, jint wlen) {
+  UNREFERENCED(o);
+  UNREFERENCED(bio);
+  UNREFERENCED(wbuf);
+  UNREFERENCED(wlen);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, readFromBIO)(TCN_STDARGS, jlong bio, jlong rbuf, jint rlen) {
+  UNREFERENCED(o);
+  UNREFERENCED(bio);
+  UNREFERENCED(rbuf);
+  UNREFERENCED(rlen);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, writeToSSL)(TCN_STDARGS, jlong ssl, jlong wbuf, jint wlen) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  UNREFERENCED(wbuf);
+  UNREFERENCED(wlen);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, readFromSSL)(TCN_STDARGS, jlong ssl, jlong rbuf, jint rlen) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  UNREFERENCED(rbuf);
+  UNREFERENCED(rlen);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, getShutdown)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(void, SSL, setShutdown)(TCN_STDARGS, jlong ssl, jint mode) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  UNREFERENCED(mode);
+  tcn_ThrowException(e, "Not implemented");
+}
+
+TCN_IMPLEMENT_CALL(void, SSL, freeSSL)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+}
+
+TCN_IMPLEMENT_CALL(jlong, SSL, makeNetworkBIO)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(void, SSL, freeBIO)(TCN_STDARGS, jlong bio) {
+  UNREFERENCED(o);
+  UNREFERENCED(bio);
+  tcn_ThrowException(e, "Not implemented");
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, shutdownSSL)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jstring, SSL, getCipherForSSL)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return NULL;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, isInInit)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, doHandshake)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+}
+
+TCN_IMPLEMENT_CALL(jstring, SSL, getNextProtoNegotiated)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return NULL;
+}
+
+/*** End Twitter 1:1 API addition ***/
+
+/*** Begin Apple 1:1 API addition ***/
+
+TCN_IMPLEMENT_CALL(jstring, SSL, getAlpnSelected)(TCN_STDARGS, jlong ssl) {
+    UNREFERENCED(o);
+    UNREFERENCED(ssl);
+    tcn_ThrowException(e, "Not implemented");
+    return NULL;
+}
+
+TCN_IMPLEMENT_CALL(jobjectArray, SSL, getPeerCertChain)(TCN_STDARGS, jlong ssl)
+{
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return NULL;
+}
+
+TCN_IMPLEMENT_CALL(jbyteArray, SSL, getPeerCertificate)(TCN_STDARGS, jlong ssl)
+{
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return NULL;
+}
+
+TCN_IMPLEMENT_CALL(jstring, SSL, getErrorString)(TCN_STDARGS, jlong number)
+{
+  UNREFERENCED(o);
+  UNREFERENCED(number);
+  tcn_ThrowException(e, "Not implemented");
+  return NULL;
+}
+
+TCN_IMPLEMENT_CALL(jstring, SSL, getVersion)(TCN_STDARGS, jlong ssl)
+{
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return NULL;
+}
+
+TCN_IMPLEMENT_CALL(jlong, SSL, getTime)(TCN_STDARGS, jlong ssl)
+{
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(void, SSL, setVerify)(TCN_STDARGS, jlong ssl,
+                                                jint level, jint depth)
+{
+    UNREFERENCED(o);
+    UNREFERENCED(ssl);
+    tcn_ThrowException(e, "Not implemented");
+}
+
+TCN_IMPLEMENT_CALL(void, SSL, setOptions)(TCN_STDARGS, jlong ssl,
+                                                 jint opt)
+{
+    UNREFERENCED_STDARGS;
+    UNREFERENCED(ssl);
+    UNREFERENCED(opt);
+    tcn_ThrowException(e, "Not implemented");
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, getOptions)(TCN_STDARGS, jlong ssl)
+{
+    UNREFERENCED_STDARGS;
+    UNREFERENCED(ssl);
+    tcn_ThrowException(e, "Not implemented");
+    return 0;
+}
+TCN_IMPLEMENT_CALL(jobjectArray, SSL, getCiphers)(TCN_STDARGS, jlong ssl)
+{
+    UNREFERENCED_STDARGS;
+    UNREFERENCED(ssl);
+    tcn_ThrowException(e, "Not implemented");
+    return 0;
+}
+TCN_IMPLEMENT_CALL(jboolean, SSL, setCipherSuites)(TCN_STDARGS, jlong ssl,
+                                                         jstring ciphers)
+{
+    UNREFERENCED_STDARGS;
+    UNREFERENCED(ssl);
+    UNREFERENCED(ciphers);
+    tcn_ThrowException(e, "Not implemented");
+    return JNI_FALSE;
+}
+TCN_IMPLEMENT_CALL(jbyteArray, SSL, getSessionId)(TCN_STDARGS, jlong ssl)
+{
+    UNREFERENCED(o);
+    UNREFERENCED(ssl);
+    tcn_ThrowException(e, "Not implemented");
+}
+TCN_IMPLEMENT_CALL(jint, SSL, getHandshakeCount)(TCN_STDARGS, jlong ssl)
+{
+    UNREFERENCED(o);
+    UNREFERENCED(ssl);
+    tcn_ThrowException(e, "Not implemented");
+}
+/*** End Apple API Additions ***/
 #endif
