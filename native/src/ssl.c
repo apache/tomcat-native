@@ -1377,7 +1377,7 @@ TCN_IMPLEMENT_CALL(jstring, SSL, getNextProtoNegotiated)(TCN_STDARGS,
     UNREFERENCED(o);
 
     SSL_get0_next_proto_negotiated(ssl_, &proto, &proto_len);
-    return tcn_new_stringn(e, proto, proto_len);
+    return tcn_new_stringn(e, (const char *)proto, (size_t) proto_len);
 }
 
 /*** End Twitter API Additions ***/
@@ -1399,7 +1399,7 @@ TCN_IMPLEMENT_CALL(jstring, SSL, getAlpnSelected)(TCN_STDARGS,
     UNREFERENCED(o);
 
     SSL_get0_alpn_selected(ssl_, &proto, &proto_len);
-    return tcn_new_stringn(e, proto, proto_len);
+    return tcn_new_stringn(e, (const char *) proto, (size_t) proto_len);
 }
 
 TCN_IMPLEMENT_CALL(jobjectArray, SSL, getPeerCertChain)(TCN_STDARGS,
@@ -1678,8 +1678,8 @@ TCN_IMPLEMENT_CALL(jboolean, SSL, setCipherSuites)(TCN_STDARGS, jlong ssl,
 TCN_IMPLEMENT_CALL(jbyteArray, SSL, getSessionId)(TCN_STDARGS, jlong ssl)
 {
 
-    int len;
-    const char *session_id;
+    unsigned int len;
+    const unsigned char *session_id;
     const SSL_SESSION *session;
     jbyteArray bArray;
     SSL *ssl_ = J2P(ssl, SSL *);
