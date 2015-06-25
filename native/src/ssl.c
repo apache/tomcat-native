@@ -1137,6 +1137,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     int *handshakeCount = malloc(sizeof(int));
     SSL *ssl;
+    tcn_ssl_conn_t *con;
 
     UNREFERENCED_STDARGS;
 
@@ -1146,6 +1147,14 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
         tcn_ThrowException(e, "cannot create new ssl");
         return 0;
     }
+    if ((con = apr_pcalloc(c->pool, sizeof(tcn_ssl_conn_t))) == NULL) {
+        tcn_ThrowAPRException(e, apr_get_os_error());
+        return NULL;
+    }
+    con->pool = c->pool;
+    con->ctx  = c;
+    con->ssl  = ssl;
+    con->shutdown_type = c->shutdown_type;
 
     /* Store the handshakeCount in the SSL instance. */
     *handshakeCount = 0;
@@ -1166,6 +1175,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
 
     /* Store for later usage in SSL_callback_SSL_verify */
     SSL_set_app_data2(ssl, c);
+    SSL_set_app_data(ssl, con);
     return P2J(ssl);
 }
 
