@@ -1149,7 +1149,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     }
     if ((con = apr_pcalloc(c->pool, sizeof(tcn_ssl_conn_t))) == NULL) {
         tcn_ThrowAPRException(e, apr_get_os_error());
-        return NULL;
+        return 0;
     }
     con->pool = c->pool;
     con->ctx  = c;
