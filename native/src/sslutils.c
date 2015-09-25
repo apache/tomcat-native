@@ -405,7 +405,11 @@ static int ssl_verify_CRL(int ok, X509_STORE_CTX *ctx, tcn_ssl_conn_t *con)
             X509_REVOKED *revoked =
                 sk_X509_REVOKED_value(X509_CRL_get_REVOKED(crl), i);
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
             ASN1_INTEGER *sn = revoked->serialNumber;
+#else
+            ASN1_INTEGER *sn = X509_REVOKED_get0_serialNumber(revoked);
+#endif
 
             if (!ASN1_INTEGER_cmp(sn, X509_get_serialNumber(cert))) {
                 X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_REVOKED);
