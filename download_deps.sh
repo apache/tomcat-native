@@ -5,8 +5,8 @@
 
 
 
-SSL=openssl-1.0.1-beta2.tar.gz
-APR=apr-1.4.5.tar.gz
+SSL=openssl-1.0.2d.tar.gz
+APR=apr-1.5.2.tar.gz
 mkdir -p deps
 
 if [ ! -f deps/$SSL ] ; then
