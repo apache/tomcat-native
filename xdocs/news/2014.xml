@@ -18,27 +18,35 @@
 <!DOCTYPE document [
   <!ENTITY project SYSTEM "project.xml">
 ]>
-<document url="2015.html">
+<document url="2014.html">
 
   &project;
 
   <properties>
-    <title>2015 News and Status</title>
+    <title>2014 News and Status</title>
   </properties>
 
 <body>
 
-<section name="2015 News &amp; Status">
- <subsection anchor="20151028" name="28 Oct 2015 - TC-Native-1.2.0 released">
+<section name="2014 News &amp; Status">
+ <subsection anchor="20141023.1" name="23 October 2014 - TC-Native-1.1.32 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability
-  of Tomcat Native 1.2.0.
-  </p>
- </subsection>   <subsection anchor="20150323.1" name="23 March 2015 - TC-Native-1.1.33 released">
-  <p>The Apache Tomcat team is proud to announce the immediate availability
-  of Tomcat Native 1.1.33. This is a bug fixing release and includes Windows
-  binaries built with OpenSSL 1.0.1m and APR 1.5.1.
+  of Tomcat Native 1.1.32. This release add support for TLSv1.1 and TLSv1.2 and
+  includes Windows binaries built with OpenSSL 1.0.1j and APR 1.5.1.
   </p>
  </subsection>    
+ <subsection anchor="20140707.1" name="7 July 2014 - TC-Native-1.1.31 released">
+  <p>The Apache Tomcat team is proud to announce the immediate availability
+  of Tomcat Native 1.1.31. This is a bug fixing release and includes Windows
+  binaries built with OpenSSL 1.0.1h.
+  </p>
+ </subsection>    
+ <subsection anchor="20140415.1" name="15 April - TC-Native-1.1.30 released">
+  <p>The Apache Tomcat team is proud to announce the immediate availability
+  of Tomcat Native 1.1.30. This is a bug fixing release with added support for
+  EC ciphers if supported by OpenSSL.
+  </p>
+ </subsection>
 </section>
 </body>
 </document>

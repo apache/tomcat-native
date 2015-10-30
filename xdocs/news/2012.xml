@@ -18,27 +18,35 @@
 <!DOCTYPE document [
   <!ENTITY project SYSTEM "project.xml">
 ]>
-<document url="2015.html">
+<document url="2012.html">
 
   &project;
 
   <properties>
-    <title>2015 News and Status</title>
+    <title>2012 News and Status</title>
   </properties>
 
 <body>
 
-<section name="2015 News &amp; Status">
- <subsection anchor="20151028" name="28 Oct 2015 - TC-Native-1.2.0 released">
-  <p>The Apache Tomcat team is proud to announce the immediate availability
-  of Tomcat Native 1.2.0.
-  </p>
- </subsection>   <subsection anchor="20150323.1" name="23 March 2015 - TC-Native-1.1.33 released">
-  <p>The Apache Tomcat team is proud to announce the immediate availability
-  of Tomcat Native 1.1.33. This is a bug fixing release and includes Windows
-  binaries built with OpenSSL 1.0.1m and APR 1.5.1.
-  </p>
- </subsection>    
+<section name="2012 News &amp; Status">
+<subsection anchor="20120613.1" name="13 June - TC-Native-1.1.24 released">
+<p>The Apache Tomcat team is proud to announce the immediate availability
+of Tomcat Native 1.1.24. This is a feature-add release adding support for
+per-socket Poller timeouts.
+</p>
+<p>
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+</subsection>
+<subsection anchor="20120302.1" name="02 March - TC-Native-1.1.23 released">
+<p>The Apache Tomcat team is proud to announce the immediate availability
+of Tomcat Native 1.1.23. This is a stable release adding some bug fixes and
+experimental support for OCSP and PKCS12 certificates.
+</p>
+<p>
+ Please see the <a href="../miscellaneous/changelog.html">ChangeLog</a> for a full list of changes.
+</p>
+</subsection>
 </section>
 </body>
 </document>
