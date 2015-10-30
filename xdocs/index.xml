@@ -200,7 +200,7 @@ INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
   <p>
     Refer to the tomcat documentation to configure the connectors
     (See <a href="http://tomcat.apache.org/tomcat-8.0-doc/apr.html">Tomcat 8.0.x</a>,
-    <a href="http://tomcat.apache.org/tomcat-6.0-doc/apr.html">Tomcat 7.0.x</a>
+    <a href="http://tomcat.apache.org/tomcat-7.0-doc/apr.html">Tomcat 7.0.x</a>
     and <a href="http://tomcat.apache.org/tomcat-6.0-doc/apr.html">Tomcat 6.0.x</a>)
   </p>
 </subsection>
