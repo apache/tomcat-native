@@ -159,7 +159,7 @@ manual is described in more detail below.</p>
   <p>
     Use MS Visual Studio to open the workspace of the tc-native sources, adjust the OpenSSL includes and libraries location
     change the name of the libraries libeay32 and libssleay to libeay32MT and libssleayMT and build the tcn-native library.
-    That should create a tcnative-2.dll.
+    That should create a tcnative-1.dll.
   </p>
 </subsection>
 
@@ -192,15 +192,16 @@ export LD_LIBRARY_PATH</source>
   </p>
    <source wrapped="true"
 >Feb 8, 2015 12:27:41 PM org.apache.catalina.core.AprLifecycleListener init
-INFO: Loaded APR based Apache Tomcat Native library 2.x.y.
+INFO: Loaded APR based Apache Tomcat Native library 1.x.y.
 Feb 8, 2015 12:27:41 PM org.apache.catalina.core.AprLifecycleListener init
 INFO: APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true].
 Feb 8, 2015 12:27:41 PM org.apache.coyote.http11.Http11AprProtocol init
 INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
   <p>
     Refer to the tomcat documentation to configure the connectors
-    (See <a href="http://tomcat.apache.org/tomcat-6.0-doc/apr.html">Tomcat6.0.x</a>
-    and  <a href="http://tomcat.apache.org/tomcat-5.5-doc/apr.html">Tomcat5.5.x</a>)
+    (See <a href="http://tomcat.apache.org/tomcat-8.0-doc/apr.html">Tomcat 8.0.x</a>,
+    <a href="http://tomcat.apache.org/tomcat-6.0-doc/apr.html">Tomcat 7.0.x</a>
+    and <a href="http://tomcat.apache.org/tomcat-6.0-doc/apr.html">Tomcat 6.0.x</a>)
   </p>
 </subsection>
 
@@ -217,7 +218,7 @@ INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
   </p>
   <source wrapped="true"
 >Feb 8, 2015 2:48:17 PM org.apache.catalina.core.AprLifecycleListener init
-INFO: Loaded APR based Apache Tomcat Native library 2.x.y.
+INFO: Loaded APR based Apache Tomcat Native library 1.x.y.
 Feb 8, 2015 2:48:17 PM org.apache.catalina.core.AprLifecycleListener init
 INFO: APR capabilities: IPv6 [false], sendfile [true], accept filters [false], random [true].
 Feb 8, 2015 2:48:18 PM org.apache.coyote.http11.Http11AprProtocol init
