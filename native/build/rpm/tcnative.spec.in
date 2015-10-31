@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-%define tcnver 2
+%define tcnver 1
 %define aprver 1
 
 Summary: Tomcat Native Java library
@@ -92,8 +92,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc --parents html
 
 %changelog
-* Mon Jan 04 2010 Rainer Jung <rjung@apache.org> 2.0.0-1
-- update for tcnative 2.0
+* Sat Oct 31 2015 Rainer Jung <rjung@apache.org> 1.2.0-1
+- update for tcnative 1.2
 * Tue Jun 22 2004 Mladen Turk <mturk@jboss.com> 1.0.0-1
 - update to support v1.0.2 of APR
                                                                                 
