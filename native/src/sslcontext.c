@@ -106,12 +106,14 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
     hostname = (*env)->NewStringUTF(env, servername);
     original_ssl_context = P2J(c->ctx);
 
-    // Make the call
-    new_ssl_context = (*env)->CallStaticLongMethod(env,
-                                                            ssl_context_class,
-                                                            sni_java_callback,
-                                                            original_ssl_context,
-                                                            hostname);
+    // Make the call only if the statis methos exists
+    if (sni_java_callback != 0) {
+        new_ssl_context = (*env)->CallStaticLongMethod(env,
+                                                       ssl_context_class,
+                                                       sni_java_callback,
+                                                       original_ssl_context,
+                                                       hostname);
+    }
 
     if (original_ssl_context != new_ssl_context) {
         SSL_set_SSL_CTX(ssl, J2P(new_ssl_context, SSL_CTX *));
@@ -283,6 +285,10 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         ssl_context_class = (*e)->NewGlobalRef(e, o);
         sni_java_callback = (*e)->GetStaticMethodID(e, ssl_context_class,
                                                     "sniCallBack", "(JLjava/lang/String;)J");
+        /* Older Tomcat versions may not have this static method */
+        if ( JNI_TRUE == (*e)->ExceptionCheck(e) ) {
+            (*e)->ExceptionClear(e);
+        }
     }
 
     /* Set up OpenSSL call back if SNI is provided by the client */
