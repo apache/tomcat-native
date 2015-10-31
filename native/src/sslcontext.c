@@ -106,7 +106,7 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
     hostname = (*env)->NewStringUTF(env, servername);
     original_ssl_context = P2J(c->ctx);
 
-    // Make the call only if the statis methos exists
+    // Make the call only if the static method exists
     if (sni_java_callback != 0) {
         new_ssl_context = (*env)->CallStaticLongMethod(env,
                                                        ssl_context_class,
