@@ -91,7 +91,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Mon Jan 04 2010 Rainer Jung <rjung@apache.org> 1.0.0-2
-- Decouple apr major lib version form tcnative lib version
+- Decouple apr major lib version from tcnative lib version
 * Tue Jun 22 2004 Mladen Turk <mturk@jboss.com> 1.0.0-1
 - update to support v1.0.2 of APR
                                                                                 
