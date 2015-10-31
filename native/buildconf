@@ -97,7 +97,7 @@ VERSION=`echo $REVISION | sed -e 's/-.*//'`
 # Strip everything before "-"
 RELEASE=`echo $REVISION | sed -e 's/.*-//'`
 # Handle case of no "-" in REVISION
-if [ "x$RELEASE" = "xREVISION" ]; then
+if [ "x$RELEASE" = "x$REVISION" ]; then
   RELEASE=1
 fi
 echo "Using version '$VERSION' and release '$RELEASE' in RPM spec file"
