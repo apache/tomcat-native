@@ -38,7 +38,7 @@ http://tomcat.apache.org/tomcat-8.0-doc/apr.html.
 Building
 --------
 
-To build the Java API. Note that Java 1.7 is required to build the Java API.
+To build the Java API. Note that Java 1.8 is required to build the Java API.
 > ant
 
 To build the native part see native/BUILDING.
