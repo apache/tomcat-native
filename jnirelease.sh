@@ -253,7 +253,7 @@ if [ $? -ne 0 ]; then
     echo ""
     exit 1
 fi
-rm -f ${JKJNIDIST}/KEYS ${JKJNIDIST}/download_deps.sh
+rm -f ${JKWINDIST}/KEYS ${JKWINDIST}/download_deps.sh
 
 top="`pwd`"
 cd ${JKWINDIST}/xdocs
