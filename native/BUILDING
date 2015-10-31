@@ -15,6 +15,11 @@
   limitations under the License.
 ================================================================================
 
+Prerequisites
+-------------
+
+You need OpenSSL version 1.0.2 or higher and APR version 1.4.0 or higher.
+
 Building from source package
 -----------------------------
 
@@ -95,6 +100,3 @@ Build Tomcat native by executing
 
 That's it. You have just build libtcnative-1.so with statically linked
 apr and openssl.
-
-
-
