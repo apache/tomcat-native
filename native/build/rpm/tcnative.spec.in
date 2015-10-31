@@ -17,7 +17,7 @@
 
 %define tcnver 1
 %define aprmajor 1
-%define aprminor 5
+%define aprminor 4
 
 Summary: Tomcat Native Java library
 Name: tcnative
