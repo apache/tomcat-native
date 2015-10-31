@@ -34,7 +34,15 @@
   This is the Changelog for Tomcat Native 1.2.
   </p>
 </section>
-<section name="Changes between 1.1 and 1.2.0">
+<section name="Changes in 1.2.1">
+  <changelog>
+    <fix>
+      <bug>58566</bug>: Enable Tomcat Native 1.2.x to work with Tomcat releases
+      that do not have the necessary Java code to support SNI. (markt)
+    </fix>
+  </changelog>
+</section>
+<section name="Changes in 1.2.0">
   <changelog>
     <add>
       Add support for TLS extension ALPN. (markt)
@@ -42,6 +50,9 @@
     <add>
       Add support for TLS extension SNI (Server Name Indication).
       (markt)
+    </add>
+    <add>
+      Add support for OpenSSL BIO. (jfclere)
     </add>
     <add>
       Support wakeable pollsets and add Poll.interrupt() API.
