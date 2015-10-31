@@ -16,7 +16,8 @@
 #
 
 %define tcnver 1
-%define aprver 1
+%define aprmajor 1
+%define aprminor 3
 
 Summary: Tomcat Native Java library
 Name: tcnative
@@ -27,7 +28,7 @@ Group: System Environment/Libraries
 URL: http://apr.apache.org/
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildPrereq: autoconf, libtool, doxygen, apr-devel >= 0:{version}-{release}, openssl >= 0.9.8
+BuildPrereq: autoconf, libtool, doxygen, apr-devel >= %{aprmajor}.%{aprminor}.0, openssl >= 0.9.8
 
 %description
 The mission of the Tomcat Native Library (TCN) is to provide a
@@ -37,7 +38,7 @@ contains additional utility interfaces for Java.
 %package devel
 Group: Development/Libraries
 Summary: Tomcat Native development kit
-Requires: tcnative = %{version}-%{release}, apr-devel >= 0:{version}-{release}, openssl-devel >= 0.9.8
+Requires: tcnative = %{version}-%{release}, apr-devel >= %{aprmajor}.%{aprminor}.0, openssl-devel >= 0.9.8
 
 %description devel
 The mission of the Tomcat Native Library (TCN) is to provide a
@@ -49,7 +50,7 @@ contains additional utility interfaces for Java.
 
 %build
 %configure --with-apr=%{_prefix} \
-        --includedir=%{_includedir}/apr-%{aprver}
+        --includedir=%{_includedir}/apr-%{aprmajor}
 make %{?_smp_mflags} && make dox
 
 %check
@@ -86,7 +87,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libtcnative-%{tcnver}.*a
 %{_libdir}/libtcnative-%{tcnver}.so
 %{_libdir}/pkgconfig/tcnative-%{tcnver}.pc
-%{_includedir}/apr-%{aprver}/*.h
+%{_includedir}/apr-%{aprmajor}/*.h
 %doc --parents html
 
 %changelog
