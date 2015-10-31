@@ -31,7 +31,7 @@ Building from the svn tree
 Testing the build
 -----------------
 
-The make should produce a .so file named libtcnative-2.so.
+The make should produce a .so file named libtcnative-1.so.
 Build the jar containing the examples by
 
 > cd ..
@@ -54,11 +54,11 @@ NOTES
   - configure --disable-openssl: Configure without ssl support.
   - To use it in Tomcat you may have to add in bin/setenv.sh:
     LD_LIBRARY_PATH=openssl_install_location/lib; export LD_LIBRARY_PATH
-    (use ldd ./.libs/libtcnative-2.so to check it).
+    (use ldd ./.libs/libtcnative-1.so to check it).
   - quick testing: openssl s_client -connect localhost:8443
   - For MAC OS X you must manually add a link
     cd ${tcnative installdir}
-    ln -d libtcnative-2.dylib libtcnative-2.jnilib
+    ln -d libtcnative-1.dylib libtcnative-1.jnilib
 
 
 Building statically linked library on Unixes
@@ -82,7 +82,7 @@ Apr by default builds both static and dynamic libraries.
 > make
 > make install
 
-After that edit the ~/natives/apr/lib/libapr-2.la file
+After that edit the ~/natives/apr/lib/libapr-1.la file
 and comment or delete the following sections:
 dlname='...' and library_names='...'
 This is needed so that libtool picks the static version of the library.
@@ -93,7 +93,7 @@ Build Tomcat native by executing
 > make
 > make install
 
-That's it. You have just build libtcnative-2.so with statically linked
+That's it. You have just build libtcnative-1.so with statically linked
 apr and openssl.
 
 
