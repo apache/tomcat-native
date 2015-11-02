@@ -97,19 +97,21 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
     const char *servername;
     jstring hostname;
     jlong original_ssl_context, new_ssl_context;
+    tcn_ssl_ctxt_t *new_c;
+    
+    // Continue only if the static method exists
+    if (sni_java_callback == NULL) {
+        return SSL_TLSEXT_ERR_OK;
+    }
+    
     (*javavm)->AttachCurrentThread(javavm, (void **)&env, NULL);
 
     // Get the host name presented by the client
     servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
-    // Convert parameters ready for the method call
+    // Convert to Java compatible parameters ready for the method call
     hostname = (*env)->NewStringUTF(env, servername);
-    original_ssl_context = P2J(c->ctx);
-
-    // Make the call only if the static method exists
-    if (sni_java_callback == NULL) {
-        return SSL_TLSEXT_ERR_OK;
-    }
+    original_ssl_context = P2J(c);
     
     new_ssl_context = (*env)->CallStaticLongMethod(env,
                                                    ssl_context_class,
@@ -117,9 +119,10 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
                                                    original_ssl_context,
                                                    hostname);
 
-    if (new_ssl_context != 0 && original_ssl_context != new_ssl_context) {
-        SSL_set_SSL_CTX(ssl, J2P(new_ssl_context, SSL_CTX *));
-    }
+    if (new_ssl_context != 0 && new_ssl_context != original_ssl_context) {
+        new_c = J2P(new_ssl_context, tcn_ssl_ctxt_t *);
+        SSL_set_SSL_CTX(ssl, new_c->ctx);
+	}
 
     return SSL_TLSEXT_ERR_OK;
 }
