@@ -40,6 +40,23 @@
       <bug>58566</bug>: Enable Tomcat Native 1.2.x to work with Tomcat releases
       that do not have the necessary Java code to support SNI. (markt)
     </fix>
+    <update>
+      Minor rework of "buildconf" script. (rjung)
+    </update>
+    <fix>
+      Fix APR dependency version expression in RPM spec file. (rjung)
+    </fix>
+    <fix>
+      Fix major library version number in Windows build files, RPM spec file
+      and build description. (rjung)
+    </fix>
+    <fix>
+      Remove files "KEYS" and "download_deps.sh" from Windows (zip)
+      source distribution. (rjung)
+    </fix>
+    <fix>
+      Fix "unused variable" compiler warning. (rjung)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.0">
