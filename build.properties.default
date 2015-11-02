@@ -45,7 +45,6 @@ junit.version=3.8.2
 # The directory containing your binary distribution of JUnit
 # It will be automatically downloaded if it doesn't exist
 junit.home=${base.path}/junit${junit.version}
-#junit.home = /usr/local/java/junit3.8.1
 # The pathname of the "junit.jar" JAR file
 junit.jar=${junit.home}/junit.jar
 # The URL used to download JUnit if needed

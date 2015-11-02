@@ -31,14 +31,7 @@
     <property name="name"                  value="Tomcat Native" />
     <property name="title"                 value="Tomcat Native Library"/>
     <property name="year"                  value="2015" />
-    <property name="version.major"         value="1" />
-    <property name="version.minor"         value="2" />
-    <property name="version.build"         value="1" />
-    <property name="version.patch"         value="0" />
-    <property name="version.suffix"        value="-dev" />
 
-    <property name="junit.home"            value="/usr/local/junit3.8"/>
-    <property name="junit.jar"             value="${junit.home}/junit.jar"/>
     <property name="test.runner"           value="junit.textui.TestRunner"/>
 
     <property name="version"               value="${version.major}.${version.minor}.${version.build}${version.suffix}" />
@@ -53,12 +46,6 @@
     <property name="src.dir" value="."/>
     <property name="dist.root" value="./dist"/>
     <property name="ant.home" value="."/>
-
-    <property name="compile.source" value="1.8"/>
-    <property name="compile.target" value="1.8"/>
-    <property name="compile.debug" value="off"/>
-    <property name="compile.optimize" value="on"/>
-    <property name="compile.deprecation" value="on"/>
 
     <property name="docs.src" value="./xdocs"/>
     <property name="docs.dest" value="${dist.root}/doc"/>
