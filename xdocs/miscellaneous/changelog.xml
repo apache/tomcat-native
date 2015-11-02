@@ -86,6 +86,17 @@
     <fix>
       Let OpenSSL master handle thread IDs itself. (billbarker)
     </fix>
+    <update>
+      Minor rework of "buildconf" script. (rjung)
+    </update>
+    <fix>
+      Fix APR dependency version expression and requirement expression in
+      RPM spec file. (rjung)
+    </fix>
+    <update>
+      Try to make the changelog.xml served by SVN-HTTP viewable in a browser
+      by adding a stylesheet reference. (kpreisser, rjung)
+    </update>
   </changelog>
 </section>
 <section name="Changes between 1.1.32 and 1.1.33">
