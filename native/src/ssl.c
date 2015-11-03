@@ -661,7 +661,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
         ssl_initialized = 0;
         return (jint)APR_EINVAL;
     }
-#enduf
+#endif
     /* We must register the library in full, to ensure our configuration
      * code can successfully test the SSL environment.
      */
