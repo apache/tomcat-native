@@ -225,7 +225,11 @@ int SSL_CTX_use_certificate_chain(SSL_CTX *ctx, const char *file,
     unsigned long err;
     int n;
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     if ((bio = BIO_new(BIO_s_file_internal())) == NULL)
+#else
+    if ((bio = BIO_new(BIO_s_file())) == NULL)
+#endif
         return -1;
     if (BIO_read_filename(bio, file) <= 0) {
         BIO_free(bio);
@@ -534,9 +538,11 @@ void SSL_callback_handshake(const SSL *ssl, int where, int rc)
     if ((where & SSL_CB_ACCEPT_LOOP) && con->reneg_state == RENEG_REJECT) {
         int state = SSL_get_state(ssl);
 
-        if (state == SSL3_ST_SR_CLNT_HELLO_A
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+        if (state == SSL3_ST_SR_CLNT_HELLO_A
             || state == SSL23_ST_SR_CLNT_HELLO_A
+#else
+        if (state == TLS_ST_SR_CLNT_HELLO
 #endif
             ) {
             con->reneg_state = RENEG_ABORT;
