@@ -322,7 +322,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, handshake)(TCN_STDARGS, jlong sock)
             if (!con->ssl)
                 return APR_ENOTSOCK;
             rv = apr_get_netos_error();
-            i  = SSL_get_error(con->ssl, s);
+            i = SSL_get_error(con->ssl, s);
             switch (i) {
                 case SSL_ERROR_NONE:
                     con->shutdown_type = SSL_SHUTDOWN_TYPE_STANDARD;
@@ -337,12 +337,12 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, handshake)(TCN_STDARGS, jlong sock)
                 break;
                 case SSL_ERROR_SYSCALL:
 #if !defined(_WIN32)
-                      if (APR_STATUS_IS_EINTR(rv)) {
-                          /* Interrupted by signal */
-                          continue;
-                      }
+                    if (APR_STATUS_IS_EINTR(rv)) {
+                        /* Interrupted by signal */
+                        continue;
+                    }
 #endif
-                    /* Fall trough */
+                    /* Fall through */
                 default:
                     /*
                      * Anything else is a fatal error
@@ -402,8 +402,8 @@ ssl_socket_recv(apr_socket_t *sock, char *buf, apr_size_t *len)
         if ((s = SSL_read(con->ssl, buf, rd)) <= 0) {
             if (!con->ssl)
                 return APR_ENOTSOCK;
-            rv  = apr_get_netos_error();
-            i   = SSL_get_error(con->ssl, s);
+            rv = apr_get_netos_error();
+            i = SSL_get_error(con->ssl, s);
             /* Special case if the "close notify" alert send by peer */
             if (s == 0 && (SSL_get_shutdown(con->ssl) & SSL_RECEIVED_SHUTDOWN)) {
                 con->shutdown_type = SSL_SHUTDOWN_TYPE_STANDARD;
@@ -429,13 +429,13 @@ ssl_socket_recv(apr_socket_t *sock, char *buf, apr_size_t *len)
                         continue;
                     }
 #endif
-                    /* Fall trough */
+                    /* Fall through */
                 case SSL_ERROR_ZERO_RETURN:
                     if (s == 0) {
                         con->shutdown_type = SSL_SHUTDOWN_TYPE_STANDARD;
                         return APR_EOF;
                     }
-                    /* Fall trough */
+                    /* Fall through */
                 default:
                     con->shutdown_type = SSL_SHUTDOWN_TYPE_UNCLEAN;
                     return APR_EGENERAL;
@@ -466,7 +466,7 @@ ssl_socket_send(apr_socket_t *sock, const char *buf,
         return APR_ECONNABORTED;
     }
     if (!SSL_is_init_finished(con->ssl)) {
-        /* XXX: Is this a correct retval ? */ 
+        /* XXX: Is this a correct retval ? */
         return APR_EINPROGRESS;
     }
     if (wr == 0) {
@@ -481,8 +481,8 @@ ssl_socket_send(apr_socket_t *sock, const char *buf,
         if ((s = SSL_write(con->ssl, buf, wr)) <= 0) {
             if (!con->ssl)
                 return APR_ENOTSOCK;
-            rv  = apr_get_netos_error();
-            i   = SSL_get_error(con->ssl, s);
+            rv = apr_get_netos_error();
+            i = SSL_get_error(con->ssl, s);
             switch (i) {
                 case SSL_ERROR_WANT_READ:
                 case SSL_ERROR_WANT_WRITE:
@@ -516,7 +516,7 @@ ssl_socket_send(apr_socket_t *sock, const char *buf,
                         con->shutdown_type = SSL_SHUTDOWN_TYPE_STANDARD;
                         return APR_EOF;
                     }
-                    /* Fall trough */
+                    /* Fall through */
                 default:
                     con->shutdown_type = SSL_SHUTDOWN_TYPE_UNCLEAN;
                     return rv;
