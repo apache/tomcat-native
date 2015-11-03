@@ -395,7 +395,6 @@ ssl_socket_recv(apr_socket_t *sock, char *buf, apr_size_t *len)
     int s, i, rd = (int)(*len);
     apr_status_t rv;
     apr_interval_time_t timeout;
-    apr_int32_t nb;
 
     *len = 0;
     if (con->reneg_state == RENEG_ABORT) {
@@ -403,7 +402,6 @@ ssl_socket_recv(apr_socket_t *sock, char *buf, apr_size_t *len)
         return APR_ECONNABORTED;
     }
     apr_socket_timeout_get(con->sock, &timeout);
-    apr_socket_opt_get(con->sock, APR_SO_NONBLOCK, &nb);
     for (;;) {
         ERR_clear_error();
         if ((s = SSL_read(con->ssl, buf, rd)) <= 0) {
@@ -419,15 +417,6 @@ ssl_socket_recv(apr_socket_t *sock, char *buf, apr_size_t *len)
             switch (i) {
                 case SSL_ERROR_WANT_READ:
                 case SSL_ERROR_WANT_WRITE:
-                    if (nb) {
-                        if (i == SSL_ERROR_WANT_READ) {
-                            *len = 0;
-                            return APR_SUCCESS;
-                        } else {
-                            con->shutdown_type = SSL_SHUTDOWN_TYPE_UNCLEAN;
-                            return rv;
-                        }
-                    }
                     if ((rv = wait_for_io_or_timeout(con, i, timeout)) != APR_SUCCESS) {
                         con->shutdown_type = SSL_SHUTDOWN_TYPE_UNCLEAN;
                         return rv;
