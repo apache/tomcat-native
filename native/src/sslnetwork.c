@@ -154,8 +154,6 @@ static tcn_ssl_conn_t *ssl_create(JNIEnv *env, tcn_ssl_ctxt_t *ctx, apr_pool_t *
     SSL_set_verify_result(ssl, X509_V_OK);
     SSL_rand_seed(ctx->rand_file);
 
-    //SSL_set_session_ticket_ext_cb(ssl, ssl_ticket_cb, con);
-
 #ifdef TCN_DO_STATISTICS
     ssl_created++;
 #endif
@@ -350,8 +348,8 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, handshake)(TCN_STDARGS, jlong sock)
                     /* Fall through */
                 default:
                     /*
-                    * Anything else is a fatal error
-                    */
+                     * Anything else is a fatal error
+                     */
                     con->shutdown_type = SSL_SHUTDOWN_TYPE_UNCLEAN;
                     return SSL_TO_APR_ERROR(i);
                 break;
@@ -499,7 +497,7 @@ ssl_socket_send(apr_socket_t *sock, const char *buf,
         if ((s = SSL_write(con->ssl, buf, wr)) <= 0) {
             if (!con->ssl)
                 return APR_ENOTSOCK;
-            rv  = apr_get_netos_error();
+            rv = apr_get_netos_error();
             i = SSL_get_error(con->ssl, s);
             switch (i) {
                 case SSL_ERROR_WANT_READ:
