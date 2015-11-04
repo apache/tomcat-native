@@ -34,6 +34,20 @@
   This is the Changelog for Tomcat Native 1.2.
   </p>
 </section>
+<section name="Changes in 1.2.3">
+  <changelog>
+    <fix>
+      Remove Java classes that do not have C implementation code
+      for their native methods in the current library. They were
+      used for NPN support which is superseded by ALPN support
+      in the current code. (kkolinko)
+    </fix>
+    <fix>
+      Fix typo in declaration of a stub method used when the library is
+      compiled without OpenSSL support. (kkolinko)
+    </fix>
+  </changelog>
+</section>
 <section name="Changes in 1.2.2">
   <changelog>
     <fix>
