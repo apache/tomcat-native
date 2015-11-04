@@ -119,10 +119,14 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
                                                    original_ssl_context,
                                                    hostname);
 
+    // Delete the local reference as this method is called via callback.
+    // Otherwise local references are only freed once jni method returns.
+    (*env)->DeleteLocalRef(env, hostname);
+
     if (new_ssl_context != 0 && new_ssl_context != original_ssl_context) {
         new_c = J2P(new_ssl_context, tcn_ssl_ctxt_t *);
         SSL_set_SSL_CTX(ssl, new_c->ctx);
-	}
+    }
 
     return SSL_TLSEXT_ERR_OK;
 }
