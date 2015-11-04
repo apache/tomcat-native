@@ -39,6 +39,10 @@
     <fix>
       Fix broken debug and maintainer mode build. (rjung)
     </fix>
+    <fix>
+      Forward port additional fixes to the OpenSSL I/O to align it with
+      non-OpenSSL I/O. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.1">
