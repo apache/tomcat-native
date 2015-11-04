@@ -34,6 +34,13 @@
   This is the Changelog for Tomcat Native 1.2.
   </p>
 </section>
+<section name="Changes in 1.2.2">
+  <changelog>
+    <fix>
+      Fix broken debug and maintainer mode build. (rjung)
+    </fix>
+  </changelog>
+</section>
 <section name="Changes in 1.2.1">
   <changelog>
     <fix>

@@ -1549,7 +1549,11 @@ TCN_IMPLEMENT_CALL(void, SSL, setVerify)(TCN_STDARGS, jlong ssl,
     verify = SSL_VERIFY_NONE;
 
     UNREFERENCED(o);
-    TCN_ASSERT(ctx != 0);
+
+    if (c == NULL) {
+        tcn_ThrowException(e, "context is null");
+        return;
+    }
     c->verify_mode = level;
 
     if (c->verify_mode == SSL_CVERIFY_UNSET)
