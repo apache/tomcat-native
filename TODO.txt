@@ -84,11 +84,3 @@ http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HE
   - Document build
   - Use consistent naming
     (1.1.22 used ...win32-ocsp..., 1.1.24 used ...ocsp-win32...)
-
-
-Trunk
------
-
-Change release layout when releasing trunk: don't insert
-the additional "jni" directory, instead keep layout in sync
-between svn and source distribution.
