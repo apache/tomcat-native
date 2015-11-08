@@ -974,6 +974,120 @@ cleanup:
     return rv;
 }
 
+TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong ctx,
+                                                         jbyteArray javaCert, jbyteArray javaKey, jint idx)
+{
+#ifdef HAVE_ECC
+#if defined(SSL_CTX_set_ecdh_auto)
+    EC_KEY *eckey = NULL;
+#endif
+#endif
+    jsize lengthOfCert;
+    unsigned char* cert;
+    X509 * certs;
+    EVP_PKEY * evp;
+    const unsigned char *tmp;
+    BIO * bio;
+
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+    jboolean rv = JNI_TRUE;
+    char err[256];
+
+    /* we get the key contents into a byte array */
+    jbyte* bufferPtr = (*e)->GetByteArrayElements(e, javaKey, NULL);
+    jsize lengthOfKey = (*e)->GetArrayLength(e, javaKey);
+    unsigned char* key = malloc(lengthOfKey);
+    memcpy(key, bufferPtr, lengthOfKey);
+    (*e)->ReleaseByteArrayElements(e, javaKey, bufferPtr, 0);
+
+    bufferPtr = (*e)->GetByteArrayElements(e, javaCert, NULL);
+    lengthOfCert = (*e)->GetArrayLength(e, javaCert);
+    cert = malloc(lengthOfCert);
+    memcpy(cert, bufferPtr, lengthOfCert);
+    (*e)->ReleaseByteArrayElements(e, javaCert, bufferPtr, 0);
+
+    UNREFERENCED(o);
+    TCN_ASSERT(ctx != 0);
+
+    if (idx < 0 || idx >= SSL_AIDX_MAX) {
+        tcn_Throw(e, "Invalid key type");
+        rv = JNI_FALSE;
+        goto cleanup;
+    }
+
+    tmp = (const unsigned char *)cert;
+    certs = d2i_X509(NULL, &tmp, lengthOfCert);
+    if (certs == NULL) {
+        ERR_error_string(ERR_get_error(), err);
+        tcn_Throw(e, "Error reading certificat (%s)", err);
+        rv = JNI_FALSE;
+        goto cleanup;
+    }
+    if(c->certs[idx] != NULL) {
+        free(c->certs[idx]);
+    }
+    c->certs[idx] = certs;
+
+    bio = BIO_new(BIO_s_mem());
+    BIO_write(bio, key, lengthOfKey);
+
+    evp = PEM_read_bio_PrivateKey(bio, NULL, 0, NULL);
+    if (evp == NULL) {
+        BIO_free(bio);
+        ERR_error_string(ERR_get_error(), err);
+        tcn_Throw(e, "Error reading private key (%s)", err);
+        rv = JNI_FALSE;
+        goto cleanup;
+    }
+    BIO_free(bio);
+    if(c->keys[idx] != NULL) {
+        free(c->keys[idx]);
+    }
+    c->keys[idx] = evp;
+
+    if (SSL_CTX_use_certificate(c->ctx, c->certs[idx]) <= 0) {
+        ERR_error_string(ERR_get_error(), err);
+        tcn_Throw(e, "Error setting certificate (%s)", err);
+        rv = JNI_FALSE;
+        goto cleanup;
+    }
+    if (SSL_CTX_use_PrivateKey(c->ctx, c->keys[idx]) <= 0) {
+        ERR_error_string(ERR_get_error(), err);
+        tcn_Throw(e, "Error setting private key (%s)", err);
+        rv = JNI_FALSE;
+        goto cleanup;
+    }
+    if (SSL_CTX_check_private_key(c->ctx) <= 0) {
+        ERR_error_string(ERR_get_error(), err);
+        tcn_Throw(e, "Private key does not match the certificate public key (%s)",
+                  err);
+        rv = JNI_FALSE;
+        goto cleanup;
+    }
+
+    /*
+     * TODO Try to read DH parameters from somewhere...
+     */
+
+#ifdef HAVE_ECC
+    /*
+     * TODO try to read the ECDH curve name from somewhere...
+     */
+#if defined(SSL_CTX_set_ecdh_auto)
+    SSL_CTX_set_ecdh_auto(c->ctx, 1);
+#else
+    eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+    SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
+    EC_KEY_free(eckey);
+#endif
+#endif
+    SSL_CTX_set_tmp_dh_callback(c->ctx, SSL_callback_tmp_DH);
+cleanup:
+    free(key);
+    free(cert);
+    return rv;
+}
+
 static int ssl_array_index(apr_array_header_t *array,
                            const char *s)
 {
