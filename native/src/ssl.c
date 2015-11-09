@@ -1727,7 +1727,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, getHandshakeCount)(TCN_STDARGS, jlong ssl)
 
 /*** End Apple API Additions ***/
 
-#else
+#else /* HAVE_OPENSSL */
 /* OpenSSL is not supported.
  * Create empty stubs.
  */
@@ -2097,4 +2097,4 @@ TCN_IMPLEMENT_CALL(jint, SSL, getHandshakeCount)(TCN_STDARGS, jlong ssl)
     tcn_ThrowException(e, "Not implemented");
 }
 /*** End Apple API Additions ***/
-#endif
+#endif /* HAVE_OPENSSL */
