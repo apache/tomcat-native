@@ -50,6 +50,12 @@
       Fix the signature of the implementation of the native SSL method
       newSSL() in the case when OPENSSL is not available. (rjung)
     </fix>
+    <fix>
+      Fix the signature of the implementation of the native SSLSocket
+      method getInfoB() to return jbyteArray instead of jobject.
+      This is consistent with what it actually returns and how
+      the native Java method is declared. (rjung)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.2">
