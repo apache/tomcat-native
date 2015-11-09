@@ -573,8 +573,8 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, getInfoI)(TCN_STDARGS, jlong sock,
  * Create empty stubs.
  */
 
-TCN_IMPLEMENT_CALL(jobject, SSLSocket, getInfoB)(TCN_STDARGS, jlong sock,
-                                                 jint what)
+TCN_IMPLEMENT_CALL(jbyteArray, SSLSocket, getInfoB)(TCN_STDARGS, jlong sock,
+                                                    jint what)
 {
     UNREFERENCED_STDARGS;
     UNREFERENCED(sock);
