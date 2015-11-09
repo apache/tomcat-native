@@ -46,6 +46,10 @@
       Fix typo in declaration of a stub method used when the library is
       compiled without OpenSSL support. (kkolinko)
     </fix>
+    <fix>
+      Fix the signature of the implementation of the native SSL method
+      newSSL() in the case when OPENSSL is not available. (rjung)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.2">

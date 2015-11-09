@@ -1861,9 +1861,12 @@ TCN_IMPLEMENT_CALL(jint, SSL, getLastErrorNumber)(TCN_STDARGS) {
   return 0;
 }
 
-TCN_IMPLEMENT_CALL(jlong, SSL, newSSL)(TCN_STDARGS, jlong ssl_ctx) {
+TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
+                                                   jlong ctx /* tcn_ssl_ctxt_t * */,
+                                                   jboolean server) {
   UNREFERENCED(o);
-  UNREFERENCED(ssl_ctx);
+  UNREFERENCED(ctx);
+  UNREFERENCED(server);
   tcn_ThrowException(e, "Not implemented");
   return 0;
 }
