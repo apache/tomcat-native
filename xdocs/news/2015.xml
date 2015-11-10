@@ -29,11 +29,20 @@
 <body>
 
 <section name="2015 News &amp; Status">
+ <subsection anchor="20151109" name="9 Nov 2015 - TC-Native-1.2.2 released">
+  <p>The Apache Tomcat team is proud to announce the immediate availability
+  of Tomcat Native 1.2.2. This is a bug fix release and includes Windows
+  binaries built with OpenSSL 1.0.2d and APR 1.5.1.
+  </p>
+ </subsection>
  <subsection anchor="20151028" name="28 Oct 2015 - TC-Native-1.2.0 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability
-  of Tomcat Native 1.2.0.
+  of Tomcat Native 1.2.0. This is the first release of the 1.2.x series that
+  provides ALPN, SNI and OpenSSl BIO support. It includes Windows binaries built
+  with OpenSSL 1.0.2d and APR 1.5.1.
   </p>
- </subsection>   <subsection anchor="20150323.1" name="23 March 2015 - TC-Native-1.1.33 released">
+ </subsection>
+ <subsection anchor="20150323.1" name="23 March 2015 - TC-Native-1.1.33 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability
   of Tomcat Native 1.1.33. This is a bug fixing release and includes Windows
   binaries built with OpenSSL 1.0.1m and APR 1.5.1.
