@@ -650,31 +650,6 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
 #endif
         return APR_EGENERAL;
     }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    SSL_set_state(con->ssl, SSL_ST_ACCEPT);
-
-    apr_socket_timeout_get(con->sock, &timeout);
-    ecode = SSL_ERROR_WANT_READ;
-    while (ecode == SSL_ERROR_WANT_READ) {
-        retVal = SSL_do_handshake(con->ssl);
-        if (retVal <= 0) {
-            ecode = SSL_get_error(con->ssl, retVal);
-            if (ecode == SSL_ERROR_WANT_READ) {
-                if ((rv = wait_for_io_or_timeout(con, ecode, timeout)) != APR_SUCCESS)
-                    return rv; /* Can't wait */
-                continue; /* It should be ok now */
-            }
-            else
-                return APR_EGENERAL;
-        } else
-            break;
-    }
-    con->reneg_state = RENEG_REJECT;
-
-    if (SSL_get_state(con->ssl) != SSL_ST_OK) {
-        return APR_EGENERAL;
-    }
-#endif
     return APR_SUCCESS;
 }
 
