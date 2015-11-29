@@ -645,7 +645,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
 #endif
         return APR_EGENERAL;
     }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
 #if OPENSSL_VERSION_NUMBER >= 0x1000100fL
     SSL_set_state(con->ssl, SSL_ST_ACCEPT);
 #else
