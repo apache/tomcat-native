@@ -97,6 +97,10 @@
       Try to make the changelog.xml served by SVN-HTTP viewable in a browser
       by adding a stylesheet reference. (kpreisser, rjung)
     </update>
+    <scode>
+      Remove code that performs a read after a renegotiation that appears to be
+      unnecessary with OpenSSL 1.0.2. (billbarker)
+    </scode>
   </changelog>
 </section>
 <section name="Changes between 1.1.32 and 1.1.33">
