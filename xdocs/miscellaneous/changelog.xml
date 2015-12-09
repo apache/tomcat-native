@@ -57,7 +57,7 @@
       the native Java method is declared. (rjung)
     </fix>
     <add>
-      Add support for using Java ketstores for certificates and keys. (jfclere)
+      Add support for using Java keystores for certificates and keys. (jfclere)
     </add>
     <scode>
       Remove code that performs a read after a renegotiation that appears to be
