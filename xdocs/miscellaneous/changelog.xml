@@ -37,8 +37,8 @@
 <section name="Changes in 1.2.4">
   <changelog>
     <fix>
-      SSL.getHandshakeCount, which was unused, now returns the handshake
-      completed count rather than the handshake stated count. (remm)
+      SSL.getHandshakeCount(), which was unused, now returns the handshake
+      completed count rather than the handshake started count. (remm)
     </fix>
   </changelog>
 </section>
