@@ -1117,7 +1117,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, getLastErrorNumber)(TCN_STDARGS) {
 
 static void ssl_info_callback(const SSL *ssl, int where, int ret) {
     int *handshakeCount = NULL;
-    if (0 != (where & SSL_CB_HANDSHAKE_START)) {
+    if (0 != (where & SSL_CB_HANDSHAKE_DONE)) {
         handshakeCount = (int*) SSL_get_app_data3(ssl);
         if (handshakeCount != NULL) {
             ++(*handshakeCount);

@@ -34,6 +34,14 @@
   This is the Changelog for Tomcat Native 1.2.
   </p>
 </section>
+<section name="Changes in 1.2.4">
+  <changelog>
+    <fix>
+      SSL.getHandshakeCount, which was unused, now returns the handshake
+      completed count rather than the handshake stated count. (remm)
+    </fix>
+  </changelog>
+</section>
 <section name="Changes in 1.2.3">
   <changelog>
     <fix>
