@@ -32,8 +32,8 @@
  <subsection anchor="20151215.1" name="15 December 2015 - TC-Native-1.1.34 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability
   of Tomcat Native 1.1.34. This is a bug fixing release and includes Windows
-  binaries built with OpenSSL 1.0.1q and APR 1.5.1. Note that the Windows no
-  longer include support for Itanium.
+  binaries built with OpenSSL 1.0.1q and APR 1.5.1. Note that the Windows
+  binaries no longer include support for Itanium.
   </p>
  </subsection>    
  <subsection anchor="20150323.1" name="23 March 2015 - TC-Native-1.1.33 released">
