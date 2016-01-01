@@ -125,7 +125,7 @@
 
   <!-- Footer -->
   <footer><div id="footer">
-    Copyright © 2008-2015, The Apache Software Foundation
+    Copyright © 2008-2016, The Apache Software Foundation
   </div></footer>
 </div>
 </body>
