@@ -462,7 +462,7 @@ static void ssl_dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
     else {
         apr_thread_mutex_unlock(l->mutex);
     }
-
+}
 
 /*
  * Dynamic lock destruction callback
