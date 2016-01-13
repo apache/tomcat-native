@@ -462,7 +462,7 @@ static void ssl_dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
     else {
         apr_thread_mutex_unlock(l->mutex);
     }
-}
+
 
 /*
  * Dynamic lock destruction callback
@@ -661,11 +661,12 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
         ssl_initialized = 0;
         return (jint)APR_EINVAL;
     }
-#endif
+
     /* We must register the library in full, to ensure our configuration
      * code can successfully test the SSL environment.
      */
     CRYPTO_malloc_init();
+#endif
     ERR_load_crypto_strings();
     SSL_load_error_strings();
     SSL_library_init();
