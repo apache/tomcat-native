@@ -661,7 +661,9 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     /* We must register the library in full, to ensure our configuration
      * code can successfully test the SSL environment.
      */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     CRYPTO_malloc_init();
+#endif
     ERR_load_crypto_strings();
     SSL_load_error_strings();
     SSL_library_init();
