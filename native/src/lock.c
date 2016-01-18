@@ -86,17 +86,6 @@ TCN_IMPLEMENT_CALL(jint, Lock, destroy)(TCN_STDARGS, jlong mutex)
     return (jint)apr_proc_mutex_destroy(m);
 }
 
-#if 0
-/* There is bug in APR implementing that function */
-TCN_IMPLEMENT_CALL(jint, Lock, cleanup)(TCN_STDARGS, jlong mutex)
-{
-   void *m = J2P(mutex, void *);
-
-    UNREFERENCED_STDARGS;
-    return (jint)apr_proc_mutex_cleanup(m);
-}
-#endif
-
 TCN_IMPLEMENT_CALL(jstring, Lock, lockfile)(TCN_STDARGS, jlong mutex)
 {
     apr_proc_mutex_t *m = J2P(mutex, apr_proc_mutex_t *);
