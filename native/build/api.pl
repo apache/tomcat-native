@@ -47,7 +47,7 @@ our $VERSION = '1.0';
 
 # Sub directories containing c native API and Java classes.
 # Path relative to tcnative main project directory.
-my $C_NATIVE_SUBDIR = 'native/src';
+my $C_NATIVE_SUBDIR = 'native';
 my $JAVA_API_SUBDIR = 'java';
 
 # Macro used for marking C native API
