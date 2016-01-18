@@ -237,7 +237,7 @@ sub javaNativeApi {
         # Example declaration
         #public static native long uid(String username, long p)
         #       throws Error;
-        if ($_ =~ /^\s*public\s+([^\(]*)/ && ($type = $1) && $type =~ /\snative\s/) {
+        if ($_ =~ /^\s*((public|protected|private)\s+)?([^\(]*)\(/ && ($type = $3) && $type =~ /\snative\s/) {
             chomp();
             $signature = $_;
             # Concat next line until signature is complete
@@ -252,7 +252,7 @@ sub javaNativeApi {
 
                 # Normalize return type and method name
                 # Remove unused specifiers
-                $type =~ s/\bpublic\b//g;
+                $type =~ s/\b(public|protected|private)\b//g;
                 $type =~ s/\bnative\b//g;
                 $type =~ s/\bstatic\b//g;
                 # Collapse multiple spaces
