@@ -666,6 +666,8 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
      * code can successfully test the SSL environment.
      */
     CRYPTO_malloc_init();
+#else
+    OPENSSL_malloc_init();
 #endif
     ERR_load_crypto_strings();
     SSL_load_error_strings();
