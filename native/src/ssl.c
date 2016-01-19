@@ -663,6 +663,8 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
      */
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     CRYPTO_malloc_init();
+#else
+    OPENSSL_malloc_init();
 #endif
     ERR_load_crypto_strings();
     SSL_load_error_strings();
