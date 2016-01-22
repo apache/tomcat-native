@@ -213,7 +213,11 @@ EC_GROUP *SSL_ec_GetParamFromFile(const char *file)
 DH *SSL_callback_tmp_DH(SSL *ssl, int export, int keylen)
 {
     EVP_PKEY *pkey = SSL_get_privatekey(ssl);
-    int type = pkey ? EVP_PKEY_type(pkey->type) : EVP_PKEY_NONE;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    int type = pkey != NULL ? EVP_PKEY_type(pkey->type) : EVP_PKEY_NONE;
+#else
+    int type = pkey != NULL ? EVP_PKEY_base_id(pkey) : EVP_PKEY_NONE;
+#endif
 
     /*
      * OpenSSL will call us with either keylen == 512 or keylen == 1024
