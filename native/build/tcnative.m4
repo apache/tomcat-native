@@ -234,8 +234,8 @@ case "$use_openssl" in
         LIBS="$LIBS $TCN_OPENSSL_LIBS"
 
 AC_ARG_ENABLE(openssl-version-check,
-[AC_HELP_STRING([--enable-openssl-version-check],
-        [Check OpenSSL Version @<:@default=yes@:>@])])
+[AC_HELP_STRING([--disable-openssl-version-check],
+        [disable the OpenSSL version check])])
 case "$enable_openssl_version_check" in
 yes|'')
         AC_MSG_CHECKING(OpenSSL library version >= 1.0.2)

@@ -36,6 +36,11 @@
 </section>
 <section name="Changes in 1.2.5">
   <changelog>
+    <update>
+      Enable OpenSSL version check in <code>configure</code> by
+      default. It can be turned off using
+      <code>--disable-openssl-version-check</code>. (rjung)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.4">
@@ -73,7 +78,7 @@
     </add>
     <scode>
       Remove code that performs a read after a renegotiation that appears to be
-      unnecessary with OpenSDSL 1.0.2. (billbarker)
+      unnecessary with OpenSSL 1.0.2. (billbarker)
     </scode>
     <add>
       Expose <code>SSL_renegotiate</code> to the Java API. (remm)
