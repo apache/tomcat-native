@@ -42,7 +42,7 @@
       <code>--disable-openssl-version-check</code>. (rjung)
     </update>
     <fix>
-      <bug>58566</bug>: Native function <code>versionString()</code> and
+      <bug>59024</bug>: Native function <code>versionString()</code> and
       for OpenSSL 1.1.0 also <code>version()</code> (both in in ssl.c) now
       return the OpenSSL run time version, not the compile time version.
       (rjung)
