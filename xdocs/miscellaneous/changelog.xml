@@ -37,6 +37,16 @@
   new documentation project for Tomcat Native was started.
   </p>
 </section>
+<section name="Changes between 1.1.34 and 1.1.35">
+  <changelog>
+    <fix>
+      <bug>59024</bug>: Native function <code>versionString()</code> and
+      for OpenSSL 1.1.0 also <code>version()</code> (both in in ssl.c) now
+      return the OpenSSL run time version, not the compile time version.
+      (rjung)
+    </fix>
+  </changelog>
+</section>
 <section name="Changes between 1.1.33 and 1.1.34">
   <changelog>
     <update>
