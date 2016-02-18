@@ -267,13 +267,21 @@ DH *SSL_get_dh_params(unsigned keylen)
 TCN_IMPLEMENT_CALL(jint, SSL, version)(TCN_STDARGS)
 {
     UNREFERENCED_STDARGS;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     return OPENSSL_VERSION_NUMBER;
+#else
+    return OpenSSL_version_num();
+#endif
 }
 
 TCN_IMPLEMENT_CALL(jstring, SSL, versionString)(TCN_STDARGS)
 {
     UNREFERENCED(o);
-    return AJP_TO_JSTRING(OPENSSL_VERSION_TEXT);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    return AJP_TO_JSTRING(SSLeay_version(SSLEAY_VERSION));
+#else
+    return AJP_TO_JSTRING(OpenSSL_version(OPENSSL_VERSION));
+#endif
 }
 
 /*
