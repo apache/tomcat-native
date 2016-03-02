@@ -617,9 +617,6 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
     tcn_socket_t *s   = J2P(sock, tcn_socket_t *);
     tcn_ssl_conn_t *con;
     int retVal;
-    int ecode = SSL_ERROR_WANT_READ;
-    apr_status_t rv;
-    apr_interval_time_t timeout;
 
     UNREFERENCED_STDARGS;
     TCN_ASSERT(sock != 0);

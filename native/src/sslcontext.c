@@ -978,7 +978,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
                                                          jbyteArray javaCert, jbyteArray javaKey, jint idx)
 {
 #ifdef HAVE_ECC
-#if defined(SSL_CTX_set_ecdh_auto)
+#ifndef SSL_CTX_set_ecdh_auto
     EC_KEY *eckey = NULL;
 #endif
 #endif

@@ -599,7 +599,7 @@ int select_next_proto(SSL *ssl, const unsigned char **out, unsigned char *outlen
     const unsigned char *p;
     const unsigned char *end;
     const unsigned char *proto;
-    unsigned char proto_len;
+    unsigned char proto_len = '\0';
 
     while (i < supported_protos_len) {
         target_proto_len = *supported_protos;
@@ -630,11 +630,10 @@ int select_next_proto(SSL *ssl, const unsigned char **out, unsigned char *outlen
         supported_protos += target_proto_len;
     }
 
-    if (failure_behavior == SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL) {
+    if (supported_protos_len > 0 && inlen > 0 && failure_behavior == SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL) {
          // There were no match but we just select our last protocol and hope the other peer support it.
          //
          // decrement the pointer again so the pointer points to the start of the protocol.
-         /* XXX compiler warning: 'proto_len' and 'p' may be used uninitialized in this function */
          p -= proto_len;
          *out = p;
          *outlen = proto_len;

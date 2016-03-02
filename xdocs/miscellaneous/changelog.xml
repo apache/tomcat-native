@@ -36,6 +36,9 @@
 </section>
 <section name="Changes in 1.2.6">
   <changelog>
+    <fix>
+      Fix some compiler warnings in native ssl code. (rjung)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.5">
