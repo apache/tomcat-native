@@ -47,6 +47,10 @@
       return the OpenSSL run time version, not the compile time version.
       (rjung)
     </fix>
+    <scode>
+      Track changes in the OpenSSL master branch so it is possible to build
+      Tomcat Native with that branch. (billbarker)
+    </scode>
   </changelog>
 </section>
 <section name="Changes in 1.2.4">
