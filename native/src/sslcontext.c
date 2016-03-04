@@ -1534,6 +1534,10 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setSessionTicketKeys)(TCN_STDARGS, jlong ct
  * https://android.googlesource.com/platform/external/openssl/+/master/patches/0003-jsse.patch
  */
 static const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
+    /* XXX cipher->algorithm_mkey is no longer available in OpenSSL 1.1.0 */
+    /* One could try to extract the info from
+     * char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
+     * using ugly string parsing. */
     switch (cipher->algorithm_mkey)
         {
     case SSL_kRSA:
@@ -1584,6 +1588,11 @@ static const char* SSL_authentication_method(const SSL* ssl) {
         case SSL2_VERSION:
             return SSL_TXT_RSA;
         default:
+            /* XXX ssl->s3->tmp.new_cipher is no longer available in OpenSSL 1.1.0 */
+            /* https://github.com/netty/netty-tcnative/blob/1.1.33/openssl-dynamic/src/main/c/sslcontext.c
+             * contains a different method, but i think this is not correct.
+             * Instead of choosing the cipher used for the current handshake it simply
+             * uses the first cipher available during the handshake. */
             return SSL_CIPHER_authentication_method(ssl->s3->tmp.new_cipher);
         }
     }
@@ -1638,6 +1647,7 @@ static int SSL_cert_verify(X509_STORE_CTX *ctx, void *arg) {
         OPENSSL_free(buf);
     }
 
+    /* XXX SSL_authentication_method() currently does not work/compile when used with OpenSSL 1.1.0 */
     authMethod = SSL_authentication_method(ssl);
     authMethodString = (*e)->NewStringUTF(e, authMethod);
 
