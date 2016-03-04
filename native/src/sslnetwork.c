@@ -617,6 +617,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
     tcn_socket_t *s   = J2P(sock, tcn_socket_t *);
     tcn_ssl_conn_t *con;
     int retVal;
+    char peekbuf[1];
 
     UNREFERENCED_STDARGS;
     TCN_ASSERT(sock != 0);
@@ -643,6 +644,19 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
     if (!SSL_is_init_finished(con->ssl)) {
         return APR_EGENERAL;
     }
+
+    /* Need to trigger renegotiation handshake by reading.
+     * Peeking 0 bytes actually works.
+     * See: http://marc.info/?t=145493359200002&r=1&w=2
+     */
+    SSL_peek(con->ssl, peekbuf, 0);
+
+    con->reneg_state = RENEG_REJECT;
+
+    if (!SSL_is_init_finished(con->ssl)) {
+        return APR_EGENERAL;
+    }
+
     return APR_SUCCESS;
 }
 

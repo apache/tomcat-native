@@ -36,6 +36,10 @@
 </section>
 <section name="Changes in 1.2.6">
   <changelog>
+    <update>
+      Improve renegotiation code and make it compatible with
+      OpenSSL 1.1.0. (rjung)
+    </update>
     <scode>
       OpenSSL 1.1.0 compatibility updates. (rjung)
     </scode>

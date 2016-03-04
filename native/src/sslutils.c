@@ -541,20 +541,9 @@ void SSL_callback_handshake(const SSL *ssl, int where, int rc)
     /* If the reneg state is to reject renegotiations, check the SSL
      * state machine and move to ABORT if a Client Hello is being
      * read. */
-    if ((where & SSL_CB_ACCEPT_LOOP) && con->reneg_state == RENEG_REJECT) {
-        int state = SSL_get_state(ssl);
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-        if (state == SSL3_ST_SR_CLNT_HELLO_A
-            || state == SSL23_ST_SR_CLNT_HELLO_A
-#else
-        if (state == TLS_ST_SR_CLNT_HELLO
-#endif
-            ) {
-            con->reneg_state = RENEG_ABORT;
-            /* XXX: rejecting client initiated renegotiation
-             */
-        }
+    if ((where & SSL_CB_HANDSHAKE_START) &&
+         con->reneg_state == RENEG_REJECT) {
+        con->reneg_state = RENEG_ABORT;
     }
     /* If the first handshake is complete, change state to reject any
      * subsequent client-initated renegotiation. */
