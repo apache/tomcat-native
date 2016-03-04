@@ -203,6 +203,18 @@
 
 #endif /* !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name) */
 
+/* OpenSSL 1.0.2 compatibility */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#define TLS_method SSLv23_method
+#define TLS_client_method SSLv23_client_method
+#define TLS_server_method SSLv23_server_method
+#define OPENSSL_VERSION SSLEAY_VERSION
+#define OpenSSL_version SSLeay_version
+#define OPENSSL_malloc_init CRYPTO_malloc_init
+#define X509_REVOKED_get0_serialNumber(x) x->serialNumber
+#define OpenSSL_version_num SSLeay
+#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
+
 #define MAX_ALPN_NPN_PROTO_SIZE 65535
 #define SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL            1
 

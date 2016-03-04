@@ -189,21 +189,12 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         /* requested but not supported */
 #endif
     } else {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-        if (mode == SSL_MODE_CLIENT)
-                ctx = SSL_CTX_new(SSLv23_client_method());
-        else if (mode == SSL_MODE_SERVER)
-                ctx = SSL_CTX_new(SSLv23_server_method());
-        else
-                ctx = SSL_CTX_new(SSLv23_method());
-#else
         if (mode == SSL_MODE_CLIENT)
                 ctx = SSL_CTX_new(TLS_client_method());
         else if (mode == SSL_MODE_SERVER)
                 ctx = SSL_CTX_new(TLS_server_method());
         else
                 ctx = SSL_CTX_new(TLS_method());
-#endif
     }
 
     if (!ctx) {
@@ -1542,7 +1533,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setSessionTicketKeys)(TCN_STDARGS, jlong ct
  * Adapted from Android:
  * https://android.googlesource.com/platform/external/openssl/+/master/patches/0003-jsse.patch
  */
-const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
+static const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
     switch (cipher->algorithm_mkey)
         {
     case SSL_kRSA:

@@ -267,21 +267,13 @@ DH *SSL_get_dh_params(unsigned keylen)
 TCN_IMPLEMENT_CALL(jint, SSL, version)(TCN_STDARGS)
 {
     UNREFERENCED_STDARGS;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    return OPENSSL_VERSION_NUMBER;
-#else
     return OpenSSL_version_num();
-#endif
 }
 
 TCN_IMPLEMENT_CALL(jstring, SSL, versionString)(TCN_STDARGS)
 {
     UNREFERENCED(o);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    return AJP_TO_JSTRING(SSLeay_version(SSLEAY_VERSION));
-#else
     return AJP_TO_JSTRING(OpenSSL_version(OPENSSL_VERSION));
-#endif
 }
 
 /*
@@ -318,11 +310,7 @@ static apr_status_t ssl_init_cleanup(void *data)
     ENGINE_cleanup();
 #endif
     CRYPTO_cleanup_all_ex_data();
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
-    ERR_remove_state(0);
-#else
     ERR_remove_thread_state(NULL);
-#endif
 
     /* Don't call ERR_free_strings here; ERR_load_*_strings only
      * actually load the error strings once per process due to static
@@ -394,13 +382,16 @@ static unsigned long ssl_thread_id(void)
 #endif
 }
 
+static void ssl_set_thread_id(CRYPTO_THREADID *id)
+{
+    CRYPTO_THREADID_set_numeric(id, ssl_thread_id());
+}
+
 static apr_status_t ssl_thread_cleanup(void *data)
 {
     UNREFERENCED(data);
     CRYPTO_set_locking_callback(NULL);
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
-    CRYPTO_set_id_callback(NULL);
-#endif
+    CRYPTO_THREADID_set_callback(NULL);
     CRYPTO_set_dynlock_create_callback(NULL);
     CRYPTO_set_dynlock_lock_callback(NULL);
     CRYPTO_set_dynlock_destroy_callback(NULL);
@@ -501,9 +492,7 @@ static void ssl_thread_setup(apr_pool_t *p)
                                 APR_THREAD_MUTEX_DEFAULT, p);
     }
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(OPENSSL_USE_DEPRECATED)
-    CRYPTO_set_id_callback(ssl_thread_id);
-#endif
+    CRYPTO_THREADID_set_callback(ssl_set_thread_id);
     CRYPTO_set_locking_callback(ssl_thread_lock);
 
     /* Set up dynamic locking scaffolding for OpenSSL to use at its
@@ -544,9 +533,11 @@ static int ssl_rand_load_file(const char *file)
         file = RAND_file_name(buffer, sizeof(buffer));
     if (file) {
         if (strncmp(file, "egd:", 4) == 0) {
+#ifndef OPENSSL_NO_EGD
             if ((n = RAND_egd(file + 4)) > 0)
                 return n;
             else
+#endif
                 return -1;
         }
         if ((n = RAND_load_file(file, -1)) > 0)
@@ -563,13 +554,17 @@ static int ssl_rand_load_file(const char *file)
 static int ssl_rand_save_file(const char *file)
 {
     char buffer[APR_PATH_MAX];
+#ifndef OPENSSL_NO_EGD
     int n;
+#endif
 
     if (file == NULL)
         file = RAND_file_name(buffer, sizeof(buffer));
+#ifndef OPENSSL_NO_EGD
     else if ((n = RAND_egd(file)) > 0) {
         return 0;
     }
+#endif
     if (file == NULL || !RAND_write_file(file))
         return 0;
     else
@@ -669,11 +664,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     /* We must register the library in full, to ensure our configuration
      * code can successfully test the SSL environment.
      */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    CRYPTO_malloc_init();
-#else
     OPENSSL_malloc_init();
-#endif
     ERR_load_crypto_strings();
     SSL_load_error_strings();
     SSL_library_init();

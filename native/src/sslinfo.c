@@ -393,22 +393,14 @@ TCN_IMPLEMENT_CALL(jstring, SSLSocket, getInfoS)(TCN_STDARGS, jlong sock,
                     }
                 break;
                 case SSL_INFO_CLIENT_A_SIG:
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-                    nid = OBJ_obj2nid((ASN1_OBJECT *)xs->cert_info->signature->algorithm);
-#else
                     nid = X509_get_signature_nid(xs);
-#endif
                     if (nid == NID_undef)
                         value = tcn_new_string(e, "UNKNOWN");
                     else
                         value = tcn_new_string(e, OBJ_nid2ln(nid));
                 break;
                 case SSL_INFO_CLIENT_A_KEY:
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-                    nid = OBJ_obj2nid((ASN1_OBJECT *)xs->cert_info->key->algor->algorithm);
-#else
                     nid = OBJ_obj2nid((ASN1_OBJECT *)(X509_get_X509_PUBKEY(xs)->algor->algorithm));
-#endif
                     if (nid == NID_undef)
                         value = tcn_new_string(e, "UNKNOWN");
                     else
@@ -450,22 +442,14 @@ TCN_IMPLEMENT_CALL(jstring, SSLSocket, getInfoS)(TCN_STDARGS, jlong sock,
                     }
                 break;
                 case SSL_INFO_SERVER_A_SIG:
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-                    nid = OBJ_obj2nid((ASN1_OBJECT *)xs->cert_info->signature->algorithm);
-#else
                     nid = X509_get_signature_nid(xs);
-#endif
                     if (nid == NID_undef)
                         value = tcn_new_string(e, "UNKNOWN");
                     else
                         value = tcn_new_string(e, OBJ_nid2ln(nid));
                 break;
                 case SSL_INFO_SERVER_A_KEY:
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-                    nid = OBJ_obj2nid((ASN1_OBJECT *)xs->cert_info->key->algor->algorithm);
-#else
                     nid = OBJ_obj2nid((ASN1_OBJECT *)(X509_get_X509_PUBKEY(xs)->algor->algorithm));
-#endif
                     if (nid == NID_undef)
                         value = tcn_new_string(e, "UNKNOWN");
                     else

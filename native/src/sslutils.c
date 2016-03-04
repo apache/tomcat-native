@@ -213,11 +213,7 @@ EC_GROUP *SSL_ec_GetParamFromFile(const char *file)
 DH *SSL_callback_tmp_DH(SSL *ssl, int export, int keylen)
 {
     EVP_PKEY *pkey = SSL_get_privatekey(ssl);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    int type = pkey != NULL ? EVP_PKEY_type(pkey->type) : EVP_PKEY_NONE;
-#else
     int type = pkey != NULL ? EVP_PKEY_base_id(pkey) : EVP_PKEY_NONE;
-#endif
 
     /*
      * OpenSSL will call us with either keylen == 512 or keylen == 1024
@@ -250,11 +246,7 @@ int SSL_CTX_use_certificate_chain(SSL_CTX *ctx, const char *file,
     unsigned long err;
     int n;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    if ((bio = BIO_new(BIO_s_file_internal())) == NULL)
-#else
     if ((bio = BIO_new(BIO_s_file())) == NULL)
-#endif
         return -1;
     if (BIO_read_filename(bio, file) <= 0) {
         BIO_free(bio);
@@ -427,11 +419,7 @@ static int ssl_verify_CRL(int ok, X509_STORE_CTX *ctx, tcn_ssl_conn_t *con)
             X509_REVOKED *revoked =
                 sk_X509_REVOKED_value(X509_CRL_get_REVOKED(crl), i);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-            ASN1_INTEGER *sn = revoked->serialNumber;
-#else
             ASN1_INTEGER *sn = X509_REVOKED_get0_serialNumber(revoked);
-#endif
 
             if (!ASN1_INTEGER_cmp(sn, X509_get_serialNumber(cert))) {
                 X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_REVOKED);

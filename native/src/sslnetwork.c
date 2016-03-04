@@ -640,11 +640,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
     retVal = SSL_do_handshake(con->ssl);
     if (retVal <= 0)
         return APR_EGENERAL;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    if (SSL_get_state(con->ssl) != SSL_ST_OK) {
-#else
-    if (SSL_get_state(con->ssl) != TLS_ST_OK) {
-#endif
+    if (!SSL_is_init_finished(con->ssl)) {
         return APR_EGENERAL;
     }
     return APR_SUCCESS;
