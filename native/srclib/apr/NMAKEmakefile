@@ -50,6 +50,7 @@ PDBFLAGS = -Fo$(WORKDIR)\ -Fd$(WORKDIR)\$(PROJECT)-src
 OBJECTS = \
 	$(WORKDIR)\apr_atomic.obj \
 	$(WORKDIR)\dso.obj \
+	$(WORKDIR)\apr_escape.obj \
 	$(WORKDIR)\buffer.obj \
 	$(WORKDIR)\copy.obj \
 	$(WORKDIR)\dir.obj \
@@ -144,12 +145,26 @@ $(WORKDIR) :
 
 $(SRCDIR)\include\apr.h: $(SRCDIR)\include\apr.hw
 	-@copy $(SRCDIR)\include\apr.hw $(SRCDIR)\include\apr.h
-    
+
+$(WORKDIR)\apr_escape_test_char.h: $(WORKDIR)\gen_test_char.exe
+	$(WORKDIR)\gen_test_char.exe > $(WORKDIR)\apr_escape_test_char.h
+
+$(WORKDIR)\gen_test_char.exe: $(WORKDIR)\gen_test_char.obj
+	$(LINK) $(WORKDIR)\gen_test_char.obj /out:$(WORKDIR)\gen_test_char.exe
+
+$(WORKDIR)\gen_test_char.obj: $(SRCDIR)\tools\gen_test_char.c
+	$(CC) $(CFLAGS) $(PDBFLAGS) $(SRCDIR)\tools\gen_test_char.c
+
 {$(SRCDIR)\atomic\win32}.c{$(WORKDIR)}.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) $(PDBFLAGS) $<
 
 {$(SRCDIR)\dso\win32}.c{$(WORKDIR)}.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) $(PDBFLAGS) $<
+
+# Needs additional dynamically generated header file.
+# It is created in $(WORKDIR), so add it to header serach dirs.
+{$(SRCDIR)\encoding}.c{$(WORKDIR)}.obj:
+	$(CC) $(CFLAGS) $(INCLUDES) -I$(WORKDIR) $(PDBFLAGS) $<
 
 {$(SRCDIR)\file_io\unix}.c{$(WORKDIR)}.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) $(PDBFLAGS) $<
@@ -209,6 +224,8 @@ $(SRCDIR)\include\apr.h: $(SRCDIR)\include\apr.hw
 	$(CC) $(CFLAGS) $(INCLUDES) $(PDBFLAGS) $<
 
 $(OBJECTS): $(SRCDIR)\include\apr.h
+
+$(WORKDIR)\apr_escape.obj: $(WORKDIR)\apr_escape_test_char.h
 
 !IF "$(TARGET)" == "DLL"
 $(BUILDRES): libapr.rc $(SRCDIR)\include\apr.h
