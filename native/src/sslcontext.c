@@ -1498,80 +1498,152 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setSessionTicketKeys)(TCN_STDARGS, jlong ct
 }
 
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
 /*
  * Adapted from OpenSSL:
- * http://osxr.org/openssl/source/ssl/ssl_locl.h#0291
+ * https://github.com/openssl/openssl/blob/OpenSSL_1_0_2-stable/ssl/ssl_locl.h#L318
  */
 /* Bits for algorithm_mkey (key exchange algorithm) */
-#define SSL_kRSA        0x00000001L /* RSA key exchange */
-#define SSL_kDHr        0x00000002L /* DH cert, RSA CA cert */ /* no such ciphersuites supported! */
-#define SSL_kDHd        0x00000004L /* DH cert, DSA CA cert */ /* no such ciphersuite supported! */
-#define SSL_kEDH        0x00000008L /* tmp DH key no DH cert */
-#define SSL_kKRB5       0x00000010L /* Kerberos5 key exchange */
-#define SSL_kECDHr      0x00000020L /* ECDH cert, RSA CA cert */
-#define SSL_kECDHe      0x00000040L /* ECDH cert, ECDSA CA cert */
-#define SSL_kEECDH      0x00000080L /* ephemeral ECDH */
-#define SSL_kPSK        0x00000100L /* PSK */
-#define SSL_kGOST       0x00000200L /* GOST key exchange */
-#define SSL_kSRP        0x00000400L /* SRP */
+/* RSA key exchange */
+# define SSL_kRSA                0x00000001L
+/* DH cert, RSA CA cert */
+# define SSL_kDHr                0x00000002L
+/* DH cert, DSA CA cert */
+# define SSL_kDHd                0x00000004L
+/* tmp DH key no DH cert */
+# define SSL_kEDH                0x00000008L
+/* forward-compatible synonym */
+# define SSL_kDHE                SSL_kEDH
+/* Kerberos5 key exchange */
+# define SSL_kKRB5               0x00000010L
+/* ECDH cert, RSA CA cert */
+# define SSL_kECDHr              0x00000020L
+/* ECDH cert, ECDSA CA cert */
+# define SSL_kECDHe              0x00000040L
+/* ephemeral ECDH */
+# define SSL_kEECDH              0x00000080L
+/* forward-compatible synonym */
+# define SSL_kECDHE              SSL_kEECDH
+/* PSK */
+# define SSL_kPSK                0x00000100L
+/* GOST key exchange */
+# define SSL_kGOST               0x00000200L
+/* SRP */
+# define SSL_kSRP                0x00000400L
 
 /* Bits for algorithm_auth (server authentication) */
-#define SSL_aRSA        0x00000001L /* RSA auth */
-#define SSL_aDSS        0x00000002L /* DSS auth */
-#define SSL_aNULL       0x00000004L /* no auth (i.e. use ADH or AECDH) */
-#define SSL_aDH         0x00000008L /* Fixed DH auth (kDHd or kDHr) */ /* no such ciphersuites supported! */
-#define SSL_aECDH       0x00000010L /* Fixed ECDH auth (kECDHe or kECDHr) */
-#define SSL_aKRB5       0x00000020L /* KRB5 auth */
-#define SSL_aECDSA      0x00000040L /* ECDSA auth*/
-#define SSL_aPSK        0x00000080L /* PSK auth */
-#define SSL_aGOST94     0x00000100L /* GOST R 34.10-94 signature auth */
-#define SSL_aGOST01     0x00000200L /* GOST R 34.10-2001 signature auth */
+/* RSA auth */
+# define SSL_aRSA                0x00000001L
+/* DSS auth */
+# define SSL_aDSS                0x00000002L
+/* no auth (i.e. use ADH or AECDH) */
+# define SSL_aNULL               0x00000004L
+/* Fixed DH auth (kDHd or kDHr) */
+# define SSL_aDH                 0x00000008L
+/* Fixed ECDH auth (kECDHe or kECDHr) */
+# define SSL_aECDH               0x00000010L
+/* KRB5 auth */
+# define SSL_aKRB5               0x00000020L
+/* ECDSA auth*/
+# define SSL_aECDSA              0x00000040L
+/* PSK auth */
+# define SSL_aPSK                0x00000080L
+/* GOST R 34.10-94 signature auth */
+# define SSL_aGOST94             0x00000100L
+/* GOST R 34.10-2001 signature auth */
+# define SSL_aGOST01             0x00000200L
+/* SRP auth */
+# define SSL_aSRP                0x00000400L
 
 /* OpenSSL end */
+
+#define TCN_SSL_kRSA                SSL_kRSA
+#define TCN_SSL_kDHr                SSL_kDHr
+#define TCN_SSL_kDHd                SSL_kDHd
+#define TCN_SSL_kDHE                SSL_kDHE
+#define TCN_SSL_kKRB5               SSL_kKRB5
+#define TCN_SSL_kECDHr              SSL_kECDHr
+#define TCN_SSL_kECDHe              SSL_kECDHe
+#define TCN_SSL_kECDHE              SSL_kECDHE
+
+#define TCN_SSL_aRSA                SSL_aRSA
+#define TCN_SSL_aDSS                SSL_aDSS
+#define TCN_SSL_aNULL               SSL_aNULL
+#define TCN_SSL_aDH                 SSL_aDH
+#define TCN_SSL_aECDH               SSL_aECDH
+#define TCN_SSL_aKRB5               SSL_aKRB5
+#define TCN_SSL_aECDSA              SSL_aECDSA
+
+#else
+
+#define TCN_SSL_kRSA                NID_kx_rsa
+#define TCN_SSL_kDHE                NID_kx_dhe
+#define TCN_SSL_kECDHE              NID_kx_ecdhe
+
+#define TCN_SSL_aRSA                NID_auth_rsa
+#define TCN_SSL_aDSS                NID_auth_dss
+#define TCN_SSL_aNULL               NID_auth_null
+#define TCN_SSL_aECDSA              NID_auth_ecdsa
+
+#endif
 
 /*
  * Adapted from Android:
  * https://android.googlesource.com/platform/external/openssl/+/master/patches/0003-jsse.patch
  */
 static const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
-    /* XXX cipher->algorithm_mkey is no longer available in OpenSSL 1.1.0 */
-    /* One could try to extract the info from
-     * char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
-     * using ugly string parsing. */
-    switch (cipher->algorithm_mkey)
+    int auth;
+    int kx;
+    if (cipher == NULL) {
+        return "UNKNOWN";
+    }
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    kx = cipher->algorithm_mkey;
+    auth = cipher->algorithm_auth;
+#else
+    kx = SSL_CIPHER_get_kx_nid(cipher);
+    auth = SSL_CIPHER_get_auth_nid(cipher);
+#endif
+
+    switch (kx)
         {
-    case SSL_kRSA:
+    case TCN_SSL_kRSA:
         return SSL_TXT_RSA;
-    case SSL_kDHr:
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    case TCN_SSL_kDHr:
         return SSL_TXT_DH "_" SSL_TXT_RSA;
-    case SSL_kDHd:
+    case TCN_SSL_kDHd:
         return SSL_TXT_DH "_" SSL_TXT_DSS;
-    case SSL_kEDH:
-        switch (cipher->algorithm_auth)
+#endif
+    case TCN_SSL_kDHE:
+        switch (auth)
             {
-        case SSL_aDSS:
+        case TCN_SSL_aDSS:
             return "DHE_" SSL_TXT_DSS;
-        case SSL_aRSA:
+        case TCN_SSL_aRSA:
             return "DHE_" SSL_TXT_RSA;
-        case SSL_aNULL:
+        case TCN_SSL_aNULL:
             return SSL_TXT_DH "_anon";
         default:
             return "UNKNOWN";
             }
-    case SSL_kKRB5:
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    case TCN_SSL_kKRB5:
         return SSL_TXT_KRB5;
-    case SSL_kECDHr:
+    case TCN_SSL_kECDHr:
         return SSL_TXT_ECDH "_" SSL_TXT_RSA;
-    case SSL_kECDHe:
+    case TCN_SSL_kECDHe:
         return SSL_TXT_ECDH "_" SSL_TXT_ECDSA;
-    case SSL_kEECDH:
-        switch (cipher->algorithm_auth)
+#endif
+    case TCN_SSL_kECDHE:
+        switch (auth)
             {
-        case SSL_aECDSA:
+        case TCN_SSL_aECDSA:
             return "ECDHE_" SSL_TXT_ECDSA;
-        case SSL_aRSA:
+        case TCN_SSL_aRSA:
             return "ECDHE_" SSL_TXT_RSA;
-        case SSL_aNULL:
+        case TCN_SSL_aNULL:
             return SSL_TXT_ECDH "_anon";
         default:
             return "UNKNOWN";
@@ -1582,20 +1654,18 @@ static const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
 }
 
 static const char* SSL_authentication_method(const SSL* ssl) {
-{
-    switch (ssl->version)
-        {
-        case SSL2_VERSION:
-            return SSL_TXT_RSA;
-        default:
-            /* XXX ssl->s3->tmp.new_cipher is no longer available in OpenSSL 1.1.0 */
-            /* https://github.com/netty/netty-tcnative/blob/1.1.33/openssl-dynamic/src/main/c/sslcontext.c
-             * contains a different method, but i think this is not correct.
-             * Instead of choosing the cipher used for the current handshake it simply
-             * uses the first cipher available during the handshake. */
-            return SSL_CIPHER_authentication_method(ssl->s3->tmp.new_cipher);
-        }
-    }
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+   return SSL_CIPHER_authentication_method(ssl->s3->tmp.new_cipher);
+#else
+    /* XXX ssl->s3->tmp.new_cipher is no longer available in OpenSSL 1.1.0 */
+    /* https://github.com/netty/netty-tcnative/blob/1.1.33/openssl-dynamic/src/main/c/sslcontext.c
+     * contains a different method, but I think this is not correct.
+     * Instead of choosing the cipher used for the current handshake it simply
+     * uses the first cipher available during the handshake. */
+    /* Not sure whether SSL_get_current_cipher(ssl) returns something useful
+     * at the point in time we call it. */
+   return SSL_CIPHER_authentication_method(SSL_get_current_cipher(ssl));
+#endif
 }
 /* Android end */
 
@@ -1647,7 +1717,6 @@ static int SSL_cert_verify(X509_STORE_CTX *ctx, void *arg) {
         OPENSSL_free(buf);
     }
 
-    /* XXX SSL_authentication_method() currently does not work/compile when used with OpenSSL 1.1.0 */
     authMethod = SSL_authentication_method(ssl);
     authMethodString = (*e)->NewStringUTF(e, authMethod);
 
