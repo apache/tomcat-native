@@ -348,6 +348,7 @@ static ENGINE *ssl_try_load_engine(const char *engine)
  * To ensure thread-safetyness in OpenSSL
  */
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static apr_thread_mutex_t **ssl_lock_cs;
 static int                  ssl_lock_num_locks;
 
@@ -365,6 +366,7 @@ static void ssl_thread_lock(int mode, int type,
         }
     }
 }
+#endif
 
 static unsigned long ssl_thread_id(void)
 {
@@ -394,10 +396,14 @@ static void ssl_set_thread_id(CRYPTO_THREADID *id)
 static apr_status_t ssl_thread_cleanup(void *data)
 {
     UNREFERENCED(data);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     CRYPTO_set_locking_callback(NULL);
+#endif
     CRYPTO_THREADID_set_callback(NULL);
     CRYPTO_set_dynlock_create_callback(NULL);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     CRYPTO_set_dynlock_lock_callback(NULL);
+#endif
     CRYPTO_set_dynlock_destroy_callback(NULL);
 
     dynlockpool = NULL;
@@ -440,6 +446,7 @@ static struct CRYPTO_dynlock_value *ssl_dyn_create_function(const char *file,
        using our own pool. */
     value->file = apr_pstrdup(p, file);
     value->line = line;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     rv = apr_thread_mutex_create(&(value->mutex), APR_THREAD_MUTEX_DEFAULT,
                                 p);
     if (rv != APR_SUCCESS) {
@@ -447,6 +454,7 @@ static struct CRYPTO_dynlock_value *ssl_dyn_create_function(const char *file,
         apr_pool_destroy(p);
         return NULL;
     }
+#endif
     return value;
 }
 
@@ -454,6 +462,7 @@ static struct CRYPTO_dynlock_value *ssl_dyn_create_function(const char *file,
  * Dynamic locking and unlocking function
  */
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void ssl_dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
                            const char *file, int line)
 {
@@ -466,6 +475,7 @@ static void ssl_dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
         apr_thread_mutex_unlock(l->mutex);
     }
 }
+#endif
 
 /*
  * Dynamic lock destruction callback
@@ -474,11 +484,12 @@ static void ssl_dyn_destroy_function(struct CRYPTO_dynlock_value *l,
                           const char *file, int line)
 {
     apr_status_t rv;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     rv = apr_thread_mutex_destroy(l->mutex);
     if (rv != APR_SUCCESS) {
         /* TODO log that fprintf(stderr, "Failed to destroy mutex for dynamic lock %s:%d", l->file, l->line); */
     }
-
+#endif
     /* Trust that whomever owned the CRYPTO_dynlock_value we were
      * passed has no future use for it...
      */
@@ -488,6 +499,8 @@ static void ssl_thread_setup(apr_pool_t *p)
 {
     int i;
 
+    CRYPTO_THREADID_set_callback(ssl_set_thread_id);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     ssl_lock_num_locks = CRYPTO_num_locks();
     ssl_lock_cs = apr_palloc(p, ssl_lock_num_locks * sizeof(*ssl_lock_cs));
 
@@ -496,15 +509,16 @@ static void ssl_thread_setup(apr_pool_t *p)
                                 APR_THREAD_MUTEX_DEFAULT, p);
     }
 
-    CRYPTO_THREADID_set_callback(ssl_set_thread_id);
     CRYPTO_set_locking_callback(ssl_thread_lock);
-
+#endif
     /* Set up dynamic locking scaffolding for OpenSSL to use at its
      * convenience.
      */
     dynlockpool = p;
     CRYPTO_set_dynlock_create_callback(ssl_dyn_create_function);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     CRYPTO_set_dynlock_lock_callback(ssl_dyn_lock_function);
+#endif
     CRYPTO_set_dynlock_destroy_callback(ssl_dyn_destroy_function);
 
     apr_pool_cleanup_register(p, NULL, ssl_thread_cleanup,
