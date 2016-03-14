@@ -29,6 +29,12 @@
 <body>
 
 <section name="2016 News &amp; Status">
+ <subsection anchor="20160307" name="7 Mar 2016 - TC-Native-1.2.5 released">
+  <p>The Apache Tomcat team is proud to announce the immediate availability
+  of Tomcat Native 1.2.5. This is a bug fix release and includes Windows
+  binaries built with OpenSSL 1.0.2g and APR 1.5.1.
+  </p>
+ </subsection>
  <subsection anchor="20160111" name="11 Jan 2016 - TC-Native-1.2.4 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability
   of Tomcat Native 1.2.4. This is a bug fix release and includes Windows
