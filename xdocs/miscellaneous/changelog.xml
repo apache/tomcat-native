@@ -37,6 +37,10 @@
 <section name="Changes in 1.2.6">
   <changelog>
     <update>
+      Use new OpenSSL 1.1.0 protocol version max and min API
+      when creating a new SSL context. (rjung)
+    </update>
+    <update>
       Improve renegotiation code and make it compatible with
       OpenSSL 1.1.0. (rjung)
     </update>
