@@ -37,6 +37,10 @@
 <section name="Changes in 1.2.6">
   <changelog>
     <update>
+      Change the OpenSSL version check in <code>configure</code>
+      to be fatal. (rjung)
+    </update>
+    <update>
       Use new OpenSSL 1.1.0 protocol version max and min API
       when creating a new SSL context. (rjung)
     </update>
