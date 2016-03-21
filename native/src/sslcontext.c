@@ -265,7 +265,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     if (prot == TLS1_1_VERSION && protocol & SSL_PROTOCOL_TLSV1) {
         prot = TLS1_VERSION;
     }
-    if (prot == TLS1_VERSION && protocol & SSL_PROTOCOL_TLSV1) {
+    if (prot == TLS1_VERSION && protocol & SSL_PROTOCOL_SSLV3) {
         prot = SSL3_VERSION;
     }
     SSL_CTX_set_min_proto_version(ctx, prot);
