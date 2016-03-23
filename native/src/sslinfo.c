@@ -427,6 +427,7 @@ TCN_IMPLEMENT_CALL(jstring, SSLSocket, getInfoS)(TCN_STDARGS, jlong sock,
     }
     else if (what & SSL_INFO_SERVER_MASK) {
         X509 *xs;
+        ASN1_OBJECT *paobj;
         char *result;
         int nid;
         if ((xs = SSL_get_certificate(s->ssl)) != NULL) {
@@ -451,7 +452,8 @@ TCN_IMPLEMENT_CALL(jstring, SSLSocket, getInfoS)(TCN_STDARGS, jlong sock,
                         value = tcn_new_string(e, OBJ_nid2ln(nid));
                 break;
                 case SSL_INFO_SERVER_A_KEY:
-                    nid = OBJ_obj2nid((ASN1_OBJECT *)(X509_get_X509_PUBKEY(xs)->algor->algorithm));
+                    X509_PUBKEY_get0_param(&paobj, NULL, 0, NULL, X509_get_X509_PUBKEY(xs));
+                    nid = OBJ_obj2nid(paobj);
                     if (nid == NID_undef)
                         value = tcn_new_string(e, "UNKNOWN");
                     else
