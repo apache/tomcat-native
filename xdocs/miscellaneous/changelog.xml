@@ -54,6 +54,9 @@
     <fix>
       Fix some compiler warnings in native ssl code. (rjung)
     </fix>
+    <add>
+      Add support for using Java keystores for certificate chains. (markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.5">

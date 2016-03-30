@@ -1051,7 +1051,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
     certs = d2i_X509(NULL, &tmp, lengthOfCert);
     if (certs == NULL) {
         ERR_error_string(ERR_get_error(), err);
-        tcn_Throw(e, "Error reading certificat (%s)", err);
+        tcn_Throw(e, "Error reading certificate (%s)", err);
         rv = JNI_FALSE;
         goto cleanup;
     }
@@ -1116,6 +1116,50 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
     SSL_CTX_set_tmp_dh_callback(c->ctx, SSL_callback_tmp_DH);
 cleanup:
     free(key);
+    free(cert);
+    return rv;
+}
+
+TCN_IMPLEMENT_CALL(jboolean, SSLContext, addChainCertificateRaw)(TCN_STDARGS, jlong ctx,
+                                                                 jbyteArray javaCert)
+{
+    jsize lengthOfCert;
+    unsigned char* cert;
+    X509 * certs;
+    EVP_PKEY * evp;
+    const unsigned char *tmp;
+    BIO * bio;
+
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+    jboolean rv = JNI_TRUE;
+    char err[256];
+
+    /* we get the cert contents into a byte array */
+    jbyte* bufferPtr = (*e)->GetByteArrayElements(e, javaCert, NULL);
+    lengthOfCert = (*e)->GetArrayLength(e, javaCert);
+    cert = malloc(lengthOfCert);
+    memcpy(cert, bufferPtr, lengthOfCert);
+    (*e)->ReleaseByteArrayElements(e, javaCert, bufferPtr, 0);
+
+    UNREFERENCED(o);
+    TCN_ASSERT(ctx != 0);
+
+    tmp = (const unsigned char *)cert;
+    certs = d2i_X509(NULL, &tmp, lengthOfCert);
+    if (certs == NULL) {
+        ERR_error_string(ERR_get_error(), err);
+        tcn_Throw(e, "Error reading certificate (%s)", err);
+        rv = JNI_FALSE;
+        goto cleanup;
+    }
+
+    if (SSL_CTX_add0_chain_cert(c->ctx, certs) <= 0) {
+        ERR_error_string(ERR_get_error(), err);
+        tcn_Throw(e, "Error setting certificate (%s)", err);
+        rv = JNI_FALSE;
+    }
+
+cleanup:
     free(cert);
     return rv;
 }
