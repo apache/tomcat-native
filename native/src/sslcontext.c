@@ -1126,9 +1126,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addChainCertificateRaw)(TCN_STDARGS, jl
     jsize lengthOfCert;
     unsigned char* cert;
     X509 * certs;
-    EVP_PKEY * evp;
     const unsigned char *tmp;
-    BIO * bio;
 
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     jboolean rv = JNI_TRUE;
@@ -1152,7 +1150,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addChainCertificateRaw)(TCN_STDARGS, jl
         rv = JNI_FALSE;
     } else if (SSL_CTX_add0_chain_cert(c->ctx, certs) <= 0) {
         ERR_error_string(ERR_get_error(), err);
-        tcn_Throw(e, "Error setting certificate (%s)", err);
+        tcn_Throw(e, "Error adding certificate to chain (%s)", err);
         rv = JNI_FALSE;
     }
 
