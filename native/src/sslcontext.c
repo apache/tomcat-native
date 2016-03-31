@@ -2018,6 +2018,27 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     return JNI_FALSE;
 }
 
+TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong ctx,
+                                                         jbyteArray javaCert, jbyteArray javaKey,
+                                                         jint idx)
+{
+    UNREFERENCED_STDARGS;
+    UNREFERENCED(ctx);
+    UNREFERENCED(javaCert);
+    UNREFERENCED(javaKey);
+    UNREFERENCED(idx);
+    return JNI_FALSE;
+}
+
+TCN_IMPLEMENT_CALL(jboolean, SSLContext, addChainCertificateRaw)(TCN_STDARGS, jlong ctx,
+                                                                 jbyteArray javaCert)
+{
+    UNREFERENCED_STDARGS;
+    UNREFERENCED(ctx);
+    UNREFERENCED(javaCert);
+    return JNI_FALSE;
+}
+
 TCN_IMPLEMENT_CALL(jint, SSLContext, setALPN)(TCN_STDARGS, jlong ctx,
                                               jbyteArray buf, jint len)
 {
