@@ -162,7 +162,7 @@ $(WORKDIR)\gen_test_char.obj: $(SRCDIR)\tools\gen_test_char.c
 	$(CC) $(CFLAGS) $(INCLUDES) $(PDBFLAGS) $<
 
 # Needs additional dynamically generated header file.
-# It is created in $(WORKDIR), so add it to header serach dirs.
+# It is created in $(WORKDIR), so add it to header search dirs.
 {$(SRCDIR)\encoding}.c{$(WORKDIR)}.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -I$(WORKDIR) $(PDBFLAGS) $<
 
