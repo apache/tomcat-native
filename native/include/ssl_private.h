@@ -213,6 +213,11 @@
 #define OPENSSL_malloc_init CRYPTO_malloc_init
 #define X509_REVOKED_get0_serialNumber(x) x->serialNumber
 #define OpenSSL_version_num SSLeay
+#define BIO_get_init(x)       (x->init)
+#define BIO_set_init(x,v)     (x->init=v)
+#define BIO_get_data(x)       (x->ptr)
+#define BIO_set_data(x,v)     (x->ptr=v)
+#define BIO_set_shutdown(x,v) (x->shutdown=v)
 #endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
 
 #define MAX_ALPN_NPN_PROTO_SIZE 65535
