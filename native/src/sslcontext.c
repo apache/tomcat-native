@@ -1755,7 +1755,7 @@ static int SSL_cert_verify(X509_STORE_CTX *ctx, void *arg) {
 
 
     // Get a stack of all certs in the chain
-    STACK_OF(X509) *sk = ctx->untrusted;
+    STACK_OF(X509) *sk = X509_STORE_CTX_get0_untrusted(ctx);
 
     int len = sk_X509_num(sk);
     unsigned i;

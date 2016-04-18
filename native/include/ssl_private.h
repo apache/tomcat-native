@@ -205,19 +205,22 @@
 
 /* OpenSSL 1.0.2 compatibility */
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-#define TLS_method SSLv23_method
-#define TLS_client_method SSLv23_client_method
-#define TLS_server_method SSLv23_server_method
-#define OPENSSL_VERSION SSLEAY_VERSION
-#define OpenSSL_version SSLeay_version
-#define OPENSSL_malloc_init CRYPTO_malloc_init
+#define OpenSSL_version                  SSLeay_version
+#define OpenSSL_version_num              SSLeay
+#define OPENSSL_VERSION                  SSLEAY_VERSION
+#define OPENSSL_malloc_init              CRYPTO_malloc_init
+#define BIO_get_init(x)                  (x->init)
+#define BIO_set_init(x,v)                (x->init=v)
+#define BIO_get_data(x)                  (x->ptr)
+#define BIO_set_data(x,v)                (x->ptr=v)
+#define BIO_set_shutdown(x,v)            (x->shutdown=v)
 #define X509_REVOKED_get0_serialNumber(x) x->serialNumber
-#define OpenSSL_version_num SSLeay
-#define BIO_get_init(x)       (x->init)
-#define BIO_set_init(x,v)     (x->init=v)
-#define BIO_get_data(x)       (x->ptr)
-#define BIO_set_data(x,v)     (x->ptr=v)
-#define BIO_set_shutdown(x,v) (x->shutdown=v)
+#define X509_STORE_CTX_get0_untrusted(x) (x->untrusted)
+#define X509_OBJECT_free(x)              {X509_OBJECT_free_contents(obj);\
+                                          OPENSSL_free(obj);}
+#define TLS_method                       SSLv23_method
+#define TLS_client_method                SSLv23_client_method
+#define TLS_server_method                SSLv23_server_method
 #endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
 
 #define MAX_ALPN_NPN_PROTO_SIZE 65535

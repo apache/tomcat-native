@@ -288,20 +288,29 @@ int SSL_CTX_use_certificate_chain(SSL_CTX *ctx, const char *file,
 }
 
 static int ssl_X509_STORE_lookup(X509_STORE *store, int yype,
-                                 X509_NAME *name, X509_OBJECT *obj)
+                                 X509_NAME *name, X509_OBJECT **obj)
 {
-    X509_STORE_CTX ctx;
+    X509_STORE_CTX *ctx;
     int rc;
 
-    X509_STORE_CTX_init(&ctx, store, NULL, NULL);
-    rc = X509_STORE_get_by_subject(&ctx, yype, name, obj);
-    X509_STORE_CTX_cleanup(&ctx);
+    ctx = X509_STORE_CTX_new();
+    X509_STORE_CTX_init(ctx, store, NULL, NULL);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    rc = X509_STORE_get_by_subject(ctx, yype, name, *obj);
+#else
+    *obj = X509_STORE_get_X509_by_subject(ctx, yype, name);
+    if (*obj == NULL) {
+        rc = -1;
+    }
+#endif
+    X509_STORE_CTX_cleanup(ctx);
+    X509_STORE_CTX_free(ctx);
     return rc;
 }
 
 static int ssl_verify_CRL(int ok, X509_STORE_CTX *ctx, tcn_ssl_conn_t *con)
 {
-    X509_OBJECT obj;
+    X509_OBJECT *obj;
     X509_NAME *subject, *issuer;
     X509 *cert;
     X509_CRL *crl;
@@ -350,10 +359,14 @@ static int ssl_verify_CRL(int ok, X509_STORE_CTX *ctx, tcn_ssl_conn_t *con)
      * Try to retrieve a CRL corresponding to the _subject_ of
      * the current certificate in order to verify it's integrity.
      */
-    memset((char *)&obj, 0, sizeof(obj));
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    obj = OPENSSL_malloc(sizeof (*obj));
+    memset((char *)obj, 0, sizeof(*obj));
+#endif
     rc = ssl_X509_STORE_lookup(con->ctx->crl,
                                X509_LU_CRL, subject, &obj);
-    crl = obj.data.crl;
+    /* XXX obj is now OPAQUE */
+    crl = obj->data.crl;
 
     if ((rc > 0) && crl) {
         /*
@@ -371,7 +384,7 @@ static int ssl_verify_CRL(int ok, X509_STORE_CTX *ctx, tcn_ssl_conn_t *con)
         if (rc <= 0) {
             /* TODO: Log Invalid signature on CRL */
             X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_SIGNATURE_FAILURE);
-            X509_OBJECT_free_contents(&obj);
+            X509_OBJECT_free(obj);
             return 0;
         }
 
@@ -385,30 +398,34 @@ static int ssl_verify_CRL(int ok, X509_STORE_CTX *ctx, tcn_ssl_conn_t *con)
 
             X509_STORE_CTX_set_error(ctx,
                                      X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD);
-            X509_OBJECT_free_contents(&obj);
+            X509_OBJECT_free(obj);
             return 0;
         }
 
         if (i < 0) {
             /* TODO: Log Found CRL is expired */
             X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_HAS_EXPIRED);
-            X509_OBJECT_free_contents(&obj);
+            X509_OBJECT_free(obj);
 
             return 0;
         }
 
-        X509_OBJECT_free_contents(&obj);
+        X509_OBJECT_free(obj);
     }
 
     /*
      * Try to retrieve a CRL corresponding to the _issuer_ of
      * the current certificate in order to check for revocation.
      */
-    memset((char *)&obj, 0, sizeof(obj));
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    obj = OPENSSL_malloc(sizeof (*obj));
+    memset((char *)obj, 0, sizeof(*obj));
+#endif
     rc = ssl_X509_STORE_lookup(con->ctx->crl,
                                X509_LU_CRL, issuer, &obj);
 
-    crl = obj.data.crl;
+    /* XXX obj is now OPAQUE */
+    crl = obj->data.crl;
     if ((rc > 0) && crl) {
         /*
          * Check if the current certificate is revoked by this CRL
@@ -423,13 +440,13 @@ static int ssl_verify_CRL(int ok, X509_STORE_CTX *ctx, tcn_ssl_conn_t *con)
 
             if (!ASN1_INTEGER_cmp(sn, X509_get_serialNumber(cert))) {
                 X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_REVOKED);
-                X509_OBJECT_free_contents(&obj);
+                X509_OBJECT_free(obj);
 
                 return 0;
             }
         }
 
-        X509_OBJECT_free_contents(&obj);
+        X509_OBJECT_free(obj);
     }
 
     return ok;
