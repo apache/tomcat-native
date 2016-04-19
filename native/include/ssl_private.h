@@ -209,6 +209,14 @@
 #define OpenSSL_version_num              SSLeay
 #define OPENSSL_VERSION                  SSLEAY_VERSION
 #define OPENSSL_malloc_init              CRYPTO_malloc_init
+#define BN_get_rfc2409_prime_768         get_rfc2409_prime_768
+#define BN_get_rfc2409_prime_1024        get_rfc2409_prime_1024
+#define BN_get_rfc3526_prime_1536        get_rfc3526_prime_1536
+#define BN_get_rfc3526_prime_2048        get_rfc3526_prime_2048
+#define BN_get_rfc3526_prime_3072        get_rfc3526_prime_3072
+#define BN_get_rfc3526_prime_4096        get_rfc3526_prime_4096
+#define BN_get_rfc3526_prime_6144        get_rfc3526_prime_6144
+#define BN_get_rfc3526_prime_8192        get_rfc3526_prime_8192
 #define BIO_get_init(x)                  (x->init)
 #define BIO_set_init(x,v)                (x->init=v)
 #define BIO_get_data(x)                  (x->ptr)
