@@ -287,171 +287,6 @@ int SSL_CTX_use_certificate_chain(SSL_CTX *ctx, const char *file,
     return n;
 }
 
-static int ssl_X509_STORE_lookup(X509_STORE *store, int yype,
-                                 X509_NAME *name, X509_OBJECT **obj)
-{
-    X509_STORE_CTX *ctx;
-    int rc;
-
-    ctx = X509_STORE_CTX_new();
-    X509_STORE_CTX_init(ctx, store, NULL, NULL);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    rc = X509_STORE_get_by_subject(ctx, yype, name, *obj);
-#else
-    *obj = X509_STORE_get_X509_by_subject(ctx, yype, name);
-    if (*obj == NULL) {
-        rc = -1;
-    }
-#endif
-    X509_STORE_CTX_cleanup(ctx);
-    X509_STORE_CTX_free(ctx);
-    return rc;
-}
-
-static int ssl_verify_CRL(int ok, X509_STORE_CTX *ctx, tcn_ssl_conn_t *con)
-{
-    X509_OBJECT *obj;
-    X509_NAME *subject, *issuer;
-    X509 *cert;
-    X509_CRL *crl;
-    EVP_PKEY *pubkey;
-    int i, n, rc;
-
-    /*
-     * Determine certificate ingredients in advance
-     */
-    cert    = X509_STORE_CTX_get_current_cert(ctx);
-    subject = X509_get_subject_name(cert);
-    issuer  = X509_get_issuer_name(cert);
-
-    /*
-     * OpenSSL provides the general mechanism to deal with CRLs but does not
-     * use them automatically when verifying certificates, so we do it
-     * explicitly here. We will check the CRL for the currently checked
-     * certificate, if there is such a CRL in the store.
-     *
-     * We come through this procedure for each certificate in the certificate
-     * chain, starting with the root-CA's certificate. At each step we've to
-     * both verify the signature on the CRL (to make sure it's a valid CRL)
-     * and it's revocation list (to make sure the current certificate isn't
-     * revoked).  But because to check the signature on the CRL we need the
-     * public key of the issuing CA certificate (which was already processed
-     * one round before), we've a little problem. But we can both solve it and
-     * at the same time optimize the processing by using the following
-     * verification scheme (idea and code snippets borrowed from the GLOBUS
-     * project):
-     *
-     * 1. We'll check the signature of a CRL in each step when we find a CRL
-     *    through the _subject_ name of the current certificate. This CRL
-     *    itself will be needed the first time in the next round, of course.
-     *    But we do the signature processing one round before this where the
-     *    public key of the CA is available.
-     *
-     * 2. We'll check the revocation list of a CRL in each step when
-     *    we find a CRL through the _issuer_ name of the current certificate.
-     *    This CRLs signature was then already verified one round before.
-     *
-     * This verification scheme allows a CA to revoke its own certificate as
-     * well, of course.
-     */
-
-    /*
-     * Try to retrieve a CRL corresponding to the _subject_ of
-     * the current certificate in order to verify it's integrity.
-     */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    obj = OPENSSL_malloc(sizeof (*obj));
-    memset((char *)obj, 0, sizeof(*obj));
-#endif
-    rc = ssl_X509_STORE_lookup(con->ctx->crl,
-                               X509_LU_CRL, subject, &obj);
-    /* XXX obj is now OPAQUE */
-    crl = obj->data.crl;
-
-    if ((rc > 0) && crl) {
-        /*
-         * Log information about CRL
-         * (A little bit complicated because of ASN.1 and BIOs...)
-         */
-        /*
-         * Verify the signature on this CRL
-         */
-        pubkey = X509_get_pubkey(cert);
-        rc = X509_CRL_verify(crl, pubkey);
-        /* Only refcounted in OpenSSL */
-        if (pubkey)
-            EVP_PKEY_free(pubkey);
-        if (rc <= 0) {
-            /* TODO: Log Invalid signature on CRL */
-            X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_SIGNATURE_FAILURE);
-            X509_OBJECT_free(obj);
-            return 0;
-        }
-
-        /*
-         * Check date of CRL to make sure it's not expired
-         */
-        i = X509_cmp_current_time(X509_CRL_get_nextUpdate(crl));
-
-        if (i == 0) {
-            /* TODO: Log Found CRL has invalid nextUpdate field */
-
-            X509_STORE_CTX_set_error(ctx,
-                                     X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD);
-            X509_OBJECT_free(obj);
-            return 0;
-        }
-
-        if (i < 0) {
-            /* TODO: Log Found CRL is expired */
-            X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_HAS_EXPIRED);
-            X509_OBJECT_free(obj);
-
-            return 0;
-        }
-
-        X509_OBJECT_free(obj);
-    }
-
-    /*
-     * Try to retrieve a CRL corresponding to the _issuer_ of
-     * the current certificate in order to check for revocation.
-     */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    obj = OPENSSL_malloc(sizeof (*obj));
-    memset((char *)obj, 0, sizeof(*obj));
-#endif
-    rc = ssl_X509_STORE_lookup(con->ctx->crl,
-                               X509_LU_CRL, issuer, &obj);
-
-    /* XXX obj is now OPAQUE */
-    crl = obj->data.crl;
-    if ((rc > 0) && crl) {
-        /*
-         * Check if the current certificate is revoked by this CRL
-         */
-        n = sk_X509_REVOKED_num(X509_CRL_get_REVOKED(crl));
-
-        for (i = 0; i < n; i++) {
-            X509_REVOKED *revoked =
-                sk_X509_REVOKED_value(X509_CRL_get_REVOKED(crl), i);
-
-            ASN1_INTEGER *sn = X509_REVOKED_get0_serialNumber(revoked);
-
-            if (!ASN1_INTEGER_cmp(sn, X509_get_serialNumber(cert))) {
-                X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_REVOKED);
-                X509_OBJECT_free(obj);
-
-                return 0;
-            }
-        }
-
-        X509_OBJECT_free(obj);
-    }
-
-    return ok;
-}
-
 /*
  * This OpenSSL callback function is called when OpenSSL
  * does client authentication and verifies the certificate chain.
@@ -469,7 +304,6 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
     int errdepth = X509_STORE_CTX_get_error_depth(ctx);
     int verify   = con->ctx->verify_mode;
     int depth    = con->ctx->verify_depth;
-    int skip_crl = 0;
 
     if (verify == SSL_CVERIFY_UNSET ||
         verify == SSL_CVERIFY_NONE)
@@ -479,6 +313,22 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
         (verify == SSL_CVERIFY_OPTIONAL_NO_CA)) {
         ok = 1;
         SSL_set_verify_result(ssl, X509_V_OK);
+    }
+
+    /*
+     * Expired certificates vs. "expired" CRLs: by default, OpenSSL
+     * turns X509_V_ERR_CRL_HAS_EXPIRED into a "certificate_expired(45)"
+     * SSL alert, but that's not really the message we should convey to the
+     * peer (at the very least, it's confusing, and in many cases, it's also
+     * inaccurate, as the certificate itself may very well not have expired
+     * yet). We set the X509_STORE_CTX error to something which OpenSSL's
+     * s3_both.c:ssl_verify_alarm_type() maps to SSL_AD_CERTIFICATE_UNKNOWN,
+     * i.e. the peer will receive a "certificate_unknown(46)" alert.
+     * We do not touch errnum, though, so that later on we will still log
+     * the "real" error, as returned by OpenSSL.
+     */
+    if (!ok && errnum == X509_V_ERR_CRL_HAS_EXPIRED) {
+        X509_STORE_CTX_set_error(ctx, -1);
     }
 
 #ifdef HAVE_OCSP_STAPLING
@@ -495,29 +345,17 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
         }
         else {
             int ocsp_response = ssl_verify_OCSP(ok, ctx);
-            if (ocsp_response == OCSP_STATUS_OK) {
-                skip_crl = 1; /* we know it is valid we skip crl evaluation */
-            }
-            else if (ocsp_response == OCSP_STATUS_REVOKED) {
+            if (ocsp_response == OCSP_STATUS_REVOKED) {
                 ok = 0 ;
                 errnum = X509_STORE_CTX_get_error(ctx);
             }
             else if (ocsp_response == OCSP_STATUS_UNKNOWN) {
-                /* TODO: do nothing for time being, continue with CRL */
+                /* TODO: do nothing for time being */
                 ;
             }
         }
     }
 #endif
-    /*
-     * Additionally perform CRL-based revocation checks
-     */
-    if (ok && con->ctx->crl && !skip_crl) {
-        if (!(ok = ssl_verify_CRL(ok, ctx, con))) {
-            errnum = X509_STORE_CTX_get_error(ctx);
-            /* TODO: Log something */
-        }
-    }
     /*
      * If we already know it's not ok, log the real reason
      */
@@ -660,6 +498,26 @@ static int ssl_verify_OCSP(int ok, X509_STORE_CTX *ctx)
     int r = OCSP_STATUS_UNKNOWN;
 
     cert = X509_STORE_CTX_get_current_cert(ctx);
+
+    if (!cert) {
+        /* starting with OpenSSL 1.0, X509_STORE_CTX_get_current_cert()
+         * may yield NULL. Return early, but leave the ctx error as is. */
+        return OCSP_STATUS_UNKNOWN;
+    }
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    else if (cert->valid && X509_check_issued(cert,cert) == X509_V_OK) {
+#else
+    /* No need to check cert->valid, because ssl_verify_OCSP() only
+     * is called if OpenSSL already successfully verified the certificate
+     * (parameter "ok" in SSL_callback_SSL_verify() must be true).
+     */
+    else if (X509_check_issued(cert,cert) == X509_V_OK) {
+#endif
+        /* don't do OCSP checking for valid self-issued certs */
+        X509_STORE_CTX_set_error(ctx, X509_V_OK);
+        return OCSP_STATUS_UNKNOWN;
+    }
+
     /* if we can't get the issuer, we cannot perform OCSP verification */
     if (X509_STORE_CTX_get1_issuer(&issuer, ctx, cert) == 1 ) {
         r = ssl_ocsp_request(cert, issuer);
@@ -668,7 +526,7 @@ static int ssl_verify_OCSP(int ok, X509_STORE_CTX *ctx)
             X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_REVOKED);
         }
         else {
-            /* else we return unknown, so that we can continue with the crl */
+            /* else we return unknown */
             r = OCSP_STATUS_UNKNOWN;
         }
         X509_free(issuer); /* It appears that we  should free issuer since

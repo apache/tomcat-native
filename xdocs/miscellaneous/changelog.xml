@@ -57,6 +57,12 @@
     <add>
       Add support for using Java keystores for certificate chains. (markt)
     </add>
+    <update>
+      Remove the explicit CRL check when verifying certificates.
+      The checks were already part of the internal certification
+      verification since OpenSSL 0.9.7. Backport from mod_ssl.
+      (rjung)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.5">
