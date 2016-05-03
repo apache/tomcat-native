@@ -34,6 +34,13 @@
   This is the Changelog for Tomcat Native 1.2.
   </p>
 </section>
+<section name="Changes in 1.2.7">
+  <changelog>
+    <update>
+      Update minimum recommended OpenSSL version to 1.0.2h. (markt)
+    </update>
+  </changelog>
+</section>
 <section name="Changes in 1.2.6">
   <changelog>
     <update>
