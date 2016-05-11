@@ -351,8 +351,6 @@ static apr_status_t ssl_init_cleanup(void *data)
     CRYPTO_cleanup_all_ex_data();
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     ERR_remove_thread_state(NULL);
-#else
-    ERR_remove_thread_state();
 #endif
 
     /* Don't call ERR_free_strings here; ERR_load_*_strings only
