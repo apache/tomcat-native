@@ -771,7 +771,9 @@ static OCSP_RESPONSE *parse_ocsp_resp(char *buf, int len)
 
     BIO_write(mem, buf, len);  /* write the buffer to the bio */
     if (BIO_gets(mem, tmpbuf, 512) <= 0) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
         OCSPerr(OCSP_F_OCSP_SENDREQ_BIO,OCSP_R_SERVER_RESPONSE_PARSE_ERROR);
+#endif
         goto err;
     }
     /* Parse the HTTP response. This will look like this:
@@ -828,12 +830,13 @@ static OCSP_RESPONSE *parse_ocsp_resp(char *buf, int len)
         goto err;
     }
 err:
+    /* XXX No error logging? */
     BIO_free(mem);
     return resp;
 }
 
 
-/* Reads the respnse from the APR socket to a buffer, and parses the buffer to
+/* Reads the response from the APR socket to a buffer, and parses the buffer to
    return the OCSP response  */
 #define ADDLEN 512
 static OCSP_RESPONSE *ocsp_get_resp(apr_socket_t *sock)
