@@ -36,6 +36,10 @@
 </section>
 <section name="Changes in 1.2.8">
   <changelog>
+    <fix>
+      <bug>59616</bug>: Correct the Windows build files so that OCSP is
+      correctly enabled and disabled in the respective Windows binaries. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.7">
