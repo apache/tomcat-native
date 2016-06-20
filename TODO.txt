@@ -79,8 +79,3 @@ http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HE
   (at least after I extract it on Solaris).
   It's a bit strange that permissions differ between the
   tar and zip archives.
-
-- OCSP enabled Windows binary
-  - Document build
-  - Use consistent naming
-    (1.1.22 used ...win32-ocsp..., 1.1.24 used ...ocsp-win32...)
