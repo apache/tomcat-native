@@ -339,8 +339,11 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, handshake)(TCN_STDARGS, jlong sock)
                     }
                 break;
                 case SSL_ERROR_SYSCALL:
+                    if (APR_STATUS_IS_EAGAIN(rv)) {
+                        return APR_EAGAIN;
+                    }
 #if !defined(_WIN32)
-                    if (APR_STATUS_IS_EINTR(rv)) {
+                    else if (APR_STATUS_IS_EINTR(rv)) {
                         /* Interrupted by signal */
                         continue;
                     }
@@ -426,6 +429,9 @@ ssl_socket_recv(apr_socket_t *sock, char *buf, apr_size_t *len)
                     if (APR_STATUS_IS_EPIPE(rv) || APR_STATUS_IS_ECONNRESET(rv)) {
                         con->shutdown_type = SSL_SHUTDOWN_TYPE_STANDARD;
                         return APR_EOF;
+                    }
+                    else if (APR_STATUS_IS_EAGAIN(rv)) {
+                        return APR_EAGAIN;
                     }
 #if !defined(_WIN32)
                     else if (APR_STATUS_IS_EINTR(rv)) {

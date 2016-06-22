@@ -40,6 +40,10 @@
       <bug>59616</bug>: Correct the Windows build files so that OCSP is
       correctly enabled and disabled in the respective Windows binaries. (markt)
     </fix>
+    <fix>
+      Correctly handle OS level EAGAIN return codes during non-blocking TLS I/O.
+      (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.7">
