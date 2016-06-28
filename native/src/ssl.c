@@ -20,6 +20,10 @@
 #include "apr_atomic.h"
 #include "apr_poll.h"
 
+#ifdef __linux__
+#include <sys/syscall.h>
+#endif
+
 #ifdef HAVE_OPENSSL
 #include "ssl_private.h"
 
@@ -420,6 +424,12 @@ static unsigned long ssl_thread_id(void)
     return psaptr->PSATOLD;
 #elif defined(WIN32)
     return (unsigned long)GetCurrentThreadId();
+#elif defined(DARWIN)
+    uint64_t tid;
+    pthread_threadid_np(NULL, &tid);
+    return (unsigned long)tid;
+#elif defined(__linux__)
+    return (unsigned long)syscall(SYS_gettid);
 #else
     return (unsigned long)(apr_os_thread_current());
 #endif
