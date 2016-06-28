@@ -48,9 +48,9 @@
       Correct a potential performance problem identified by Nate Clark due to
       Tomcat Native providing OpenSSL with thread identifiers poorly suited to
       the hash function used by OpenSSL when selecting a bucket for the hash
-      that holds the per thread error data. Tomcat Native on Windows was not
-      affected. A fix has been applied for OSX and Linux. Other platforms may
-      still be affected. (markt/rjung)
+      that holds the per thread error data. Tomcat Native on Windows and on
+      Solaris were not affected. A fix has been applied for OSX and Linux. Other
+      platforms may still be affected. (markt/rjung)
     </fix>
   </changelog>
 </section>
