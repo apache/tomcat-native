@@ -34,13 +34,15 @@
   This is the Changelog for Tomcat Native 1.2.
   </p>
 </section>
-<section name="Changes in 1.2.9">
+<section name="Changes in 1.2.10">
   <changelog>
+  </changelog>
+</section>
+<section name="Changes in 1.2.9">
   <changelog>
     <update>
       Update minimum recommended OpenSSL version to 1.0.2i. (markt)
     </update>
-  </changelog>
   </changelog>
 </section>
 <section name="Changes in 1.2.8">
