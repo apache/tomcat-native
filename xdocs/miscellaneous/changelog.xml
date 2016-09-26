@@ -36,6 +36,7 @@
 </section>
 <section name="Changes in 1.2.10">
   <changelog>
+      Update minimum recommended OpenSSL version to 1.0.2j. (markt)
   </changelog>
 </section>
 <section name="Changes in 1.2.9">
