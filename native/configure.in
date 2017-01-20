@@ -198,12 +198,16 @@ AC_ARG_ENABLE(
 maintainer-mode,
 [  --enable-maintainer-mode   Turn on debugging and compile time warnings],
 [
-  if test "$GCC" = "yes"; then
-    CFLAGS="${CFLAGS} -DDEBUG -Wall"
-  else
-    CFLAGS="${CFLAGS} -DDEBUG"
-  fi
-AC_MSG_RESULT([...Enabling Maintainer mode...])
+  case "${enableval}" in
+    yes )
+       if test "$GCC" = "yes"; then
+         CFLAGS="${CFLAGS} -DDEBUG -Wall"
+       else
+         CFLAGS="${CFLAGS} -DDEBUG"
+       fi
+       AC_MSG_RESULT([...Enabling Maintainer mode...])
+       ;;
+  esac
 ])
 
 dnl
