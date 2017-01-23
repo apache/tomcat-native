@@ -36,6 +36,10 @@
 </section>
 <section name="Changes in 1.2.11">
   <changelog>
+    <fix>
+      The --disable-maintainer-mode option of the configure script no longer
+      enables the maintainer mode. (ebourg)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.10">
