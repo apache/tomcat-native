@@ -37,6 +37,11 @@
 <section name="Changes in 1.2.11">
   <changelog>
     <fix>
+      <bug>59996</bug>: Correctly handle building tc-native on a 64-bit system
+      when using an OpenSSL distribution that is not in <code>/usr</code>.
+      (csutherl)
+    </fix>
+    <fix>
       <bug>60388</bug>: The --disable-maintainer-mode option of the configure
       script no longer enables the maintainer mode. (ebourg)
     </fix>

@@ -210,22 +210,23 @@ case "$use_openssl" in
             TCN_OPENSSL_LIBS="-lssl -lcrypto"
         else
             TCN_OPENSSL_INC="-I$use_openssl/include"
+            test -d $use_openssl/lib64 && libdir=lib64 || libdir=lib
             case $host in
             *-solaris*)
-                TCN_OPENSSL_LIBS="-L$use_openssl/lib -R$use_openssl/lib -lssl -lcrypto"
+                TCN_OPENSSL_LIBS="-L$use_openssl/$libdir -R$use_openssl/$libdir -lssl -lcrypto"
                 ;;
             *-hp-hpux*)
-                TCN_OPENSSL_LIBS="-L$use_openssl/lib -Wl,+b: -lssl -lcrypto"
+                TCN_OPENSSL_LIBS="-L$use_openssl/$libdir -Wl,+b: -lssl -lcrypto"
                 ;;
             *linux*)
-                TCN_OPENSSL_LIBS="-L$use_openssl/lib -Wl,-rpath,$use_openssl/lib -lssl -lcrypto"
+                TCN_OPENSSL_LIBS="-L$use_openssl/$libdir -Wl,-rpath,$use_openssl/$libdir -lssl -lcrypto"
                 ;;
             *)
-                TCN_OPENSSL_LIBS="-L$use_openssl/lib -lssl -lcrypto"
+                TCN_OPENSSL_LIBS="-L$use_openssl/$libdir -lssl -lcrypto"
                 ;;
             esac
         fi
-        AC_MSG_RESULT(using openssl from $use_openssl/lib and $use_openssl/include)
+        AC_MSG_RESULT(using openssl from $use_openssl/$libdir and $use_openssl/include)
 
         saved_cflags="$CFLAGS"
         saved_libs="$LIBS"
