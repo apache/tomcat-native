@@ -210,19 +210,19 @@ case "$use_openssl" in
             TCN_OPENSSL_LIBS="-lssl -lcrypto"
         else
             TCN_OPENSSL_INC="-I$use_openssl/include"
-            test -d $use_openssl/lib64 && libdir=lib64 || libdir=lib
+            test -d $use_openssl/lib64 && ssllibdir=lib64 || ssllibdir=lib
             case $host in
             *-solaris*)
-                TCN_OPENSSL_LIBS="-L$use_openssl/$libdir -R$use_openssl/$libdir -lssl -lcrypto"
+                TCN_OPENSSL_LIBS="-L$use_openssl/$ssllibdir -R$use_openssl/$ssllibdir -lssl -lcrypto"
                 ;;
             *-hp-hpux*)
-                TCN_OPENSSL_LIBS="-L$use_openssl/$libdir -Wl,+b: -lssl -lcrypto"
+                TCN_OPENSSL_LIBS="-L$use_openssl/$ssllibdir -Wl,+b: -lssl -lcrypto"
                 ;;
             *linux*)
-                TCN_OPENSSL_LIBS="-L$use_openssl/$libdir -Wl,-rpath,$use_openssl/$libdir -lssl -lcrypto"
+                TCN_OPENSSL_LIBS="-L$use_openssl/$ssllibdir -Wl,-rpath,$use_openssl/$ssllibdir -lssl -lcrypto"
                 ;;
             *)
-                TCN_OPENSSL_LIBS="-L$use_openssl/$libdir -lssl -lcrypto"
+                TCN_OPENSSL_LIBS="-L$use_openssl/$ssllibdir -lssl -lcrypto"
                 ;;
             esac
         fi
