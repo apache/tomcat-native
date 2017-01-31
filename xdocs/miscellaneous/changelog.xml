@@ -37,6 +37,10 @@
 <section name="Changes in 1.2.11">
   <changelog>
     <fix>
+      <bug>52627</bug>: Prevent a crash in <code>File.infoGet()</code> caused by
+      the use of uninitialised variables. Based on patch by Ilya Maykov. (markt)
+    </fix>
+    <fix>
       <bug>55114</bug>: Clean up building instructions for the native component
       and expand the instructions for building for Windows platforms. (markt)
     </fix>
