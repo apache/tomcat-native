@@ -14,28 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 package org.apache.tomcat;
 
-import java.io.InputStream;
-import java.util.Properties;
-
+/**
+ * @deprecated This will be removed in 1.3.x
+ */
+@Deprecated
 public class Apr {
-    private static String aprInfo = null;
-
-    static {
-
-        try {
-            InputStream is = Apr.class.getResourceAsStream
-                ("/org/apache/tomcat/apr.properties");
-            Properties props = new Properties();
-            props.load(is);
-            is.close();
-            aprInfo = props.getProperty("tcn.info");
-        }
-        catch (Throwable t) {
-            ; // Nothing
-        }
-    }
 }
