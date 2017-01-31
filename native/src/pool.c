@@ -203,6 +203,7 @@ TCN_IMPLEMENT_CALL(jint, Pool, dataSet)(TCN_STDARGS, jlong pool,
 
     UNREFERENCED(o);
     TCN_ASSERT(pool != 0);
+    TCN_ASSERT(key != 0);
 
     if (apr_pool_userdata_get(&old, J2S(key), p) == APR_SUCCESS) {
         if (old)
@@ -237,6 +238,7 @@ TCN_IMPLEMENT_CALL(jobject, Pool, dataGet)(TCN_STDARGS, jlong pool,
 
     UNREFERENCED(o);
     TCN_ASSERT(pool != 0);
+    TCN_ASSERT(key != 0);
 
     if (apr_pool_userdata_get(&old, J2S(key), p) == APR_SUCCESS) {
         if (old) {
