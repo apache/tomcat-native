@@ -1913,6 +1913,7 @@ TCN_IMPLEMENT_CALL(jint, SSLContext, getOptions)(TCN_STDARGS, jlong ctx)
 {
     UNREFERENCED_STDARGS;
     UNREFERENCED(ctx);
+    return 0;
 }
 
 TCN_IMPLEMENT_CALL(void, SSLContext, clearOptions)(TCN_STDARGS, jlong ctx,

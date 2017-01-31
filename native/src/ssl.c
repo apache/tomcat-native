@@ -2096,12 +2096,14 @@ TCN_IMPLEMENT_CALL(jint, SSL, doHandshake)(TCN_STDARGS, jlong ssl) {
   UNREFERENCED(o);
   UNREFERENCED(ssl);
   tcn_ThrowException(e, "Not implemented");
+  return 0;
 }
 
 TCN_IMPLEMENT_CALL(jint, SSL, renegotiate)(TCN_STDARGS, jlong ssl) {
   UNREFERENCED(o);
   UNREFERENCED(ssl);
   tcn_ThrowException(e, "Not implemented");
+  return 0;
 }
 
 TCN_IMPLEMENT_CALL(jstring, SSL, getNextProtoNegotiated)(TCN_STDARGS, jlong ssl) {
@@ -2207,12 +2209,14 @@ TCN_IMPLEMENT_CALL(jbyteArray, SSL, getSessionId)(TCN_STDARGS, jlong ssl)
     UNREFERENCED(o);
     UNREFERENCED(ssl);
     tcn_ThrowException(e, "Not implemented");
+    return 0;
 }
 TCN_IMPLEMENT_CALL(jint, SSL, getHandshakeCount)(TCN_STDARGS, jlong ssl)
 {
     UNREFERENCED(o);
     UNREFERENCED(ssl);
     tcn_ThrowException(e, "Not implemented");
+    return 0;
 }
 /*** End Apple API Additions ***/
 #endif /* HAVE_OPENSSL */
