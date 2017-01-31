@@ -41,6 +41,12 @@
       and expand the instructions for building for Windows platforms. (markt)
     </fix>
     <fix>
+      <bug>55938</bug>: Resolve remaining clang-analyzer warnings. Note that the
+      use of <code>-1</code> to indicate the full array in
+      <code>File.(read|write)[Full]</code> has been removed since it was only
+      partially implemented and the implementation was faulty. (markt)
+    </fix>
+    <fix>
       <bug>58082</bug>: Update unit tests to use JUnit 4. Refactor unit tests
       into separate tests and use an external to reference them in the same way
       an external is used to reference the main code. (markt)

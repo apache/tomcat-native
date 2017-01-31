@@ -286,8 +286,6 @@ TCN_IMPLEMENT_CALL(jint, File, write)(TCN_STDARGS, jlong file,
     apr_status_t ss;
 
     UNREFERENCED(o);
-    if (towrite < 0)
-        towrite = (*e)->GetArrayLength(e, buf);
     ss = apr_file_write(f, bytes + offset, &nbytes);
 
     (*e)->ReleasePrimitiveArrayCritical(e, buf, bytes, JNI_ABORT);
@@ -325,8 +323,6 @@ TCN_IMPLEMENT_CALL(jint, File, writeFull)(TCN_STDARGS, jlong file,
     jbyte *bytes = (*e)->GetByteArrayElements(e, buf, NULL);
 
     UNREFERENCED(o);
-    if (towrite < 0)
-        towrite = (*e)->GetArrayLength(e, buf);
     ss = apr_file_write_full(f, bytes + offset, nbytes, &written);
 
     (*e)->ReleaseByteArrayElements(e, buf, bytes, JNI_ABORT);
