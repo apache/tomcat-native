@@ -45,7 +45,7 @@ public class LocalServer {
             serverNmax = Integer.decode(props.getProperty("local.max", "0")).intValue();
         }
         catch (Throwable t) {
-            ; // Nothing
+            // NO-OP
         }
     }
 
@@ -96,6 +96,7 @@ public class LocalServer {
             }
         }
 
+        @Override
         public void run() {
             int i = 0;
             try {
@@ -128,6 +129,7 @@ public class LocalServer {
                            from).getBytes();
         }
 
+        @Override
         public void run() {
             boolean doClose = false;
             try {
@@ -157,7 +159,7 @@ public class LocalServer {
                         Socket.close(clientSock);
                     }
                     else
-                        Socket.send(clientSock, msg, 0, p);                
+                        Socket.send(clientSock, msg, 0, p);
                 }
             } catch (Exception e) {
                 Socket.destroy(clientSock);
@@ -173,6 +175,7 @@ public class LocalServer {
         try {
             Library.initialize(null);
 
+            @SuppressWarnings("unused")
             LocalServer server = new LocalServer();
         } catch (Exception e) {
             e.printStackTrace();

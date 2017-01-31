@@ -58,7 +58,7 @@ public class SSLServer {
             serverPassword = props.getProperty("server.password", null);
         }
         catch (Throwable t) {
-            ; // Nothing
+            // NO-OP
         }
     }
 
@@ -121,6 +121,7 @@ public class SSLServer {
             }
         }
 
+        @Override
         public void run() {
             int i = 0;
             try {
@@ -159,7 +160,7 @@ public class SSLServer {
                                                    this.getClass().getName());
                         SSLServer.incThreads();
                         worker.start();
-                        
+
                     }
                     else {
                         System.out.println("Handshake error: " + SSL.getLastError());
@@ -185,6 +186,7 @@ public class SSLServer {
                            from + "\r\n").getBytes();
         }
 
+        @Override
         public void run() {
             boolean doClose = false;
             try {
@@ -228,6 +230,7 @@ public class SSLServer {
             Library.initialize(null);
             SSL.initialize(null);
 
+            @SuppressWarnings("unused")
             SSLServer server = new SSLServer();
         } catch (Exception e) {
             e.printStackTrace();

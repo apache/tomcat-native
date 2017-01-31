@@ -50,7 +50,7 @@ public class Echo {
             echoNmax = Integer.decode(props.getProperty("echo.max", "1")).intValue();
         }
         catch (Throwable t) {
-            ; // Nothing
+            // NO-OP
         }
     }
 
@@ -90,6 +90,7 @@ public class Echo {
             }
         }
 
+        @Override
         public void run() {
             int i = 0;
             try {
@@ -168,6 +169,7 @@ public class Echo {
             }
         }
 
+        @Override
         public void run() {
             while (true) {
                 try {
@@ -228,6 +230,7 @@ public class Echo {
                            from + "\r\n").getBytes();
         }
 
+        @Override
         public void run() {
             boolean doClose = false;
             try {
@@ -328,6 +331,7 @@ public class Echo {
 
             System.out.println("Starting Native Echo server example on port " +
                                echoAddr + ":" + echoPort);
+            @SuppressWarnings("unused")
             Echo echo = new Echo();
         } catch (Exception e) {
             e.printStackTrace();
