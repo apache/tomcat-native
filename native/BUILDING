@@ -15,88 +15,118 @@
   limitations under the License.
 ================================================================================
 
-Prerequisites
--------------
+Linux / Unix / OSX (dynamic linking)
+====================================
 
-You need OpenSSL version 1.0.2 or higher and APR version 1.4.0 or higher.
+1. Prerequisites
 
-Building from source package
------------------------------
+   Install OpenSSL version 1.0.2 or higher
+   Install APR version 1.4.0 or higher.
+   Download and expand the source package or use an svn checkout
 
->  configure --with-apr=apr_install_location --with-ssl=openssl_install_location
->  make
+   > cd native
 
-Building from the svn tree
---------------------------
+2. Configure build environment
 
->  sh buildconf --with-apr=apr_source_location.
->  configure --with-apr=apr_install_location --with-ssl=openssl_install_location
->  make
+   Note: This step is only required if you are building from an svn checkout. It
+         is not required when building from a source package.
 
-Testing the build
------------------
+   >  sh buildconf --with-apr=apr_source_location.
 
-The make should produce a .so file named libtcnative-1.so.
-Build the jar containing the examples by
+3. Build
 
-> cd ..
->  ant jar
-  Run one of the example (the echo one):
->  ant run-echo
+   >  configure --with-apr=apr_install_location --with-ssl=openssl_install_location
+   >  make
+
+   This should produce a file named libtcnative-1.so
+
+   Note: To build without SSL support use:
+   
+   > configure --disable-openssl --with-apr=apr_install_location
+   
+
+Linux / Unix / OSX (dynamic linking)
+====================================
+
+1. Build static version of OpenSSL 1.0.2 or later
+
+   > ./config --prefix=~/natives/openssl no-shared -fPIC
+   > make
+   > make install_sw
+
+   Note: For the Solaris platform you should use -KPIC instead -fPIC so that the
+         library is compiled with position independent code.
+
+2. Build static version of APR 1.4.0 or later
+
+   > ./configure --prefix=~/natives/apr
+   > make
+   > make install
+
+   Note: APR builds both static and dynamic libraries by default.
+
+3. Ensure the static APR library is used
+
+   Edit the ~/natives/apr/lib/libapr-1.la file and comment or delete the
+   following sections: dlname='...' and library_names='...'
+   This is needed so that libtool picks the static version of the library.
+
+4. Build tc-native
+
+   > ./configure --with-apr=~/natives/apr --with-ssl=~/natives/openssl --prefix=~/natives/tomcat
+   > make
+   > make install
+
+
+Windows
+=======
+
+1. Prerequisites
+
+   These steps assume a suitable build environment has been set up.
+   https://cwiki.apache.org/confluence/display/TOMCAT/Common+Native+Build+Environment
+   
+2. Obtain tc-native source
+
+   Download and expand the source package or use an svn checkout
+
+3. Build APR
+
+   Unpack the APR source distribution into native\srclib\apr
+   Apply apr-enable-ipv6.patch
+   
+   > c:\cmsc\setenv.bat /x86 
+   > nmake -f NMAKEmakefile BUILD_CPU=x86 APR_DECLARE_STATIC=1
  
-Using it in Tomcat
-------------------
+   > c:\cmsc\setenv.bat /x64
+   > nmake -f NMAKEmakefile BUILD_CPU=x64 APR_DECLARE_STATIC=1
+   
+4. Build OpenSSL
 
-1. In <Connector> use of conf/server.xml:
-   protocol="org.apache.coyote.http11.Http11AprProtocol"
-2. In bin/setenv.sh add the following:
-   CATALINA_OPTS="$CATALINA_OPTS -Djava.library.path=tclib_location"
-   In my machine I am using:
-   /home/jfclere/native/native/.libs for tclib_location
+   Unpack the OpenSSL source distribution into native\srclib\openssl
+   Apply openssl-msvcrt.patch
+   
+   > c:\cmsc\setenv.bat /x86
+   > perl Configure VC-WIN32
+   > ms\do_nasm
+   > nmake -f ms\nt.mak
+   > move out32 out32-x86
+ 
+   > c:\cmsc\setenv.bat /x64
+   > perl Configure VC-WIN64A
+   > ms\do_win64a
+   > nmake -f ms\nt.mak clean
+   > nmake -f ms\nt.mak
+   > move out32 out32-x64
 
-NOTES
------
-  - configure --disable-openssl: Configure without ssl support.
-  - To use it in Tomcat you may have to add in bin/setenv.sh:
-    LD_LIBRARY_PATH=openssl_install_location/lib; export LD_LIBRARY_PATH
-    (use ldd ./.libs/libtcnative-1.so to check it).
-  - quick testing: openssl s_client -connect localhost:8443
-  - For MAC OS X you must manually add a link
-    cd ${tcnative installdir}
-    ln -d libtcnative-1.dylib libtcnative-1.jnilib
+5. Build tc-native
 
+   > SET JAVA_HOME=C:\Program Files\Java\jdk1.7.0_71
 
-Building statically linked library on Unixes
---------------------------------------------
-
-To statically link apr and openssl dependencies use the following
-procedure.
-
-You will need to build static version of openssl library.
-
-> ./config --prefix=~/natives/openssl no-shared -fPIC
-> make
-> make install_sw
-
-Note that for Solaris platform you should use -KPIC instead -fPIC
-so that library is compiled with position independent code.
-
-Apr by default builds both static and dynamic libraries.
-
-> ./configure --prefix=~/natives/apr
-> make
-> make install
-
-After that edit the ~/natives/apr/lib/libapr-1.la file
-and comment or delete the following sections:
-dlname='...' and library_names='...'
-This is needed so that libtool picks the static version of the library.
-
-Build Tomcat native by executing
-
-> ./configure --with-apr=~/natives/apr --with-ssl=~/natives/openssl --prefix=~/natives/tomcat
-> make
-> make install
-
-That's it. You have just build libtcnative-1.so with statically linked
-apr and openssl.
+   > c:\cmsc\setenv.bat /x86
+   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X86_LIB_RELEASE\apr-1.lib WITH_OPENSSL=srclib\openssl\out32-x86 APR_DECLARE_STATIC=1
+ 
+   > c:\cmsc\setenv.bat /x64
+   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X64_LIB_RELEASE\apr-1.lib WITH_OPENSSL=srclib\openssl\out32-x64 APR_DECLARE_STATIC=1
+ 
+   Note: Use ENABLE_OCSP=1 to create OCSP enabled builds

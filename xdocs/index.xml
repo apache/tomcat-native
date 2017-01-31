@@ -145,23 +145,22 @@ list of changes.
 
 <subsection name="Windows">
   <p>
-   Download the windows sources of tc-native and extract them.
+   Download the Windows sources of tc-native and extract them.
   </p>
   <p>
-    Download OpenSSL sources (See <a href="http://www.openssl.org/related/binaries.html"><b>Binary Distributions</b></a>)
-    OpenSSL is a crypto software so check if you are allowed to download it. If not you can still use tc-native without SSL.
+   Obtain the Windows sources for
+   <a href="http://apr.apache.org/download.cgi">APR</a> and
+   <a href="https://www.openssl.org/source/">OpenSSL</a>. Apply the patches from
+   native/srclib and build APR and OpenSSL for your platform (X86 or X64).  
   </p>
   <p>
-    Download APR sources for Windows. (See <a href="http://apr.apache.org/download.cgi"><b>Download</b></a>)
-    Extract them in jni and rename the apr-1.x.y directory to apr.
+    Build with <source
+>nmake -f NMAKEMakefile WITH_APR=... WITH_OPENSSL=... APR_DECLARE_STATIC=1</source>
   </p>
   <p>
-    Use MS Visual Studio to open the workspace of the APR sources and build the library (libapr).
-  </p>
-  <p>
-    Use MS Visual Studio to open the workspace of the tc-native sources, adjust the OpenSSL includes and libraries location
-    change the name of the libraries libeay32 and libssleay to libeay32MT and libssleayMT and build the tcn-native library.
-    That should create a tcnative-1.dll.
+    More detailed instructions including the steps to create a standard release
+    distribution are provided on the <a
+    href="https://cwiki.apache.org/confluence/display/TOMCAT/Building+the+Tomcat+Native+Connector+binaries+for+Windows">Wiki</a>.
   </p>
 </subsection>
 
