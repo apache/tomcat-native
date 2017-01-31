@@ -68,6 +68,7 @@
         <pathelement location="${build.dest}/java"/>
         <pathelement location="${build.dest}/test"/>
         <pathelement location="${junit.jar}"/>
+        <pathelement location="${hamcrest.jar}"/>
     </path>
 
     <!-- Examples classpath -->
@@ -90,7 +91,8 @@
     </target>
 
     <target name="prepare" depends="env">
-       <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${basedir}/logs"/>
     </target>
 
     <!-- Download and dependency building -->
@@ -217,7 +219,8 @@ limitations under the License.--&gt;">
             debug="${compile.debug}"
             deprecation="${compile.deprecation}"
             optimize="${compile.optimize}"
-            encoding="ISO-8859-1">
+            encoding="ISO-8859-1"
+            includeantruntime="false">
             <classpath refid="classpath"/>
         </javac>
 
@@ -281,7 +284,8 @@ limitations under the License.--&gt;">
             debug="on"
             deprecation="${compile.deprecation}"
             optimize="${compile.optimize}"
-            encoding="ISO-8859-1">
+            encoding="ISO-8859-1"
+            includeantruntime="false">
             <classpath refid="test.classpath"/>
         </javac>
         <copy todir="${build.dest}/test" filtering="yes" encoding="ISO-8859-1">
@@ -297,13 +301,19 @@ limitations under the License.--&gt;">
     <!-- =================================================================== -->
     <target name="test" depends="compile-tests" description="Run the tests">
         <echo message="Running Tomcat Native package tests ..."/>
-        <java dir="${test.dir}" classname="${test.runner}" fork="yes" failonerror="${test.failonerror}">
-            <arg value="org.apache.tomcat.jni.SocketServerTestSuite"/>
-            <classpath refid="test.classpath"/>
-            <env key="PATH" path="${tc.library.path}:${java.library.path}"/>
-            <env key="Path" path="${tc.library.path}:${java.library.path}"/>
+        <junit printsummary="yes" fork="yes" dir="." showoutput="yes"
+            haltonfailure="${test.failonerror}" >
+
+            <formatter type="plain"/>
+
             <jvmarg value="-Djava.library.path=${tc.library.path}"/>
-        </java>
+
+            <classpath refid="test.classpath" />
+
+            <batchtest todir="${basedir}/logs">
+                <fileset dir="test" />
+            </batchtest>
+        </junit>
     </target>
 
     <!-- =================================================================== -->

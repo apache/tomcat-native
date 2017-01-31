@@ -36,16 +36,16 @@ compile.debug=off
 compile.deprecation=on
 compile.optimize=on
 
-base-tomcat.loc=http://archive.apache.org/dist/tomcat
-base-sf.loc=http://downloads.sourceforge.net
+base-maven.loc=http://repo.maven.apache.org/maven2
 
-# ----- JUnit Unit Test Suite, version 3.8 or later -----
-# The JUnit version we will use
-junit.version=3.8.2
-# The directory containing your binary distribution of JUnit
-# It will be automatically downloaded if it doesn't exist
-junit.home=${base.path}/junit${junit.version}
-# The pathname of the "junit.jar" JAR file
-junit.jar=${junit.home}/junit.jar
-# The URL used to download JUnit if needed
-junit.loc=${base-sf.loc}/junit/junit${junit.version}.zip
+# ----- JUnit Unit Test Suite, version 4.11 or later -----
+junit.version=4.11
+junit.home=${base.path}/junit-${junit.version}
+junit.jar=${junit.home}/junit-${junit.version}.jar
+junit.loc=${base-maven.loc}/junit/junit/${junit.version}/junit-${junit.version}.jar
+
+# ----- Hamcrest Library, used by JUnit, version 1.3 or later ----
+hamcrest.version=1.3
+hamcrest.home=${base.path}/hamcrest-${hamcrest.version}
+hamcrest.jar=${hamcrest.home}/hamcrest-core-${hamcrest.version}.jar
+hamcrest.loc=${base-maven.loc}/org/hamcrest/hamcrest-core/${hamcrest.version}/hamcrest-core-${hamcrest.version}.jar

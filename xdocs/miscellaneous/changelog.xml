@@ -37,6 +37,11 @@
 <section name="Changes in 1.2.11">
   <changelog>
     <fix>
+      <bug>58082</bug>: Update unit tests to use JUnit 4. Refactor unit tests
+      into separate tests and use an external to reference them in the same way
+      an external is used to reference the main code. (markt)
+    </fix>
+    <fix>
       <bug>59996</bug>: Correctly handle building tc-native on a 64-bit system
       when using an OpenSSL distribution that is not in <code>/usr</code>.
       (csutherl)
