@@ -45,8 +45,8 @@ Linux / Unix / OSX (dynamic linking)
    > configure --disable-openssl --with-apr=apr_install_location
    
 
-Linux / Unix / OSX (dynamic linking)
-====================================
+Linux / Unix / OSX (static linking)
+===================================
 
 1. Build static version of OpenSSL 1.0.2 or later
 
