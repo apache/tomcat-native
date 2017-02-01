@@ -130,3 +130,50 @@ Windows
    > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X64_LIB_RELEASE\apr-1.lib WITH_OPENSSL=srclib\openssl\out32-x64 APR_DECLARE_STATIC=1
  
    Note: Use ENABLE_OCSP=1 to create OCSP enabled builds
+
+
+Windows with FIPS
+=================
+
+The steps are broadly the same as the non-FIPS build with the following additions and changes.
+
+Note: The build process has only been verified with 64-bit Windows. The process
+      for 32-bit Windows should be very similar.
+
+1. Build the FIPS object module
+
+   This step should be completed immediately before building OpenSSL.
+   
+   Unpack the openssl-fips-2.0.x.tar.gz distribution into native\srclib\openssl-fips
+   The tar.gz contains symbolic links. Ensure you unpack the archive with a tool
+   that replaces these with the linked file or manually replace the symbolic
+   links with associated the linked file before continuing.
+   
+   > c:\cmsc\setenv.bat /x64
+   > set FIPSDIR=%cd%\lib-x64
+   > ms\do_fips
+
+2. Modify the OpenSSL build configuration
+
+   Add 'fips' to the OpenSSL build configuration
+   
+   > perl Configure VC-WIN64A fips
+   
+3. Test the OpenSSL build
+
+   This step should be completed immediately after building OpenSSL.
+   
+   > SET OPENSSL_FIPS=1
+   > openssl md5 openssl.exe
+   
+   This should fail since MD5 is disabled in FIPS mode.
+   
+   > SET OPENSSL_FIPS=
+   > openssl md5 openssl.exe
+   
+   This should work.
+
+4. Modify the tc-native build configuration
+
+   > c:\cmsc\setenv.bat /x64
+   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X64_LIB_RELEASE\apr-1.lib WITH_OPENSSL=srclib\openssl\out32-x64 WITH_FIPS=srclib\openssl-fips\lib-x64 APR_DECLARE_STATIC=1
