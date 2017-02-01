@@ -97,9 +97,17 @@ Windows
    
    > c:\cmsc\setenv.bat /x86 
    > nmake -f NMAKEmakefile BUILD_CPU=x86 APR_DECLARE_STATIC=1
- 
+   > mkdir WINXP_X86_LIB_RELEASE\include
+   > mkdir WINXP_X86_LIB_RELEASE\lib
+   > xcopy /E include WINXP_X86_LIB_RELEASE\include\
+   > copy WINXP_X86_LIB_RELEASE\apr-1.lib WINXP_X86_LIB_RELEASE\lib
+   
    > c:\cmsc\setenv.bat /x64
    > nmake -f NMAKEmakefile BUILD_CPU=x64 APR_DECLARE_STATIC=1
+   > mkdir WINXP_X64_LIB_RELEASE\include
+   > mkdir WINXP_X64_LIB_RELEASE\lib
+   > xcopy /E include WINXP_X64_LIB_RELEASE\include\
+   > copy WINXP_X64_LIB_RELEASE\apr-1.lib WINXP_X64_LIB_RELEASE\lib
    
 4. Build OpenSSL
 
@@ -110,24 +118,32 @@ Windows
    > perl Configure VC-WIN32
    > ms\do_nasm
    > nmake -f ms\nt.mak
-   > move out32 out32-x86
+   > mkdir release-x86
+   > mkdir release-x86\include
+   > mkdir release-x86\lib
+   > xcopy /E inc32 release-x86\include\
+   > copy out32\*.lib release-x86\lib\
  
    > c:\cmsc\setenv.bat /x64
    > perl Configure VC-WIN64A
    > ms\do_win64a
    > nmake -f ms\nt.mak clean
    > nmake -f ms\nt.mak
-   > move out32 out32-x64
+   > mkdir release-x64
+   > mkdir release-x64\include
+   > mkdir release-x64\lib
+   > xcopy /E inc32 release-x64\include\
+   > copy out32\*.lib release-x64\lib\
 
 5. Build tc-native
 
    > SET JAVA_HOME=C:\Program Files\Java\jdk1.7.0_71
 
    > c:\cmsc\setenv.bat /x86
-   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X86_LIB_RELEASE\apr-1.lib WITH_OPENSSL=srclib\openssl\out32-x86 APR_DECLARE_STATIC=1
+   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X86_LIB_RELEASE WITH_OPENSSL=srclib\openssl\release-x86 APR_DECLARE_STATIC=1
  
    > c:\cmsc\setenv.bat /x64
-   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X64_LIB_RELEASE\apr-1.lib WITH_OPENSSL=srclib\openssl\out32-x64 APR_DECLARE_STATIC=1
+   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X64_LIB_RELEASE WITH_OPENSSL=srclib\openssl\release-x64 APR_DECLARE_STATIC=1
  
    Note: Use ENABLE_OCSP=1 to create OCSP enabled builds
 
@@ -176,4 +192,4 @@ Note: The build process has only been verified with 64-bit Windows. The process
 4. Modify the tc-native build configuration
 
    > c:\cmsc\setenv.bat /x64
-   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X64_LIB_RELEASE\apr-1.lib WITH_OPENSSL=srclib\openssl\out32-x64 WITH_FIPS=srclib\openssl-fips\lib-x64 APR_DECLARE_STATIC=1
+   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X64_LIB_RELEASE WITH_OPENSSL=srclib\openssl\release-x64 WITH_FIPS=srclib\openssl-fips\lib-x64 APR_DECLARE_STATIC=1
