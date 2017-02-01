@@ -71,7 +71,11 @@ LDIRS = $(LDIRS) /libpath:"$(WITH_OPENSSL)\out32"
 LFLAGS = $(LFLAGS) /version:1.1
 LFLAGS = $(LFLAGS) user32.lib psapi.lib gdi32.lib shlwapi.lib wldap32.lib ole32.lib
 LFLAGS = $(LFLAGS) $(APR_LIB)
+!IF DEFINED(WITH_FIPS)
+LFLAGS = $(LFLAGS) libeayfips32.lib libeaycompat32.lib ssleay32.lib /NODEFAULTLIB:LIBCMT
+!ELSE
 LFLAGS = $(LFLAGS) libeay32.lib ssleay32.lib
+!ENDIF
 
 CFLAGS = $(CFLAGS) -DZLIB_WINAPI -DNO_IDEA -DNO_RC5 -DNO_MDC2 -DOPENSSL_NO_IDEA \
 	-DOPENSSL_NO_RC5 -DOPENSSL_NO_MDC2 -DHAVE_OPENSSL -DHAVE_SSL_SET_STATE=1
@@ -107,6 +111,16 @@ OBJECTS = \
 	$(WORKDIR)\ntpipe.obj \
 	$(WORKDIR)\registry.obj \
 	$(WORKDIR)\system.obj
+!IF DEFINED(WITH_FIPS)
+OBJECTS = $(OBJECTS) srclib\openssl\tmp32\fips_premain.obj
+!ENDIF
+
+!IF DEFINED(WITH_FIPS)
+FIPS_OPTS = /map
+LINK_WRAPPER = perl $(FIPSDIR)\bin\fipslink.pl
+!ELSE
+LINK_WRAPPER = $(LINK)
+!ENDIF
 
 HEADERS = \
 	$(SRCDIR)\include\tcn.h \
@@ -140,7 +154,15 @@ $(BUILDRES): $(SRCDIR)\os\win32\libtcnative.rc $(HEADERS)
 	$(RC) $(RCFLAGS) /i "$(SRCDIR)\include" /fo $(BUILDRES) $(SRCDIR)\os\win32\libtcnative.rc
 
 $(BUILDBIN): $(WORKDIR) $(OBJECTS) $(BUILDRES)
-	$(LINK) $(LFLAGS) $(OBJECTS) $(BUILDRES) $(LIBS) $(LDIRS) /pdb:$(BUILDPDB) /out:$(BUILDBIN)
+  SET FIPSLINK=perl $(FIPSDIR)\bin\fipslink.pl
+  SET FIPS_LINK=$(LINK)
+  SET FIPS_CC=$(CC)
+  SET FIPS_CC_ARGS=/Fosrclib\openssl\tmp32\fips_premain.obj /MD -c
+  SET PREMAIN_DSO_EXE=srclib\openssl\\out32\fips_premain_dso.exe
+  SET FIPS_TARGET=$(BUILDBIN)
+  SET FIPS_SHA1_EXE=$(FIPSDIR)\bin\fips_standalone_sha1.exe
+  SET FIPSLIB_D=$(FIPSDIR)\lib
+  $(LINK_WRAPPER) $(LFLAGS) $(OBJECTS) $(BUILDRES) $(LIBS) $(LDIRS) /pdb:$(BUILDPDB) $(FIPS_OPTS) /out:$(BUILDBIN)
 	IF EXIST $(BUILDMAN) \
 		mt -nologo -manifest $(BUILDMAN) -outputresource:$(BUILDBIN);2
 

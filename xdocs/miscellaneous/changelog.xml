@@ -41,6 +41,11 @@
       the use of uninitialised variables. Based on patch by Ilya Maykov. (markt)
     </fix>
     <fix>
+      <bug>55113</bug>: Document the process for creating a static tc-native
+      library with a FIPS-enabled OpenSSL and update the nmake make file to
+      support the process. (markt)
+    </fix>
+    <fix>
       <bug>55114</bug>: Clean up building instructions for the native component
       and expand the instructions for building for Windows platforms. (markt)
     </fix>
