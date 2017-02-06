@@ -74,11 +74,16 @@
       <bug>60388</bug>: The --disable-maintainer-mode option of the configure
       script no longer enables the maintainer mode. (ebourg)
     </fix>
+    <update>
+      Update minimum recommended OpenSSL version to 1.0.2k. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.10">
   <changelog>
+    <update>
       Update minimum recommended OpenSSL version to 1.0.2j. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.9">
