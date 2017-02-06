@@ -445,6 +445,7 @@ void SSL_thread_exit(void) {
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if ! (defined(WIN32) || defined(WIN64))
 unsigned long SSL_ERR_get() {
     apr_threadkey_private_set(thread_exit_key, thread_exit_key);
     return ERR_get_error();
@@ -454,6 +455,7 @@ void SSL_ERR_clear() {
     apr_threadkey_private_set(thread_exit_key, thread_exit_key);
     ERR_clear_error();
 }
+#endif
 
 static void _ssl_thread_exit(void *data) {
     UNREFERENCED(data);
