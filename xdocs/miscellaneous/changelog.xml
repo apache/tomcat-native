@@ -61,6 +61,11 @@
       an external is used to reference the main code. (markt)
     </fix>
     <fix>
+      <bug>59797</bug>: Ensure that the per thread error hash maintained by
+      OpenSSL is cleaned up as individual threads exit to ensure it does not
+      grow too large. Patch provided by Nate Clark. (markt) 
+    </fix>
+    <fix>
       <bug>59996</bug>: Correctly handle building tc-native on a 64-bit system
       when using an OpenSSL distribution that is not in <code>/usr</code>.
       (csutherl)

@@ -363,4 +363,13 @@ int         SSL_callback_select_next_proto(SSL *, unsigned char **, unsigned cha
 int         SSL_callback_alpn_select_proto(SSL *, const unsigned char **, unsigned char *, const unsigned char *, unsigned int, void *);
 
 
+void SSL_thread_exit(void);
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) && ! defined(WIN32)
+unsigned long SSL_ERR_get(void);
+void SSL_ERR_clear(void);
+#else
+#define SSL_ERR_get() ERR_get_error()
+#define SSL_ERR_clear() ERR_clear_error()
+#endif
+
 #endif /* SSL_PRIVATE_H */

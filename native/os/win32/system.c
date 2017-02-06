@@ -101,6 +101,9 @@ DllMain(
         /** The thread of the attached process terminates.
          */
         case DLL_THREAD_DETACH:
+#ifdef HAVE_OPENSSL
+            SSL_thread_exit();
+#endif
             break;
 
         /** DLL unload due to process termination

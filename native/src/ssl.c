@@ -49,6 +49,8 @@ struct CRYPTO_dynlock_value {
     int line;
     apr_thread_mutex_t *mutex;
 };
+
+apr_threadkey_t *thread_exit_key;
 #endif
 
 /*
@@ -435,7 +437,29 @@ static unsigned long ssl_thread_id(void)
 #endif
 }
 
+void SSL_thread_exit(void) {
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+    ERR_remove_thread_state(NULL);
+    apr_threadkey_private_set(NULL, thread_exit_key);
+#endif
+}
+
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+unsigned long SSL_ERR_get() {
+    apr_threadkey_private_set(thread_exit_key, thread_exit_key);
+    return ERR_get_error();
+}
+
+void SSL_ERR_clear() {
+    apr_threadkey_private_set(thread_exit_key, thread_exit_key);
+    ERR_clear_error();
+}
+
+static void _ssl_thread_exit(void *data) {
+    UNREFERENCED(data);
+    SSL_thread_exit();
+}
+
 static void ssl_set_thread_id(CRYPTO_THREADID *id)
 {
     CRYPTO_THREADID_set_numeric(id, ssl_thread_id());
@@ -700,6 +724,9 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
 {
     jclass clazz;
     jclass sClazz;
+#if !defined(OPENSSL_NO_ENGINE) || OPENSSL_VERSION_NUMBER < 0x10100000L
+    apr_status_t err = APR_SUCCESS;
+#endif
 
     TCN_ALLOC_CSTRING(engine);
 
@@ -729,6 +756,14 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     OPENSSL_load_builtin_modules();
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+    err = apr_threadkey_private_create(&thread_exit_key, _ssl_thread_exit,
+                                       tcn_global_pool);
+    if (err != APR_SUCCESS) {
+        ssl_init_cleanup(NULL);
+        tcn_ThrowAPRException(e, err);
+        return (jint)err;
+    }
+
     /* Initialize thread support */
     ssl_thread_setup(tcn_global_pool);
 #endif
@@ -736,7 +771,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
 #ifndef OPENSSL_NO_ENGINE
     if (J2S(engine)) {
         ENGINE *ee = NULL;
-        apr_status_t err = APR_SUCCESS;
         if(strcmp(J2S(engine), "auto") == 0) {
             ENGINE_register_all_complete();
         }
@@ -859,7 +893,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, fipsModeSet)(TCN_STDARGS, jint mode)
 #ifdef OPENSSL_FIPS
     if(1 != (r = (jint)FIPS_mode_set((int)mode))) {
       /* arrange to get a human-readable error message */
-      unsigned long err = ERR_get_error();
+      unsigned long err = SSL_ERR_get();
       char msg[256];
 
       /* ERR_load_crypto_strings() already called in initialize() */
@@ -1196,7 +1230,7 @@ TCN_IMPLEMENT_CALL(jstring, SSL, getLastError)(TCN_STDARGS)
 {
     char buf[256];
     UNREFERENCED(o);
-    ERR_error_string(ERR_get_error(), buf);
+    ERR_error_string(SSL_ERR_get(), buf);
     return tcn_new_string(e, buf);
 }
 
@@ -1208,7 +1242,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSL, hasOp)(TCN_STDARGS, jint op)
 /*** Begin Twitter 1:1 API addition ***/
 TCN_IMPLEMENT_CALL(jint, SSL, getLastErrorNumber)(TCN_STDARGS) {
     UNREFERENCED_STDARGS;
-    return ERR_get_error();
+    return SSL_ERR_get();
 }
 
 static void ssl_info_callback(const SSL *ssl, int where, int ret) {
@@ -1784,7 +1818,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSL, setCipherSuites)(TCN_STDARGS, jlong ssl,
     }
     if (!SSL_set_cipher_list(ssl_, J2S(ciphers))) {
         char err[256];
-        ERR_error_string(ERR_get_error(), err);
+        ERR_error_string(SSL_ERR_get(), err);
         tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
         rv = JNI_FALSE;
     }

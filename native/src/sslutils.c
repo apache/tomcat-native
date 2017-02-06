@@ -281,7 +281,7 @@ int SSL_CTX_use_certificate_chain(SSL_CTX *ctx, const char *file,
             BIO_free(bio);
             return -1;
         }
-        while (ERR_get_error() > 0) ;
+        while (SSL_ERR_get() > 0) ;
     }
     BIO_free(bio);
     return n;

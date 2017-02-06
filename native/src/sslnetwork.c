@@ -127,7 +127,7 @@ static tcn_ssl_conn_t *ssl_create(JNIEnv *env, tcn_ssl_ctxt_t *ctx, apr_pool_t *
     }
     if ((ssl = SSL_new(ctx->ctx)) == NULL) {
         char err[256];
-        ERR_error_string(ERR_get_error(), err);
+        ERR_error_string(SSL_ERR_get(), err);
         tcn_Throw(env, "SSL_new failed (%s)", err);
         con = NULL;
         return NULL;
@@ -320,7 +320,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, handshake)(TCN_STDARGS, jlong sock)
 
     apr_socket_timeout_get(con->sock, &timeout);
     while (!SSL_is_init_finished(con->ssl)) {
-        ERR_clear_error();
+        SSL_ERR_clear();
         if ((s = SSL_do_handshake(con->ssl)) <= 0) {
             if (!con->ssl)
                 return APR_ENOTSOCK;
@@ -406,7 +406,7 @@ ssl_socket_recv(apr_socket_t *sock, char *buf, apr_size_t *len)
     }
     apr_socket_timeout_get(con->sock, &timeout);
     for (;;) {
-        ERR_clear_error();
+        SSL_ERR_clear();
         if ((s = SSL_read(con->ssl, buf, rd)) <= 0) {
             if (!con->ssl)
                 return APR_ENOTSOCK;
@@ -488,7 +488,7 @@ ssl_socket_send(apr_socket_t *sock, const char *buf,
     }
     apr_socket_timeout_get(con->sock, &timeout);
     for (;;) {
-        ERR_clear_error();
+        SSL_ERR_clear();
         if ((s = SSL_write(con->ssl, buf, wr)) <= 0) {
             if (!con->ssl)
                 return APR_ENOTSOCK;
