@@ -454,7 +454,12 @@ TCN_IMPLEMENT_CALL(jint, Library, size)(TCN_STDARGS, jint what)
 
 apr_pool_t *tcn_get_global_pool()
 {
-    if (!tcn_global_pool) {
+    return tcn_get_global_pool_int(1);
+}
+
+apr_pool_t *tcn_get_global_pool_int(int create)
+{
+    if (!tcn_global_pool && create) {
         if (apr_pool_create(&tcn_global_pool, NULL) != APR_SUCCESS) {
             return NULL;
         }
