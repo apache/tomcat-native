@@ -50,7 +50,9 @@ struct CRYPTO_dynlock_value {
     apr_thread_mutex_t *mutex;
 };
 
+#if ! (defined(WIN32) || defined(WIN64))
 apr_threadkey_t *thread_exit_key;
+#endif
 #endif
 
 /*
@@ -437,15 +439,13 @@ static unsigned long ssl_thread_id(void)
 #endif
 }
 
-void SSL_thread_exit(void) {
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-    ERR_remove_thread_state(NULL);
-    apr_threadkey_private_set(NULL, thread_exit_key);
-#endif
-}
-
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 #if ! (defined(WIN32) || defined(WIN64))
+void SSL_thread_exit(void) {
+    ERR_remove_thread_state(NULL);
+    apr_threadkey_private_set(NULL, thread_exit_key);
+}
+
 unsigned long SSL_ERR_get() {
     apr_threadkey_private_set(thread_exit_key, thread_exit_key);
     return ERR_get_error();
@@ -455,12 +455,12 @@ void SSL_ERR_clear() {
     apr_threadkey_private_set(thread_exit_key, thread_exit_key);
     ERR_clear_error();
 }
-#endif
 
 static void _ssl_thread_exit(void *data) {
     UNREFERENCED(data);
     SSL_thread_exit();
 }
+#endif
 
 static void ssl_set_thread_id(CRYPTO_THREADID *id)
 {
@@ -758,6 +758,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     OPENSSL_load_builtin_modules();
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if ! (defined(WIN32) || defined(WIN64))
     err = apr_threadkey_private_create(&thread_exit_key, _ssl_thread_exit,
                                        tcn_global_pool);
     if (err != APR_SUCCESS) {
@@ -765,7 +766,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
         tcn_ThrowAPRException(e, err);
         return (jint)err;
     }
-
+#endif
     /* Initialize thread support */
     ssl_thread_setup(tcn_global_pool);
 #endif

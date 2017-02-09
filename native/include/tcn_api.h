@@ -40,10 +40,6 @@
  */
 apr_pool_t *tcn_get_global_pool(void);
 
-/* Return global apr pool, optionally creating it if necessary
- */
-apr_pool_t *tcn_get_global_pool_int(int);
-
 /* Return global String class
  */
 jclass tcn_get_string_class(void);

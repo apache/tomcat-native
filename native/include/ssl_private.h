@@ -362,8 +362,6 @@ int         SSL_callback_next_protos(SSL *, const unsigned char **, unsigned int
 int         SSL_callback_select_next_proto(SSL *, unsigned char **, unsigned char *, const unsigned char *, unsigned int,void *);
 int         SSL_callback_alpn_select_proto(SSL *, const unsigned char **, unsigned char *, const unsigned char *, unsigned int, void *);
 
-
-void SSL_thread_exit(void);
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L) && ! (defined(WIN32) || defined(WIN64))
 unsigned long SSL_ERR_get(void);
 void SSL_ERR_clear(void);

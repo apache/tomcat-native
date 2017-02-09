@@ -102,9 +102,7 @@ DllMain(
          */
         case DLL_THREAD_DETACH:
 #ifdef HAVE_OPENSSL
-            if (tcn_get_global_pool_int(0)) {
-                SSL_thread_exit();
-            }
+            ERR_remove_thread_state(NULL);
 #endif
             break;
 

@@ -35,6 +35,13 @@
   </p>
 </section>
 <section name="Changes in 1.2.12">
+  <changelog>
+    <fix>
+      Correct a regression in the fix for <bug>59797</bug> that triggered a JVM
+      crash on shutdown in some Tomcat unit tests when using the APR/native
+      connector. (markt)
+    </fix>
+  </changelog>
 </section>
 <section name="Changes in 1.2.11">
   <changelog>
