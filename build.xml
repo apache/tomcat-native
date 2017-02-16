@@ -143,11 +143,18 @@
 
       <mkdir dir="${base.path}"/>
 
-      <antcall target="downloadzip">
+      <antcall target="downloadfile">
         <param name="sourcefile" value="${junit.loc}"/>
         <param name="destfile" value="${junit.jar}"/>
-        <param name="destdir" value="${base.path}"/>
+        <param name="destdir" value="${junit.home}"/>
       </antcall>
+
+      <antcall target="downloadfile">
+        <param name="sourcefile" value="${hamcrest.loc}"/>
+        <param name="destfile" value="${hamcrest.jar}"/>
+        <param name="destdir" value="${hamcrest.home}"/>
+      </antcall>
+
     </target>
 
     <!-- =================================================================== -->
