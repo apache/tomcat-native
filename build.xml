@@ -58,6 +58,9 @@
     <!-- The base directory for component sources -->
     <property name="source.home"             value="java"/>
 
+    <!-- Tests To Run -->
+    <property name="test.name" value="**/Test*.java"/>
+
     <!-- Build classpath -->
     <path id="classpath">
         <pathelement location="${build.dest}/java"/>
@@ -318,7 +321,11 @@ limitations under the License.--&gt;">
             <classpath refid="test.classpath" />
 
             <batchtest todir="${basedir}/logs">
-                <fileset dir="test" />
+                <!-- Include all by default -->
+                <fileset dir="test" includes="${test.name}">
+                  <!-- Exclude helper classes -->
+                  <exclude name="**/Tester*.java" />
+                </fileset>
             </batchtest>
         </junit>
     </target>
