@@ -85,7 +85,7 @@ dnl set up the compilation flags and stuff
 dnl
 
 TCNATIVE_INCLUDES=""
-TCNATIVE_PRIV_INCLUDES="-I$top_builddir/include"
+TCNATIVE_PRIV_INCLUDES="-I$srcdir/include"
 
 dnl
 dnl Find the APR includes directory and (possibly) the source (base) dir.
