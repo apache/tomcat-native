@@ -96,6 +96,10 @@ SOURCE=.\src\address.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\bb.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\dir.c
 # End Source File
 # Begin Source File
@@ -133,6 +137,10 @@ SOURCE=.\src\multicast.c
 # Begin Source File
 
 SOURCE=.\src\network.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\os.c
 # End Source File
 # Begin Source File
 
