@@ -16,34 +16,34 @@
   limitations under the License.
 -->
 <project name="Apache Tomcat Native Documentation"
-        href="http://tomcat.apache.org/">
+  href="http://tomcat.apache.org/">
 
-    <title>Apache Tomcat Native Library</title>
+  <title>Apache Tomcat Native Library</title>
 
-    <logo href="/images/tomcat.gif">
-      Apache Tomcat Native Library
-    </logo>
-<body>
+  <logo href="/images/tomcat.gif">
+    Apache Tomcat Native Library
+  </logo>
 
+  <body>
     <menu name="Links">
-        <item name="Docs Home"                  href="index.html"/>
+      <item name="Docs Home" href="index.html"/>
     </menu>
 
     <menu name="Miscellaneous Documentation">
-        <item name="Changelog"                  href="miscellaneous/changelog.html"/>
+      <item name="Changelog" href="miscellaneous/changelog.html"/>
     </menu>
 
     <menu name="News">
-        <item name="2016"                       href="news/2016.html"/>
-        <item name="2015"                       href="news/2015.html"/>
-        <item name="2014"                       href="news/2014.html"/>
-        <item name="2013"                       href="news/2013.html"/>
-        <item name="2012"                       href="news/2012.html"/>
-        <item name="2011"                       href="news/2011.html"/>
-        <item name="2010"                       href="news/2010.html"/>
-        <item name="2009"                       href="news/2009.html"/>
-        <item name="2008"                       href="news/2008.html"/>
+      <item name="2017" href="news/2017.html"/>
+      <item name="2016" href="news/2016.html"/>
+      <item name="2015" href="news/2015.html"/>
+      <item name="2014" href="news/2014.html"/>
+      <item name="2013" href="news/2013.html"/>
+      <item name="2012" href="news/2012.html"/>
+      <item name="2011" href="news/2011.html"/>
+      <item name="2010" href="news/2010.html"/>
+      <item name="2009" href="news/2009.html"/>
+      <item name="2008" href="news/2008.html"/>
     </menu>
-
-</body>
+  </body>
 </project>
