@@ -629,13 +629,6 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
     TCN_ASSERT(sock != 0);
     con = (tcn_ssl_conn_t *)s->opaque;
 
-    /* Sequence to renegotiate is
-     *  SSL_renegotiate()
-     *  SSL_do_handshake()
-     *  ssl->state = SSL_ST_ACCEPT
-     *  SSL_do_handshake()
-     */
-
     /* Toggle the renegotiation state to allow the new
      * handshake to proceed.
      */
