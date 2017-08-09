@@ -589,7 +589,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCACertificate)(TCN_STDARGS,
         c->ca_certs++;
         ca_certs = SSL_CTX_get_client_CA_list(c->ctx);
         if (ca_certs == NULL) {
-            SSL_load_client_CA_file(J2S(file));
+            ca_certs = SSL_load_client_CA_file(J2S(file));
             if (ca_certs != NULL)
                 SSL_CTX_set_client_CA_list(c->ctx, ca_certs);
         }
