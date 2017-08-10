@@ -36,6 +36,10 @@
 </section>
 <section name="Changes in 1.2.13">
   <changelog>
+    <add>
+      Add method to add a single CA certificate to the list of CA certificates
+      which are accepted as issuers of client certificates. (rjung)
+    </add>
     <fix>
       Fix an error not announcing the correct CA list for client certificates
       during TLS handshake. (rjung)

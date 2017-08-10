@@ -1158,6 +1158,44 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addChainCertificateRaw)(TCN_STDARGS, jl
     return rv;
 }
 
+TCN_IMPLEMENT_CALL(jboolean, SSLContext, addClientCACertificateRaw)(TCN_STDARGS, jlong ctx,
+                                                                    jbyteArray javaCert)
+{
+    jsize lengthOfCert;
+    unsigned char *charCert;
+    X509 *cert;
+    const unsigned char *tmp;
+
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+    jboolean rv = JNI_TRUE;
+    char err[256];
+
+    /* we get the cert contents into a byte array */
+    jbyte* bufferPtr = (*e)->GetByteArrayElements(e, javaCert, NULL);
+    lengthOfCert = (*e)->GetArrayLength(e, javaCert);
+    charCert = malloc(lengthOfCert);
+    memcpy(charCert, bufferPtr, lengthOfCert);
+    (*e)->ReleaseByteArrayElements(e, javaCert, bufferPtr, 0);
+
+    UNREFERENCED(o);
+    TCN_ASSERT(ctx != 0);
+
+    tmp = (const unsigned char *)charCert;
+    cert = d2i_X509(NULL, &tmp, lengthOfCert);
+    if (cert == NULL) {
+        ERR_error_string(SSL_ERR_get(), err);
+        tcn_Throw(e, "Error encoding allowed peer CA certificate (%s)", err);
+        rv = JNI_FALSE;
+    } else if (SSL_CTX_add_client_CA(c->ctx, cert) <= 0) {
+        ERR_error_string(SSL_ERR_get(), err);
+        tcn_Throw(e, "Error adding allowed peer CA certificate (%s)", err);
+        rv = JNI_FALSE;
+    }
+
+    free(charCert);
+    return rv;
+}
+
 static int ssl_array_index(apr_array_header_t *array,
                            const char *s)
 {
@@ -2027,6 +2065,15 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
 
 TCN_IMPLEMENT_CALL(jboolean, SSLContext, addChainCertificateRaw)(TCN_STDARGS, jlong ctx,
                                                                  jbyteArray javaCert)
+{
+    UNREFERENCED_STDARGS;
+    UNREFERENCED(ctx);
+    UNREFERENCED(javaCert);
+    return JNI_FALSE;
+}
+
+TCN_IMPLEMENT_CALL(jboolean, SSLContext, addClientCACertificateRaw)(TCN_STDARGS, jlong ctx,
+                                                                    jbyteArray javaCert)
 {
     UNREFERENCED_STDARGS;
     UNREFERENCED(ctx);
