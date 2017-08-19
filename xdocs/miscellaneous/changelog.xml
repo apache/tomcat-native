@@ -37,6 +37,9 @@
 <section name="Changes in 1.2.13">
   <changelog>
     <add>
+      Add SSLContext.getCiphers(). (rjung)
+    </add>
+    <add>
       Add method to add a single CA certificate to the list of CA certificates
       which are accepted as issuers of client certificates. (rjung)
     </add>

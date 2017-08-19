@@ -27,6 +27,7 @@
 #include "ssl_private.h"
 
 static jclass byteArrayClass;
+static jclass stringClass;
 
 static apr_status_t ssl_context_cleanup(void *data)
 {
@@ -139,6 +140,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     tcn_ssl_ctxt_t *c = NULL;
     SSL_CTX *ctx = NULL;
     jclass clazz;
+    jclass sClazz;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
     jint prot;
 #endif
@@ -346,6 +348,8 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     /* Cache the byte[].class for performance reasons */
     clazz = (*e)->FindClass(e, "[B");
     byteArrayClass = (jclass) (*e)->NewGlobalRef(e, clazz);
+    sClazz = (*e)->FindClass(e, "java/lang/String");
+    stringClass = (jclass) (*e)->NewGlobalRef(e, sClazz);
 
     return P2J(c);
 init_failed:
@@ -488,6 +492,61 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
     TCN_FREE_CSTRING(ciphers);
     return rv;
 }
+
+TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
+{
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+    STACK_OF(SSL_CIPHER) *sk;
+    int len;
+    jobjectArray array;
+    SSL_CIPHER *cipher;
+    const char *name;
+    int i;
+    jstring c_name;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    SSL *ssl;
+#endif
+
+    UNREFERENCED_STDARGS;
+
+    if (c->ctx == NULL) {
+        tcn_ThrowException(e, "ssl context is null");
+        return NULL;
+    }
+
+    /* Before OpenSSL 1.1.0, get_ciphers() was only available
+     * on an SSL, not for an SSL_CTX. */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    ssl = SSL_new(c->ctx);
+    if (ssl == NULL) {
+        tcn_ThrowException(e, "could not create temporary ssl from ssl context");
+        return NULL;
+    }
+
+    sk = SSL_get_ciphers(ssl);
+#else
+    sk = SSL_CTX_get_ciphers(c->ctx);
+#endif
+    len = sk_SSL_CIPHER_num(sk);
+
+    if (len <= 0) {
+        SSL_free(ssl);
+        return NULL;
+    }
+
+    array = (*e)->NewObjectArray(e, len, stringClass, NULL);
+
+    for (i = 0; i < len; i++) {
+        cipher = (SSL_CIPHER*) sk_SSL_CIPHER_value(sk, i);
+        name = SSL_CIPHER_get_name(cipher);
+
+        c_name = (*e)->NewStringUTF(e, name);
+        (*e)->SetObjectArrayElement(e, array, i, c_name);
+    }
+    SSL_free(ssl);
+    return array;
+}
+
 
 TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx,
                                                           jstring file,
