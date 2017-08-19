@@ -37,6 +37,9 @@
 <section name="Changes in 1.2.13">
   <changelog>
     <add>
+      Add support for the OpenSSL SSL_CONF API. (rjung)
+    </add>
+    <add>
       Add SSLContext.getCiphers(). (rjung)
     </add>
     <add>

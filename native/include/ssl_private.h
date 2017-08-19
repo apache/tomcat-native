@@ -180,6 +180,11 @@
 #define HAVE_TLSV1_2
 #endif
 
+/* Check for SSL_CONF support */
+#if defined(SSL_CONF_FLAG_FILE)
+#define HAVE_SSL_CONF_CMD
+#endif
+
 /**
  * The following features all depend on TLS extension support.
  * Within this block, check again for features (not version numbers).
@@ -306,6 +311,14 @@ struct tcn_ssl_ctxt_t {
     /* End add from netty-tcnative */
 };
 
+#ifdef HAVE_SSL_CONF_CMD
+typedef struct tcn_ssl_conf_ctxt_t tcn_ssl_conf_ctxt_t;
+
+struct tcn_ssl_conf_ctxt_t {
+    apr_pool_t      *pool;
+    SSL_CONF_CTX    *cctx;
+};
+#endif
   
 typedef struct {
     apr_pool_t     *pool;
