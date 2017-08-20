@@ -102,6 +102,7 @@ OBJECTS = \
 	$(WORKDIR)\shm.obj \
 	$(WORKDIR)\ssl.obj \
 	$(WORKDIR)\sslcontext.obj \
+	$(WORKDIR)\sslconf.obj \
 	$(WORKDIR)\sslinfo.obj \
 	$(WORKDIR)\sslnetwork.obj \
 	$(WORKDIR)\sslutils.obj \

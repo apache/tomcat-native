@@ -827,6 +827,7 @@ native/src/dir.c
 native/src/shm.c
 native/src/multicast.c
 native/src/sslcontext.c
+native/src/sslconf.c
 native/src/user.c
 native/src/pool.c
 native/src/bb.c

@@ -168,6 +168,10 @@ SOURCE=.\src\sslcontext.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\sslconf.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\sslinfo.c
 # End Source File
 # Begin Source File
