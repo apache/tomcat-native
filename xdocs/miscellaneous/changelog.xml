@@ -50,6 +50,10 @@
       Fix an error not announcing the correct CA list for client certificates
       during TLS handshake. (rjung)
     </fix>
+    <fix>
+      Fix renegotiation to obtain a client certificate from a user agent.
+      (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.12">
