@@ -394,11 +394,15 @@ TCN_IMPLEMENT_CALL(jstring, SSLSocket, getInfoS)(TCN_STDARGS, jlong sock,
                     }
                 break;
                 case SSL_INFO_CLIENT_A_SIG:
+#if defined(LIBRESSL_VERSION_NUMBER)
+                	value = tcn_new_string(e, "UNKNOWN");
+#else
                     nid = X509_get_signature_nid(xs);
                     if (nid == NID_undef)
                         value = tcn_new_string(e, "UNKNOWN");
                     else
                         value = tcn_new_string(e, OBJ_nid2ln(nid));
+#endif
                 break;
                 case SSL_INFO_CLIENT_A_KEY:
                     X509_PUBKEY_get0_param(&paobj, NULL, 0, NULL, X509_get_X509_PUBKEY(xs));
@@ -445,11 +449,15 @@ TCN_IMPLEMENT_CALL(jstring, SSLSocket, getInfoS)(TCN_STDARGS, jlong sock,
                     }
                 break;
                 case SSL_INFO_SERVER_A_SIG:
+#if defined(LIBRESSL_VERSION_NUMBER)
+                	value = tcn_new_string(e, "UNKNOWN");
+#else
                     nid = X509_get_signature_nid(xs);
                     if (nid == NID_undef)
                         value = tcn_new_string(e, "UNKNOWN");
                     else
                         value = tcn_new_string(e, OBJ_nid2ln(nid));
+#endif
                 break;
                 case SSL_INFO_SERVER_A_KEY:
                     X509_PUBKEY_get0_param(&paobj, NULL, 0, NULL, X509_get_X509_PUBKEY(xs));
