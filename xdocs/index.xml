@@ -54,11 +54,6 @@
     <li>FIPS 140-2 support for TLS/SSL (if supported by linked OpenSSL library)</li>
   </ul>
 
-
-<p>Select one of the links from the navigation menu (to the left) to drill
-down to the more detailed documentation that is available. Each available
-manual is described in more detail below.</p>
-
 </section>
 
 <section name="Headlines">
@@ -202,9 +197,8 @@ INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
   <p>
     Refer to the tomcat documentation to configure the connectors
     (See <a href="http://tomcat.apache.org/tomcat-8.5-doc/apr.html">Tomcat 8.5.x</a>,
-    <a href="http://tomcat.apache.org/tomcat-8.0-doc/apr.html">Tomcat 8.0.x</a>,
-    <a href="http://tomcat.apache.org/tomcat-7.0-doc/apr.html">Tomcat 7.0.x</a>,
-    and <a href="http://tomcat.apache.org/tomcat-6.0-doc/apr.html">Tomcat 6.0.x</a>)
+    <a href="http://tomcat.apache.org/tomcat-8.0-doc/apr.html">Tomcat 8.0.x</a>
+    and <a href="http://tomcat.apache.org/tomcat-7.0-doc/apr.html">Tomcat 7.0.x</a>)
   </p>
 </subsection>
 
