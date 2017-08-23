@@ -1,9 +1,0 @@
-#! /bin/sh
-#
-# Created by configure
-
-"./configure" \
-"--with-apr=/usr/bin/apr-config" \
-"--with-ssl=/usr/lib/x86_64-linux-gnu" \
-"--prefix=/home/mark/libs/tomcat-native-1.2.x" \
-"$@"
