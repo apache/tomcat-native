@@ -61,6 +61,11 @@
       <bug>58434</bug>: Allow Tomcat Native to be compiled with LibreSSL. Note
       that some features may not be available when using LibreSSL. (markt)
     </fix>
+    <fix>
+      <bug>60290</bug>: When building Tomcat Native, don't ignore the value of
+      <code>CC</code> if explicitly set. Patch provided by Michael Osipov.
+      (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.12">

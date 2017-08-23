@@ -21,6 +21,7 @@
 
 CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
+CC_OLD = @CC@
 
 # gets substituted into some targets
 TCNATIVE_MAJOR_VERSION=@TCNATIVE_MAJOR_VERSION@
@@ -46,6 +47,10 @@ TARGETS = $(TARGET_LIB)
 # bring in rules.mk for standard functionality
 @INCLUDE_RULES@
 @INCLUDE_OUTPUTS@
+
+ifneq ($(CC_OLD),$(CC))
+    CC=$(CC_OLD)
+endif
 
 LINK          = $(LIBTOOL) $(LTFLAGS) --mode=link $(LT_LDFLAGS) $(COMPILE) -version-info $(TCNATIVE_LIBTOOL_VERSION) $(ALL_LDFLAGS) -o $@
 CLEAN_SUBDIRS = test
