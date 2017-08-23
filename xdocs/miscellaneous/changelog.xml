@@ -36,6 +36,9 @@
 </section>
 <section name="Changes in 1.2.13">
   <changelog>
+    <fix>
+      Add missing source files to Visual Studio project files. (wrowe)
+    </fix>
     <add>
       Add support for the OpenSSL SSL_CONF API. (rjung)
     </add>
