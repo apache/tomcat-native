@@ -226,7 +226,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         BIO_set_fp(c->bio_os, stderr, BIO_NOCLOSE | BIO_FP_TEXT);
     SSL_CTX_set_options(c->ctx, SSL_OP_ALL);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     /* always disable SSLv2, as per RFC 6176 */
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
     if (!(protocol & SSL_PROTOCOL_SSLV3))
@@ -242,7 +242,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         SSL_CTX_set_options(c->ctx, SSL_OP_NO_TLSv1_2);
 #endif
 
-#else /* if OPENSSL_VERSION_NUMBER < 0x10100000L */
+#else /* if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER) */
     /* We first determine the maximum protocol version we should provide */
     if (protocol & SSL_PROTOCOL_TLSV1_2) {
         prot = TLS1_2_VERSION;

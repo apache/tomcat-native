@@ -303,7 +303,7 @@ DH *SSL_get_dh_params(unsigned keylen)
     return NULL; /* impossible to reach. */
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
 static void init_bio_methods(void);
 static void free_bio_methods(void);
 #endif
@@ -338,7 +338,7 @@ static apr_status_t ssl_init_cleanup(void *data)
                          tcn_password_callback.cb.obj);
     }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
     free_bio_methods();
 #endif
     free_dh_params();
@@ -357,7 +357,7 @@ static apr_status_t ssl_init_cleanup(void *data)
     ENGINE_cleanup();
 #endif
     CRYPTO_cleanup_all_ex_data();
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     ERR_remove_thread_state(NULL);
 #endif
 
@@ -813,7 +813,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     SSL_init_app_data2_3_idx();
 
     init_dh_params();
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
     init_bio_methods();
 #endif
 
@@ -1111,7 +1111,7 @@ static long jbs_ctrl(BIO *b, int cmd, long num, void *ptr)
     return ret;
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 static BIO_METHOD jbs_methods = {
     BIO_TYPE_FILE,
     "Java Callback",
@@ -1147,7 +1147,7 @@ static void free_bio_methods(void)
 
 static BIO_METHOD *BIO_jbs()
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     return(&jbs_methods);
 #else
     return jbs_methods;
