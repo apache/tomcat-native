@@ -503,7 +503,7 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
     const char *name;
     int i;
     jstring c_name;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     SSL *ssl;
 #endif
 
@@ -516,7 +516,7 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
 
     /* Before OpenSSL 1.1.0, get_ciphers() was only available
      * on an SSL, not for an SSL_CTX. */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     ssl = SSL_new(c->ctx);
     if (ssl == NULL) {
         tcn_ThrowException(e, "could not create temporary ssl from ssl context");
@@ -530,7 +530,7 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
     len = sk_SSL_CIPHER_num(sk);
 
     if (len <= 0) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
         SSL_free(ssl);
 #endif
         return NULL;
@@ -545,7 +545,7 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
         c_name = (*e)->NewStringUTF(e, name);
         (*e)->SetObjectArrayElement(e, array, i, c_name);
     }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     SSL_free(ssl);
 #endif
     return array;
@@ -1678,7 +1678,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setSessionTicketKeys)(TCN_STDARGS, jlong ct
 }
 
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 
 /*
  * Adapted from OpenSSL:

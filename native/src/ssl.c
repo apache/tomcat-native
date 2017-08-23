@@ -201,7 +201,7 @@ static const jint supported_ssl_opts = 0
 #endif
      | 0;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 /* OpenSSL Pre-1.1.0 compatibility */
 /* Taken from OpenSSL 1.1.0 snapshot 20160410 */
 int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)

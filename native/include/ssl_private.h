@@ -209,7 +209,7 @@
 #endif /* !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name) */
 
 /* OpenSSL 1.0.2 compatibility */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #define OpenSSL_version                  SSLeay_version
 #define OpenSSL_version_num              SSLeay
 #define OPENSSL_VERSION                  SSLEAY_VERSION
@@ -234,7 +234,7 @@
 #define TLS_method                       SSLv23_method
 #define TLS_client_method                SSLv23_client_method
 #define TLS_server_method                SSLv23_server_method
-#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
+#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER) */
 
 #define MAX_ALPN_NPN_PROTO_SIZE 65535
 #define SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL            1
