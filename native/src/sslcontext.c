@@ -530,7 +530,9 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
     len = sk_SSL_CIPHER_num(sk);
 
     if (len <= 0) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
         SSL_free(ssl);
+#endif
         return NULL;
     }
 
@@ -543,7 +545,9 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
         c_name = (*e)->NewStringUTF(e, name);
         (*e)->SetObjectArrayElement(e, array, i, c_name);
     }
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_free(ssl);
+#endif
     return array;
 }
 
