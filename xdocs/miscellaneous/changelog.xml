@@ -57,6 +57,10 @@
       Fix renegotiation to obtain a client certificate from a user agent.
       (markt)
     </fix>
+    <fix>
+      <bug>58434</bug>: Allow Tomcat Native to be compiled with LibreSSL. Note
+      that some features may not be available when using LibreSSL. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.12">
