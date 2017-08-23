@@ -22,6 +22,7 @@
 CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 CC_OLD = @CC@
+LIBTOOL_OLD = @LIBTOOL@
 
 # gets substituted into some targets
 TCNATIVE_MAJOR_VERSION=@TCNATIVE_MAJOR_VERSION@
@@ -50,6 +51,10 @@ TARGETS = $(TARGET_LIB)
 
 ifneq ($(CC_OLD),$(CC))
     CC=$(CC_OLD)
+endif
+
+ifneq ($(LIBTOOL_OLD),$(LIBTOOL))
+    LIBTOOL=$(LIBTOOL_OLD)
 endif
 
 LINK          = $(LIBTOOL) $(LTFLAGS) --mode=link $(LT_LDFLAGS) $(COMPILE) -version-info $(TCNATIVE_LIBTOOL_VERSION) $(ALL_LDFLAGS) -o $@

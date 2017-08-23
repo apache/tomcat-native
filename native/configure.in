@@ -101,6 +101,11 @@ dnl
 APR_SETIFNULL(CC, `$apr_config --cc`)
 APR_SETIFNULL(CPP, `$apr_config --cpp`)
 
+dnl
+dnl Default to the APR provided libtool but allow the user to override it
+dnl
+APR_SETIFNULL(LIBTOOL, `$apr_config --apr-libtool`)
+
 AC_PROG_INSTALL
 
 dnl
@@ -234,6 +239,7 @@ AC_SUBST(TCNATIVE_LDFLAGS)
 AC_SUBST(TCNATIVE_LIBS)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
+AC_SUBST(LIBTOOL)
 
 dnl copy apr's rules.mk into our build directory.
 if test ! -d ./build; then

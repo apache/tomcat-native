@@ -66,6 +66,11 @@
       <code>CC</code> if explicitly set. Patch provided by Michael Osipov.
       (markt)
     </fix>
+    <fix>
+      <bug>60301</bug>: When building Tomcat Native, allow the user to override
+      the libtool specified by APR but setting the <code>LIBTOOL</code>
+      environment variable. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.12">
