@@ -29,7 +29,7 @@
 <body>
 
 <section name="2017 News &amp; Status">
- <subsection anchor="20170626" name="26 June 2017 - TC-Native-1.2.12 released">
+ <subsection anchor="20170221" name="21 Feb 2017 - TC-Native-1.2.12 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability
   of Tomcat Native 1.2.12. This is a release to update dependencies for the
   Windows binaries and includes Windows binaries built with OpenSSL 1.0.2k and
