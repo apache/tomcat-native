@@ -144,6 +144,7 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, check)(TCN_STDARGS, jlong cctx,
 {
     tcn_ssl_conf_ctxt_t *c = J2P(cctx, tcn_ssl_conf_ctxt_t *);
     int rc = 1;
+    int value_type;
     unsigned long ec;
     TCN_ALLOC_CSTRING(cmd);
     TCN_ALLOC_CSTRING(value);
@@ -156,7 +157,7 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, check)(TCN_STDARGS, jlong cctx,
     }
 
     SSL_ERR_clear();
-    int value_type = SSL_CONF_cmd_value_type(c->cctx, J2S(cmd));
+    value_type = SSL_CONF_cmd_value_type(c->cctx, J2S(cmd));
     ec = SSL_ERR_get();
     if (ec != 0) {
         char err[256];
