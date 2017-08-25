@@ -71,6 +71,12 @@
       the libtool specified by APR by setting the <code>LIBTOOL</code>
       environment variable. (markt)
     </fix>
+    <update>
+      Update build to use APR 1.6.x, with 1.6.2 recommended. (markt)
+    </update>
+    <update>
+      Update recommended OpenSSL version to 1.0.2l. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.12">

@@ -99,6 +99,7 @@ OBJECTS = \
 	$(WORKDIR)\poll.obj \
 	$(WORKDIR)\pollcb.obj \
 	$(WORKDIR)\pollset.obj \
+	$(WORKDIR)\wakeup.obj \
 	$(WORKDIR)\select.obj \
 	$(WORKDIR)\apr_random.obj \
 	$(WORKDIR)\sha2.obj \
