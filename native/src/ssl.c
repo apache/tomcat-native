@@ -52,6 +52,7 @@ struct CRYPTO_dynlock_value {
 
 #if ! (defined(WIN32) || defined(WIN64))
 apr_threadkey_t *thread_exit_key;
+static int threadkey_initialized = 0;
 #endif
 #endif
 
@@ -331,6 +332,12 @@ static apr_status_t ssl_init_cleanup(void *data)
         return APR_SUCCESS;
     ssl_initialized = 0;
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L && ! (defined(WIN32) || defined(WIN64))
+    if (threadkey_initialized) {
+        threadkey_initialized = 0;
+        apr_threadkey_private_delete(thread_exit_key);
+    }
+#endif
     if (tcn_password_callback.cb.obj) {
         JNIEnv *env;
         tcn_get_java_env(&env);
@@ -766,6 +773,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
         tcn_ThrowAPRException(e, err);
         return (jint)err;
     }
+    threadkey_initialized = 1;
 #endif
     /* Initialize thread support */
     ssl_thread_setup(tcn_global_pool);
