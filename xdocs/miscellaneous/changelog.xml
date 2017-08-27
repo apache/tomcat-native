@@ -34,6 +34,14 @@
   This is the Changelog for Tomcat Native 1.2.
   </p>
 </section>
+<section name="Changes in 1.2.14">
+  <changelog>
+    <fix>
+      Fix a thread local key leak. Only relevant when doing
+      SSL.initialize() and Library.terminate() a lot of times. (rjung)
+    </fix>
+  </changelog>
+</section>
 <section name="Changes in 1.2.13">
   <changelog>
     <fix>
