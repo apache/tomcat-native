@@ -353,15 +353,18 @@ static apr_status_t ssl_init_cleanup(void *data)
     /*
      * Try to kill the internals of the SSL library.
      */
-    /* Corresponds to OPENSSL_load_builtin_modules():
-     * XXX: borrowed from apps.h, but why not CONF_modules_free()
-     * which also invokes CONF_modules_finish()?
-     */
-    CONF_modules_unload(1);
+#ifdef OPENSSL_FIPS
+    FIPS_mode_set(0);
+#endif
+    /* Corresponds to OPENSSL_load_builtin_modules() */
+    CONF_modules_free();
     /* Corresponds to SSL_library_init: */
     EVP_cleanup();
 #if HAVE_ENGINE_LOAD_BUILTIN_ENGINES
     ENGINE_cleanup();
+#endif
+#if OPENSSL_VERSION_NUMBER >= 0x1000200fL
+    SSL_COMP_free_compression_methods();
 #endif
     CRYPTO_cleanup_all_ex_data();
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
