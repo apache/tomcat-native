@@ -182,7 +182,11 @@ static char *lookup_ssl_cert_dn(X509_NAME *xsname, int dnidx)
                     ASN1_STRING *adata = X509_NAME_ENTRY_get_data(xsne);
                     int len = ASN1_STRING_length(adata);
                     result = malloc(len + 1);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
                     memcpy(result, ASN1_STRING_data(adata), len);
+#else
+                    memcpy(result, ASN1_STRING_get0_data(adata), len);
+#endif
                     result[len] = '\0';
 
 #if APR_CHARSET_EBCDIC
