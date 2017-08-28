@@ -953,7 +953,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     const char *p;
     char err[256];
 #ifdef HAVE_ECC
-    EC_GROUP *ecparams;
+    EC_GROUP *ecparams = NULL;
     int nid;
     EC_KEY *eckey = NULL;
 #endif
@@ -1034,6 +1034,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
      * If only for PEM files move above to the PEM handling */
     if ((idx == 0) && (dhparams = SSL_dh_GetParamFromFile(cert_file))) {
         SSL_CTX_set_tmp_dh(c->ctx, dhparams);
+        DH_free(dhparams);
     }
 
 #ifdef HAVE_ECC
@@ -1048,8 +1049,11 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
         SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
     }
     /*
-     * ...otherwise, configure NIST P-256 (required to enable ECDHE)
+     * ...otherwise, enable auto curve selection (OpenSSL 1.0.2)
+     * or configure NIST P-256 (required to enable ECDHE for earlier versions)
+     * ECDH is always enabled in 1.1.0 unless excluded from SSLCipherList
      */
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
     else {
 #if defined(SSL_CTX_set_ecdh_auto)
         SSL_CTX_set_ecdh_auto(c->ctx, 1);
@@ -1058,7 +1062,10 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
         SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
 #endif
     }
+#endif
+    /* OpenSSL assures us that _free() is NULL-safe */
     EC_KEY_free(eckey);
+    EC_GROUP_free(ecparams);
 #endif
     SSL_CTX_set_tmp_dh_callback(c->ctx, SSL_callback_tmp_DH);
 
@@ -1168,12 +1175,14 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
     /*
      * TODO try to read the ECDH curve name from somewhere...
      */
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
 #if defined(SSL_CTX_set_ecdh_auto)
     SSL_CTX_set_ecdh_auto(c->ctx, 1);
 #else
     eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
     EC_KEY_free(eckey);
+#endif
 #endif
 #endif
     SSL_CTX_set_tmp_dh_callback(c->ctx, SSL_callback_tmp_DH);

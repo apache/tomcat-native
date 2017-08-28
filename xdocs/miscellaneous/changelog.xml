@@ -37,6 +37,9 @@
 <section name="Changes in 1.2.14">
   <changelog>
     <fix>
+      Fix a small memory leak during certificate initialization. (rjung)
+    </fix>
+    <fix>
       Replace use of deprecated <code>ASN1_STRING_data</code> with
       <code>ASN1_STRING_get0_data</code> when building against
       OpenSSL 1.1.0 and newer. (rjung)
