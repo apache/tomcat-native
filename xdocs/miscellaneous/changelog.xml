@@ -25,7 +25,7 @@
 
   <properties>
     <author email="jfclere@apache.org">Jean-Frederic Clere</author>
-    </properties>
+  </properties>
 
 <body>
 
@@ -38,6 +38,10 @@
     <update>
       Update recommended OpenSSL version to 1.0.2m. (markt)
     </update>
+    <fix>
+      Correctly calculate field lengths when parsing the OCSP extension so
+      that longer values are read correctly. (markt)
+    </fix>
 </section>
 <section name="Changes in 1.2.14">
   <changelog>

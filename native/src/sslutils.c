@@ -549,6 +549,49 @@ static void *apr_xrealloc(void *buf, size_t oldlen, size_t len, apr_pool_t *p)
     return newp;
 }
 
+/* Parses an ASN.1 length.
+ * On entry, ans1 points to the current tag.
+ * Updates the pointer to the ASN.1 structure to point to the start of the data.
+ * Returns 0 on success, 1 on failure.
+ */
+static int parse_asn1_length(unsigned char **asn1, int *len) {
+
+    /* Length immediately follows tag so increment before reading first (and
+     * possibly only) length byte.
+     */
+    (*asn1)++;
+
+    if (**asn1 & 0x80) {
+        // MSB set. Remaining bits are number of bytes used to store the length.
+        int i, l;
+
+        // How many bytes for this length?
+        i = **asn1 & 0x7F;
+
+        if (i == 0) {
+            // Should be at least 1 byte
+            return 1;
+        }
+
+        // Most significant byte is first
+        l = 0;
+        while (i > 0) {
+            l <<= 8;
+            (*asn1)++;
+            l += **asn1;
+            i--;
+        }
+        *len = l;
+    } else {
+        // Single byte length
+        *len = **asn1;
+    }
+    
+    (*asn1)++;
+
+    return 0;
+}
+
 /* parses the ocsp url and updates the ocsp_urls and nocsp_urls variables
    returns 0 on success, 1 on failure */
 static int parse_ocsp_url(unsigned char *asn1, char ***ocsp_urls,
@@ -558,11 +601,13 @@ static int parse_ocsp_url(unsigned char *asn1, char ***ocsp_urls,
     int len, err = 0, new_nocsp_urls;
 
     if (*asn1 == ASN1_STRING) {
-        len = *++asn1;
-        asn1++;
-        new_nocsp_urls = *nocsp_urls+1;
-        if ((new_ocsp_urls = apr_xrealloc(*ocsp_urls,*nocsp_urls, new_nocsp_urls, p)) == NULL)
-            err = 1;
+        err = parse_asn1_length(&asn1, &len);
+
+        if (!err) {
+            new_nocsp_urls = *nocsp_urls+1;
+            if ((new_ocsp_urls = apr_xrealloc(*ocsp_urls,*nocsp_urls, new_nocsp_urls, p)) == NULL)
+                err = 1;
+        }
         if (!err) {
             *ocsp_urls  = new_ocsp_urls;
             *nocsp_urls = new_nocsp_urls;
@@ -587,9 +632,9 @@ static int parse_ASN1_OID(unsigned char *asn1, char ***ocsp_urls, int *nocsp_url
     int len, err = 0 ;
     const unsigned char OCSP_OID[] = {0x2b, 0x06, 0x01, 0x05, 0x05, 0x07, 0x30, 0x01};
 
-    len = *++asn1;
-    asn1++;
-    if (memcmp(asn1, OCSP_OID, len) == 0) {
+    err = parse_asn1_length(&asn1, &len);
+
+    if (!err && memcmp(asn1, OCSP_OID, len) == 0) {
         asn1+=len;
         err = parse_ocsp_url(asn1, ocsp_urls, nocsp_urls, p);
     }
@@ -611,9 +656,10 @@ static int parse_ASN1_Sequence(unsigned char *asn1, char ***ocsp_urls,
     while (!err && *asn1 != '\0') {
         switch(*asn1) {
             case ASN1_SEQUENCE:
-                len = *++asn1;
-                asn1++;
-                err = parse_ASN1_Sequence(asn1, ocsp_urls, nocsp_urls, p);
+                err = parse_asn1_length(&asn1, &len);
+                if (!err) {
+                    err = parse_ASN1_Sequence(asn1, ocsp_urls, nocsp_urls, p);
+                }
             break;
             case ASN1_OID:
                 err = parse_ASN1_OID(asn1,ocsp_urls,nocsp_urls, p);
