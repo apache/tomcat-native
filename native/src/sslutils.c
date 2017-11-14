@@ -550,7 +550,7 @@ static void *apr_xrealloc(void *buf, size_t oldlen, size_t len, apr_pool_t *p)
 }
 
 /* Parses an ASN.1 length.
- * On entry, ans1 points to the current tag.
+ * On entry, asn1 points to the current tag.
  * Updates the pointer to the ASN.1 structure to point to the start of the data.
  * Returns 0 on success, 1 on failure.
  */
@@ -569,8 +569,17 @@ static int parse_asn1_length(unsigned char **asn1, int *len) {
         i = **asn1 & 0x7F;
 
         if (i == 0) {
-            // Should be at least 1 byte
+            /* This is the indefinite form of length. Since certificates use DER
+             * this should never happen and is therefore an error.
+        	 */
             return 1;
+        }
+        if (i > 3) {
+        	/* Three bytes for length gives a maximum of 16MB which should be
+        	 * far more than is required. (2 bytes is 64K which is probably more
+        	 * than enough but play safe.)
+        	 */
+        	return 1;
         }
 
         // Most significant byte is first
@@ -634,7 +643,7 @@ static int parse_ASN1_OID(unsigned char *asn1, char ***ocsp_urls, int *nocsp_url
 
     err = parse_asn1_length(&asn1, &len);
 
-    if (!err && memcmp(asn1, OCSP_OID, len) == 0) {
+    if (!err && len == 8 && memcmp(asn1, OCSP_OID, 8) == 0) {
         asn1+=len;
         err = parse_ocsp_url(asn1, ocsp_urls, nocsp_urls, p);
     }
@@ -663,7 +672,7 @@ static int parse_ASN1_Sequence(unsigned char *asn1, char ***ocsp_urls,
             break;
             case ASN1_OID:
                 err = parse_ASN1_OID(asn1,ocsp_urls,nocsp_urls, p);
-                return 0;
+                return err;
             break;
             default:
                 err = 1; /* we shouldn't have any errors */

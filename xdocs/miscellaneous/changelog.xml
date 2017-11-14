@@ -34,6 +34,13 @@
   This is the Changelog for Tomcat Native 1.2.
   </p>
 </section>
+<section name="Changes in 1.2.16">
+  <changelog>
+    <fix>
+      Further clean-up in the parsing of the OCSP extension. (markt)
+    </fix>
+  </changelog>
+</section>
 <section name="Changes in 1.2.15">
   <changelog>
     <update>
