@@ -571,15 +571,15 @@ static int parse_asn1_length(unsigned char **asn1, int *len) {
         if (i == 0) {
             /* This is the indefinite form of length. Since certificates use DER
              * this should never happen and is therefore an error.
-        	 */
+             */
             return 1;
         }
         if (i > 3) {
-        	/* Three bytes for length gives a maximum of 16MB which should be
-        	 * far more than is required. (2 bytes is 64K which is probably more
-        	 * than enough but play safe.)
-        	 */
-        	return 1;
+            /* Three bytes for length gives a maximum of 16MB which should be
+             * far more than is required. (2 bytes is 64K which is probably more
+             * than enough but play safe.)
+             */
+            return 1;
         }
 
         // Most significant byte is first
