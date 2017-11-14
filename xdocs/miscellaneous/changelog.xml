@@ -35,6 +35,7 @@
   </p>
 </section>
 <section name="Changes in 1.2.15">
+  <changelog>
     <update>
       Update recommended OpenSSL version to 1.0.2m. (markt)
     </update>
@@ -42,6 +43,10 @@
       Correctly calculate field lengths when parsing the OCSP extension so
       that longer values are read correctly. (markt)
     </fix>
+    <update>
+      Update the recommended APR version to 1.6.3 or later. (markt)
+    </update>
+  </changelog>
 </section>
 <section name="Changes in 1.2.14">
   <changelog>
