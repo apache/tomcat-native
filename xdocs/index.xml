@@ -119,7 +119,7 @@ list of changes.
     JVM version the JVM you use with Tomcat.<br/>
     <code>$HOME/OPENSSL</code> is the path where OpenSSL is installed.<br/>
     <code>$CATALINA_HOME</code> is the path where the produced libraries will be
-    installed. Something like $HOME/apache-tomcat-6.0.16/<br/>
+    installed. Something like $HOME/apache-tomcat-8.0.47/<br/>
     <br/>
     The configure is able to guess most of OpenSSL standard installations.
     So most of the time the following will be enough:
