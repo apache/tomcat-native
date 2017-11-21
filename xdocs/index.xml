@@ -114,7 +114,7 @@ list of changes.
     Where:<br/>
     <code>$HOME/APR</code> is something like /usr/bin/apr-1-config or the path where apr is
     installed.<br/>
-    <code>$JAVA_HOME</code> is something /home/jfclere/JAVA/jdk1.5.0_09 path to a JDK
+    <code>$JAVA_HOME</code> is something /home/jfclere/JAVA/jdk1.7.0_80 path to a JDK
     installation. Any JDK should work but it is advisable to use the same
     JVM version the JVM you use with Tomcat.<br/>
     <code>$HOME/OPENSSL</code> is the path where OpenSSL is installed.<br/>
@@ -126,7 +126,7 @@ list of changes.
   </p>
     <source
 >./configure --with-apr=/usr/bin/apr-1-config \
-            --with-java-home=/home/jfclere/JAVA/jdk1.5.0_09/ \
+            --with-java-home=/home/jfclere/JAVA/jdk1.7.0_80/ \
             --with-ssl=yes \
             --prefix=$CATALINA_HOME</source>
   <p>
