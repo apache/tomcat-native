@@ -3,14 +3,12 @@
 # Small script to get a recent openssl, with npn support
 # Will run configure and build_libs to generate the .s files
 
-
-
 SSL=openssl-1.0.2g.tar.gz
 APR=apr-1.5.2.tar.gz
 mkdir -p deps
 
 if [ ! -f deps/$SSL ] ; then
-  curl http://openssl.org/source/$SSL -o deps/$SSL
+  curl https://www.openssl.org/source/$SSL -o deps/$SSL
 fi 
 if [ ! -d deps/src/openssl ] ; then
   mkdir -p deps/src/openssl 
@@ -22,15 +20,10 @@ fi
 
 (cd deps/src/openssl; make build_libs )
 
-  
 if [ ! -f deps/$APR ] ; then
-  curl http://mirrors.ibiblio.org/apache/apr/$APR -o deps/$APR
+  curl https://archive.apache.org/dist/apr/$APR -o deps/$APR
 fi 
 if [ ! -d deps/src/apr ] ; then
   mkdir -p deps/src/apr 
   (cd deps/src/apr; tar  -xvz --strip-components=1 -f ../../$APR)
 fi
-
-  
-  
- 
