@@ -532,7 +532,7 @@ static int ssl_verify_OCSP(int ok, X509_STORE_CTX *ctx)
             break;
         case OCSP_STATUS_UNKNOWN:
             /* correct error code for application errors? */
-            X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
+            // X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
             break;
         }
     }
