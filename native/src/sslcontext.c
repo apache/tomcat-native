@@ -565,11 +565,13 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
 
     UNREFERENCED(o);
     TCN_ASSERT(ctx != 0);
-    if (J2S(file) == NULL && J2S(path) == NULL)
+    if (J2S(file) == NULL && J2S(path) == NULL) {
         return JNI_FALSE;
+    }
 
+    fprintf(stderr,"setCARevocation: 1\n");
     if (!c->crl) {
-        if ((c->crl = X509_STORE_new()) == NULL)
+        if ((c->crl = SSL_CTX_get_cert_store(c->ctx)) == NULL)
             goto cleanup;
     }
     if (J2S(file)) {
@@ -581,7 +583,13 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
             tcn_Throw(e, "Lookup failed for file %s (%s)", J2S(file), err);
             goto cleanup;
         }
-        X509_LOOKUP_load_file(lookup, J2S(file), X509_FILETYPE_PEM);
+        if (!X509_LOOKUP_load_file(lookup, J2S(file), X509_FILETYPE_PEM)) {
+            ERR_error_string(SSL_ERR_get(), err);
+            X509_STORE_free(c->crl);
+            c->crl = NULL;
+            tcn_Throw(e, "Load failed for file %s (%s)", J2S(file), err);
+            goto cleanup;
+        }
     }
     if (J2S(path)) {
         lookup = X509_STORE_add_lookup(c->crl, X509_LOOKUP_hash_dir());
@@ -592,8 +600,15 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
             tcn_Throw(e, "Lookup failed for path %s (%s)", J2S(file), err);
             goto cleanup;
         }
-        X509_LOOKUP_add_dir(lookup, J2S(path), X509_FILETYPE_PEM);
+        if (!X509_LOOKUP_add_dir(lookup, J2S(path), X509_FILETYPE_PEM)) {
+            ERR_error_string(SSL_ERR_get(), err);
+            X509_STORE_free(c->crl);
+            c->crl = NULL;
+            tcn_Throw(e, "Load failed for path %s (%s)", J2S(file), err);
+            goto cleanup;
+        }
     }
+    X509_STORE_set_flags(c->store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
     rv = JNI_TRUE;
 cleanup:
     TCN_FREE_CSTRING(file);
