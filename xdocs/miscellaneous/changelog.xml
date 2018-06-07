@@ -34,6 +34,24 @@
   This is the Changelog for Tomcat Native 1.2.
   </p>
 </section>
+<section name="Changes in 1.2.17">
+  <changelog>
+    <fix>
+      <bug>62094</bug>: Certificate verification using CRL with
+      Tomcat APR connector does not work. (jfclere)
+    </fix>
+    <fix>
+      <bug>62122</bug>: undefined symbol: SSL_COMP_free_compression_methods. (jfclere)
+    </fix>
+    <fix>
+      <bug>62221</bug>: OCSP response processing uses always the first
+      entry in the response. (jfclere)
+    </fix>
+    <fix>
+      Further clean-up in the OCSP extension logic. (jfclere)
+    </fix>
+  </changelog>
+</section>
 <section name="Changes in 1.2.16">
   <changelog>
     <fix>
