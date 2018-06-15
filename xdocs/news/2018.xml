@@ -33,7 +33,7 @@
   <p>The Apache Tomcat team is proud to announce the immediate availability of
   Tomcat Native 1.2.17. This is a bugfix release that also updates the
   dependencies for the Windows binaries and includes Windows binaries built with
-  OpenSSL 1.0.20 and APR 1.6.3.
+  OpenSSL 1.0.2o and APR 1.6.3.
   </p>
  </subsection>
 </section>
