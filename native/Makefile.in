@@ -57,7 +57,7 @@ ifneq ($(LIBTOOL_OLD),$(LIBTOOL))
     LIBTOOL=$(LIBTOOL_OLD)
 endif
 
-LINK          = $(LIBTOOL) $(LTFLAGS) --mode=link $(LT_LDFLAGS) $(COMPILE) -version-info $(TCNATIVE_LIBTOOL_VERSION) $(ALL_LDFLAGS) -o $@
+LINK          = $(LIBTOOL) $(LTFLAGS) --mode=link --tag=CC $(LT_LDFLAGS) $(COMPILE) -version-info $(TCNATIVE_LIBTOOL_VERSION) $(ALL_LDFLAGS) -o $@
 CLEAN_SUBDIRS = test
 
 CLEAN_TARGETS = .make.dirs
