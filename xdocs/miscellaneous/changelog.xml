@@ -39,6 +39,10 @@
     <fix>
       <bug>62641</bug>: libtool invocations should use --tag=CC. (michaelo)
     </fix>
+    <scode>
+      Remove support for Netware as there has not been a supported Netware
+      platform for a number of years. (markt)
+    </scode>
   </changelog>
 </section>
 <section name="Changes in 1.2.17">

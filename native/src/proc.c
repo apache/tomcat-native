@@ -311,7 +311,7 @@ TCN_IMPLEMENT_CALL(jint, Proc, detach)(TCN_STDARGS, jint daemonize)
 {
 
     UNREFERENCED_STDARGS;
-#if defined(WIN32) || defined (NETWARE)
+#if defined(WIN32)
     UNREFERENCED(daemonize);
     return APR_ENOTIMPL;
 #else
