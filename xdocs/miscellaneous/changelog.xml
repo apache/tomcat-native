@@ -43,6 +43,9 @@
       Remove support for Netware as there has not been a supported Netware
       platform for a number of years. (markt)
     </scode>
+    <add>
+      <bug>62748</bug>: Add support for TLS 1.3. (schultz/markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.17">

@@ -152,7 +152,16 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-    if (protocol == SSL_PROTOCOL_TLSV1_2) {
+    if (protocol == SSL_PROTOCOL_TLSV1_3) {
+#ifdef HAVE_TLSV1_3
+        if (mode == SSL_MODE_CLIENT)
+            ctx = SSL_CTX_new(TLSv1_3_client_method());
+        else if (mode == SSL_MODE_SERVER)
+            ctx = SSL_CTX_new(TLSv1_3_server_method());
+        else
+            ctx = SSL_CTX_new(TLSv1_3_method());
+#endif
+    } else if (protocol == SSL_PROTOCOL_TLSV1_2) {
 #ifdef HAVE_TLSV1_2
         if (mode == SSL_MODE_CLIENT)
             ctx = SSL_CTX_new(TLSv1_2_client_method());
@@ -186,6 +195,10 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
             ctx = SSL_CTX_new(SSLv3_method());
     } else if (protocol == SSL_PROTOCOL_SSLV2) {
         /* requested but not supported */
+#ifndef HAVE_TLSV1_3
+    } else if (protocol & SSL_PROTOCOL_TLSV1_3) {
+        /* requested but not supported */
+#endif
 #ifndef HAVE_TLSV1_2
     } else if (protocol & SSL_PROTOCOL_TLSV1_2) {
         /* requested but not supported */
@@ -241,9 +254,19 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     if (!(protocol & SSL_PROTOCOL_TLSV1_2))
         SSL_CTX_set_options(c->ctx, SSL_OP_NO_TLSv1_2);
 #endif
+#ifdef HAVE_TLSV1_3
+    if (!(protocol & SSL_PROTOCOL_TLSV1_3))
+        SSL_CTX_set_options(c->ctx, SSL_OP_NO_TLSv1_3);
+#endif
 
 #else /* if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER) */
     /* We first determine the maximum protocol version we should provide */
+#ifdef HAVE_TLSV1_3
+    if (protocol & SSL_PROTOCOL_TLSV1_3) {
+        prot = TLS1_3_VERSION;
+    } else
+/* NOTE the dangling else above: take care to preserve it */
+#endif
     if (protocol & SSL_PROTOCOL_TLSV1_2) {
         prot = TLS1_2_VERSION;
     } else if (protocol & SSL_PROTOCOL_TLSV1_1) {
@@ -261,6 +284,12 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
 
     /* Next we scan for the minimal protocol version we should provide,
      * but we do not allow holes between max and min */
+#ifdef HAVE_TLSV1_3
+    if (prot == TLS1_3_VERSION && protocol & SSL_PROTOCOL_TLSV1_2) {
+        prot = TLS1_2_VERSION;
+    } else
+/* NOTE the dangling else above: take care to preserve it */
+#endif
     if (prot == TLS1_2_VERSION && protocol & SSL_PROTOCOL_TLSV1_1) {
         prot = TLS1_1_VERSION;
     }

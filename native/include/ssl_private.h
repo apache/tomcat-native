@@ -84,6 +84,7 @@
 #define SSL_PROTOCOL_TLSV1      (1<<2)
 #define SSL_PROTOCOL_TLSV1_1    (1<<3)
 #define SSL_PROTOCOL_TLSV1_2    (1<<4)
+#define SSL_PROTOCOL_TLSV1_3    (1<<5)
 
 #define SSL_MODE_CLIENT         (0)
 #define SSL_MODE_SERVER         (1)
@@ -178,6 +179,10 @@
 
 #if defined(SSL_OP_NO_TLSv1_2)
 #define HAVE_TLSV1_2
+#endif
+
+#if defined(SSL_OP_NO_TLSv1_3)
+#define HAVE_TLSV1_3
 #endif
 
 /* Check for SSL_CONF support */
