@@ -324,7 +324,7 @@ struct tcn_ssl_conf_ctxt_t {
     SSL_CONF_CTX    *cctx;
 };
 #endif
-  
+
 typedef struct {
     apr_pool_t     *pool;
     tcn_ssl_ctxt_t *ctx;
@@ -335,7 +335,7 @@ typedef struct {
      * that all client-initiated renegotiations can be rejected, as a
      * partial fix for CVE-2009-3555.
      */
-    enum { 
+    enum {
         RENEG_INIT = 0, /* Before initial handshake */
         RENEG_REJECT,   /* After initial handshake; any client-initiated
                          * renegotiation should be rejected
@@ -347,6 +347,13 @@ typedef struct {
                          * connection
                          */
     } reneg_state;
+#if defined(SSL_OP_NO_TLSv1_3)
+    enum {
+    	PHA_NONE = 0,	/* Before PHA */
+		PHA_STARTED,	/* PHA req sent to client but no response */
+		PHA_COMPLETE	/* Client has returned cert */
+    } pha_state;
+#endif
     apr_socket_t   *sock;
     apr_pollset_t  *pollset;
 } tcn_ssl_conn_t;
@@ -356,7 +363,7 @@ typedef struct {
  *  Additional Functions
  */
 void        SSL_init_app_data2_3_idx(void);
-/* The app_data2 is used to store the tcn_ssl_ctxt_t pointer for the SSL instance. */ 
+/* The app_data2 is used to store the tcn_ssl_ctxt_t pointer for the SSL instance. */
 void       *SSL_get_app_data2(SSL *);
 void        SSL_set_app_data2(SSL *, void *);
 /* The app_data3 is used to store the handshakeCount pointer for the SSL instance. */

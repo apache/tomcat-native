@@ -305,6 +305,10 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
     int verify   = con->ctx->verify_mode;
     int depth    = con->ctx->verify_depth;
 
+#if defined(SSL_OP_NO_TLSv1_3)
+    con->pha_state = PHA_COMPLETE;
+#endif
+
     if (verify == SSL_CVERIFY_UNSET ||
         verify == SSL_CVERIFY_NONE)
         return 1;
