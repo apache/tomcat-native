@@ -1527,6 +1527,19 @@ TCN_IMPLEMENT_CALL(jint, SSL, renegotiate)(TCN_STDARGS,
     return SSL_renegotiate(ssl_);
 }
 
+TCN_IMPLEMENT_CALL(jint, SSL, renegotiatePending)(TCN_STDARGS,
+                                                  jlong ssl /* SSL * */) {
+    SSL *ssl_ = J2P(ssl, SSL *);
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return 0;
+    }
+
+    UNREFERENCED(o);
+
+    return SSL_renegotiate_pending(ssl_);
+}
+
 /* Read which protocol was negotiated for the given SSL *. */
 TCN_IMPLEMENT_CALL(jstring, SSL, getNextProtoNegotiated)(TCN_STDARGS,
                                                          jlong ssl /* SSL * */) {

@@ -46,6 +46,11 @@
     <add>
       <bug>62748</bug>: Add support for TLS 1.3. (schultz/markt)
     </add>
+    <add>
+      Expose the API necessary for CLIENT-CERT authentication to be correctly
+      supported when using Tomcat's JSSE implementation backed by OpenSSL.
+      (markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.17">
