@@ -1540,6 +1540,41 @@ TCN_IMPLEMENT_CALL(jint, SSL, renegotiatePending)(TCN_STDARGS,
     return SSL_renegotiate_pending(ssl_);
 }
 
+TCN_IMPLEMENT_CALL(jint, SSL, verifyClientPostHandshake)(TCN_STDARGS,
+                                                         jlong ssl /* SSL * */) {
+    SSL *ssl_ = J2P(ssl, SSL *);
+    tcn_ssl_conn_t *con;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return 0;
+    }
+
+    UNREFERENCED(o);
+
+    con = (tcn_ssl_conn_t *)SSL_get_app_data(ssl_);
+    con->pha_state = PHA_STARTED;
+
+    return SSL_verify_client_post_handshake(ssl_);
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, getPostHandshakeAuthInProgress)(TCN_STDARGS,
+                                                              jlong ssl /* SSL * */) {
+    SSL *ssl_ = J2P(ssl, SSL *);
+    tcn_ssl_conn_t *con;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return 0;
+    }
+
+    UNREFERENCED(o);
+
+    con = (tcn_ssl_conn_t *)SSL_get_app_data(ssl_);
+
+    return (con->pha_state == PHA_STARTED);
+}
+
 /* Read which protocol was negotiated for the given SSL *. */
 TCN_IMPLEMENT_CALL(jstring, SSL, getNextProtoNegotiated)(TCN_STDARGS,
                                                          jlong ssl /* SSL * */) {
@@ -2165,6 +2200,27 @@ TCN_IMPLEMENT_CALL(jint, SSL, doHandshake)(TCN_STDARGS, jlong ssl) {
 }
 
 TCN_IMPLEMENT_CALL(jint, SSL, renegotiate)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, renegotiatePending)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, verifyClientPostHandshake)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+  return 0;
+}
+
+TCN_IMPLEMENT_CALL(jint, SSL, getPostHandshakeAuthInProgress)(TCN_STDARGS, jlong ssl) {
   UNREFERENCED(o);
   UNREFERENCED(ssl);
   tcn_ThrowException(e, "Not implemented");
