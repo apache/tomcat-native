@@ -1542,6 +1542,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, renegotiatePending)(TCN_STDARGS,
 
 TCN_IMPLEMENT_CALL(jint, SSL, verifyClientPostHandshake)(TCN_STDARGS,
                                                          jlong ssl /* SSL * */) {
+#if defined(SSL_OP_NO_TLSv1_3)
     SSL *ssl_ = J2P(ssl, SSL *);
     tcn_ssl_conn_t *con;
 
@@ -1556,10 +1557,14 @@ TCN_IMPLEMENT_CALL(jint, SSL, verifyClientPostHandshake)(TCN_STDARGS,
     con->pha_state = PHA_STARTED;
 
     return SSL_verify_client_post_handshake(ssl_);
+#else
+    return 0;
+#endif
 }
 
 TCN_IMPLEMENT_CALL(jint, SSL, getPostHandshakeAuthInProgress)(TCN_STDARGS,
                                                               jlong ssl /* SSL * */) {
+#if defined(SSL_OP_NO_TLSv1_3)
     SSL *ssl_ = J2P(ssl, SSL *);
     tcn_ssl_conn_t *con;
 
@@ -1573,6 +1578,9 @@ TCN_IMPLEMENT_CALL(jint, SSL, getPostHandshakeAuthInProgress)(TCN_STDARGS,
     con = (tcn_ssl_conn_t *)SSL_get_app_data(ssl_);
 
     return (con->pha_state == PHA_STARTED);
+#else
+    return 0;
+#endif
 }
 
 /* Read which protocol was negotiated for the given SSL *. */
