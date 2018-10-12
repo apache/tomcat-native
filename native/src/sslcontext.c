@@ -1013,7 +1013,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     if (J2S(password)) {
         if (!c->cb_data)
             c->cb_data = &tcn_password_callback;
-        strncpy(c->cb_data->password, J2S(password), SSL_MAX_PASSWORD_LEN);
+        strncpy(c->cb_data->password, J2S(password), SSL_MAX_PASSWORD_LEN - 1);
         c->cb_data->password[SSL_MAX_PASSWORD_LEN-1] = '\0';
     }
     key_file  = J2S(key);
