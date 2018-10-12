@@ -226,6 +226,9 @@ case $host in
     *-solaris2*)
         APR_ADDTO(TCNATIVE_LIBS, -lkstat)
         ;;
+    *linux*)
+        APR_ADDTO(CFLAGS, -DTCNATIVE_LINUX)
+        ;;
     *)
         ;;
 esac

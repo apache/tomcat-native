@@ -625,15 +625,17 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
     int error = 0;
     char peekbuf[1];
     apr_interval_time_t timeout;
+#if defined(SSL_OP_NO_TLSv1_3)
     const SSL_SESSION *session;
+#endif
 
     UNREFERENCED_STDARGS;
     TCN_ASSERT(sock != 0);
     con = (tcn_ssl_conn_t *)s->opaque;
-    session  = SSL_get_session(con->ssl);
     apr_socket_timeout_get(con->sock, &timeout);
 
 #if defined(SSL_OP_NO_TLSv1_3)
+    session  = SSL_get_session(con->ssl);
     if (SSL_SESSION_get_protocol_version(session) == TLS1_3_VERSION) {
         // TLS 1.3 renegotiation
         retVal = SSL_verify_client_post_handshake(con->ssl);
