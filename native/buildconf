@@ -79,8 +79,10 @@ fi
 #
 # Generate build-outputs.mk for the build systme
 #
+PYTHON=${PYTHON-`build/PrintPath python3 python2 python`}
+
 echo "Generating 'make' outputs ..."
-$apr_src_dir/build/gen-build.py make
+${PYTHON} $apr_src_dir/build/gen-build.py make
 if [ $? -gt 0 ]; then
   echo "Creating build-outputs.mk failed"
   exit 1
