@@ -347,13 +347,11 @@ typedef struct {
                          * connection
                          */
     } reneg_state;
-#if defined(SSL_OP_NO_TLSv1_3)
     enum {
     	PHA_NONE = 0,	/* Before PHA */
 		PHA_STARTED,	/* PHA req sent to client but no response */
 		PHA_COMPLETE	/* Client has returned cert */
     } pha_state;
-#endif
     apr_socket_t   *sock;
     apr_pollset_t  *pollset;
 } tcn_ssl_conn_t;
