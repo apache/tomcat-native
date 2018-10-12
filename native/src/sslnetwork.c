@@ -616,15 +616,69 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, attach)(TCN_STDARGS, jlong ctx,
     return APR_SUCCESS;
 }
 
+static int ssl_do_renegotiate(tcn_ssl_conn_t *con, int use_pha)
+{
+    int retVal;
+    int error = 0;
+    char peekbuf[1];
+    apr_interval_time_t timeout;
+
+    apr_socket_timeout_get(con->sock, &timeout);
+
+    /* Trigger reading of the certs from the client.
+     * Peeking 0 bytes actually works.
+     * Before TLS 1.3 this will result in a renegotiation.
+     * for TLS 1.3 in PHA.
+     * See: http://marc.info/?t=145493359200002&r=1&w=2
+     *
+     * This will normally return SSL_ERROR_WANT_READ whether the renegotiation
+     * has been completed or not. Afterwards, need to determine if I/O needs to
+     * be triggered or not.
+     */
+    retVal = SSL_peek(con->ssl, peekbuf, 0);
+    if (retVal < 1) {
+        error = SSL_get_error(con->ssl, retVal);
+    }
+
+    // If the certs have not been received, then need to wait for I/O
+    while ((use_pha && con->pha_state == PHA_STARTED) || (!use_pha && SSL_renegotiate_pending(con->ssl))) {
+        // SSL_ERROR_WANT_READ is expected. Anything else is an error.
+        if (error == SSL_ERROR_WANT_READ) {
+            retVal = wait_for_io_or_timeout(con, error, timeout);
+            /*
+             * Since this is blocking I/O, anything other than APR_SUCCESS is an
+             * error.
+             */
+            if (retVal != APR_SUCCESS) {
+                con->shutdown_type = SSL_SHUTDOWN_TYPE_UNCLEAN;
+                return retVal;
+            }
+        } else {
+            return APR_EGENERAL;
+        }
+
+        // Re-try SSL_peek after I/O
+        retVal = SSL_peek(con->ssl, peekbuf, 0);
+        if (retVal < 1) {
+            error = SSL_get_error(con->ssl, retVal);
+        } else {
+            /*
+             * Reset error to handle case where SSL_Peek returns 0 but
+             * the pha resp. renegotiation state has not changed.
+             * This will trigger an error to be returned.
+             */
+            error = 0;
+        }
+    }
+    return APR_SUCCESS;
+}
+
 TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
                                                  jlong sock)
 {
     tcn_socket_t *s   = J2P(sock, tcn_socket_t *);
     tcn_ssl_conn_t *con;
     int retVal;
-    int error = 0;
-    char peekbuf[1];
-    apr_interval_time_t timeout;
 #if defined(SSL_OP_NO_TLSv1_3)
     const SSL_SESSION *session;
 #endif
@@ -632,7 +686,6 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
     UNREFERENCED_STDARGS;
     TCN_ASSERT(sock != 0);
     con = (tcn_ssl_conn_t *)s->opaque;
-    apr_socket_timeout_get(con->sock, &timeout);
 
 #if defined(SSL_OP_NO_TLSv1_3)
     session  = SSL_get_session(con->ssl);
@@ -651,43 +704,11 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
         if (retVal <= 0) {
             return APR_EGENERAL;
         }
-
-        // Trigger reading of the certs from the client
-        retVal = SSL_peek(con->ssl, peekbuf, 0);
-        if (retVal < 1) {
-            error = SSL_get_error(con->ssl, retVal);
+        retVal = ssl_do_renegotiate(con, 1);
+        if (retVal != APR_SUCCESS) {
+            return retVal;
         }
 
-        // If the certs have not been received, then need to wait for I/O
-        while (con->pha_state == PHA_STARTED) {
-            // SSL_ERROR_WANT_READ is expected. Anything else is an error.
-            if (error == SSL_ERROR_WANT_READ) {
-                retVal = wait_for_io_or_timeout(con, error, timeout);
-                /*
-                 * Since this is blocking I/O, anything other than APR_SUCCESS is an
-                 * error.
-                 */
-                if (retVal != APR_SUCCESS) {
-                    con->shutdown_type = SSL_SHUTDOWN_TYPE_UNCLEAN;
-                    return retVal;
-                }
-            } else {
-                return APR_EGENERAL;
-            }
-
-            // Re-try SSL_peek after I/O
-            retVal = SSL_peek(con->ssl, peekbuf, 0);
-            if (retVal < 1) {
-                error = SSL_get_error(con->ssl, retVal);
-            } else {
-                /*
-                 * Reset error to handle case where SSL_Peek returns 0 but
-                 * con->pha_state has not changed. This will trigger an error
-                 * to be returned.
-                 */
-                error = 0;
-            }
-        }
     } else {
 #endif
         // TLS 1.2 and earlier renegotiation
@@ -702,49 +723,9 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, renegotiate)(TCN_STDARGS,
         if (retVal <= 0) {
             return APR_EGENERAL;
         }
-
-        /* Need to trigger the renegotiation handshake by reading.
-         * Peeking 0 bytes actually works.
-         * See: http://marc.info/?t=145493359200002&r=1&w=2
-         *
-         * This will normally return SSL_ERROR_WANT_READ whether the renegotiation
-         * has been completed or not. Afterwards, need to determine if I/O needs to
-         * be triggered or not.
-         */
-        retVal = SSL_peek(con->ssl, peekbuf, 0);
-        if (retVal < 1) {
-            error = SSL_get_error(con->ssl, retVal);
-        }
-
-        // If the renegotiation is still pending, then I/O needs to be triggered
-        while (SSL_renegotiate_pending(con->ssl)) {
-            // SSL_ERROR_WANT_READ is expected. Anything else is an error.
-            if (error == SSL_ERROR_WANT_READ) {
-                retVal = wait_for_io_or_timeout(con, error, timeout);
-                /*
-                 * Since this is blocking I/O, anything other than APR_SUCCESS is an
-                 * error.
-                 */
-                if (retVal != APR_SUCCESS) {
-                    con->shutdown_type = SSL_SHUTDOWN_TYPE_UNCLEAN;
-                    return retVal;
-                }
-            } else {
-                return APR_EGENERAL;
-            }
-
-            // Re-try SSL_peek after I/O
-            retVal = SSL_peek(con->ssl, peekbuf, 0);
-            if (retVal < 1) {
-                error = SSL_get_error(con->ssl, retVal);
-            } else {
-                /*
-                 * Reset error to handle case where SSL_Peek returns 0 but
-                 * SSL_renegotiate_pending returns true. This will trigger an error
-                 * to be returned.
-                 */
-                error = 0;
-            }
+        retVal = ssl_do_renegotiate(con, 0);
+        if (retVal != APR_SUCCESS) {
+            return retVal;
         }
 
         con->reneg_state = RENEG_REJECT;
