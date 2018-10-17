@@ -1,3 +1,16 @@
+--- crypto/o_time.c
++++ crypto/o_time.c
+@@ -109,10 +109,6 @@
+     if (gmtime_r(timer, result) == NULL)
+         return NULL;
+     ts = result;
+-#elif defined (OPENSSL_SYS_WINDOWS) && defined(_MSC_VER) && _MSC_VER >= 1400
+-    if (gmtime_s(result, timer))
+-        return NULL;
+-    ts = result;
+ #elif !defined(OPENSSL_SYS_VMS) || defined(VMS_GMTIME_OK)
+     ts = gmtime(timer);
+     if (ts == NULL)
 --- util/pl/VC-32.pl
 +++ util/pl/VC-32.pl
 @@ -45,7 +45,7 @@
