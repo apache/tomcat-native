@@ -1,0 +1,112 @@
+--- Configurations/10-main.conf
++++ Configurations/10-main.conf
+@@ -1268,7 +1268,7 @@
+         # prefer [non-debug] openssl.exe to be free from Micorosoft RTL
+         # redistributable.
+         bin_cflags       => add(picker(debug   => "/MDd",
+-                                       release => sub { $disabled{shared} ? "/MT" : () },
++                                       release => "/MD",
+                                       )),
+         bin_lflags       => add("/subsystem:console /opt:ref"),
+         ex_libs          => add(sub {
+--- crypto/engine/eng_openssl.c
++++ crypto/engine/eng_openssl.c
+@@ -9,6 +9,7 @@
+  */
+ 
+ #include <stdio.h>
++#include "e_os.h"
+ #include <openssl/crypto.h>
+ #include "internal/cryptlib.h"
+ #include "internal/engine.h"
+--- crypto/sm2/sm2_sign.c
++++ crypto/sm2/sm2_sign.c
+@@ -12,6 +12,7 @@
+ #include "internal/sm2.h"
+ #include "internal/sm2err.h"
+ #include "internal/ec_int.h" /* ec_group_do_inverse_ord() */
++#include "internal/numbers.h"
+ #include <openssl/err.h>
+ #include <openssl/evp.h>
+ #include <openssl/err.h>
+--- crypto/o_time.c
++++ crypto/o_time.c
+@@ -41,10 +41,6 @@
+     if (gmtime_r(timer, result) == NULL)
+         return NULL;
+     ts = result;
+-#elif defined (OPENSSL_SYS_WINDOWS) && defined(_MSC_VER) && _MSC_VER >= 1400
+-    if (gmtime_s(result, timer))
+-        return NULL;
+-    ts = result;
+ #else
+     ts = gmtime(timer);
+     if (ts == NULL)
+--- engines/e_capi.c
++++ engines/e_capi.c
+@@ -15,6 +15,7 @@
+ # include <wincrypt.h>
+ 
+ # include <stdio.h>
++# include "e_os.h"
+ # include <string.h>
+ # include <stdlib.h>
+ # include <malloc.h>
+--- test/testutil/basic_output.c
++++ test/testutil/basic_output.c
+@@ -10,6 +10,7 @@
+ #include "../testutil.h"
+ #include "output.h"
+ #include "tu_local.h"
++#include "../../e_os.h"
+ 
+ #include <openssl/crypto.h>
+ #include <openssl/bio.h>
+--- test/ct_test.c
++++ test/ct_test.c
+@@ -500,8 +500,8 @@
+ {
+     int success = 0;
+     CT_POLICY_EVAL_CTX *ct_policy_ctx = CT_POLICY_EVAL_CTX_new();
+-    const time_t default_time = CT_POLICY_EVAL_CTX_get_time(ct_policy_ctx) /
+-                                1000;
++    const time_t default_time =
++        (time_t)(CT_POLICY_EVAL_CTX_get_time(ct_policy_ctx) / 1000);
+     const time_t time_tolerance = 600;  /* 10 minutes */
+ 
+     if (!TEST_time_t_le(abs((int)difftime(time(NULL), default_time)),
+--- e_os.h
++++ e_os.h
+@@ -148,8 +148,6 @@
+ }
+ #   endif
+ #   include <malloc.h>
+-#   if defined(_MSC_VER) && !defined(_WIN32_WCE) && !defined(_DLL) && defined(stdin)
+-#    if _MSC_VER>=1300 && _MSC_VER<1600
+ #     undef stdin
+ #     undef stdout
+ #     undef stderr
+@@ -157,23 +155,6 @@
+ #     define stdin  (&__iob_func()[0])
+ #     define stdout (&__iob_func()[1])
+ #     define stderr (&__iob_func()[2])
+-#    elif _MSC_VER<1300 && defined(I_CAN_LIVE_WITH_LNK4049)
+-#     undef stdin
+-#     undef stdout
+-#     undef stderr
+-         /*
+-          * pre-1300 has __p__iob(), but it's available only in msvcrt.lib,
+-          * or in other words with /MD. Declaring implicit import, i.e. with
+-          * _imp_ prefix, works correctly with all compiler options, but
+-          * without /MD results in LINK warning LNK4049: 'locally defined
+-          * symbol "__iob" imported'.
+-          */
+-extern FILE *_imp___iob;
+-#     define stdin  (&_imp___iob[0])
+-#     define stdout (&_imp___iob[1])
+-#     define stderr (&_imp___iob[2])
+-#    endif
+-#   endif
+ #  endif
+ #  include <io.h>
+ #  include <fcntl.h>
