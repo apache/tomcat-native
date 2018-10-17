@@ -11,7 +11,6 @@
  #elif !defined(OPENSSL_SYS_VMS) || defined(VMS_GMTIME_OK)
      ts = gmtime(timer);
      if (ts == NULL)
-
 --- util/pl/VC-32.pl
 +++ util/pl/VC-32.pl
 @@ -45,7 +45,7 @@
