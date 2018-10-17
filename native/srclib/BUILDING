@@ -15,8 +15,8 @@ environment before calling nmake so that correct
 compiler is setup for the target architecture.
 
 
-Building OpenSSL
-----------------
+Building OpenSSL 1.1.0 and earlier
+----------------------------------
 
 Apply openssl-msvcrt.patch
 
@@ -36,7 +36,25 @@ For 64-bit Windows use
 > ms\do_win64a
 > nmake -f ms\nt.mak
 
-For 64-bit Windows on Itanium processor use
-> perl Configure VC-WIN64I
-> ms\do_win64i
-> nmake -f ms\nt.mak
+
+Building OpenSSL 1.1.1 and later
+----------------------------------
+
+Apply openssl-msvcrt-1.1.1.patch
+
+This patch addresses issues caused by CMSC compiling against an older Windows
+API than expected for the compiler version in additional to the static linking
+issues described above.
+
+Then follow the standard OpenSSL make procedure ...
+
+> perl Configure no-shared VC-WIN32
+> nmake
+
+For 64-bit Windows use
+> perl Configure no-shared VC-WIN64A
+> nmake
+
+
+For a step-by-step guide to building OpenSSL on Windows see:
+https://cwiki.apache.org/confluence/display/TOMCAT/Building+the+Tomcat+Native+Connector+binaries+for+Windows
