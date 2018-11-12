@@ -1034,14 +1034,12 @@ static int process_ocsp_response(OCSP_RESPONSE *ocsp_resp, X509 *cert, X509 *iss
     r = OCSP_response_status(ocsp_resp);
 
     if (r != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
-        OCSP_RESPONSE_free(ocsp_resp);
         return OCSP_STATUS_UNKNOWN;
     }
     bs = OCSP_response_get1_basic(ocsp_resp);
 
     certid = OCSP_cert_to_id(NULL, cert, issuer);
     if (certid == NULL) {
-        OCSP_RESPONSE_free(ocsp_resp);
         return OCSP_STATUS_UNKNOWN;
     }
     ss = OCSP_resp_get0(bs, OCSP_resp_find(bs, certid, -1)); /* find by serial number and get the matching response */
@@ -1057,7 +1055,6 @@ static int process_ocsp_response(OCSP_RESPONSE *ocsp_resp, X509 *cert, X509 *iss
 
     /* we clean up */
     OCSP_CERTID_free(certid);
-    OCSP_RESPONSE_free(ocsp_resp);
     return o;
 }
 
@@ -1096,6 +1093,7 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx)
         }
 
         if (resp != NULL) {
+            OCSP_RESPONSE_free(resp);
             apr_pool_destroy(p);
             return rv;
         }
