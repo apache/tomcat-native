@@ -34,7 +34,7 @@ extern int WIN32_SSL_password_prompt(tcn_pass_cb_t *data);
 #define ASN1_SEQUENCE 0x30
 #define ASN1_OID      0x06
 #define ASN1_STRING   0x86
-static int ssl_verify_OCSP(int ok, X509_STORE_CTX *ctx);
+static int ssl_verify_OCSP(X509_STORE_CTX *ctx);
 static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx);
 #endif
 
@@ -310,8 +310,9 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
 #endif
 
     if (verify == SSL_CVERIFY_UNSET ||
-        verify == SSL_CVERIFY_NONE)
+        verify == SSL_CVERIFY_NONE) {
         return 1;
+    }
 
     if (SSL_VERIFY_ERROR_IS_OPTIONAL(errnum) &&
         (verify == SSL_CVERIFY_OPTIONAL_NO_CA)) {
@@ -348,7 +349,7 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
             ok = 0;
         }
         else {
-            int ocsp_response = ssl_verify_OCSP(ok, ctx);
+            int ocsp_response = ssl_verify_OCSP(ctx);
             if (ocsp_response == OCSP_STATUS_REVOKED) {
                 ok = 0 ;
                 errnum = X509_STORE_CTX_get_error(ctx);
@@ -507,7 +508,7 @@ int SSL_callback_alpn_select_proto(SSL* ssl, const unsigned char **out, unsigned
 #ifdef HAVE_OCSP_STAPLING
 
 /* Function that is used to do the OCSP verification */
-static int ssl_verify_OCSP(int ok, X509_STORE_CTX *ctx)
+static int ssl_verify_OCSP(X509_STORE_CTX *ctx)
 {
     X509 *cert, *issuer;
     int r = OCSP_STATUS_UNKNOWN;
@@ -722,24 +723,23 @@ static char **decode_OCSP_url(ASN1_OCTET_STRING *os, apr_pool_t *p)
 
 
 /* stolen from openssl ocsp command */
-static int add_ocsp_cert(OCSP_REQUEST **req, X509 *cert, X509 *issuer,
+static int add_ocsp_cert(OCSP_REQUEST *req, X509 *cert, X509 *issuer,
                          STACK_OF(OCSP_CERTID) *ids)
 {
     OCSP_CERTID *id;
 
     if (!issuer)
         return 0;
-    if (!*req)
-        *req = OCSP_REQUEST_new();
-    if (!*req)
-        return 0;
     id = OCSP_cert_to_id(NULL, cert, issuer);
-    if (!id || !sk_OCSP_CERTID_push(ids, id))
+    if (!id)
         return 0;
-    if (!OCSP_request_add0_id(*req, id))
+    if (!OCSP_request_add0_id(req, id)) {
+        OCSP_CERTID_free(id);
         return 0;
-    else
+    } else {
+        sk_OCSP_CERTID_push(ids, id);
         return 1;
+    }
 }
 
 
@@ -801,7 +801,6 @@ static int ocsp_send_req(apr_socket_t *sock, BIO *req)
     int len;
     char buf[TCN_BUFFER_SZ];
     apr_status_t rv;
-    int ok = 1;
 
     while ((len = BIO_read(req, buf, sizeof buf)) > 0) {
         char *wbuf = buf;
@@ -815,12 +814,11 @@ static int ocsp_send_req(apr_socket_t *sock, BIO *req)
         } while (rv == APR_SUCCESS && remain > 0);
 
         if (rv != APR_SUCCESS) {
-            apr_socket_close(sock);
-            ok = 0;
+            return 0;
         }
     }
 
-    return ok;
+    return 1;
 }
 
 
@@ -909,7 +907,7 @@ err:
 /* Reads the response from the APR socket to a buffer, and parses the buffer to
    return the OCSP response  */
 #define ADDLEN 512
-static OCSP_RESPONSE *ocsp_get_resp(apr_socket_t *sock)
+static OCSP_RESPONSE *ocsp_get_resp(apr_pool_t *mp, apr_socket_t *sock)
 {
     int buflen;
     apr_size_t totalread = 0;
@@ -919,7 +917,7 @@ static OCSP_RESPONSE *ocsp_get_resp(apr_socket_t *sock)
     apr_pool_t *p;
     OCSP_RESPONSE *resp;
 
-    apr_pool_create(&p, NULL);
+    apr_pool_create(&p, mp);
     buflen = ADDLEN;
     buf = apr_palloc(p, buflen);
     if (buf == NULL) {
@@ -959,7 +957,7 @@ static OCSP_RESPONSE *ocsp_get_resp(apr_socket_t *sock)
 }
 
 /* Creates and OCSP request and returns the OCSP_RESPONSE */
-static OCSP_RESPONSE *get_ocsp_response(X509 *cert, X509 *issuer, char *url)
+static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, X509 *cert, X509 *issuer, char *url)
 {
     OCSP_RESPONSE *ocsp_resp = NULL;
     OCSP_REQUEST *ocsp_req = NULL;
@@ -971,22 +969,19 @@ static OCSP_RESPONSE *get_ocsp_response(X509 *cert, X509 *issuer, char *url)
     apr_socket_t *apr_sock = NULL;
     apr_pool_t *mp;
 
-    apr_pool_create(&mp, NULL);
-    ids = sk_OCSP_CERTID_new_null();
+    if (OCSP_parse_url(url,&hostname, &c_port, &path, &use_ssl) == 0 )
+        goto end;
 
-    /* problem parsing the URL */
-    if (OCSP_parse_url(url,&hostname, &c_port, &path, &use_ssl) == 0 ) {
-        sk_OCSP_CERTID_free(ids);
-        return NULL;
-    }
-
-    /* Create the OCSP request */
     if (sscanf(c_port, "%d", &port) != 1)
         goto end;
+
+    /* Create the OCSP request */
     ocsp_req = OCSP_REQUEST_new();
     if (ocsp_req == NULL)
-        return NULL;
-    if (add_ocsp_cert(&ocsp_req,cert,issuer,ids) == 0 )
+        goto end;
+
+    ids = sk_OCSP_CERTID_new_null();
+    if (add_ocsp_cert(ocsp_req,cert,issuer,ids) == 0 )
         goto free_req;
 
     /* create the BIO with the request to send */
@@ -995,29 +990,31 @@ static OCSP_RESPONSE *get_ocsp_response(X509 *cert, X509 *issuer, char *url)
         goto free_req;
     }
 
+    apr_pool_create(&mp, p);
     apr_sock = make_socket(hostname, port, mp);
     if (apr_sock == NULL) {
-        ocsp_resp = NULL;
         goto free_bio;
     }
 
     ok = ocsp_send_req(apr_sock, bio_req);
-    if (ok)
-        ocsp_resp = ocsp_get_resp(apr_sock);
+    if (ok) {
+        ocsp_resp = ocsp_get_resp(mp, apr_sock);
+    }
+    apr_socket_close(apr_sock);
 
 free_bio:
     BIO_free(bio_req);
-
-free_req:
-    if(apr_sock && ok) /* if ok == 0 we have already closed the socket */
-        apr_socket_close(apr_sock);
-
     apr_pool_destroy(mp);
 
-    sk_OCSP_CERTID_free(ids);
+free_req:
     OCSP_REQUEST_free(ocsp_req);
+    sk_OCSP_CERTID_free(ids);
 
 end:
+    OPENSSL_free(hostname);
+    OPENSSL_free(c_port);
+    OPENSSL_free(path);
+
     return ocsp_resp;
 }
 
@@ -1084,7 +1081,7 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx)
         int rv = OCSP_STATUS_UNKNOWN;
         /* for the time being just check for the fist response .. a better
            approach is to iterate for all the possible ocsp urls */
-        resp = get_ocsp_response(cert, issuer, ocsp_urls[0]);
+        resp = get_ocsp_response(p, cert, issuer, ocsp_urls[0]);
         if (resp != NULL) {
             rv = process_ocsp_response(resp, cert, issuer);
         } else {
