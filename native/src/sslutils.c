@@ -1052,6 +1052,7 @@ static int process_ocsp_response(OCSP_RESPONSE *ocsp_resp, X509 *cert, X509 *iss
 
     /* we clean up */
     OCSP_CERTID_free(certid);
+    OCSP_BASICRESP_free(bs);
     return o;
 }
 
