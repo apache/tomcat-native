@@ -723,8 +723,7 @@ static char **decode_OCSP_url(ASN1_OCTET_STRING *os, apr_pool_t *p)
 
 
 /* stolen from openssl ocsp command */
-static int add_ocsp_cert(OCSP_REQUEST *req, X509 *cert, X509 *issuer,
-                         STACK_OF(OCSP_CERTID) *ids)
+static int add_ocsp_cert(OCSP_REQUEST *req, X509 *cert, X509 *issuer)
 {
     OCSP_CERTID *id;
 
@@ -737,7 +736,7 @@ static int add_ocsp_cert(OCSP_REQUEST *req, X509 *cert, X509 *issuer,
         OCSP_CERTID_free(id);
         return 0;
     } else {
-        sk_OCSP_CERTID_push(ids, id);
+        /* id will be freed by OCSP_REQUEST_free() */
         return 1;
     }
 }
@@ -964,7 +963,6 @@ static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, X509 *cert, X509 *issuer,
     BIO *bio_req;
     char *hostname, *path, *c_port;
     int port, use_ssl;
-    STACK_OF(OCSP_CERTID) *ids = NULL;
     int ok = 0;
     apr_socket_t *apr_sock = NULL;
     apr_pool_t *mp;
@@ -980,8 +978,7 @@ static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, X509 *cert, X509 *issuer,
     if (ocsp_req == NULL)
         goto end;
 
-    ids = sk_OCSP_CERTID_new_null();
-    if (add_ocsp_cert(ocsp_req,cert,issuer,ids) == 0 )
+    if (add_ocsp_cert(ocsp_req,cert,issuer) == 0 )
         goto free_req;
 
     /* create the BIO with the request to send */
@@ -1008,7 +1005,6 @@ free_bio:
 
 free_req:
     OCSP_REQUEST_free(ocsp_req);
-    sk_OCSP_CERTID_free(ids);
 
 end:
     OPENSSL_free(hostname);
