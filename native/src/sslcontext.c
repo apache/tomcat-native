@@ -287,8 +287,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
 #ifdef HAVE_TLSV1_3
     if (prot == TLS1_3_VERSION && protocol & SSL_PROTOCOL_TLSV1_2) {
         prot = TLS1_2_VERSION;
-    } else
-/* NOTE the dangling else above: take care to preserve it */
+    }
 #endif
     if (prot == TLS1_2_VERSION && protocol & SSL_PROTOCOL_TLSV1_1) {
         prot = TLS1_1_VERSION;
