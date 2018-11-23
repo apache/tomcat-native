@@ -37,6 +37,9 @@
 <section name="Changes in 1.2.19">
   <changelog>
     <fix>
+      <bug>62862</bug>: Fix memory leaks in OCSP handling. (jfclere)
+    </fix>
+    <fix>
       <bug>62944</bug>: Fix copy/paste error that prevented TLS 1.0 and TLS 1.1
       from being used if TLS 1.3 was available. Patch provided by Dean Rasheed.
       (markt)
