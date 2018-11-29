@@ -220,8 +220,8 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, apply)(TCN_STDARGS, jlong cctx,
     unsigned long ec;
 #ifndef HAVE_EXPORT_CIPHERS
     size_t len;
-    char *buf = NULL;
 #endif
+    char *buf = NULL;
     TCN_ALLOC_CSTRING(cmd);
     TCN_ALLOC_CSTRING(value);
     UNREFERENCED(o);
