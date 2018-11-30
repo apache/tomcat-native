@@ -19,16 +19,6 @@
  #include <openssl/crypto.h>
  #include "internal/cryptlib.h"
  #include "internal/engine.h"
---- crypto/sm2/sm2_sign.c
-+++ crypto/sm2/sm2_sign.c
-@@ -12,6 +12,7 @@
- #include "internal/sm2.h"
- #include "internal/sm2err.h"
- #include "internal/ec_int.h" /* ec_group_do_inverse_ord() */
-+#include "internal/numbers.h"
- #include <openssl/err.h>
- #include <openssl/evp.h>
- #include <openssl/err.h>
 --- crypto/o_time.c
 +++ crypto/o_time.c
 @@ -41,10 +41,6 @@
@@ -62,19 +52,6 @@
  
  #include <openssl/crypto.h>
  #include <openssl/bio.h>
---- test/ct_test.c
-+++ test/ct_test.c
-@@ -500,8 +500,8 @@
- {
-     int success = 0;
-     CT_POLICY_EVAL_CTX *ct_policy_ctx = CT_POLICY_EVAL_CTX_new();
--    const time_t default_time = CT_POLICY_EVAL_CTX_get_time(ct_policy_ctx) /
--                                1000;
-+    const time_t default_time =
-+        (time_t)(CT_POLICY_EVAL_CTX_get_time(ct_policy_ctx) / 1000);
-     const time_t time_tolerance = 600;  /* 10 minutes */
- 
-     if (!TEST_time_t_le(abs((int)difftime(time(NULL), default_time)),
 --- e_os.h
 +++ e_os.h
 @@ -149,7 +149,7 @@
