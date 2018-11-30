@@ -48,6 +48,9 @@
       Include OpenSSL licensing information in the Tomcat Native binaries for
       Windows that are built with OpenSSL. (markt)
     </fix>
+    <update>
+      Update recommended OpenSSL version to 1.0.2q or later. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.18">
