@@ -1,0 +1,20 @@
+Apache Tomcat Native Library
+Copyright 2002-2018 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This software contains code derived from netty-native
+developed by the Netty project
+(http://netty.io, https://github.com/netty/netty-tcnative/)
+and from finagle-native developed at Twitter
+(https://github.com/twitter/finagle).
+
+This product includes software developed by the OpenSSL Project
+for use in the OpenSSL Toolkit. (http://www.openssl.org/)
+
+This product includes cryptographic software written by
+Eric Young (eay@cryptsoft.com)
+
+This product includes software written by
+Tim Hudson (tjh@cryptsoft.com)
