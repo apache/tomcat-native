@@ -29,9 +29,16 @@
 <body>
 
 <section name="2018 News &amp; Status">
+ <subsection anchor="20181204" name="4 Dec 2018 - TC-Native-1.2.19 released">
+  <p>The Apache Tomcat team is proud to announce the immediate availability of
+  Tomcat Native 1.2.19. This is a bugfix release that also updates the
+  dependencies for the Windows binaries and includes Windows binaries built
+  with OpenSSL 1.0.2q/APR 1.6.5 and 1.1.1a/APR 1.6.5.
+  </p>
+ </subsection>
  <subsection anchor="20181020" name="20 Oct 2018 - TC-Native-1.2.18 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability of
-  Tomcat Native 1.2.18. This is a festure and bugfix release that adds TLSv1.3
+  Tomcat Native 1.2.18. This is a feature and bugfix release that adds TLSv1.3
   support when built with OpenSSL 1.1.1. It also includes Windows binaries built
   with OpenSSL 1.0.2p/APR 1.6.5 and 1.1.1/APR 1.6.5.
   </p>
