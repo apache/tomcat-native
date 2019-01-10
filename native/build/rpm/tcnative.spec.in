@@ -50,7 +50,7 @@ contains additional utility interfaces for Java.
 
 %build
 %configure --with-apr=%{_prefix} \
-        --includedir=%{_includedir}/apr-%{aprmajor}
+        --includedir=%{_includedir}/%{name}
 make %{?_smp_mflags} && make dox
 
 %check
@@ -87,7 +87,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libtcnative-%{tcnver}.*a
 %{_libdir}/libtcnative-%{tcnver}.so
 %{_libdir}/pkgconfig/tcnative-%{tcnver}.pc
-%{_includedir}/apr-%{aprmajor}/*.h
+%{_includedir}/%{name}/*.h
 %doc --parents html
 
 %changelog

@@ -37,7 +37,7 @@
     sysconfdir:    ${prefix}/conf
     datadir:       ${prefix}
     installbuilddir: ${datadir}/build
-    includedir:    ${prefix}/include/apr-${TCNATIVE_MAJOR_VERSION}
+    includedir:    ${prefix}/include/tomcat-native-${TCNATIVE_MAJOR_VERSION}
     localstatedir: ${prefix}
     libsuffix:     -${TCNATIVE_MAJOR_VERSION}
 </Layout>
@@ -54,7 +54,7 @@
     sysconfdir:    ${prefix}/conf
     datadir:       ${prefix}
     installbuilddir: ${datadir}/build
-    includedir:    ${prefix}/include/apr-${TCNATIVE_MAJOR_VERSION}
+    includedir:    ${prefix}/include
     localstatedir: ${prefix}
     libsuffix:     -${TCNATIVE_MAJOR_VERSION}
 </Layout>
@@ -139,7 +139,7 @@
     sysconfdir:    /etc/httpd/conf
     datadir:       /var/www
     installbuilddir: ${datadir}/build
-    includedir:    ${prefix}/include/apr
+    includedir:    ${prefix}/include/tomcat-native
     localstatedir: /var
     runtimedir:    ${localstatedir}/run
 </Layout>     
@@ -190,7 +190,7 @@
     sysconfdir:    /etc/httpd
     datadir:       /usr/local/httpd
     installbuilddir: ${datadir}/build
-    includedir:    ${prefix}/include/apr
+    includedir:    ${prefix}/include/tomcat-native
     localstatedir: /var/lib/httpd
     runtimedir:    /var/run
 </Layout>
@@ -207,7 +207,7 @@
     sysconfdir:    ${prefix}/conf
     datadir:       ${prefix}
     installbuilddir: ${datadir}/build
-    includedir:    ${exec_prefix}/include/apr
+    includedir:    ${exec_prefix}/include/tomcat-native
     localstatedir: /var
     runtimedir:    ${localstatedir}/run
 </Layout>
@@ -241,7 +241,7 @@
     sysconfdir:    ${prefix}/conf
     datadir:       ${prefix}
     installbuilddir: ${prefix}/build
-    includedir:    ${exec_prefix}/lib/apr/include
+    includedir:    ${exec_prefix}/lib/tomcat-native/include
     localstatedir: ${prefix}
     runtimedir:    ${prefix}/logs
 </Layout>
@@ -256,7 +256,7 @@
     libexecdir:    ${exec_prefix}/lib/apr/modules
     mandir:        ${exec_prefix}/share/man
     datadir:       ${exec_prefix}/share/apr
-    includedir:    ${exec_prefix}/include/apr-${TCNATIVE_MAJOR_VERSION}
+    includedir:    ${exec_prefix}/include/tomcat-native-${TCNATIVE_MAJOR_VERSION}
     localstatedir: ${prefix}/var/run
     runtimedir:    ${prefix}/var/run
     infodir:       ${exec_prefix}/share/info

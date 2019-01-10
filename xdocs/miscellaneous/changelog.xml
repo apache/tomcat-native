@@ -35,6 +35,11 @@
   </p>
 </section>
 <section name="Changes in 1.2.20">
+  <changelog>
+    <fix>
+      Update includedir name to tomcat-native instead of apr. (csutherl)
+    </fix>
+  </changelog>
 </section>
 <section name="Changes in 1.2.19">
   <changelog>
