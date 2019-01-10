@@ -374,10 +374,12 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
                               apr_pool_cleanup_null);
 
     /* Cache the byte[].class for performance reasons */
-    clazz = (*e)->FindClass(e, "[B");
-    byteArrayClass = (jclass) (*e)->NewGlobalRef(e, clazz);
-    sClazz = (*e)->FindClass(e, "java/lang/String");
-    stringClass = (jclass) (*e)->NewGlobalRef(e, sClazz);
+    if (stringClass == NULL) {
+        clazz = (*e)->FindClass(e, "[B");
+        byteArrayClass = (jclass) (*e)->NewGlobalRef(e, clazz);
+        sClazz = (*e)->FindClass(e, "java/lang/String");
+        stringClass = (jclass) (*e)->NewGlobalRef(e, sClazz);
+    }
 
     return P2J(c);
 init_failed:

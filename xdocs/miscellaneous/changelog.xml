@@ -39,6 +39,10 @@
     <fix>
       Update includedir name to tomcat-native instead of apr. (csutherl)
     </fix>
+    <fix>
+      Fix a minor memory leak. It ocurred every time a TLS connector was started
+      so the impact was very unlikely to be noticed. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.19">
