@@ -1286,10 +1286,12 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     TCN_ASSERT(ctx != 0);
     ssl = SSL_new(c->ctx);
     if (ssl == NULL) {
+        free(handshakeCount);
         tcn_ThrowException(e, "cannot create new ssl");
         return 0;
     }
     if ((con = apr_pcalloc(c->pool, sizeof(tcn_ssl_conn_t))) == NULL) {
+        free(handshakeCount);
         tcn_ThrowAPRException(e, apr_get_os_error());
         return 0;
     }
@@ -1882,12 +1884,14 @@ TCN_IMPLEMENT_CALL(jboolean, SSL, setCipherSuites)(TCN_STDARGS, jlong ssl,
     UNREFERENCED_STDARGS;
 
     if (ssl_ == NULL) {
+        TCN_FREE_CSTRING(ciphers);
         tcn_ThrowException(e, "ssl is null");
         return JNI_FALSE;
     }
 
     UNREFERENCED(o);
     if (!J2S(ciphers)) {
+        TCN_FREE_CSTRING(ciphers);
         return JNI_FALSE;
     }
     if (!SSL_set_cipher_list(ssl_, J2S(ciphers))) {

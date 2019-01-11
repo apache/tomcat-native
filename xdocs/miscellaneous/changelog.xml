@@ -43,6 +43,10 @@
       Fix a minor memory leak. It occurred every time a TLS connector was
       started so the impact was very unlikely to be noticed. (markt)
     </fix>
+    <fix>
+      Fix some minor memory leaks that could occur after error conditions during
+      TLS connector initialisation. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.19">
