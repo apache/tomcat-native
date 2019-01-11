@@ -1279,23 +1279,36 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     int *handshakeCount = malloc(sizeof(int));
     SSL *ssl;
+    apr_pool_t *p = NULL;
     tcn_ssl_conn_t *con;
 
     UNREFERENCED_STDARGS;
 
     TCN_ASSERT(ctx != 0);
+    
     ssl = SSL_new(c->ctx);
     if (ssl == NULL) {
         free(handshakeCount);
         tcn_ThrowException(e, "cannot create new ssl");
         return 0;
     }
-    if ((con = apr_pcalloc(c->pool, sizeof(tcn_ssl_conn_t))) == NULL) {
+    
+    apr_pool_create(&p, c->pool);
+    if (p == NULL) {
         free(handshakeCount);
+        SSL_free(ssl);
         tcn_ThrowAPRException(e, apr_get_os_error());
         return 0;
     }
-    con->pool = c->pool;
+    
+    if ((con = apr_pcalloc(p, sizeof(tcn_ssl_conn_t))) == NULL) {
+        free(handshakeCount);
+        SSL_free(ssl);
+        apr_pool_destroy(p);
+        tcn_ThrowAPRException(e, apr_get_os_error());
+        return 0;
+    }
+    con->pool = p;
     con->ctx  = c;
     con->ssl  = ssl;
     con->shutdown_type = c->shutdown_type;
@@ -1417,6 +1430,7 @@ TCN_IMPLEMENT_CALL(void, SSL, freeSSL)(TCN_STDARGS,
                                        jlong ssl /* SSL * */) {
     SSL *ssl_ = J2P(ssl, SSL *);
     int *handshakeCount = SSL_get_app_data3(ssl_);
+    tcn_ssl_conn_t *con = SSL_get_app_data(ssl_);
 
     UNREFERENCED_STDARGS;
 
@@ -1424,6 +1438,7 @@ TCN_IMPLEMENT_CALL(void, SSL, freeSSL)(TCN_STDARGS,
         free(handshakeCount);
     }
     SSL_free(ssl_);
+    apr_pool_destroy(con->pool);
 }
 
 /* Make a BIO pair (network and internal) for the provided SSL * and return the network BIO */

@@ -47,6 +47,10 @@
       Fix some minor memory leaks that could occur after error conditions during
       TLS connector initialisation. (markt)
     </fix>
+    <fix>
+      Fix a per connection memory leak when using OpenSSL BIO. This is typically
+      used when OpenSSL is providing the TLS support for NIO or NIO2. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.19">
