@@ -360,13 +360,16 @@ typedef struct {
 /*
  *  Additional Functions
  */
-void        SSL_init_app_data2_3_idx(void);
+void        SSL_init_app_data_idx(void);
 /* The app_data2 is used to store the tcn_ssl_ctxt_t pointer for the SSL instance. */
 void       *SSL_get_app_data2(SSL *);
 void        SSL_set_app_data2(SSL *, void *);
 /* The app_data3 is used to store the handshakeCount pointer for the SSL instance. */
 void       *SSL_get_app_data3(const SSL *);
 void        SSL_set_app_data3(SSL *, void *);
+/* The app_data4 is used to store the destroyCount pointer for the SSL instance. */
+void       *SSL_get_app_data4(const SSL *);
+void        SSL_set_app_data4(SSL *, void *);
 int         SSL_password_prompt(tcn_pass_cb_t *);
 int         SSL_password_callback(char *, int, int, void *);
 void        SSL_BIO_close(BIO *);

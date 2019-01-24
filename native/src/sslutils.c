@@ -52,8 +52,9 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx);
  */
 static int SSL_app_data2_idx = -1;
 static int SSL_app_data3_idx = -1;
+static int SSL_app_data4_idx = -1;
 
-void SSL_init_app_data2_3_idx(void)
+void SSL_init_app_data_idx(void)
 {
     int i;
 
@@ -78,6 +79,15 @@ void SSL_init_app_data2_3_idx(void)
                                  "Third Application Data for SSL",
                                   NULL, NULL, NULL);
 
+    if (SSL_app_data4_idx > -1) {
+        return;
+    }
+
+    SSL_app_data4_idx =
+            SSL_get_ex_new_index(0,
+                                 "Fourth Application Data for SSL",
+                                  NULL, NULL, NULL);
+
 }
 
 void *SSL_get_app_data2(SSL *ssl)
@@ -100,6 +110,16 @@ void *SSL_get_app_data3(const SSL *ssl)
 void SSL_set_app_data3(SSL *ssl, void *arg)
 {
     SSL_set_ex_data(ssl, SSL_app_data3_idx, arg);
+}
+
+void *SSL_get_app_data4(const SSL *ssl)
+{
+    return SSL_get_ex_data(ssl, SSL_app_data4_idx);
+}
+
+void SSL_set_app_data4(SSL *ssl, void *arg)
+{
+    SSL_set_ex_data(ssl, SSL_app_data4_idx, arg);
 }
 
 /* Simple echo password prompting */

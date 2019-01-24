@@ -822,8 +822,8 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
      * low entropy seed.
      */
     SSL_rand_seed(NULL);
-    /* For SSL_get_app_data2() and SSL_get_app_data3() at request time */
-    SSL_init_app_data2_3_idx();
+    /* For SSL_get_app_data2(), SSL_get_app_data3() and SSL_get_app_data4() at request time */
+    SSL_init_app_data_idx();
 
     init_dh_params();
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
@@ -1273,11 +1273,27 @@ static void ssl_info_callback(const SSL *ssl, int where, int ret) {
     }
 }
 
+static apr_status_t ssl_con_pool_cleanup(void *data)
+{
+    SSL *ssl = (SSL*) data;
+    int *destroyCount;
+
+    TCN_ASSERT(ssl != 0);
+    
+    destroyCount = SSL_get_app_data4(ssl);
+    if (destroyCount != NULL) {
+        ++(*destroyCount);
+    }
+
+    return APR_SUCCESS;
+}
+
 TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
                                                    jlong ctx /* tcn_ssl_ctxt_t * */,
                                                    jboolean server) {
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     int *handshakeCount = malloc(sizeof(int));
+    int *destroyCount = malloc(sizeof(int));
     SSL *ssl;
     apr_pool_t *p = NULL;
     tcn_ssl_conn_t *con;
@@ -1289,6 +1305,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     ssl = SSL_new(c->ctx);
     if (ssl == NULL) {
         free(handshakeCount);
+        free(destroyCount);
         tcn_ThrowException(e, "cannot create new ssl");
         return 0;
     }
@@ -1296,6 +1313,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     apr_pool_create(&p, c->pool);
     if (p == NULL) {
         free(handshakeCount);
+        free(destroyCount);
         SSL_free(ssl);
         tcn_ThrowAPRException(e, apr_get_os_error());
         return 0;
@@ -1303,6 +1321,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     
     if ((con = apr_pcalloc(p, sizeof(tcn_ssl_conn_t))) == NULL) {
         free(handshakeCount);
+        free(destroyCount);
         SSL_free(ssl);
         apr_pool_destroy(p);
         tcn_ThrowAPRException(e, apr_get_os_error());
@@ -1316,6 +1335,10 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     /* Store the handshakeCount in the SSL instance. */
     *handshakeCount = 0;
     SSL_set_app_data3(ssl, handshakeCount);
+
+    /* Store the destroyCount in the SSL instance. */
+    *destroyCount = 0;
+    SSL_set_app_data4(ssl, destroyCount);
 
     /* Add callback to keep track of handshakes. */
     SSL_CTX_set_info_callback(c->ctx, ssl_info_callback);
@@ -1333,6 +1356,11 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     /* Store for later usage in SSL_callback_SSL_verify */
     SSL_set_app_data2(ssl, c);
     SSL_set_app_data(ssl, con);
+    /* Register cleanup that prevent double destruction */
+    apr_pool_cleanup_register(con->pool, (const void *)ssl,
+                              ssl_con_pool_cleanup,
+                              apr_pool_cleanup_null);
+    
     return P2J(ssl);
 }
 
@@ -1430,15 +1458,21 @@ TCN_IMPLEMENT_CALL(void, SSL, freeSSL)(TCN_STDARGS,
                                        jlong ssl /* SSL * */) {
     SSL *ssl_ = J2P(ssl, SSL *);
     int *handshakeCount = SSL_get_app_data3(ssl_);
+    int *destroyCount = SSL_get_app_data4(ssl_);
     tcn_ssl_conn_t *con = SSL_get_app_data(ssl_);
 
     UNREFERENCED_STDARGS;
 
+    if (destroyCount != NULL) {
+        if (*destroyCount == 0) {
+            apr_pool_destroy(con->pool);
+        }
+        free(destroyCount);
+    }
     if (handshakeCount != NULL) {
         free(handshakeCount);
     }
     SSL_free(ssl_);
-    apr_pool_destroy(con->pool);
 }
 
 /* Make a BIO pair (network and internal) for the provided SSL * and return the network BIO */
