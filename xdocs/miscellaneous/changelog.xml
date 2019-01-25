@@ -36,6 +36,10 @@
 </section>
 <section name="Changes in 1.2.21">
   <changelog>
+    <fix>
+      Correct a possible JVM crash during shutdown caused by a bug in the fix
+      for the per connection memory leak included in 1.2.20. (rjung)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.20">
