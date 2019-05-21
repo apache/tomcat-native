@@ -230,6 +230,10 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         goto init_failed;
     }
 
+#ifdef HAVE_KEYLOG_CALLBACK
+    SSL_callback_add_keylog(ctx);
+#endif
+
     c->protocol = protocol;
     c->mode     = mode;
     c->ctx      = ctx;

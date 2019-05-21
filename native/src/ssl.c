@@ -34,6 +34,18 @@ extern apr_pool_t *tcn_global_pool;
 ENGINE *tcn_ssl_engine = NULL;
 tcn_pass_cb_t tcn_password_callback;
 
+#ifdef HAVE_KEYLOG_CALLBACK
+static BIO *key_log_file = NULL;
+
+static void ssl_keylog_callback(const SSL *ssl, const char *line)
+{
+    if (key_log_file && line && *line) {
+        BIO_puts(key_log_file, line);
+        BIO_puts(key_log_file, "\n");
+    }
+}
+#endif
+
 /* From netty-tcnative */
 static jclass byteArrayClass;
 static jclass stringClass;
@@ -286,6 +298,15 @@ static void free_dh_params(void)
     }
 }
 
+#ifdef HAVE_KEYLOG_CALLBACK
+void SSL_callback_add_keylog(SSL_CTX *ctx)
+{
+    if (key_log_file) {
+        SSL_CTX_set_keylog_callback(ctx, ssl_keylog_callback);
+    }
+}
+#endif
+
 /* Hand out the same DH structure though once generated as we leak
  * memory otherwise and freeing the structure up after use would be
  * hard to track and in fact is not needed at all as it is safe to
@@ -371,6 +392,13 @@ static apr_status_t ssl_init_cleanup(void *data)
     CRYPTO_cleanup_all_ex_data();
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     ERR_remove_thread_state(NULL);
+#endif
+
+#ifdef HAVE_KEYLOG_CALLBACK
+    if (key_log_file) {
+        BIO_free(key_log_file);
+        key_log_file = NULL;
+    }
 #endif
 
     /* Don't call ERR_free_strings here; ERR_load_*_strings only
@@ -845,6 +873,22 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     /* Cache the String.class for performance reasons */
     sClazz = (*e)->FindClass(e, "java/lang/String");
     stringClass = (jclass) (*e)->NewGlobalRef(e, sClazz);
+
+#ifdef HAVE_KEYLOG_CALLBACK
+    if (!key_log_file) {
+        char *key_log_file_name = getenv("SSLKEYLOGFILE");
+        if (key_log_file_name) {
+            FILE *file = fopen(key_log_file_name, "a");
+            if (file) {
+                if (setvbuf(file, NULL, _IONBF, 0)) {
+                    fclose(file);
+                } else {
+                    key_log_file = BIO_new_fp(file, BIO_CLOSE);
+                }
+            }
+        }
+    }
+#endif
 
     return (jint)APR_SUCCESS;
 }
