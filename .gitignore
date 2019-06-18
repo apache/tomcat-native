@@ -1,3 +1,16 @@
 .classpath
 .project
 /.settings/
+/native/.libs/
+/native/.make.dirs
+/native/Makefile
+/native/build/rules.mk
+/native/config.log
+/native/config.nice
+/native/config.status
+/native/libtcnative-1.la
+/native/tcnative.pc
+
+
+**/*.o
+**/*.lo
