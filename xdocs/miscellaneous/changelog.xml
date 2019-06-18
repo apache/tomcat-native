@@ -40,6 +40,11 @@
       <bug>63159</bug>: Unable to complete build when build directory is
       outside of the source tree. Patch provided by Bob Huemmer. (markt)
     </fix>
+    <fix>
+      <bug>63356</bug>: Fix client certificate authentication when a certificate
+      contains an AIA extension without an OCSP URI. Patch provided by Milind
+      Takawale. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.21">
