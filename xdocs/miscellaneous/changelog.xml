@@ -36,6 +36,10 @@
 </section>
 <section name="Changes in 1.2.22">
   <changelog>
+    <fix>
+      <bug>63159</bug>: Unable to complete build when build directory is
+      outside of the source tree. Patch provided by Bob Huemmer. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.21">
