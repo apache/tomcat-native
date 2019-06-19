@@ -34,8 +34,6 @@ static apr_status_t ssl_context_cleanup(void *data)
     tcn_ssl_ctxt_t *c = (tcn_ssl_ctxt_t *)data;
     if (c) {
         int i;
-        if (c->crl)
-            X509_STORE_free(c->crl);
         c->crl = NULL;
         if (c->ctx)
             SSL_CTX_free(c->ctx);
@@ -607,14 +605,12 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
         lookup = X509_STORE_add_lookup(c->crl, X509_LOOKUP_file());
         if (lookup == NULL) {
             ERR_error_string(SSL_ERR_get(), err);
-            X509_STORE_free(c->crl);
             c->crl = NULL;
             tcn_Throw(e, "Lookup failed for file %s (%s)", J2S(file), err);
             goto cleanup;
         }
         if (!X509_LOOKUP_load_file(lookup, J2S(file), X509_FILETYPE_PEM)) {
             ERR_error_string(SSL_ERR_get(), err);
-            X509_STORE_free(c->crl);
             c->crl = NULL;
             tcn_Throw(e, "Load failed for file %s (%s)", J2S(file), err);
             goto cleanup;
@@ -624,20 +620,18 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
         lookup = X509_STORE_add_lookup(c->crl, X509_LOOKUP_hash_dir());
         if (lookup == NULL) {
             ERR_error_string(SSL_ERR_get(), err);
-            X509_STORE_free(c->crl);
             c->crl = NULL;
             tcn_Throw(e, "Lookup failed for path %s (%s)", J2S(file), err);
             goto cleanup;
         }
         if (!X509_LOOKUP_add_dir(lookup, J2S(path), X509_FILETYPE_PEM)) {
             ERR_error_string(SSL_ERR_get(), err);
-            X509_STORE_free(c->crl);
             c->crl = NULL;
             tcn_Throw(e, "Load failed for path %s (%s)", J2S(file), err);
             goto cleanup;
         }
     }
-    X509_STORE_set_flags(c->store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    X509_STORE_set_flags(c->crl, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
     rv = JNI_TRUE;
 cleanup:
     TCN_FREE_CSTRING(file);

@@ -45,6 +45,10 @@
       contains an AIA extension without an OCSP URI. Patch provided by Milind
       Takawale. (markt)
     </fix>
+    <fix>
+      <bug>63500</bug>: Fix JVM crash on Connector start when a certificate
+      revocation file or path is specified for OpenSSL. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.21">
