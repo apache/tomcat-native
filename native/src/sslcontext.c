@@ -99,12 +99,12 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
     jstring hostname;
     jlong original_ssl_context, new_ssl_context;
     tcn_ssl_ctxt_t *new_c;
-    
+
     // Continue only if the static method exists
     if (sni_java_callback == NULL) {
         return SSL_TLSEXT_ERR_OK;
     }
-    
+
     (*javavm)->AttachCurrentThread(javavm, (void **)&env, NULL);
 
     // Get the host name presented by the client
@@ -113,7 +113,7 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
     // Convert to Java compatible parameters ready for the method call
     hostname = (*env)->NewStringUTF(env, servername);
     original_ssl_context = P2J(c);
-    
+
     new_ssl_context = (*env)->CallStaticLongMethod(env,
                                                    ssl_context_class,
                                                    sni_java_callback,
@@ -745,7 +745,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setTmpDH)(TCN_STDARGS, jlong ctx,
         tcn_Throw(e, "Error while configuring DH: no dh param file given");
         return;
     }
-    
+
     bio = BIO_new_file(J2S(file), "r");
     if (!bio) {
         char err[256];
@@ -773,7 +773,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setTmpDH)(TCN_STDARGS, jlong ctx,
         TCN_FREE_CSTRING(file);
         return;
     }
-    
+
     DH_free(dh);
     TCN_FREE_CSTRING(file);
 }
@@ -789,7 +789,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setTmpECDHByCurveName)(TCN_STDARGS, jlong c
     UNREFERENCED(o);
     TCN_ASSERT(ctx != 0);
     TCN_ASSERT(curveName);
-    
+
     /* First try to get curve by name */
     i = OBJ_sn2nid(J2S(curveName));
     if (!i) {
@@ -797,14 +797,14 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setTmpECDHByCurveName)(TCN_STDARGS, jlong c
         TCN_FREE_CSTRING(curveName);
         return;
     }
-    
+
     ecdh = EC_KEY_new_by_curve_name(i);
     if (!ecdh) {
         tcn_Throw(e, "Can't configure elliptic curve: unknown curve name %s", J2S(curveName));
         TCN_FREE_CSTRING(curveName);
         return;
     }
-    
+
     /* Setting found curve to context */
     if (1 != SSL_CTX_set_tmp_ecdh(c->ctx, ecdh)) {
         char err[256];
