@@ -49,6 +49,11 @@
       <bug>63500</bug>: Fix JVM crash on Connector start when a certificate
       revocation file or path is specified for OpenSSL. (markt)
     </fix>
+    <add>
+      Add support for TLS key logging when using OpenSSL 1.1.1 or later. If the
+      environment variable SSLKEYLOGFILE is set then the TLS keys will be logged
+      to that file. Patch provided by John Kelly. (markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.21">
