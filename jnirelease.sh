@@ -24,8 +24,9 @@
 # Default place to look for apr source.  Can be overridden with
 #   --with-apr=[directory]
 apr_src_dir=`pwd`/native/srclib/apr
-SVNBASE=https://svn.apache.org/repos/asf/tomcat/native
-TCJAVA_SVNBASE=https://svn.apache.org/repos/asf/tomcat/trunk
+
+GITBASE=https://gitbox.apache.org/repos/asf/tomcat-native.git
+TCJAVA_GITBASE=https://gitbox.apache.org/repos/asf/tomcat.git
 
 # Set the environment variable that stops OSX storing extended
 # attributes in tar archives etc. with a file starting with ._
@@ -33,6 +34,7 @@ COPYFILE_DISABLE=1
 export COPYFILE_DISABLE
 
 JKJNIEXT=""
+JKJNIHASH=""
 JKJNIVER=""
 JKJNIREL=""
 JKJNIFORCE=""
@@ -81,9 +83,9 @@ fi
 
 if [ "x$JKJNIEXT" = "x" ]; then
     echo ""
-    echo "Unknown SVN version"
+    echo "Unknown Git tag/branch"
     echo "Use:"
-    echo "  --ver=<tagged-version>|1.1.x|trunk|."
+    echo "  --ver=<tag>|1.1.x|master|."
     echo ""
     exit 1
 fi
@@ -131,40 +133,38 @@ else
     exit 1
 fi
 
-if [ "x$JKJNIEXT" = "xtrunk" ]; then
-    JKJNISVN="${SVNBASE}/trunk"
-    JKJNIVER=`svn info $JKJNISVN | awk '$1 == "Revision:" {print $2}'`
-    JKJNIVER="$JKJNIEXT-$JKJNIVER"
+if [ "x$JKJNIEXT" = "xmaster" ]; then
+    JKJNIHASH=`git rev-parse --short origin/master`
+    JKJNIVER="$JKJNIEXT-$JKJNIHASH"
 elif [ "x$JKJNIEXT" = "x1.1.x" ]; then
-    JKJNISVN="${SVNBASE}/branches/$JKJNIEXT"
-    JKJNIVER=`svn info $JKJNISVN | awk '$1 == "Revision:" {print $2}'`
-    JKJNIVER="$JKJNIEXT-$JKJNIVER"
+    JKJNIHASH=`git rev-parse --short origin/1.1.x`
+    JKJNIVER="$JKJNIEXT-$JKJNIHASH"
 elif [ "x$JKJNIEXT" = "x." ]; then
-    JKJNISVN="."
-    JKJNIVER=`svn info $JKJNISVN | awk '$1 == "Revision:" {print $2}'`
-    JKJNIEXT=`svn info $JKJNISVN | awk '$1 == "URL:" {print $2}' | sed -e 's#.*/##'`
-    JKJNIVER="checkout-$JKJNIEXT-$JKJNIVER"
+    JKJNIHASH=`git rev-parse --short HEAD`
+    JKJNIVER="HEAD-$JKJNIHASH"
 else
-    JKJNISVN="${SVNBASE}/tags/TOMCAT_NATIVE_`echo $JKJNIEXT | sed 's/\./_/g'`"
-    JKJNIVER=$JKJNIEXT
+    JKJNIHASH=`git rev-parse --short refs/tags/$JKJNIEXT`
+    JKJNIVER="$JKJNIEXT"
     JKJNIREL=1
 fi
-echo "Using SVN repo       : \`${JKJNISVN}'"
-echo "Using version        : \`${JKJNIVER}'"
+echo "Using GIT repo       : \`${GITBASE}\`"
+echo "Using version        : \`${JKJNIVER}\`"
 
-# Checking for recentness of svn:externals
-externals_path=java/org/apache/tomcat
-jni_externals=`svn propget svn:externals $JKJNISVN/$externals_path | \
-    grep $externals_path/jni | \
-    sed -e 's#.*@##' -e 's# .*##'`
-jni_last_changed=`svn info --xml $TCJAVA_SVNBASE/$externals_path/jni | \
-    tr "\n" " " | \
-    sed -e 's#.*commit  *revision="##' -e 's#".*##'`
-if [ "x$jni_externals" != "x$jni_last_changed" ]; then
-    echo "WARNING: svn:externals for jni in $externals_path is '$jni_externals',"
-    echo "         last changed revision in TC trunk is '$jni_last_changed'."
+# Checking for recentness of git subtree
+git checkout ${JKJNIHASH}
+if [ ! -d .git/refs/remotes/9.0.x ]; then
+    git remote add -f 9.0.x ${TCJAVA_GITBASE}
+fi
+git remote update 9.0.x
+diffcount=$(git diff HEAD remotes/9.0.x/master java/org/apache/tomcat/jni | wc -l)
+
+if [ $diffcount -ne 0 ]; then
+    echo "WARNING: git subtree is not up to date with"
+    echo "         $TCJAVA_GITBASE"
     echo "         Either correct now by running"
-    echo "         'svn propedit svn:externals' on $externals_path to fix"
+    echo "         'git rm -rf java/org/apache/tomcat/jni'"
+    echo "         'git read-tree --prefix=java/org/apache/tomcat/jni/ -u 9.0.x/master:java/org/apache/tomcat/jni'"
+    echo "         'git commit'"
     echo "         or run this script with -f (force)"
     if [ "X$JKJNIFORCE" = "X1" ]
     then
@@ -179,10 +179,10 @@ JKJNIDIST=tomcat-native-${JKJNIVER}-src
 
 rm -rf ${JKJNIDIST}
 mkdir -p ${JKJNIDIST}
-svn export --force ${JKJNISVN} ${JKJNIDIST}
+git archive ${JKJNIHASH} | tar -x -C ${JKJNIDIST}
 if [ $? -ne 0 ]; then
     echo ""
-    echo "svn export failed"
+    echo "git export failed"
     echo ""
     exit 1
 fi
@@ -246,10 +246,10 @@ tar -cf - ${JKJNIDIST} | gzip -c9 > ${JKJNIDIST}.tar.gz || exit 1
 JKWINDIST=tomcat-native-${JKJNIVER}-win32-src
 rm -rf ${JKWINDIST}
 mkdir -p ${JKWINDIST}
-svn export --force --native-eol CRLF ${JKJNISVN} ${JKWINDIST}
+git -c core.autocrlf=true -c core.eol=crlf archive ${JKJNIHASH} | tar -x -C ${JKWINDIST}
 if [ $? -ne 0 ]; then
     echo ""
-    echo "svn export failed"
+    echo "git export failed"
     echo ""
     exit 1
 fi

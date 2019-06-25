@@ -54,6 +54,10 @@
       environment variable SSLKEYLOGFILE is set then the TLS keys will be logged
       to that file. Patch provided by John Kelly. (markt)
     </add>
+    <fix>
+      Update build script after migration of soucre repository from Subversion
+      to Git. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.21">
