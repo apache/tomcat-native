@@ -32,7 +32,7 @@ http://tomcat.apache.org/native-doc/
 
 Documentation about the Tomcat APR connector which is based
 on this library can be found at
-http://tomcat.apache.org/tomcat-8.0-doc/apr.html.
+http://tomcat.apache.org/tomcat-9.0-doc/apr.html.
 
 
 Building
