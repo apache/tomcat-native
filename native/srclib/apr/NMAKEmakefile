@@ -45,7 +45,7 @@ SRCDIR = .
 !IF "$(TARGET)" != "LIB"
 LFLAGS = $(LFLAGS) /version:1.4
 !ENDIF
-INCLUDES = -I$(SRCDIR)\include -I$(SRCDIR)\include\arch -I$(SRCDIR)\include\arch\win32 -I$(SRCDIR)\include\arch\unix
+INCLUDES = -I$(SRCDIR)\include -I$(SRCDIR)\include\arch -I$(SRCDIR)\include\private -I$(SRCDIR)\include\arch\win32 -I$(SRCDIR)\include\arch\unix
 PDBFLAGS = -Fo$(WORKDIR)\ -Fd$(WORKDIR)\$(PROJECT)-src
 OBJECTS = \
 	$(WORKDIR)\apr_atomic.obj \

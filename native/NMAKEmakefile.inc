@@ -30,13 +30,12 @@
 #                           PROCESSOR_ARCHITECTURE environment variable
 #                           or to the X86 if not specified.
 #                 WINVER    Compile for specified Windows version
-#                           WINNT   for Windows 2000 and up(default)
-#                           WINXP   for Windows XP and up
-#                           WIN2003 for Windows 2003 and up
-#                           VSITA   for Windows Vista and up
+#                           WIN7    for Windows 7 and up (default)
 #                           Deprecated targets (may not even compile):
-#                               NT4     for Windows NT4 and up
-#                               WIN9X   for Windows 95, 98 and Me
+#                               WIN2003 for Windows 2003 and up
+#                               VISTA   for Windows Vista and up
+#                               WINXP   for Windows XP and up
+#                               WINNT   for Windows 2000 and up
 #                 BUILD     Build version
 #                           RETAIL or RELEASE (default)
 #                           DEBUG
@@ -140,7 +139,7 @@ TARGET=EXE
 !ENDIF
 
 !IF !DEFINED(WINVER) || "$(WINVER)" == ""
-WINVER=WINXP
+WINVER=WIN7
 !ENDIF
 
 
