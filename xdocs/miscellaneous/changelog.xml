@@ -36,7 +36,9 @@
 </section>
 <section name="Changes in 1.2.23">
   <changelog>
-    Make file fixes to enable building with APR 1.7.x. (markt)
+    <fix>
+      NMake file fixes to enable building with APR 1.7.x. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.22">
