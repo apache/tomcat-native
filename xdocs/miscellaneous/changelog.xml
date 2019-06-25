@@ -37,7 +37,10 @@
 <section name="Changes in 1.2.23">
   <changelog>
     <fix>
-      NMake file fixes to enable building with APR 1.7.x. (markt)
+      Make file fixes to enable building with APR 1.7.x. (markt)
+    </fix>
+    <fix>
+      Switch to Windows 7 as the default target. (markt)
     </fix>
   </changelog>
 </section>
