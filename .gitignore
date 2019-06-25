@@ -1,16 +1,24 @@
 .classpath
 .project
+
 /.settings/
 /native/.libs/
 /native/.make.dirs
 /native/Makefile
+/native/build-outputs.mk
+/native/build/apr_common.m4
+/native/build/config.guess
+/native/build/config.sub
+/native/build/find_apr.m4
+/native/build/install.sh
 /native/build/rules.mk
 /native/config.log
 /native/config.nice
 /native/config.status
+/native/configure
 /native/libtcnative-1.la
 /native/tcnative.pc
+/native/tcnative.spec
 
-
-**/*.o
 **/*.lo
+**/*.o
