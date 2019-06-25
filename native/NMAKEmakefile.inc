@@ -174,7 +174,7 @@ _WIN32_IE = 0x0800
 !ERROR Must specify WINVER environment variable (WINNT, WINXP, WIN2003, VISTA, WIN7)
 !ENDIF
 
-NMAKE_WINNT = -DWINNT -D_WINNT -D_WIN32_WINNT=$(NMAKE_WINVER) -DWINVER=$(NMAKE_WINVER) -D_WIN32_IE=$(_WIN32_IE)
+NMAKE_WINNT = -DWINNT -D_WINNT -D_WIN32_WINNT=$(NMAKE_WINVER) -DWINVER=$(NMAKE_WINVER) -D_WIN32_IE=$(_WIN32_IE) -DPSAPI_VERSION=1
 
 !IF !DEFINED(BUILD) || "$(BUILD)" == ""
 BUILD=RELEASE
@@ -256,7 +256,7 @@ CXXFLAGS = $(EXTRA_CXXFLAGS)
 !ENDIF
 
 # Linker section
-LIBS = kernel32.lib advapi32.lib ws2_32.lib mswsock.lib ole32.lib shell32.lib rpcrt4.lib
+LIBS = kernel32.lib advapi32.lib ws2_32.lib mswsock.lib ole32.lib shell32.lib rpcrt4.lib psapi.lib
 # Extra libs from command line or env
 !IF DEFINED(EXTRA_LIBS)
 LIBS = $(LIBS) $(EXTRA_LIBS)
