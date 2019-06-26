@@ -156,7 +156,7 @@ if [ ! -d .git/refs/remotes/9.0.x ]; then
     git remote add -f 9.0.x ${TCJAVA_GITBASE}
 fi
 git remote update 9.0.x
-diffcount=$(git diff HEAD remotes/9.0.x/master java/org/apache/tomcat/jni | wc -l)
+diffcount=`git diff HEAD remotes/9.0.x/master java/org/apache/tomcat/jni | wc -l`
 
 if [ $diffcount -ne 0 ]; then
     echo "WARNING: git subtree is not up to date with"
