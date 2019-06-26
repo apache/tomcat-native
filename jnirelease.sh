@@ -134,24 +134,34 @@ else
 fi
 
 if [ "x$JKJNIEXT" = "xmaster" ]; then
-    JKJNIHASH=`git rev-parse --short origin/master`
+    JKJNIHASH=`git ls-remote $GITBASE refs/heads/master | awk '{print $1}'`
     JKJNIVER="$JKJNIEXT-$JKJNIHASH"
 elif [ "x$JKJNIEXT" = "x1.1.x" ]; then
-    JKJNIHASH=`git rev-parse --short origin/1.1.x`
+    JKJNIHASH=`git ls-remote $GITBASE refs/heads/1.1.x | awk '{print $1}'`
     JKJNIVER="$JKJNIEXT-$JKJNIHASH"
 elif [ "x$JKJNIEXT" = "x." ]; then
     JKJNIHASH=`git rev-parse --short HEAD`
     JKJNIVER="HEAD-$JKJNIHASH"
 else
-    JKJNIHASH=`git rev-parse --short refs/tags/$JKJNIEXT`
+    JKJNIHASH=`git ls-remote $GITBASE refs/tags/$JKJNIEXT | awk '{print $1}'`
     JKJNIVER="$JKJNIEXT"
     JKJNIREL=1
 fi
 echo "Using GIT repo       : \`${GITBASE}\`"
 echo "Using version        : \`${JKJNIVER}\`"
 
-# Checking for recentness of git subtree
-git checkout ${JKJNIHASH}
+if [ ! -d .git ]; then
+    rm -rf tmp-clone
+    git clone --no-checkout $GITBASE tmp-clone
+    mv tmp-clone/.git .
+    rm -rf tmp-clone
+    # Checking for recentness of git subtree
+    git checkout --force ${JKJNIHASH}
+else
+    # Checking for recentness of git subtree
+    git checkout ${JKJNIHASH}
+fi
+
 if [ ! -d .git/refs/remotes/9.0.x ]; then
     git remote add -f 9.0.x ${TCJAVA_GITBASE}
 fi
