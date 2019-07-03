@@ -20,5 +20,8 @@
 /native/tcnative.pc
 /native/tcnative.spec
 
+/tomcat-native-*
+/tomcat-native-*/
+
 **/*.lo
 **/*.o
