@@ -29,6 +29,11 @@
 <body>
 
 <section name="2019 News &amp; Status">
+ <subsection anchor="20190702" name="07 Jul 2019 - TC-Native-1.2.23 released">
+  <p>The Apache Tomcat team is proud to announce the immediate availability of
+  Tomcat Native 1.2.23. This is a bugfix release.
+  </p>
+ </subsection>
  <subsection anchor="20190131" name="31 Jan 2019 - TC-Native-1.2.21 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability of
   Tomcat Native 1.2.21. This is a bugfix release.
