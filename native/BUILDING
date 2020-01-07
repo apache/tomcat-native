@@ -22,13 +22,13 @@ Linux / Unix / OSX (dynamic linking)
 
    Install OpenSSL version 1.0.2 or higher
    Install APR version 1.4.0 or higher.
-   Download and expand the source package or use an svn checkout
+   Download and expand the source package or use an git checkout
 
    > cd native
 
 2. Configure build environment
 
-   Note: This step is only required if you are building from an svn checkout. It
+   Note: This step is only required if you are building from an git checkout. It
          is not required when building from a source package.
 
    >  sh buildconf --with-apr=apr_source_location.
@@ -88,7 +88,7 @@ Windows
    
 2. Obtain tc-native source
 
-   Download and expand the source package or use an svn checkout
+   Download and expand the source package or use an git checkout
 
 3. Build APR
 
