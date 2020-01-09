@@ -84,7 +84,7 @@ install: $(TARGET_LIB)
 	list='$(INSTALL_SUBDIRS)'; for i in $$list; do \
 		( cd $$i ; $(MAKE) DESTDIR=$(DESTDIR) install ); \
 	done
-	$(LIBTOOL) --mode=install $(INSTALL) -m 755 $(TARGET_LIB) $(DESTDIR)$(libdir)
+	$(LIBTOOL) --mode=install $(INSTALL) -m 755 $(TARGET_LIB) $(DESTDIR)$(bindir)
 
 $(TARGET_LIB): $(OBJECTS)
 	$(LINK) @lib_target@ $(TCNATIVE_LDFLAGS) $(TCNATIVE_LIBS)
