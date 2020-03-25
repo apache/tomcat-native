@@ -37,7 +37,6 @@ TCNATIVE_LIBS = @TCNATIVE_LIBS@
 
 TARGET_LIB = lib@TCNATIVE_LIBNAME@.la
 EXTRA_OS_LINK=@EXTRA_OS_LINK@
-TCNATIVE_PCFILE = tcnative-$(TCNATIVE_MAJOR_VERSION).pc
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 
@@ -51,29 +50,21 @@ LINK          = $(LIBTOOL) $(LTFLAGS) --mode=link --tag=CC $(LT_LDFLAGS) $(COMPI
 CLEAN_SUBDIRS = test
 
 CLEAN_TARGETS = .make.dirs
-DISTCLEAN_TARGETS = config.cache config.log config.status libtool \
-	build/rules.mk tcnative.pc
+DISTCLEAN_TARGETS = config.cache config.log config.status \
+	build/rules.mk
 EXTRACLEAN_TARGETS = configure aclocal.m4 build-outputs.mk \
 	build/apr_common.m4 build/find_apr.m4 build/install.sh \
 	build/config.guess build/config.sub tcnative.spec
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-bindir=@bindir@
 libdir=@libdir@
-includedir=@includedir@
 top_srcdir=@abs_srcdir@
 top_blddir=@abs_builddir@
 
 
 install: $(TARGET_LIB)
-	$(APR_MKDIR) $(DESTDIR)$(includedir) $(DESTDIR)$(libdir)/pkgconfig \
-		     $(DESTDIR)$(libdir) $(DESTDIR)$(bindir)
-	$(INSTALL_DATA) tcnative.pc $(DESTDIR)$(libdir)/pkgconfig/$(TCNATIVE_PCFILE)
-	$(INSTALL_DATA) $(srcdir)/include/*.h $(DESTDIR)$(includedir)
-	list='$(INSTALL_SUBDIRS)'; for i in $$list; do \
-		( cd $$i ; $(MAKE) DESTDIR=$(DESTDIR) install ); \
-	done
+	$(APR_MKDIR) $(DESTDIR)$(libdir)
 	$(LIBTOOL) --mode=install $(INSTALL) -m 755 $(TARGET_LIB) $(DESTDIR)$(libdir)
 
 $(TARGET_LIB): $(OBJECTS)

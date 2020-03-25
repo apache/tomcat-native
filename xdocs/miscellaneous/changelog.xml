@@ -37,6 +37,9 @@
 <section name="Changes in 1.2.24">
   <changelog>
     <update>
+      <bug>64260</bug>: Clean up install target. (michaelo)
+    </update>
+    <update>
       Drop obsolete build time workarounds for HP-UX. (michaelo)
     </update>
     <add>
