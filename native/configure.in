@@ -282,7 +282,6 @@ dnl
 dnl everything is done.
 MAKEFILES="Makefile"
 AC_OUTPUT([
-    tcnative.pc
     $MAKEFILES
 	],[
 TCNATIVE_MAJOR_VERSION=$TCNATIVE_MAJOR_VERSION
