@@ -36,6 +36,9 @@
 </section>
 <section name="Changes in 1.2.24">
   <changelog>
+    <update>
+      Drop obsolete build time workarounds for HP-UX. (michaelo)
+    </update>
     <add>
       Add support for FreeBSD's pthread_getthreadid_np() in our
       ssl_thread_id(void). (michaelo)
