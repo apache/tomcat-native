@@ -24,8 +24,8 @@
 #include "apr_network_io.h"
 #include "apr_strings.h"
 
-#ifndef APR_HAS_THREADS
-#error "Missing APR_HAS_THREADS support from APR."
+#if !APR_HAS_THREADS
+#error "Missing threading support from APR."
 #endif
 #include <jni.h>
 
