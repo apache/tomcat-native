@@ -36,6 +36,9 @@
 </section>
 <section name="Changes in 1.2.24">
   <changelog>
+    <fix>
+      Correct configure message for OpenSSL libdir. (michaelo)
+    </fix>
     <update>
       <bug>64260</bug>: Clean up install target. (michaelo)
     </update>

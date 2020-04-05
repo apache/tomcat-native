@@ -226,7 +226,7 @@ case "$use_openssl" in
                 ;;
             esac
         fi
-        AC_MSG_RESULT(using openssl from $use_openssl/$libdir and $use_openssl/include)
+        AC_MSG_RESULT(using openssl from $use_openssl/$ssllibdir and $use_openssl/include)
 
         saved_cflags="$CFLAGS"
         saved_libs="$LIBS"
