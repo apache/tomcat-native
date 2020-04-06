@@ -37,7 +37,7 @@
 <section name="Changes in 1.2.24">
   <changelog>
     <fix>
-      <bug>63671<bug>: libtcnative does not compile with OpenSSL &lt; 1.1.0
+      <bug>63671</bug>: libtcnative does not compile with OpenSSL &lt; 1.1.0
       and APR w/o threading support. (michaelo)
     </fix>
     <fix>
