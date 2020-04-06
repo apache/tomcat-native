@@ -46,6 +46,10 @@
     <update>
       <bug>64260</bug>: Clean up install target. (michaelo)
     </update>
+    <fix>
+      <bug>64315</bug>: configure output for OpenSSL wrong/incomplete sometimes.
+      (michaelo)
+    </fix>
     <update>
       Drop obsolete build time workarounds for HP-UX. (michaelo)
     </update>

@@ -204,18 +204,20 @@ case "$use_openssl" in
         fi
         USE_OPENSSL='-DOPENSSL'
 
+        test -d $use_openssl/lib64 && ssllibdir=lib64 || ssllibdir=lib
         if test "$use_openssl" = "/usr"
         then
             TCN_OPENSSL_INC=""
             TCN_OPENSSL_LIBS="-lssl -lcrypto"
         else
             TCN_OPENSSL_INC="-I$use_openssl/include"
-            test -d $use_openssl/lib64 && ssllibdir=lib64 || ssllibdir=lib
             case $host in
             *-solaris*)
                 TCN_OPENSSL_LIBS="-L$use_openssl/$ssllibdir -R$use_openssl/$ssllibdir -lssl -lcrypto"
                 ;;
             *-hp-hpux*)
+                # By default cc/aCC on HP-UX IA64 will produce 32 bit output
+                ssllibdir=lib/hpux32
                 TCN_OPENSSL_LIBS="-L$use_openssl/$ssllibdir -Wl,+b: -lssl -lcrypto"
                 ;;
             *linux*)
