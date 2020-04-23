@@ -3,5 +3,5 @@ The following version of the libraries are recommended:
 - APR 1.7.0 or later, http://apr.apache.org
 - OpenSSL 1.1.1g or later, http://www.openssl.org
 
-Older versions may also work but are not as throughly tested by the Tomcat
+Older versions should also work but are not as thoroughly tested by the Tomcat
 Native team
