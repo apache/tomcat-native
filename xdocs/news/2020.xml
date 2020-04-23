@@ -18,25 +18,20 @@
 <!DOCTYPE document [
   <!ENTITY project SYSTEM "project.xml">
 ]>
-<document url="2019.html">
+<document url="2020.html">
 
   &project;
 
   <properties>
-    <title>2019 News and Status</title>
+    <title>2020 News and Status</title>
   </properties>
 
 <body>
 
-<section name="2019 News &amp; Status">
- <subsection anchor="20190702" name="07 Jul 2019 - TC-Native-1.2.23 released">
+<section name="2020 News &amp; Status">
+ <subsection anchor="20200429" name="29 Apr 2020 - TC-Native-1.2.24 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability of
-  Tomcat Native 1.2.23. This is a bugfix release.
-  </p>
- </subsection>
- <subsection anchor="20190131" name="31 Jan 2019 - TC-Native-1.2.21 released">
-  <p>The Apache Tomcat team is proud to announce the immediate availability of
-  Tomcat Native 1.2.21. This is a bugfix release.
+  Tomcat Native 1.2.24. This is a bugfix release.
   </p>
  </subsection>
 </section>
