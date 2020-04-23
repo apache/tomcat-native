@@ -220,7 +220,7 @@ case "$use_openssl" in
                 ssllibdir=lib/hpux32
                 TCN_OPENSSL_LIBS="-L$use_openssl/$ssllibdir -Wl,+b: -lssl -lcrypto"
                 ;;
-            *linux*)
+            *linux*|*freebsd*)
                 TCN_OPENSSL_LIBS="-L$use_openssl/$ssllibdir -Wl,-rpath,$use_openssl/$ssllibdir -lssl -lcrypto"
                 ;;
             *)

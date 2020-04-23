@@ -64,6 +64,10 @@ This will have been <?xml version="1.0" encoding="UTF-8"?>
     <add>
       Introduce tcn_get_thread_id(void) to reduce code duplication. (michaelo)
     </add>
+    <fix>
+      Fix linking against OpenSSL in non-standard locations on FreeBSD.
+      (michaelo)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.23">
