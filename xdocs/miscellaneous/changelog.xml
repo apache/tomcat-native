@@ -58,9 +58,12 @@ This will have been <?xml version="1.0" encoding="UTF-8"?>
       ssl_thread_id(void). (michaelo)
     </add>
     <update>
-      <bug>63701 </bug>Use new OpenSSL initialisation process when building with
+      <bug>63701</bug>: Use new OpenSSL initialisation process when building with
       OpenSSL 1.1.0 onwards. (mturk)
     </update>
+    <add>
+      Introduce tcn_get_thread_id(void) to reduce code duplication. (michaelo)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.23">

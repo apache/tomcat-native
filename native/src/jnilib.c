@@ -23,6 +23,22 @@
 
 #include "tcn_version.h"
 
+#ifdef WIN32
+#include <Windows.h>
+#endif
+
+#ifdef DARWIN
+#include <pthread.h>
+#endif
+
+#ifdef __FreeBSD__
+#include <pthread_np.h>
+#endif
+
+#ifdef __linux__
+#include <sys/syscall.h>
+#endif
+
 #ifdef TCN_DO_STATISTICS
 extern void sp_poll_dump_statistics();
 extern void sp_network_dump_statistics();
@@ -481,3 +497,32 @@ jint tcn_get_java_env(JNIEnv **env)
     }
     return JNI_OK;
 }
+
+unsigned long tcn_get_thread_id(void)
+{
+    /* OpenSSL needs this to return an unsigned long.  On OS/390, the pthread
+     * id is a structure twice that big.  Use the TCB pointer instead as a
+     * unique unsigned long.
+     */
+#ifdef __MVS__
+    struct PSA {
+        char unmapped[540];
+        unsigned long PSATOLD;
+    } *psaptr = 0;
+
+    return psaptr->PSATOLD;
+#elif defined(WIN32)
+    return (unsigned long)GetCurrentThreadId();
+#elif defined(DARWIN)
+    uint64_t tid;
+    pthread_threadid_np(NULL, &tid);
+    return (unsigned long)tid;
+#elif defined(__FreeBSD__)
+    return (unsigned long)pthread_getthreadid_np();
+#elif defined(__linux__)
+    return (unsigned long)syscall(SYS_gettid);
+#else
+    return (unsigned long)pthread_self();
+#endif
+}
+

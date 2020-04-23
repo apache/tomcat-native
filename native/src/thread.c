@@ -19,5 +19,6 @@
 TCN_IMPLEMENT_CALL(jlong, Thread, current)(TCN_STDARGS)
 {
     UNREFERENCED_STDARGS;
-    return (jlong)((unsigned long)apr_os_thread_current());
+    return (jlong)tcn_get_thread_id();
 }
+

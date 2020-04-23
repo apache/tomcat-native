@@ -175,6 +175,7 @@ char           *tcn_strdup(JNIEnv *, jstring);
 char           *tcn_pstrdup(JNIEnv *, jstring, apr_pool_t *);
 apr_status_t    tcn_load_finfo_class(JNIEnv *, jclass);
 apr_status_t    tcn_load_ainfo_class(JNIEnv *, jclass);
+unsigned long   tcn_get_thread_id(void);
 
 #define J2S(V)  c##V
 #define J2L(V)  p##V

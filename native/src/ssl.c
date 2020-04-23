@@ -20,14 +20,6 @@
 #include "apr_atomic.h"
 #include "apr_poll.h"
 
-#ifdef __linux__
-#include <sys/syscall.h>
-#endif
-
-#ifdef __FreeBSD__
-#include <pthread_np.h>
-#endif
-
 #ifdef HAVE_OPENSSL
 #include "ssl_private.h"
 
@@ -465,30 +457,7 @@ static void ssl_thread_lock(int mode, int type,
 
 static unsigned long ssl_thread_id(void)
 {
-    /* OpenSSL needs this to return an unsigned long.  On OS/390, the pthread
-     * id is a structure twice that big.  Use the TCB pointer instead as a
-     * unique unsigned long.
-     */
-#ifdef __MVS__
-    struct PSA {
-        char unmapped[540];
-        unsigned long PSATOLD;
-    } *psaptr = 0;
-
-    return psaptr->PSATOLD;
-#elif defined(WIN32)
-    return (unsigned long)GetCurrentThreadId();
-#elif defined(DARWIN)
-    uint64_t tid;
-    pthread_threadid_np(NULL, &tid);
-    return (unsigned long)tid;
-#elif defined(__FreeBSD__)
-    return (unsigned long)pthread_getthreadid_np();
-#elif defined(__linux__)
-    return (unsigned long)syscall(SYS_gettid);
-#else
-    return (unsigned long)(apr_os_thread_current());
-#endif
+    return (unsigned long)tcn_get_thread_id();
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
