@@ -3,8 +3,8 @@
 # Small script to get a recent openssl, with npn support
 # Will run configure and build_libs to generate the .s files
 
-SSL=openssl-1.0.2o.tar.gz
-APR=apr-1.6.3.tar.gz
+SSL=openssl-1.1.1g.tar.gz
+APR=apr-1.7.0.tar.gz
 mkdir -p deps
 
 if [ ! -f deps/$SSL ] ; then
