@@ -15,36 +15,17 @@ environment before calling nmake so that correct
 compiler is setup for the target architecture.
 
 
-Building OpenSSL 1.1.0 and earlier
-----------------------------------
-
-Apply openssl-msvcrt.patch
-
-This patch makes sure that static version of OpenSSL libraries
-is linked to msvcrt.dll instead statically linking msvcrt.
-Without that patch it won't be possible to create statically linked
-Tomcat native .dll
-
-Then follow the standard OpenSSL make procedure ...
-
-> perl Configure VC-WIN32
-> ms\do_nasm
-> nmake -f ms\nt.mak
-
-For 64-bit Windows use
-> perl Configure VC-WIN64A
-> ms\do_win64a
-> nmake -f ms\nt.mak
-
-
 Building OpenSSL 1.1.1 and later
 ----------------------------------
 
 Apply openssl-msvcrt-1.1.1.patch
 
-This patch addresses issues caused by CMSC compiling against an older Windows
-API than expected for the compiler version in additional to the static linking
-issues described above.
+This patch makes sure that static version of OpenSSL libraries
+is linked to msvcrt.dll instead statically linking msvcrt.
+Without that patch it won't be possible to create statically linked
+Tomcat native .dll
+This patch also addresses issues caused by CMSC compiling against an older Windows
+API than expected for the compiler version.
 
 Then follow the standard OpenSSL make procedure ...
 
