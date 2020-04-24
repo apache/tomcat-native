@@ -162,18 +162,18 @@ else
     git checkout ${JKJNIHASH}
 fi
 
-if [ ! -d .git/refs/remotes/9.0.x ]; then
-    git remote add -f 9.0.x ${TCJAVA_GITBASE}
+if [ ! -d .git/refs/remotes/10.0.x ]; then
+    git remote add -f 10.0.x ${TCJAVA_GITBASE}
 fi
-git remote update 9.0.x
-diffcount=`git diff HEAD remotes/9.0.x/master java/org/apache/tomcat/jni | wc -l`
+git remote update 10.0.x
+diffcount=`git diff HEAD remotes/10.0.x/master java/org/apache/tomcat/jni | wc -l`
 
 if [ $diffcount -ne 0 ]; then
     echo "WARNING: git subtree is not up to date with"
     echo "         $TCJAVA_GITBASE"
     echo "         Either correct now by running"
     echo "         'git rm -rf java/org/apache/tomcat/jni'"
-    echo "         'git read-tree --prefix=java/org/apache/tomcat/jni/ -u 9.0.x/master:java/org/apache/tomcat/jni'"
+    echo "         'git read-tree --prefix=java/org/apache/tomcat/jni/ -u 10.0.x/master:java/org/apache/tomcat/jni'"
     echo "         'git commit'"
     echo "         or run this script with -f (force)"
     if [ "X$JKJNIFORCE" = "X1" ]
