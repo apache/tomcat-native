@@ -39,6 +39,9 @@
     <fix>
       Incomplete name mangling fix for C++ compilers in tcn_api.h. (michaelo)
     </fix>
+    <update>
+      Improve OS-specific header include for native thread id. (michaelo)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.24">

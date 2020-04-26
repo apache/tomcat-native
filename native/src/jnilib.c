@@ -23,20 +23,17 @@
 
 #include "tcn_version.h"
 
-#ifdef WIN32
+#if defined(WIN32)
 #include <Windows.h>
-#endif
-
-#ifdef DARWIN
+#elif defined(DARWIN)
+/* Included intentionally for the sake of completeness */
 #include <pthread.h>
-#endif
-
-#ifdef __FreeBSD__
+#elif defined(__FreeBSD__)
 #include <pthread_np.h>
-#endif
-
-#ifdef __linux__
+#elif defined(__linux__)
 #include <sys/syscall.h>
+#else
+#include <pthread.h>
 #endif
 
 #ifdef TCN_DO_STATISTICS
