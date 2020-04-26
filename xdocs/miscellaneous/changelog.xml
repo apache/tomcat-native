@@ -62,7 +62,8 @@
       OpenSSL 1.1.0 onwards. (mturk)
     </update>
     <add>
-      Introduce tcn_get_thread_id(void) to reduce code duplication. (michaelo)
+      <bug>64316</bug>: Introduce tcn_get_thread_id(void) to reduce code
+	  duplication. (michaelo)
     </add>
     <fix>
       Fix linking against OpenSSL in non-standard locations on FreeBSD.
