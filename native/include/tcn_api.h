@@ -29,6 +29,10 @@
 #endif
 #include <jni.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @file tcn_api.h
  * @brief
