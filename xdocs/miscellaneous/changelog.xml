@@ -42,6 +42,9 @@
     <update>
       Improve OS-specific header include for native thread id. (michaelo)
     </update>
+    <fix>
+      Disable keylog callback support for LibreSSL. (michaelo)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.24">
