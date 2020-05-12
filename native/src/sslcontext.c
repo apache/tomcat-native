@@ -1262,7 +1262,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addChainCertificateRaw)(TCN_STDARGS, jl
         ERR_error_string(SSL_ERR_get(), err);
         tcn_Throw(e, "Error reading certificate (%s)", err);
         rv = JNI_FALSE;
-#if defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20901000L
     } else {
         tcn_Throw(e, "Unable to use Java keystores with LibreSSL");
 #else

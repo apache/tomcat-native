@@ -45,6 +45,10 @@
     <fix>
       Disable keylog callback support for LibreSSL. (michaelo)
     </fix>
+    <add>
+      Add support for <code>SSLContext.addChainCertificateRaw()</code> with
+      LibreSSL 2.9.1 and up. (michaelo)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.24">
