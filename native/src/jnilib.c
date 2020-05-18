@@ -32,6 +32,8 @@
 #include <pthread_np.h>
 #elif defined(__linux__)
 #include <sys/syscall.h>
+#elif defined(__hpux)
+#include <sys/lwp_id.h>
 #else
 #include <pthread.h>
 #endif
@@ -518,6 +520,8 @@ unsigned long tcn_get_thread_id(void)
     return (unsigned long)pthread_getthreadid_np();
 #elif defined(__linux__)
     return (unsigned long)syscall(SYS_gettid);
+#elif defined(__hpux)
+    return (unsigned long)_lwp_self();
 #else
     return (unsigned long)pthread_self();
 #endif

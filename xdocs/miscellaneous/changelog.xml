@@ -49,6 +49,10 @@
       Add support for <code>SSLContext.addChainCertificateRaw()</code> with
       LibreSSL 2.9.1 and up. (michaelo)
     </add>
+    <add>
+      Add support for HP-UX's _lwp_self() in our
+      ssl_thread_id(void). (michaelo)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.24">
