@@ -53,6 +53,9 @@
       Add support for HP-UX's _lwp_self() in our
       ssl_thread_id(void). (michaelo)
     </add>
+    <remove>
+      Remove default option passed for rpath to linker on HP-UX. (michaelo)
+    </remove>
   </changelog>
 </section>
 <section name="Changes in 1.2.24">
