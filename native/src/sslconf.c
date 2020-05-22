@@ -155,6 +155,15 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, check)(TCN_STDARGS, jlong cctx,
         tcn_Throw(e, "Can not check null SSL_CONF command");
         return SSL_THROW_RETURN;
     }
+    if (!strcmp(J2S(cmd), "NO_OCSP_CHECK")) {
+        if (!strcasecmp(J2S(value), "false"))
+            c->no_ocsp_check = 0;
+        else
+            c->no_ocsp_check = 1;
+        TCN_FREE_CSTRING(cmd);
+        TCN_FREE_CSTRING(value);
+        return 1;
+    }
 
     SSL_ERR_clear();
     value_type = SSL_CONF_cmd_value_type(c->cctx, J2S(cmd));
@@ -209,6 +218,7 @@ TCN_IMPLEMENT_CALL(void, SSLConf, assign)(TCN_STDARGS, jlong cctx,
     TCN_ASSERT(sc != 0);
     // sc->ctx == 0 is allowed!
     SSL_CONF_CTX_set_ssl_ctx(c->cctx, sc->ctx);
+    sc->no_ocsp_check = c->no_ocsp_check;
 }
 
 /* Apply a command to an SSL_CONF context */
@@ -248,6 +258,15 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, apply)(TCN_STDARGS, jlong cctx,
         buf[len - 1] = '\0';
     }
 #endif
+    if (!strcmp(J2S(cmd), "NO_OCSP_CHECK")) {
+        if (!strcasecmp(J2S(value), "false"))
+            c->no_ocsp_check = 0;
+        else
+            c->no_ocsp_check = 1;
+        TCN_FREE_CSTRING(cmd);
+        TCN_FREE_CSTRING(value);
+        return 1; 
+    }
     SSL_ERR_clear();
     rc = SSL_CONF_cmd(c->cctx, J2S(cmd), buf != NULL ? buf : J2S(value));
     ec = SSL_ERR_get();

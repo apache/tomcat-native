@@ -318,6 +318,7 @@ struct tcn_ssl_ctxt_t {
     unsigned int    alpn_proto_len;
     int             alpn_selector_failure_behavior;
     /* End add from netty-tcnative */
+    int             no_ocsp_check;
 };
 
 #ifdef HAVE_SSL_CONF_CMD
@@ -326,6 +327,7 @@ typedef struct tcn_ssl_conf_ctxt_t tcn_ssl_conf_ctxt_t;
 struct tcn_ssl_conf_ctxt_t {
     apr_pool_t      *pool;
     SSL_CONF_CTX    *cctx;
+    int     no_ocsp_check;
 };
 #endif
 
