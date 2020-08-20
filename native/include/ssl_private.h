@@ -397,7 +397,7 @@ int         SSL_callback_alpn_select_proto(SSL *, const unsigned char **, unsign
 void        SSL_callback_add_keylog(SSL_CTX *);
 #endif
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) && ! (defined(WIN32) || defined(WIN64))
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)) && ! (defined(WIN32) || defined(WIN64))
 unsigned long SSL_ERR_get(void);
 void SSL_ERR_clear(void);
 #else

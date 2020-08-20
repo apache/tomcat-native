@@ -46,7 +46,7 @@ static void ssl_keylog_callback(const SSL *ssl, const char *line)
 static jclass byteArrayClass;
 static jclass stringClass;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 /* Global reference to the pool used by the dynamic mutexes */
 static apr_pool_t *dynlockpool = NULL;
 
@@ -349,7 +349,7 @@ static apr_status_t ssl_init_cleanup(void *data)
         return APR_SUCCESS;
     ssl_initialized = 0;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L && ! (defined(WIN32) || defined(WIN64))
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)) && ! (defined(WIN32) || defined(WIN64))
     if (threadkey_initialized) {
         threadkey_initialized = 0;
         apr_threadkey_private_delete(thread_exit_key);
@@ -435,7 +435,7 @@ static ENGINE *ssl_try_load_engine(const char *engine)
  * To ensure thread-safetyness in OpenSSL
  */
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 static apr_thread_mutex_t **ssl_lock_cs;
 static int                  ssl_lock_num_locks;
 
@@ -460,7 +460,7 @@ static unsigned long ssl_thread_id(void)
     return (unsigned long)tcn_get_thread_id();
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #if ! (defined(WIN32) || defined(WIN64))
 void SSL_thread_exit(void) {
     ERR_remove_thread_state(NULL);
@@ -1310,7 +1310,7 @@ static apr_status_t ssl_con_pool_cleanup(void *data)
     int *destroyCount;
 
     TCN_ASSERT(ssl != 0);
-    
+
     destroyCount = SSL_get_app_data4(ssl);
     if (destroyCount != NULL) {
         ++(*destroyCount);
@@ -1332,7 +1332,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     UNREFERENCED_STDARGS;
 
     TCN_ASSERT(ctx != 0);
-    
+
     ssl = SSL_new(c->ctx);
     if (ssl == NULL) {
         free(handshakeCount);
@@ -1340,7 +1340,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
         tcn_ThrowException(e, "cannot create new ssl");
         return 0;
     }
-    
+
     apr_pool_create(&p, c->pool);
     if (p == NULL) {
         free(handshakeCount);
@@ -1349,7 +1349,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
         tcn_ThrowAPRException(e, apr_get_os_error());
         return 0;
     }
-    
+
     if ((con = apr_pcalloc(p, sizeof(tcn_ssl_conn_t))) == NULL) {
         free(handshakeCount);
         free(destroyCount);
@@ -1391,7 +1391,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     apr_pool_cleanup_register(con->pool, (const void *)ssl,
                               ssl_con_pool_cleanup,
                               apr_pool_cleanup_null);
-    
+
     return P2J(ssl);
 }
 

@@ -61,6 +61,9 @@
       if OCSP is enabled, a missing responder is now treated as an error.
       (jfclere)
     </add>
+    <fix>
+      <bug>64429</bug>: Fix compilation with LibreSSL. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.24">
