@@ -1,6 +1,9 @@
 .classpath
 .project
 
+/build
+/dist
+
 /.settings/
 /native/.libs/
 /native/.make.dirs
