@@ -35,6 +35,11 @@
   </p>
 </section>
 <section name="Changes in 1.2.26">
+  <changelog>
+    <fix>
+      Enable building to continue against OpenSSL 3.x and 1.1.1. (markt)
+    </fix>
+  </changelog>
 </section>
 <section name="Changes in 1.2.25">
   <changelog>
