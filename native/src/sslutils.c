@@ -995,7 +995,7 @@ static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, X509 *cert, X509 *issuer,
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
     if (OCSP_parse_url(url,&hostname, &c_port, &path, &use_ssl) == 0 )
 #else
-    if (OCSP_parse_url(url,&hostname, &c_port, NULL, &path, &use_ssl) == 0 )
+    if (OCSP_HTTP_parse_url(url,&hostname, &c_port, NULL, &path, &use_ssl) == 0 )
 #endif
         goto end;
 
