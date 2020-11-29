@@ -71,6 +71,26 @@ void sp_network_dump_statistics()
 
 #endif /* TCN_DO_STATISTICS */
 
+static apr_status_t sp_socket_remove(void *data)
+{
+#ifdef APR_UNIX
+    tcn_socket_t *s = (tcn_socket_t *)data;
+
+    if (s->sock) {
+        apr_sockaddr_t *sa = NULL;
+        apr_socket_addr_get(&sa, APR_LOCAL, s->sock);
+        if (sa && sa->family == APR_UNIX) {
+            char *path = NULL;
+            apr_getnameinfo(&path, sa, 0);
+            if (path) {
+                apr_file_remove(path, s->pool);
+            }
+        }
+    }
+#endif
+    return APR_SUCCESS;
+}
+
 extern apr_pool_t *tcn_global_pool;
 static apr_status_t sp_socket_cleanup(void *data)
 {
@@ -80,17 +100,6 @@ static apr_status_t sp_socket_cleanup(void *data)
         (*s->net->cleanup)(s->opaque);
     if (s->sock) {
         apr_socket_t *as = s->sock;
-#ifdef APR_UNIX
-        apr_sockaddr_t *sa = NULL;
-        apr_socket_addr_get(&sa, APR_LOCAL, as);
-        if (sa && sa->family == APR_UNIX) {
-            char *sock;
-            apr_getnameinfo(&sock, sa, 0);
-            if (sock) {
-                apr_file_remove(sock, s->pool);
-            }
-        }
-#endif
         s->sock = NULL;
         apr_socket_close(as);
     }
@@ -328,6 +337,11 @@ TCN_IMPLEMENT_CALL(jint, Socket, bind)(TCN_STDARGS, jlong sock,
     TCN_ASSERT(sock != 0);
     TCN_ASSERT(s->sock != NULL);
     rv = (jint)apr_socket_bind(s->sock, a);
+
+    apr_pool_cleanup_register(s->pool, (const void *)s,
+                              sp_socket_remove,
+                              apr_pool_cleanup_null);
+
     return rv;
 }
 
