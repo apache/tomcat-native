@@ -431,6 +431,11 @@ TCN_IMPLEMENT_CALL(jboolean, Library, has)(TCN_STDARGS, jint what)
             rv = JNI_TRUE;
 #endif
         break;
+        case 22:
+#ifdef APR_UNIX
+            rv = JNI_TRUE;
+#endif
+        break;
     }
     return rv;
 }

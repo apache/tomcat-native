@@ -281,11 +281,20 @@ typedef struct {
 #define APR_INET6 APR_INET
 #endif
 
+#ifdef APR_UNIX
+#define GET_S_FAMILY(T, F)           \
+    if (F == 0) T = APR_UNSPEC;      \
+    else if (F == 1) T = APR_INET;   \
+    else if (F == 2) T = APR_INET6;  \
+    else if (F == 3) T = APR_UNIX;   \
+    else T = F
+#else
 #define GET_S_FAMILY(T, F)           \
     if (F == 0) T = APR_UNSPEC;      \
     else if (F == 1) T = APR_INET;   \
     else if (F == 2) T = APR_INET6;  \
     else T = F
+#endif
 
 #define GET_S_TYPE(T, F)             \
     if (F == 0) T = SOCK_STREAM;     \
