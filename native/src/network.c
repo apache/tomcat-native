@@ -80,6 +80,7 @@ static apr_status_t sp_socket_cleanup(void *data)
         (*s->net->cleanup)(s->opaque);
     if (s->sock) {
         apr_socket_t *as = s->sock;
+#ifdef APR_UNIX
         apr_sockaddr_t *sa = NULL;
         apr_socket_addr_get(&sa, APR_LOCAL, as);
         if (sa && sa->family == APR_UNIX) {
@@ -89,6 +90,7 @@ static apr_status_t sp_socket_cleanup(void *data)
                 apr_file_remove(sock, s->pool);
             }
         }
+#endif
         s->sock = NULL;
         apr_socket_close(as);
     }
