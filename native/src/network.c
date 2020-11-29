@@ -19,6 +19,7 @@
 #ifdef TCN_DO_STATISTICS
 
 #include "apr_atomic.h"
+#include "apr_file_io.h"
 
 static volatile apr_uint32_t sp_created  = 0;
 static volatile apr_uint32_t sp_closed   = 0;
@@ -79,6 +80,15 @@ static apr_status_t sp_socket_cleanup(void *data)
         (*s->net->cleanup)(s->opaque);
     if (s->sock) {
         apr_socket_t *as = s->sock;
+        apr_sockaddr_t *sa = NULL;
+        apr_socket_addr_get(&sa, APR_LOCAL, as);
+        if (sa && sa->family == APR_UNIX) {
+            char *sock;
+            apr_getnameinfo(&sock, sa, 0);
+            if (sock) {
+                apr_file_remove(sock, s->pool);
+            }
+        }
         s->sock = NULL;
         apr_socket_close(as);
     }

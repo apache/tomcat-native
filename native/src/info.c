@@ -198,6 +198,9 @@ static void fill_ainfo(JNIEnv *e, jobject obj, apr_sockaddr_t *info)
     if (info->family == APR_UNSPEC) f = 0;
     else if (info->family == APR_INET) f = 1;
     else if (info->family == APR_INET6) f = 2;
+#ifdef APR_UNIX
+    else if (info->family == APR_UNIX) f = 3;
+#endif
     else f = info->family;
 
     SET_AINFO_J(pool, P2J(info->pool));

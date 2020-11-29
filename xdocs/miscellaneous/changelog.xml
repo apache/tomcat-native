@@ -39,6 +39,9 @@
     <fix>
       Enable building to continue against OpenSSL 3.x and 1.1.1. (markt)
     </fix>
+    <add>
+      Expose support for Unix Domain Sockets in APR v1.6 and up. (minfrin)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.25">
