@@ -52,6 +52,7 @@
     <li>Non-blocking I/O for Keep-Alive requests (between requests)</li>
     <li>Uses OpenSSL for TLS/SSL capabilities (if supported by linked APR library)</li>
     <li>FIPS 140-2 support for TLS/SSL (if supported by linked OpenSSL library)</li>
+    <li>Support for IPv4, IPv6 and Unix Domain Sockets</li>
   </ul>
 
 </section>
@@ -174,6 +175,14 @@ list of changes.
     <p>
       Please see the Apache Tomcat documentation for configuration specifics.
     </p>
+
+    <p>
+      When using unix domain sockets a cleanup is registered to delete the
+      socket on destruction of the socket, or shutdown of the application.
+      Should the application terminate abnormally, the socket deletion will
+      need to be handled by the caller or by the administrator.
+    </p>
+
   </subsection>
 
 <subsection name="UNIX">
