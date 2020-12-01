@@ -177,7 +177,7 @@ list of changes.
     </p>
 
     <p>
-      When using unix domain sockets a cleanup is registered to delete the
+      When using Unix Domain Sockets a cleanup is registered to delete the
       socket on destruction of the socket, or shutdown of the application.
       Should the application terminate abnormally, the socket deletion will
       need to be handled by the caller or by the administrator.
