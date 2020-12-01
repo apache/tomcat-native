@@ -199,7 +199,7 @@ export LD_LIBRARY_PATH</source>
 >Nov 29, 2020 12:27:41 PM org.apache.catalina.core.AprLifecycleListener init
 INFO: Loaded APR based Apache Tomcat Native library 1.x.y.
 Nov 29, 2020 12:27:41 PM org.apache.catalina.core.AprLifecycleListener init
-INFO: APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], uds [true].
+INFO: APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], UDS [true].
 Nov 29, 2020 12:27:41 PM org.apache.coyote.http11.Http11AprProtocol init
 INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
 
@@ -226,7 +226,7 @@ INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
 >Nov 29, 2020 2:48:17 PM org.apache.catalina.core.AprLifecycleListener init
 INFO: Loaded APR based Apache Tomcat Native library 1.x.y.
 Nov 29, 2020 2:48:17 PM org.apache.catalina.core.AprLifecycleListener init
-INFO: APR capabilities: IPv6 [false], sendfile [true], accept filters [false], random [true], uds [false].
+INFO: APR capabilities: IPv6 [false], sendfile [true], accept filters [false], random [true], UDS [false].
 Nov 29, 2020 2:48:18 PM org.apache.coyote.http11.Http11AprProtocol init
 INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
 
