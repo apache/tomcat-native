@@ -42,6 +42,9 @@
     <add>
       <bug>64942</bug>: Expose support for Unix Domain Sockets in APR v1.6 and up. (minfrin)
     </add>
+    <update>
+      Update recommended OpenSSL version to 1.1.1i or later. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.25">

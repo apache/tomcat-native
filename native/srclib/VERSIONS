@@ -5,14 +5,16 @@ The current minimum versions are:
 The following version of the libraries are recommended:
 
 - APR 1.7.0 or later, http://apr.apache.org
-- OpenSSL 1.1.1g or later, http://www.openssl.org
+- OpenSSL 1.1.1i or later, http://www.openssl.org
 
 Older versions should also work but are not as thoroughly tested by the Tomcat
 Native team
 
+
 It is current anticipated that Tomcat Native releases will transition to 1.3.x
 after April 2021 when the minimum version will become OpenSSL 1.1.0 and
 APR 1.5.2.
+
 
 The minimum version of OpenSSL is driven by the version of OpenSSL used by
 downstream distributions.
