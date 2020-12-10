@@ -407,11 +407,7 @@ TCN_IMPLEMENT_CALL(jint, File, writevFull)(TCN_STDARGS, jlong file,
         vec[i].iov_len  = (*e)->GetArrayLength(e, ba[i]);
         vec[i].iov_base = (void *)((*e)->GetByteArrayElements(e, ba[i], NULL));
     }
-#if (APR_VERSION_MAJOR >= 1) && (APR_VERSION_MINOR >= 1)
     ss = apr_file_writev_full(f, vec, nvec, &written);
-#else
-    ss = apr_file_writev(f, vec, nvec, &written);
-#endif
 
     for (i = 0; i < nvec; i++) {
         (*e)->ReleaseByteArrayElements(e, ba[i], (jbyte *)vec[i].iov_base,
