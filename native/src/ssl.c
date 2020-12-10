@@ -385,10 +385,8 @@ static apr_status_t ssl_init_cleanup(void *data)
 #if HAVE_ENGINE_LOAD_BUILTIN_ENGINES
     ENGINE_cleanup();
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x1000200fL
 #ifndef OPENSSL_NO_COMP
     SSL_COMP_free_compression_methods();
-#endif
 #endif
     CRYPTO_cleanup_all_ex_data();
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
