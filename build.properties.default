@@ -36,7 +36,7 @@ compile.debug=off
 compile.deprecation=on
 compile.optimize=on
 
-base-maven.loc=http://repo.maven.apache.org/maven2
+base-maven.loc=https://repo.maven.apache.org/maven2
 
 # ----- JUnit Unit Test Suite, version 4.11 or later -----
 junit.version=4.11
