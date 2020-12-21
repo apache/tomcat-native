@@ -29,9 +29,9 @@
 <body>
 
 <section name="2020 News &amp; Status">
- <subsection anchor="20201218" name="18 Dec 2020 - TC-Native-1.2.26 released">
+ <subsection anchor="20201221" name="21 Dec 2020 - TC-Native-1.2.26 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability of
-  Tomcat Native 1.2.25. This is a bugfix release.
+  Tomcat Native 1.2.26. This is a bugfix release.
   </p>
  </subsection>
  <subsection anchor="20200903" name="3 Sep 2020 - TC-Native-1.2.25 released">
