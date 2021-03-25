@@ -40,6 +40,9 @@
       <bug>65181</bug>: Improve support for using OpenSSL Engines that use
       proprietary key formats. Patch provided by Edin Hodizc. (markt)
     </add>
+    <update>
+      Update recommended OpenSSL version to 1.1.1k or later. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.26">
