@@ -51,6 +51,7 @@
  */
 #ifndef OPENSSL_NO_ENGINE
 #include <openssl/engine.h>
+extern ENGINE *tcn_ssl_engine;
 #endif
 
 #ifndef RAND_MAX
