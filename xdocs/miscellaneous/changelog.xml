@@ -40,7 +40,7 @@
   <changelog>
     <add>
       <bug>65181</bug>: Improve support for using OpenSSL Engines that use
-      proprietary key formats. Patch provided by Edin Hodizc. (markt)
+      proprietary key formats. Patch provided by Edin Hodzic. (markt)
     </add>
     <update>
       Update recommended OpenSSL version to 1.1.1k or later. (markt)
