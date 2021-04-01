@@ -35,6 +35,13 @@
   </p>
 </section>
 <section name="Changes in 1.2.28">
+  <changelog>
+    <fix>
+      Correct a regression in the fix for <bug>65181</bug> that prevented an
+      error message from being displayed if an invalid key file was provided
+      and no OpenSSL Engine was configured. (markt)
+    </fix>
+  </changelog>
 </section>
 <section name="Changes in 1.2.27">
   <changelog>

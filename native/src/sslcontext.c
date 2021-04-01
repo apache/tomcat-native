@@ -1036,9 +1036,9 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     else {
         if ((c->keys[idx] = load_pem_key(c, key_file)) == NULL
 #ifndef OPENSSL_NO_ENGINE
-                && tcn_ssl_engine != NULL &&
+                && (tcn_ssl_engine == NULL ||
                 (c->keys[idx] = ENGINE_load_private_key(tcn_ssl_engine, key_file,
-                                                        NULL, NULL)) == NULL
+                                                        NULL, NULL)) == NULL)
 #endif
                 ) {
             ERR_error_string(SSL_ERR_get(), err);
