@@ -35,6 +35,11 @@
   </p>
 </section>
 <section name="Changes in 1.2.29">
+  <changelog>
+    <update>
+      Simplify <code>Address.getInfo()<code> native implementation. (michaelo)
+    </update>
+  </changelog>
 </section>
 <section name="Changes in 1.2.28">
   <changelog>
