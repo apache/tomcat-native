@@ -85,7 +85,7 @@ if [ "x$JKJNIEXT" = "x" ]; then
     echo ""
     echo "Unknown Git tag/branch"
     echo "Use:"
-    echo "  --ver=<tag>|1.1.x|master|."
+    echo "  --ver=<tag>|1.1.x|main|."
     echo ""
     exit 1
 fi
@@ -133,8 +133,8 @@ else
     exit 1
 fi
 
-if [ "x$JKJNIEXT" = "xmaster" ]; then
-    JKJNIHASH=`git ls-remote $GITBASE refs/heads/master | awk '{print $1}'`
+if [ "x$JKJNIEXT" = "xmain" ]; then
+    JKJNIHASH=`git ls-remote $GITBASE refs/heads/main | awk '{print $1}'`
     JKJNIVER="$JKJNIEXT-$JKJNIHASH"
 elif [ "x$JKJNIEXT" = "x1.1.x" ]; then
     JKJNIHASH=`git ls-remote $GITBASE refs/heads/1.1.x | awk '{print $1}'`
@@ -166,14 +166,14 @@ if [ ! -d .git/refs/remotes/10.0.x ]; then
     git remote add -f 10.0.x ${TCJAVA_GITBASE}
 fi
 git remote update 10.0.x
-diffcount=`git diff HEAD remotes/10.0.x/master java/org/apache/tomcat/jni | wc -l`
+diffcount=`git diff HEAD remotes/10.0.x/main java/org/apache/tomcat/jni | wc -l`
 
 if [ $diffcount -ne 0 ]; then
     echo "WARNING: git subtree is not up to date with"
     echo "         $TCJAVA_GITBASE"
     echo "         Either correct now by running"
     echo "         'git rm -rf java/org/apache/tomcat/jni'"
-    echo "         'git read-tree --prefix=java/org/apache/tomcat/jni/ -u 10.0.x/master:java/org/apache/tomcat/jni'"
+    echo "         'git read-tree --prefix=java/org/apache/tomcat/jni/ -u 10.0.x/main:java/org/apache/tomcat/jni'"
     echo "         'git commit'"
     echo "         or run this script with -f (force)"
     if [ "X$JKJNIFORCE" = "X1" ]
