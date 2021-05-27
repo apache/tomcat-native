@@ -1,19 +1,3 @@
-Index: apr/apr/branches/1.7.x/CHANGES
-===================================================================
---- apr/apr/branches/1.7.x/CHANGES	(revision 1890229)
-+++ apr/apr/branches/1.7.x/CHANGES	(revision 1890230)
-@@ -47,6 +47,11 @@
-      events are emitted on pool clear/destroy for proper accounting.
-      [Brane Čibej]
- 
-+  *) apr_socket_listen: Allow larger listen backlog values on Windows 8+.
-+     [Evgeny Kotkov <evgeny.kotkov visualsvn.com>]
-+
-+  *) Fixed: apr_get_oslevel() was returning APR_WIN_XP on Windows 10
-+
- Changes for APR 1.7.0
- 
-   *) apr_dir_read: [Unix] Dropped the preference of the dirread_r() flavor
 Index: apr/apr/branches/1.7.x/include/arch/win32/apr_arch_misc.h
 ===================================================================
 --- apr/apr/branches/1.7.x/include/arch/win32/apr_arch_misc.h	(revision 1890229)
