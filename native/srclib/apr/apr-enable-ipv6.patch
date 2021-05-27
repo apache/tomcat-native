@@ -1,5 +1,5 @@
---- include/apr.hw
-+++ include/apr.hw
+--- /include/apr.hw
++++ /include/apr.hw
 @@ -367,7 +367,7 @@
  /* If we have a TCP implementation that can be "corked", what flag
   * do we use?
