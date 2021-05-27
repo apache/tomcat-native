@@ -35,6 +35,14 @@
   </p>
 </section>
 <section name="Changes in 1.2.29">
+  <changelog>
+    <fix>
+      Add a patch for APR that fixes an issue where some Windows systems in some
+      configurations would only listen on IPv6 addresses on dual stack systems
+      even though configured to listen on both IPv6 and IPv4 addresses.
+      (michaelo)
+    </fix>
+  </changelog>
 </section>
 <section name="Changes in 1.2.28">
   <changelog>
