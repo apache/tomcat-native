@@ -1,0 +1,141 @@
+Index: apr/apr/branches/1.7.x/CHANGES
+===================================================================
+--- apr/apr/branches/1.7.x/CHANGES	(revision 1890229)
++++ apr/apr/branches/1.7.x/CHANGES	(revision 1890230)
+@@ -47,6 +47,11 @@
+      events are emitted on pool clear/destroy for proper accounting.
+      [Brane Čibej]
+ 
++  *) apr_socket_listen: Allow larger listen backlog values on Windows 8+.
++     [Evgeny Kotkov <evgeny.kotkov visualsvn.com>]
++
++  *) Fixed: apr_get_oslevel() was returning APR_WIN_XP on Windows 10
++
+ Changes for APR 1.7.0
+ 
+   *) apr_dir_read: [Unix] Dropped the preference of the dirread_r() flavor
+Index: apr/apr/branches/1.7.x/include/arch/win32/apr_arch_misc.h
+===================================================================
+--- apr/apr/branches/1.7.x/include/arch/win32/apr_arch_misc.h	(revision 1890229)
++++ apr/apr/branches/1.7.x/include/arch/win32/apr_arch_misc.h	(revision 1890230)
+@@ -110,7 +110,11 @@
+     APR_WIN_XP_SP2 =   62,
+     APR_WIN_2003 =     70,
+     APR_WIN_VISTA =    80,
+-    APR_WIN_7 =        90
++    APR_WIN_7 =        90,
++    APR_WIN_7_SP1 =    91,
++    APR_WIN_8  =       100,
++    APR_WIN_8_1 =      110,
++    APR_WIN_10 =       120
+ } apr_oslevel_e;
+ 
+ extern APR_DECLARE_DATA apr_oslevel_e apr_os_level;
+Index: apr/apr/branches/1.7.x/misc/win32/misc.c
+===================================================================
+--- apr/apr/branches/1.7.x/misc/win32/misc.c	(revision 1890229)
++++ apr/apr/branches/1.7.x/misc/win32/misc.c	(revision 1890230)
+@@ -27,25 +27,15 @@
+ {
+     if (apr_os_level == APR_WIN_UNK) 
+     {
+-        static OSVERSIONINFO oslev;
+-        oslev.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+-        GetVersionEx(&oslev);
++        OSVERSIONINFOEXW oslev;
++        oslev.dwOSVersionInfoSize = sizeof(oslev);
++        if (!GetVersionExW((OSVERSIONINFOW*) &oslev)) {
++            return apr_get_os_error();
++        }
+ 
+         if (oslev.dwPlatformId == VER_PLATFORM_WIN32_NT) 
+         {
+-            static unsigned int servpack = 0;
+-            TCHAR *pservpack;
+-            if ((pservpack = oslev.szCSDVersion)) {
+-                while (*pservpack && !apr_isdigit(*pservpack)) {
+-                    pservpack++;
+-                }
+-                if (*pservpack)
+-#ifdef _UNICODE
+-                    servpack = _wtoi(pservpack);
+-#else
+-                    servpack = atoi(pservpack);
+-#endif
+-            }
++            unsigned int servpack = oslev.wServicePackMajor;
+ 
+             if (oslev.dwMajorVersion < 3) {
+                 apr_os_level = APR_WIN_UNSUP;
+@@ -99,11 +89,19 @@
+             else if (oslev.dwMajorVersion == 6) {
+                 if (oslev.dwMinorVersion == 0)
+                     apr_os_level = APR_WIN_VISTA;
++                else if (oslev.dwMinorVersion == 1) {
++                    if (servpack < 1)
++                        apr_os_level = APR_WIN_7;
++                    else
++                        apr_os_level = APR_WIN_7_SP1;
++                }
++                else if (oslev.dwMinorVersion == 2)
++                    apr_os_level = APR_WIN_8;
+                 else
+-                    apr_os_level = APR_WIN_7;
++                    apr_os_level = APR_WIN_8_1;
+             }
+             else {
+-                apr_os_level = APR_WIN_XP;
++                apr_os_level = APR_WIN_10;
+             }
+         }
+ #ifndef WINNT
+@@ -151,7 +149,7 @@
+ 
+     *level = apr_os_level;
+ 
+-    if (apr_os_level < APR_WIN_UNSUP) {
++    if (apr_os_level <= APR_WIN_UNSUP) {
+         return APR_EGENERAL;
+     }
+ 
+Index: apr/apr/branches/1.7.x/network_io/win32/sockets.c
+===================================================================
+--- apr/apr/branches/1.7.x/network_io/win32/sockets.c	(revision 1890229)
++++ apr/apr/branches/1.7.x/network_io/win32/sockets.c	(revision 1890230)
+@@ -24,6 +24,13 @@
+ #include "apr_arch_inherit.h"
+ #include "apr_arch_misc.h"
+ 
++/* Borrow the definition of SOMAXCONN_HINT() from Windows SDK 8,
++ * in case the SDK we are building against doesn't have it.
++ */
++#ifndef SOMAXCONN_HINT
++#define SOMAXCONN_HINT(b) (-(b))
++#endif
++
+ static char generic_inaddr_any[16] = {0}; /* big enough for IPv4 or IPv6 */
+ 
+ static apr_status_t socket_cleanup(void *sock)
+@@ -223,7 +230,21 @@
+ APR_DECLARE(apr_status_t) apr_socket_listen(apr_socket_t *sock,
+                                             apr_int32_t backlog)
+ {
+-    if (listen(sock->socketdes, backlog) == SOCKET_ERROR)
++    int backlog_val;
++
++    if (apr_os_level >= APR_WIN_8) {
++        /* Starting from Windows 8, listen() accepts a special SOMAXCONN_HINT()
++         * arg that allows setting the listen backlog value to a larger
++         * value than the predefined Winsock 2 limit (several hundred).
++         * https://blogs.msdn.microsoft.com/winsdk/2015/06/01/winsocks-listen-backlog-offers-more-flexibility-in-windows-8/
++         */
++        backlog_val = SOMAXCONN_HINT(backlog);
++    }
++    else {
++        backlog_val = backlog;
++    }
++
++    if (listen(sock->socketdes, backlog_val) == SOCKET_ERROR)
+         return apr_get_netos_error();
+     else
+         return APR_SUCCESS;
