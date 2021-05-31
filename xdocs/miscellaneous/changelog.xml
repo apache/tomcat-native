@@ -36,7 +36,7 @@
 </section>
 <section name="Changes in 1.2.30">
 </section>
-<section name="Changes in 1.2.29">
+<section name="Changes in 1.2.29 (not released)">
   <changelog>
     <fix>
       Add a patch for APR that fixes an issue where some Windows systems in some
