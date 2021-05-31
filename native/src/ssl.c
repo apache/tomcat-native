@@ -367,6 +367,14 @@ static apr_status_t ssl_init_cleanup(void *data)
 #endif
     free_dh_params();
 
+#ifndef OPENSSL_NO_ENGINE
+    if (tcn_ssl_engine != NULL) {
+        /* Release the SSL Engine structural reference */
+        ENGINE_free(tcn_ssl_engine);
+        tcn_ssl_engine = NULL;
+    }
+#endif
+
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
     /* Openssl v1.1+ handles all termination automatically. Do
      * nothing in this case.
@@ -815,9 +823,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
                 if (!ENGINE_set_default(ee, ENGINE_METHOD_ALL))
                     err = APR_ENOTIMPL;
             }
-            /* Free our "structural" reference. */
-            if (ee)
-                ENGINE_free(ee);
         }
         if (err != APR_SUCCESS) {
             TCN_FREE_CSTRING(engine);

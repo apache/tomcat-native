@@ -35,6 +35,11 @@
   </p>
 </section>
 <section name="Changes in 1.2.30">
+    <add>
+      <bug>65181</bug>: Additional changes required to provided support for
+      using OpenSSL Engines that use proprietary key formats. Based on a patch
+      provided by Edin Hodzic. (markt)
+    </add>
 </section>
 <section name="Changes in 1.2.29 (not released)">
   <changelog>
