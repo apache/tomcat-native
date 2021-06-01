@@ -40,6 +40,13 @@
       using OpenSSL Engines that use proprietary key formats. Based on a patch
       provided by Edin Hodzic. (markt)
     </add>
+    <fix>
+      <bug>65329</bug>: Correct handling of <code>WINVER</code> in make file to
+      use correct constant for Windows 7. Add constants for Windows 8,
+      Windows 8.1 and Windows 10. Rename <code>WINNT</code> to
+      <code>WIN2k</code> as it is used for Windows 2000 upwards, not Windows NT
+      upwards. (markt)
+    </fix>
 </section>
 <section name="Changes in 1.2.29 (not released)">
   <changelog>

@@ -30,12 +30,15 @@
 #                           PROCESSOR_ARCHITECTURE environment variable
 #                           or to the X86 if not specified.
 #                 WINVER    Compile for specified Windows version
+#                           WIN10   for Windows 10 and up
+#                           WIN81   for Windows 8.1 and up
+#                           WIN8    for Windows 8 and up
 #                           WIN7    for Windows 7 and up (default)
 #                           Deprecated targets (may not even compile):
+#                               VISTA   for Windows Vista / Server 2008 and up
 #                               WIN2003 for Windows 2003 and up
-#                               VISTA   for Windows Vista and up
 #                               WINXP   for Windows XP and up
-#                               WINNT   for Windows 2000 and up
+#                               WIN2K   for Windows 2000 and up
 #                 BUILD     Build version
 #                           RETAIL or RELEASE (default)
 #                           DEBUG
@@ -143,19 +146,7 @@ WINVER=WIN7
 !ENDIF
 
 
-!IF "$(WINVER)" != "WINNT"
-!IF "$(WINVER)" != "WINXP"
-!IF "$(WINVER)" != "WIN2003"
-!IF "$(WINVER)" != "VISTA"
-!IF "$(WINVER)" != "WIN7"
-!ERROR Must specify WINVER environment variable (WINNT, WINXP, WIN2003, VISTA, WIN7)
-!ENDIF
-!ENDIF
-!ENDIF
-!ENDIF
-!ENDIF
-
-!IF "$(WINVER)" == "WINNT"
+!IF "$(WINVER)" == "WIN2K"
 NMAKE_WINVER = 0x0500
 _WIN32_IE = 0x0500
 !ELSEIF "$(WINVER)" == "WINXP"
@@ -168,10 +159,19 @@ _WIN32_IE = 0x0600
 NMAKE_WINVER = 0x0600
 _WIN32_IE = 0x0700
 !ELSEIF "$(WINVER)" == "WIN7"
-NMAKE_WINVER = 0x0700
+NMAKE_WINVER = 0x0601
 _WIN32_IE = 0x0800
+!ELSEIF "$(WINVER)" == "WIN8"
+NMAKE_WINVER = 0x0602
+_WIN32_IE = 0x0A00
+!ELSEIF "$(WINVER)" == "WIN81"
+NMAKE_WINVER = 0x0603
+_WIN32_IE = 0x0A00
+!ELSEIF "$(WINVER)" == "WIN10"
+NMAKE_WINVER = 0x0A00
+_WIN32_IE = 0x0A00
 !ELSE
-!ERROR Must specify WINVER environment variable (WINNT, WINXP, WIN2003, VISTA, WIN7)
+!ERROR Must specify WINVER environment variable (WIN2K, WINXP, WIN2003, VISTA, WIN7, WIN8, WIN81, WIN10)
 !ENDIF
 
 NMAKE_WINNT = -DWINNT -D_WINNT -D_WIN32_WINNT=$(NMAKE_WINVER) -DWINVER=$(NMAKE_WINVER) -D_WIN32_IE=$(_WIN32_IE) -DPSAPI_VERSION=1
