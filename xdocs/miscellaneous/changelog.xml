@@ -35,6 +35,7 @@
   </p>
 </section>
 <section name="Changes in 1.2.30">
+  <changelog>
     <add>
       <bug>65181</bug>: Additional changes required to provided support for
       using OpenSSL Engines that use proprietary key formats. Based on a patch
@@ -47,6 +48,7 @@
       <code>WIN2k</code> as it is used for Windows 2000 upwards, not Windows NT
       upwards. (markt)
     </fix>
+  </changelog>
 </section>
 <section name="Changes in 1.2.29 (not released)">
   <changelog>
