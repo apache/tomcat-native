@@ -36,6 +36,10 @@
 </section>
 <section name="Changes in 1.2.31">
   <changelog>
+    <fix>
+      <bug>65441</bug>: Correct previous fix that enabled building to continue
+      with OpenSSL 3.x. Patch provided by lzsiga. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.30">
