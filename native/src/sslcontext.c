@@ -130,6 +130,104 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
     return SSL_TLSEXT_ERR_OK;
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+/*
+ * This callback function is called when the ClientHello is received.
+ */
+int ssl_callback_ClientHello(SSL *ssl, int *al, void *arg)
+{
+    JavaVM *javavm = tcn_get_java_vm();
+    JNIEnv *env;
+    char *servername = NULL;
+    const unsigned char *pos;
+    size_t len, remaining;
+    tcn_ssl_ctxt_t *c = (tcn_ssl_ctxt_t *) arg;
+ 
+    (*javavm)->AttachCurrentThread(javavm, (void **)&env, NULL);
+    // Continue only if the static method exists
+    if (sni_java_callback == NULL) {
+        return SSL_CLIENT_HELLO_SUCCESS;
+    }
+
+    /* We can't use SSL_get_servername() at this earliest OpenSSL connection
+     * stage, and there is no SSL_client_hello_get0_servername() provided as
+     * of OpenSSL 1.1.1. So the code below, that extracts the SNI from the
+     * ClientHello's TLS extensions, is taken from some test code in OpenSSL,
+     * i.e. client_hello_select_server_ctx() in "test/handshake_helper.c".
+     */
+
+    /*
+     * The server_name extension was given too much extensibility when it
+     * was written, so parsing the normal case is a bit complex.
+     */
+    if (!SSL_client_hello_get0_ext(ssl, TLSEXT_TYPE_server_name, &pos,
+                                   &remaining)
+            || remaining <= 2) 
+        goto give_up;
+
+    /* Extract the length of the supplied list of names. */
+    len = (*(pos++) << 8);
+    len += *(pos++);
+    if (len + 2 != remaining)
+        goto give_up;
+    remaining = len;
+
+    /*
+     * The list in practice only has a single element, so we only consider
+     * the first one.
+     */
+    if (remaining <= 3 || *pos++ != TLSEXT_NAMETYPE_host_name)
+        goto give_up;
+    remaining--;
+
+    /* Now we can finally pull out the byte array with the actual hostname. */
+    len = (*(pos++) << 8);
+    len += *(pos++);
+    if (len + 2 != remaining)
+        goto give_up;
+
+    /* Use the SNI to switch to the relevant vhost, should it differ from
+     * c->base_server.
+     */
+    servername = apr_pstrmemdup(c->pool, (const char *)pos, len);
+
+give_up:
+    if (servername != NULL) {
+        jstring hostname;
+        jlong original_ssl_context, new_ssl_context;
+        tcn_ssl_ctxt_t *new_c;
+
+        hostname = (*env)->NewStringUTF(env, servername);
+        original_ssl_context = P2J(c);
+        new_ssl_context = (*env)->CallStaticLongMethod(env,
+                                                   ssl_context_class,
+                                                   sni_java_callback,
+                                                   original_ssl_context,
+                                                   hostname);
+        (*env)->DeleteLocalRef(env, hostname);
+        if (new_ssl_context != 0 && new_ssl_context != original_ssl_context) {
+            SSL_CTX *ctx;
+            new_c = J2P(new_ssl_context, tcn_ssl_ctxt_t *);
+            ctx = SSL_set_SSL_CTX(ssl, new_c->ctx);
+
+            /* Copied from httpd (modules/ssl/ssl_engine_kernel.c) */
+            SSL_set_options(ssl, SSL_CTX_get_options(ctx));
+            SSL_set_min_proto_version(ssl, SSL_CTX_get_min_proto_version(ctx));
+            SSL_set_max_proto_version(ssl, SSL_CTX_get_max_proto_version(ctx));
+            if ((SSL_get_verify_mode(ssl) == SSL_VERIFY_NONE) ||
+                (SSL_num_renegotiations(ssl) == 0)) {
+                SSL_set_verify(ssl, SSL_CTX_get_verify_mode(ctx), SSL_CTX_get_verify_callback(ctx));
+            }
+            if (SSL_num_renegotiations(ssl) == 0) {
+                SSL_set_session_id_context(ssl,  &(c->context_id[0]), sizeof c->context_id);
+            }
+        }
+ 
+    }
+    return SSL_CLIENT_HELLO_SUCCESS;
+}
+#endif /* OPENSSL_VERSION_NUMBER < 0x10101000L */
+
 /* Initialize server context */
 TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
                                             jint protocol, jint mode)
@@ -367,6 +465,16 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     /* Set up OpenSSL call back if SNI is provided by the client */
     SSL_CTX_set_tlsext_servername_callback(c->ctx, ssl_callback_ServerNameIndication);
     SSL_CTX_set_tlsext_servername_arg(c->ctx, c);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+    /*
+     * The ClientHello callback also allows to retrieve the SNI, but since it
+     * runs at the earliest possible connection stage we can even set the TLS
+     * protocol version(s) according to the selected (name-based-)vhost, which
+     * is not possible at the SNI callback stage (due to OpenSSL internals).
+     */
+    SSL_CTX_set_client_hello_cb(c->ctx, ssl_callback_ClientHello, c);
+#endif
 
     /*
      * Let us cleanup the ssl context when the pool is destroyed
