@@ -86,7 +86,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %{_libdir}/libtcnative-%{tcnver}.*a
 %{_libdir}/libtcnative-%{tcnver}.so
-%{_libdir}/pkgconfig/tcnative-%{tcnver}.pc
 %{_includedir}/%{name}/*.h
 %doc --parents html
 
