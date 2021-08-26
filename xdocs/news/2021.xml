@@ -29,6 +29,11 @@
 <body>
 
 <section name="2021 News &amp; Status">
+ <subsection anchor="20210831" name="31 Aug 2021 - TC-Native-1.2.31 released">
+  <p>The Apache Tomcat team is proud to announce the immediate availability of
+  Tomcat Native 1.2.31. This is a bugfix release.
+  </p>
+ </subsection>
  <subsection anchor="20210604" name="4 Jun 2021 - TC-Native-1.2.30 released">
   <p>The Apache Tomcat team is proud to announce the immediate availability of
   Tomcat Native 1.2.30. This is a bugfix release.
