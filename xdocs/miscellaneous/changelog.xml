@@ -40,6 +40,10 @@
       <bug>65441</bug>: Correct previous fix that enabled building to continue
       with OpenSSL 3.x. Patch provided by lzsiga. (markt)
     </fix>
+    <fix>
+      <bug>65659</bug>: Remove remaining reference to <code>pkg-config</code>
+      which is no longer included in the Tomcat Native distribution. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.30">
