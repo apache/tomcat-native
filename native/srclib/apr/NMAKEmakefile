@@ -15,7 +15,7 @@
 #
 # ====================================================================
 #
-# NMAKEmakefile   Master APR makefile.
+# NMAKEmakefile   APR makefile.
 # Usage:
 #                 DLL=1     Build DLL version
 #                 DEBUG=1   Build DEBUG version of APR

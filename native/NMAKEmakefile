@@ -15,7 +15,7 @@
 #
 # ====================================================================
 #
-# NMAKEmakefile   Master Tomcat Native makefile.
+# NMAKEmakefile   Tomcat Native makefile.
 # Usage:
 #                 APR_DECLARE_STATIC=1  Use static version of the APR
 #                 ENABLE_OCSP=1  	    Enable OpenSSL OCSP code

@@ -18,7 +18,7 @@
 #
 # ====================================================================
 #
-# Makefile.inc Master makefile definitions.
+# Makefile.inc Tomcat Native makefile definitions.
 #                 This file defines CPU architecture and basic compiler
 #                 and linker parameters.
 # Common params:
