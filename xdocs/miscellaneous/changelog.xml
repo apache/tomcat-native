@@ -39,6 +39,9 @@
     <update>
       Update recommended OpenSSL version to 1.1.1n or later. (markt)
     </update>
+    <fix>
+      Fix release script so it works with the current git layout. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.31">

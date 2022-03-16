@@ -162,11 +162,11 @@ else
     git checkout ${JKJNIHASH}
 fi
 
-if [ ! -d .git/refs/remotes/10.0.x ]; then
-    git remote add -f 10.0.x ${TCJAVA_GITBASE}
+if [ ! -d .git/refs/remotes/tcjava ]; then
+    git remote add -f tcjava ${TCJAVA_GITBASE}
 fi
-git remote update 10.0.x
-diffcount=`git diff HEAD remotes/10.0.x/main java/org/apache/tomcat/jni | wc -l`
+git remote update tcjava
+diffcount=`git diff HEAD remotes/tcjava/10.0.x java/org/apache/tomcat/jni | wc -l`
 
 if [ $diffcount -ne 0 ]; then
     echo "WARNING: git subtree is not up to date with"
