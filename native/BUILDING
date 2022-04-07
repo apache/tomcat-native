@@ -50,7 +50,7 @@ Linux / Unix / OSX (static linking)
 
 1. Build static version of OpenSSL 1.0.2 or later
 
-   > ./config --prefix=~/natives/openssl no-shared -fPIC
+   > ./configure --prefix=~/natives/openssl no-shared -fPIC
    > make
    > make install_sw
 
