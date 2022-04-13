@@ -142,7 +142,7 @@
       Remove default option passed for rpath to linker on HP-UX. (michaelo)
     </remove>
     <add>
-      Add an option to allow the OCSP responder check to by bypassed. Note that
+      Add an option to allow the OCSP responder check to be bypassed. Note that
       if OCSP is enabled, a missing responder is now treated as an error.
       (jfclere)
     </add>
