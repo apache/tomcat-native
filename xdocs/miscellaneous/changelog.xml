@@ -44,6 +44,9 @@
       Enable <code>download_deps.sh</code> to be called from any directory. Pull
       request <pr>12</pr> provided by Dimitrios Soumis. (markt)
     </fix>
+    <update>
+      Update recommended OpenSSL version to 1.1.1o or later. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.32">
