@@ -2001,6 +2001,10 @@ TCN_IMPLEMENT_CALL(jbyteArray, SSL, getSessionId)(TCN_STDARGS, jlong ssl)
     }
     UNREFERENCED(o);
     session = SSL_get_session(ssl_);
+    if (NULL == session) {
+        return NULL;
+    }
+
     session_id = SSL_SESSION_get_id(session, &len);
 
     if (len == 0 || session_id == NULL) {

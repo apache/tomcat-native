@@ -36,6 +36,10 @@
 </section>
 <section name="Changes in 1.2.33">
   <changelog>
+    <fix>
+      <bug>66035</bug>: Fix crash when attempting to read TLS session ID after a
+      handshake failure. (schultz/markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.32">
