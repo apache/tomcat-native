@@ -21,7 +21,7 @@ Linux / Unix / OSX (dynamic linking)
 1. Prerequisites
 
    Install OpenSSL version 1.0.2 or higher
-   Install APR version 1.4.0 or higher.
+   Install APR version 1.4.3 or higher.
    Download and expand the source package or use an git checkout
 
    > cd native
