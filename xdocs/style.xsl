@@ -37,6 +37,7 @@
   <xsl:param    name="apache-logo"      select="'/images/asf-feather.png'"/>
   <xsl:param    name="relative-path"    select="'.'"/>
   <xsl:param    name="buglink"          select="'https://bz.apache.org/bugzilla/show_bug.cgi?id='"/>
+  <xsl:param    name="prlink"           select="'https://github.com/apache/tomcat-native/pull/'"/>
 
   <!-- Defined variables (non-overrideable) -->
 
@@ -333,6 +334,12 @@
   <xsl:template match="bug">
       <xsl:variable name="link"><xsl:value-of select="$buglink"/><xsl:value-of select="text()"/></xsl:variable>
       <a href="{$link}"><xsl:apply-templates/></a>
+  </xsl:template>
+
+  <!-- Link to a pull request -->
+  <xsl:template match="pr">
+    <xsl:variable name="link"><xsl:value-of select="$prlink"/><xsl:value-of select="text()"/></xsl:variable>
+    <a href="{$link}">#<xsl:apply-templates/></a>
   </xsl:template>
 
 
