@@ -52,6 +52,11 @@
       Add support for using OpenSSL when the FIPS provider is configured as the
       default provider. (markt)
     </add>
+    <design>
+      Remove all API methods (and supporting code) that are not used by Tomcat
+      10.1.x to support the use of OpenSSL as a replacement for JSSE to provide
+      TLS functionality. (markt)
+    </design>
   </changelog>
 </section>
 <section name="Changes in 1.2.x">

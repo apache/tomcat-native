@@ -88,35 +88,14 @@ CFLAGS = $(CFLAGS) -DZLIB_WINAPI -DNO_IDEA -DNO_RC5 -DNO_MDC2 -DOPENSSL_NO_IDEA 
 
 PDBFLAGS = -Fo$(WORKDIR)\ -Fd$(WORKDIR)\$(PROJECT)-src
 OBJECTS = \
-	$(WORKDIR)\address.obj \
 	$(WORKDIR)\bb.obj \
-	$(WORKDIR)\dir.obj \
 	$(WORKDIR)\error.obj \
-	$(WORKDIR)\file.obj \
-	$(WORKDIR)\info.obj \
 	$(WORKDIR)\jnilib.obj \
-	$(WORKDIR)\lock.obj \
-	$(WORKDIR)\misc.obj \
-	$(WORKDIR)\mmap.obj \
-	$(WORKDIR)\multicast.obj \
-	$(WORKDIR)\network.obj \
-	$(WORKDIR)\os.obj \
-	$(WORKDIR)\poll.obj \
 	$(WORKDIR)\pool.obj \
-	$(WORKDIR)\proc.obj \
-	$(WORKDIR)\shm.obj \
 	$(WORKDIR)\ssl.obj \
 	$(WORKDIR)\sslcontext.obj \
 	$(WORKDIR)\sslconf.obj \
-	$(WORKDIR)\sslinfo.obj \
-	$(WORKDIR)\sslnetwork.obj \
 	$(WORKDIR)\sslutils.obj \
-	$(WORKDIR)\stdlib.obj \
-	$(WORKDIR)\user.obj \
-	$(WORKDIR)\thread.obj \
-	$(WORKDIR)\ntpipe.obj \
-	$(WORKDIR)\registry.obj \
-	$(WORKDIR)\system.obj
 !IF DEFINED(WITH_FIPS)
 OBJECTS = $(OBJECTS) srclib\openssl\tmp32\fips_premain.obj
 !ENDIF

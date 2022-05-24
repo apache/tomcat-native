@@ -92,15 +92,7 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\src\address.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\bb.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\dir.c
 # End Source File
 # Begin Source File
 
@@ -108,55 +100,11 @@ SOURCE=.\src\error.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\file.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\info.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\jnilib.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\lock.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\misc.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\mmap.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\multicast.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\network.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\os.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\poll.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\pool.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\proc.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\shm.c
 # End Source File
 # Begin Source File
 
@@ -172,27 +120,7 @@ SOURCE=.\src\sslconf.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\sslinfo.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\sslnetwork.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\sslutils.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\stdlib.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\thread.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\user.c
 # End Source File
 # End Group
 # Begin Group "Generated Files"
@@ -222,18 +150,6 @@ SOURCE=.\include\tcn_version.h
 # Begin Group "Platform Files"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\os\win32\ntpipe.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\os\win32\registry.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\os\win32\system.c
-# End Source File
 # End Group
 # Begin Source File
 
