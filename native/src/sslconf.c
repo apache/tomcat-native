@@ -19,8 +19,6 @@
 
 #include "tcn.h"
 
-#ifdef HAVE_OPENSSL
-
 #include "ssl_private.h"
 
 #ifdef HAVE_SSL_CONF_CMD
@@ -373,61 +371,3 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, finish)(TCN_STDARGS, jlong cctx)
 
 
 #endif /* HAVE_SSL_CONF_CMD */
-
-#else /* HAVE_OPENSSL */
-/* OpenSSL is not supported.
- * Create empty stubs.
- */
-
-TCN_IMPLEMENT_CALL(jlong, SSLConf, make)(TCN_STDARGS, jlong pool,
-                                         jint flags)
-{
-    UNREFERENCED_STDARGS;
-    UNREFERENCED(pool);
-    UNREFERENCED(flags);
-    return 0;
-}
-
-TCN_IMPLEMENT_CALL(void, SSLConf, free)(TCN_STDARGS, jlong cctx)
-{
-    UNREFERENCED_STDARGS;
-    UNREFERENCED(cctx);
-}
-
-TCN_IMPLEMENT_CALL(jint, SSLConf, check)(TCN_STDARGS, jlong cctx,
-                                         jstring cmd, jstring value)
-{
-    UNREFERENCED_STDARGS;
-    UNREFERENCED(cctx);
-    UNREFERENCED(cmd);
-    UNREFERENCED(value);
-    return APR_ENOTIMPL;
-}
-
-TCN_IMPLEMENT_CALL(void, SSLConf, assign)(TCN_STDARGS, jlong cctx,
-                                          jlong ctx)
-{
-    UNREFERENCED_STDARGS;
-    UNREFERENCED(cctx);
-    UNREFERENCED(ctx);
-}
-
-TCN_IMPLEMENT_CALL(jint, SSLConf, apply)(TCN_STDARGS, jlong cctx,
-                                         jstring cmd, jstring value)
-{
-    UNREFERENCED_STDARGS;
-    UNREFERENCED(cctx);
-    UNREFERENCED(cmd);
-    UNREFERENCED(value);
-    return APR_ENOTIMPL;
-}
-
-TCN_IMPLEMENT_CALL(jint, SSLConf, finish)(TCN_STDARGS, jlong cctx)
-{
-    UNREFERENCED_STDARGS;
-    UNREFERENCED(cctx);
-    return APR_ENOTIMPL;
-}
-
-
-#endif /* HAVE_OPENSSL */

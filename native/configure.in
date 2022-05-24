@@ -132,23 +132,6 @@ AC_SUBST(JAVA_PLATFORM)
 AC_SUBST(JAVA_OS)
 
 
-dnl
-dnl Detect openssl toolkit installation
-dnl
-
-use_openssl=true;
-
-AC_ARG_ENABLE(openssl,
-[AS_HELP_STRING([--disable-openssl],[avoid using OpenSSL toolkit])],
-[
-  case "${enableval}" in
-    no )
-       use_openssl=false;
-       AC_MSG_RESULT([Disabling SSL support...])
-       ;;
-  esac
-])
-
 AC_ARG_ENABLE(insecure-export-ciphers,
 [AS_HELP_STRING([--enable-insecure-export-ciphers],[allow including insecure export and null ciphers in the cipher string (default is disabled=not allowed)])],
 [
@@ -160,9 +143,10 @@ AC_ARG_ENABLE(insecure-export-ciphers,
   esac
 ])
 
-if $use_openssl ; then
-  TCN_CHECK_SSL_TOOLKIT
-fi
+dnl
+dnl  Find the OpenSSL installation
+dnl
+TCN_FIND_SSL_TOOLKIT
 
 so_ext=$APR_SO_EXT
 lib_target=$APR_LIB_TARGET
