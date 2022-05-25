@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Small script to get a recent openssl, with npn support
+# Small script to get a recent openssl
 # Will run configure and build_libs to generate the .s files
 
 cd $(dirname $0)

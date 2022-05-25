@@ -446,17 +446,6 @@ void SSL_callback_handshake(const SSL *ssl, int where, int rc)
     }
 }
 
-int SSL_callback_next_protos(SSL *ssl, const unsigned char **data,
-                             unsigned int *len, void *arg)
-{
-    tcn_ssl_ctxt_t *ssl_ctxt = arg;
-
-    *data = ssl_ctxt->next_proto_data;
-    *len = ssl_ctxt->next_proto_len;
-
-    return SSL_TLSEXT_ERR_OK;
-}
-
 /* The code here is inspired by nghttp2
  *
  * See https://github.com/tatsuhiro-t/nghttp2/blob/ae0100a9abfcf3149b8d9e62aae216e946b517fb/src/shrpx_ssl.cc#L244 */
@@ -513,13 +502,6 @@ int select_next_proto(SSL *ssl, const unsigned char **out, unsigned char *outlen
     //       Issue https://github.com/openssl/openssl/issues/188 has been created for this.
     // Nothing matched so not select anything and just accept.
     return SSL_TLSEXT_ERR_NOACK;
-}
-
-int SSL_callback_select_next_proto(SSL *ssl, unsigned char **out, unsigned char *outlen,
-                         const unsigned char *in, unsigned int inlen,
-                         void *arg) {
-    tcn_ssl_ctxt_t *ssl_ctxt = arg;
-    return select_next_proto(ssl, (const unsigned char **) out, outlen, in, inlen, ssl_ctxt->next_proto_data, ssl_ctxt->next_proto_len, ssl_ctxt->next_selector_failure_behavior);
 }
 
 int SSL_callback_alpn_select_proto(SSL* ssl, const unsigned char **out, unsigned char *outlen,

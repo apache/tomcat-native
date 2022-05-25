@@ -246,7 +246,7 @@ extern ENGINE *tcn_ssl_engine;
 #define HAVE_KEYLOG_CALLBACK
 #endif
 
-#define MAX_ALPN_NPN_PROTO_SIZE 65535
+#define MAX_ALPN_PROTO_SIZE 65535
 #define SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL            1
 
 typedef struct {
@@ -391,8 +391,6 @@ void        SSL_callback_handshake(const SSL *, int, int);
 int         SSL_CTX_use_certificate_chain(SSL_CTX *, const char *, int);
 int         SSL_callback_SSL_verify(int, X509_STORE_CTX *);
 int         SSL_rand_seed(const char *file);
-int         SSL_callback_next_protos(SSL *, const unsigned char **, unsigned int *, void *);
-int         SSL_callback_select_next_proto(SSL *, unsigned char **, unsigned char *, const unsigned char *, unsigned int,void *);
 int         SSL_callback_alpn_select_proto(SSL *, const unsigned char **, unsigned char *, const unsigned char *, unsigned int, void *);
 #ifdef HAVE_KEYLOG_CALLBACK
 void        SSL_callback_add_keylog(SSL_CTX *);

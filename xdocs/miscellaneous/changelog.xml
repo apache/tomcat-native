@@ -44,6 +44,10 @@
     <update>
       Update the minimum required version of APR to 1.7.0. (markt)
     </update>
+    <design>
+      Remove NPN support as NPN was never standardised and browser support was
+      removed in 2019. (markt)
+    </design>
   </changelog>
 </section>
 <section name="Changes in 1.2.x">

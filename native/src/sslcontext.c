@@ -1612,7 +1612,7 @@ static int initProtocols(JNIEnv *e, const tcn_ssl_ctxt_t *c, unsigned char **pro
          proto_chars = (*e)->GetStringUTFChars(e, proto_string, 0);
 
          proto_chars_len = strlen(proto_chars);
-         if (proto_chars_len > 0 && proto_chars_len <= MAX_ALPN_NPN_PROTO_SIZE) {
+         if (proto_chars_len > 0 && proto_chars_len <= MAX_ALPN_PROTO_SIZE) {
             // We need to add +1 as each protocol is prefixed by it's length (unsigned char).
             // For all except of the last one we already have the extra space as everything is
             // delimited by ','.
@@ -1652,26 +1652,6 @@ static int initProtocols(JNIEnv *e, const tcn_ssl_ctxt_t *c, unsigned char **pro
         *proto_data = p_data;
         *proto_len = p_data_len;
         return 0;
-    }
-}
-
-TCN_IMPLEMENT_CALL(void, SSLContext, setNpnProtos)(TCN_STDARGS, jlong ctx, jobjectArray next_protos,
-        jint selectorFailureBehavior)
-{
-    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
-
-    TCN_ASSERT(ctx != 0);
-    UNREFERENCED(o);
-
-    if (initProtocols(e, c, &c->next_proto_data, &c->next_proto_len, next_protos) == 0) {
-        c->next_selector_failure_behavior = selectorFailureBehavior;
-
-        // depending on if it's client mode or not we need to call different functions.
-        if (c->mode == SSL_MODE_CLIENT)  {
-            SSL_CTX_set_next_proto_select_cb(c->ctx, SSL_callback_select_next_proto, (void *)c);
-        } else {
-            SSL_CTX_set_next_protos_advertised_cb(c->ctx, SSL_callback_next_protos, (void *)c);
-        }
     }
 }
 

@@ -1667,24 +1667,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, getPostHandshakeAuthInProgress)(TCN_STDARGS,
 #endif
 }
 
-/* Read which protocol was negotiated for the given SSL *. */
-TCN_IMPLEMENT_CALL(jstring, SSL, getNextProtoNegotiated)(TCN_STDARGS,
-                                                         jlong ssl /* SSL * */) {
-    SSL *ssl_ = J2P(ssl, SSL *);
-    const unsigned char *proto;
-    unsigned int proto_len;
-
-    if (ssl_ == NULL) {
-        tcn_ThrowException(e, "ssl is null");
-        return NULL;
-    }
-
-    UNREFERENCED(o);
-
-    SSL_get0_next_proto_negotiated(ssl_, &proto, &proto_len);
-    return tcn_new_stringn(e, (const char *)proto, (size_t) proto_len);
-}
-
 /*** End Twitter API Additions ***/
 
 /*** Apple API Additions ***/
