@@ -29,7 +29,6 @@ extern apr_pool_t *tcn_global_pool;
 ENGINE *tcn_ssl_engine = NULL;
 tcn_pass_cb_t tcn_password_callback;
 
-#ifdef HAVE_KEYLOG_CALLBACK
 static BIO *key_log_file = NULL;
 
 static void ssl_keylog_callback(const SSL *ssl, const char *line)
@@ -39,7 +38,6 @@ static void ssl_keylog_callback(const SSL *ssl, const char *line)
         BIO_puts(key_log_file, "\n");
     }
 }
-#endif
 
 /* From netty-tcnative */
 static jclass byteArrayClass;
@@ -293,14 +291,12 @@ static void free_dh_params(void)
     }
 }
 
-#ifdef HAVE_KEYLOG_CALLBACK
 void SSL_callback_add_keylog(SSL_CTX *ctx)
 {
     if (key_log_file) {
         SSL_CTX_set_keylog_callback(ctx, ssl_keylog_callback);
     }
 }
-#endif
 
 /* Hand out the same DH structure though once generated as we leak
  * memory otherwise and freeing the structure up after use would be
@@ -401,12 +397,10 @@ static apr_status_t ssl_init_cleanup(void *data)
 #endif
 #endif
 
-#ifdef HAVE_KEYLOG_CALLBACK
     if (key_log_file) {
         BIO_free(key_log_file);
         key_log_file = NULL;
     }
-#endif
 
     /* Don't call ERR_free_strings here; ERR_load_*_strings only
      * actually load the error strings once per process due to static
@@ -863,7 +857,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     sClazz = (*e)->FindClass(e, "java/lang/String");
     stringClass = (jclass) (*e)->NewGlobalRef(e, sClazz);
 
-#ifdef HAVE_KEYLOG_CALLBACK
     if (!key_log_file) {
         char *key_log_file_name = getenv("SSLKEYLOGFILE");
         if (key_log_file_name) {
@@ -877,7 +870,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
             }
         }
     }
-#endif
 
     return (jint)APR_SUCCESS;
 }
