@@ -41,6 +41,9 @@
       Update the minimum required version of OpenSSL to 3.0.0 and make it a
       madatory dependency. (markt)
     </update>
+    <update>
+      Update the minimum required version of APR to 1.7.0. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.x">
