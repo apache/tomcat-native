@@ -214,8 +214,8 @@ extern ENGINE *tcn_ssl_engine;
 
 #endif /* !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name) */
 
-/* OpenSSL 1.0.2 compatibility */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+/* LibreSSL compatibility */
+#if defined(LIBRESSL_VERSION_NUMBER)
 #define OpenSSL_version                  SSLeay_version
 #define OpenSSL_version_num              SSLeay
 #define OPENSSL_VERSION                  SSLEAY_VERSION
@@ -240,7 +240,7 @@ extern ENGINE *tcn_ssl_engine;
 #define TLS_method                       SSLv23_method
 #define TLS_client_method                SSLv23_client_method
 #define TLS_server_method                SSLv23_server_method
-#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER) */
+#endif /* defined(LIBRESSL_VERSION_NUMBER) */
 
 #define MAX_ALPN_PROTO_SIZE 65535
 #define SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL            1
@@ -390,7 +390,7 @@ int         SSL_rand_seed(const char *file);
 int         SSL_callback_alpn_select_proto(SSL *, const unsigned char **, unsigned char *, const unsigned char *, unsigned int, void *);
 void        SSL_callback_add_keylog(SSL_CTX *);
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)) && ! (defined(WIN32) || defined(WIN64))
+#if defined(LIBRESSL_VERSION_NUMBER) && ! (defined(WIN32) || defined(WIN64))
 unsigned long SSL_ERR_get(void);
 void SSL_ERR_clear(void);
 #else

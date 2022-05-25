@@ -129,7 +129,7 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, tcn_ssl_ctxt_t *c)
     return SSL_TLSEXT_ERR_OK;
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(LIBRESSL_VERSION_NUMBER)
 /*
  * This callback function is called when the ClientHello is received.
  */
@@ -225,7 +225,7 @@ give_up:
     }
     return SSL_CLIENT_HELLO_SUCCESS;
 }
-#endif /* OPENSSL_VERSION_NUMBER < 0x10101000L */
+#endif
 
 /* Initialize server context */
 TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
@@ -236,9 +236,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     SSL_CTX *ctx = NULL;
     jclass clazz;
     jclass sClazz;
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
     jint prot;
-#endif
 
     UNREFERENCED(o);
     if (protocol == SSL_PROTOCOL_NONE) {
@@ -246,73 +244,12 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         goto init_failed;
     }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    if (protocol == SSL_PROTOCOL_TLSV1_3) {
-#ifdef HAVE_TLSV1_3
-        if (mode == SSL_MODE_CLIENT)
-            ctx = SSL_CTX_new(TLSv1_3_client_method());
-        else if (mode == SSL_MODE_SERVER)
-            ctx = SSL_CTX_new(TLSv1_3_server_method());
-        else
-            ctx = SSL_CTX_new(TLSv1_3_method());
-#endif
-    } else if (protocol == SSL_PROTOCOL_TLSV1_2) {
-#ifdef HAVE_TLSV1_2
-        if (mode == SSL_MODE_CLIENT)
-            ctx = SSL_CTX_new(TLSv1_2_client_method());
-        else if (mode == SSL_MODE_SERVER)
-            ctx = SSL_CTX_new(TLSv1_2_server_method());
-        else
-            ctx = SSL_CTX_new(TLSv1_2_method());
-#endif
-    } else if (protocol == SSL_PROTOCOL_TLSV1_1) {
-#ifdef HAVE_TLSV1_1
-        if (mode == SSL_MODE_CLIENT)
-            ctx = SSL_CTX_new(TLSv1_1_client_method());
-        else if (mode == SSL_MODE_SERVER)
-            ctx = SSL_CTX_new(TLSv1_1_server_method());
-        else
-            ctx = SSL_CTX_new(TLSv1_1_method());
-#endif
-    } else if (protocol == SSL_PROTOCOL_TLSV1) {
-        if (mode == SSL_MODE_CLIENT)
-            ctx = SSL_CTX_new(TLSv1_client_method());
-        else if (mode == SSL_MODE_SERVER)
-            ctx = SSL_CTX_new(TLSv1_server_method());
-        else
-            ctx = SSL_CTX_new(TLSv1_method());
-    } else if (protocol == SSL_PROTOCOL_SSLV3) {
-        if (mode == SSL_MODE_CLIENT)
-            ctx = SSL_CTX_new(SSLv3_client_method());
-        else if (mode == SSL_MODE_SERVER)
-            ctx = SSL_CTX_new(SSLv3_server_method());
-        else
-            ctx = SSL_CTX_new(SSLv3_method());
-    } else if (protocol == SSL_PROTOCOL_SSLV2) {
-        /* requested but not supported */
-#ifndef HAVE_TLSV1_3
-    } else if (protocol & SSL_PROTOCOL_TLSV1_3) {
-        /* requested but not supported */
-#endif
-#ifndef HAVE_TLSV1_2
-    } else if (protocol & SSL_PROTOCOL_TLSV1_2) {
-        /* requested but not supported */
-#endif
-#ifndef HAVE_TLSV1_1
-    } else if (protocol & SSL_PROTOCOL_TLSV1_1) {
-        /* requested but not supported */
-#endif
-    } else {
-#endif /* if OPENSSL_VERSION_NUMBER < 0x10100000L */
-        if (mode == SSL_MODE_CLIENT)
-                ctx = SSL_CTX_new(TLS_client_method());
-        else if (mode == SSL_MODE_SERVER)
-                ctx = SSL_CTX_new(TLS_server_method());
-        else
-                ctx = SSL_CTX_new(TLS_method());
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    }
-#endif
+    if (mode == SSL_MODE_CLIENT)
+        ctx = SSL_CTX_new(TLS_client_method());
+    else if (mode == SSL_MODE_SERVER)
+        ctx = SSL_CTX_new(TLS_server_method());
+    else
+        ctx = SSL_CTX_new(TLS_method());
 
     if (!ctx) {
         char err[256];
@@ -336,7 +273,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         BIO_set_fp(c->bio_os, stderr, BIO_NOCLOSE | BIO_FP_TEXT);
     SSL_CTX_set_options(c->ctx, SSL_OP_ALL);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
     /* always disable SSLv2, as per RFC 6176 */
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
     if (!(protocol & SSL_PROTOCOL_SSLV3))
@@ -356,7 +293,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         SSL_CTX_set_options(c->ctx, SSL_OP_NO_TLSv1_3);
 #endif
 
-#else /* if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER) */
+#else
     /* We first determine the maximum protocol version we should provide */
 #ifdef HAVE_TLSV1_3
     if (protocol & SSL_PROTOCOL_TLSV1_3) {
@@ -396,7 +333,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         prot = SSL3_VERSION;
     }
     SSL_CTX_set_min_proto_version(ctx, prot);
-#endif /* if OPENSSL_VERSION_NUMBER < 0x10100000L */
+#endif
 
     /*
      * Configure additional context ingredients
@@ -463,7 +400,7 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     SSL_CTX_set_tlsext_servername_callback(c->ctx, ssl_callback_ServerNameIndication);
     SSL_CTX_set_tlsext_servername_arg(c->ctx, c);
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(LIBRESSL_VERSION_NUMBER)
     /*
      * The ClientHello callback also allows to retrieve the SNI, but since it
      * runs at the earliest possible connection stage we can even set the TLS
@@ -640,7 +577,7 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
     const char *name;
     int i;
     jstring c_name;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
     SSL *ssl;
 #endif
 
@@ -651,9 +588,9 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
         return NULL;
     }
 
-    /* Before OpenSSL 1.1.0, get_ciphers() was only available
+    /* For LibreSSL get_ciphers() iss only available
      * on an SSL, not for an SSL_CTX. */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
     ssl = SSL_new(c->ctx);
     if (ssl == NULL) {
         tcn_ThrowException(e, "could not create temporary ssl from ssl context");
@@ -667,7 +604,7 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
     len = sk_SSL_CIPHER_num(sk);
 
     if (len <= 0) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
         SSL_free(ssl);
 #endif
         return NULL;
@@ -682,7 +619,7 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
         c_name = (*e)->NewStringUTF(e, name);
         (*e)->SetObjectArrayElement(e, array, i, c_name);
     }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
     SSL_free(ssl);
 #endif
     return array;
@@ -1201,21 +1138,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
         (eckey = EC_KEY_new_by_curve_name(nid))) {
         SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
     }
-    /*
-     * ...otherwise, enable auto curve selection (OpenSSL 1.0.2)
-     * or configure NIST P-256 (required to enable ECDHE for earlier versions)
-     * ECDH is always enabled in 1.1.0 unless excluded from SSLCipherList
-     */
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-    else {
-#if defined(SSL_CTX_set_ecdh_auto)
-        SSL_CTX_set_ecdh_auto(c->ctx, 1);
-#else
-        eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-        SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
-#endif
-    }
-#endif
+
     /* OpenSSL assures us that _free() is NULL-safe */
     EC_KEY_free(eckey);
     EC_GROUP_free(ecparams);
@@ -1328,15 +1251,6 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
     /*
      * TODO try to read the ECDH curve name from somewhere...
      */
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-#if defined(SSL_CTX_set_ecdh_auto)
-    SSL_CTX_set_ecdh_auto(c->ctx, 1);
-#else
-    eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-    SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
-    EC_KEY_free(eckey);
-#endif
-#endif
 #endif
     SSL_CTX_set_tmp_dh_callback(c->ctx, SSL_callback_tmp_DH);
 cleanup:
@@ -1825,7 +1739,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setSessionTicketKeys)(TCN_STDARGS, jlong ct
 }
 
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
 
 /*
  * Adapted from OpenSSL:
@@ -1925,7 +1839,7 @@ static const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
     if (cipher == NULL) {
         return "UNKNOWN";
     }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
     kx = cipher->algorithm_mkey;
     auth = cipher->algorithm_auth;
 #else
@@ -1937,12 +1851,6 @@ static const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
         {
     case TCN_SSL_kRSA:
         return SSL_TXT_RSA;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    case TCN_SSL_kDHr:
-        return SSL_TXT_DH "_" SSL_TXT_RSA;
-    case TCN_SSL_kDHd:
-        return SSL_TXT_DH "_" SSL_TXT_DSS;
-#endif
     case TCN_SSL_kDHE:
         switch (auth)
             {
@@ -1955,14 +1863,6 @@ static const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
         default:
             return "UNKNOWN";
             }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    case TCN_SSL_kKRB5:
-        return SSL_TXT_KRB5;
-    case TCN_SSL_kECDHr:
-        return SSL_TXT_ECDH "_" SSL_TXT_RSA;
-    case TCN_SSL_kECDHe:
-        return SSL_TXT_ECDH "_" SSL_TXT_ECDSA;
-#endif
     case TCN_SSL_kECDHE:
         switch (auth)
             {
@@ -1981,9 +1881,6 @@ static const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
 }
 
 static const char* SSL_authentication_method(const SSL* ssl) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-   return SSL_CIPHER_authentication_method(ssl->s3->tmp.new_cipher);
-#else
     /* XXX ssl->s3->tmp.new_cipher is no longer available in OpenSSL 1.1.0 */
     /* https://github.com/netty/netty-tcnative/blob/1.1.33/openssl-dynamic/src/main/c/sslcontext.c
      * contains a different method, but I think this is not correct.
@@ -1992,7 +1889,6 @@ static const char* SSL_authentication_method(const SSL* ssl) {
     /* Not sure whether SSL_get_current_cipher(ssl) returns something useful
      * at the point in time we call it. */
    return SSL_CIPHER_authentication_method(SSL_get_current_cipher(ssl));
-#endif
 }
 /* Android end */
 
