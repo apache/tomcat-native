@@ -227,10 +227,13 @@ unsigned long   tcn_get_thread_id(void);
         jclass _##C = (*(E))->FindClass((E), N);    \
         if (_##C == NULL) {                         \
             (*(E))->ExceptionClear((E));            \
-            return R;                               \
+            if (R != JNI_OK) {                      \
+                return R;                           \
+            }                                       \
+        } else {                                    \
+            C = (*(E))->NewGlobalRef((E), _##C);    \
+            (*(E))->DeleteLocalRef((E), _##C);      \
         }                                           \
-        C = (*(E))->NewGlobalRef((E), _##C);        \
-        (*(E))->DeleteLocalRef((E), _##C);          \
     TCN_END_MACRO
 
 #define TCN_UNLOAD_CLASS(E, C)                      \

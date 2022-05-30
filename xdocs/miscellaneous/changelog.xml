@@ -36,6 +36,10 @@
 </section>
 <section name="Changes in 1.2.34">
   <changelog>
+    <scode>
+      Refactor library initialization so it is compatible with Tomcat 10.1.x
+      onwards where a number of Java classes have been removed. (markt)
+    </scode>
   </changelog>
 </section>
 <section name="Changes in 1.2.33">
