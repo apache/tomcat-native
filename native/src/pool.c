@@ -42,7 +42,7 @@ TCN_IMPLEMENT_CALL(jlong, Pool, create)(TCN_STDARGS, jlong parent)
     apr_pool_t *n;
 
     UNREFERENCED(o);
-    /* Make sure our global pool is accessor for all pools */
+    /* Make sure our global pool is ancestor for all pools */
     if (p == NULL)
         p = tcn_global_pool;
     TCN_THROW_IF_ERR(apr_pool_create(&n, p), n);
