@@ -90,6 +90,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc --parents html
 
 %changelog
+* Tue May 24 2022 Mark Thomas <markt@apache.org> 2.0.0-1
+- update for tcnative 2.0
 * Sat Oct 31 2015 Rainer Jung <rjung@apache.org> 1.2.0-1
 - update for tcnative 1.2
 * Tue Jun 22 2004 Mladen Turk <mturk@jboss.com> 1.0.0-1
