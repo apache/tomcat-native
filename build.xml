@@ -30,7 +30,7 @@
     <property name="project"               value="tomcat-native" />
     <property name="name"                  value="Tomcat Native" />
     <property name="title"                 value="Tomcat Native Library"/>
-    <property name="year"                  value="2020" />
+    <property name="year"                  value="2022" />
 
     <property name="test.runner"           value="junit.textui.TestRunner"/>
 
