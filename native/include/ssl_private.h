@@ -46,6 +46,9 @@
 #include <openssl/x509v3.h>
 #include <openssl/dh.h>
 #include <openssl/bn.h>
+#if (OPENSSL_VERSION_NUMBER > 0x2FFFFFFFL)
+#include <openssl/provider.h>
+#endif
 /* Avoid tripping over an engine build installed globally and detected
  * when the user points at an explicit non-engine flavor of OpenSSL
  */

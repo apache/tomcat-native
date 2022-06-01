@@ -40,6 +40,11 @@
       Refactor library initialization so it is compatible with Tomcat 10.1.x
       onwards where a number of Java classes have been removed. (markt)
     </scode>
+    <add>
+      Map the OpenSSL 3.x FIPS behaviour to the OpenSSL 1.x API to allow clients
+      to determine if the FIPS provider is being used when Tomcat Native is
+      compiled against OpenSSL 3.x. (markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.33">
