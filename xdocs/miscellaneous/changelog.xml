@@ -48,6 +48,10 @@
       Remove NPN support as NPN was never standardised and browser support was
       removed in 2019. (markt)
     </design>
+    <add>
+      Add support for using OpenSSL when the FIPS provider is configured as the
+      default provider. (markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.x">
