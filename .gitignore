@@ -20,6 +20,7 @@
 /native/config.status
 /native/configure
 /native/libtcnative-1.la
+/native/libtcnative-2.la
 /native/tcnative.pc
 /native/tcnative.spec
 
