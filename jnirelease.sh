@@ -176,7 +176,7 @@ if [ $diffcount -ne 0 ]; then
     echo "         $TCJAVA_GITBASE"
     echo "         Either correct now by running"
     echo "         'git rm -rf java/org/apache/tomcat/jni'"
-    echo "         'git read-tree --prefix=java/org/apache/tomcat/jni/ -u 9.0.x:java/org/apache/tomcat/jni'"
+    echo "         'git read-tree --prefix=java/org/apache/tomcat/jni/ -u tcjava/9.0.x:java/org/apache/tomcat/jni'"
     echo "         'git commit'"
     echo "         or run this script with -f (force)"
     if [ "X$JKJNIFORCE" = "X1" ]
