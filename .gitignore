@@ -29,3 +29,5 @@
 
 **/*.lo
 **/*.o
+
+build.properties
