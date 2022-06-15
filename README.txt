@@ -55,24 +55,6 @@ or overwrite it in a new file build.properties.
 Now run "ant test".
 
 
-Running the examples
---------------------
-
-Before running the examples you may have to set LD_LIBRARY_PATH, something like
-LD_LIBRARY_PATH=/opt/SMAWoIS/openssl/lib; export LD_LIBRARY_PATH
-
-1) echo example:
-   - Choose some free port in
-     dist/classes/examples/org/apache/tomcat/jni/Echo.properties
-   - run: ant run-echo
-
-2) ssl server example:
-   - Change parameters in dist/classes/examples/org/apache/tomcat/jni/SSL.properties
-     according to your needs. The certificate and key should be in
-     dist/classes/examples.
-   - run: ant run-ssl-server
-
-
 Cryptographic Software Notice
 -----------------------------
 

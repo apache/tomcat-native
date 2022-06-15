@@ -35,29 +35,10 @@ known attacks will not work even with old OpenSSL?
 Should we add a remark about this topic to the docs?
 
 
-Java Tests and Examples
------------------------
-
-- "ant run-echo": what is the expected behaviour of this example.
-  I couldn't get it to do something understandable.
-  Document the example in the README.txt.
-
-- "ant run-ssl-server": Could't we include a test certificate in the
-  distribution?
-
-- "ant run-ssl-server": What should the test produce, if run successfully?
-  Document the example in the README.txt.
-
-- "ant run-local-server": Creates a unix socket "\\.\PIPE\test" in the
-  examples directory, then waits. How is the test expected to work?
-  And the file name doesn't seem to be appropriate for Unix.
-  Document the example in the README.txt.
-
-
 Java Classes Source Distribution
 --------------------------------
 
-Check on how to handle the test and examples classes.
+Check on how to handle the test classes.
 I think they have no other home.
 
 

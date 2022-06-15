@@ -51,7 +51,6 @@
     <property name="docs.dest" value="${dist.root}/doc"/>
     <property name="docs.dest.print" value="${dist.root}/doc/printable"/>
     <property name="test.dir" value="${build.dest}/test"/>
-    <property name="examples.dir" value="${build.dest}/examples"/>
 
     <property name="tc.library.path" value="${basedir}/native/.libs"/>
 
@@ -72,12 +71,6 @@
         <pathelement location="${build.dest}/test"/>
         <pathelement location="${junit.jar}"/>
         <pathelement location="${hamcrest.jar}"/>
-    </path>
-
-    <!-- Examples classpath -->
-    <path id="examples.classpath">
-        <pathelement location="${build.dest}/java"/>
-        <pathelement location="${build.dest}/examples"/>
     </path>
 
     <!-- =================================================================== -->
@@ -330,78 +323,4 @@ limitations under the License.--&gt;">
         </junit>
     </target>
 
-    <!-- =================================================================== -->
-    <!-- Compiles the examples directory                                     -->
-    <!-- =================================================================== -->
-    <target name="compile-examples" depends="compile" description="Compile example Java classes">
-        <mkdir dir="${build.dest}"/>
-        <mkdir dir="${build.dest}/examples"/>
-        <mkdir dir="${build.src}"/>
-        <mkdir dir="${build.src}/examples"/>
-        <tstamp>
-            <format property="TODAY" pattern="MMM d yyyy" locale="en"/>
-            <format property="TSTAMP" pattern="hh:mm:ss"/>
-        </tstamp>
-        <!-- Copy static resource files -->
-        <filter token="VERSION" value="${version}"/>
-        <filter token="VERSION_NUMBER" value="${version.number}"/>
-        <filter token="VERSION_BUILT" value="${TODAY} ${TSTAMP}"/>
-        <copy todir="${build.src}/examples" filtering="yes" encoding="ISO-8859-1">
-            <fileset dir="${src.dir}/examples">
-                <include name="**/*.java"/>
-                <include name="**/*.xml"/>
-                <include name="**/*.properties"/>
-            </fileset>
-        </copy>
-        <javac srcdir="${build.src}/examples"
-            destdir="${build.dest}/examples"
-            source="${compile.source}"
-            target="${compile.target}"
-            debug="${compile.debug}"
-            deprecation="${compile.deprecation}"
-            optimize="${compile.optimize}"
-            encoding="ISO-8859-1">
-            <classpath refid="examples.classpath"/>
-        </javac>
-        <copy todir="${build.dest}/examples" filtering="yes" encoding="ISO-8859-1">
-            <fileset dir="${build.src}/examples">
-                <include name="**/*.xml"/>
-                <include name="**/*.properties"/>
-            </fileset>
-        </copy>
-    </target>
-
-    <!-- =================================================================== -->
-    <!-- executes the examples                                                -->
-    <!-- =================================================================== -->
-    <target name="run-echo" depends="compile-examples" description="Run the Echo example">
-        <echo message="Running Tomcat Native Echo example ..."/>
-        <java dir="${examples.dir}" classname="org.apache.tomcat.jni.Echo"
-             fork="yes" failonerror="${test.failonerror}">
-            <classpath refid="examples.classpath"/>
-            <env key="PATH" path="${tc.library.path}:${java.library.path}"/>
-            <env key="Path" path="${tc.library.path}:${java.library.path}"/>
-            <jvmarg value="-Djava.library.path=${tc.library.path}"/>
-        </java>
-    </target>
-    <target name="run-ssl-server" depends="compile-examples" description="Run the SSL Server example">
-        <echo message="Running Tomcat Native SSL Server example ..."/>
-        <java dir="${examples.dir}" classname="org.apache.tomcat.jni.SSLServer"
-             fork="yes" failonerror="${test.failonerror}">
-            <env key="PATH" path="${tc.library.path}:${java.library.path}"/>
-            <env key="Path" path="${tc.library.path}:${java.library.path}"/>
-            <classpath refid="examples.classpath"/>
-            <jvmarg value="-Djava.library.path=${tc.library.path}"/>
-        </java>
-    </target>
-    <target name="run-local-server" depends="compile-examples" description="Run the Local Server example">
-        <echo message="Running Tomcat Native Local Server example ..."/>
-        <java dir="${examples.dir}" classname="org.apache.tomcat.jni.LocalServer"
-             fork="yes" failonerror="${test.failonerror}">
-            <classpath refid="examples.classpath"/>
-            <env key="PATH" path="${tc.library.path}:${java.library.path}"/>
-            <env key="Path" path="${tc.library.path}:${java.library.path}"/>
-            <jvmarg value="-Djava.library.path=${tc.library.path}"/>
-        </java>
-    </target>
 </project>
