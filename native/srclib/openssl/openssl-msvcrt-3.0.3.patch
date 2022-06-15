@@ -11,8 +11,33 @@ index 66bc81dfb4..52345e4f33 100644
                                        )),
          bin_lflags       => add("/subsystem:console /opt:ref"),
          ex_libs          => add(sub {
+diff --git a/apps/lib/s_socket.c b/apps/lib/s_socket.c
+index 059afe47b9..cbece5fcb3 100644
+--- a/apps/lib/s_socket.c
++++ b/apps/lib/s_socket.c
+@@ -31,7 +31,7 @@ typedef unsigned int u_int;
+ 
+ /* MSVC renamed some POSIX functions to have an underscore prefix. */
+ # ifdef _MSC_VER
+-#  define getpid _getpid
++#  define getpid GetCurrentProcessId
+ # endif
+ #endif
+ 
+diff --git a/crypto/cmp/cmp_util.c b/crypto/cmp/cmp_util.c
+index ed611d64dd..09238bfb7d 100644
+--- a/crypto/cmp/cmp_util.c
++++ b/crypto/cmp/cmp_util.c
+@@ -9,6 +9,7 @@
+  * https://www.openssl.org/source/license.html
+  */
+ 
++#include "e_os.h"
+ #include <string.h>
+ #include <openssl/cmp_util.h>
+ #include "cmp_local.h" /* just for decls of internal functions defined here */
 diff --git a/crypto/engine/eng_openssl.c b/crypto/engine/eng_openssl.c
-index 91656e6b80..cf51ed08fe 100644
+index 91656e6b80..e0692e5618 100644
 --- a/crypto/engine/eng_openssl.c
 +++ b/crypto/engine/eng_openssl.c
 @@ -18,6 +18,7 @@
@@ -23,56 +48,6 @@ index 91656e6b80..cf51ed08fe 100644
  #include <openssl/crypto.h>
  #include "internal/cryptlib.h"
  #include "crypto/engine.h"
-diff --git a/crypto/o_time.c b/crypto/o_time.c
-index 23ffe16245..cd448e5483 100644
---- a/crypto/o_time.c
-+++ b/crypto/o_time.c
-@@ -41,10 +41,6 @@ struct tm *OPENSSL_gmtime(const time_t *timer, struct tm *result)
-     if (gmtime_r(timer, result) == NULL)
-         return NULL;
-     ts = result;
--#elif defined (OPENSSL_SYS_WINDOWS) && defined(_MSC_VER) && _MSC_VER >= 1400 && !defined(_WIN32_WCE)
--    if (gmtime_s(result, timer))
--        return NULL;
--    ts = result;
- #else
-     ts = gmtime(timer);
-     if (ts == NULL)
-diff --git a/e_os.h b/e_os.h
-index 9e2f14072f..70ef508971 100644
---- a/e_os.h
-+++ b/e_os.h
-@@ -139,7 +139,7 @@ static __inline unsigned int _strlen31(const char *str)
- #   endif
- #   include <malloc.h>
- #   if defined(_MSC_VER) && !defined(_WIN32_WCE) && !defined(_DLL) && defined(stdin)
--#    if _MSC_VER>=1300 && _MSC_VER<1600
-+#    ifdef _WIN64
- #     undef stdin
- #     undef stdout
- #     undef stderr
-@@ -147,6 +147,21 @@ FILE *__iob_func();
- #     define stdin  (&__iob_func()[0])
- #     define stdout (&__iob_func()[1])
- #     define stderr (&__iob_func()[2])
-+#    else
-+#     undef stdin
-+#     undef stdout
-+#     undef stderr
-+         /*
-+          * pre-1300 has __p__iob(), but it's available only in msvcrt.lib,
-+          * or in other words with /MD. Declaring implicit import, i.e. with
-+          * _imp_ prefix, works correctly with all compiler options, but
-+          * without /MD results in LINK warning LNK4049: 'locally defined
-+          * symbol "__iob" imported'.
-+          */
-+extern FILE *_imp___iob;
-+#     define stdin  (&_imp___iob[0])
-+#     define stdout (&_imp___iob[1])
-+#     define stderr (&_imp___iob[2])
- #    endif
- #   endif
- #  endif
 diff --git a/engines/e_capi.c b/engines/e_capi.c
 index 6f223a6922..045d1368fd 100644
 --- a/engines/e_capi.c
@@ -86,14 +61,26 @@ index 6f223a6922..045d1368fd 100644
  # include <stdlib.h>
  # include <malloc.h>
 diff --git a/test/testutil/basic_output.c b/test/testutil/basic_output.c
-index 92f3de9300..47a4f19901 100644
+index 92f3de9300..e84301946e 100644
 --- a/test/testutil/basic_output.c
 +++ b/test/testutil/basic_output.c
-@@ -10,6 +10,7 @@
+@@ -7,6 +7,7 @@
+  * https://www.openssl.org/source/license.html
+  */
+ 
++#include "e_os.h"
  #include "../testutil.h"
  #include "output.h"
  #include "tu_local.h"
-+#include "../../e_os.h"
+diff --git a/test/testutil/provider.c b/test/testutil/provider.c
+index d073d732da..8a96f9a151 100644
+--- a/test/testutil/provider.c
++++ b/test/testutil/provider.c
+@@ -7,6 +7,7 @@
+  * https://www.openssl.org/source/license.html
+  */
  
- #include <openssl/crypto.h>
- #include <openssl/bio.h>
++#include "e_os.h"
+ #include "../testutil.h"
+ #include <openssl/provider.h>
+ #include <string.h>
