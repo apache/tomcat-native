@@ -16,30 +16,15 @@
  */
 package org.apache.tomcat.jni;
 
-/** Sockaddr
- *
- * @author Mladen Turk
- *
- * @deprecated  The scope of the APR/Native Library will be reduced in Tomcat
- *              10.1.x / Tomcat Native 2.x onwards to only include those
- *              components required to provide OpenSSL integration with the NIO
- *              and NIO2 connectors.
+/**
+ * Tomcat Native 1.2.33 and earlier won't initialise unless this class is
+ * present. This dummy class ensures initialisation gets as far as being able to
+ * check the version of the Tomcat Native library and reporting a version error
+ * if 1.2.33 or earlier is present.
  */
-@Deprecated
 public class Sockaddr {
 
-   /** The pool to use... */
-    public long pool;
-    /** The hostname */
-    public String hostname;
-    /** Either a string of the port number or the service name for the port */
-    public String servname;
-    /** The numeric port */
-    public int port;
-    /** The family */
-    public int family;
-    /** If multiple addresses were found by apr_sockaddr_info_get(), this
-     *  points to a representation of the next address. */
-    public long next;
-
+    private Sockaddr() {
+        // Hide default constructor
+    }
 }
