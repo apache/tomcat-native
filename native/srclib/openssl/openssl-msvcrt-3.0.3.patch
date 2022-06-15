@@ -1,0 +1,77 @@
+diff --git a/Configurations/10-main.conf b/Configurations/10-main.conf
+index a7294d2ad1..24c887f8d3 100644
+--- a/Configurations/10-main.conf
++++ b/Configurations/10-main.conf
+@@ -1361,7 +1361,7 @@ my %targets = (
+         # prefer [non-debug] openssl.exe to be free from Micorosoft RTL
+         # redistributable.
+         bin_cflags       => add(picker(debug   => "/MDd",
+-                                       release => sub { $disabled{shared} ? "/MT" : () },
++                                       release => "/MD",
+                                       )),
+         bin_lflags       => add("/subsystem:console /opt:ref"),
+         ex_libs          => add(sub {
+diff --git a/crypto/engine/eng_openssl.c b/crypto/engine/eng_openssl.c
+index 91656e6b80..cf51ed08fe 100644
+--- a/crypto/engine/eng_openssl.c
++++ b/crypto/engine/eng_openssl.c
+@@ -18,6 +18,7 @@
+ #include "internal/deprecated.h"
+ 
+ #include <stdio.h>
++#include "e_os.h"
+ #include <openssl/crypto.h>
+ #include "internal/cryptlib.h"
+ #include "crypto/engine.h"
+diff --git a/crypto/o_time.c b/crypto/o_time.c
+index 23ffe16245..cd448e5483 100644
+--- a/crypto/o_time.c
++++ b/crypto/o_time.c
+@@ -41,10 +41,6 @@ struct tm *OPENSSL_gmtime(const time_t *timer, struct tm *result)
+     if (gmtime_r(timer, result) == NULL)
+         return NULL;
+     ts = result;
+-#elif defined (OPENSSL_SYS_WINDOWS) && defined(_MSC_VER) && _MSC_VER >= 1400 && !defined(_WIN32_WCE)
+-    if (gmtime_s(result, timer))
+-        return NULL;
+-    ts = result;
+ #else
+     ts = gmtime(timer);
+     if (ts == NULL)
+diff --git a/e_os.h b/e_os.h
+index 514de967a9..49b68d10a3 100644
+--- a/e_os.h
++++ b/e_os.h
+@@ -139,7 +139,7 @@ static __inline unsigned int _strlen31(const char *str)
+ #   endif
+ #   include <malloc.h>
+ #   if defined(_MSC_VER) && !defined(_WIN32_WCE) && !defined(_DLL) && defined(stdin)
+-#    if _MSC_VER>=1300 && _MSC_VER<1600
++#    ifdef _WIN64
+ #     undef stdin
+ #     undef stdout
+ #     undef stderr
+diff --git a/engines/e_capi.c b/engines/e_capi.c
+index 6f223a6922..045d1368fd 100644
+--- a/engines/e_capi.c
++++ b/engines/e_capi.c
+@@ -18,6 +18,7 @@
+ # include <wincrypt.h>
+ 
+ # include <stdio.h>
++# include "e_os.h"
+ # include <string.h>
+ # include <stdlib.h>
+ # include <malloc.h>
+diff --git a/test/testutil/basic_output.c b/test/testutil/basic_output.c
+index 92f3de9300..47a4f19901 100644
+--- a/test/testutil/basic_output.c
++++ b/test/testutil/basic_output.c
+@@ -10,6 +10,7 @@
+ #include "../testutil.h"
+ #include "output.h"
+ #include "tu_local.h"
++#include "../../e_os.h"
+ 
+ #include <openssl/crypto.h>
+ #include <openssl/bio.h>
