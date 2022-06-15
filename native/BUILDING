@@ -20,8 +20,8 @@ Linux / Unix / OSX (dynamic linking)
 
 1. Prerequisites
 
-   Install OpenSSL version 1.0.2 or higher
-   Install APR version 1.4.3 or higher.
+   Install OpenSSL version 3.0.0 or higher
+   Install APR version 1.7.0 or higher.
    Download and expand the source package or use an git checkout
 
    > cd native
@@ -38,26 +38,19 @@ Linux / Unix / OSX (dynamic linking)
    >  configure --with-apr=apr_install_location --with-ssl=openssl_install_location
    >  make
 
-   This should produce a file named libtcnative-1.so
+   This should produce a file named libtcnative-2.so
 
-   Note: To build without SSL support use:
-   
-   > configure --disable-openssl --with-apr=apr_install_location
-   
 
 Linux / Unix / OSX (static linking)
 ===================================
 
-1. Build static version of OpenSSL 1.0.2 or later
+1. Build static version of OpenSSL 3.0.0 or later
 
-   > ./Configure --prefix=~/natives/openssl no-shared -fPIC
+   > ./Configure --prefix=~/natives/openssl enable-fips
    > make
-   > make install_sw
+   > make install
 
-   Note: For the Solaris platform you should use -KPIC instead -fPIC so that the
-         library is compiled with position independent code.
-
-2. Build static version of APR 1.4.0 or later
+2. Build static version of APR 1.7.0 or later
 
    > ./configure --prefix=~/natives/apr
    > make
@@ -67,7 +60,7 @@ Linux / Unix / OSX (static linking)
 
 3. Ensure the static APR library is used
 
-   Edit the ~/natives/apr/lib/libapr-1.la file and comment or delete the
+   Edit the ~/natives/apr/lib/libapr-2.la file and comment or delete the
    following sections: dlname='...' and library_names='...'
    This is needed so that libtool picks the static version of the library.
 
@@ -93,59 +86,85 @@ Windows
 3. Build APR
 
    Unpack the APR source distribution into native\srclib\apr
-   Apply apr-enable-ipv6.patch
-   
+
    > c:\cmsc\setenv.bat /x86 
    > nmake -f NMAKEmakefile BUILD_CPU=x86 APR_DECLARE_STATIC=1
-   > mkdir WINXP_X86_LIB_RELEASE\include
-   > mkdir WINXP_X86_LIB_RELEASE\lib
-   > xcopy /E include WINXP_X86_LIB_RELEASE\include\
-   > copy WINXP_X86_LIB_RELEASE\apr-1.lib WINXP_X86_LIB_RELEASE\lib
-   
+ 
    > c:\cmsc\setenv.bat /x64
    > nmake -f NMAKEmakefile BUILD_CPU=x64 APR_DECLARE_STATIC=1
-   > mkdir WINXP_X64_LIB_RELEASE\include
-   > mkdir WINXP_X64_LIB_RELEASE\lib
-   > xcopy /E include WINXP_X64_LIB_RELEASE\include\
-   > copy WINXP_X64_LIB_RELEASE\apr-1.lib WINXP_X64_LIB_RELEASE\lib
-   
+
 4. Build OpenSSL
 
-   Unpack the OpenSSL source distribution into native\srclib\openssl
-   Apply openssl-msvcrt.patch
-   
-   > c:\cmsc\setenv.bat /x86
-   > perl Configure VC-WIN32
-   > ms\do_nasm
-   > nmake -f ms\nt.mak
-   > mkdir release-x86
-   > mkdir release-x86\include
-   > mkdir release-x86\lib
-   > xcopy /E inc32 release-x86\include\
-   > copy out32\*.lib release-x86\lib\
- 
-   > c:\cmsc\setenv.bat /x64
-   > perl Configure VC-WIN64A
-   > ms\do_win64a
-   > nmake -f ms\nt.mak clean
-   > nmake -f ms\nt.mak
-   > mkdir release-x64
-   > mkdir release-x64\include
-   > mkdir release-x64\lib
-   > xcopy /E inc32 release-x64\include\
-   > copy out32\*.lib release-x64\lib\
+   > cd ..\openssl
 
-5. Build tc-native
+   Unpack the OpenSSL 3.0.x source distribution in this directory
 
-   > SET JAVA_HOME=C:\Program Files\Java\jdk1.7.0_71
+   Apply openssl-msvcrt-3.0.x.patch. Note that you may need to skip and/or use an offset to get the patch to apply.
 
    > c:\cmsc\setenv.bat /x86
-   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X86_LIB_RELEASE WITH_OPENSSL=srclib\openssl\release-x86 APR_DECLARE_STATIC=1
+   > perl Configure no-shared VC-WIN32
+   > nmake
+   > mkdir out32-x86
+   > copy libssl.lib out32-x86\
+   > copy libcrypto.lib out32-x86\
+   > copy apps\openssl.exe out32-x86\
+ 
+   > nmake clean
+
+   > c:\cmsc\setenv.bat /x64
+   > perl Configure no-shared VC-WIN64A
+   > nmake
+   > mkdir out32-x64
+   > copy libssl.lib out32-x64\
+   > copy libcrypto.lib out32-x64\
+   > copy apps\openssl.exe out32-x64\
+
+5. Copy APR and OpenSSL to versioned directories
+
+   Keeping the various libraries in versioned directories saves having to
+   rebuild them next time if the version remains unchanged.    
+
+   > cd ..
+   > set OPENSSL_VER=3.0.0
+   > set APR_VER=1.7.0
+ 
+   > mkdir \deps-x86\apr-%APR_VER%\include
+   > mkdir \deps-x86\apr-%APR_VER%\lib
+   > mkdir \deps-x86\openssl-%OPENSSL_VER%\include
+   > mkdir \deps-x86\openssl-%OPENSSL_VER%\lib
+   > xcopy /E \deps-x86\apr-%APR_VER% \deps-x64\apr-%APR_VER%\
+   > xcopy /E \deps-x86\openssl-%OPENSSL_VER% \deps-x64\openssl-%OPENSSL_VER%\
+ 
+   > xcopy /E apr\include \deps-x86\apr-%APR_VER%\include\
+   > xcopy /E apr\include \deps-x64\apr-%APR_VER%\include\
+ 
+   > copy apr\WIN7_X86_LIB_RELEASE\apr-1.lib \deps-x86\apr-%APR_VER%\lib
+   > copy apr\WIN7_X64_LIB_RELEASE\apr-1.lib \deps-x64\apr-%APR_VER%\lib
+   > xcopy /E openssl\include\openssl \deps-x86\openssl-%OPENSSL_VER%\include\openssl\
+   > xcopy /E openssl\include\openssl \deps-x64\openssl-%OPENSSL_VER%\include\openssl\
+   > copy openssl\out32-x86\*.lib \deps-x86\openssl-%OPENSSL_VER%\lib\
+   > copy openssl\out32-x64\*.lib \deps-x64\openssl-%OPENSSL_VER%\lib\
+
+   > copy openssl\out32-x86\openssl.exe \deps-x86\openssl-%OPENSSL_VER%\
+   > copy openssl\out32-x64\openssl.exe \deps-x64\openssl-%OPENSSL_VER%\
+
+ 
+ 6. Build Tomcat Native
+ 
+   > cd ..
+   >set JAVA_HOME=\java\jdk11
+
+   > c:\cmsc\setenv.bat /x86
+   > nmake -f NMAKEMakefile WITH_APR=C:\deps-x86\apr-%APR_VER% WITH_OPENSSL=C:\deps-x86\openssl-%OPENSSL_VER% APR_DECLARE_STATIC=1 OPENSSL_NEW_LIBS=1 ENABLE_OCSP=1
+   > move WIN7_X86_DLL_RELEASE WIN7_X86_OCSP_DLL_RELEASE
+   > nmake -f NMAKEMakefile WITH_APR=C:\deps-x86\apr-%APR_VER% WITH_OPENSSL=C:\deps-x86\openssl-%OPENSSL_VER% APR_DECLARE_STATIC=1 OPENSSL_NEW_LIBS=1
  
    > c:\cmsc\setenv.bat /x64
-   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X64_LIB_RELEASE WITH_OPENSSL=srclib\openssl\release-x64 APR_DECLARE_STATIC=1
+   > nmake -f NMAKEMakefile WITH_APR=C:\deps-x64\apr-%APR_VER% WITH_OPENSSL=C:\deps-x64\openssl-%OPENSSL_VER% APR_DECLARE_STATIC=1 OPENSSL_NEW_LIBS=1 ENABLE_OCSP=1
+   > move WIN7_X64_DLL_RELEASE WIN7_X64_OCSP_DLL_RELEASE
+   > nmake -f NMAKEMakefile WITH_APR=C:\deps-x64\apr-%APR_VER% WITH_OPENSSL=C:\deps-x64\openssl-%OPENSSL_VER% APR_DECLARE_STATIC=1 OPENSSL_NEW_LIBS=1
  
-   Note: Use ENABLE_OCSP=1 to create OCSP enabled builds
+   Tomcat Native Connector DLLs may then be found in native\WIN7_*_[OCSP_]DLL_RELEASE    
 
 
 FIPS

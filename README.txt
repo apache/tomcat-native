@@ -5,10 +5,9 @@
 What is it?
 -----------
 
-The Apache Tomcat Native Library provides portable API for features
-not found in contemporary JDK's. It uses Apache Portable Runtime as
-operating system abstraction layer and OpenSSL for SSL networking and
-allows optimal performance in production environments.
+The Apache Tomcat Native Library is an optional component for use with
+Apache Tomcat that allows Tomcat to use OpenSSL as a replacement for JSSE
+to support TLS connections.
 
 
 Licensing
@@ -30,15 +29,11 @@ included in HTML format in the docs directory.
 The most up-to-date documentation can be found at
 http://tomcat.apache.org/native-doc/
 
-Documentation about the Tomcat APR connector which is based
-on this library can be found at
-http://tomcat.apache.org/tomcat-9.0-doc/apr.html.
-
 
 Building
 --------
 
-To build the Java API. Note that Java 1.8 is required to build the Java API.
+To build the Java API. Note that Java 11 is required to build the Java API.
 > ant
 
 To build the native part see native/BUILDING.

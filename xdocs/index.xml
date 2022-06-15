@@ -33,27 +33,9 @@
 
   <p>
     The Apache Tomcat Native Library is an optional component for use with
-    Apache Tomcat that allows Tomcat to use certain native resources
-    for performance, compatibility, etc.
+    Apache Tomcat that allows Tomcat to use OpenSSL as a replacement for JSSE
+    to support TLS connections.
   </p>
-
-  <p>
-    Specifically, the Apache Tomcat Native Library gives Tomcat access to
-    the Apache Portable Runtime (APR) library's network connection (socket)
-    implementation and random-number generator.
-    See the Apache Tomcat documentation for more information on how to
-    configure Tomcat to use the APR connector.
-  </p>
-
-  <p>
-    Features of the APR connector:
-  </p>
-  <ul>
-    <li>Non-blocking I/O for Keep-Alive requests (between requests)</li>
-    <li>Uses OpenSSL for TLS/SSL capabilities (if supported by linked APR library)</li>
-    <li>FIPS 140-2 support for TLS/SSL (if supported by linked OpenSSL library)</li>
-    <li>Support for IPv4, IPv6 and Unix Domain Sockets</li>
-  </ul>
 
 </section>
 
@@ -113,21 +95,21 @@ list of changes.
   <p>
     to create the includes and makefiles to be able to build tc-native.<br/>
     Where:<br/>
-    <code>$HOME/APR</code> is something like /usr/bin/apr-1-config or the path where apr is
-    installed.<br/>
-    <code>$JAVA_HOME</code> is something /home/jfclere/JAVA/jdk1.7.0_80 path to a JDK
-    installation. Any JDK should work but it is advisable to use the same
-    JVM version the JVM you use with Tomcat.<br/>
+    <code>$HOME/APR</code> is something like /usr/bin/apr-1-config or the path
+    where apr is installed.<br/>
+    <code>$JAVA_HOME</code> is something like /home/jfclere/JAVA/jdk11 or the
+    path to a JDK installation. Any JDK should work but it is advisable to use
+    the same JVM version the JVM you use with Tomcat.<br/>
     <code>$HOME/OPENSSL</code> is the path where OpenSSL is installed.<br/>
     <code>$CATALINA_HOME</code> is the path where the produced libraries will be
-    installed. Something like $HOME/apache-tomcat-8.0.47/<br/>
+    installed. Something like $HOME/apache-tomcat-10.0.2<br/>
     <br/>
     The configure is able to guess most of OpenSSL standard installations.
     So most of the time the following will be enough:
   </p>
     <source
 >./configure --with-apr=/usr/bin/apr-1-config \
-            --with-java-home=/home/jfclere/JAVA/jdk1.7.0_80/ \
+            --with-java-home=/home/jfclere/JAVA/jdk11 \
             --with-ssl=yes \
             --prefix=$CATALINA_HOME</source>
   <p>
@@ -176,13 +158,6 @@ list of changes.
       Please see the Apache Tomcat documentation for configuration specifics.
     </p>
 
-    <p>
-      When using Unix Domain Sockets a cleanup is registered to delete the
-      socket on destruction of the socket, or shutdown of the application.
-      Should the application terminate abnormally, the socket deletion will
-      need to be handled by the caller or by the administrator.
-    </p>
-
   </subsection>
 
 <subsection name="UNIX">
@@ -193,21 +168,17 @@ list of changes.
   <source>LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CATALINA_HOME/lib
 export LD_LIBRARY_PATH</source>
   <p>
-   Start tomcat and check for the messages like this ones:
+   Start tomcat and check for the messages like these ones:
   </p>
    <source wrapped="true"
->Nov 29, 2020 12:27:41 PM org.apache.catalina.core.AprLifecycleListener init
-INFO: Loaded APR based Apache Tomcat Native library 1.x.y.
-Nov 29, 2020 12:27:41 PM org.apache.catalina.core.AprLifecycleListener init
-INFO: APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], UDS [true].
-Nov 29, 2020 12:27:41 PM org.apache.coyote.http11.Http11AprProtocol init
-INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
+>15-Jun-2022 11:06:23.274 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent Loaded Apache Tomcat Native library [2.0.0-dev] using APR version [1.7.0]
+15-Jun-2022 11:06:23.298 INFO [main] org.apache.catalina.core.AprLifecycleListener.initializeSSL OpenSSL successfully initialized [OpenSSL 3.0.4-dev 3 May 2022]</source>
 
   <p>
     Refer to the tomcat documentation to configure the connectors (See
-    <a href="http://tomcat.apache.org/tomcat-10.0-doc/apr.html">Tomcat 10.0.x</a>,
-    <a href="http://tomcat.apache.org/tomcat-9.0-doc/apr.html">Tomcat 9.0.x</a> and 
-    <a href="http://tomcat.apache.org/tomcat-8.5-doc/apr.html">Tomcat 8.5.x</a>)
+    <a href="https://tomcat.apache.org/tomcat-10.1-doc/config/http.html">Tomcat 10.1.x</a>,
+    <a href="https://tomcat.apache.org/tomcat-9.0-doc/config/http.html">Tomcat 9.0.x</a> and 
+    <a href="https://tomcat.apache.org/tomcat-8.5-doc/config/http.html">Tomcat 8.5.x</a>)
   </p>
 </subsection>
 
@@ -220,15 +191,11 @@ INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
   <source wrapped="true"
     >set PATH=%PATH;C:\cygwin\home\support\tomcat-native-current-win32-src\jni\native\Debug;C:\cygwin\home\support\tomcat-native-current-win32-src\jni\apr\Debug;C:\OpenSSL\lib\VC</source>
   <p>
-    Start tomcat and check for the messages like this ones:
+    Start tomcat and check for the messages like these ones:
   </p>
-  <source wrapped="true"
->Nov 29, 2020 2:48:17 PM org.apache.catalina.core.AprLifecycleListener init
-INFO: Loaded APR based Apache Tomcat Native library 1.x.y.
-Nov 29, 2020 2:48:17 PM org.apache.catalina.core.AprLifecycleListener init
-INFO: APR capabilities: IPv6 [false], sendfile [true], accept filters [false], random [true], UDS [false].
-Nov 29, 2020 2:48:18 PM org.apache.coyote.http11.Http11AprProtocol init
-INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
+   <source wrapped="true"
+>15-Jun-2022 11:06:23.274 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent Loaded Apache Tomcat Native library [2.0.0-dev] using APR version [1.7.0]
+15-Jun-2022 11:06:23.298 INFO [main] org.apache.catalina.core.AprLifecycleListener.initializeSSL OpenSSL successfully initialized [OpenSSL 3.0.4-dev 3 May 2022]</source>
 
 </subsection>
 
