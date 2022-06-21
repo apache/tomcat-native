@@ -27,7 +27,7 @@
 extern int WIN32_SSL_password_prompt(tcn_pass_cb_t *data);
 #endif
 
-#ifdef HAVE_OCSP_STAPLING
+#ifdef HAVE_OCSP
 #include <openssl/bio.h>
 #include <openssl/ocsp.h>
 /* defines with the values as seen by the asn1parse -dump openssl command */
@@ -356,7 +356,7 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
         X509_STORE_CTX_set_error(ctx, -1);
     }
 
-#ifdef HAVE_OCSP_STAPLING
+#ifdef HAVE_OCSP
     /* First perform OCSP validation if possible */
     if (ocsp_check_type == 0) {
        if (ok) {
@@ -528,7 +528,7 @@ int SSL_callback_alpn_select_proto(SSL* ssl, const unsigned char **out, unsigned
     tcn_ssl_ctxt_t *ssl_ctxt = arg;
     return select_next_proto(ssl, out, outlen, in, inlen, ssl_ctxt->alpn_proto_data, ssl_ctxt->alpn_proto_len, ssl_ctxt->alpn_selector_failure_behavior);
 }
-#ifdef HAVE_OCSP_STAPLING
+#ifdef HAVE_OCSP
 
 /* Function that is used to do the OCSP verification */
 static int ssl_verify_OCSP(X509_STORE_CTX *ctx)
@@ -1125,5 +1125,5 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx)
     return OCSP_STATUS_UNKNOWN;
 }
 
-#endif /* HAVE_OCSP_STAPLING */
+#endif /* HAVE_OCSP */
 #endif /* HAVE_OPENSSL  */
