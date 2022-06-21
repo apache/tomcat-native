@@ -1,0 +1,86 @@
+diff --git a/Configurations/10-main.conf b/Configurations/10-main.conf
+index 66bc81dfb4..52345e4f33 100644
+--- a/Configurations/10-main.conf
++++ b/Configurations/10-main.conf
+@@ -1369,7 +1369,7 @@ my %targets = (
+         # prefer [non-debug] openssl.exe to be free from Micorosoft RTL
+         # redistributable.
+         bin_cflags       => add(picker(debug   => "/MDd",
+-                                       release => sub { $disabled{shared} ? "/MT" : () },
++                                       release => "/MD",
+                                       )),
+         bin_lflags       => add("/subsystem:console /opt:ref"),
+         ex_libs          => add(sub {
+diff --git a/apps/lib/s_socket.c b/apps/lib/s_socket.c
+index 059afe47b9..cbece5fcb3 100644
+--- a/apps/lib/s_socket.c
++++ b/apps/lib/s_socket.c
+@@ -31,7 +31,7 @@ typedef unsigned int u_int;
+ 
+ /* MSVC renamed some POSIX functions to have an underscore prefix. */
+ # ifdef _MSC_VER
+-#  define getpid _getpid
++#  define getpid GetCurrentProcessId
+ # endif
+ #endif
+ 
+diff --git a/crypto/cmp/cmp_util.c b/crypto/cmp/cmp_util.c
+index ed611d64dd..09238bfb7d 100644
+--- a/crypto/cmp/cmp_util.c
++++ b/crypto/cmp/cmp_util.c
+@@ -9,6 +9,7 @@
+  * https://www.openssl.org/source/license.html
+  */
+ 
++#include "e_os.h"
+ #include <string.h>
+ #include <openssl/cmp_util.h>
+ #include "cmp_local.h" /* just for decls of internal functions defined here */
+diff --git a/crypto/engine/eng_openssl.c b/crypto/engine/eng_openssl.c
+index 91656e6b80..e0692e5618 100644
+--- a/crypto/engine/eng_openssl.c
++++ b/crypto/engine/eng_openssl.c
+@@ -18,6 +18,7 @@
+ #include "internal/deprecated.h"
+ 
+ #include <stdio.h>
++#include "e_os.h"
+ #include <openssl/crypto.h>
+ #include "internal/cryptlib.h"
+ #include "crypto/engine.h"
+diff --git a/engines/e_capi.c b/engines/e_capi.c
+index 6f223a6922..045d1368fd 100644
+--- a/engines/e_capi.c
++++ b/engines/e_capi.c
+@@ -18,6 +18,7 @@
+ # include <wincrypt.h>
+ 
+ # include <stdio.h>
++# include "e_os.h"
+ # include <string.h>
+ # include <stdlib.h>
+ # include <malloc.h>
+diff --git a/test/testutil/basic_output.c b/test/testutil/basic_output.c
+index 92f3de9300..e84301946e 100644
+--- a/test/testutil/basic_output.c
++++ b/test/testutil/basic_output.c
+@@ -7,6 +7,7 @@
+  * https://www.openssl.org/source/license.html
+  */
+ 
++#include "e_os.h"
+ #include "../testutil.h"
+ #include "output.h"
+ #include "tu_local.h"
+diff --git a/test/testutil/provider.c b/test/testutil/provider.c
+index d073d732da..8a96f9a151 100644
+--- a/test/testutil/provider.c
++++ b/test/testutil/provider.c
+@@ -7,6 +7,7 @@
+  * https://www.openssl.org/source/license.html
+  */
+ 
++#include "e_os.h"
+ #include "../testutil.h"
+ #include <openssl/provider.h>
+ #include <string.h>
