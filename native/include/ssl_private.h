@@ -207,7 +207,7 @@ extern ENGINE *tcn_ssl_engine;
 
 /* OCSP stapling */
 #if !defined(OPENSSL_NO_OCSP) && defined(SSL_CTX_set_tlsext_status_cb)
-#define HAVE_OCSP_STAPLING
+#define HAVE_OCSP
 #define OCSP_STATUS_OK        0
 #define OCSP_STATUS_REVOKED   1
 #define OCSP_STATUS_UNKNOWN   2
