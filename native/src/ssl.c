@@ -912,15 +912,16 @@ TCN_IMPLEMENT_CALL(void, SSL, randSet)(TCN_STDARGS, jstring file)
 
 TCN_IMPLEMENT_CALL(jint, SSL, fipsModeGet)(TCN_STDARGS)
 {
-    UNREFERENCED(o);
 
 #if defined(LIBRESSL_VERSION_NUMBER)
+    UNREFERENCED(o);
     /* LibreSSL doesn't support FIPS */
     return 0;
 #else
     EVP_MD              *md;
     const OSSL_PROVIDER *provider;
     const char          *name;
+    UNREFERENCED(o);
 
     // Maps the OpenSSL 3. x onwards behaviour to theOpenSSL 1.x API
 
