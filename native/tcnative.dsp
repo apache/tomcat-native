@@ -150,6 +150,10 @@ SOURCE=.\include\tcn_version.h
 # Begin Group "Platform Files"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\os\win32\system.c
+# End Source File
 # End Group
 # Begin Source File
 

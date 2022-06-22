@@ -96,6 +96,7 @@ OBJECTS = \
 	$(WORKDIR)\sslcontext.obj \
 	$(WORKDIR)\sslconf.obj \
 	$(WORKDIR)\sslutils.obj \
+        $(WORKDIR)\system.obj
 !IF DEFINED(WITH_FIPS)
 OBJECTS = $(OBJECTS) srclib\openssl\tmp32\fips_premain.obj
 !ENDIF
