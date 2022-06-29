@@ -66,11 +66,6 @@ Releasing
 
 - Document how to release.
 
-- Add info about updating config.guess and config.sub from 
-
-http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD
-http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD
-
 - ZIP download seems to have group write permissions set
   (at least after I extract it on Solaris).
   It's a bit strange that permissions differ between the
