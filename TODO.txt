@@ -35,13 +35,6 @@ known attacks will not work even with old OpenSSL?
 Should we add a remark about this topic to the docs?
 
 
-Java Classes Source Distribution
---------------------------------
-
-Check on how to handle the test classes.
-I think they have no other home.
-
-
 Releasing
 ---------
 
