@@ -24,7 +24,6 @@
 #include "apr_poll.h"
 #include "apr_network_io.h"
 #include "apr_arch_misc.h" /* for apr_os_level */
-#include "apr_arch_atime.h"  /* for FileTimeToAprTime */
 
 #include "tcn.h"
 #include "ssl_private.h"
@@ -37,13 +36,6 @@
 
 static CRITICAL_SECTION dll_critical_section;   /* dll's critical section */
 static HINSTANCE        dll_instance = NULL;
-static SYSTEM_INFO      dll_system_info;
-static HANDLE           h_kernel = NULL;
-static HANDLE           h_ntdll  = NULL;
-static char             dll_file_name[MAX_PATH];
-
-typedef BOOL (WINAPI *pfnGetSystemTimes)(LPFILETIME, LPFILETIME, LPFILETIME);
-static pfnGetSystemTimes fnGetSystemTimes = NULL;
 
 BOOL
 WINAPI
@@ -60,15 +52,6 @@ DllMain(
         case DLL_PROCESS_ATTACH:
             InitializeCriticalSection(&dll_critical_section);
             dll_instance = instance;
-            GetSystemInfo(&dll_system_info);
-            if ((h_kernel = LoadLibrary("kernel32.dll")) != NULL)
-                fnGetSystemTimes = (pfnGetSystemTimes)GetProcAddress(h_kernel,
-                                                            "GetSystemTimes");
-            if (fnGetSystemTimes == NULL) {
-                FreeLibrary(h_kernel);
-                h_kernel = NULL;
-            }
-            GetModuleFileName(instance, dll_file_name, sizeof(dll_file_name));
             break;
         /** The attached process creates a new thread.
          */
@@ -85,10 +68,6 @@ DllMain(
          *  or FreeLibrary.
          */
         case DLL_PROCESS_DETACH:
-            if (h_kernel)
-                FreeLibrary(h_kernel);
-            if (h_ntdll)
-                FreeLibrary(h_ntdll);
             DeleteCriticalSection(&dll_critical_section);
             break;
 
