@@ -930,10 +930,10 @@ TCN_IMPLEMENT_CALL(jint, SSL, fipsModeGet)(TCN_STDARGS)
     UNREFERENCED(o);
     return FIPS_mode();
 #elif (OPENSSL_VERSION_NUMBER > 0x2FFFFFFFL)
-    UNREFERENCED(o);
     EVP_MD              *md;
     const OSSL_PROVIDER *provider;
     const char          *name;
+    UNREFERENCED(o);
 
     // Maps the OpenSSL 3. x onwards behaviour to theOpenSSL 1.x API
 
