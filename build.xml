@@ -157,7 +157,7 @@
     <target name="javadocs" description="Java documentation">
         <mkdir dir="${docs.dest}"/>
         <mkdir dir="${docs.dest}/api"/>
-        <javadoc sourcepath="${build.src}/java"
+        <javadoc sourcepath="${src.dir}/java"
             destdir="${docs.dest}/api"
             author="true"
             version="true"
@@ -165,7 +165,7 @@
             packagenames="org.apache.tomcat.*"
             windowtitle="${title} (Version ${version})"
             doctitle="&lt;h1&gt;${title} (Version ${version})&lt;/h1&gt;"
-            bottom="Copyright 2002-2020 The Apache Software Foundation.&lt;!--
+            bottom="Copyright 2002-${year} The Apache Software Foundation.&lt;!--
 
 Licensed under the Apache License, Version 2.0 (the 'License');
 you may not use this file except in compliance with the License.
