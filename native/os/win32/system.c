@@ -79,17 +79,6 @@ DllMain(
             if (fnGetSystemTimes == NULL) {
                 FreeLibrary(h_kernel);
                 h_kernel = NULL;
-#if (_WIN32_WINNT < 0x0501)
-                if ((h_ntdll = LoadLibrary("ntdll.dll")) != NULL)
-                    fnNtQuerySystemInformation =
-                        (pfnNtQuerySystemInformation)GetProcAddress(h_ntdll,
-                                                "NtQuerySystemInformation");
-
-                if (fnNtQuerySystemInformation == NULL) {
-                    FreeLibrary(h_ntdll);
-                    h_ntdll = NULL;
-                }
-#endif
             }
             GetModuleFileName(instance, dll_file_name, sizeof(dll_file_name));
             break;
