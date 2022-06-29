@@ -926,7 +926,6 @@ TCN_IMPLEMENT_CALL(void, SSL, randSet)(TCN_STDARGS, jstring file)
 
 TCN_IMPLEMENT_CALL(jint, SSL, fipsModeGet)(TCN_STDARGS)
 {
-    UNREFERENCED(o);
 #ifdef OPENSSL_FIPS
     UNREFERENCED(o);
     return FIPS_mode();
