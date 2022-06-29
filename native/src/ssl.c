@@ -928,8 +928,10 @@ TCN_IMPLEMENT_CALL(jint, SSL, fipsModeGet)(TCN_STDARGS)
 {
     UNREFERENCED(o);
 #ifdef OPENSSL_FIPS
+    UNREFERENCED(o);
     return FIPS_mode();
 #elif (OPENSSL_VERSION_NUMBER > 0x2FFFFFFFL)
+    UNREFERENCED(o);
     EVP_MD              *md;
     const OSSL_PROVIDER *provider;
     const char          *name;
@@ -949,6 +951,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, fipsModeGet)(TCN_STDARGS)
     	return 1;
     }
 #else
+    UNREFERENCED(o);
     /* FIPS is unavailable */
     tcn_ThrowException(e, "FIPS was not available to tcnative at build time. You will need to re-build tcnative against an OpenSSL with FIPS.");
 
