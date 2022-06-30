@@ -67,6 +67,9 @@
     <docs>
       Add HOWTO-RELEASE.txt that describes the release process. (markt)
     </docs>
+    <fix>
+      Fix the autoconf warnings when creating a release. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.x">

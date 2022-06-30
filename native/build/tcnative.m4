@@ -143,10 +143,10 @@ AC_DEFUN([TCN_FIND_JDK_OS],[
 
 dnl TCN_HELP_STRING(LHS, RHS)
 dnl Autoconf 2.50 can not handle substr correctly.  It does have
-dnl AC_HELP_STRING, so let's try to call it if we can.
+dnl AS_HELP_STRING, so let's try to call it if we can.
 dnl Note: this define must be on one line so that it can be properly returned
 dnl as the help string.
-AC_DEFUN(TCN_HELP_STRING,[ifelse(regexp(AC_ACVERSION, 2\.1), -1, AC_HELP_STRING($1,$2),[  ]$1 substr([                       ],len($1))$2)])dnl
+AC_DEFUN(TCN_HELP_STRING,[ifelse(regexp(AC_ACVERSION, 2\.1), -1, AS_HELP_STRING($1,$2),[  ]$1 substr([                       ],len($1))$2)])dnl
 
 dnl
 dnl TCN_FIND_SSL_TOOLKIT
@@ -224,12 +224,12 @@ AC_DEFUN([TCN_FIND_SSL_TOOLKIT],[
   LIBS="$LIBS $TCN_OPENSSL_LIBS"
 
   AC_ARG_ENABLE(openssl-version-check,
-      [AC_HELP_STRING([--disable-openssl-version-check],
+      [AS_HELP_STRING([--disable-openssl-version-check],
       [disable the OpenSSL version check])])
   case "$enable_openssl_version_check" in
     yes|'')
       AC_MSG_CHECKING(OpenSSL library version >= 3.0.0)
-      AC_TRY_RUN([
+      AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <openssl/opensslv.h>
 int main() {
@@ -240,10 +240,7 @@ int main() {
     printf("Require OPENSSL_VERSION_NUMBER 0x3000000f or greater (3.0.0)\n\n");
         return (1);
 }
-    ],
-    [AC_MSG_RESULT(ok)],
-    [AC_MSG_ERROR(Your version of OpenSSL is not compatible with this version of tcnative)],
-    [AC_MSG_RESULT(assuming target platform has compatible version)])
+    ]])],[AC_MSG_RESULT(ok)],[AC_MSG_ERROR(Your version of OpenSSL is not compatible with this version of tcnative)],[AC_MSG_RESULT(assuming target platform has compatible version)])
     ;;
   no)
     AC_MSG_RESULT(Skipped OpenSSL version check)
