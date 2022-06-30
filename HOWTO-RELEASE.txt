@@ -45,6 +45,8 @@ Run the release script to check the Java code is aligned with the current 10.1.x
 source.
 ./jnirelease.sh --ver=main --with-apr=/path/to/apr/source
 
+Switch back to the main branch
+git checkout main
 
 Tagging
 -------
@@ -75,10 +77,11 @@ Create the source release
 # Modify version as appropriate
 ./jnirelease.sh --ver=2.0.0 --with-apr=/path/to/apr/source
 
+# Switch back to the main branch
+git checkout main
+
 
 Create the binary release for Windows
 -------------------------------------
 
 See native/building
-
-
