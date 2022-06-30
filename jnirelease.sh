@@ -285,7 +285,7 @@ cp ${JKJNIDIST}/CHANGELOG.txt ${JKWINDIST}
 
 mv ${JKWINDIST}/build/docs ${JKWINDIST}/docs
 rm -rf ${JKWINDIST}/build
-for i in LICENSE NOTICE README.txt TODO.txt
+for i in LICENSE NOTICE README.txt
 do
     $PERL ${JKWINDIST}/native/build/lineends.pl --cr ${JKWINDIST}/${i}
 done
