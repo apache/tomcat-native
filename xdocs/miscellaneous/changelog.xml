@@ -56,6 +56,9 @@
     <docs>
       Document the TLS rengotiation behaviour. (markt)
     </docs>
+    <update>
+      Update the minimum required Java version to Java 11. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.x">
