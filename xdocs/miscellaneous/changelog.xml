@@ -64,6 +64,9 @@
       Vista and Windows Server 2008. The minimum Windows version is now Windows
       7 / Windows Server 2008 R2. (markt)
     </update>
+    <docs>
+      Add HOWTO-RELEASE.txt that describes the release process. (markt)
+    </docs>
   </changelog>
 </section>
 <section name="Changes in 1.2.x">
