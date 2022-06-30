@@ -35,6 +35,9 @@
     <docs>
       Document the TLS rengotiation behaviour. (markt)
     </docs>
+    <docs>
+      Add HOWTO-RELEASE.txt that describes the release process. (markt)
+    </docs>
   </changelog>
 </section>
 <section name="Changes in 1.2.34">

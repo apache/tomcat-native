@@ -1,0 +1,87 @@
+================================================================================
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+================================================================================
+
+How to do a Tomcat Native release
+=================================
+
+Requirements
+------------
+
+Java 8
+Apache Ant 1.9 or later
+Apache APR 1.4.3 or later source (1.7.0 or later recommended)
+
+
+Preparation
+-----------
+
+Review the open issues in Bugzilla.
+Review open PRs in GitHub.
+
+If you haven't already, add your public PGP key to KEYS.
+
+Ensure dates and/or version numbers are up to date:
+- build.properties.default
+- native/build/rpm/tcnative.spec.in
+- native/include/tcn_version.h
+- native/os/win32/libtcnative.rc
+- xdocs/miscellaneous/changelog.xml
+
+Run the release script to check the Java code is aligned with the current 9.0.x
+source.
+./jnirelease.sh --ver=1.2.x --with-apr=/path/to/apr/source
+
+Switch back to the main branch
+git checkout main
+
+Tagging
+-------
+
+# Check clone is up to date and clean
+git pull
+git status
+
+# Edit files to remove / disable dev build flags
+# - build.properties.default
+# - tcn_version.h
+
+# Confirm the previous edits
+git diff
+
+# Tag (modify version as appropriate)
+git commit -a -m "Tag 1.2.35"
+git tag 1.2.35
+git push origin 1.2.35
+
+# Reset main
+git reset --hard HEAD~1
+
+
+Create the source release
+-------------------------
+
+# Modify version as appropriate
+./jnirelease.sh --ver=1.2.35 --with-apr=/path/to/apr/source
+
+# Switch back to the main branch
+git checkout main
+
+
+Create the binary release for Windows
+-------------------------------------
+
+See native/building
