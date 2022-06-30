@@ -15,9 +15,9 @@
 # limitations under the License.
 #
 
-%define tcnver 1
+%define tcnver 2
 %define aprmajor 1
-%define aprminor 4
+%define aprminor 7
 
 Summary: Tomcat Native Java library
 Name: tcnative
@@ -90,7 +90,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc --parents html
 
 %changelog
-* Tue May 24 2022 Mark Thomas <markt@apache.org> 2.0.0-1
+* Tue Jun 30 2022 Mark Thomas <markt@apache.org> 2.0.0-1
 - update for tcnative 2.0
 * Sat Oct 31 2015 Rainer Jung <rjung@apache.org> 1.2.0-1
 - update for tcnative 1.2
