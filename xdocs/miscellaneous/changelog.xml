@@ -59,6 +59,11 @@
     <update>
       Update the minimum required Java version to Java 11. (markt)
     </update>
+    <update>
+      Remove support for Windows 2000, Windows XP, Windows Server 2003, Windows
+      Vista and Windows Server 2008. The minimum Windows version is now Windows
+      7 / Windows Server 2008 R2. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.x">
