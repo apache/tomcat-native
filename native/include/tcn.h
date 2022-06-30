@@ -32,10 +32,6 @@
 #endif
 
 #if defined(DEBUG) || defined(_DEBUG)
-/* On -DDEBUG use the statistics */
-#ifndef TCN_DO_STATISTICS
-#define TCN_DO_STATISTICS
-#endif
 #endif
 #include <stdio.h>
 #include <stdlib.h>
