@@ -23,10 +23,6 @@
 
   &project;
 
-  <properties>
-    <author email="jfclere@apache.org">Jean-Frederic Clere</author>
-  </properties>
-
 <body>
 
 <section name="Preface">
@@ -36,6 +32,9 @@
 </section>
 <section name="Changes in 1.2.35">
   <changelog>
+    <docs>
+      Document the TLS rengotiation behaviour. (markt)
+    </docs>
   </changelog>
 </section>
 <section name="Changes in 1.2.34">

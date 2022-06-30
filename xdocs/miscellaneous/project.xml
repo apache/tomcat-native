@@ -31,6 +31,7 @@
 
     <menu name="Miscellaneous Documentation">
         <item name="Changelog"                  href="../miscellaneous/changelog.html"/>
+        <item name="TLS renegotiation"          href="../miscellaneous/tls-renegotiation.html"/>
     </menu>
 
     <menu name="News">
