@@ -60,7 +60,7 @@ Linux / Unix / OSX (static linking)
 
 3. Ensure the static APR library is used
 
-   Edit the ~/natives/apr/lib/libapr-2.la file and comment or delete the
+   Edit the ~/natives/apr/lib/libapr-1.la file and comment or delete the
    following sections: dlname='...' and library_names='...'
    This is needed so that libtool picks the static version of the library.
 
