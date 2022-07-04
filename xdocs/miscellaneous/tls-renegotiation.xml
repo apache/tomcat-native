@@ -40,9 +40,10 @@
 </section>
 <section name="Unsafe legacy negotiation">
   <p>
-  Support for unsafe legacy negotiation depends on OpenSSL. Only if Tomcat
-  Native is compiled with a build of OpenSSL that supports legacy renegotiation
-  will Tomcat Native support it.
+  Support for unsafe legacy negotiation depends on OpenSSL. Unsafe legacy
+  renegotiation is disabled by default and will not be allowed unless the
+  OpenSSL configuration option
+  <code>SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION</code> is set.
   </p>
 </section>
 </body>
