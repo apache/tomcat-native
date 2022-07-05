@@ -32,6 +32,11 @@
   </p>
 </section>
 <section name="Changes in 2.0.1">
+  <changelog>
+    <update>
+      Update recommended OpenSSL version to 3.0.5 or later. (markt)
+    </update>
+  </changelog>
 </section>
 <section name="Changes in 2.0.0">
   <changelog>
