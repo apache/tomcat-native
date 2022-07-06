@@ -38,6 +38,9 @@
     <docs>
       Add HOWTO-RELEASE.txt that describes the release process. (markt)
     </docs>
+    <update>
+      Update recommended OpenSSL version to 1.1.1q or later. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.34">
