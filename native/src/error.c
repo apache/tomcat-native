@@ -16,16 +16,6 @@
 
 #include "tcn.h"
 
-static const char *tcn_errors[] = {
-                            "Unknown user error",
-    /* TCN_TIMEUP      */   "Operation timed out",
-    /* TCN_EAGAIN      */   "There is no data ready",
-    /* TCN_EINTR       */   "Interrupted system call",
-    /* TCN_EINPROGRESS */   "Operation in progress",
-    /* TCN_ETIMEDOUT   */   "Connection timed out",
-    NULL
-};
-
 /* Merge IS_ETIMEDOUT with APR_TIMEUP
  */
 #define TCN_STATUS_IS_ETIMEDOUT(x) (APR_STATUS_IS_ETIMEDOUT((x)) || ((x) == APR_TIMEUP))
