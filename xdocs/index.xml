@@ -60,10 +60,10 @@
 <section name="Headlines">
 <ul>
 
-<li><a href="news/2022.html#20220614">14 June 2022 - <b>TC-Native-1.2.34
+<li><a href="news/2022.html#20220712">12 July 2022 - <b>TC-Native-1.2.35
 released</b></a>
 <p>The Apache Tomcat team is proud to announce the immediate availability of
-Tomcat Native 1.2.34 Stable.</p>
+Tomcat Native 1.2.35 Stable.</p>
 <p>
 The sources and the binaries for selected platforms are available from the
 <a href="../download-native.cgi">Download page</a>.
