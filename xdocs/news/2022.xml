@@ -26,19 +26,18 @@
     <title>2022 News and Status</title>
   </properties>
 
-<body>
+  <body>
 
-<section name="2021 News &amp; Status">
- <subsection anchor="20220509" name="5 May 2022 - TC-Native-1.2.33 released">
-  <p>The Apache Tomcat team is proud to announce the immediate availability of
-  Tomcat Native 1.2.33. This is a bugfix release.
-  </p>
- </subsection>
- <subsection anchor="20220322" name="22 Mar 2022 - TC-Native-1.2.32 released">
-  <p>The Apache Tomcat team is proud to announce the immediate availability of
-  Tomcat Native 1.2.32. This is a bugfix release.
-  </p>
- </subsection>
-</section>
-</body>
+    <section name="2022 News &amp; Status">
+    
+      <subsection anchor="20220712" name="12 July 2022 - TC-Native-2.0.1 released">
+        <p>The Apache Tomcat team is proud to announce the immediate
+        availability of Tomcat Native 2.0.1. This is the first release of the
+        2.0.x branch</p>
+      </subsection>
+      
+    </section>
+    
+  </body>
+
 </document>

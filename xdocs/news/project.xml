@@ -36,20 +36,6 @@
 
     <menu name="News">
       <item name="2022" href="../news/2022.html"/>
-      <item name="2021" href="../news/2021.html"/>
-      <item name="2020" href="../news/2020.html"/>
-      <item name="2019" href="../news/2019.html"/>
-      <item name="2018" href="../news/2018.html"/>
-      <item name="2017" href="../news/2017.html"/>
-      <item name="2016" href="../news/2016.html"/>
-      <item name="2015" href="../news/2015.html"/>
-      <item name="2014" href="../news/2014.html"/>
-      <item name="2013" href="../news/2013.html"/>
-      <item name="2012" href="../news/2012.html"/>
-      <item name="2011" href="../news/2011.html"/>
-      <item name="2010" href="../news/2010.html"/>
-      <item name="2009" href="../news/2009.html"/>
-      <item name="2008" href="../news/2008.html"/>
     </menu>
 
   </body>
