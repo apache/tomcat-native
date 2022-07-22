@@ -43,22 +43,9 @@ static void ssl_keylog_callback(const SSL *ssl, const char *line)
 static jclass byteArrayClass;
 static jclass stringClass;
 
-#if defined(LIBRESSL_VERSION_NUMBER)
-/* Global reference to the pool used by the dynamic mutexes */
-static apr_pool_t *dynlockpool = NULL;
-
-/* Dynamic lock structure */
-struct CRYPTO_dynlock_value {
-    apr_pool_t *pool;
-    const char* file;
-    int line;
-    apr_thread_mutex_t *mutex;
-};
-
-#if ! (defined(WIN32) || defined(WIN64))
+#if defined(LIBRESSL_VERSION_NUMBER) && ! (defined(WIN32) || defined(WIN64))
 apr_threadkey_t *thread_exit_key;
 static int threadkey_initialized = 0;
-#endif
 #endif
 
 /*
@@ -293,10 +280,8 @@ DH *SSL_get_dh_params(unsigned keylen)
     return NULL; /* impossible to reach. */
 }
 
-#if !defined(LIBRESSL_VERSION_NUMBER)
 static void init_bio_methods(void);
 static void free_bio_methods(void);
-#endif
 
 TCN_IMPLEMENT_CALL(jint, SSL, version)(TCN_STDARGS)
 {
@@ -321,7 +306,7 @@ static apr_status_t ssl_init_cleanup(void *data)
         return APR_SUCCESS;
     ssl_initialized = 0;
 
-#if defined(LIBRESSL_VERSION_NUMBER) && ! (defined(WIN32) || defined(WIN64))
+#if ! (defined(WIN32) || defined(WIN64))
     if (threadkey_initialized) {
         threadkey_initialized = 0;
         apr_threadkey_private_delete(thread_exit_key);
@@ -334,9 +319,7 @@ static apr_status_t ssl_init_cleanup(void *data)
                          tcn_password_callback.cb.obj);
     }
 
-#if !defined(LIBRESSL_VERSION_NUMBER)
     free_bio_methods();
-#endif
     free_dh_params();
 
 #ifndef OPENSSL_NO_ENGINE
@@ -347,27 +330,7 @@ static apr_status_t ssl_init_cleanup(void *data)
     }
 #endif
 
-#if !defined(LIBRESSL_VERSION_NUMBER)
-    /* Openssl v1.1+ handles all termination automatically. Do
-     * nothing in this case.
-     */
-#else
-    /*
-     * Try to kill the internals of the SSL library.
-     */
-    /* Corresponds to OPENSSL_load_builtin_modules() */
-    CONF_modules_free();
-    /* Corresponds to SSL_library_init: */
-    EVP_cleanup();
-#if HAVE_ENGINE_LOAD_BUILTIN_ENGINES
-    ENGINE_cleanup();
-#endif
-#ifndef OPENSSL_NO_COMP
-    SSL_COMP_free_compression_methods();
-#endif
-    CRYPTO_cleanup_all_ex_data();
-    ERR_remove_thread_state(NULL);
-#endif
+    /* Openssl v1.1+ handles all termination automatically. */
 
     if (key_log_file) {
         BIO_free(key_log_file);
@@ -406,178 +369,10 @@ static ENGINE *ssl_try_load_engine(const char *engine)
  * To ensure thread-safetyness in LibreSSL
  */
 
-#if defined(LIBRESSL_VERSION_NUMBER)
-static apr_thread_mutex_t **ssl_lock_cs;
-static int                  ssl_lock_num_locks;
-
-static void ssl_thread_lock(int mode, int type,
-                            const char *file, int line)
-{
-    UNREFERENCED(file);
-    UNREFERENCED(line);
-    if (type < ssl_lock_num_locks) {
-        if (mode & CRYPTO_LOCK) {
-            apr_thread_mutex_lock(ssl_lock_cs[type]);
-        }
-        else {
-            apr_thread_mutex_unlock(ssl_lock_cs[type]);
-        }
-    }
-}
-#endif
-
 static unsigned long ssl_thread_id(void)
 {
     return (unsigned long)tcn_get_thread_id();
 }
-
-#if defined(LIBRESSL_VERSION_NUMBER)
-#if ! (defined(WIN32) || defined(WIN64))
-void SSL_thread_exit(void) {
-    ERR_remove_thread_state(NULL);
-    apr_threadkey_private_set(NULL, thread_exit_key);
-}
-
-unsigned long SSL_ERR_get() {
-    apr_threadkey_private_set(thread_exit_key, thread_exit_key);
-    return ERR_get_error();
-}
-
-void SSL_ERR_clear() {
-    apr_threadkey_private_set(thread_exit_key, thread_exit_key);
-    ERR_clear_error();
-}
-
-static void _ssl_thread_exit(void *data) {
-    UNREFERENCED(data);
-    SSL_thread_exit();
-}
-#endif
-
-static void ssl_set_thread_id(CRYPTO_THREADID *id)
-{
-    CRYPTO_THREADID_set_numeric(id, ssl_thread_id());
-}
-
-static apr_status_t ssl_thread_cleanup(void *data)
-{
-    UNREFERENCED(data);
-    CRYPTO_THREADID_set_callback(NULL);
-    CRYPTO_set_locking_callback(NULL);
-    CRYPTO_set_dynlock_create_callback(NULL);
-    CRYPTO_set_dynlock_lock_callback(NULL);
-    CRYPTO_set_dynlock_destroy_callback(NULL);
-
-    dynlockpool = NULL;
-
-    /* Let the registered mutex cleanups do their own thing
-     */
-    return APR_SUCCESS;
-}
-
-/*
- * Dynamic lock creation callback
- */
-static struct CRYPTO_dynlock_value *ssl_dyn_create_function(const char *file,
-                                                     int line)
-{
-    struct CRYPTO_dynlock_value *value;
-    apr_pool_t *p;
-    apr_status_t rv;
-
-    /*
-     * We need a pool to allocate our mutex.  Since we can't clear
-     * allocated memory from a pool, create a subpool that we can blow
-     * away in the destruction callback.
-     */
-    rv = apr_pool_create(&p, dynlockpool);
-    if (rv != APR_SUCCESS) {
-        /* TODO log that fprintf(stderr, "Failed to create subpool for dynamic lock"); */
-        return NULL;
-    }
-
-    value = (struct CRYPTO_dynlock_value *)apr_palloc(p,
-                                                      sizeof(struct CRYPTO_dynlock_value));
-    if (!value) {
-        /* TODO log that fprintf(stderr, "Failed to allocate dynamic lock structure"); */
-        return NULL;
-    }
-
-    value->pool = p;
-    /* Keep our own copy of the place from which we were created,
-       using our own pool. */
-    value->file = apr_pstrdup(p, file);
-    value->line = line;
-    rv = apr_thread_mutex_create(&(value->mutex), APR_THREAD_MUTEX_DEFAULT,
-                                p);
-    if (rv != APR_SUCCESS) {
-        /* TODO log that fprintf(stderr, "Failed to create thread mutex for dynamic lock"); */
-        apr_pool_destroy(p);
-        return NULL;
-    }
-    return value;
-}
-
-/*
- * Dynamic locking and unlocking function
- */
-
-static void ssl_dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
-                           const char *file, int line)
-{
-
-
-    if (mode & CRYPTO_LOCK) {
-        apr_thread_mutex_lock(l->mutex);
-    }
-    else {
-        apr_thread_mutex_unlock(l->mutex);
-    }
-}
-
-/*
- * Dynamic lock destruction callback
- */
-static void ssl_dyn_destroy_function(struct CRYPTO_dynlock_value *l,
-                          const char *file, int line)
-{
-    apr_status_t rv;
-    rv = apr_thread_mutex_destroy(l->mutex);
-    if (rv != APR_SUCCESS) {
-        /* TODO log that fprintf(stderr, "Failed to destroy mutex for dynamic lock %s:%d", l->file, l->line); */
-    }
-    /* Trust that whomever owned the CRYPTO_dynlock_value we were
-     * passed has no future use for it...
-     */
-    apr_pool_destroy(l->pool);
-}
-
-static void ssl_thread_setup(apr_pool_t *p)
-{
-    int i;
-
-    CRYPTO_THREADID_set_callback(ssl_set_thread_id);
-    ssl_lock_num_locks = CRYPTO_num_locks();
-    ssl_lock_cs = apr_palloc(p, ssl_lock_num_locks * sizeof(*ssl_lock_cs));
-
-    for (i = 0; i < ssl_lock_num_locks; i++) {
-        apr_thread_mutex_create(&(ssl_lock_cs[i]),
-                                APR_THREAD_MUTEX_DEFAULT, p);
-    }
-
-    CRYPTO_set_locking_callback(ssl_thread_lock);
-    /* Set up dynamic locking scaffolding for OpenSSL to use at its
-     * convenience.
-     */
-    dynlockpool = p;
-    CRYPTO_set_dynlock_create_callback(ssl_dyn_create_function);
-    CRYPTO_set_dynlock_lock_callback(ssl_dyn_lock_function);
-    CRYPTO_set_dynlock_destroy_callback(ssl_dyn_destroy_function);
-
-    apr_pool_cleanup_register(p, NULL, ssl_thread_cleanup,
-                              apr_pool_cleanup_null);
-}
-#endif
 
 static int ssl_rand_choosenum(int l, int h)
 {
@@ -781,9 +576,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     SSL_init_app_data_idx();
 
     init_dh_params();
-#if !defined(LIBRESSL_VERSION_NUMBER)
     init_bio_methods();
-#endif
 
     /*
      * Let us cleanup the ssl library when the library is unloaded
@@ -861,7 +654,6 @@ TCN_IMPLEMENT_CALL(void, SSL, randSet)(TCN_STDARGS, jstring file)
 
 TCN_IMPLEMENT_CALL(jint, SSL, fipsModeGet)(TCN_STDARGS)
 {
-
 #if defined(LIBRESSL_VERSION_NUMBER)
     UNREFERENCED(o);
     /* LibreSSL doesn't support FIPS */

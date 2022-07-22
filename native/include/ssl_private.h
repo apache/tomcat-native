@@ -365,7 +365,7 @@ int         SSL_rand_seed(const char *file);
 int         SSL_callback_alpn_select_proto(SSL *, const unsigned char **, unsigned char *, const unsigned char *, unsigned int, void *);
 void        SSL_callback_add_keylog(SSL_CTX *);
 
-#if defined(LIBRESSL_VERSION_NUMBER) && ! (defined(WIN32) || defined(WIN64))
+#if ! (defined(WIN32) || defined(WIN64))
 unsigned long SSL_ERR_get(void);
 void SSL_ERR_clear(void);
 #else
