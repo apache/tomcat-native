@@ -207,29 +207,6 @@ static const jint supported_ssl_opts = 0
 #endif
      | 0;
 
-#if defined(LIBRESSL_VERSION_NUMBER)
-/* LibreSSL compatibility */
-/* Taken from OpenSSL 1.1.0 snapshot 20160410 */
-int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
-{
-    /* q is optional */
-    if (p == NULL || g == NULL)
-        return 0;
-    BN_free(dh->p);
-    BN_free(dh->q);
-    BN_free(dh->g);
-    dh->p = p;
-    dh->q = q;
-    dh->g = g;
-
-    if (q != NULL) {
-        dh->length = BN_num_bits(q);
-    }
-
-    return 1;
-}
-#endif
-
 /*
  * Grab well-defined DH parameters from OpenSSL, see the BN_get_rfc*
  * functions in <openssl/bn.h> for all available primes.
@@ -758,40 +735,12 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
         TCN_FREE_CSTRING(engine);
         return (jint)APR_SUCCESS;
     }
-#if !defined(LIBRESSL_VERSION_NUMBER)
     /* Openssl v1.1+ handles all initialisation automatically, apart
      * from hints as to how we want to use the library.
      *
      * We tell openssl we want to include engine support.
      */
     OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN, NULL);
-#else
-    /* We must register the library in full, to ensure our configuration
-     * code can successfully test the SSL environment.
-     */
-    OPENSSL_malloc_init();
-    ERR_load_crypto_strings();
-    SSL_load_error_strings();
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
-#if HAVE_ENGINE_LOAD_BUILTIN_ENGINES
-    ENGINE_load_builtin_engines();
-#endif
-    OPENSSL_load_builtin_modules();
-
-#if ! (defined(WIN32) || defined(WIN64))
-    err = apr_threadkey_private_create(&thread_exit_key, _ssl_thread_exit,
-                                       tcn_global_pool);
-    if (err != APR_SUCCESS) {
-        ssl_init_cleanup(NULL);
-        tcn_ThrowAPRException(e, err);
-        return (jint)err;
-    }
-    threadkey_initialized = 1;
-#endif
-    /* Initialize thread support */
-    ssl_thread_setup(tcn_global_pool);
-#endif
 
 #ifndef OPENSSL_NO_ENGINE
     if (J2S(engine)) {
@@ -1140,20 +1089,6 @@ static long jbs_ctrl(BIO *b, int cmd, long num, void *ptr)
     return ret;
 }
 
-#if defined(LIBRESSL_VERSION_NUMBER)
-static BIO_METHOD jbs_methods = {
-    BIO_TYPE_FILE,
-    "Java Callback",
-    jbs_write,
-    jbs_read,
-    jbs_puts,
-    jbs_gets,
-    jbs_ctrl,
-    jbs_new,
-    jbs_free,
-    NULL
-};
-#else
 static BIO_METHOD *jbs_methods = NULL;
 
 static void init_bio_methods(void)
@@ -1172,15 +1107,10 @@ static void free_bio_methods(void)
 {
     BIO_meth_free(jbs_methods);
 }
-#endif
 
 static BIO_METHOD *BIO_jbs()
 {
-#if defined(LIBRESSL_VERSION_NUMBER)
-    return(&jbs_methods);
-#else
     return jbs_methods;
-#endif
 }
 
 TCN_IMPLEMENT_CALL(jlong, SSL, newBIO)(TCN_STDARGS, jlong pool,

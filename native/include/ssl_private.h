@@ -46,7 +46,9 @@
 #include <openssl/x509v3.h>
 #include <openssl/dh.h>
 #include <openssl/bn.h>
+#ifndef LIBRESSL_VERSION_NUMBER
 #include <openssl/provider.h>
+#endif
 /* Avoid tripping over an engine build installed globally and detected
  * when the user points at an explicit non-engine flavor of OpenSSL
  */
@@ -214,30 +216,6 @@ extern ENGINE *tcn_ssl_engine;
 #endif
 
 #endif /* !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name) */
-
-/* LibreSSL compatibility */
-#if defined(LIBRESSL_VERSION_NUMBER)
-#define OpenSSL_version                  SSLeay_version
-#define OpenSSL_version_num              SSLeay
-#define OPENSSL_VERSION                  SSLEAY_VERSION
-#define OPENSSL_malloc_init              CRYPTO_malloc_init
-#define BN_get_rfc2409_prime_1024        get_rfc2409_prime_1024
-#define BN_get_rfc3526_prime_1536        get_rfc3526_prime_1536
-#define BN_get_rfc3526_prime_2048        get_rfc3526_prime_2048
-#define BN_get_rfc3526_prime_3072        get_rfc3526_prime_3072
-#define BN_get_rfc3526_prime_4096        get_rfc3526_prime_4096
-#define BN_get_rfc3526_prime_6144        get_rfc3526_prime_6144
-#define BN_get_rfc3526_prime_8192        get_rfc3526_prime_8192
-#define BIO_get_init(x)                  (x->init)
-#define BIO_set_init(x,v)                (x->init=v)
-#define BIO_get_data(x)                  (x->ptr)
-#define BIO_set_data(x,v)                (x->ptr=v)
-#define BIO_set_shutdown(x,v)            (x->shutdown=v)
-#define X509_STORE_CTX_get0_untrusted(x) (x->untrusted)
-#define TLS_method                       SSLv23_method
-#define TLS_client_method                SSLv23_client_method
-#define TLS_server_method                SSLv23_server_method
-#endif /* defined(LIBRESSL_VERSION_NUMBER) */
 
 #define MAX_ALPN_PROTO_SIZE 65535
 #define SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL            1

@@ -1839,13 +1839,8 @@ static const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
     if (cipher == NULL) {
         return "UNKNOWN";
     }
-#if defined(LIBRESSL_VERSION_NUMBER)
-    kx = cipher->algorithm_mkey;
-    auth = cipher->algorithm_auth;
-#else
     kx = SSL_CIPHER_get_kx_nid(cipher);
     auth = SSL_CIPHER_get_auth_nid(cipher);
-#endif
 
     switch (kx)
         {
