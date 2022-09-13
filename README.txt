@@ -5,7 +5,7 @@
 What is it?
 -----------
 
-The Apache Tomcat Native Library is an optional component for use with
+The Apache Tomcat Native Library is an optional component to use with
 Apache Tomcat that allows Tomcat to use OpenSSL as a replacement for JSSE
 to support TLS connections.
 
