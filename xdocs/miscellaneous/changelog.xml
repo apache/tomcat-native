@@ -37,6 +37,10 @@
       Update the minimum supported version of LibreSSL to 3.5.2. Based on pull
       request <pr>13</pr> provided by orbea. (markt)
     </update>
+    <fix>
+      Fix build when building with rlibtool. Pull request <pr>14</pr> provided
+      by orbea. (markt)
+    </fix>
   </changelog>
 </section>
 
