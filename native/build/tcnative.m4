@@ -233,7 +233,7 @@ AC_DEFUN([TCN_FIND_SSL_TOOLKIT],[
 #include <stdio.h>
 #include <openssl/opensslv.h>
 int main() {
-        if (OPENSSL_VERSION_NUMBER >= 0x3000000fL)
+        if (OPENSSL_VERSION_NUMBER >= 0x3000000fL || LIBRESSL_VERSION_NUMBER >= 0x3050200fL)
             return (0);
     printf("\n\nFound   OPENSSL_VERSION_NUMBER %#010x (" OPENSSL_VERSION_TEXT ")\n",
         OPENSSL_VERSION_NUMBER);

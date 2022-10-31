@@ -273,27 +273,6 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         BIO_set_fp(c->bio_os, stderr, BIO_NOCLOSE | BIO_FP_TEXT);
     SSL_CTX_set_options(c->ctx, SSL_OP_ALL);
 
-#if defined(LIBRESSL_VERSION_NUMBER)
-    /* always disable SSLv2, as per RFC 6176 */
-    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
-    if (!(protocol & SSL_PROTOCOL_SSLV3))
-        SSL_CTX_set_options(c->ctx, SSL_OP_NO_SSLv3);
-    if (!(protocol & SSL_PROTOCOL_TLSV1))
-        SSL_CTX_set_options(c->ctx, SSL_OP_NO_TLSv1);
-#ifdef HAVE_TLSV1_1
-    if (!(protocol & SSL_PROTOCOL_TLSV1_1))
-        SSL_CTX_set_options(c->ctx, SSL_OP_NO_TLSv1_1);
-#endif
-#ifdef HAVE_TLSV1_2
-    if (!(protocol & SSL_PROTOCOL_TLSV1_2))
-        SSL_CTX_set_options(c->ctx, SSL_OP_NO_TLSv1_2);
-#endif
-#ifdef HAVE_TLSV1_3
-    if (!(protocol & SSL_PROTOCOL_TLSV1_3))
-        SSL_CTX_set_options(c->ctx, SSL_OP_NO_TLSv1_3);
-#endif
-
-#else
     /* We first determine the maximum protocol version we should provide */
 #ifdef HAVE_TLSV1_3
     if (protocol & SSL_PROTOCOL_TLSV1_3) {
@@ -333,7 +312,6 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         prot = SSL3_VERSION;
     }
     SSL_CTX_set_min_proto_version(ctx, prot);
-#endif
 
     /*
      * Configure additional context ingredients
@@ -577,9 +555,6 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
     const char *name;
     int i;
     jstring c_name;
-#if defined(LIBRESSL_VERSION_NUMBER)
-    SSL *ssl;
-#endif
 
     UNREFERENCED_STDARGS;
 
@@ -590,23 +565,10 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
 
     /* For LibreSSL get_ciphers() iss only available
      * on an SSL, not for an SSL_CTX. */
-#if defined(LIBRESSL_VERSION_NUMBER)
-    ssl = SSL_new(c->ctx);
-    if (ssl == NULL) {
-        tcn_ThrowException(e, "could not create temporary ssl from ssl context");
-        return NULL;
-    }
-
-    sk = SSL_get_ciphers(ssl);
-#else
     sk = SSL_CTX_get_ciphers(c->ctx);
-#endif
     len = sk_SSL_CIPHER_num(sk);
 
     if (len <= 0) {
-#if defined(LIBRESSL_VERSION_NUMBER)
-        SSL_free(ssl);
-#endif
         return NULL;
     }
 
@@ -619,9 +581,6 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
         c_name = (*e)->NewStringUTF(e, name);
         (*e)->SetObjectArrayElement(e, array, i, c_name);
     }
-#if defined(LIBRESSL_VERSION_NUMBER)
-    SSL_free(ssl);
-#endif
     return array;
 }
 
@@ -1287,14 +1246,9 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addChainCertificateRaw)(TCN_STDARGS, jl
         ERR_error_string(SSL_ERR_get(), err);
         tcn_Throw(e, "Error reading certificate (%s)", err);
         rv = JNI_FALSE;
-#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20901000L
-    } else {
-        tcn_Throw(e, "Unable to use Java keystores with LibreSSL");
-#else
     } else if (SSL_CTX_add0_chain_cert(c->ctx, certs) <= 0) {
         ERR_error_string(SSL_ERR_get(), err);
         tcn_Throw(e, "Error adding certificate to chain (%s)", err);
-#endif
         rv = JNI_FALSE;
     }
 
@@ -1738,96 +1692,34 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setSessionTicketKeys)(TCN_STDARGS, jlong ct
     (*e)->ReleaseByteArrayElements(e, keys, b, 0);
 }
 
-
 #if defined(LIBRESSL_VERSION_NUMBER)
 
 /*
  * Adapted from OpenSSL:
  * https://github.com/openssl/openssl/blob/OpenSSL_1_0_2-stable/ssl/ssl_locl.h#L318
  */
-/* Bits for algorithm_mkey (key exchange algorithm) */
-/* RSA key exchange */
-# define SSL_kRSA                0x00000001L
-/* DH cert, RSA CA cert */
-# define SSL_kDHr                0x00000002L
-/* DH cert, DSA CA cert */
-# define SSL_kDHd                0x00000004L
-/* tmp DH key no DH cert */
-# define SSL_kEDH                0x00000008L
-/* forward-compatible synonym */
-# define SSL_kDHE                SSL_kEDH
-/* Kerberos5 key exchange */
-# define SSL_kKRB5               0x00000010L
-/* ECDH cert, RSA CA cert */
-# define SSL_kECDHr              0x00000020L
-/* ECDH cert, ECDSA CA cert */
-# define SSL_kECDHe              0x00000040L
-/* ephemeral ECDH */
-# define SSL_kEECDH              0x00000080L
-/* forward-compatible synonym */
-# define SSL_kECDHE              SSL_kEECDH
-/* PSK */
-# define SSL_kPSK                0x00000100L
-/* GOST key exchange */
-# define SSL_kGOST               0x00000200L
-/* SRP */
-# define SSL_kSRP                0x00000400L
 
 /* Bits for algorithm_auth (server authentication) */
-/* RSA auth */
-# define SSL_aRSA                0x00000001L
 /* DSS auth */
 # define SSL_aDSS                0x00000002L
-/* no auth (i.e. use ADH or AECDH) */
-# define SSL_aNULL               0x00000004L
-/* Fixed DH auth (kDHd or kDHr) */
-# define SSL_aDH                 0x00000008L
-/* Fixed ECDH auth (kECDHe or kECDHr) */
-# define SSL_aECDH               0x00000010L
-/* KRB5 auth */
-# define SSL_aKRB5               0x00000020L
-/* ECDSA auth*/
-# define SSL_aECDSA              0x00000040L
-/* PSK auth */
-# define SSL_aPSK                0x00000080L
-/* GOST R 34.10-94 signature auth */
-# define SSL_aGOST94             0x00000100L
-/* GOST R 34.10-2001 signature auth */
-# define SSL_aGOST01             0x00000200L
-/* SRP auth */
-# define SSL_aSRP                0x00000400L
 
 /* OpenSSL end */
 
-#define TCN_SSL_kRSA                SSL_kRSA
-#define TCN_SSL_kDHr                SSL_kDHr
-#define TCN_SSL_kDHd                SSL_kDHd
-#define TCN_SSL_kDHE                SSL_kDHE
-#define TCN_SSL_kKRB5               SSL_kKRB5
-#define TCN_SSL_kECDHr              SSL_kECDHr
-#define TCN_SSL_kECDHe              SSL_kECDHe
-#define TCN_SSL_kECDHE              SSL_kECDHE
-
-#define TCN_SSL_aRSA                SSL_aRSA
 #define TCN_SSL_aDSS                SSL_aDSS
-#define TCN_SSL_aNULL               SSL_aNULL
-#define TCN_SSL_aDH                 SSL_aDH
-#define TCN_SSL_aECDH               SSL_aECDH
-#define TCN_SSL_aKRB5               SSL_aKRB5
-#define TCN_SSL_aECDSA              SSL_aECDSA
 
 #else
+
+#define TCN_SSL_aDSS                NID_auth_dss
+
+#endif
 
 #define TCN_SSL_kRSA                NID_kx_rsa
 #define TCN_SSL_kDHE                NID_kx_dhe
 #define TCN_SSL_kECDHE              NID_kx_ecdhe
 
 #define TCN_SSL_aRSA                NID_auth_rsa
-#define TCN_SSL_aDSS                NID_auth_dss
 #define TCN_SSL_aNULL               NID_auth_null
 #define TCN_SSL_aECDSA              NID_auth_ecdsa
-
-#endif
 
 /*
  * Adapted from Android:
@@ -1839,13 +1731,8 @@ static const char* SSL_CIPHER_authentication_method(const SSL_CIPHER* cipher){
     if (cipher == NULL) {
         return "UNKNOWN";
     }
-#if defined(LIBRESSL_VERSION_NUMBER)
-    kx = cipher->algorithm_mkey;
-    auth = cipher->algorithm_auth;
-#else
     kx = SSL_CIPHER_get_kx_nid(cipher);
     auth = SSL_CIPHER_get_auth_nid(cipher);
-#endif
 
     switch (kx)
         {
