@@ -43,11 +43,6 @@ static void ssl_keylog_callback(const SSL *ssl, const char *line)
 static jclass byteArrayClass;
 static jclass stringClass;
 
-#if defined(LIBRESSL_VERSION_NUMBER) && ! (defined(WIN32) || defined(WIN64))
-apr_threadkey_t *thread_exit_key;
-static int threadkey_initialized = 0;
-#endif
-
 /*
  * supported_ssl_opts is a bitmask that contains all supported SSL_OP_*
  * options at compile-time. This is used in hasOp to determine which
@@ -306,12 +301,6 @@ static apr_status_t ssl_init_cleanup(void *data)
         return APR_SUCCESS;
     ssl_initialized = 0;
 
-#if ! (defined(WIN32) || defined(WIN64))
-    if (threadkey_initialized) {
-        threadkey_initialized = 0;
-        apr_threadkey_private_delete(thread_exit_key);
-    }
-#endif
     if (tcn_password_callback.cb.obj) {
         JNIEnv *env;
         tcn_get_java_env(&env);

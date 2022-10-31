@@ -33,6 +33,10 @@
 </section>
 <section name="Changes in 2.0.2">
   <changelog>
+    <update>
+      Update the minimum supported version of LibreSSL to 3.5.2. Based on pull
+      request <pr>13</pr> provided by orbea. (markt)
+    </update>
   </changelog>
 </section>
 
