@@ -30,10 +30,15 @@
 
     <section name="2022 News &amp; Status">
     
+      <subsection anchor="20220811" name="11 November 2022 - TC-Native-2.0.2 released">
+        <p>The Apache Tomcat team is proud to announce the immediate
+        availability of Tomcat Native 2.0.2.</p>
+      </subsection>
+      
       <subsection anchor="20220712" name="12 July 2022 - TC-Native-2.0.1 released">
         <p>The Apache Tomcat team is proud to announce the immediate
         availability of Tomcat Native 2.0.1. This is the first release of the
-        2.0.x branch</p>
+        2.0.x branch.</p>
       </subsection>
       
     </section>
