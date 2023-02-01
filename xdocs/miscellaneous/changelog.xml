@@ -32,6 +32,9 @@
   </p>
 </section>
 <section name="Changes in 2.0.3">
+    <update>
+      Update the recommended minimum version of APR to 1.7.1. (markt)
+    </update>
 </section>
 <section name="Changes in 2.0.2">
   <changelog>
