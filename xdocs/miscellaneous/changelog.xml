@@ -32,9 +32,14 @@
   </p>
 </section>
 <section name="Changes in 2.0.3">
+  <changelog>
     <update>
-      Update the recommended minimum version of APR to 1.7.1. (markt)
+      Update the recommended minimum version of APR to 1.7.2. (markt)
     </update>
+    <update>
+      Update the recommended minimum version of OpenSSL to 3.0.8. (markt)
+    </update>
+  </changelog>
 </section>
 <section name="Changes in 2.0.2">
   <changelog>
