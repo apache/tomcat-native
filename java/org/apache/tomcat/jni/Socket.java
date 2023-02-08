@@ -19,7 +19,8 @@ package org.apache.tomcat.jni;
 /* Import needed classes */
 import java.nio.ByteBuffer;
 
-/** Socket
+/**
+ * Socket
  *
  * @author Mladen Turk
  *
@@ -37,23 +38,34 @@ public class Socket {
     /*
      * apr_sockopt Socket option definitions
      */
-    public static final int APR_SO_LINGER       = 1;    /** Linger */
-    public static final int APR_SO_KEEPALIVE    = 2;    /** Keepalive */
-    public static final int APR_SO_DEBUG        = 4;    /** Debug */
-    public static final int APR_SO_NONBLOCK     = 8;    /** Non-blocking IO */
-    public static final int APR_SO_REUSEADDR    = 16;   /** Reuse addresses */
-    public static final int APR_SO_SNDBUF       = 64;   /** Send buffer */
-    public static final int APR_SO_RCVBUF       = 128;  /** Receive buffer */
-    public static final int APR_SO_DISCONNECTED = 256;  /** Disconnected */
+    /** Linger */
+    public static final int APR_SO_LINGER       = 1;
+    /** Keepalive */
+    public static final int APR_SO_KEEPALIVE    = 2;
+    /** Debug */
+    public static final int APR_SO_DEBUG        = 4;
+    /** Non-blocking IO */
+    public static final int APR_SO_NONBLOCK     = 8;
+    /** Reuse addresses */
+    public static final int APR_SO_REUSEADDR    = 16;
+    /** Send buffer */
+    public static final int APR_SO_SNDBUF       = 64;
+    /** Receive buffer */
+    public static final int APR_SO_RCVBUF       = 128;
+    /** Disconnected */
+    public static final int APR_SO_DISCONNECTED = 256;
     /** For SCTP sockets, this is mapped to STCP_NODELAY internally. */
     public static final int APR_TCP_NODELAY     = 512;
-    public static final int APR_TCP_NOPUSH      = 1024; /** No push */
-    /** This flag is ONLY set internally when we set APR_TCP_NOPUSH with
+    /** No push */
+    public static final int APR_TCP_NOPUSH      = 1024;
+    /**
+     * This flag is ONLY set internally when we set APR_TCP_NOPUSH with
      * APR_TCP_NODELAY set to tell us that APR_TCP_NODELAY should be turned on
      * again when NOPUSH is turned off
      */
     public static final int APR_RESET_NODELAY   = 2048;
-    /** Set on non-blocking sockets (timeout != 0) on which the
+    /**
+     * Set on non-blocking sockets (timeout != 0) on which the
      * previous read() did not fill a buffer completely.  the next
      * apr_socket_recv()  will first call select()/poll() rather than
      * going straight into read().  (Can also be set by an application to
@@ -61,22 +73,22 @@ public class Socket {
      * the app expects that an immediate read would fail.)
      */
     public static final int APR_INCOMPLETE_READ = 4096;
-    /** like APR_INCOMPLETE_READ, but for write
-     */
+    /** like APR_INCOMPLETE_READ, but for write */
     public static final int APR_INCOMPLETE_WRITE = 8192;
-    /** Don't accept IPv4 connections on an IPv6 listening socket.
-     */
+    /** Don't accept IPv4 connections on an IPv6 listening socket. */
     public static final int APR_IPV6_V6ONLY      = 16384;
-    /** Delay accepting of new connections until data is available.
-     */
+    /** Delay accepting of new connections until data is available. */
     public static final int APR_TCP_DEFER_ACCEPT = 32768;
 
-    /** Define what type of socket shutdown should occur.
+    /* Define what type of socket shutdown should occur.
      * apr_shutdown_how_e enum
      */
-    public static final int APR_SHUTDOWN_READ      = 0; /** no longer allow read request */
-    public static final int APR_SHUTDOWN_WRITE     = 1; /** no longer allow write requests */
-    public static final int APR_SHUTDOWN_READWRITE = 2; /** no longer allow read or write requests */
+    /** no longer allow read request */
+    public static final int APR_SHUTDOWN_READ      = 0;
+    /** no longer allow write requests */
+    public static final int APR_SHUTDOWN_WRITE     = 1;
+    /** no longer allow read or write requests */
+    public static final int APR_SHUTDOWN_READWRITE = 2;
 
     public static final int APR_IPV4_ADDR_OK = 0x01;
     public static final int APR_IPV6_ADDR_OK = 0x02;
@@ -86,9 +98,12 @@ public class Socket {
     public static final int APR_INET6  = 2;
     public static final int APR_UNIX   = 3;
 
-    public static final int APR_PROTO_TCP  =   6; /** TCP  */
-    public static final int APR_PROTO_UDP  =  17; /** UDP  */
-    public static final int APR_PROTO_SCTP = 132; /** SCTP */
+    /** TCP  */
+    public static final int APR_PROTO_TCP  =   6;
+    /** UDP  */
+    public static final int APR_PROTO_UDP  =  17;
+    /** SCTP */
+    public static final int APR_PROTO_SCTP = 132;
 
     /**
      * Enum to tell us if we're interested in remote or local socket

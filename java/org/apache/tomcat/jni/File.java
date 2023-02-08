@@ -18,7 +18,8 @@ package org.apache.tomcat.jni;
 /* Import needed classes */
 import java.nio.ByteBuffer;
 
-/** File
+/**
+ * File
  *
  * @author Mladen Turk
  *
@@ -48,21 +49,25 @@ public class File {
     public static final int APR_FOPEN_BUFFERED   = 0x00080;
     /** Delete the file after close */
     public static final int APR_FOPEN_DELONCLOSE = 0x00100;
-    /** Platform dependent tag to open the file for
+    /**
+     * Platform dependent tag to open the file for
      * use across multiple threads
      */
     public static final int APR_FOPEN_XTHREAD     = 0x00200;
-    /** Platform dependent support for higher level locked read/write
+    /**
+     * Platform dependent support for higher level locked read/write
      * access to support writes across process/machines
      */
     public static final int APR_FOPEN_SHARELOCK   = 0x00400;
     /** Do not register a cleanup when the file is opened */
     public static final int APR_FOPEN_NOCLEANUP   = 0x00800;
-    /** Advisory flag that this file should support
+    /**
+     * Advisory flag that this file should support
      * apr_socket_sendfile operation
      */
     public static final int APR_FOPEN_SENDFILE_ENABLED = 0x01000;
-    /** Platform dependent flag to enable large file support;
+    /**
+     * Platform dependent flag to enable large file support;
      * <br><b>Warning :</b> The APR_LARGEFILE flag only has effect on some platforms
      * where sizeof(apr_off_t) == 4.  Where implemented, it allows opening
      * and writing to a file which exceeds the size which can be
@@ -95,13 +100,15 @@ public class File {
 
     /* File lock types/flags */
 
-    /** Shared lock. More than one process or thread can hold a shared lock
+    /**
+     * Shared lock. More than one process or thread can hold a shared lock
      * at any given time. Essentially, this is a "read lock", preventing
      * writers from establishing an exclusive lock.
      */
     public static final int APR_FLOCK_SHARED    = 1;
 
-    /** Exclusive lock. Only one process may hold an exclusive lock at any
+    /**
+     * Exclusive lock. Only one process may hold an exclusive lock at any
      * given time. This is analogous to a "write lock".
      */
     public static final int APR_FLOCK_EXCLUSIVE = 2;
@@ -144,48 +151,84 @@ public class File {
     /*
      * apr_file_permissions File Permissions flags
      */
+    /** Set user id */
+    public static final int APR_FPROT_USETID     = 0x8000;
+    /** Read by user */
+    public static final int APR_FPROT_UREAD      = 0x0400;
+    /** Write by user */
+    public static final int APR_FPROT_UWRITE     = 0x0200;
+    /** Execute by user */
+    public static final int APR_FPROT_UEXECUTE   = 0x0100;
 
-    public static final int APR_FPROT_USETID     = 0x8000; /** Set user id */
-    public static final int APR_FPROT_UREAD      = 0x0400; /** Read by user */
-    public static final int APR_FPROT_UWRITE     = 0x0200; /** Write by user */
-    public static final int APR_FPROT_UEXECUTE   = 0x0100; /** Execute by user */
+    /** Set group id */
+    public static final int APR_FPROT_GSETID     = 0x4000;
+    /** Read by group */
+    public static final int APR_FPROT_GREAD      = 0x0040;
+    /** Write by group */
+    public static final int APR_FPROT_GWRITE     = 0x0020;
+    /** Execute by group */
+    public static final int APR_FPROT_GEXECUTE   = 0x0010;
 
-    public static final int APR_FPROT_GSETID     = 0x4000; /** Set group id */
-    public static final int APR_FPROT_GREAD      = 0x0040; /** Read by group */
-    public static final int APR_FPROT_GWRITE     = 0x0020; /** Write by group */
-    public static final int APR_FPROT_GEXECUTE   = 0x0010; /** Execute by group */
+    /** Sticky bit */
+    public static final int APR_FPROT_WSTICKY    = 0x2000;
+    /** Read by others */
+    public static final int APR_FPROT_WREAD      = 0x0004;
+    /** Write by others */
+    public static final int APR_FPROT_WWRITE     = 0x0002;
+    /** Execute by others */
+    public static final int APR_FPROT_WEXECUTE   = 0x0001;
+    /** use OS's default permissions */
+    public static final int APR_FPROT_OS_DEFAULT = 0x0FFF;
 
-    public static final int APR_FPROT_WSTICKY    = 0x2000; /** Sticky bit */
-    public static final int APR_FPROT_WREAD      = 0x0004; /** Read by others */
-    public static final int APR_FPROT_WWRITE     = 0x0002; /** Write by others */
-    public static final int APR_FPROT_WEXECUTE   = 0x0001; /** Execute by others */
-    public static final int APR_FPROT_OS_DEFAULT = 0x0FFF; /** use OS's default permissions */
 
+    /** Stat the link not the file itself if it is a link */
+    public static final int APR_FINFO_LINK   = 0x00000001;
+    /** Modification Time */
+    public static final int APR_FINFO_MTIME  = 0x00000010;
+    /** Creation or inode-changed time */
+    public static final int APR_FINFO_CTIME  = 0x00000020;
+    /** Access Time */
+    public static final int APR_FINFO_ATIME  = 0x00000040;
+    /** Size of the file */
+    public static final int APR_FINFO_SIZE   = 0x00000100;
+    /** Storage size consumed by the file */
+    public static final int APR_FINFO_CSIZE  = 0x00000200;
+    /** Device */
+    public static final int APR_FINFO_DEV    = 0x00001000;
+    /** Inode */
+    public static final int APR_FINFO_INODE  = 0x00002000;
+    /** Number of links */
+    public static final int APR_FINFO_NLINK  = 0x00004000;
+    /** Type */
+    public static final int APR_FINFO_TYPE   = 0x00008000;
+    /** User */
+    public static final int APR_FINFO_USER   = 0x00010000;
+    /** Group */
+    public static final int APR_FINFO_GROUP  = 0x00020000;
+    /** User protection bits */
+    public static final int APR_FINFO_UPROT  = 0x00100000;
+    /** Group protection bits */
+    public static final int APR_FINFO_GPROT  = 0x00200000;
+    /** World protection bits */
+    public static final int APR_FINFO_WPROT  = 0x00400000;
+    /** if dev is case insensitive */
+    public static final int APR_FINFO_ICASE  = 0x01000000;
+    /** -&gt;name in proper case */
+    public static final int APR_FINFO_NAME   = 0x02000000;
 
-    public static final int APR_FINFO_LINK   = 0x00000001; /** Stat the link not the file itself if it is a link */
-    public static final int APR_FINFO_MTIME  = 0x00000010; /** Modification Time */
-    public static final int APR_FINFO_CTIME  = 0x00000020; /** Creation or inode-changed time */
-    public static final int APR_FINFO_ATIME  = 0x00000040; /** Access Time */
-    public static final int APR_FINFO_SIZE   = 0x00000100; /** Size of the file */
-    public static final int APR_FINFO_CSIZE  = 0x00000200; /** Storage size consumed by the file */
-    public static final int APR_FINFO_DEV    = 0x00001000; /** Device */
-    public static final int APR_FINFO_INODE  = 0x00002000; /** Inode */
-    public static final int APR_FINFO_NLINK  = 0x00004000; /** Number of links */
-    public static final int APR_FINFO_TYPE   = 0x00008000; /** Type */
-    public static final int APR_FINFO_USER   = 0x00010000; /** User */
-    public static final int APR_FINFO_GROUP  = 0x00020000; /** Group */
-    public static final int APR_FINFO_UPROT  = 0x00100000; /** User protection bits */
-    public static final int APR_FINFO_GPROT  = 0x00200000; /** Group protection bits */
-    public static final int APR_FINFO_WPROT  = 0x00400000; /** World protection bits */
-    public static final int APR_FINFO_ICASE  = 0x01000000; /** if dev is case insensitive */
-    public static final int APR_FINFO_NAME   = 0x02000000; /** -&gt;name in proper case */
+    /** type, mtime, ctime, atime, size */
+    public static final int APR_FINFO_MIN    = 0x00008170;
+    /** dev and inode */
+    public static final int APR_FINFO_IDENT  = 0x00003000;
+    /** user and group */
+    public static final int APR_FINFO_OWNER  = 0x00030000;
+    /**  all protections */
+    public static final int APR_FINFO_PROT   = 0x00700000;
+    /**  an atomic unix apr_stat() */
+    public static final int APR_FINFO_NORM   = 0x0073b170;
+    /**  an atomic unix apr_dir_read() */
+    public static final int APR_FINFO_DIRENT = 0x02000000;
 
-    public static final int APR_FINFO_MIN    = 0x00008170; /** type, mtime, ctime, atime, size */
-    public static final int APR_FINFO_IDENT  = 0x00003000; /** dev and inode */
-    public static final int APR_FINFO_OWNER  = 0x00030000; /** user and group */
-    public static final int APR_FINFO_PROT   = 0x00700000; /**  all protections */
-    public static final int APR_FINFO_NORM   = 0x0073b170; /**  an atomic unix apr_stat() */
-    public static final int APR_FINFO_DIRENT = 0x02000000; /**  an atomic unix apr_dir_read() */
 
 
 
