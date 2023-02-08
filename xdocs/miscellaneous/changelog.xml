@@ -33,7 +33,10 @@
 <section name="Changes in 1.2.36">
   <changelog>
     <update>
-      Update the recommended minimum version of APR to 1.7.1. (markt)
+      Update the recommended minimum version of APR to 1.7.2. (markt)
+    </update>
+    <update>
+      Update the recommended minimum version of OpenSSL to 1.1.1t. (markt)
     </update>
   </changelog>
 </section>
