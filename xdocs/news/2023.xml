@@ -15,29 +15,28 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<project name="Apache Tomcat Native Documentation - News"
-  href="http://tomcat.apache.org/">
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="2023.html">
 
-  <title>The Apache Tomcat Native - News</title>
+  &project;
 
-  <logo href="/images/tomcat.gif">
-    The Apache Tomcat Native - News
-  </logo>
+  <properties>
+    <title>2023 News and Status</title>
+  </properties>
 
   <body>
-    <menu name="Links">
-      <item name="Docs Home" href="../index.html"/>
-    </menu>
 
-    <menu name="Miscellaneous Documentation">
-      <item name="Changelog"           href="../miscellaneous/changelog.html"/>
-        <item name="TLS renegotiation" href="../miscellaneous/tls-renegotiation.html"/>
-    </menu>
-
-    <menu name="News">
-      <item name="2023" href="../news/2023.html"/>
-      <item name="2022" href="../news/2022.html"/>
-    </menu>
-
+    <section name="2023 News &amp; Status">
+    
+      <subsection anchor="20230213" name="13 February 2023 - TC-Native-2.0.3 released">
+        <p>The Apache Tomcat team is proud to announce the immediate
+        availability of Tomcat Native 2.0.3.</p>
+      </subsection>
+      
+    </section>
+    
   </body>
-</project>
+
+</document>
