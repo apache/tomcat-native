@@ -5,8 +5,8 @@
 
 cd $(dirname $0)
 
-SSL=openssl-1.1.1o.tar.gz
-APR=apr-1.7.0.tar.gz
+SSL=openssl-3.0.8.tar.gz
+APR=apr-1.7.2.tar.gz
 mkdir -p deps
 
 if [ ! -f deps/$SSL ] ; then
