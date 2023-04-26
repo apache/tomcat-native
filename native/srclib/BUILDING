@@ -1,9 +1,6 @@
 Building apr on windows
 -----------------------
 
-Apply apr-enable-ipv6.patch.
-This will enable IPV6 support for windows builds.
-
 Open Visual Studio command prompt and execute
 nmake -f NMAKEMakefile BUILD_CPU=x86 APR_DECLARE_STATIC=1
 
@@ -15,10 +12,10 @@ environment before calling nmake so that correct
 compiler is setup for the target architecture.
 
 
-Building OpenSSL 1.1.1 and later
+Building OpenSSL 3.0.0 and later
 ----------------------------------
 
-Apply openssl-msvcrt-1.1.1.patch
+Apply openssl-msvcrt-3.0.x.patch
 
 This patch makes sure that static version of OpenSSL libraries
 is linked to msvcrt.dll instead statically linking msvcrt.
