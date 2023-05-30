@@ -57,7 +57,7 @@ Linux / Unix / OSX (static linking)
    Note: For the Solaris platform you should use -KPIC instead -fPIC so that the
          library is compiled with position independent code.
 
-2. Build static version of APR 1.4.0 or later
+2. Build static version of APR 1.4.3 or later
 
    > ./configure --prefix=~/natives/apr
    > make
