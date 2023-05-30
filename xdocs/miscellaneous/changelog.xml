@@ -36,6 +36,9 @@
     <update>
       Update the recommended minimum version of APR to 1.7.4. (markt)
     </update>
+    <update>
+      Update the recommended minimum version of OpenSSL to 3.0.9. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 2.0.3">
