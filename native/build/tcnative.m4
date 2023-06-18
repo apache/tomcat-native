@@ -141,14 +141,6 @@ AC_DEFUN([TCN_FIND_JDK_OS],[
   ])
 ])
 
-dnl TCN_HELP_STRING(LHS, RHS)
-dnl Autoconf 2.50 can not handle substr correctly.  It does have
-dnl AS_HELP_STRING, so let's try to call it if we can.
-dnl Note: this define must be on one line so that it can be properly returned
-dnl as the help string.
-dnl TODO: Check whether this is still needed for autoconf 2.68. 
-AC_DEFUN([TCN_HELP_STRING],[ifelse(regexp(AC_ACVERSION, 2\.1), -1, AS_HELP_STRING($1,$2),[  ]$1 substr([                       ],len($1))$2)])dnl
-
 dnl
 dnl TCN_FIND_SSL_TOOLKIT
 dnl
