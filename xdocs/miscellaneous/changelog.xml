@@ -33,6 +33,9 @@
 </section>
 <section name="Changes in 2.0.5">
   <changelog>
+    <update>
+      Update the minimum version of autoconf for releasing to 2.68. (rjung)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 2.0.4">
