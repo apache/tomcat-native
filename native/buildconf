@@ -70,7 +70,7 @@ rm -rf aclocal.m4 autom4te*.cache
 
 echo "Creating configure ..."
 ### do some work to toss config.cache?
-${AUTOCONF:-autoconf}
+${AUTORECONF:-autoreconf} --install --force
 if [ $? -gt 0 ]; then
   echo "autoconf failed"
   exit 1
