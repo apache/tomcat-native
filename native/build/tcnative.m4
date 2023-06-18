@@ -18,7 +18,7 @@
 dnl
 dnl TCN_FIND_APR: figure out where APR is located
 dnl
-AC_DEFUN(TCN_FIND_APR,[
+AC_DEFUN([TCN_FIND_APR],[
 
   dnl use the find_apr.m4 script to locate APR. sets apr_found and apr_config
   APR_FIND_APR(,,1,[1])
@@ -146,7 +146,7 @@ dnl Autoconf 2.50 can not handle substr correctly.  It does have
 dnl AC_HELP_STRING, so let's try to call it if we can.
 dnl Note: this define must be on one line so that it can be properly returned
 dnl as the help string.
-AC_DEFUN(TCN_HELP_STRING,[ifelse(regexp(AC_ACVERSION, 2\.1), -1, AC_HELP_STRING($1,$2),[  ]$1 substr([                       ],len($1))$2)])dnl
+AC_DEFUN([TCN_HELP_STRING],[ifelse(regexp(AC_ACVERSION, 2\.1), -1, AS_HELP_STRING($1,$2),[  ]$1 substr([                       ],len($1))$2)])dnl
 
 dnl
 dnl TCN_CHECK_SSL_TOOLKIT
@@ -285,7 +285,7 @@ fi
 dnl
 dnl TCN_FIND_APR_FEATURE: figure out if APR feature is suipported
 dnl
-AC_DEFUN(TCN_FIND_APR_FEATURE,[
+AC_DEFUN([TCN_FIND_APR_FEATURE],[
   saved_cflags="$CFLAGS"
   saved_libs="$LIBS"
   CFLAGS="$CFLAGS $APR_INCLUDES"
