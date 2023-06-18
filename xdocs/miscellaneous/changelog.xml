@@ -34,6 +34,9 @@
 <section name="Changes in 2.0.5">
   <changelog>
     <update>
+      Improve quoting in tcnative.m4. (rjung)
+    </update>
+    <update>
       Update the minimum version of autoconf for releasing to 2.68. (rjung)
     </update>
   </changelog>
