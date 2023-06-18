@@ -19,8 +19,8 @@ dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
 
-AC_PREREQ(2.50)
-AC_INIT(configure.in)
+AC_PREREQ(2.68)
+AC_INIT(configure.ac)
 
 AC_CONFIG_AUX_DIR(build)
 
