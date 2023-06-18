@@ -34,6 +34,9 @@
 <section name="Changes in 1.3.2">
   <changelog>
     <update>
+      Rename configure.in to modern autotools style configure.ac. (rjung)
+    </update>
+    <update>
       Fix incomplete updates for autotools generated files during "buildconf" execution. (rjung)
     </update>
     <update>
