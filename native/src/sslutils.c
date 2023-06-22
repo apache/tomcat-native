@@ -718,7 +718,7 @@ static char **decode_OCSP_url(ASN1_OCTET_STRING *os, apr_pool_t *p)
         return NULL;
     }
     if (parse_ASN1_Sequence(ocsp_urls, &response, &numofresponses, p) ||
-    		numofresponses ==0) {
+            numofresponses ==0) {
         response = NULL;
     }
     return response;

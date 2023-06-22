@@ -326,9 +326,9 @@ typedef struct {
                          */
     } reneg_state;
     enum {
-    	PHA_NONE = 0,	/* Before PHA */
-		PHA_STARTED,	/* PHA req sent to client but no response */
-		PHA_COMPLETE	/* Client has returned cert */
+        PHA_NONE = 0,   /* Before PHA */
+        PHA_STARTED,    /* PHA req sent to client but no response */
+        PHA_COMPLETE    /* Client has returned cert */
     } pha_state;
     apr_socket_t   *sock;
     apr_pollset_t  *pollset;
