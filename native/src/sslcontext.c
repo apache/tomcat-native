@@ -923,8 +923,8 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setTmpECDHByCurveName)(TCN_STDARGS, jlong c
     EC_KEY_free(ecdh);
     TCN_FREE_CSTRING(curveName);
 #else
-	tcn_Throw(e, "Cant't configure elliptic curve: unsupported by this OpenSSL version");
-	return;
+    tcn_Throw(e, "Cant't configure elliptic curve: unsupported by this OpenSSL version");
+    return;
 #endif
 }
 

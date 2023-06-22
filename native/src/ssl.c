@@ -817,7 +817,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
                 err = APR_ENOTIMPL;
             else {
 #ifdef ENGINE_CTRL_CHIL_SET_FORKCHECK
-            	if (strcmp(J2S(engine), "chil") == 0)
+                if (strcmp(J2S(engine), "chil") == 0)
                     ENGINE_ctrl(ee, ENGINE_CTRL_CHIL_SET_FORKCHECK, 1, 0, 0);
 #endif
                 if (!ENGINE_set_default(ee, ENGINE_METHOD_ALL))
@@ -947,7 +947,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, fipsModeGet)(TCN_STDARGS)
     if (strcmp("fips", name)) {
         return 0;
     } else {
-    	return 1;
+        return 1;
     }
 #else
     UNREFERENCED(o);
