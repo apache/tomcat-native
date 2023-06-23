@@ -232,7 +232,6 @@ typedef struct tcn_ssl_ctxt_t tcn_ssl_ctxt_t;
 typedef struct {
     char            password[SSL_MAX_PASSWORD_LEN];
     const char     *prompt;
-    tcn_callback_t cb;
 } tcn_pass_cb_t;
 
 extern tcn_pass_cb_t tcn_password_callback;

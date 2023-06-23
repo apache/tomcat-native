@@ -45,8 +45,7 @@ static jclass stringClass;
 
 /*
  * supported_ssl_opts is a bitmask that contains all supported SSL_OP_*
- * options at compile-time. This is used in hasOp to determine which
- * SSL_OP_* options are available at runtime.
+ * options at compile-time.
  *
  * Note that at least up through OpenSSL 0.9.8o, checking SSL_OP_ALL will
  * return JNI_FALSE because SSL_OP_ALL is a mask that covers all bug
@@ -300,13 +299,6 @@ static apr_status_t ssl_init_cleanup(void *data)
     if (!ssl_initialized)
         return APR_SUCCESS;
     ssl_initialized = 0;
-
-    if (tcn_password_callback.cb.obj) {
-        JNIEnv *env;
-        tcn_get_java_env(&env);
-        TCN_UNLOAD_CLASS(env,
-                         tcn_password_callback.cb.obj);
-    }
 
     free_bio_methods();
     free_dh_params();
@@ -600,37 +592,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     return (jint)APR_SUCCESS;
 }
 
-TCN_IMPLEMENT_CALL(jboolean, SSL, randLoad)(TCN_STDARGS, jstring file)
-{
-    TCN_ALLOC_CSTRING(file);
-    int r;
-    UNREFERENCED(o);
-    r = SSL_rand_seed(J2S(file));
-    TCN_FREE_CSTRING(file);
-    return r ? JNI_TRUE : JNI_FALSE;
-}
-
-TCN_IMPLEMENT_CALL(jboolean, SSL, randSave)(TCN_STDARGS, jstring file)
-{
-    TCN_ALLOC_CSTRING(file);
-    int r;
-    UNREFERENCED(o);
-    r = ssl_rand_save_file(J2S(file));
-    TCN_FREE_CSTRING(file);
-    return r ? JNI_TRUE : JNI_FALSE;
-}
-
-TCN_IMPLEMENT_CALL(jboolean, SSL, randMake)(TCN_STDARGS, jstring file,
-                                            jint length, jboolean base64)
-{
-    TCN_ALLOC_CSTRING(file);
-    int r;
-    UNREFERENCED(o);
-    r = ssl_rand_make(J2S(file), length, base64);
-    TCN_FREE_CSTRING(file);
-    return r ? JNI_TRUE : JNI_FALSE;
-}
-
 TCN_IMPLEMENT_CALL(void, SSL, randSet)(TCN_STDARGS, jstring file)
 {
     TCN_ALLOC_CSTRING(file);
@@ -894,96 +855,6 @@ static BIO_METHOD *BIO_jbs()
     return jbs_methods;
 }
 
-TCN_IMPLEMENT_CALL(jlong, SSL, newBIO)(TCN_STDARGS, jlong pool,
-                                       jobject callback)
-{
-    BIO *bio = NULL;
-    BIO_JAVA *j;
-    jclass cls;
-
-    UNREFERENCED(o);
-
-    if ((bio = BIO_new(BIO_jbs())) == NULL) {
-        tcn_ThrowException(e, "Create BIO failed");
-        goto init_failed;
-    }
-    j = (BIO_JAVA *)BIO_get_data(bio);
-    if (j == NULL) {
-        tcn_ThrowException(e, "Create BIO failed");
-        goto init_failed;
-    }
-    j->pool = J2P(pool, apr_pool_t *);
-    if (j->pool) {
-        apr_pool_cleanup_register(j->pool, (const void *)bio,
-                                  generic_bio_cleanup,
-                                  apr_pool_cleanup_null);
-    }
-
-    cls = (*e)->GetObjectClass(e, callback);
-    j->cb.mid[0] = (*e)->GetMethodID(e, cls, "write", "([B)I");
-    j->cb.mid[1] = (*e)->GetMethodID(e, cls, "read",  "([B)I");
-    j->cb.mid[2] = (*e)->GetMethodID(e, cls, "puts",  "(Ljava/lang/String;)I");
-    j->cb.mid[3] = (*e)->GetMethodID(e, cls, "gets",  "(I)Ljava/lang/String;");
-    /* TODO: Check if method id's are valid */
-    j->cb.obj    = (*e)->NewGlobalRef(e, callback);
-
-    BIO_set_init(bio, 1);
-    BIO_set_flags(bio, SSL_BIO_FLAG_CALLBACK);
-    return P2J(bio);
-init_failed:
-    return 0;
-}
-
-TCN_IMPLEMENT_CALL(jint, SSL, closeBIO)(TCN_STDARGS, jlong bio)
-{
-    BIO *b = J2P(bio, BIO *);
-    UNREFERENCED_STDARGS;
-    SSL_BIO_close(b);
-    return APR_SUCCESS;
-}
-
-TCN_IMPLEMENT_CALL(void, SSL, setPasswordCallback)(TCN_STDARGS,
-                                                   jobject callback)
-{
-    jclass cls;
-
-    UNREFERENCED(o);
-    if (tcn_password_callback.cb.obj) {
-        TCN_UNLOAD_CLASS(e,
-                         tcn_password_callback.cb.obj);
-    }
-    cls = (*e)->GetObjectClass(e, callback);
-    tcn_password_callback.cb.mid[0] = (*e)->GetMethodID(e, cls, "callback",
-                           "(Ljava/lang/String;)Ljava/lang/String;");
-    /* TODO: Check if method id is valid */
-    tcn_password_callback.cb.obj    = (*e)->NewGlobalRef(e, callback);
-
-}
-
-TCN_IMPLEMENT_CALL(void, SSL, setPassword)(TCN_STDARGS, jstring password)
-{
-    TCN_ALLOC_CSTRING(password);
-    UNREFERENCED(o);
-    if (J2S(password)) {
-        strncpy(tcn_password_callback.password, J2S(password), SSL_MAX_PASSWORD_LEN);
-        tcn_password_callback.password[SSL_MAX_PASSWORD_LEN-1] = '\0';
-    }
-    TCN_FREE_CSTRING(password);
-}
-
-TCN_IMPLEMENT_CALL(jstring, SSL, getLastError)(TCN_STDARGS)
-{
-    char buf[256];
-    UNREFERENCED(o);
-    ERR_error_string(SSL_ERR_get(), buf);
-    return tcn_new_string(e, buf);
-}
-
-TCN_IMPLEMENT_CALL(jboolean, SSL, hasOp)(TCN_STDARGS, jint op)
-{
-    return op == (op & supported_ssl_opts) ? JNI_TRUE : JNI_FALSE;
-}
-
 /*** Begin Twitter 1:1 API addition ***/
 TCN_IMPLEMENT_CALL(jint, SSL, getLastErrorNumber)(TCN_STDARGS) {
     UNREFERENCED_STDARGS;
@@ -1091,22 +962,6 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     return P2J(ssl);
 }
 
-TCN_IMPLEMENT_CALL(void, SSL, setBIO)(TCN_STDARGS,
-                                      jlong ssl /* SSL * */,
-                                      jlong rbio /* BIO * */,
-                                      jlong wbio /* BIO * */) {
-    UNREFERENCED_STDARGS;
-    SSL_set_bio(J2P(ssl, SSL *), J2P(rbio, BIO *), J2P(wbio, BIO *));
-    return;
-}
-
-TCN_IMPLEMENT_CALL(jint, SSL, getError)(TCN_STDARGS,
-                                       jlong ssl /* SSL * */,
-                                       jint ret) {
-    UNREFERENCED_STDARGS;
-    return SSL_get_error(J2P(ssl, SSL*), ret);
-}
-
 /* How much did SSL write into this BIO? */
 TCN_IMPLEMENT_CALL(jint /* nbytes */, SSL, pendingWrittenBytesInBIO)(TCN_STDARGS,
                                                                      jlong bio /* BIO * */) {
@@ -1169,15 +1024,6 @@ TCN_IMPLEMENT_CALL(jint /* status */, SSL, getShutdown)(TCN_STDARGS,
     UNREFERENCED_STDARGS;
 
     return SSL_get_shutdown(J2P(ssl, SSL *));
-}
-
-/* Called when the peer closes the connection */
-TCN_IMPLEMENT_CALL(void, SSL, setShutdown)(TCN_STDARGS,
-                                           jlong ssl /* SSL * */,
-                                           jint mode) {
-    UNREFERENCED_STDARGS;
-
-    SSL_set_shutdown(J2P(ssl, SSL *), mode);
 }
 
 /* Free the SSL * and its associated internal BIO */

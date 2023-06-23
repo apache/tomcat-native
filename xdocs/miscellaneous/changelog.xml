@@ -34,6 +34,9 @@
 <section name="Changes in 2.0.5">
   <changelog>
     <update>
+      <bug>66666</bug>: Remove non-reachable functions from ssl.c. (michaelo)
+    </update>
+    <update>
       Align default pass phrase prompt with HTTPd. (michaelo)
     </update>
     <update>

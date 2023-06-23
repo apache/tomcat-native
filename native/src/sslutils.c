@@ -126,32 +126,13 @@ int SSL_password_prompt(tcn_pass_cb_t *data)
 {
     int rv = 0;
     data->password[0] = '\0';
-    if (data->cb.obj) {
-        JNIEnv *e;
-        jobject  o;
-        jstring  prompt;
-        tcn_get_java_env(&e);
-        prompt = AJP_TO_JSTRING(data->prompt);
-        if ((o = (*e)->CallObjectMethod(e, data->cb.obj,
-                            data->cb.mid[0], prompt))) {
-            TCN_ALLOC_CSTRING(o);
-            if (J2S(o)) {
-                strncpy(data->password, J2S(o), SSL_MAX_PASSWORD_LEN);
-                data->password[SSL_MAX_PASSWORD_LEN-1] = '\0';
-                rv = (int)strlen(data->password);
-            }
-            TCN_FREE_CSTRING(o);
-        }
-    }
-    else {
 #ifdef WIN32
-        rv = WIN32_SSL_password_prompt(data);
+    rv = WIN32_SSL_password_prompt(data);
 #else
-        EVP_read_pw_string(data->password, SSL_MAX_PASSWORD_LEN,
-                           data->prompt, 0);
+    EVP_read_pw_string(data->password, SSL_MAX_PASSWORD_LEN,
+                       data->prompt, 0);
 #endif
-        rv = (int)strlen(data->password);
-    }
+    rv = (int)strlen(data->password);
     if (rv > 0) {
         /* Remove LF char if present */
         char *r = strchr(data->password, '\n');
