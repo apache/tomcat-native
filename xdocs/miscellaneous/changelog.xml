@@ -32,6 +32,9 @@
 </section>
 <section name="Changes in 1.2.38">
   <changelog>
+    <update>
+      Align default pass phrase prompt with HTTPd. (michaelo)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.37">
