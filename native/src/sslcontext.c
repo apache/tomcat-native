@@ -141,7 +141,7 @@ int ssl_callback_ClientHello(SSL *ssl, int *al, void *arg)
     const unsigned char *pos;
     size_t len, remaining;
     tcn_ssl_ctxt_t *c = (tcn_ssl_ctxt_t *) arg;
- 
+
     (*javavm)->AttachCurrentThread(javavm, (void **)&env, NULL);
     // Continue only if the static method exists
     if (sni_java_callback == NULL) {
@@ -161,7 +161,7 @@ int ssl_callback_ClientHello(SSL *ssl, int *al, void *arg)
      */
     if (!SSL_client_hello_get0_ext(ssl, TLSEXT_TYPE_server_name, &pos,
                                    &remaining)
-            || remaining <= 2) 
+            || remaining <= 2)
         goto give_up;
 
     /* Extract the length of the supplied list of names. */
@@ -221,7 +221,7 @@ give_up:
                 SSL_set_session_id_context(ssl,  &(c->context_id[0]), sizeof c->context_id);
             }
         }
- 
+
     }
     return SSL_CLIENT_HELLO_SUCCESS;
 }
