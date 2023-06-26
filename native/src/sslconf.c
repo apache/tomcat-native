@@ -265,7 +265,7 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, apply)(TCN_STDARGS, jlong cctx,
             c->no_ocsp_check = 1;
         TCN_FREE_CSTRING(cmd);
         TCN_FREE_CSTRING(value);
-        return 1; 
+        return 1;
     }
     SSL_ERR_clear();
     rc = SSL_CONF_cmd(c->cctx, J2S(cmd), buf != NULL ? buf : J2S(value));

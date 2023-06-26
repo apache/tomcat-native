@@ -140,7 +140,7 @@ apr_status_t tcn_load_finfo_class(JNIEnv *e, jclass finfo)
     GET_FINFO_S(fname);
     GET_FINFO_S(name);
     GET_FINFO_J(filehand);
-    
+
     finfo_class_init = (*e)->GetMethodID(e, finfo,
                                       "<init>", "()V");
     if (finfo_class_init == NULL)

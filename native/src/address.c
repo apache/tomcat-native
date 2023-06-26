@@ -46,7 +46,7 @@ TCN_IMPLEMENT_CALL(jlong, Address, info)(TCN_STDARGS,
             J2S(hostname), f, (apr_port_t)port,
             (apr_int32_t)flags, p), sa);
     sl = sa;
-    /* 
+    /*
      * apr_sockaddr_info_get may return several address so this is not
      * go to work in some cases (but as least it works for Linux)
      * XXX: with AP_ENABLE_V4_MAPPED it is going to work otherwise it won't.

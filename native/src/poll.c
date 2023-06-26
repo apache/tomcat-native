@@ -403,7 +403,7 @@ TCN_IMPLEMENT_CALL(jint, Poll, poll)(TCN_STDARGS, jlong pollset,
                array or as multiple pairs depending on implementation. On OSX at
                least, multiple pairs have been observed. In this case do not try
                and remove socket from the pollset for a second time else a crash
-               will result. */ 
+               will result. */
             if (remove) {
                 if (s->pe) {
                     apr_pollset_remove(p->pollset, fd);
