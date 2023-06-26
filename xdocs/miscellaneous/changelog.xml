@@ -34,6 +34,9 @@
 <section name="Changes in 2.0.5">
   <changelog>
     <update>
+      Align default pass phrase prompt with HTTPd. (michaelo)
+    </update>
+    <update>
       Rename configure.in to modern autotools style configure.ac. (rjung)
     </update>
     <update>
