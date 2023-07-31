@@ -35,6 +35,9 @@
     <update>
       Align default pass phrase prompt with HTTPd. (michaelo)
     </update>
+    <fix>
+      <bug>66669</bug>: Fix memory leak in SNI processing. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.37">
