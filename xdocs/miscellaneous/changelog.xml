@@ -51,6 +51,9 @@
     <update>
       Update the minimum version of autoconf for releasing to 2.68. (rjung)
     </update>
+    <fix>
+      <bug>66669</bug>: Fix memory leak in SNI processing. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 2.0.4">

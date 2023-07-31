@@ -22,6 +22,7 @@
 #include "apr_file_io.h"
 #include "apr_thread_mutex.h"
 #include "apr_poll.h"
+#include "apr_pools.h"
 
 #include "ssl_private.h"
 
@@ -141,6 +142,7 @@ int ssl_callback_ClientHello(SSL *ssl, int *al, void *arg)
     const unsigned char *pos;
     size_t len, remaining;
     tcn_ssl_ctxt_t *c = (tcn_ssl_ctxt_t *) arg;
+    apr_pool_t *subpool = NULL;
 
     (*javavm)->AttachCurrentThread(javavm, (void **)&env, NULL);
     // Continue only if the static method exists
@@ -188,7 +190,10 @@ int ssl_callback_ClientHello(SSL *ssl, int *al, void *arg)
     /* Use the SNI to switch to the relevant vhost, should it differ from
      * c->base_server.
      */
-    servername = apr_pstrmemdup(c->pool, (const char *)pos, len);
+    if (apr_pool_create(&subpool, c->pool) != APR_SUCCESS) {
+        goto give_up;
+    }
+    servername = apr_pstrmemdup(subpool, (const char *)pos, len);
 
 give_up:
     if (servername != NULL) {
@@ -221,8 +226,12 @@ give_up:
                 SSL_set_session_id_context(ssl,  &(c->context_id[0]), sizeof c->context_id);
             }
         }
-
     }
+
+    if (subpool != NULL) {
+        apr_pool_destroy(subpool);
+    }
+
     return SSL_CLIENT_HELLO_SUCCESS;
 }
 #endif
