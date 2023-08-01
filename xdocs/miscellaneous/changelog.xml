@@ -54,6 +54,9 @@
     <fix>
       <bug>66669</bug>: Fix memory leak in SNI processing. (markt)
     </fix>
+    <update>
+      Update the recommended minimum version of OpenSSL to 3.0.10. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 2.0.4">
