@@ -45,8 +45,8 @@ Run the release script to check the Java code is aligned with the current 9.0.x
 source.
 ./jnirelease.sh --ver=1.2.x --with-apr=/path/to/apr/source
 
-Switch back to the main branch
-git checkout main
+Switch back to the 1.2.x branch
+git checkout 1.2.x
 
 Tagging
 -------
