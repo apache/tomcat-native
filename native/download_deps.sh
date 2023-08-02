@@ -5,7 +5,7 @@
 
 cd $(dirname $0)
 
-SSL=openssl-1.1.1u.tar.gz
+SSL=openssl-1.1.1v.tar.gz
 APR=apr-1.7.4.tar.gz
 mkdir -p deps
 
