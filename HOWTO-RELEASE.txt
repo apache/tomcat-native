@@ -67,7 +67,7 @@ git commit -a -m "Tag 1.2.35"
 git tag 1.2.35
 git push origin 1.2.35
 
-# Reset main
+# Reset 1.2.x
 git reset --hard HEAD~1
 
 
@@ -77,8 +77,8 @@ Create the source release
 # Modify version as appropriate
 ./jnirelease.sh --ver=1.2.35 --with-apr=/path/to/apr/source
 
-# Switch back to the main branch
-git checkout main
+# Switch back to the 1.2.x branch
+git checkout 1.2.x
 
 
 Create the binary release for Windows
