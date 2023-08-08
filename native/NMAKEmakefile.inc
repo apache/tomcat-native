@@ -245,7 +245,7 @@ CXXFLAGS = $(EXTRA_CXXFLAGS)
 !ENDIF
 
 # Linker section
-LIBS = kernel32.lib advapi32.lib ws2_32.lib mswsock.lib shell32.lib rpcrt4.lib
+LIBS = kernel32.lib advapi32.lib ws2_32.lib shell32.lib rpcrt4.lib
 # Extra libs from command line or env
 !IF DEFINED(EXTRA_LIBS)
 LIBS = $(LIBS) $(EXTRA_LIBS)
@@ -265,6 +265,9 @@ COMMON_LFLAGS = /NOLOGO /MACHINE:$(MACHINE)
 OPT_LFLAGS = /INCREMENTAL:NO /DEBUG
 !IF "$(BUILD)" == "RELEASE"
 OPT_LFLAGS = /OPT:REF $(OPT_LFLAGS)
+!IF DEFINED(STATIC_CRT) && "$(STATIC_CRT)" == "Hybrid"
+OPT_LFLAGS = $(OPT_LFLAGS) /NODEFAULTLIB:libucrt.lib /DEFAULTLIB:ucrt.lib
+!ENDIF
 !ENDIF
 
 !IF "$(TARGET)" == "EXE"
