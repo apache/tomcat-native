@@ -18,9 +18,10 @@
 # NMAKEmakefile   Tomcat Native makefile.
 # Usage:
 #                 APR_DECLARE_STATIC=1  Use static version of the APR
-#                 ENABLE_OCSP=1  	    Enable OpenSSL OCSP code
+#                 ENABLE_OCSP=1         Enable OpenSSL OCSP code
 #                 OPENSSL_NEW_LIBS=1    Use new OpenSSL lib file names
-#                 DEBUG=1   		    Build DEBUG version of TCN
+#                 DEBUG=1               Build DEBUG version of TCN
+#                 STATIC_CRT=Hybrid     Build using the 'Hybrid CRT' technique
 #
 # Originally contributed by Mladen Turk <mturk redhat.com>
 #
@@ -69,16 +70,16 @@ INCLUDES = $(INCLUDES) -I$(WITH_OPENSSL)\inc32
 LDIRS = $(LDIRS) /libpath:"$(WITH_OPENSSL)\out32"
 !ENDIF
 
-LFLAGS = $(LFLAGS) /version:1.1
-LFLAGS = $(LFLAGS) user32.lib psapi.lib gdi32.lib shlwapi.lib wldap32.lib ole32.lib
-LFLAGS = $(LFLAGS) $(APR_LIB)
+LFLAGS = $(LFLAGS) /version:2.0
+LIBS = $(LIBS) user32.lib gdi32.lib $(APR_LIB)
 !IF DEFINED(WITH_FIPS)
-LFLAGS = $(LFLAGS) libeayfips32.lib libeaycompat32.lib ssleay32.lib /NODEFAULTLIB:LIBCMT
+LIBS = $(LIBS) libeayfips32.lib libeaycompat32.lib ssleay32.lib
+LFLAGS = $(LFLAGS) /NODEFAULTLIB:LIBCMT
 !ELSE
 !IF DEFINED(OPENSSL_NEW_LIBS)
-LFLAGS = $(LFLAGS) libssl.lib libcrypto.lib crypt32.lib
+LIBS = $(LIBS) libssl.lib libcrypto.lib crypt32.lib
 !ELSE
-LFLAGS = $(LFLAGS) libeay32.lib ssleay32.lib 
+LIBS = $(LIBS) libeay32.lib ssleay32.lib
 !ENDIF
 !ENDIF
 
@@ -86,7 +87,7 @@ CFLAGS = $(CFLAGS) -DZLIB_WINAPI -DNO_IDEA -DNO_RC5 -DNO_MDC2 -DOPENSSL_NO_IDEA 
 	-DOPENSSL_NO_RC5 -DOPENSSL_NO_MDC2 -DHAVE_SSL_SET_STATE=1
 
 
-PDBFLAGS = -Fo$(WORKDIR)\ -Fd$(WORKDIR)\$(PROJECT)-src
+PDBFLAGS = -Fo$(WORKDIR)\ -Fd$(WORKDIR)\$(PROJECT)
 OBJECTS = \
 	$(WORKDIR)\bb.obj \
 	$(WORKDIR)\error.obj \
@@ -96,7 +97,8 @@ OBJECTS = \
 	$(WORKDIR)\sslcontext.obj \
 	$(WORKDIR)\sslconf.obj \
 	$(WORKDIR)\sslutils.obj \
-        $(WORKDIR)\system.obj
+	$(WORKDIR)\system.obj
+
 !IF DEFINED(WITH_FIPS)
 OBJECTS = $(OBJECTS) srclib\openssl\tmp32\fips_premain.obj
 !ENDIF
@@ -108,24 +110,14 @@ LINK_WRAPPER = perl $(FIPSDIR)\bin\fipslink.pl
 LINK_WRAPPER = $(LINK)
 !ENDIF
 
-HEADERS = \
-	$(SRCDIR)\include\tcn.h \
-	$(SRCDIR)\include\tcn_api.h \
-	$(SRCDIR)\include\tcn_version.h \
-	$(SRCDIR)\include\ssl_private.h
-
 BUILDLIB = $(PREFIX)\lib
 BUILDBIN = $(WORKDIR)\$(PROJECT).dll
 BUILDPDB = $(WORKDIR)\$(PROJECT).pdb
 BUILDRES = $(WORKDIR)\$(PROJECT).res
-BUILDMAN = $(BUILDBIN).manifest
 
 all : $(WORKDIR) $(BUILDBIN)
 
-$(BUILDLIB) :
-	@if not exist "$(BUILDLIB)\$(NULL)" mkdir "$(BUILDLIB)"
-
-$(WORKDIR) :
+$(WORKDIR):
 	@$(MAKEWORKDIR)
 
 {$(SRCDIR)\src}.c{$(WORKDIR)}.obj:
@@ -134,27 +126,23 @@ $(WORKDIR) :
 {$(SRCDIR)\os\win32}.c{$(WORKDIR)}.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) $(PDBFLAGS) $<
 
-$(OBJECTS): $(HEADERS)
+$(BUILDRES): $(SRCDIR)\os\win32\libtcnative.rc
+	$(RC) $(RCFLAGS) /i "$(SRCDIR)\include" /fo $(BUILDRES) $**
 
-$(BUILDRES): $(SRCDIR)\os\win32\libtcnative.rc $(HEADERS)
-	$(RC) $(RCFLAGS) /i "$(SRCDIR)\include" /fo $(BUILDRES) $(SRCDIR)\os\win32\libtcnative.rc
-
-$(BUILDBIN): $(WORKDIR) $(OBJECTS) $(BUILDRES)
+$(BUILDBIN): $(OBJECTS) $(BUILDRES)
   SET FIPSLINK=perl $(FIPSDIR)\bin\fipslink.pl
   SET FIPS_LINK=$(LINK)
   SET FIPS_CC=$(CC)
   SET FIPS_CC_ARGS=/Fosrclib\openssl\tmp32\fips_premain.obj /MD -c
-  SET PREMAIN_DSO_EXE=srclib\openssl\\out32\fips_premain_dso.exe
+  SET PREMAIN_DSO_EXE=srclib\openssl\out32\fips_premain_dso.exe
   SET FIPS_TARGET=$(BUILDBIN)
   SET FIPS_SHA1_EXE=$(FIPSDIR)\bin\fips_standalone_sha1.exe
   SET FIPSLIB_D=$(FIPSDIR)\lib
-  $(LINK_WRAPPER) $(LFLAGS) $(OBJECTS) $(BUILDRES) $(LIBS) $(LDIRS) /pdb:$(BUILDPDB) $(FIPS_OPTS) /out:$(BUILDBIN)
-	IF EXIST $(BUILDMAN) \
-		mt -nologo -manifest $(BUILDMAN) -outputresource:$(BUILDBIN);2
+  $(LINK_WRAPPER) $(LFLAGS) $(LDIRS) $** $(LIBS) /pdb:$(BUILDPDB) $(FIPS_OPTS) /out:$(BUILDBIN)
 
 clean:
 	@$(CLEANTARGET)
 
-install: $(BUILDLIB) $(WORKDIR) $(BUILDBIN)
-	@xcopy "$(WORKDIR)\*.lib" "$(BUILDLIB)" /Y /Q
-	@xcopy "$(WORKDIR)\*.dll" "$(BUILDLIB)" /Y /Q
+install: all
+	@xcopy  /I /Y /Q "$(WORKDIR)\*.lib" "$(BUILDLIB)"
+	@xcopy  /I /Y /Q "$(WORKDIR)\*.dll" "$(BUILDLIB)"
