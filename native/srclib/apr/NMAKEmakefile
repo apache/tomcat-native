@@ -46,14 +46,34 @@ SRCDIR = .
 LFLAGS = $(LFLAGS) /version:1.4
 !ENDIF
 INCLUDES = -I$(SRCDIR)\include -I$(SRCDIR)\include\arch -I$(SRCDIR)\include\private -I$(SRCDIR)\include\arch\win32 -I$(SRCDIR)\include\arch\unix
-PDBFLAGS = -Fo$(WORKDIR)\ -Fd$(WORKDIR)\$(PROJECT)-src
+PDBFLAGS = -Fo$(WORKDIR)\ -Fd$(WORKDIR)\$(PROJECT)
+
 OBJECTS = \
 	$(WORKDIR)\apr_atomic.obj \
-	$(WORKDIR)\dso.obj \
+	$(WORKDIR)\apr_atomic64.obj \
+	$(WORKDIR)\apr_cpystrn.obj \
+	$(WORKDIR)\apr_cstr.obj \
+	$(WORKDIR)\apr_encode.obj \
 	$(WORKDIR)\apr_escape.obj \
+	$(WORKDIR)\apr_fnmatch.obj \
+	$(WORKDIR)\apr_getpass.obj \
+	$(WORKDIR)\apr_hash.obj \
+	$(WORKDIR)\apr_pools.obj \
+	$(WORKDIR)\apr_random.obj \
+	$(WORKDIR)\apr_skiplist.obj \
+	$(WORKDIR)\apr_snprintf.obj \
+	$(WORKDIR)\apr_strings.obj \
+	$(WORKDIR)\apr_strnatcmp.obj \
+	$(WORKDIR)\apr_strtok.obj \
+	$(WORKDIR)\apr_tables.obj \
 	$(WORKDIR)\buffer.obj \
+	$(WORKDIR)\charset.obj \
+	$(WORKDIR)\common.obj \
 	$(WORKDIR)\copy.obj \
 	$(WORKDIR)\dir.obj \
+	$(WORKDIR)\dso.obj \
+	$(WORKDIR)\env.obj \
+	$(WORKDIR)\errorcodes.obj \
 	$(WORKDIR)\fileacc.obj \
 	$(WORKDIR)\filedup.obj \
 	$(WORKDIR)\filepath.obj \
@@ -62,65 +82,54 @@ OBJECTS = \
 	$(WORKDIR)\filesys.obj \
 	$(WORKDIR)\flock.obj \
 	$(WORKDIR)\fullrw.obj \
-	$(WORKDIR)\mktemp.obj \
-	$(WORKDIR)\open.obj \
-	$(WORKDIR)\pipe.obj \
-	$(WORKDIR)\readwrite.obj \
-	$(WORKDIR)\seek.obj \
-	$(WORKDIR)\tempdir.obj \
-	$(WORKDIR)\proc_mutex.obj \
-	$(WORKDIR)\thread_cond.obj \
-	$(WORKDIR)\thread_mutex.obj \
-	$(WORKDIR)\thread_rwlock.obj \
-	$(WORKDIR)\apr_pools.obj \
-	$(WORKDIR)\apr_app.obj \
-	$(WORKDIR)\charset.obj \
-	$(WORKDIR)\env.obj \
-	$(WORKDIR)\errorcodes.obj \
 	$(WORKDIR)\getopt.obj \
-	$(WORKDIR)\internal.obj \
-	$(WORKDIR)\misc.obj \
-	$(WORKDIR)\otherchild.obj \
-	$(WORKDIR)\rand.obj \
-	$(WORKDIR)\start.obj \
-	$(WORKDIR)\utf8.obj \
-	$(WORKDIR)\version.obj \
-	$(WORKDIR)\common.obj \
-	$(WORKDIR)\mmap.obj \
+	$(WORKDIR)\groupinfo.obj \
 	$(WORKDIR)\inet_ntop.obj \
 	$(WORKDIR)\inet_pton.obj \
+	$(WORKDIR)\internal.obj \
+	$(WORKDIR)\misc.obj \
+	$(WORKDIR)\mktemp.obj \
+	$(WORKDIR)\mmap.obj \
 	$(WORKDIR)\multicast.obj \
-	$(WORKDIR)\sendrecv.obj \
-	$(WORKDIR)\sockaddr.obj \
-	$(WORKDIR)\sockets.obj \
-	$(WORKDIR)\socket_util.obj \
-	$(WORKDIR)\sockopt.obj \
-	$(WORKDIR)\apr_getpass.obj \
+	$(WORKDIR)\open.obj \
+	$(WORKDIR)\otherchild.obj \
+	$(WORKDIR)\pipe.obj \
 	$(WORKDIR)\poll.obj \
 	$(WORKDIR)\pollcb.obj \
 	$(WORKDIR)\pollset.obj \
-	$(WORKDIR)\wakeup.obj \
+	$(WORKDIR)\proc.obj \
+	$(WORKDIR)\proc_mutex.obj \
+	$(WORKDIR)\rand.obj \
+	$(WORKDIR)\readwrite.obj \
+	$(WORKDIR)\seek.obj \
 	$(WORKDIR)\select.obj \
-	$(WORKDIR)\apr_random.obj \
+	$(WORKDIR)\sendrecv.obj \
 	$(WORKDIR)\sha2.obj \
 	$(WORKDIR)\sha2_glue.obj \
 	$(WORKDIR)\shm.obj \
-	$(WORKDIR)\apr_cpystrn.obj \
-	$(WORKDIR)\apr_fnmatch.obj \
-	$(WORKDIR)\apr_snprintf.obj \
-	$(WORKDIR)\apr_strings.obj \
-	$(WORKDIR)\apr_strnatcmp.obj \
-	$(WORKDIR)\apr_strtok.obj \
-	$(WORKDIR)\apr_hash.obj \
-	$(WORKDIR)\apr_tables.obj \
-	$(WORKDIR)\proc.obj \
 	$(WORKDIR)\signals.obj \
+	$(WORKDIR)\sockaddr.obj \
+	$(WORKDIR)\socket_util.obj \
+	$(WORKDIR)\sockets.obj \
+	$(WORKDIR)\sockopt.obj \
+	$(WORKDIR)\start.obj \
+	$(WORKDIR)\tempdir.obj \
 	$(WORKDIR)\thread.obj \
+	$(WORKDIR)\thread_cond.obj \
+	$(WORKDIR)\thread_mutex.obj \
+	$(WORKDIR)\thread_rwlock.obj \
 	$(WORKDIR)\threadpriv.obj \
 	$(WORKDIR)\time.obj \
 	$(WORKDIR)\timestr.obj \
-	$(WORKDIR)\groupinfo.obj \
-	$(WORKDIR)\userinfo.obj
+	$(WORKDIR)\userinfo.obj \
+	$(WORKDIR)\utf8.obj \
+	$(WORKDIR)\version.obj \
+	$(WORKDIR)\wakeup.obj
+
+HEADERS = \
+	$(SRCDIR)\include\apr.h \
+	$(SRCDIR)\include\private\apr_escape_test_char.h
+
 
 BUILDINC = $(PREFIX)\include\apr-1
 BUILDLIB = $(PREFIX)\lib
@@ -128,33 +137,22 @@ BUILDLIB = $(PREFIX)\lib
 BUILDBIN = $(WORKDIR)\$(PROJECT).dll
 BUILDPDB = $(WORKDIR)\$(PROJECT).pdb
 BUILDRES = $(WORKDIR)\$(PROJECT).res
-BUILDMAN = $(BUILDBIN).manifest
+BUILDIMP = $(WORKDIR)\$(PROJECT).lib
 !ELSE
 BUILDBIN = $(WORKDIR)\$(PROJECT).lib
 !ENDIF
 
-all : $(WORKDIR) $(BUILDBIN)
+all : $(WORKDIR) $(HEADERS) $(BUILDBIN)
 
-$(BUILDINC) :
-	@if not exist "$(BUILDINC)\arch\win32\$(NULL)" mkdir "$(BUILDINC)\arch\win32"
-
-$(BUILDLIB) :
-	@if not exist "$(BUILDLIB)\$(NULL)" mkdir "$(BUILDLIB)"
-
-$(WORKDIR) :
+$(WORKDIR):
 	@$(MAKEWORKDIR)
 
 $(SRCDIR)\include\apr.h: $(SRCDIR)\include\apr.hw
-	-@copy $(SRCDIR)\include\apr.hw $(SRCDIR)\include\apr.h
+	@type $** > $@
 
-$(WORKDIR)\apr_escape_test_char.h: $(WORKDIR)\gen_test_char.exe
-	$(WORKDIR)\gen_test_char.exe > $(WORKDIR)\apr_escape_test_char.h
-
-$(WORKDIR)\gen_test_char.exe: $(WORKDIR)\gen_test_char.obj
-	$(LINK) $(WORKDIR)\gen_test_char.obj /out:$(WORKDIR)\gen_test_char.exe
-
-$(WORKDIR)\gen_test_char.obj: $(SRCDIR)\tools\gen_test_char.c
-	$(CC) $(CFLAGS) $(PDBFLAGS) $(SRCDIR)\tools\gen_test_char.c
+$(SRCDIR)\include\private\apr_escape_test_char.h: $(SRCDIR)\tools\gen_test_char.c
+	$(CC) /nologo -MT -W3 -O2 -Ob2 -DWIN32 -D_WIN32 -D_CONSOLE -D_MBCS /Fo$(WORKDIR)\ /Fe$(WORKDIR)\gen_test_char.exe $**
+	$(WORKDIR)\gen_test_char.exe > $@
 
 {$(SRCDIR)\atomic\win32}.c{$(WORKDIR)}.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) $(PDBFLAGS) $<
@@ -162,8 +160,6 @@ $(WORKDIR)\gen_test_char.obj: $(SRCDIR)\tools\gen_test_char.c
 {$(SRCDIR)\dso\win32}.c{$(WORKDIR)}.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) $(PDBFLAGS) $<
 
-# Needs additional dynamically generated header file.
-# It is created in $(WORKDIR), so add it to header search dirs.
 {$(SRCDIR)\encoding}.c{$(WORKDIR)}.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -I$(WORKDIR) $(PDBFLAGS) $<
 
@@ -224,29 +220,23 @@ $(WORKDIR)\gen_test_char.obj: $(SRCDIR)\tools\gen_test_char.c
 {$(SRCDIR)\user\win32}.c{$(WORKDIR)}.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) $(PDBFLAGS) $<
 
-$(OBJECTS): $(SRCDIR)\include\apr.h
-
-$(WORKDIR)\apr_escape.obj: $(WORKDIR)\apr_escape_test_char.h
-
 !IF "$(TARGET)" == "DLL"
-$(BUILDRES): libapr.rc $(SRCDIR)\include\apr.h
-	$(RC) $(RCFLAGS) /i "$(SRCDIR)\include" /d "APR_VERSION_ONLY" /fo $(BUILDRES) libapr.rc
-$(BUILDBIN): $(WORKDIR) $(OBJECTS) $(BUILDRES)
-	$(LINK) $(LFLAGS) $(OBJECTS) $(BUILDRES) $(LIBS) /pdb:$(BUILDPDB) /out:$(BUILDBIN)
-	IF EXIST $(BUILDMAN) \
-		mt -nologo -manifest $(BUILDMAN) -outputresource:$(BUILDBIN);2
+$(BUILDRES): $(SRCDIR)\libapr.rc
+	$(RC) $(RCFLAGS) /i "$(SRCDIR)\include" /d "APR_VERSION_ONLY" /fo $(BUILDRES) $**
+$(BUILDBIN): $(OBJECTS) $(BUILDRES)
+	$(LINK) $(LFLAGS) $** $(LIBS) /pdb:$(BUILDPDB) /out:$(BUILDBIN) /implib:$(BUILDIMP)
 !ELSE
-$(BUILDBIN): $(WORKDIR) $(OBJECTS)
-	$(LINK) $(LFLAGS) $(OBJECTS) /out:$(BUILDBIN)
+$(BUILDBIN): $(OBJECTS)
+	$(LINK) $(LFLAGS) $** /out:$(BUILDBIN)
 !ENDIF
 
 clean:
 	@$(CLEANTARGET)
 
-install: $(BUILDINC) $(BUILDLIB) $(WORKDIR) $(BUILDBIN)
-	@xcopy "$(SRCDIR)\include\*.h" "$(BUILDINC)" /Y /Q
-	@xcopy "$(SRCDIR)\include\arch\apr_private_common.h" "$(BUILDINC)\arch" /Y /Q
-	@xcopy "$(SRCDIR)\include\arch\win32\*.h" "$(BUILDINC)\arch\win32" /Y /Q
-	@xcopy "$(WORKDIR)\*.lib" "$(BUILDLIB)" /Y /Q
-	@xcopy "$(WORKDIR)\*.dll" "$(BUILDLIB)" /Y /Q 2>NUL
+install: all
+	@xcopy /I /Y /Q "$(SRCDIR)\include\*.h" "$(BUILDINC)"
+	@xcopy /I /Y /Q "$(SRCDIR)\include\arch\*.h" "$(BUILDINC)\arch"
+	@xcopy /I /Y /Q "$(SRCDIR)\include\arch\win32\*.h" "$(BUILDINC)\arch\win32"
+	@xcopy /I /Y /Q "$(WORKDIR)\*.lib" "$(BUILDLIB)"
+	@xcopy /I /Y /Q "$(WORKDIR)\*.dll" "$(BUILDLIB)" 2>NUL
 
