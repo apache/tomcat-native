@@ -177,14 +177,27 @@ public final class SSLContext {
      * @param key Private Key file to use if not in cert.
      * @param password Certificate password. If null and certificate
      *                 is encrypted, password prompt will be displayed.
+     * @param passwordFile Certificate password file. If null and certificate
+     *                 is encrypted, password prompt will be displayed.
      * @param idx Certificate index SSL_AIDX_RSA or SSL_AIDX_DSA.
      * @return <code>true</code> if the operation was successful
      * @throws Exception An error occurred
      */
     public static native boolean setCertificate(long ctx, String cert,
                                                 String key, String password,
-                                                int idx)
+                                                String passwordFile, int idx)
         throws Exception;
+
+    /**
+     * @deprecated use {@link #setCertificate(long, String, String, String, String, int)}
+     */
+    @Deprecated
+    public static boolean setCertificate(long ctx, String cert,
+                                         String key, String password,
+                                         int idx)
+        throws Exception {
+        return setCertificate(ctx, cert, key, password, null, idx);
+    }
 
     /**
      * Set the size of the internal session cache.

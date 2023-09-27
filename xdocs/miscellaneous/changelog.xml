@@ -34,6 +34,10 @@
 <section name="Changes in 2.0.7">
   <changelog>
     <add>
+      <bug>66670</bug>: Add SSLHostConfig#certificateKeyPasswordFile and
+      SSLHostConfig#certificateKeystorePasswordFile. (michaelo)
+    </add>
+    <add>
       <bug>67538</bug>: Make use of Ant's <code>&lt;javaversion /&gt;</code> task
       to enfore the mininum Java build version. (michaelo)
     </add>

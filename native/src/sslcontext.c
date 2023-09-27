@@ -994,15 +994,20 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setRandom)(TCN_STDARGS, jlong ctx,
 
 TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
                                                          jstring cert, jstring key,
-                                                         jstring password, jint idx)
+                                                         jstring password, jstring passwordFile,
+                                                         jint idx)
 {
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     jboolean rv = JNI_TRUE;
     TCN_ALLOC_CSTRING(cert);
     TCN_ALLOC_CSTRING(key);
     TCN_ALLOC_CSTRING(password);
-    const char *key_file, *cert_file;
-    const char *p;
+    TCN_ALLOC_CSTRING(passwordFile);
+    char temp_password[SSL_MAX_PASSWORD_LEN];
+    const char *password_to_use = NULL;
+    char *p;
+    const char *key_file, *cert_file, *password_file;
+    BIO *password_bio;
     char err[256];
 #ifdef HAVE_ECC
     EC_GROUP *ecparams = NULL;
@@ -1019,10 +1024,30 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
         rv = JNI_FALSE;
         goto cleanup;
     }
-    if (J2S(password)) {
+    password_file = J2S(passwordFile);
+    if (password_file) {
+        password_bio = BIO_new_file(password_file, "r");
+        if (password_bio == NULL) {
+            ERR_error_string(SSL_ERR_get(), err);
+            tcn_Throw(e, "Unable to load certificate key password file %s (%s)", password_file, err);
+            rv = JNI_FALSE;
+            goto cleanup;
+        }
+        BIO_gets(password_bio, temp_password, SSL_MAX_PASSWORD_LEN);
+        BIO_free_all(password_bio);
+        password_bio = NULL;
+        p = strchr(temp_password, '\n');
+        if (p != NULL) {
+            *p = 0;
+        }
+        password_to_use = temp_password;
+    } else {
+        password_to_use = J2S(password);
+    }
+    if (password_to_use) {
         if (!c->cb_data)
             c->cb_data = &tcn_password_callback;
-        strncpy(c->cb_data->password, J2S(password), SSL_MAX_PASSWORD_LEN - 1);
+        strncpy(c->cb_data->password, password_to_use, SSL_MAX_PASSWORD_LEN - 1);
         c->cb_data->password[SSL_MAX_PASSWORD_LEN-1] = '\0';
     }
     key_file  = J2S(key);
@@ -1117,6 +1142,7 @@ cleanup:
     TCN_FREE_CSTRING(cert);
     TCN_FREE_CSTRING(key);
     TCN_FREE_CSTRING(password);
+    TCN_FREE_CSTRING(passwordFile);
     return rv;
 }
 
