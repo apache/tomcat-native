@@ -87,10 +87,10 @@ Windows
 
    Unpack the APR source distribution into native\srclib\apr
 
-   > c:\cmsc\setenv.bat /x86 
+   > c:\cmsc\setenv.bat x86 
    > nmake -f NMAKEmakefile BUILD_CPU=x86 APR_DECLARE_STATIC=1
  
-   > c:\cmsc\setenv.bat /x64
+   > c:\cmsc\setenv.bat x64
    > nmake -f NMAKEmakefile BUILD_CPU=x64 APR_DECLARE_STATIC=1
 
 4. Build OpenSSL
@@ -101,7 +101,7 @@ Windows
 
    Apply openssl-msvcrt-3.0.x.patch. Note that you may need to skip and/or use an offset to get the patch to apply.
 
-   > c:\cmsc\setenv.bat /x86
+   > c:\cmsc\setenv.bat x86
    > perl Configure no-shared VC-WIN32
    > nmake
    > mkdir out32-x86
@@ -111,7 +111,7 @@ Windows
  
    > nmake clean
 
-   > c:\cmsc\setenv.bat /x64
+   > c:\cmsc\setenv.bat x64
    > perl Configure no-shared VC-WIN64A
    > nmake
    > mkdir out32-x64
@@ -154,12 +154,12 @@ Windows
    > cd ..
    >set JAVA_HOME=\java\jdk11
 
-   > c:\cmsc\setenv.bat /x86
+   > c:\cmsc\setenv.bat x86
    > nmake -f NMAKEMakefile WITH_APR=C:\deps-x86\apr-%APR_VER% WITH_OPENSSL=C:\deps-x86\openssl-%OPENSSL_VER% APR_DECLARE_STATIC=1 OPENSSL_NEW_LIBS=1 ENABLE_OCSP=1
    > move WIN7_X86_DLL_RELEASE WIN7_X86_OCSP_DLL_RELEASE
    > nmake -f NMAKEMakefile WITH_APR=C:\deps-x86\apr-%APR_VER% WITH_OPENSSL=C:\deps-x86\openssl-%OPENSSL_VER% APR_DECLARE_STATIC=1 OPENSSL_NEW_LIBS=1
  
-   > c:\cmsc\setenv.bat /x64
+   > c:\cmsc\setenv.bat x64
    > nmake -f NMAKEMakefile WITH_APR=C:\deps-x64\apr-%APR_VER% WITH_OPENSSL=C:\deps-x64\openssl-%OPENSSL_VER% APR_DECLARE_STATIC=1 OPENSSL_NEW_LIBS=1 ENABLE_OCSP=1
    > move WIN7_X64_DLL_RELEASE WIN7_X64_OCSP_DLL_RELEASE
    > nmake -f NMAKEMakefile WITH_APR=C:\deps-x64\apr-%APR_VER% WITH_OPENSSL=C:\deps-x64\openssl-%OPENSSL_VER% APR_DECLARE_STATIC=1 OPENSSL_NEW_LIBS=1
