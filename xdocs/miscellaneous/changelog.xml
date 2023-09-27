@@ -38,6 +38,9 @@
       mode is used, disable OCSP if enabled else client certificates from
       unknown certificate authorities will be rejected. (markt)
     </fix>
+    <update>
+      Update the recommended minimum version of OpenSSL to 3.0.11. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 2.0.5">
