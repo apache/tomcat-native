@@ -14,11 +14,15 @@
 /native/build/config.sub
 /native/build/find_apr.m4
 /native/build/install.sh
+/native/build/install-sh
+/native/build/ltmain.sh
 /native/build/rules.mk
+/native/aclocal.m4
 /native/config.log
 /native/config.nice
 /native/config.status
 /native/configure
+/native/configure~
 /native/libtcnative-1.la
 /native/libtcnative-2.la
 /native/tcnative.pc
