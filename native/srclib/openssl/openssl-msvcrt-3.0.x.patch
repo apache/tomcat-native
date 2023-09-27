@@ -82,5 +82,5 @@ index d073d732da..8a96f9a151 100644
  
 +#include "e_os.h"
  #include "../testutil.h"
+ #include <ctype.h>
  #include <openssl/provider.h>
- #include <string.h>
