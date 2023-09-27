@@ -309,15 +309,14 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
     con->pha_state = PHA_COMPLETE;
 #endif
 
-    if (verify == SSL_CVERIFY_UNSET ||
-        verify == SSL_CVERIFY_NONE) {
+    if (verify == SSL_CVERIFY_UNSET || verify == SSL_CVERIFY_NONE) {
         return 1;
     }
 
-    if (SSL_VERIFY_ERROR_IS_OPTIONAL(errnum) &&
-        (verify == SSL_CVERIFY_OPTIONAL_NO_CA)) {
-        ok = 1;
+    if (SSL_VERIFY_ERROR_IS_OPTIONAL(errnum) && (verify == SSL_CVERIFY_OPTIONAL_NO_CA)) {
         SSL_set_verify_result(ssl, X509_V_OK);
+        // Skip OCSP checks since the CA is optional
+        return 1;
     }
 
     /*

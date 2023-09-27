@@ -33,6 +33,11 @@
 </section>
 <section name="Changes in 2.0.6">
   <changelog>
+    <fix>
+      <bug>67061</bug>: If the insecure optionalNoCA certificate verification
+      mode is used, disable OCSP if enabled else client certificates from
+      unknown certificate authorities will be rejected. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 2.0.5">
