@@ -2,7 +2,7 @@ diff --git a/Configurations/10-main.conf b/Configurations/10-main.conf
 index 66bc81dfb4..52345e4f33 100644
 --- a/Configurations/10-main.conf
 +++ b/Configurations/10-main.conf
-@@ -1369,7 +1369,7 @@ my %targets = (
+@@ -1379,7 +1379,7 @@ my %targets = (
          # prefer [non-debug] openssl.exe to be free from Micorosoft RTL
          # redistributable.
          bin_cflags       => add(picker(debug   => "/MDd",
@@ -84,3 +84,4 @@ index d073d732da..8a96f9a151 100644
  #include "../testutil.h"
  #include <ctype.h>
  #include <openssl/provider.h>
+ 
