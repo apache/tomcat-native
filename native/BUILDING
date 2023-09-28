@@ -95,14 +95,14 @@ Windows
    Unpack the APR source distribution into native\srclib\apr
    Apply apr-enable-ipv6.patch
    
-   > c:\cmsc\setenv.bat /x86 
+   > c:\cmsc\setenv.bat x86 
    > nmake -f NMAKEmakefile BUILD_CPU=x86 APR_DECLARE_STATIC=1
    > mkdir WINXP_X86_LIB_RELEASE\include
    > mkdir WINXP_X86_LIB_RELEASE\lib
    > xcopy /E include WINXP_X86_LIB_RELEASE\include\
    > copy WINXP_X86_LIB_RELEASE\apr-1.lib WINXP_X86_LIB_RELEASE\lib
    
-   > c:\cmsc\setenv.bat /x64
+   > c:\cmsc\setenv.bat x64
    > nmake -f NMAKEmakefile BUILD_CPU=x64 APR_DECLARE_STATIC=1
    > mkdir WINXP_X64_LIB_RELEASE\include
    > mkdir WINXP_X64_LIB_RELEASE\lib
@@ -114,7 +114,7 @@ Windows
    Unpack the OpenSSL source distribution into native\srclib\openssl
    Apply openssl-msvcrt.patch
    
-   > c:\cmsc\setenv.bat /x86
+   > c:\cmsc\setenv.bat x86
    > perl Configure VC-WIN32
    > ms\do_nasm
    > nmake -f ms\nt.mak
@@ -124,7 +124,7 @@ Windows
    > xcopy /E inc32 release-x86\include\
    > copy out32\*.lib release-x86\lib\
  
-   > c:\cmsc\setenv.bat /x64
+   > c:\cmsc\setenv.bat x64
    > perl Configure VC-WIN64A
    > ms\do_win64a
    > nmake -f ms\nt.mak clean
@@ -139,10 +139,10 @@ Windows
 
    > SET JAVA_HOME=C:\Program Files\Java\jdk1.7.0_71
 
-   > c:\cmsc\setenv.bat /x86
+   > c:\cmsc\setenv.bat x86
    > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X86_LIB_RELEASE WITH_OPENSSL=srclib\openssl\release-x86 APR_DECLARE_STATIC=1
  
-   > c:\cmsc\setenv.bat /x64
+   > c:\cmsc\setenv.bat x64
    > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X64_LIB_RELEASE WITH_OPENSSL=srclib\openssl\release-x64 APR_DECLARE_STATIC=1
  
    Note: Use ENABLE_OCSP=1 to create OCSP enabled builds
