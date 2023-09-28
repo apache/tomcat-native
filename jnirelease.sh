@@ -175,7 +175,7 @@ if [ $diffcount -ne 0 ]; then
     echo "WARNING: git subtree is not up to date with"
     echo "         $TCJAVA_GITBASE"
     echo "         Either correct now by running"
-    echo "         'git co main'"
+    echo "         'git checkout main'"
     echo "         'git rm -rf java/org/apache/tomcat/jni'"
     echo "         'git read-tree --prefix=java/org/apache/tomcat/jni/ -u tcjava/main:java/org/apache/tomcat/jni'"
     echo "         'git commit'"
