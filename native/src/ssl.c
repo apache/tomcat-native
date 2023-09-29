@@ -249,31 +249,6 @@ static int ssl_rand_load_file(const char *file)
     return -1;
 }
 
-/*
- * writes a number of random bytes (currently 1024) to
- * file which can be used to initialize the PRNG by calling
- * RAND_load_file() in a later session
- */
-static int ssl_rand_save_file(const char *file)
-{
-    char buffer[APR_PATH_MAX];
-#ifndef OPENSSL_NO_EGD
-    int n;
-#endif
-
-    if (file == NULL)
-        file = RAND_file_name(buffer, sizeof(buffer));
-#ifndef OPENSSL_NO_EGD
-    else if ((n = RAND_egd(file)) > 0) {
-        return 0;
-    }
-#endif
-    if (file == NULL || !RAND_write_file(file))
-        return 0;
-    else
-        return 1;
-}
-
 int SSL_rand_seed(const char *file)
 {
     unsigned char stackdata[256];
