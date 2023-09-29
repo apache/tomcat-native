@@ -641,11 +641,6 @@ static void free_bio_methods(void)
     BIO_meth_free(jbs_methods);
 }
 
-static BIO_METHOD *BIO_jbs()
-{
-    return jbs_methods;
-}
-
 /*** Begin Twitter 1:1 API addition ***/
 TCN_IMPLEMENT_CALL(jint, SSL, getLastErrorNumber)(TCN_STDARGS) {
     UNREFERENCED_STDARGS;
