@@ -42,10 +42,10 @@
 <section name="Headlines">
 <ul>
 
-<li><a href="news/2023.html#20230807">7 August 2023 - <b>TC-Native-2.0.5
+<li><a href="news/2023.html#20231002">2 October 2023 - <b>TC-Native-2.0.6
 released</b></a>
 <p>The Apache Tomcat team is proud to announce the immediate availability of
-Tomcat Native 2.0.5 Stable.</p>
+Tomcat Native 2.0.6 Stable.</p>
 <p>
 The sources and the binaries for selected platforms are available from the
 <a href="../download-native.cgi">Download page</a>.
@@ -176,6 +176,7 @@ export LD_LIBRARY_PATH</source>
 
   <p>
     Refer to the tomcat documentation to configure the connectors (See
+    <a href="https://tomcat.apache.org/tomcat-11.0-doc/config/http.html">Tomcat 11.0.x</a>,
     <a href="https://tomcat.apache.org/tomcat-10.1-doc/config/http.html">Tomcat 10.1.x</a>,
     <a href="https://tomcat.apache.org/tomcat-9.0-doc/config/http.html">Tomcat 9.0.x</a> and 
     <a href="https://tomcat.apache.org/tomcat-8.5-doc/config/http.html">Tomcat 8.5.x</a>)

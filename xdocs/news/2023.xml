@@ -30,6 +30,11 @@
 
     <section name="2023 News &amp; Status">
     
+      <subsection anchor="20231002" name="2 October 2023 - TC-Native-2.0.6 released">
+        <p>The Apache Tomcat team is proud to announce the immediate
+        availability of Tomcat Native 2.0.6.</p>
+      </subsection>
+      
       <subsection anchor="20230807" name="7 August 2023 - TC-Native-2.0.5 released">
         <p>The Apache Tomcat team is proud to announce the immediate
         availability of Tomcat Native 2.0.5.</p>
