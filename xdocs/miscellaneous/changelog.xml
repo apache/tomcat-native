@@ -40,6 +40,9 @@
     <update>
       Align default pass phrase prompt with HTTPd on Windows as well. (michaelo)
     </update>
+    <fix>
+      <bug>67616</bug>: o.a.tomcat.jni.SSL contains useless check for old OpenSSL version. (michaelo)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 2.0.6">
