@@ -29,9 +29,9 @@
 #
 
 !IF !DEFINED(APR_DECLARE_STATIC) || "$(APR_DECLARE_STATIC)" == ""
-PROJECT = libtcnative-1
+PROJECT = libtcnative-2
 !ELSE
-PROJECT = tcnative-1
+PROJECT = tcnative-2
 !ENDIF
 TARGET = DLL
 

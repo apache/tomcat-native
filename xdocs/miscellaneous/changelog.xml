@@ -32,6 +32,12 @@
   </p>
 </section>
 <section name="Changes in 2.0.7">
+  <changelog>
+    <fix>
+      <bug>67615</bug>: Windows binary for version 2 has incorrect version suffix
+      compared to the GNU autoconf version. (michaelo)
+    </fix>
+  </changelog>
 </section>
 <section name="Changes in 2.0.6">
   <changelog>
