@@ -37,6 +37,9 @@
       <bug>67615</bug>: Windows binary for version 2 has incorrect version suffix
       compared to the GNU autoconf version. (michaelo)
     </fix>
+    <update>
+      Align default pass phrase prompt with HTTPd on Windows as well. (michaelo)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 2.0.6">
