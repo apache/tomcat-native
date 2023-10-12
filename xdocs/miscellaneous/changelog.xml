@@ -38,6 +38,9 @@
     <update>
       Align Java source compile configuration with Tomcat. (michaelo)
     </update>
+    <fix>
+      Fix version set in DLL header on Windows. (michaelo)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.2.39">
