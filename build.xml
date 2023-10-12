@@ -64,6 +64,13 @@
     <property name="compile.release" value="11"/>
     <property name="build.java.version" value="11"/>
 
+    <!-- Check Java Build Version -->
+    <fail message="Java version ${build.java.version} or newer is required (${java.version} is installed)">
+        <condition>
+            <not><javaversion atleast="${build.java.version}" /></not>
+        </condition>
+    </fail>
+
     <!-- The base directory for component sources -->
     <property name="source.home"           value="java"/>
 

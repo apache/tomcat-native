@@ -33,6 +33,10 @@
 </section>
 <section name="Changes in 2.0.7">
   <changelog>
+    <add>
+      <bug>67538</bug>: Make use of Ant's <code>&lt;javaversion /&gt;</code> task
+      to enfore the mininum Java build version. (michaelo)
+    </add>
     <fix>
       <bug>67615</bug>: Windows binary for version 2 has incorrect version suffix
       compared to the GNU autoconf version. (michaelo)
