@@ -30,10 +30,10 @@ base.path=/usr/share/java
 #base.path=C:/path/to/the/repository
 #base.path=/usr/local
 
-compile.source=1.8
-compile.target=1.8
-compile.debug=off
-compile.deprecation=on
+# ----- Build control flags -----
+compile.debug=true
+# Do not pass -deprecation (-Xlint:deprecation) flag to javac
+compile.deprecation=false
 
 base-maven.loc=https://repo.maven.apache.org/maven2
 

@@ -35,6 +35,9 @@
     <update>
       Drop useless <code>compile.optimize</code> option. (michaelo)
     </update>
+    <update>
+      Align Java source compile configuration with Tomcat. (michaelo)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 1.2.39">

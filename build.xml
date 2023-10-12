@@ -55,6 +55,10 @@
 
     <property name="tc.library.path"       value="${basedir}/native/.libs"/>
 
+    <property name="compile.source" value="1.8"/>
+    <property name="compile.target" value="1.8"/>
+    <property name="build.java.version" value="1.8"/>
+
     <!-- The base directory for component sources -->
     <property name="source.home"           value="java"/>
 
@@ -204,12 +208,11 @@ limitations under the License.--&gt;">
     <target name="compile" depends="prepare" description="Compile Java sources">
         <mkdir dir="${build.dest}"/>
         <mkdir dir="${build.dest}/java"/>
-        <javac srcdir="${src.dir}/java"
-            destdir="${build.dest}/java"
-            source="${compile.source}"
-            target="${compile.target}"
+        <javac srcdir="${src.dir}/java" destdir="${build.dest}/java"
             debug="${compile.debug}"
             deprecation="${compile.deprecation}"
+            source="${compile.source}"
+            target="${compile.target}"
             encoding="ISO-8859-1"
             includeantruntime="false">
             <classpath refid="classpath"/>
@@ -244,13 +247,11 @@ limitations under the License.--&gt;">
     <target name="compile-tests" depends="compile" description="Compile Java test classes">
         <mkdir dir="${build.dest}"/>
         <mkdir dir="${build.dest}/test"/>
-        <javac srcdir="${src.dir}/test"
-            destdir="${build.dest}/test"
+        <javac srcdir="${src.dir}/test" destdir="${build.dest}/test"
+            debug="${compile.debug}"
+            deprecation="${compile.deprecation}"
             source="${compile.source}"
             target="${compile.target}"
-            debug="on"
-            deprecation="${compile.deprecation}"
-            optimize="${compile.optimize}"
             encoding="ISO-8859-1"
             includeantruntime="false">
             <classpath refid="test.classpath"/>
