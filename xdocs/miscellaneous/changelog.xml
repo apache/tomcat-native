@@ -49,6 +49,9 @@
     <update>
       Align Java source compile configuration with Tomcat. (michaelo)
     </update>
+    <add>
+      Add Ant version (1.10.2) requirement identical to Tomcat. (michaelo)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 2.0.6">
