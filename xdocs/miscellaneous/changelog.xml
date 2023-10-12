@@ -43,6 +43,9 @@
     <fix>
       <bug>67616</bug>: o.a.tomcat.jni.SSL contains useless check for old OpenSSL version. (michaelo)
     </fix>
+    <update>
+      Drop useless <code>compile.optimize</code> option. (michaelo)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 2.0.6">
