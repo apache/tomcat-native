@@ -41,6 +41,9 @@
     <fix>
       Fix version set in DLL header on Windows. (michaelo)
     </fix>
+    <add>
+      Reinstantiate an updated patch for OpenSSL 1.1.1 on Windows. (michaelo)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.2.39">
