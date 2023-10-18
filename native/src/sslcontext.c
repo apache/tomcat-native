@@ -35,6 +35,7 @@ static apr_status_t ssl_context_cleanup(void *data)
     if (c) {
         int i;
         c->crl = NULL;
+        c->store = NULL;
         if (c->ctx)
             SSL_CTX_free(c->ctx);
         c->ctx = NULL;
@@ -861,15 +862,8 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setVerify)(TCN_STDARGS, jlong ctx,
     if ((c->verify_mode == SSL_CVERIFY_OPTIONAL) ||
         (c->verify_mode == SSL_CVERIFY_OPTIONAL_NO_CA))
         verify |= SSL_VERIFY_PEER;
-    if (!c->store) {
-        if (SSL_CTX_set_default_verify_paths(c->ctx)) {
-            c->store = SSL_CTX_get_cert_store(c->ctx);
-            X509_STORE_set_flags(c->store, 0);
-        }
-        else {
-            /* XXX: See if this is fatal */
-        }
-    }
+    if (!c->store)
+        c->store = SSL_CTX_get_cert_store(c->ctx);
 
     SSL_CTX_set_verify(c->ctx, verify, SSL_callback_SSL_verify);
 }
