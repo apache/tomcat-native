@@ -59,6 +59,10 @@
     <update>
       Remove an unreachable if condition around CRLs in sslcontext.c. (michaelo)
     </update>
+    <fix>
+      <bug>67818</bug>: <code>SSL.setVerify()</code>/<code>SSLContext.setVerify()</code>
+      silently set undocumented default verify paths. (michaelo)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 2.0.6">
