@@ -1894,15 +1894,8 @@ TCN_IMPLEMENT_CALL(void, SSL, setVerify)(TCN_STDARGS, jlong ssl,
     if ((c->verify_mode == SSL_CVERIFY_OPTIONAL) ||
         (c->verify_mode == SSL_CVERIFY_OPTIONAL_NO_CA))
         verify |= SSL_VERIFY_PEER;
-    if (!c->store) {
-        if (SSL_CTX_set_default_verify_paths(c->ctx)) {
-            c->store = SSL_CTX_get_cert_store(c->ctx);
-            X509_STORE_set_flags(c->store, 0);
-        }
-        else {
-            /* XXX: See if this is fatal */
-        }
-    }
+    if (!c->store)
+        c->store = SSL_CTX_get_cert_store(c->ctx);
 
     SSL_set_verify(ssl_, verify, SSL_callback_SSL_verify);
 }
