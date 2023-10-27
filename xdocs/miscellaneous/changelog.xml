@@ -56,6 +56,9 @@
     <add>
       Add Ant version (1.10.2) requirement identical to Tomcat. (michaelo)
     </add>
+    <update>
+      Remove an unreachable if condition around CRLs in sslcontext.c. (michaelo)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 2.0.6">
