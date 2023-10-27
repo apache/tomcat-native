@@ -718,10 +718,9 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
         return JNI_FALSE;
     }
 
-    if (!c->crl) {
-        if ((c->crl = SSL_CTX_get_cert_store(c->ctx)) == NULL)
-            goto cleanup;
-    }
+    if (!c->crl)
+        c->crl = SSL_CTX_get_cert_store(c->ctx);
+
     if (J2S(file)) {
         lookup = X509_STORE_add_lookup(c->crl, X509_LOOKUP_file());
         if (lookup == NULL) {
