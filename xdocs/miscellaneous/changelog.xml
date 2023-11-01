@@ -48,7 +48,7 @@
       <bug>67818</bug>: When calling <code>SSL.setVerify()</code> or
       <code>SSLContext.setVerify()</code>, the default verify paths are no
       longer set. Only the explicitly configured trust store, if any, will be
-      used to verify client certificates. (michaelo)
+      used. (michaelo)
     </fix>
   </changelog>
 </section>
