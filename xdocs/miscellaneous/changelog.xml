@@ -35,7 +35,7 @@
   <changelog>
     <add>
       <bug>67538</bug>: Make use of Ant's <code>&lt;javaversion /&gt;</code>
-      task to enfore the mininum Java build version. (michaelo)
+      task to enforce the mininum Java build version. (michaelo)
     </add>
     <fix>
       <bug>67615</bug>: Windows binary for version 2 has incorrect version
@@ -64,7 +64,7 @@
       <bug>67818</bug>: When calling <code>SSL.setVerify()</code> or
       <code>SSLContext.setVerify()</code>, the default verify paths are no
       longer set. Only the explicitly configured trust store, if any, will be
-      used to verify client certificates. (michaelo)
+      used. (michaelo)
     </fix>
   </changelog>
 </section>
