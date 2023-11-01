@@ -45,8 +45,10 @@
       Remove an unreachable if condition around CRLs in sslcontext.c. (michaelo)
     </update>
     <fix>
-      <bug>67818</bug>: <code>SSL.setVerify()</code>/<code>SSLContext.setVerify()</code>
-      silently set undocumented default verify paths. (michaelo)
+      <bug>67818</bug>: When calling <code>SSL.setVerify()</code> or
+      <code>SSLContext.setVerify()</code>, the default verify paths are no
+      longer set. Only the explicitly configured trust store, if any, will be
+      used to verify client certificates. (michaelo)
     </fix>
   </changelog>
 </section>
