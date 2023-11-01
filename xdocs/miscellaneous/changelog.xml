@@ -34,18 +34,19 @@
 <section name="Changes in 2.0.7">
   <changelog>
     <add>
-      <bug>67538</bug>: Make use of Ant's <code>&lt;javaversion /&gt;</code> task
-      to enfore the mininum Java build version. (michaelo)
+      <bug>67538</bug>: Make use of Ant's <code>&lt;javaversion /&gt;</code>
+      task to enfore the mininum Java build version. (michaelo)
     </add>
     <fix>
-      <bug>67615</bug>: Windows binary for version 2 has incorrect version suffix
-      compared to the GNU autoconf version. (michaelo)
+      <bug>67615</bug>: Windows binary for version 2 has incorrect version
+      suffix compared to the GNU autoconf version. (michaelo)
     </fix>
     <update>
       Align default pass phrase prompt with HTTPd on Windows as well. (michaelo)
     </update>
     <fix>
-      <bug>67616</bug>: o.a.tomcat.jni.SSL contains useless check for old OpenSSL version. (michaelo)
+      <bug>67616</bug>: o.a.tomcat.jni.SSL contains useless check for old
+      OpenSSL version. (michaelo)
     </fix>
     <update>
       Drop useless <code>compile.optimize</code> option. (michaelo)
@@ -60,8 +61,10 @@
       Remove an unreachable if condition around CRLs in sslcontext.c. (michaelo)
     </update>
     <fix>
-      <bug>67818</bug>: <code>SSL.setVerify()</code>/<code>SSLContext.setVerify()</code>
-      silently set undocumented default verify paths. (michaelo)
+      <bug>67818</bug>: When calling <code>SSL.setVerify()</code> or
+      <code>SSLContext.setVerify()</code>, the default verify paths are no
+      longer set. Only the explicitly configured trust store, if any, will be
+      used to verify client certificates. (michaelo)
     </fix>
   </changelog>
 </section>
