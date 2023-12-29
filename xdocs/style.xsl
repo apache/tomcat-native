@@ -30,8 +30,6 @@
 
 
   <!-- Defined parameters (overrideable) -->
-  <xsl:param    name="home-name"        select="'Apache Tomcat'"/>
-  <xsl:param    name="home-href"        select="'http://tomcat.apache.org/'"/>
   <xsl:param    name="home-logo"        select="'/images/tomcat.png'"/>
   <xsl:param    name="home-stylesheet"  select="'/images/docs-stylesheet.css'"/>
   <xsl:param    name="apache-logo"      select="'/images/asf-feather.png'"/>
