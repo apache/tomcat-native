@@ -66,6 +66,9 @@
       longer set. Only the explicitly configured trust store, if any, will be
       used. (michaelo)
     </fix>
+    <update>
+      Update the recommended minimum version of OpenSSL to 3.0.13. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 2.0.6">
