@@ -25,6 +25,7 @@
 /native/configure~
 /native/libtcnative-1.la
 /native/libtcnative-2.la
+/native/libtool
 /native/tcnative.pc
 /native/tcnative.spec
 
