@@ -70,11 +70,8 @@ public final class SSL {
     public static final int SSL_PROTOCOL_TLSV1_1 = (1<<3);
     public static final int SSL_PROTOCOL_TLSV1_2 = (1<<4);
     public static final int SSL_PROTOCOL_TLSV1_3 = (1<<5);
-    public static final int SSL_PROTOCOL_ALL;
-
-    static {
-        SSL_PROTOCOL_ALL = (SSL_PROTOCOL_TLSV1|SSL_PROTOCOL_TLSV1_1|SSL_PROTOCOL_TLSV1_2|SSL_PROTOCOL_TLSV1_3);
-    }
+    public static final int SSL_PROTOCOL_ALL =
+            (SSL_PROTOCOL_TLSV1 | SSL_PROTOCOL_TLSV1_1 | SSL_PROTOCOL_TLSV1_2 | SSL_PROTOCOL_TLSV1_3);
 
 
     /*
