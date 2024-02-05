@@ -46,7 +46,7 @@
 #include <openssl/x509v3.h>
 #include <openssl/dh.h>
 #include <openssl/bn.h>
-#if (OPENSSL_VERSION_NUMBER > 0x2FFFFFFFL)
+#if OPENSSL_VERSION_NUMBER > 0x2FFFFFFFL && !defined(LIBRESSL_VERSION_NUMBER)
 #include <openssl/provider.h>
 #endif
 /* Avoid tripping over an engine build installed globally and detected
@@ -217,39 +217,7 @@ extern ENGINE *tcn_ssl_engine;
 
 #endif /* !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name) */
 
-/* LibreSSL compatibility */
-#if defined(LIBRESSL_VERSION_NUMBER)
-#define OpenSSL_version                  SSLeay_version
-#define OpenSSL_version_num              SSLeay
-#define OPENSSL_VERSION                  SSLEAY_VERSION
-#define OPENSSL_malloc_init              CRYPTO_malloc_init
-#define BN_get_rfc2409_prime_768         get_rfc2409_prime_768
-#define BN_get_rfc2409_prime_1024        get_rfc2409_prime_1024
-#define BN_get_rfc3526_prime_1536        get_rfc3526_prime_1536
-#define BN_get_rfc3526_prime_2048        get_rfc3526_prime_2048
-#define BN_get_rfc3526_prime_3072        get_rfc3526_prime_3072
-#define BN_get_rfc3526_prime_4096        get_rfc3526_prime_4096
-#define BN_get_rfc3526_prime_6144        get_rfc3526_prime_6144
-#define BN_get_rfc3526_prime_8192        get_rfc3526_prime_8192
-#define BIO_get_init(x)                  (x->init)
-#define BIO_set_init(x,v)                (x->init=v)
-#define BIO_get_data(x)                  (x->ptr)
-#define BIO_set_data(x,v)                (x->ptr=v)
-#define BIO_set_shutdown(x,v)            (x->shutdown=v)
-#define X509_REVOKED_get0_serialNumber(x) x->serialNumber
-#define X509_STORE_CTX_get0_untrusted(x) (x->untrusted)
-#define X509_OBJECT_free(x)              {X509_OBJECT_free_contents(obj);\
-                                          OPENSSL_free(obj);}
-#define TLS_method                       SSLv23_method
-#define TLS_client_method                SSLv23_client_method
-#define TLS_server_method                SSLv23_server_method
-#endif /* defined(LIBRESSL_VERSION_NUMBER) */
-
-#if !defined(LIBRESSL_VERSION_NUMBER)
-#define HAVE_KEYLOG_CALLBACK
-#endif
-
-#define MAX_ALPN_NPN_PROTO_SIZE 65535
+#define MAX_ALPN_PROTO_SIZE 65535
 #define SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL            1
 
 typedef struct {
@@ -394,19 +362,10 @@ void        SSL_callback_handshake(const SSL *, int, int);
 int         SSL_CTX_use_certificate_chain(SSL_CTX *, const char *, int);
 int         SSL_callback_SSL_verify(int, X509_STORE_CTX *);
 int         SSL_rand_seed(const char *file);
-int         SSL_callback_next_protos(SSL *, const unsigned char **, unsigned int *, void *);
-int         SSL_callback_select_next_proto(SSL *, unsigned char **, unsigned char *, const unsigned char *, unsigned int,void *);
 int         SSL_callback_alpn_select_proto(SSL *, const unsigned char **, unsigned char *, const unsigned char *, unsigned int, void *);
-#ifdef HAVE_KEYLOG_CALLBACK
 void        SSL_callback_add_keylog(SSL_CTX *);
-#endif
 
-#if defined(LIBRESSL_VERSION_NUMBER) && ! (defined(WIN32) || defined(WIN64))
-unsigned long SSL_ERR_get(void);
-void SSL_ERR_clear(void);
-#else
 #define SSL_ERR_get() ERR_get_error()
 #define SSL_ERR_clear() ERR_clear_error()
-#endif
 
 #endif /* SSL_PRIVATE_H */

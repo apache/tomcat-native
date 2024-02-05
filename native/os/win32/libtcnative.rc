@@ -25,13 +25,13 @@ LANGUAGE 0x9,0x1
 
 1001 DIALOGEX 0, 0, 252, 51
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_CAPTION
-CAPTION "Password prompt"
+CAPTION "Pass Phrase Prompt"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     ICON            1000,-1,8,6,21,20
     LTEXT           "Some of your private key files are encrypted for security reasons.\nIn order to read them you have to provide the pass phrases.",
                     -1,29,5,220,19
-    LTEXT           "Enter password:",-1,7,28,75,8
+    LTEXT           "Enter pass phrase:",-1,7,28,75,8
     EDITTEXT        1002,67,27,174,12,ES_PASSWORD | ES_AUTOHSCROLL
 END
 

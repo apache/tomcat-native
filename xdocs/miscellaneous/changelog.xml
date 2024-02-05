@@ -51,6 +51,13 @@
       longer set. Only the explicitly configured trust store, if any, will be
       used. (michaelo)
     </fix>
+    <update>
+      Update the minimum supported version of LibreSSL to 3.5.2. (markt)
+    </update>
+    <design>
+      Remove NPN support as NPN was never standardised and browser support was
+      removed in 2019. (markt)
+    </design>
   </changelog>
 </section>
 <section name="Changes in 1.2.x">
