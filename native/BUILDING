@@ -112,7 +112,7 @@ Windows
 4. Build OpenSSL
 
    Unpack the OpenSSL source distribution into native\srclib\openssl
-   Apply openssl-msvcrt.patch
+   Apply openssl-msvcrt-3.0.x.patch
    
    > c:\cmsc\setenv.bat x86
    > perl Configure VC-WIN32
