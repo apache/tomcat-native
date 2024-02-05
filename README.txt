@@ -20,7 +20,7 @@ The Latest Version
 ------------------
 
 Details of the latest version can be found on the Apache Tomcat
-project page under http://tomcat.apache.org/.
+project page under https://tomcat.apache.org/.
 
 Documentation
 -------------
@@ -28,7 +28,7 @@ Documentation
 The documentation available as of the date of this release is
 included in HTML format in the docs directory.
 The most up-to-date documentation can be found at
-http://tomcat.apache.org/native-doc/
+https://tomcat.apache.org/native-doc/
 
 Documentation about the Tomcat APR connector which is based
 on this library can be found at
