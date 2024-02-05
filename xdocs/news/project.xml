@@ -16,12 +16,12 @@
   limitations under the License.
 -->
 <project name="Apache Tomcat Native Documentation - News"
-  href="http://tomcat.apache.org/">
+    href="http://tomcat.apache.org/">
 
-  <title>The Apache Tomcat Native - News</title>
+  <title>The Apache Tomcat Native Library 1.2 - News</title>
 
   <logo href="/images/tomcat.gif">
-    The Apache Tomcat Native - News
+    The Apache Tomcat Native Library - News
   </logo>
 
   <body>
@@ -30,8 +30,8 @@
     </menu>
 
     <menu name="Miscellaneous Documentation">
-      <item name="Changelog"           href="../miscellaneous/changelog.html"/>
-        <item name="TLS renegotiation" href="../miscellaneous/tls-renegotiation.html"/>
+      <item name="Changelog"         href="../miscellaneous/changelog.html"/>
+      <item name="TLS renegotiation" href="../miscellaneous/tls-renegotiation.html"/>
     </menu>
 
     <menu name="News">
