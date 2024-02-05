@@ -85,7 +85,7 @@ if [ "x$JKJNIEXT" = "x" ]; then
     echo ""
     echo "Unknown Git tag/branch"
     echo "Use:"
-    echo "  --ver=<tag>|1.1.x|1.2.x|main|."
+    echo "  --ver=<tag>|1.1.x|1.2.x|1.3.x|main|."
     echo ""
     exit 1
 fi
@@ -135,6 +135,9 @@ fi
 
 if [ "x$JKJNIEXT" = "xmain" ]; then
     JKJNIHASH=`git ls-remote $GITBASE refs/heads/main | awk '{print $1}'`
+    JKJNIVER="$JKJNIEXT-$JKJNIHASH"
+elif [ "x$JKJNIEXT" = "x1.3.x" ]; then
+    JKJNIHASH=`git ls-remote $GITBASE refs/heads/1.3.x | awk '{print $1}'`
     JKJNIVER="$JKJNIEXT-$JKJNIHASH"
 elif [ "x$JKJNIEXT" = "x1.2.x" ]; then
     JKJNIHASH=`git ls-remote $GITBASE refs/heads/1.2.x | awk '{print $1}'`
