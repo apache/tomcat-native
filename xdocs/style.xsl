@@ -32,7 +32,7 @@
   <!-- Defined parameters (overrideable) -->
   <xsl:param    name="home-logo"        select="'/images/tomcat.png'"/>
   <xsl:param    name="home-stylesheet"  select="'/images/docs-stylesheet.css'"/>
-  <xsl:param    name="apache-logo"      select="'/images/asf-feather.png'"/>
+  <xsl:param    name="apache-logo"      select="'/images/asf-logo.svg'"/>
   <xsl:param    name="relative-path"    select="'.'"/>
   <xsl:param    name="buglink"          select="'https://bz.apache.org/bugzilla/show_bug.cgi?id='"/>
   <xsl:param    name="prlink"           select="'https://github.com/apache/tomcat-native/pull/'"/>
