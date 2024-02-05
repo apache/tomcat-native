@@ -240,16 +240,16 @@ AC_ARG_ENABLE(openssl-version-check,
         [disable the OpenSSL version check])])
 case "$enable_openssl_version_check" in
 yes|'')
-        AC_MSG_CHECKING(OpenSSL library version >= 1.0.2)
+        AC_MSG_CHECKING(OpenSSL library version >= 1.1.1)
         AC_TRY_RUN([
 #include <stdio.h>
 #include <openssl/opensslv.h>
 int main() {
-        if (OPENSSL_VERSION_NUMBER >= 0x1000200fL)
+        if (OPENSSL_VERSION_NUMBER >= 0x1010100fL)
             return (0);
     printf("\n\nFound   OPENSSL_VERSION_NUMBER %#010x (" OPENSSL_VERSION_TEXT ")\n",
         OPENSSL_VERSION_NUMBER);
-    printf("Require OPENSSL_VERSION_NUMBER 0x1000200f or greater (1.0.2)\n\n");
+    printf("Require OPENSSL_VERSION_NUMBER 0x1010100f or greater (1.1.1)\n\n");
         return (1);
 }
         ],

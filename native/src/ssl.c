@@ -46,7 +46,7 @@ static void ssl_keylog_callback(const SSL *ssl, const char *line)
 static jclass byteArrayClass;
 static jclass stringClass;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
 /* Global reference to the pool used by the dynamic mutexes */
 static apr_pool_t *dynlockpool = NULL;
 
@@ -210,8 +210,8 @@ static const jint supported_ssl_opts = 0
 #endif
      | 0;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-/* OpenSSL Pre-1.1.0 compatibility */
+#if defined(LIBRESSL_VERSION_NUMBER)
+/* LibreSSL compatibility */
 /* Taken from OpenSSL 1.1.0 snapshot 20160410 */
 int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 {
@@ -321,7 +321,7 @@ DH *SSL_get_dh_params(unsigned keylen)
     return NULL; /* impossible to reach. */
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(LIBRESSL_VERSION_NUMBER)
 static void init_bio_methods(void);
 static void free_bio_methods(void);
 #endif
@@ -349,7 +349,7 @@ static apr_status_t ssl_init_cleanup(void *data)
         return APR_SUCCESS;
     ssl_initialized = 0;
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)) && ! (defined(WIN32) || defined(WIN64))
+#if defined(LIBRESSL_VERSION_NUMBER) && ! (defined(WIN32) || defined(WIN64))
     if (threadkey_initialized) {
         threadkey_initialized = 0;
         apr_threadkey_private_delete(thread_exit_key);
@@ -362,7 +362,7 @@ static apr_status_t ssl_init_cleanup(void *data)
                          tcn_password_callback.cb.obj);
     }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(LIBRESSL_VERSION_NUMBER)
     free_bio_methods();
 #endif
     free_dh_params();
@@ -375,7 +375,7 @@ static apr_status_t ssl_init_cleanup(void *data)
     }
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(LIBRESSL_VERSION_NUMBER)
     /* Openssl v1.1+ handles all termination automatically. Do
      * nothing in this case.
      */
@@ -397,7 +397,7 @@ static apr_status_t ssl_init_cleanup(void *data)
     SSL_COMP_free_compression_methods();
 #endif
     CRYPTO_cleanup_all_ex_data();
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
     ERR_remove_thread_state(NULL);
 #endif
 #endif
@@ -441,7 +441,7 @@ static ENGINE *ssl_try_load_engine(const char *engine)
  * To ensure thread-safetyness in OpenSSL
  */
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
 static apr_thread_mutex_t **ssl_lock_cs;
 static int                  ssl_lock_num_locks;
 
@@ -466,7 +466,7 @@ static unsigned long ssl_thread_id(void)
     return (unsigned long)tcn_get_thread_id();
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
 #if ! (defined(WIN32) || defined(WIN64))
 void SSL_thread_exit(void) {
     ERR_remove_thread_state(NULL);
@@ -753,7 +753,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
 {
     jclass clazz;
     jclass sClazz;
-#if !defined(OPENSSL_NO_ENGINE) || OPENSSL_VERSION_NUMBER < 0x10100000L
+#if !defined(OPENSSL_NO_ENGINE)
     apr_status_t err = APR_SUCCESS;
 #endif
 
@@ -770,7 +770,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
         TCN_FREE_CSTRING(engine);
         return (jint)APR_SUCCESS;
     }
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(LIBRESSL_VERSION_NUMBER)
     /* Openssl v1.1+ handles all initialisation automatically, apart
      * from hints as to how we want to use the library.
      *
@@ -844,7 +844,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     SSL_init_app_data_idx();
 
     init_dh_params();
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(LIBRESSL_VERSION_NUMBER)
     init_bio_methods();
 #endif
 
@@ -1046,13 +1046,6 @@ static int jbs_new(BIO *bi)
     j->refcount  = 1;
     BIO_set_shutdown(bi, 1);
     BIO_set_init(bi, 0);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    /* No setter method for OpenSSL 1.1.0 available,
-     * but I can't find any functional use of the
-     * "num" field there either.
-     */
-    bi->num      = -1;
-#endif
     BIO_set_data(bi, (void *)j);
 
     return 1;
@@ -1182,7 +1175,7 @@ static long jbs_ctrl(BIO *b, int cmd, long num, void *ptr)
     return ret;
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
 static BIO_METHOD jbs_methods = {
     BIO_TYPE_FILE,
     "Java Callback",
@@ -1218,7 +1211,7 @@ static void free_bio_methods(void)
 
 static BIO_METHOD *BIO_jbs()
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
     return(&jbs_methods);
 #else
     return jbs_methods;

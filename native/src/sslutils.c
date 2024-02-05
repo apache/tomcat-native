@@ -542,15 +542,11 @@ static int ssl_verify_OCSP(X509_STORE_CTX *ctx)
          * may yield NULL. Return early, but leave the ctx error as is. */
         return OCSP_STATUS_UNKNOWN;
     }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    else if (cert->valid && X509_check_issued(cert,cert) == X509_V_OK) {
-#else
     /* No need to check cert->valid, because ssl_verify_OCSP() only
      * is called if OpenSSL already successfully verified the certificate
      * (parameter "ok" in SSL_callback_SSL_verify() must be true).
      */
     else if (X509_check_issued(cert,cert) == X509_V_OK) {
-#endif
         /* don't do OCSP checking for valid self-issued certs */
         X509_STORE_CTX_set_error(ctx, X509_V_OK);
         return OCSP_STATUS_UNKNOWN;
@@ -863,9 +859,6 @@ static OCSP_RESPONSE *parse_ocsp_resp(char *buf, int len)
 
     BIO_write(mem, buf, len);  /* write the buffer to the bio */
     if (BIO_gets(mem, tmpbuf, 512) <= 0) {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-        OCSPerr(OCSP_F_OCSP_SENDREQ_BIO,OCSP_R_SERVER_RESPONSE_PARSE_ERROR);
-#endif
         goto err;
     }
     /* Parse the HTTP response. This will look like this:
