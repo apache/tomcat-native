@@ -60,10 +60,10 @@
 <section name="Headlines">
 <ul>
 
-<li><a href="news/2023.html#20231003">3 October 2023 - <b>TC-Native-1.2.39
+<li><a href="news/2024.html#20240208">8 February 2024 - <b>TC-Native-1.3.0
 released</b></a>
 <p>The Apache Tomcat team is proud to announce the immediate availability of
-Tomcat Native 1.2.39 Stable.</p>
+Tomcat Native 1.3.0 Stable.</p>
 <p>
 The sources and the binaries for selected platforms are available from the
 <a href="../download-native.cgi">Download page</a>.
@@ -205,7 +205,8 @@ INFO: Initializing Coyote HTTP/1.1 on http-8080</source>
 
   <p>
     Refer to the tomcat documentation to configure the connectors (See
-    <a href="http://tomcat.apache.org/tomcat-10.0-doc/apr.html">Tomcat 10.0.x</a>,
+    <a href="http://tomcat.apache.org/tomcat-11.0-doc/apr.html">Tomcat 11.0.x</a>,
+    <a href="http://tomcat.apache.org/tomcat-10.1-doc/apr.html">Tomcat 10.1.x</a>,
     <a href="http://tomcat.apache.org/tomcat-9.0-doc/apr.html">Tomcat 9.0.x</a> and 
     <a href="http://tomcat.apache.org/tomcat-8.5-doc/apr.html">Tomcat 8.5.x</a>)
   </p>
