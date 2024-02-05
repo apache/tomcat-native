@@ -16,27 +16,28 @@
   limitations under the License.
 -->
 <project name="Apache Tomcat Native Documentation - Miscellaneous Documentation"
-        href="http://tomcat.apache.org/">
+    href="http://tomcat.apache.org/">
 
-    <title>The Apache Tomcat Native - Miscellaneous Documentation</title>
+  <title>The Apache Tomcat Native Library - Miscellaneous Documentation</title>
 
-    <logo href="/images/tomcat.gif">
-      The Apache Tomcat Native - Miscellaneous Documentation
-    </logo>
-<body>
+  <logo href="/images/tomcat.gif">
+    The Apache Tomcat Native Library - Miscellaneous Documentation
+  </logo>
 
+  <body>
     <menu name="Links">
-        <item name="Docs Home"                  href="../index.html"/>
+      <item name="Docs Home" href="../index.html"/>
     </menu>
 
     <menu name="Miscellaneous Documentation">
-        <item name="Changelog"                  href="../miscellaneous/changelog.html"/>
-        <item name="TLS renegotiation"          href="../miscellaneous/tls-renegotiation.html"/>
+      <item name="Changelog"         href="../miscellaneous/changelog.html"/>
+      <item name="TLS renegotiation" href="../miscellaneous/tls-renegotiation.html"/>
     </menu>
 
     <menu name="News">
-        <item name="2022"                       href="../news/2022.html"/>
+      <item name="2023" href="../news/2023.html"/>
+      <item name="2022" href="../news/2022.html"/>
     </menu>
 
-</body>
+  </body>
 </project>

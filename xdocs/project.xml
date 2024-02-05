@@ -16,12 +16,12 @@
   limitations under the License.
 -->
 <project name="Apache Tomcat Native Documentation"
-  href="http://tomcat.apache.org/">
+    href="http://tomcat.apache.org/">
 
-  <title>Apache Tomcat Native Library</title>
+  <title>The Apache Tomcat Native Library</title>
 
   <logo href="/images/tomcat.gif">
-    Apache Tomcat Native Library
+    The Apache Tomcat Native Library
   </logo>
 
   <body>
@@ -36,6 +36,8 @@
 
     <menu name="News">
       <item name="2022" href="news/2022.html"/>
+      <item name="2023" href="news/2023.html"/>
     </menu>
+
   </body>
 </project>
