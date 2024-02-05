@@ -254,12 +254,13 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         goto init_failed;
     }
 
-    if (mode == SSL_MODE_CLIENT)
+    if (mode == SSL_MODE_CLIENT) {
         ctx = SSL_CTX_new(TLS_client_method());
-    else if (mode == SSL_MODE_SERVER)
+    } else if (mode == SSL_MODE_SERVER) {
         ctx = SSL_CTX_new(TLS_server_method());
-    else
+    } else {
         ctx = SSL_CTX_new(TLS_method());
+    }
 
     if (!ctx) {
         char err[256];
@@ -573,8 +574,6 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSLContext, getCiphers)(TCN_STDARGS, jlong ctx)
         return NULL;
     }
 
-    /* For LibreSSL get_ciphers() iss only available
-     * on an SSL, not for an SSL_CTX. */
     sk = SSL_CTX_get_ciphers(c->ctx);
     len = sk_SSL_CIPHER_num(sk);
 
@@ -1099,7 +1098,6 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
         (eckey = EC_KEY_new_by_curve_name(nid))) {
         SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
     }
-
     /* OpenSSL assures us that _free() is NULL-safe */
     EC_KEY_free(eckey);
     EC_GROUP_free(ecparams);
