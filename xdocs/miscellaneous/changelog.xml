@@ -33,6 +33,10 @@
 </section>
 <section name="Changes in 1.3.0">
   <changelog>
+  </changelog>
+</section>
+<section name="Changes in 1.3.0">
+  <changelog>
     <update>
       Drop useless <code>compile.optimize</code> option. (michaelo)
     </update>
