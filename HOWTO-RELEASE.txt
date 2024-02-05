@@ -23,7 +23,7 @@ Requirements
 
 Java 8
 Apache Ant 1.9 or later
-Apache APR 1.4.3 or later source (1.7.4 or later recommended)
+Apache APR 1.6.3 or later source (1.7.4 or later recommended)
 
 
 Preparation

@@ -60,10 +60,10 @@ extern "C" {
  * Minor API changes that do not cause binary compatibility problems.
  * Should be reset to 0 when upgrading TCN_MAJOR_VERSION
  */
-#define TCN_MINOR_VERSION       2
+#define TCN_MINOR_VERSION       3
 
 /** patch level */
-#define TCN_PATCH_VERSION       40
+#define TCN_PATCH_VERSION       0
 
 /**
  *  This symbol is defined for internal, "development" copies of TCN. This
