@@ -38,9 +38,9 @@ AC_DEFUN(TCN_FIND_APR,[
   set $sapr_version
   IFS=$tc_save_IFS
   decimal_apr_version=`printf %02d%02d%03d ${1} ${2} ${3}`
-  if test "${decimal_apr_version}" -lt "0104003"
+  if test "${decimal_apr_version}" -lt "0106003"
   then
-    AC_MSG_ERROR(Found APR $sapr_version. You need version 1.4.3 or newer installed.)
+    AC_MSG_ERROR(Found APR $sapr_version. You need version 1.6.3 or newer installed.)
   fi
   AC_MSG_NOTICE(APR $sapr_version detected.)
 
