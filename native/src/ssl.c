@@ -405,7 +405,7 @@ TCN_IMPLEMENT_CALL(jint, SSL, fipsModeGet)(TCN_STDARGS)
     const char          *name;
     UNREFERENCED(o);
 
-    // Maps the OpenSSL 3. x onwards behaviour to theOpenSSL 1.x API
+    // Maps the OpenSSL 3.x onwards behaviour to the OpenSSL 1.x API
 
     // Checks that FIPS is the default provider
     md = EVP_MD_fetch(NULL, "SHA-512", NULL);
