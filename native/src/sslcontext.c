@@ -264,8 +264,8 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     }
 
     if (!ctx) {
-        char err[256];
-        ERR_error_string(SSL_ERR_get(), err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Invalid Server SSL Protocol (%s)", err);
         goto init_failed;
     }
@@ -545,8 +545,8 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
 #else
     if (!SSL_CTX_set_cipher_list(c->ctx, J2S(ciphers))) {
 #endif
-        char err[256];
-        ERR_error_string(SSL_ERR_get(), err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
         rv = JNI_FALSE;
     }
@@ -604,7 +604,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
     TCN_ALLOC_CSTRING(path);
     jboolean rv = JNI_FALSE;
     X509_LOOKUP *lookup;
-    char err[256];
+    char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
 
     UNREFERENCED(o);
     TCN_ASSERT(ctx != 0);
@@ -618,13 +618,13 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
     if (J2S(file)) {
         lookup = X509_STORE_add_lookup(c->crl, X509_LOOKUP_file());
         if (lookup == NULL) {
-            ERR_error_string(SSL_ERR_get(), err);
+            ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             c->crl = NULL;
             tcn_Throw(e, "Lookup failed for file %s (%s)", J2S(file), err);
             goto cleanup;
         }
         if (!X509_LOOKUP_load_file(lookup, J2S(file), X509_FILETYPE_PEM)) {
-            ERR_error_string(SSL_ERR_get(), err);
+            ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             c->crl = NULL;
             tcn_Throw(e, "Load failed for file %s (%s)", J2S(file), err);
             goto cleanup;
@@ -633,13 +633,13 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
     if (J2S(path)) {
         lookup = X509_STORE_add_lookup(c->crl, X509_LOOKUP_hash_dir());
         if (lookup == NULL) {
-            ERR_error_string(SSL_ERR_get(), err);
+            ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             c->crl = NULL;
             tcn_Throw(e, "Lookup failed for path %s (%s)", J2S(file), err);
             goto cleanup;
         }
         if (!X509_LOOKUP_add_dir(lookup, J2S(path), X509_FILETYPE_PEM)) {
-            ERR_error_string(SSL_ERR_get(), err);
+            ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             c->crl = NULL;
             tcn_Throw(e, "Load failed for path %s (%s)", J2S(file), err);
             goto cleanup;
@@ -691,8 +691,8 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCACertificate)(TCN_STDARGS,
      */
     if (!SSL_CTX_load_verify_locations(c->ctx,
                                        J2S(file), J2S(path))) {
-        char err[256];
-        ERR_error_string(SSL_ERR_get(), err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Unable to configure locations "
                   "for client authentication (%s)", err);
         rv = JNI_FALSE;
@@ -756,8 +756,8 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setTmpDH)(TCN_STDARGS, jlong ctx,
 
     bio = BIO_new_file(J2S(file), "r");
     if (!bio) {
-        char err[256];
-        ERR_error_string(SSL_ERR_get(), err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error while configuring DH using %s: %s", J2S(file), err);
         TCN_FREE_CSTRING(file);
         return;
@@ -766,17 +766,17 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setTmpDH)(TCN_STDARGS, jlong ctx,
     dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
     BIO_free(bio);
     if (!dh) {
-        char err[256];
-        ERR_error_string(SSL_ERR_get(), err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error while configuring DH: no DH parameter found in %s (%s)", J2S(file), err);
         TCN_FREE_CSTRING(file);
         return;
     }
 
     if (1 != SSL_CTX_set_tmp_dh(c->ctx, dh)) {
-        char err[256];
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
         DH_free(dh);
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error while configuring DH with file %s: %s", J2S(file), err);
         TCN_FREE_CSTRING(file);
         return;
@@ -815,9 +815,9 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setTmpECDHByCurveName)(TCN_STDARGS, jlong c
 
     /* Setting found curve to context */
     if (1 != SSL_CTX_set_tmp_ecdh(c->ctx, ecdh)) {
-        char err[256];
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
         EC_KEY_free(ecdh);
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error while configuring elliptic curve %s: %s", J2S(curveName), err);
         TCN_FREE_CSTRING(curveName);
         return;
@@ -996,7 +996,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     TCN_ALLOC_CSTRING(password);
     const char *key_file, *cert_file;
     const char *p;
-    char err[256];
+    char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
 #ifdef HAVE_ECC
     EC_GROUP *ecparams = NULL;
     int nid;
@@ -1029,7 +1029,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     }
     if ((p = strrchr(cert_file, '.')) != NULL && strcmp(p, ".pkcs12") == 0) {
         if (!ssl_load_pkcs12(c, cert_file, &c->keys[idx], &c->certs[idx], 0)) {
-            ERR_error_string(SSL_ERR_get(), err);
+            ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             tcn_Throw(e, "Unable to load certificate %s (%s)",
                       cert_file, err);
             rv = JNI_FALSE;
@@ -1044,14 +1044,14 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
                                                         NULL, NULL)) == NULL)
 #endif
                 ) {
-            ERR_error_string(SSL_ERR_get(), err);
+            ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             tcn_Throw(e, "Unable to load certificate key %s (%s)",
                       key_file, err);
             rv = JNI_FALSE;
             goto cleanup;
         }
         if ((c->certs[idx] = load_pem_cert(c, cert_file)) == NULL) {
-            ERR_error_string(SSL_ERR_get(), err);
+            ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             tcn_Throw(e, "Unable to load certificate %s (%s)",
                       cert_file, err);
             rv = JNI_FALSE;
@@ -1059,19 +1059,19 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
         }
     }
     if (SSL_CTX_use_certificate(c->ctx, c->certs[idx]) <= 0) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error setting certificate (%s)", err);
         rv = JNI_FALSE;
         goto cleanup;
     }
     if (SSL_CTX_use_PrivateKey(c->ctx, c->keys[idx]) <= 0) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error setting private key (%s)", err);
         rv = JNI_FALSE;
         goto cleanup;
     }
     if (SSL_CTX_check_private_key(c->ctx) <= 0) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Private key does not match the certificate public key (%s)",
                   err);
         rv = JNI_FALSE;
@@ -1129,7 +1129,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
 
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     jboolean rv = JNI_TRUE;
-    char err[256];
+    char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
 
     /* we get the key contents into a byte array */
     jbyte* bufferPtr = (*e)->GetByteArrayElements(e, javaKey, NULL);
@@ -1156,7 +1156,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
     tmp = (const unsigned char *)cert;
     certs = d2i_X509(NULL, &tmp, lengthOfCert);
     if (certs == NULL) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error reading certificate (%s)", err);
         rv = JNI_FALSE;
         goto cleanup;
@@ -1172,7 +1172,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
     evp = PEM_read_bio_PrivateKey(bio, NULL, 0, NULL);
     if (evp == NULL) {
         BIO_free(bio);
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error reading private key (%s)", err);
         rv = JNI_FALSE;
         goto cleanup;
@@ -1184,19 +1184,19 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
     c->keys[idx] = evp;
 
     if (SSL_CTX_use_certificate(c->ctx, c->certs[idx]) <= 0) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error setting certificate (%s)", err);
         rv = JNI_FALSE;
         goto cleanup;
     }
     if (SSL_CTX_use_PrivateKey(c->ctx, c->keys[idx]) <= 0) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error setting private key (%s)", err);
         rv = JNI_FALSE;
         goto cleanup;
     }
     if (SSL_CTX_check_private_key(c->ctx) <= 0) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Private key does not match the certificate public key (%s)",
                   err);
         rv = JNI_FALSE;
@@ -1229,7 +1229,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addChainCertificateRaw)(TCN_STDARGS, jl
 
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     jboolean rv = JNI_TRUE;
-    char err[256];
+    char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
 
     /* we get the cert contents into a byte array */
     jbyte* bufferPtr = (*e)->GetByteArrayElements(e, javaCert, NULL);
@@ -1244,11 +1244,11 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addChainCertificateRaw)(TCN_STDARGS, jl
     tmp = (const unsigned char *)cert;
     certs = d2i_X509(NULL, &tmp, lengthOfCert);
     if (certs == NULL) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error reading certificate (%s)", err);
         rv = JNI_FALSE;
     } else if (SSL_CTX_add0_chain_cert(c->ctx, certs) <= 0) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error adding certificate to chain (%s)", err);
         rv = JNI_FALSE;
     }
@@ -1267,7 +1267,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addClientCACertificateRaw)(TCN_STDARGS,
 
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     jboolean rv = JNI_TRUE;
-    char err[256];
+    char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
 
     /* we get the cert contents into a byte array */
     jbyte* bufferPtr = (*e)->GetByteArrayElements(e, javaCert, NULL);
@@ -1282,11 +1282,11 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addClientCACertificateRaw)(TCN_STDARGS,
     tmp = (const unsigned char *)charCert;
     cert = d2i_X509(NULL, &tmp, lengthOfCert);
     if (cert == NULL) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error encoding allowed peer CA certificate (%s)", err);
         rv = JNI_FALSE;
     } else if (SSL_CTX_add_client_CA(c->ctx, cert) <= 0) {
-        ERR_error_string(SSL_ERR_get(), err);
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error adding allowed peer CA certificate (%s)", err);
         rv = JNI_FALSE;
     }

@@ -96,8 +96,8 @@ TCN_IMPLEMENT_CALL(jlong, SSLConf, make)(TCN_STDARGS, jlong pool,
     ec = SSL_ERR_get();
     if (!cctx || ec != 0) {
         if (ec != 0) {
-            char err[256];
-            ERR_error_string(ec, err);
+            char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+            ERR_error_string_n(ec, err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             tcn_Throw(e, "Could not create SSL_CONF context (%s)", err);
         } else {
             tcn_Throw(e, "Could not create SSL_CONF context");
@@ -169,8 +169,8 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, check)(TCN_STDARGS, jlong cctx,
     value_type = SSL_CONF_cmd_value_type(c->cctx, J2S(cmd));
     ec = SSL_ERR_get();
     if (ec != 0) {
-        char err[256];
-        ERR_error_string(ec, err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(ec, err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Could not determine SSL_CONF command type for '%s' (%s)", J2S(cmd), err);
         return 0;
     }
@@ -272,8 +272,8 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, apply)(TCN_STDARGS, jlong cctx,
     ec = SSL_ERR_get();
     if (rc <= 0 || ec != 0) {
         if (ec != 0) {
-            char err[256];
-            ERR_error_string(ec, err);
+            char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+            ERR_error_string_n(ec, err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             tcn_Throw(e, "Could not apply SSL_CONF command '%s' with value '%s' (%s)", J2S(cmd), buf != NULL ? buf : J2S(value), err);
         } else {
             tcn_Throw(e, "Could not apply SSL_CONF command '%s' with value '%s'", J2S(cmd), buf != NULL ? buf : J2S(value));
@@ -304,8 +304,8 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, finish)(TCN_STDARGS, jlong cctx)
     ec = SSL_ERR_get();
     if (rc <= 0 || ec != 0) {
         if (ec != 0) {
-            char err[256];
-            ERR_error_string(ec, err);
+            char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+            ERR_error_string_n(ec, err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             tcn_Throw(e, "Could not finish SSL_CONF commands (%s)", err);
         } else {
             tcn_Throw(e, "Could not finish SSL_CONF commands");

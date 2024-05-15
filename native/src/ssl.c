@@ -1509,9 +1509,9 @@ TCN_IMPLEMENT_CALL(jbyteArray, SSL, getPeerCertificate)(TCN_STDARGS,
 
 TCN_IMPLEMENT_CALL(jstring, SSL, getErrorString)(TCN_STDARGS, jlong number)
 {
-    char buf[256];
+    char buf[TCN_OPENSSL_ERROR_STRING_LENGTH];
     UNREFERENCED(o);
-    ERR_error_string(number, buf);
+    ERR_error_string_n(number, buf, TCN_OPENSSL_ERROR_STRING_LENGTH);
     return tcn_new_string(e, buf);
 }
 
@@ -1673,8 +1673,8 @@ TCN_IMPLEMENT_CALL(jboolean, SSL, setCipherSuites)(TCN_STDARGS, jlong ssl,
         return JNI_FALSE;
     }
     if (!SSL_set_cipher_list(ssl_, J2S(ciphers))) {
-        char err[256];
-        ERR_error_string(SSL_ERR_get(), err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
         rv = JNI_FALSE;
     }
