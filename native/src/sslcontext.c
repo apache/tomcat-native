@@ -720,13 +720,13 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCACertificate)(TCN_STDARGS,
                 BIO_printf(c->bio_os,
                             "[WARN] Oops, you want to request client "
                             "authentication, but no CAs are known for "
-                            "verification!?");
+                            "verification!?\n");
             }
             else {
                 fprintf(stderr,
                         "[WARN] Oops, you want to request client "
                         "authentication, but no CAs are known for "
-                        "verification!?");
+                        "verification!?\n");
             }
 
         }
@@ -1679,10 +1679,10 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setSessionTicketKeys)(TCN_STDARGS, jlong ct
 
     if ((*e)->GetArrayLength(e, keys) != TICKET_KEYS_SIZE) {
         if (c->bio_os) {
-            BIO_printf(c->bio_os, "[ERROR] Session ticket keys provided were wrong size.");
+            BIO_printf(c->bio_os, "[ERROR] Session ticket keys provided were wrong size.\n");
         }
         else {
-            fprintf(stderr, "[ERROR] Session ticket keys provided were wrong size.");
+            fprintf(stderr, "[ERROR] Session ticket keys provided were wrong size.\n");
         }
         exit(1);
     }
