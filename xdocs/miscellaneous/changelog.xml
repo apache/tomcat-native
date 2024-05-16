@@ -33,6 +33,13 @@
 </section>
 <section name="Changes in 2.0.8">
   <changelog>
+    <fix>
+      Fix a crash on Windows when <code>SSLContext.setCACertificate()</code>
+      is invoked with a <code>null</code> value for <code>caCertificateFile</code>
+      and a non-<code>null</code> value for <code>caCertificatePath</code>
+      until properly addressed with
+      https://github.com/openssl/openssl/issues/24416. (michaelo)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 2.0.7">
