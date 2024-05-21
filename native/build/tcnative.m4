@@ -65,8 +65,8 @@ AC_DEFUN(TCN_FIND_APR,[
 dnl --------------------------------------------------------------------------
 dnl TCN_JDK
 dnl
-dnl Detection of JDK location and Java Platform (1.2, 1.3, 1.4, 1.5, 1.6)
-dnl result goes in JAVA_HOME / JAVA_PLATFORM (2 -> 1.2 and higher)
+dnl Detection of JDK location
+dnl Result goes in JAVA_HOME
 dnl
 dnl --------------------------------------------------------------------------
 AC_DEFUN([TCN_FIND_JAVA],[
