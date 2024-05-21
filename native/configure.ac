@@ -131,7 +131,6 @@ if test "$NEED_JNI_MD" = "yes"; then
 fi
 
 AC_SUBST(JAVA_HOME)
-AC_SUBST(JAVA_PLATFORM)
 AC_SUBST(JAVA_OS)
 
 
