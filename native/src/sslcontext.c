@@ -136,8 +136,8 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     }
 
     if (!ctx) {
-        char err[256];
-        ERR_error_string(ERR_get_error(), err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Invalid Server SSL Protocol (%s)", err);
         goto init_failed;
     }
@@ -327,8 +327,8 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
 #else
     if (!SSL_CTX_set_cipher_list(c->ctx, J2S(ciphers))) {
 #endif
-        char err[256];
-        ERR_error_string(ERR_get_error(), err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
         rv = JNI_FALSE;
     }
@@ -348,7 +348,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
     TCN_ALLOC_CSTRING(path);
     jboolean rv = JNI_FALSE;
     X509_LOOKUP *lookup;
-    char err[256];
+    char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
 
     UNREFERENCED(o);
     TCN_ASSERT(ctx != 0);
@@ -362,7 +362,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
     if (J2S(file)) {
         lookup = X509_STORE_add_lookup(c->crl, X509_LOOKUP_file());
         if (lookup == NULL) {
-            ERR_error_string(ERR_get_error(), err);
+            ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             X509_STORE_free(c->crl);
             c->crl = NULL;
             tcn_Throw(e, "Lookup failed for file %s (%s)", J2S(file), err);
@@ -373,7 +373,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCARevocation)(TCN_STDARGS, jlong ctx
     if (J2S(path)) {
         lookup = X509_STORE_add_lookup(c->crl, X509_LOOKUP_hash_dir());
         if (lookup == NULL) {
-            ERR_error_string(ERR_get_error(), err);
+            ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             X509_STORE_free(c->crl);
             c->crl = NULL;
             tcn_Throw(e, "Lookup failed for path %s (%s)", J2S(file), err);
@@ -426,8 +426,8 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCACertificate)(TCN_STDARGS,
      */
     if (!SSL_CTX_load_verify_locations(c->ctx,
                                        J2S(file), J2S(path))) {
-        char err[256];
-        ERR_error_string(ERR_get_error(), err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Unable to configure locations "
                   "for client authentication (%s)", err);
         rv = JNI_FALSE;
@@ -637,7 +637,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     TCN_ALLOC_CSTRING(password);
     const char *key_file, *cert_file;
     const char *p;
-    char err[256];
+    char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
 #ifdef HAVE_ECC
     EC_GROUP *ecparams;
     int nid;
@@ -670,7 +670,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     }
     if ((p = strrchr(cert_file, '.')) != NULL && strcmp(p, ".pkcs12") == 0) {
         if (!ssl_load_pkcs12(c, cert_file, &c->keys[idx], &c->certs[idx], 0)) {
-            ERR_error_string(ERR_get_error(), err);
+            ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             tcn_Throw(e, "Unable to load certificate %s (%s)",
                       cert_file, err);
             rv = JNI_FALSE;
@@ -679,14 +679,14 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     }
     else {
         if ((c->keys[idx] = load_pem_key(c, key_file)) == NULL) {
-            ERR_error_string(ERR_get_error(), err);
+            ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             tcn_Throw(e, "Unable to load certificate key %s (%s)",
                       key_file, err);
             rv = JNI_FALSE;
             goto cleanup;
         }
         if ((c->certs[idx] = load_pem_cert(c, cert_file)) == NULL) {
-            ERR_error_string(ERR_get_error(), err);
+            ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             tcn_Throw(e, "Unable to load certificate %s (%s)",
                       cert_file, err);
             rv = JNI_FALSE;
@@ -694,19 +694,19 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
         }
     }
     if (SSL_CTX_use_certificate(c->ctx, c->certs[idx]) <= 0) {
-        ERR_error_string(ERR_get_error(), err);
+        ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error setting certificate (%s)", err);
         rv = JNI_FALSE;
         goto cleanup;
     }
     if (SSL_CTX_use_PrivateKey(c->ctx, c->keys[idx]) <= 0) {
-        ERR_error_string(ERR_get_error(), err);
+        ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error setting private key (%s)", err);
         rv = JNI_FALSE;
         goto cleanup;
     }
     if (SSL_CTX_check_private_key(c->ctx) <= 0) {
-        ERR_error_string(ERR_get_error(), err);
+        ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Private key does not match the certificate public key (%s)",
                   err);
         rv = JNI_FALSE;

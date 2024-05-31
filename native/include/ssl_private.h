@@ -64,6 +64,11 @@
 #define SSL_AIDX_MAX     (4)
 
 /*
+ * The length of error message strings. MUST BE AT LEAST 256.
+ */
+#define TCN_OPENSSL_ERROR_STRING_LENGTH 256
+
+/*
  * Define the SSL options
  */
 #define SSL_OPT_NONE            (0)

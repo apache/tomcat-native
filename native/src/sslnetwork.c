@@ -126,8 +126,8 @@ static tcn_ssl_conn_t *ssl_create(JNIEnv *env, tcn_ssl_ctxt_t *ctx, apr_pool_t *
         return NULL;
     }
     if ((ssl = SSL_new(ctx->ctx)) == NULL) {
-        char err[256];
-        ERR_error_string(ERR_get_error(), err);
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(ERR_get_error(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(env, "SSL_new failed (%s)", err);
         con = NULL;
         return NULL;

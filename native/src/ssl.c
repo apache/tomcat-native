@@ -806,11 +806,11 @@ TCN_IMPLEMENT_CALL(jint, SSL, fipsModeSet)(TCN_STDARGS, jint mode)
     if(1 != (r = (jint)FIPS_mode_set((int)mode))) {
       /* arrange to get a human-readable error message */
       unsigned long err = ERR_get_error();
-      char msg[256];
+      char msg[TCN_OPENSSL_ERROR_STRING_LENGTH];
 
       /* ERR_load_crypto_strings() already called in initialize() */
 
-      ERR_error_string_n(err, msg, 256);
+      ERR_error_string_n(err, msg, TCN_OPENSSL_ERROR_STRING_LENGTH);
 
       tcn_ThrowException(e, msg);
     }
@@ -1105,9 +1105,9 @@ TCN_IMPLEMENT_CALL(jboolean, SSL, loadDSATempKey)(TCN_STDARGS, jint idx,
 
 TCN_IMPLEMENT_CALL(jstring, SSL, getLastError)(TCN_STDARGS)
 {
-    char buf[256];
+    char buf[TCN_OPENSSL_ERROR_STRING_LENGTH];
     UNREFERENCED(o);
-    ERR_error_string(ERR_get_error(), buf);
+    ERR_error_string_n(ERR_get_error(), buf, TCN_OPENSSL_ERROR_STRING_LENGTH);
     return tcn_new_string(e, buf);
 }
 
