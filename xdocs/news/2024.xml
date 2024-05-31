@@ -15,30 +15,28 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<project name="Apache Tomcat Native Documentation - Miscellaneous Documentation"
-    href="https://tomcat.apache.org/">
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="2024.html">
 
-  <title>The Apache Tomcat Native Library 2.0 - Miscellaneous Documentation</title>
+  &project;
 
-  <logo href="/images/tomcat.gif">
-    The Apache Tomcat Native Library - Miscellaneous Documentation
-  </logo>
+  <properties>
+    <title>2024 News and Status</title>
+  </properties>
 
   <body>
-    <menu name="Links">
-      <item name="Docs Home" href="../index.html"/>
-    </menu>
 
-    <menu name="Miscellaneous Documentation">
-      <item name="Changelog"         href="../miscellaneous/changelog.html"/>
-      <item name="TLS renegotiation" href="../miscellaneous/tls-renegotiation.html"/>
-    </menu>
-
-    <menu name="News">
-      <item name="2024" href="../news/2024.html"/>
-      <item name="2023" href="../news/2023.html"/>
-      <item name="2022" href="../news/2022.html"/>
-    </menu>
-
+    <section name="2024 News &amp; Status">
+    
+      <subsection anchor="20240208" name="8 February 2024 - TC-Native-2.0.7 released">
+        <p>The Apache Tomcat team is proud to announce the immediate
+        availability of Tomcat Native 2.0.7.</p>
+      </subsection>
+      
+    </section>
+    
   </body>
-</project>
+
+</document>
