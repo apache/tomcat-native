@@ -40,6 +40,13 @@
       until properly addressed with
       https://github.com/openssl/openssl/issues/24416. (michaelo)
     </fix>
+    <add>
+      Use ERR_error_string_n with a definite buffer length as a named constant.
+      (schultz)
+    </add>
+    <add>
+      Ensure local reference capacity is available when creating new arrays
+      and Strings. (schultz)
   </changelog>
 </section>
 <section name="Changes in 1.3.0">
