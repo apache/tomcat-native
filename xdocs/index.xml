@@ -81,7 +81,7 @@ list of changes.
 
 <subsection name="UNIX">
   <p>
-      On all POSIX systems (Linux, Solaris, HP-UX, AIX etc...), the well-known
+      On all POSIX-like systems (Linux, Solaris, HP-UX, AIX etc...), the well-known
       configure and make are used to build TC-Native.<br/>
       To see a description of all configuration parameters, run the following command in the <code>native</code> directory of the source distribution:
   </p>
@@ -104,7 +104,7 @@ list of changes.
       The configure script can automatically detect most standard APR and OpenSSL installations. Therefore, an equivalent command is usually sufficient:
   </p>
     <source
->./configure --with-java-home=/home/jfclere/JAVA/jdk11 --prefix=$CATALINA_HOME</source>
+>./configure --with-java-home=$JAVA_HOME --prefix=$CATALINA_HOME</source>
   <p>
       To build and install the libraries, run:
   </p>
