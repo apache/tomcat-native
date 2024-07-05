@@ -47,6 +47,7 @@
     <add>
       Ensure local reference capacity is available when creating new arrays
       and Strings. (schultz)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.3.0">
