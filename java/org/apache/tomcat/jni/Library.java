@@ -97,12 +97,13 @@ public final class Library {
         System.loadLibrary(libraryName);
     }
 
-    /* create global TCN's APR pool
-     * This has to be the first call to TCN library.
+    /**
+     * Create Tomcat Native's global APR pool. This has to be the first call to TCN library.
      */
     private static native boolean initialize();
-    /* destroy global TCN's APR pool
-     * This has to be the last call to TCN library.
+    /**
+     * Destroys Tomcat Native's global APR pool. This has to be the last call to TCN library. This will destroy any APR
+     * root pools that have not been explicitly destroyed.
      */
     public static native void terminate();
     /* Internal function for loading APR Features */
