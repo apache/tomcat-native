@@ -45,6 +45,9 @@
     <update>
       Update the minimum version of autoconf for releasing to 2.68. (rjung)
     </update>
+    <fix>
+      Fix the autoconf warnings when creating a release. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.3.1">

@@ -147,7 +147,7 @@ dnl
 dnl Configure for the detected openssl toolkit installation, giving
 dnl preference to "--with-ssl=<path>" if it was specified.
 dnl
-AC_DEFUN(TCN_CHECK_SSL_TOOLKIT,[
+AC_DEFUN([TCN_CHECK_SSL_TOOLKIT],[
 AC_MSG_CHECKING(for OpenSSL library)
 AC_ARG_WITH(ssl,
 [  --with-ssl[=PATH]   Build with OpenSSL [yes|no|path]],
@@ -229,12 +229,12 @@ case "$use_openssl" in
         LIBS="$LIBS $TCN_OPENSSL_LIBS"
 
 AC_ARG_ENABLE(openssl-version-check,
-[AC_HELP_STRING([--disable-openssl-version-check],
+[AS_HELP_STRING([--disable-openssl-version-check],
         [disable the OpenSSL version check])])
 case "$enable_openssl_version_check" in
 yes|'')
         AC_MSG_CHECKING(OpenSSL library version >= 1.1.1)
-        AC_TRY_RUN([
+        AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <openssl/opensslv.h>
 int main() {
@@ -245,14 +245,11 @@ int main() {
     printf("Require OPENSSL_VERSION_NUMBER 0x1010100f or greater (1.1.1)\n\n");
         return (1);
 }
-        ],
-        [AC_MSG_RESULT(ok)],
-        [AC_MSG_ERROR(Your version of OpenSSL is not compatible with this version of tcnative)],
-        [AC_MSG_RESULT(assuming target platform has compatible version)])
-;;
+    ]])],[AC_MSG_RESULT(ok)],[AC_MSG_ERROR(Your version of OpenSSL is not compatible with this version of tcnative)],[AC_MSG_RESULT(assuming target platform has compatible version)])
+    ;;
 no)
     AC_MSG_RESULT(Skipped OpenSSL version check)
-;;
+    ;;
 esac
 
         AC_MSG_CHECKING(for OpenSSL DSA support)
