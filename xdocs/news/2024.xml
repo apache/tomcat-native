@@ -30,6 +30,11 @@
 
     <section name="2024 News &amp; Status">
     
+      <subsection anchor="202400727" name="27 July 2024 - TC-Native-2.0.8 released">
+        <p>The Apache Tomcat team is proud to announce the immediate
+        availability of Tomcat Native 2.0.8.</p>
+      </subsection>
+      
       <subsection anchor="20240208" name="8 February 2024 - TC-Native-2.0.7 released">
         <p>The Apache Tomcat team is proud to announce the immediate
         availability of Tomcat Native 2.0.7.</p>
