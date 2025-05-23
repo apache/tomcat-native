@@ -32,6 +32,17 @@
   </p>
 </section>
 <section name="Changes in 2.0.9">
+  <changelog>
+    <update>
+      Update the Windows build environment to use Visual Studio 2022. (markt)
+    </update>
+    <update>
+      Update the recommended minimum version of OpenSSL to 3.5.0. (markt)
+    </update>
+    <update>
+      Update the recommended minimum version of APR to 1.7.6. (markt)
+    </update>
+  </changelog>
 </section>
 <section name="Changes in 2.0.8">
   <changelog>

@@ -1,35 +1,25 @@
 Building apr on windows
 -----------------------
 
-Open Visual Studio command prompt and execute
-nmake -f NMAKEMakefile BUILD_CPU=x86 APR_DECLARE_STATIC=1
+For 32-bit windows use
+> "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+> nmake -f NMAKEmakefile CPU=X86 APR_DECLARE_STATIC=1
 
-For building 64-bit version execute
-nmake -f NMAKEMakefile BUILD_CPU=x64 APR_DECLARE_STATIC=1
-
-Make sure you select the correct Visual Studio command prompt
-environment before calling nmake so that correct
-compiler is setup for the target architecture.
+For 64-bit windows use
+> "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+> nmake -f NMAKEmakefile CPU=X64 APR_DECLARE_STATIC=1 
 
 
 Building OpenSSL 3.0.0 and later
 ----------------------------------
 
-Apply openssl-msvcrt-3.0.x.patch
-
-This patch makes sure that static version of OpenSSL libraries
-is linked to msvcrt.dll instead statically linking msvcrt.
-Without that patch it won't be possible to create statically linked
-Tomcat native .dll
-This patch also addresses issues caused by CMSC compiling against an older Windows
-API than expected for the compiler version.
-
-Then follow the standard OpenSSL make procedure ...
-
+For 32-bit Windows use
+> "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
 > perl Configure no-shared VC-WIN32
 > nmake
 
 For 64-bit Windows use
+> "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
 > perl Configure no-shared VC-WIN64A
 > nmake
 
