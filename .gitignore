@@ -33,7 +33,7 @@
 !/native/srclib/apr/NMAKEmakefile
 
 /native/srclib/openssl/*
-!/native/srclib/openssl/openssl-mscvrt*
+!/native/srclib/openssl/.gitkeep
 
 /native/*RELEASE
 /tomcat-native-*
