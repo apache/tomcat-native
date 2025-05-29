@@ -61,8 +61,8 @@
 
     <property name="tc.library.path"       value="${basedir}/native/.libs"/>
 
-    <property name="compile.release" value="11"/>
-    <property name="build.java.version" value="11"/>
+    <property name="compile.release" value="21"/>
+    <property name="build.java.version" value="21"/>
 
     <!-- Check Java Build Version -->
     <fail message="Java version ${build.java.version} or newer is required (${java.version} is installed)">
