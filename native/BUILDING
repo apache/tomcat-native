@@ -22,6 +22,7 @@ Linux / Unix / OSX (dynamic linking)
 
    Install OpenSSL version 3.0.0 or higher
    Install APR version 1.7.0 or higher.
+   C compiler (e.g. GCC, clang, etc.), autoconf and/or automake
    Download and expand the source package or use an git checkout
 
    > cd native
