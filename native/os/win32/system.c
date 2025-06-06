@@ -23,7 +23,6 @@
 #include "apr_pools.h"
 #include "apr_poll.h"
 #include "apr_network_io.h"
-#include "apr_arch_misc.h" /* for apr_os_level */
 
 #include "tcn.h"
 #include "ssl_private.h"
