@@ -1,0 +1,86 @@
+name: Makefile CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  OPENSSL_VERSION: 3.5.0
+  APR_VERSION: 1.7.6
+  NASM_VERSION: 2.16.03
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Default
+            triplet: x64-windows
+            arch: x64
+            build-arch: X64
+            build-type: Debug
+            generator: "Ninja"
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+          ref: trunk
+    - name: Download Openssl using curl and Expand-Archive
+      shell: pwsh
+      run: |
+            echo on
+            curl -L -o openssl.zip https://github.com/openssl/openssl/archive/refs/tags/openssl-$env:OPENSSL_VERSION.zip
+            Expand-Archive openssl.zip -DestinationPath .
+    - name: Download and install strawberryperl
+      shell: pwsh
+      run: |
+            echo on
+            curl -L -o perl.msi https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_54021_64bit_UCRT/strawberry-perl-5.40.2.1-64bit.msi
+            msiexec.exe /i perl.msi
+    - name: Download and install nasm
+      shell: pwsh
+      run: |
+            echo on
+            echo "https://www.nasm.us/pub/nasm/releasebuilds/$env:NASM_VERSION/win64/nasm-$env:NASM_VERSION-win64.zip"
+            curl -o nasm.zip https://www.nasm.us/pub/nasm/releasebuilds/$env:NASM_VERSION/win64/nasm-$env:NASM_VERSION-win64.zip
+            Expand-Archive nasm.zip -DestinationPath .
+    - name: Build Openssl using Nmake and nasm
+      shell: cmd
+      run: |
+            echo on
+            echo %CD%
+            set PATH=%PATH%;%CD%\nasm-%NASM_VERSION%
+            dir %CD%\nasm-%NASM_VERSION%
+            cd openssl-openssl-%OPENSSL_VERSION%
+            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
+            C:\strawberry\perl\bin\perl Configure no-shared VC-WIN64A --prefix=C:\OPENSSL
+            nmake
+            nmake install
+    - name: Download apr using curl and Expand-Archive
+      shell: pwsh
+      run: |
+            echo on
+            curl -L -o apr.zip https://github.com/apache/apr/archive/refs/tags/$env:APR_VERSION.zip
+            Expand-Archive apr.zip
+            cd apr\apr-$env:APR_VERSION
+            (Get-Content .\include\apr.hw).Replace('0x0501', '0x0600') | Set-Content .\include\apr.hw 
+    - name: Build apr using Nmake
+      shell: cmd
+      run: |
+            echo on
+            cd apr\apr-%APR_VERSION%
+            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
+            nmake -f Makefile.win ARCH="x64 Release" buildall PREFIX=C:\APR
+            nmake -f Makefile.win ARCH="x64 Release" install PREFIX=C:\APR
+            mkdir C:\APR\include\arch\win32
+            copy include\arch\win32\*.h c:\APR\include\arch\win32
+            copy include\arch\*.h c:\APR\include\arch
+    - name: Build using Nmake
+      shell: cmd
+      run: |
+            echo on
+            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
+            cd native
+            echo "Building for ${{ matrix.build-arch }}"
+            nmake  -f NMAKEmakefile CPU=${{ matrix.build-arch }} WITH_APR=C:\APR WITH_OPENSSL=C:\OPENSSL APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid OPENSSL_NEW_LIBS=1 ENABLE_OCSP=1
