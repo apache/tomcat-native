@@ -24,8 +24,6 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
-      with:
-          ref: trunk
     - name: Download Openssl using curl and Expand-Archive
       shell: pwsh
       run: |
@@ -84,3 +82,7 @@ jobs:
             cd native
             echo "Building for ${{ matrix.build-arch }}"
             nmake  -f NMAKEmakefile CPU=${{ matrix.build-arch }} WITH_APR=C:\APR WITH_OPENSSL=C:\OPENSSL APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid OPENSSL_NEW_LIBS=1 ENABLE_OCSP=1
+    - uses: actions/upload-artifact@v4
+      with:
+        name: windows-artifact
+        path: native\WIN7_X64_DLL_RELEASE\tcnative-2.dll
