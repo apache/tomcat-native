@@ -24,8 +24,6 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
-      with:
-          ref: trunk
     - name: Download Openssl using curl and Expand-Archive
       shell: pwsh
       run: |
