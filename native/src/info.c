@@ -346,6 +346,8 @@ TCN_IMPLEMENT_CALL(jobject, Address, getInfo)(TCN_STDARGS, jlong info)
     UNREFERENCED(o);
 
     /* Create the APR Error object */
+    if (ainfo_class == NULL)
+        return NULL;
     sockaddrObj = (*e)->NewObject(e, ainfo_class, ainfo_class_init);
     if (sockaddrObj == NULL)
         return NULL;
