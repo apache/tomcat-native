@@ -1860,7 +1860,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setCertVerifyCallback)(TCN_STDARGS, jlong c
         }
         // Delete the reference to the previous specified verifier if needed.
         if (c->verifier != NULL) {
-            (*e)->DeleteLocalRef(e, c->verifier);
+            (*e)->DeleteGlobalRef(e, c->verifier);
         }
         c->verifier = (*e)->NewGlobalRef(e, verifier);
         c->verifier_method = method;
