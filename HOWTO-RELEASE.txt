@@ -41,7 +41,7 @@ Ensure dates and/or version numbers are up to date:
 - native/os/win32/libtcnative.rc x3
 - xdocs/miscellaneous/changelog.xml
 
-Run the release script to check the Java code is aligned with the current 11.0.x
+Run the release script to check the Java code is aligned with the current 12.0.x
 source.
 ./jnirelease.sh --ver=main --with-apr=/path/to/apr/source
 
