@@ -18,7 +18,7 @@
 # NMAKEmakefile   Tomcat Native makefile.
 # Usage:
 #                 APR_DECLARE_STATIC=1  Use static version of the APR
-#                 ENABLE_OCSP=1         Enable OpenSSL OCSP code
+#                 DISABLE_OCSP=1        Disable OpenSSL OCSP code
 #                 OPENSSL_NEW_LIBS=1    Use new OpenSSL lib file names
 #                 DEBUG=1               Build DEBUG version of TCN
 #                 STATIC_CRT=Hybrid     Build using the 'Hybrid CRT' technique
@@ -43,7 +43,7 @@ APR_LIB = libapr-1.lib
 CFLAGS = $(CFLAGS) -DAPR_DECLARE_STATIC
 APR_LIB = apr-1.lib
 !ENDIF
-!IF !DEFINED(ENABLE_OCSP)
+!IF DEFINED(DISABLE_OCSP)
 CFLAGS = $(CFLAGS) -DOPENSSL_NO_OCSP
 !ENDIF
 

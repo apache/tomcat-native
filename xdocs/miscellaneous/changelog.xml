@@ -32,6 +32,12 @@
   </p>
 </section>
 <section name="Changes in 2.0.10">
+  <changelog>
+    <update>
+      The Windows binaries are now built with OCSP support enabled by default.
+      (markt)
+    </update>
+  </changelog>
 </section>
 <section name="Changes in 2.0.9">
   <changelog>
