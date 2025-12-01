@@ -145,8 +145,6 @@ Windows
    > c:\cmsc\setenv.bat x64
    > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WINXP_X64_LIB_RELEASE WITH_OPENSSL=srclib\openssl\release-x64 APR_DECLARE_STATIC=1
  
-   Note: Use ENABLE_OCSP=1 to create OCSP enabled builds
-
 
 FIPS
 ====
