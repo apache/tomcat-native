@@ -298,6 +298,7 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, finish)(TCN_STDARGS, jlong cctx)
     UNREFERENCED_STDARGS;
     TCN_ASSERT(c != 0);
     TCN_ASSERT(c->cctx != 0);
+    SSL_ERR_clear();
     rc = SSL_CONF_CTX_finish(c->cctx);
     ec = SSL_ERR_get();
     if (rc <= 0 || ec != 0) {
