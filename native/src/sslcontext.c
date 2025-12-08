@@ -518,6 +518,8 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     TCN_ALLOC_CSTRING(ciphers);
     jboolean rv = JNI_TRUE;
+    int minProtoVer = 0;
+    int maxProtoVer = 0;
 #ifndef HAVE_EXPORT_CIPHERS
     size_t len;
     char *buf;
@@ -527,6 +529,9 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
     TCN_ASSERT(ctx != 0);
     if (!J2S(ciphers))
         return JNI_FALSE;
+
+    minProtoVer = SSL_CTX_get_min_proto_version(c->ctx);
+    maxProtoVer = SSL_CTX_get_max_proto_version(c->ctx);
 
 #ifndef HAVE_EXPORT_CIPHERS
     /*
@@ -540,14 +545,25 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
     memcpy(buf, SSL_CIPHERS_ALWAYS_DISABLED, strlen(SSL_CIPHERS_ALWAYS_DISABLED));
     memcpy(buf + strlen(SSL_CIPHERS_ALWAYS_DISABLED), J2S(ciphers), strlen(J2S(ciphers)));
     buf[len - 1] = '\0';
-    if (!SSL_CTX_set_cipher_list(c->ctx, buf)) {
 #else
-    if (!SSL_CTX_set_cipher_list(c->ctx, J2S(ciphers))) {
+    buf = (char*)J2S(ciphers);
 #endif
-        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
-        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
-        tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
-        rv = JNI_FALSE;
+    /* OpenSSL will ignore any unknown cipher, but TLS 1.3 requires a call to SSL_CTX_set_ciphersuites */
+    if (minProtoVer <= TLS1_2_VERSION) {
+         if (!SSL_CTX_set_cipher_list(c->ctx, buf)) {
+            char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+            ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
+            tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
+            rv = JNI_FALSE;
+        }
+    }
+    if (maxProtoVer >= TLS1_3_VERSION) {
+        if (!SSL_CTX_set_ciphersuites(c->ctx, buf)) {
+            char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+            ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
+            tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
+            rv = JNI_FALSE;
+        }       
     }
 #ifndef HAVE_EXPORT_CIPHERS
     free(buf);
