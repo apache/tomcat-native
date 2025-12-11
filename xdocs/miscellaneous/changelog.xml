@@ -49,6 +49,10 @@
       responder cannot be contacted or fails to respond in a timely manner the
       OCSP check will not fail. (markt)
     </add>
+    <add>
+      Add a configurable timeout to the writing of OCSP requests and reading of
+      OCSP responses. (markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 2.0.9">

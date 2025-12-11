@@ -311,6 +311,7 @@ struct tcn_ssl_ctxt_t {
     /* End add from netty-tcnative */
     int             no_ocsp_check;
     int             ocsp_soft_fail;
+    int             ocsp_timeout;
 };
 
 #ifdef HAVE_SSL_CONF_CMD
@@ -321,6 +322,7 @@ struct tcn_ssl_conf_ctxt_t {
     SSL_CONF_CTX    *cctx;
     int             no_ocsp_check;
     int             ocsp_soft_fail;
+    int             ocsp_timeout;
 };
 #endif
 

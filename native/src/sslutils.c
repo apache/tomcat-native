@@ -33,8 +33,8 @@ extern int WIN32_SSL_password_prompt(tcn_pass_cb_t *data);
 #define ASN1_SEQUENCE 0x30
 #define ASN1_OID      0x06
 #define ASN1_STRING   0x86
-static int ssl_verify_OCSP(X509_STORE_CTX *ctx);
-static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx);
+static int ssl_verify_OCSP(X509_STORE_CTX *ctx, int timeout);
+static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int timeout);
 #endif
 
 /*  _________________________________________________________________
@@ -305,6 +305,7 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
     int depth             = con->ctx->verify_depth;
     int ocsp_check_type   = con->ctx->no_ocsp_check;
     int ocsp_soft_fail    = con->ctx->ocsp_soft_fail;
+    int ocsp_timeout      = con->ctx->ocsp_timeout;
 
 #if defined(SSL_OP_NO_TLSv1_3)
     con->pha_state = PHA_COMPLETE;
@@ -350,7 +351,7 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
                 ok = 0;
             }
             else {
-                int ocsp_response = ssl_verify_OCSP(ctx);
+                int ocsp_response = ssl_verify_OCSP(ctx, ocsp_timeout);
                 if (ocsp_response == OCSP_STATUS_REVOKED) {
                     ok = 0 ;
                     errnum = X509_STORE_CTX_get_error(ctx);
@@ -493,7 +494,7 @@ int SSL_callback_alpn_select_proto(SSL* ssl, const unsigned char **out, unsigned
 #ifdef HAVE_OCSP
 
 /* Function that is used to do the OCSP verification */
-static int ssl_verify_OCSP(X509_STORE_CTX *ctx)
+static int ssl_verify_OCSP(X509_STORE_CTX *ctx, int timeout)
 {
     X509 *cert, *issuer;
     int r = OCSP_STATUS_UNKNOWN;
@@ -518,7 +519,7 @@ static int ssl_verify_OCSP(X509_STORE_CTX *ctx)
     /* if we can't get the issuer, we cannot perform OCSP verification */
     issuer = X509_STORE_CTX_get0_current_issuer(ctx);
     if (issuer != NULL) {
-        r = ssl_ocsp_request(cert, issuer, ctx);
+        r = ssl_ocsp_request(cert, issuer, ctx, timeout);
         switch (r) {
         case OCSP_STATUS_OK:
             X509_STORE_CTX_set_error(ctx, X509_V_OK);
@@ -958,7 +959,7 @@ static OCSP_REQUEST *get_ocsp_request(X509 *cert, X509 *issuer)
 }
 
 /* Submits an OCSP request and returns the OCSP_RESPONSE */
-static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, char *url, OCSP_REQUEST *ocsp_req)
+static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, char *url, OCSP_REQUEST *ocsp_req, int timeout)
 {
     OCSP_RESPONSE *ocsp_resp = NULL;
     BIO *bio_req;
@@ -988,6 +989,8 @@ static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, char *url, OCSP_REQUEST *
     if (apr_sock == NULL) {
         goto free_bio;
     }
+
+    apr_socket_timeout_set(apr_sock, timeout);
 
     ok = ocsp_send_req(apr_sock, bio_req);
     if (ok) {
@@ -1075,7 +1078,7 @@ clean_bs:
     return o;
 }
 
-static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx)
+static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int timeout)
 {
     char **ocsp_urls = NULL;
     int nid;
@@ -1104,13 +1107,16 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx)
            approach is to iterate for all the possible ocsp urls */
         req = get_ocsp_request(cert, issuer);
         if (req != NULL) {
-            resp = get_ocsp_response(p, ocsp_urls[0], req);
+            resp = get_ocsp_response(p, ocsp_urls[0], req, timeout);
             if (resp != NULL) {
                 rv = process_ocsp_response(req, resp, cert, issuer, ctx);
             } else {
-                /* correct error code for application errors? */
-                X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
+                /* Unable to send request / receive response. */
+                X509_STORE_CTX_set_error(ctx, X509_V_ERR_UNABLE_TO_GET_CRL);
             }
+        } else {
+            /* correct error code for application errors? */
+            X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
         }
 
         if (req != NULL) {
