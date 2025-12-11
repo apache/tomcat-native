@@ -59,6 +59,11 @@
     <add>
       Expand verification of OCSP responses. (markt)
     </add>
+    <add>
+      Add the ability to configure the OCSP checks to soft-fail - i.e. if the
+      responder cannot be contacted or fails to respond in a timely manner the
+      OCSP check will not fail. (markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.3.1">

@@ -311,6 +311,7 @@ struct tcn_ssl_ctxt_t {
     int             alpn_selector_failure_behavior;
     /* End add from netty-tcnative */
     int             no_ocsp_check;
+    int             ocsp_soft_fail;
 };
 
 #ifdef HAVE_SSL_CONF_CMD
@@ -319,7 +320,8 @@ typedef struct tcn_ssl_conf_ctxt_t tcn_ssl_conf_ctxt_t;
 struct tcn_ssl_conf_ctxt_t {
     apr_pool_t      *pool;
     SSL_CONF_CTX    *cctx;
-    int     no_ocsp_check;
+    int             no_ocsp_check;
+    int             ocsp_soft_fail;
 };
 #endif
 
