@@ -938,7 +938,7 @@ static OCSP_RESPONSE *ocsp_get_resp(apr_pool_t *mp, apr_socket_t *sock)
 /* Creates an OCSP request */
 static OCSP_REQUEST *get_ocsp_request(X509 *cert, X509 *issuer)
 {
-     OCSP_REQUEST *ocsp_req = NULL;
+    OCSP_REQUEST *ocsp_req = NULL;
 
     ocsp_req = OCSP_REQUEST_new();
     if (ocsp_req == NULL)
