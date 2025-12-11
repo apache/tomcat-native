@@ -1024,7 +1024,7 @@ end:
 }
 
 /* Process the OCSP_RESPONSE and returns the corresponding
-   answert according to the status.
+   answer according to the status.
 */
 static int process_ocsp_response(OCSP_RESPONSE *ocsp_resp, X509 *cert, X509 *issuer)
 {
