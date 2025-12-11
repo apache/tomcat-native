@@ -220,6 +220,19 @@ extern ENGINE *tcn_ssl_engine;
 #define OCSP_STATUS_UNKNOWN   2
 /* 15 minutes - aligns with JSSE */
 #define OCSP_MAX_SKEW       900
+/* Older versions of OpenSSL have a smaller range of OCSP error codes*/
+#if !defined(X509_V_ERR_OCSP_RESP_INVALID)
+#define X509_V_ERR_OCSP_RESP_INVALID      96
+#endif
+#if !defined(X509_V_ERR_OCSP_SIGNATURE_FAILURE)
+#define X509_V_ERR_OCSP_SIGNATURE_FAILURE 97
+#endif
+#if !defined(X509_V_ERR_OCSP_NOT_YET_VALID)
+#define X509_V_ERR_OCSP_NOT_YET_VALID     98
+#endif
+#if !defined(X509_V_ERR_OCSP_HAS_EXPIRED)
+#define X509_V_ERR_OCSP_HAS_EXPIRED       99
+#endif
 #endif
 
 #endif /* !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name) */
