@@ -52,6 +52,10 @@
       The Windows binaries are now built with OCSP support enabled by default.
       (markt)
     </update>
+    <add>
+      Include a nonce with OCSP requests and check the nonce, if any, in the
+      OCSP response. (markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.3.1">

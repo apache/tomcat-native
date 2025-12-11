@@ -970,6 +970,9 @@ static OCSP_REQUEST *get_ocsp_request(X509 *cert, X509 *issuer)
         return NULL;
     }
 
+    // Add a nonce to protect against replay attacks
+    OCSP_request_add1_nonce(ocsp_req, NULL, -1);
+
     return ocsp_req;
 }
 
@@ -1026,7 +1029,8 @@ end:
 /* Process the OCSP_RESPONSE and returns the corresponding
    answer according to the status.
 */
-static int process_ocsp_response(OCSP_RESPONSE *ocsp_resp, X509 *cert, X509 *issuer)
+static int process_ocsp_response(OCSP_REQUEST *ocsp_req, OCSP_RESPONSE *ocsp_resp, X509 *cert, X509 *issuer,
+        X509_STORE_CTX *ctx)
 {
     int r, o = V_OCSP_CERTSTATUS_UNKNOWN, i;
     OCSP_BASICRESP *bs;
@@ -1038,7 +1042,13 @@ static int process_ocsp_response(OCSP_RESPONSE *ocsp_resp, X509 *cert, X509 *iss
     if (r != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
         return OCSP_STATUS_UNKNOWN;
     }
+    
     bs = OCSP_response_get1_basic(ocsp_resp);
+    if (OCSP_check_nonce(ocsp_req, bs) == 0) {
+        X509_STORE_CTX_set_error(ctx, X509_V_ERR_OCSP_RESP_INVALID);
+        o = OCSP_STATUS_UNKNOWN;
+        goto clean_bs;
+    }
 
     certid = OCSP_cert_to_id(NULL, cert, issuer);
     if (certid == NULL) {
@@ -1057,6 +1067,7 @@ static int process_ocsp_response(OCSP_RESPONSE *ocsp_resp, X509 *cert, X509 *iss
 
     /* we clean up */
     OCSP_CERTID_free(certid);
+clean_bs:
     OCSP_BASICRESP_free(bs);
     return o;
 }
@@ -1092,7 +1103,7 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx)
         if (req != NULL) {
             resp = get_ocsp_response(p, ocsp_urls[0], req);
             if (resp != NULL) {
-                rv = process_ocsp_response(resp, cert, issuer);
+                rv = process_ocsp_response(req, resp, cert, issuer, ctx);
             } else {
                 /* correct error code for application errors? */
                 X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
