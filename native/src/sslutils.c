@@ -299,11 +299,12 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
                                           SSL_get_ex_data_X509_STORE_CTX_idx());
     tcn_ssl_conn_t *con = (tcn_ssl_conn_t *)SSL_get_app_data(ssl);
     /* Get verify ingredients */
-    int errnum   = X509_STORE_CTX_get_error(ctx);
-    int errdepth = X509_STORE_CTX_get_error_depth(ctx);
-    int verify   = con->ctx->verify_mode;
-    int depth    = con->ctx->verify_depth;
-    int ocsp_check_type = con->ctx->no_ocsp_check;
+    int errnum            = X509_STORE_CTX_get_error(ctx);
+    int errdepth          = X509_STORE_CTX_get_error_depth(ctx);
+    int verify            = con->ctx->verify_mode;
+    int depth             = con->ctx->verify_depth;
+    int ocsp_check_type   = con->ctx->no_ocsp_check;
+    int ocsp_soft_fail    = con->ctx->ocsp_soft_fail;
 
 #if defined(SSL_OP_NO_TLSv1_3)
     con->pha_state = PHA_COMPLETE;
@@ -356,8 +357,8 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
                 }
                 else if (ocsp_response == OCSP_STATUS_UNKNOWN) {
                     errnum = X509_STORE_CTX_get_error(ctx);
-                    if (errnum)
-                        ok = 0 ;
+                    if (errnum != 0 && !(ocsp_soft_fail && errnum == X509_V_ERR_UNABLE_TO_GET_CRL))
+                        ok = 0;
                 }
             }
         }

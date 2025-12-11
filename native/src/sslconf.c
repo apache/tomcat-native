@@ -163,6 +163,16 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, check)(TCN_STDARGS, jlong cctx,
         return 1;
     }
 
+    if (!strcmp(J2S(cmd), "OCSP_SOFT_FAIL")) {
+        if (!strcasecmp(J2S(value), "false"))
+            c->ocsp_soft_fail = 0;
+        else
+            c->ocsp_soft_fail = 1;
+        TCN_FREE_CSTRING(cmd);
+        TCN_FREE_CSTRING(value);
+        return 1;
+    }
+
     SSL_ERR_clear();
     value_type = SSL_CONF_cmd_value_type(c->cctx, J2S(cmd));
     ec = SSL_ERR_get();
@@ -217,6 +227,7 @@ TCN_IMPLEMENT_CALL(void, SSLConf, assign)(TCN_STDARGS, jlong cctx,
     // sc->ctx == 0 is allowed!
     SSL_CONF_CTX_set_ssl_ctx(c->cctx, sc->ctx);
     sc->no_ocsp_check = c->no_ocsp_check;
+    sc->ocsp_soft_fail = c->ocsp_soft_fail;
 }
 
 /* Apply a command to an SSL_CONF context */
@@ -261,6 +272,15 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, apply)(TCN_STDARGS, jlong cctx,
             c->no_ocsp_check = 0;
         else
             c->no_ocsp_check = 1;
+        TCN_FREE_CSTRING(cmd);
+        TCN_FREE_CSTRING(value);
+        return 1;
+    }
+    if (!strcmp(J2S(cmd), "OCSP_SOFT_FAIL")) {
+        if (!strcasecmp(J2S(value), "false"))
+            c->ocsp_soft_fail = 0;
+        else
+            c->ocsp_soft_fail = 1;
         TCN_FREE_CSTRING(cmd);
         TCN_FREE_CSTRING(value);
         return 1;
