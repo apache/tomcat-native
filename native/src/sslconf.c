@@ -188,6 +188,18 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, check)(TCN_STDARGS, jlong cctx,
         return 1;
     }
 
+    if (!strcmp(J2S(cmd), "OCSP_VERIFY_FLAGS")) {
+        int i;
+        errno = 0;
+        i = (int) strtol(J2S(value), NULL, 10);
+        if (!errno) {
+            c->ocsp_verify_flags = i;
+        }
+        TCN_FREE_CSTRING(cmd);
+        TCN_FREE_CSTRING(value);
+        return 1;
+    }
+
     SSL_ERR_clear();
     value_type = SSL_CONF_cmd_value_type(c->cctx, J2S(cmd));
     ec = SSL_ERR_get();
@@ -244,7 +256,7 @@ TCN_IMPLEMENT_CALL(void, SSLConf, assign)(TCN_STDARGS, jlong cctx,
     sc->no_ocsp_check = c->no_ocsp_check;
     sc->ocsp_soft_fail = c->ocsp_soft_fail;
     sc->ocsp_timeout = c->ocsp_timeout;
-    // TODO verify
+    sc->ocsp_verify_flags = c->ocsp_verify_flags;
 }
 
 /* Apply a command to an SSL_CONF context */
@@ -309,6 +321,17 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, apply)(TCN_STDARGS, jlong cctx,
         if (!errno) {
             // Tomcat configures timeout is millisecond. APR uses microseconds.
             c->ocsp_timeout = i * 1000;
+        }
+        TCN_FREE_CSTRING(cmd);
+        TCN_FREE_CSTRING(value);
+        return 1;
+    }
+    if (!strcmp(J2S(cmd), "OCSP_VERIFY_FLAGS")) {
+        int i;
+        errno = 0;
+        i = (int) strtol(J2S(value), NULL, 10);
+        if (!errno) {
+            c->ocsp_verify_flags = i;
         }
         TCN_FREE_CSTRING(cmd);
         TCN_FREE_CSTRING(value);

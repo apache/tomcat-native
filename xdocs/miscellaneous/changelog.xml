@@ -68,6 +68,9 @@
       Add a configurable timeout to the writing of OCSP requests and reading of
       OCSP responses. (markt)
     </add>
+    <add>
+      Add the ability to control the OCSP verification flags. (markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 1.3.1">
