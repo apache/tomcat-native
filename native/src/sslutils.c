@@ -935,11 +935,28 @@ static OCSP_RESPONSE *ocsp_get_resp(apr_pool_t *mp, apr_socket_t *sock)
     return resp;
 }
 
-/* Creates and OCSP request and returns the OCSP_RESPONSE */
-static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, X509 *cert, X509 *issuer, char *url)
+/* Creates an OCSP request */
+static OCSP_REQUEST *get_ocsp_request(X509 *cert, X509 *issuer)
+{
+     OCSP_REQUEST *ocsp_req = NULL;
+
+    ocsp_req = OCSP_REQUEST_new();
+    if (ocsp_req == NULL)
+        return NULL;
+
+    // Populate the request
+    if (add_ocsp_cert(ocsp_req, cert, issuer) == 0) {
+        OCSP_REQUEST_free(ocsp_req);
+        return NULL;
+    }
+
+    return ocsp_req;
+}
+
+/* Submits an OCSP request and returns the OCSP_RESPONSE */
+static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, char *url, OCSP_REQUEST *ocsp_req)
 {
     OCSP_RESPONSE *ocsp_resp = NULL;
-    OCSP_REQUEST *ocsp_req = NULL;
     BIO *bio_req;
     char *hostname, *path, *c_port;
     int port, use_ssl;
@@ -956,18 +973,10 @@ static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, X509 *cert, X509 *issuer,
     if (sscanf(c_port, "%d", &port) != 1)
         goto end;
 
-    /* Create the OCSP request */
-    ocsp_req = OCSP_REQUEST_new();
-    if (ocsp_req == NULL)
-        goto end;
-
-    if (add_ocsp_cert(ocsp_req,cert,issuer) == 0 )
-        goto free_req;
-
     /* create the BIO with the request to send */
     bio_req = serialize_request(ocsp_req, hostname, port, path);
     if (bio_req == NULL) {
-        goto free_req;
+        goto end;
     }
 
     apr_pool_create(&mp, p);
@@ -985,9 +994,6 @@ static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, X509 *cert, X509 *issuer,
 free_bio:
     BIO_free(bio_req);
     apr_pool_destroy(mp);
-
-free_req:
-    OCSP_REQUEST_free(ocsp_req);
 
 end:
     OPENSSL_free(hostname);
@@ -1058,15 +1064,23 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx)
     /* if we find the extensions and we can parse it check
        the ocsp status. Otherwise, return OCSP_STATUS_UNKNOWN */
     if (ocsp_urls != NULL) {
+        OCSP_REQUEST *req;
         OCSP_RESPONSE *resp;
         /* for the time being just check for the fist response .. a better
            approach is to iterate for all the possible ocsp urls */
-        resp = get_ocsp_response(p, cert, issuer, ocsp_urls[0]);
-        if (resp != NULL) {
-            rv = process_ocsp_response(resp, cert, issuer);
-        } else {
-            /* correct error code for application errors? */
-            X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
+        req = get_ocsp_request(cert, issuer);
+        if (req != NULL) {
+            resp = get_ocsp_response(p, ocsp_urls[0], req);
+            if (resp != NULL) {
+                rv = process_ocsp_response(resp, cert, issuer);
+            } else {
+                /* correct error code for application errors? */
+                X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
+            }
+        }
+
+        if (req != NULL) {
+            OCSP_REQUEST_free(req);
         }
 
         if (resp != NULL) {
