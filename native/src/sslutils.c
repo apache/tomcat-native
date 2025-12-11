@@ -1060,11 +1060,12 @@ static int process_ocsp_response(OCSP_REQUEST *ocsp_req, OCSP_RESPONSE *ocsp_res
 
     certid = OCSP_cert_to_id(NULL, cert, issuer);
     if (certid == NULL) {
-        return OCSP_STATUS_UNKNOWN;
+        X509_STORE_CTX_set_error(ctx, X509_V_ERR_OCSP_RESP_INVALID);
+        o = OCSP_STATUS_UNKNOWN;
+        goto clean_bs;
     }
+
     ss = OCSP_resp_get0(bs, OCSP_resp_find(bs, certid, -1)); /* find by serial number and get the matching response */
-
-
     i = OCSP_single_get0_status(ss, NULL, NULL, NULL, NULL);
     if (i == V_OCSP_CERTSTATUS_GOOD)
         o =  OCSP_STATUS_OK;
