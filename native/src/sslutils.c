@@ -33,8 +33,8 @@ extern int WIN32_SSL_password_prompt(tcn_pass_cb_t *data);
 #define ASN1_SEQUENCE 0x30
 #define ASN1_OID      0x06
 #define ASN1_STRING   0x86
-static int ssl_verify_OCSP(X509_STORE_CTX *ctx, int timeout);
-static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int timeout);
+static int ssl_verify_OCSP(X509_STORE_CTX *ctx, int timeout, int verifyFlags);
+static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int timeout, int verifyFlags);
 #endif
 
 /*  _________________________________________________________________
@@ -306,6 +306,7 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
     int ocsp_check_type   = con->ctx->no_ocsp_check;
     int ocsp_soft_fail    = con->ctx->ocsp_soft_fail;
     int ocsp_timeout      = con->ctx->ocsp_timeout;
+    int ocsp_verify_flags = con->ctx->ocsp_verify_flags;
 
 #if defined(SSL_OP_NO_TLSv1_3)
     con->pha_state = PHA_COMPLETE;
@@ -351,7 +352,7 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
                 ok = 0;
             }
             else {
-                int ocsp_response = ssl_verify_OCSP(ctx, ocsp_timeout);
+                int ocsp_response = ssl_verify_OCSP(ctx, ocsp_timeout, ocsp_verify_flags);
                 if (ocsp_response == OCSP_STATUS_REVOKED) {
                     ok = 0 ;
                     errnum = X509_STORE_CTX_get_error(ctx);
@@ -494,7 +495,7 @@ int SSL_callback_alpn_select_proto(SSL* ssl, const unsigned char **out, unsigned
 #ifdef HAVE_OCSP
 
 /* Function that is used to do the OCSP verification */
-static int ssl_verify_OCSP(X509_STORE_CTX *ctx, int timeout)
+static int ssl_verify_OCSP(X509_STORE_CTX *ctx, int timeout, int verifyFlags)
 {
     X509 *cert, *issuer;
     int r = OCSP_STATUS_UNKNOWN;
@@ -519,7 +520,7 @@ static int ssl_verify_OCSP(X509_STORE_CTX *ctx, int timeout)
     /* if we can't get the issuer, we cannot perform OCSP verification */
     issuer = X509_STORE_CTX_get0_current_issuer(ctx);
     if (issuer != NULL) {
-        r = ssl_ocsp_request(cert, issuer, ctx, timeout);
+        r = ssl_ocsp_request(cert, issuer, ctx, timeout, verifyFlags);
         switch (r) {
         case OCSP_STATUS_OK:
             X509_STORE_CTX_set_error(ctx, X509_V_OK);
@@ -1014,7 +1015,7 @@ end:
    answer according to the status.
 */
 static int process_ocsp_response(OCSP_REQUEST *ocsp_req, OCSP_RESPONSE *ocsp_resp, X509 *cert, X509 *issuer,
-        X509_STORE_CTX *ctx)
+        X509_STORE_CTX *ctx, int verifyFlags)
 {
     int r, o = V_OCSP_CERTSTATUS_UNKNOWN, i;
     OCSP_BASICRESP *bs;
@@ -1038,7 +1039,7 @@ static int process_ocsp_response(OCSP_REQUEST *ocsp_req, OCSP_RESPONSE *ocsp_res
     }
 
     certStack = OCSP_resp_get0_certs(bs);
-    if (OCSP_basic_verify(bs, certStack, X509_STORE_CTX_get0_store(ctx), 0) <= 0) {
+    if (OCSP_basic_verify(bs, certStack, X509_STORE_CTX_get0_store(ctx), verifyFlags) <= 0) {
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_OCSP_SIGNATURE_FAILURE);
         o = OCSP_STATUS_UNKNOWN;
         goto clean_bs;
@@ -1078,7 +1079,7 @@ clean_bs:
     return o;
 }
 
-static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int timeout)
+static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int timeout, int verifyFlags)
 {
     char **ocsp_urls = NULL;
     int nid;
@@ -1109,7 +1110,7 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int t
         if (req != NULL) {
             resp = get_ocsp_response(p, ocsp_urls[0], req, timeout);
             if (resp != NULL) {
-                rv = process_ocsp_response(req, resp, cert, issuer, ctx);
+                rv = process_ocsp_response(req, resp, cert, issuer, ctx, verifyFlags);
             } else {
                 /* Unable to send request / receive response. */
                 X509_STORE_CTX_set_error(ctx, X509_V_ERR_UNABLE_TO_GET_CRL);

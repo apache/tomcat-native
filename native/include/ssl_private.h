@@ -312,6 +312,7 @@ struct tcn_ssl_ctxt_t {
     int             no_ocsp_check;
     int             ocsp_soft_fail;
     int             ocsp_timeout;
+    int             ocsp_verify_flags;
 };
 
 #ifdef HAVE_SSL_CONF_CMD
@@ -323,6 +324,7 @@ struct tcn_ssl_conf_ctxt_t {
     int             no_ocsp_check;
     int             ocsp_soft_fail;
     int             ocsp_timeout;
+    int             ocsp_verify_flags;
 };
 #endif
 
