@@ -41,6 +41,9 @@
       Include a nonce with OCSP requests and check the nonce, if any, in the
       OCSP response. (markt)
     </add>
+    <add>
+      Expand verification of OCSP responses. (markt)
+    </add>
   </changelog>
 </section>
 <section name="Changes in 2.0.9">

@@ -1016,6 +1016,7 @@ static int process_ocsp_response(OCSP_REQUEST *ocsp_req, OCSP_RESPONSE *ocsp_res
     OCSP_BASICRESP *bs;
     OCSP_SINGLERESP *ss;
     OCSP_CERTID *certid;
+    STACK_OF(X509) *certStack;
 
     r = OCSP_response_status(ocsp_resp);
 
@@ -1026,6 +1027,13 @@ static int process_ocsp_response(OCSP_REQUEST *ocsp_req, OCSP_RESPONSE *ocsp_res
     bs = OCSP_response_get1_basic(ocsp_resp);
     if (OCSP_check_nonce(ocsp_req, bs) == 0) {
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_OCSP_RESP_INVALID);
+        o = OCSP_STATUS_UNKNOWN;
+        goto clean_bs;
+    }
+
+    certStack = OCSP_resp_get0_certs(bs);
+    if (OCSP_basic_verify(bs, certStack, X509_STORE_CTX_get0_store(ctx), 0) <= 0) {
+        X509_STORE_CTX_set_error(ctx, X509_V_ERR_OCSP_SIGNATURE_FAILURE);
         o = OCSP_STATUS_UNKNOWN;
         goto clean_bs;
     }
