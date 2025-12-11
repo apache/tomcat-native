@@ -1039,6 +1039,7 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx)
 {
     char **ocsp_urls = NULL;
     int nid;
+    int rv = OCSP_STATUS_UNKNOWN;
     X509_EXTENSION *ext;
     ASN1_OCTET_STRING *os;
     apr_pool_t *p;
@@ -1058,7 +1059,6 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx)
        the ocsp status. Otherwise, return OCSP_STATUS_UNKNOWN */
     if (ocsp_urls != NULL) {
         OCSP_RESPONSE *resp;
-        int rv = OCSP_STATUS_UNKNOWN;
         /* for the time being just check for the fist response .. a better
            approach is to iterate for all the possible ocsp urls */
         resp = get_ocsp_response(p, cert, issuer, ocsp_urls[0]);
@@ -1071,12 +1071,10 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx)
 
         if (resp != NULL) {
             OCSP_RESPONSE_free(resp);
-            apr_pool_destroy(p);
-            return rv;
         }
     }
     apr_pool_destroy(p);
-    return OCSP_STATUS_UNKNOWN;
+    return rv;
 }
 
 #endif /* HAVE_OCSP */
