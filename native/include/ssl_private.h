@@ -218,6 +218,8 @@ extern ENGINE *tcn_ssl_engine;
 #define OCSP_STATUS_OK        0
 #define OCSP_STATUS_REVOKED   1
 #define OCSP_STATUS_UNKNOWN   2
+/* 15 minutes - aligns with JSSE */
+#define OCSP_MAX_SKEW       900
 #endif
 
 #endif /* !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name) */
