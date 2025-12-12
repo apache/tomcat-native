@@ -208,32 +208,6 @@ EC_GROUP *SSL_ec_GetParamFromFile(const char *file)
 #endif
 
 /*
- * Hand out standard DH parameters, based on the authentication strength
- */
-DH *SSL_callback_tmp_DH(SSL *ssl, int export, int keylen)
-{
-    EVP_PKEY *pkey = SSL_get_privatekey(ssl);
-    int type = pkey != NULL ? EVP_PKEY_base_id(pkey) : EVP_PKEY_NONE;
-
-    /*
-     * OpenSSL will call us with either keylen == 512 or keylen == 1024
-     * (see the definition of SSL_EXPORT_PKEYLENGTH in ssl_locl.h).
-     * Adjust the DH parameter length according to the size of the
-     * RSA/DSA private key used for the current connection, and always
-     * use at least 1024-bit parameters.
-     * Note: This may cause interoperability issues with implementations
-     * which limit their DH support to 1024 bit - e.g. Java 7 and earlier.
-     * In this case, SSLCertificateFile can be used to specify fixed
-     * 1024-bit DH parameters (with the effect that OpenSSL skips this
-     * callback).
-     */
-    if ((type == EVP_PKEY_RSA) || (type == EVP_PKEY_DSA)) {
-        keylen = EVP_PKEY_bits(pkey);
-    }
-    return SSL_get_dh_params(keylen);
-}
-
-/*
  * Read a file that optionally contains the server certificate in PEM
  * format, possibly followed by a sequence of CA certificates that
  * should be sent to the peer in the SSL Certificate message.

@@ -43,90 +43,11 @@ static void ssl_keylog_callback(const SSL *ssl, const char *line)
 static jclass byteArrayClass;
 static jclass stringClass;
 
-/*
- * Grab well-defined DH parameters from OpenSSL, see the BN_get_rfc*
- * functions in <openssl/bn.h> for all available primes.
- */
-static DH *make_dh_params(BIGNUM *(*prime)(BIGNUM *))
-{
-    DH *dh = DH_new();
-    BIGNUM *p, *g;
-
-    if (!dh) {
-        return NULL;
-    }
-    p = prime(NULL);
-    g = BN_new();
-    if (g != NULL) {
-        BN_set_word(g, 2);
-    }
-    if (!p || !g || !DH_set0_pqg(dh, p, NULL, g)) {
-        DH_free(dh);
-        BN_free(p);
-        BN_free(g);
-        return NULL;
-    }
-    return dh;
-}
-
-/* Storage and initialization for DH parameters. */
-static struct dhparam {
-    BIGNUM *(*const prime)(BIGNUM *); /* function to generate... */
-    DH *dh;                           /* ...this, used for keys.... */
-    const unsigned int min;           /* ...of length >= this. */
-} dhparams[] = {
-    { BN_get_rfc3526_prime_8192, NULL, 6145 },
-    { BN_get_rfc3526_prime_6144, NULL, 4097 },
-    { BN_get_rfc3526_prime_4096, NULL, 3073 },
-    { BN_get_rfc3526_prime_3072, NULL, 2049 },
-    { BN_get_rfc3526_prime_2048, NULL, 1025 },
-    { BN_get_rfc2409_prime_1024, NULL, 0 }
-};
-
-static void init_dh_params(void)
-{
-    unsigned n;
-
-    for (n = 0; n < sizeof(dhparams)/sizeof(dhparams[0]); n++)
-        dhparams[n].dh = make_dh_params(dhparams[n].prime);
-}
-
-static void free_dh_params(void)
-{
-    unsigned n;
-
-    /* DH_free() is a noop for a NULL parameter, so these are harmless
-     * in the (unexpected) case where these variables are already
-     * NULL. */
-    for (n = 0; n < sizeof(dhparams)/sizeof(dhparams[0]); n++) {
-        DH_free(dhparams[n].dh);
-        dhparams[n].dh = NULL;
-    }
-}
-
 void SSL_callback_add_keylog(SSL_CTX *ctx)
 {
     if (key_log_file) {
         SSL_CTX_set_keylog_callback(ctx, ssl_keylog_callback);
     }
-}
-
-/* Hand out the same DH structure though once generated as we leak
- * memory otherwise and freeing the structure up after use would be
- * hard to track and in fact is not needed at all as it is safe to
- * use the same parameters over and over again security wise (in
- * contrast to the keys itself) and code safe as the returned structure
- * is duplicated by OpenSSL anyway. Hence no modification happens
- * to our copy. */
-DH *SSL_get_dh_params(unsigned keylen)
-{
-    unsigned n;
-
-    for (n = 0; n < sizeof(dhparams)/sizeof(dhparams[0]); n++)
-        if (keylen >= dhparams[n].min)
-            return dhparams[n].dh;
-
-    return NULL; /* impossible to reach. */
 }
 
 static void init_bio_methods(void);
@@ -156,7 +77,6 @@ static apr_status_t ssl_init_cleanup(void *data)
     ssl_initialized = 0;
 
     free_bio_methods();
-    free_dh_params();
 
 #ifndef OPENSSL_NO_ENGINE
     if (tcn_ssl_engine != NULL) {
@@ -347,7 +267,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     /* For SSL_get_app_data2(), SSL_get_app_data3() and SSL_get_app_data4() at request time */
     SSL_init_app_data_idx();
 
-    init_dh_params();
     init_bio_methods();
 
     /*
