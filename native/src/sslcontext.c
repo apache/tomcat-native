@@ -753,54 +753,6 @@ cleanup:
     return rv;
 }
 
-TCN_IMPLEMENT_CALL(void, SSLContext, setTmpDH)(TCN_STDARGS, jlong ctx,
-                                                                  jstring file)
-{
-    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
-    BIO *bio = NULL;
-    DH *dh = NULL;
-    TCN_ALLOC_CSTRING(file);
-    UNREFERENCED(o);
-    TCN_ASSERT(ctx != 0);
-    TCN_ASSERT(file);
-
-    if (!J2S(file)) {
-        tcn_Throw(e, "Error while configuring DH: no dh param file given");
-        return;
-    }
-
-    bio = BIO_new_file(J2S(file), "r");
-    if (!bio) {
-        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
-        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
-        tcn_Throw(e, "Error while configuring DH using %s: %s", J2S(file), err);
-        TCN_FREE_CSTRING(file);
-        return;
-    }
-
-    dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
-    BIO_free(bio);
-    if (!dh) {
-        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
-        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
-        tcn_Throw(e, "Error while configuring DH: no DH parameter found in %s (%s)", J2S(file), err);
-        TCN_FREE_CSTRING(file);
-        return;
-    }
-
-    if (1 != SSL_CTX_set_tmp_dh(c->ctx, dh)) {
-        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
-        DH_free(dh);
-        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
-        tcn_Throw(e, "Error while configuring DH with file %s: %s", J2S(file), err);
-        TCN_FREE_CSTRING(file);
-        return;
-    }
-
-    DH_free(dh);
-    TCN_FREE_CSTRING(file);
-}
-
 TCN_IMPLEMENT_CALL(void, SSLContext, setTmpECDHByCurveName)(TCN_STDARGS, jlong ctx,
                                                                   jstring curveName)
 {
