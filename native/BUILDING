@@ -165,10 +165,10 @@ Windows
    >set JAVA_HOME=C:\java\21.0.7-tem
 
    > "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
-   > nmake -f NMAKEMakefile WITH_APR=C:\deps-x86\apr-%APR_VER% WITH_OPENSSL=C:\deps-x86\openssl-%OPENSSL_VER% CPU=X86 APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid OPENSSL_NEW_LIBS=1
+   > nmake -f NMAKEMakefile WITH_APR=C:\deps-x86\apr-%APR_VER% WITH_OPENSSL=C:\deps-x86\openssl-%OPENSSL_VER% CPU=X86 APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid
  
    > "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-   > nmake -f NMAKEMakefile WITH_APR=C:\deps-x64\apr-%APR_VER% WITH_OPENSSL=C:\deps-x64\openssl-%OPENSSL_VER% CPU=X64 APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid OPENSSL_NEW_LIBS=1
+   > nmake -f NMAKEMakefile WITH_APR=C:\deps-x64\apr-%APR_VER% WITH_OPENSSL=C:\deps-x64\openssl-%OPENSSL_VER% CPU=X64 APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid
  
    Tomcat Native Connector DLLs may then be found in native\WIN7_*_DLL_RELEASE    
 
