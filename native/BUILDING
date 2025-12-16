@@ -113,7 +113,7 @@ Windows
    > mkdir out32-x86
    > copy libssl.lib out32-x86\
    > copy libcrypto.lib out32-x86\
-   > copy ossl_static.lib out32-x86\
+   > copy ossl_static.pdb out32-x86\
    > copy apps\openssl.exe out32-x86\
  
    > nmake clean
@@ -124,7 +124,7 @@ Windows
    > mkdir out32-x64
    > copy libssl.lib out32-x64\
    > copy libcrypto.lib out32-x64\
-   > copy ossl_static.lib out32-x64\
+   > copy ossl_static.pdb out32-x64\
    > copy apps\openssl.exe out32-x64\
 
 5. Copy APR and OpenSSL to versioned directories
