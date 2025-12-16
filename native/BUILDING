@@ -133,7 +133,7 @@ Windows
    rebuild them next time if the version remains unchanged.    
 
    > cd ..
-   > set OPENSSL_VER=3.5.0
+   > set OPENSSL_VER=3.5.4
    > set APR_VER=1.7.6
  
    > mkdir \deps-x86\apr-%APR_VER%\include
@@ -162,7 +162,7 @@ Windows
  6. Build Tomcat Native
  
    > cd ..
-   >set JAVA_HOME=C:\java\21.0.7-tem
+   >set JAVA_HOME=C:\java\21.0.9-tem
 
    > "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
    > nmake -f NMAKEMakefile WITH_APR=C:\deps-x86\apr-%APR_VER% WITH_OPENSSL=C:\deps-x86\openssl-%OPENSSL_VER% CPU=X86 APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid
