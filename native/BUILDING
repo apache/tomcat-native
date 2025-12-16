@@ -79,13 +79,13 @@ Windows
 
   Currently supported Windows OS (release builds use a Windows 2022 VM running
     on VMware)
-  Currently support JDK installed (release builds use Temurin 21.0.7)
+  Currently support JDK installed (release builds use Temurin 21.0.9)
   git (if you wish to build from source)
   Perl - see OpenSSL build instructions for Windows (release builds use
-    Strawberry Perl 5.40.2001)
+    Strawberry Perl 5.42.0.1)
   NASM - see OpenSSL build instructions for Windows (release builds use 2.16.01
-    included in Strawberry Perl 5.40.2001)
-  Microsoft Visual C compiler (release builds use Visual Studio 2022 17.1.4.1)
+    included in Strawberry Perl 5.42.0.1)
+  Microsoft Visual C compiler (release builds use Visual Studio 2022 17.14.23)
 
 2. Obtain tc-native source
 
