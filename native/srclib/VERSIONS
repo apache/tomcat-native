@@ -4,8 +4,8 @@ The current minimum versions are:
 
 The following version of the libraries are recommended:
 
-- APR 1.7.4 or later, http://apr.apache.org
-- OpenSSL 3.0.14 or later, http://www.openssl.org
+- APR 1.7.6 or later, http://apr.apache.org
+- OpenSSL 3.0.18 or later, http://www.openssl.org
 
 Older versions should also work but are not as thoroughly tested by the Tomcat
 Native team
@@ -15,11 +15,10 @@ The minimum version of OpenSSL is driven by the version of OpenSSL used by
 downstream distributions. EOL dates exclude paid support offerings. 
 
 The current state of OpenSSL in Debian is:
-- OpenSSL 1.1.1w in Debian 11 LTS (EOL end June 2026)
-- OpenSSL 3.0.14 in Debian 12 LTS (EOL end June 2028)
+- OpenSSL 1.1.1w in Debian 11 LTS (EOL end August 2026)
+- OpenSSL 3.0.17 in Debian 12 LTS (EOL end June 2028)
 
 And in Ubuntu:
-- OpenSSL 1.1.1f in Ubuntu 20.04 LTS (EOL in May   2025)
 - OpenSSL 3.0.2  in Ubuntu 22.04 LTS (EOL in April 2027)
 - OpenSSL 3.0.13 in Ubuntu 24.04 LTS (EOL in April 2029)
 
@@ -27,10 +26,9 @@ The minimum version of APR is driven by the version of APR used by
 downstream distributions.
 
 The current state of APR in Debian is:
-- APR 1.7.0 in Debian 11 (EOL end June 2026)
+- APR 1.7.0 in Debian 11 (EOL end August 2026)
 - APR 1.7.2 in Debian 12 (EOL end June 2028)
 
 And in Ubuntu:
-- APR 1.6.5 in Ubuntu 20.04 LTS (EOL in May   2025)
 - APR 1.7.0 in Ubuntu 22.04 LTS (EOL in April 2027)
 - APR 1.7.2 in Ubuntu 24.04 LTS (EOL in April 2029)
