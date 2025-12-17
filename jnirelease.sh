@@ -294,6 +294,5 @@ do
     $PERL ${JKWINDIST}/native/build/lineends.pl --cr ${JKWINDIST}/${i}
 done
 $PERL ${JKWINDIST}/native/build/lineends.pl --cr ${JKWINDIST}/CHANGELOG.txt
-$PERL ${JKWINDIST}/native/build/lineends.pl --nocr ${JKWINDIST}/native/srclib/openssl/openssl-msvcrt-3.0.x.patch
 
 zip -9rqyo ${JKWINDIST}.zip ${JKWINDIST}

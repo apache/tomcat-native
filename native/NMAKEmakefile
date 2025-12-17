@@ -20,7 +20,8 @@
 #                 APR_DECLARE_STATIC=1  Use static version of the APR
 #                 DISABLE_OCSP=1        Disable OpenSSL OCSP code
 #                 OPENSSL_NEW_LIBS=1    Use new OpenSSL lib file names
-#                 DEBUG=1   		    Build DEBUG version of TCN
+#                 DEBUG=1               Build DEBUG version of TCN
+#                 STATIC_CRT=Hybrid     Build using the 'Hybrid CRT' technique
 #
 # Originally contributed by Mladen Turk <mturk redhat.com>
 #
@@ -70,17 +71,8 @@ LDIRS = $(LDIRS) /libpath:"$(WITH_OPENSSL)\out32"
 !ENDIF
 
 LFLAGS = $(LFLAGS) /version:1.3
-LFLAGS = $(LFLAGS) user32.lib psapi.lib gdi32.lib shlwapi.lib wldap32.lib ole32.lib
-LFLAGS = $(LFLAGS) $(APR_LIB)
-!IF DEFINED(WITH_FIPS)
-LFLAGS = $(LFLAGS) libeayfips32.lib libeaycompat32.lib ssleay32.lib /NODEFAULTLIB:LIBCMT
-!ELSE
-!IF DEFINED(OPENSSL_NEW_LIBS)
-LFLAGS = $(LFLAGS) libssl.lib libcrypto.lib crypt32.lib
-!ELSE
-LFLAGS = $(LFLAGS) libeay32.lib ssleay32.lib
-!ENDIF
-!ENDIF
+LIBS = $(LIBS) user32.lib gdi32.lib $(APR_LIB)
+LIBS = $(LIBS) libssl.lib libcrypto.lib crypt32.lib
 
 CFLAGS = $(CFLAGS) -DZLIB_WINAPI -DNO_IDEA -DNO_RC5 -DNO_MDC2 -DOPENSSL_NO_IDEA \
 	-DOPENSSL_NO_RC5 -DOPENSSL_NO_MDC2 -DHAVE_OPENSSL -DHAVE_SSL_SET_STATE=1
@@ -117,16 +109,8 @@ OBJECTS = \
 	$(WORKDIR)\ntpipe.obj \
 	$(WORKDIR)\registry.obj \
 	$(WORKDIR)\system.obj
-!IF DEFINED(WITH_FIPS)
-OBJECTS = $(OBJECTS) srclib\openssl\tmp32\fips_premain.obj
-!ENDIF
 
-!IF DEFINED(WITH_FIPS)
-FIPS_OPTS = /map
-LINK_WRAPPER = perl $(FIPSDIR)\bin\fipslink.pl
-!ELSE
 LINK_WRAPPER = $(LINK)
-!ENDIF
 
 HEADERS = \
 	$(SRCDIR)\include\tcn.h \
@@ -164,7 +148,7 @@ $(BUILDBIN): $(WORKDIR) $(OBJECTS) $(BUILDRES)
   SET FIPS_LINK=$(LINK)
   SET FIPS_CC=$(CC)
   SET FIPS_CC_ARGS=/Fosrclib\openssl\tmp32\fips_premain.obj /MD -c
-  SET PREMAIN_DSO_EXE=srclib\openssl\\out32\fips_premain_dso.exe
+  SET PREMAIN_DSO_EXE=srclib\openssl\out32\fips_premain_dso.exe
   SET FIPS_TARGET=$(BUILDBIN)
   SET FIPS_SHA1_EXE=$(FIPSDIR)\bin\fips_standalone_sha1.exe
   SET FIPSLIB_D=$(FIPSDIR)\lib

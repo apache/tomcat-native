@@ -83,70 +83,119 @@ Windows
 
 1. Prerequisites
 
-   These steps assume a suitable build environment has been set up.
-   https://cwiki.apache.org/confluence/display/TOMCAT/Common+Native+Build+Environment
+   Currently supported Windows OS (release builds use a Windows 2022 VM running
+     on VMware)
+   Currently support JDK installed (release builds use Temurin 21.0.9)
+   git (if you wish to build from source)
+   Perl - see OpenSSL build instructions for Windows (release builds use
+     Strawberry Perl 5.42.0.1)
+   NASM - see OpenSSL build instructions for Windows (release builds use 2.16.01
+     included in Strawberry Perl 5.42.0.1)
+   Microsoft Visual C compiler (release builds use Visual Studio 2022 17.14.23)
    
 2. Obtain tc-native source
 
    Download and expand the source package or use an git checkout
 
-3. Build APR
+3. Build APR (1.7.6 or later)
 
    Unpack the APR source distribution into native\srclib\apr
-   No patches necessary if using APR 1.7.6 or later
    
-   > c:\cmsc\setenv.bat x86 
-   > set WINVER=WIN7
-   > nmake -f NMAKEmakefile BUILD_CPU=x86 APR_DECLARE_STATIC=1
-   > mkdir WIN7_X86_LIB_RELEASE\include
-   > mkdir WIN7_X86_LIB_RELEASE\lib
-   > xcopy /E include WIN7_X86_LIB_RELEASE\include\
-   > copy WIN7_X86_LIB_RELEASE\apr-1.lib WIN7_X86_LIB_RELEASE\lib
-   
-   > c:\cmsc\setenv.bat x64
-   > set WINVER=WIN7
-   > nmake -f NMAKEmakefile BUILD_CPU=x64 APR_DECLARE_STATIC=1
-   > mkdir WIN7_X64_LIB_RELEASE\include
-   > mkdir WIN7_X64_LIB_RELEASE\lib
-   > xcopy /E include WIN7_X64_LIB_RELEASE\include\
-   > copy WIN7_X64_LIB_RELEASE\apr-1.lib WIN7_X64_LIB_RELEASE\lib
-   
-4. Build OpenSSL
+   > "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+   > nmake -f NMAKEmakefile CPU=X86 APR_DECLARE_STATIC=1
 
-   Unpack the OpenSSL source distribution into native\srclib\openssl
-   Apply openssl-msvcrt-3.0.x.patch
+   > "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+   > nmake -f NMAKEmakefile CPU=X64 APR_DECLARE_STATIC=1
+
+4. Build OpenSSL (3.0.18 or later)
+
+   > cd ..\openssl
+
+   Unpack the OpenSSL 3.0.x source distribution in this directory
+
+   > "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+   > perl Configure no-shared VC-WIN32
+   > nmake
+   > mkdir out32-x86
+   > copy libssl.lib out32-x86\
+   > copy libcrypto.lib out32-x86\
+   > copy ossl_static.pdb out32-x86\
+   > copy apps\openssl.exe out32-x86\
+
+   > nmake clean
+
+   > "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+   > perl Configure no-shared VC-WIN64A
+   > nmake
+   > mkdir out32-x64
+   > copy libssl.lib out32-x64\
+   > copy libcrypto.lib out32-x64\
+   > copy ossl_static.pdb out32-x64\
+   > copy apps\openssl.exe out32-x64\
+
+5. Copy APR and OpenSSL to versioned directories
+
+   Keeping the various libraries in versioned directories saves having to
+   rebuild them next time if the version remains unchanged.
+
+   > cd ..
+   > set OPENSSL_VER=3.0.18
+   > set APR_VER=1.7.6
+
+   > mkdir \deps-x86\apr-%APR_VER%\include
+   > mkdir \deps-x86\apr-%APR_VER%\lib
+   > mkdir \deps-x86\openssl-%OPENSSL_VER%\include
+   > mkdir \deps-x86\openssl-%OPENSSL_VER%\lib
+   > xcopy /E \deps-x86\apr-%APR_VER% \deps-x64\apr-%APR_VER%\
+   > xcopy /E \deps-x86\openssl-%OPENSSL_VER% \deps-x64\openssl-%OPENSSL_VER%\
+
+   > xcopy /E apr\include \deps-x86\apr-%APR_VER%\include\
+   > xcopy /E apr\include \deps-x64\apr-%APR_VER%\include\
+
+   > copy apr\WIN7_X86_LIB_RELEASE\apr-1.lib \deps-x86\apr-%APR_VER%\lib
+   > copy apr\WIN7_X64_LIB_RELEASE\apr-1.lib \deps-x64\apr-%APR_VER%\lib
    
-   > c:\cmsc\setenv.bat x86
-   > perl Configure VC-WIN32
-   > ms\do_nasm
-   > nmake -f ms\nt.mak
-   > mkdir release-x86
-   > mkdir release-x86\include
-   > mkdir release-x86\lib
-   > xcopy /E inc32 release-x86\include\
-   > copy out32\*.lib release-x86\lib\
+   > xcopy /E openssl\include\openssl \deps-x86\openssl-%OPENSSL_VER%\include\openssl\
+   > xcopy /E openssl\include\openssl \deps-x64\openssl-%OPENSSL_VER%\include\openssl\
+   > copy openssl\out32-x86\*.lib \deps-x86\openssl-%OPENSSL_VER%\lib\
+   > copy openssl\out32-x64\*.lib \deps-x64\openssl-%OPENSSL_VER%\lib\
+   > copy openssl\out32-x86\*.pdb \deps-x86\openssl-%OPENSSL_VER%\lib\
+   > copy openssl\out32-x64\*.pdb \deps-x64\openssl-%OPENSSL_VER%\lib\
+   > copy openssl\out32-x86\openssl.exe \deps-x86\openssl-%OPENSSL_VER%\
+   > copy openssl\out32-x64\openssl.exe \deps-x64\openssl-%OPENSSL_VER%\
+
+6. Build Tomcat Native
+
+   > cd ..
+   >set JAVA_HOME=C:\java\21.0.9-tem
+
+   > "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+   > nmake -f NMAKEMakefile WITH_APR=C:\deps-x86\apr-%APR_VER% WITH_OPENSSL=C:\deps-x86\openssl-%OPENSSL_VER% CPU=X86 APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid
+
+   > "c:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+   > nmake -f NMAKEMakefile WITH_APR=C:\deps-x64\apr-%APR_VER% WITH_OPENSSL=C:\deps-x64\openssl-%OPENSSL_VER% CPU=X64 APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid
+
+   Tomcat Native Connector DLLs may then be found in native\WIN7_*_DLL_RELEASE
+
+7. Construct the binary distributions    
+
+   > set VER=1.3.2
+   > mkdir tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin
+   > copy LICENSE.bin.win tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\LICENSE
+   > copy NOTICE.bin.win tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\NOTICE
+   > copy ..\README.txt tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\
+   > copy srclib\VERSIONS tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\
+   > mkdir tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin
+   > mkdir tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin\x64
+   > copy C:\deps-x86\openssl-%OPENSSL_VER%\openssl.exe tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin
+   > copy WIN7_X86_DLL_RELEASE\tcnative-2.dll tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin
+   > copy WIN7_X86_DLL_RELEASE\tcnative-2.pdb tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin
+   > copy WIN7_X64_DLL_RELEASE\tcnative-2.dll tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin\x64
+   > copy WIN7_X64_DLL_RELEASE\tcnative-2.pdb tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin\x64
  
-   > c:\cmsc\setenv.bat x64
-   > perl Configure VC-WIN64A
-   > ms\do_win64a
-   > nmake -f ms\nt.mak clean
-   > nmake -f ms\nt.mak
-   > mkdir release-x64
-   > mkdir release-x64\include
-   > mkdir release-x64\lib
-   > xcopy /E inc32 release-x64\include\
-   > copy out32\*.lib release-x64\lib\
-
-5. Build tc-native
-
-   > SET JAVA_HOME=C:\Program Files\Java\jdk1.7.0_71
-
-   > c:\cmsc\setenv.bat x86
-   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WIN7_X86_LIB_RELEASE WITH_OPENSSL=srclib\openssl\release-x86 APR_DECLARE_STATIC=1
- 
-   > c:\cmsc\setenv.bat x64
-   > nmake -f NMAKEMakefile WITH_APR=srclib\apr\WIN7_X64_LIB_RELEASE WITH_OPENSSL=srclib\openssl\release-x64 APR_DECLARE_STATIC=1
- 
+   > set PATH=%PATH%;%JAVA_HOME%\bin
+   > cd tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin
+   > jar -cMf ..\tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin.zip *
 
 FIPS
 ====
