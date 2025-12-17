@@ -961,13 +961,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
         }
     }
     else {
-        if ((c->keys[idx] = load_pem_key(c, key_file)) == NULL
-#ifndef OPENSSL_NO_ENGINE
-                && (tcn_ssl_engine == NULL ||
-                (c->keys[idx] = ENGINE_load_private_key(tcn_ssl_engine, key_file,
-                                                        NULL, NULL)) == NULL)
-#endif
-                ) {
+        if ((c->keys[idx] = load_pem_key(c, key_file)) == NULL) {
             ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
             tcn_Throw(e, "Unable to load certificate key %s (%s)",
                       key_file, err);

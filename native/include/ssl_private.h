@@ -49,13 +49,6 @@
 #ifndef LIBRESSL_VERSION_NUMBER
 #include <openssl/provider.h>
 #endif
-/* Avoid tripping over an engine build installed globally and detected
- * when the user points at an explicit non-engine flavor of OpenSSL
- */
-#ifndef OPENSSL_NO_ENGINE
-#include <openssl/engine.h>
-extern ENGINE *tcn_ssl_engine;
-#endif
 
 #ifndef RAND_MAX
 #include <limits.h>
