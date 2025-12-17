@@ -40,6 +40,9 @@
       Correct file names and update versions in native build instructions.
       (markt)
     </fix>
+    <update>
+      Remove references to deprecated engine configuration. (markt)
+    </update>
   </changelog>
 </section>
 <section name="Changes in 2.0.10 (not released)">
@@ -74,6 +77,10 @@
     </add>
     <update>
       Remove out of date options from make file. (markt)
+    </update>
+    <update>
+      Use automated configuration of DH parameters rather than deprecated
+      callback. (markt)
     </update>
   </changelog>
 </section>
