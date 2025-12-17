@@ -19,7 +19,6 @@
 # Usage:
 #                 APR_DECLARE_STATIC=1  Use static version of the APR
 #                 DISABLE_OCSP=1        Disable OpenSSL OCSP code
-#                 OPENSSL_NEW_LIBS=1    Use new OpenSSL lib file names
 #                 DEBUG=1               Build DEBUG version of TCN
 #                 STATIC_CRT=Hybrid     Build using the 'Hybrid CRT' technique
 #
