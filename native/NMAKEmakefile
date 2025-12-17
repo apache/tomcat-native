@@ -70,7 +70,7 @@ LDIRS = $(LDIRS) /libpath:"$(WITH_OPENSSL)\out32"
 !ENDIF
 
 LFLAGS = $(LFLAGS) /version:1.3
-LIBS = $(LIBS) user32.lib gdi32.lib $(APR_LIB)
+LIBS = $(LIBS) user32.lib gdi32.lib shlwapi.lib $(APR_LIB)
 LIBS = $(LIBS) libssl.lib libcrypto.lib crypt32.lib
 
 CFLAGS = $(CFLAGS) -DZLIB_WINAPI -DNO_IDEA -DNO_RC5 -DNO_MDC2 -DOPENSSL_NO_IDEA \
