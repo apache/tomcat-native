@@ -1123,7 +1123,7 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int t
        the ocsp status. Otherwise, return OCSP_STATUS_UNKNOWN */
     if (ocsp_urls != NULL) {
         OCSP_REQUEST *req;
-        OCSP_RESPONSE *resp;
+        OCSP_RESPONSE *resp = NULL;
         /* for the time being just check for the fist response .. a better
            approach is to iterate for all the possible ocsp urls */
         req = get_ocsp_request(cert, issuer);
