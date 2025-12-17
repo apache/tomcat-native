@@ -212,14 +212,19 @@ extern ENGINE *tcn_ssl_engine;
 #define HAVE_ECC
 #endif
 
-/* OCSP stapling */
+/* OCSP */
 #if !defined(OPENSSL_NO_OCSP) && defined(SSL_CTX_set_tlsext_status_cb)
 #define HAVE_OCSP
-#define OCSP_STATUS_OK        0
-#define OCSP_STATUS_REVOKED   1
-#define OCSP_STATUS_UNKNOWN   2
+#define OCSP_STATUS_OK              0
+#define OCSP_STATUS_REVOKED         1
+#define OCSP_STATUS_UNKNOWN         2
+#define OCSP_NO_CHECK_DEFAULT       1
+#define OCSP_SOFT_FAIL_DEFAULT      1
+#define OCSP_VERIFY_FLAGS_DEFAULT   0
 /* 15 minutes - aligns with JSSE */
-#define OCSP_MAX_SKEW       900
+#define OCSP_MAX_SKEW             900
+/* 15 seconds - aligns with JSSE*/
+#define OCSP_TIMEOUT_DEFAULT 15000000
 /* Older versions of OpenSSL have a smaller range of OCSP error codes*/
 #if !defined(X509_V_ERR_OCSP_RESP_INVALID)
 #define X509_V_ERR_OCSP_RESP_INVALID      96

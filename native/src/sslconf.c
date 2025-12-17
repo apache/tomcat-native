@@ -113,6 +113,12 @@ TCN_IMPLEMENT_CALL(jlong, SSLConf, make)(TCN_STDARGS, jlong pool,
     c->cctx = cctx;
     c->pool = p;
 
+    /* OCSP defaults */
+    c->no_ocsp_check     = OCSP_NO_CHECK_DEFAULT;
+    c->ocsp_soft_fail    = OCSP_SOFT_FAIL_DEFAULT;
+    c->ocsp_timeout      = OCSP_TIMEOUT_DEFAULT;
+    c->ocsp_verify_flags = OCSP_VERIFY_FLAGS_DEFAULT;
+
     /*
      * Let us cleanup the SSL_CONF context when the pool is destroyed
      */
