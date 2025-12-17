@@ -188,10 +188,10 @@ Windows
    > mkdir tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin
    > mkdir tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin\x64
    > copy C:\deps-x86\openssl-%OPENSSL_VER%\openssl.exe tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin
-   > copy WIN7_X86_DLL_RELEASE\tcnative-2.dll tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin
-   > copy WIN7_X86_DLL_RELEASE\tcnative-2.pdb tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin
-   > copy WIN7_X64_DLL_RELEASE\tcnative-2.dll tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin\x64
-   > copy WIN7_X64_DLL_RELEASE\tcnative-2.pdb tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin\x64
+   > copy WIN7_X86_DLL_RELEASE\tcnative-1.dll tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin
+   > copy WIN7_X86_DLL_RELEASE\tcnative-1.pdb tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin
+   > copy WIN7_X64_DLL_RELEASE\tcnative-1.dll tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin\x64
+   > copy WIN7_X64_DLL_RELEASE\tcnative-1.pdb tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin\bin\x64
  
    > set PATH=%PATH%;%JAVA_HOME%\bin
    > cd tomcat-native-%VER%-openssl-%OPENSSL_VER%-win32-bin
