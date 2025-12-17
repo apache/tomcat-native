@@ -95,8 +95,8 @@ Windows
    Unpack the APR source distribution into native\srclib\apr
    No patches necessary if using APR 1.7.6 or later
    
-   > set WINVER=WIN7
    > c:\cmsc\setenv.bat x86 
+   > set WINVER=WIN7
    > nmake -f NMAKEmakefile BUILD_CPU=x86 APR_DECLARE_STATIC=1
    > mkdir WIN7_X86_LIB_RELEASE\include
    > mkdir WIN7_X86_LIB_RELEASE\lib
@@ -104,6 +104,7 @@ Windows
    > copy WIN7_X86_LIB_RELEASE\apr-1.lib WIN7_X86_LIB_RELEASE\lib
    
    > c:\cmsc\setenv.bat x64
+   > set WINVER=WIN7
    > nmake -f NMAKEmakefile BUILD_CPU=x64 APR_DECLARE_STATIC=1
    > mkdir WIN7_X64_LIB_RELEASE\include
    > mkdir WIN7_X64_LIB_RELEASE\lib
