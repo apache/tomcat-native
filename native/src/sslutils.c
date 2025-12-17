@@ -181,16 +181,20 @@ int SSL_password_callback(char *buf, int bufsiz, int verify,
 **  Custom (EC)DH parameter support
 **  _________________________________________________________________
 */
-DH *SSL_dh_GetParamFromFile(const char *file)
+EVP_PKEY *SSL_dh_GetParamFromFile(const char *file)
 {
-    DH *dh = NULL;
+    EVP_PKEY *evp = NULL;
     BIO *bio;
 
     if ((bio = BIO_new_file(file, "r")) == NULL)
         return NULL;
-    dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+    evp = PEM_read_bio_Parameters_ex(bio, NULL, NULL, NULL);
     BIO_free(bio);
-    return dh;
+    if (!EVP_PKEY_is_a(evp, "DH")) {
+        EVP_PKEY_free(evp);
+        return NULL;
+    }
+    return evp;
 }
 
 #ifdef HAVE_ECC

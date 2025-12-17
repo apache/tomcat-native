@@ -926,7 +926,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     int nid;
     EC_KEY *eckey = NULL;
 #endif
-    DH *dhparams;
+    EVP_PKEY *evp;
 
     UNREFERENCED(o);
     TCN_ASSERT(ctx != 0);
@@ -1001,9 +1001,9 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
      */
     /* XXX Does this also work for pkcs12 or only for PEM files?
      * If only for PEM files move above to the PEM handling */
-    if ((idx == 0) && (dhparams = SSL_dh_GetParamFromFile(cert_file))) {
-        SSL_CTX_set_tmp_dh(c->ctx, dhparams);
-        DH_free(dhparams);
+    if ((idx == 0) && (evp = SSL_dh_GetParamFromFile(cert_file))) {
+        SSL_CTX_set0_tmp_dh_pkey(c->ctx, evp);
+        EVP_PKEY_free(evp);
     }
 
 #ifdef HAVE_ECC
