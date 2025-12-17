@@ -29,6 +29,13 @@
 /native/tcnative.pc
 /native/tcnative.spec
 
+/native/srclib/apr/*
+!/native/srclib/apr/NMAKEmakefile
+
+/native/srclib/openssl/*
+!/native/srclib/openssl/.gitkeep
+
+/native/*RELEASE
 /tomcat-native-*
 /tomcat-native-*/
 
@@ -36,3 +43,4 @@
 **/*.o
 
 build.properties
+/bin/
