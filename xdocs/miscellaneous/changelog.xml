@@ -31,7 +31,18 @@
   branch started from the 1.2.33 tag.
   </p>
 </section>
-<section name="Changes in 2.0.10">
+<section name="Changes in 2.0.11">
+  <changelog>
+    <fix>
+      Fix a reference to an uninitialized variable. (schultz)
+    </fix>
+    <fix>
+      Correct file names and update versions in native build instructions.
+      (markt)
+    </fix>
+  </changelog>
+</section>
+<section name="Changes in 2.0.10 (not released)">
   <changelog>
     <update>
       The Windows binaries are now built with OCSP support enabled by default.
