@@ -1639,6 +1639,12 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSL, getCiphers)(TCN_STDARGS, jlong ssl)
         return NULL;
     }
 
+    /* Ensure stringClass is initialized (lazy initialization) */
+    if (stringClass == NULL) {
+        jclass sClazz = (*e)->FindClass(e, "java/lang/String");
+        stringClass = (jclass) (*e)->NewGlobalRef(e, sClazz);
+    }
+
     /* Create the byte[][] array that holds all the certs */
     array = (*e)->NewObjectArray(e, len, stringClass, NULL);
 
