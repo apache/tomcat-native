@@ -32,8 +32,15 @@
   </p>
 </section>
 <section name="Changes in 2.0.12">
+  <changelog>
+    <fix>
+      Refactor the addition of TLS 1.3 cipher suite configuration to avoid a
+      regression when running a version of Tomcat that pre-dates this change.
+      (markt)
+    </fix>
+  </changelog>
 </section>
-<section name="Changes in 2.0.11">
+<section name="Changes in 2.0.11 (not released)">
   <changelog>
     <fix>
       Fix a reference to an uninitialized variable. (schultz)

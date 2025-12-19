@@ -513,54 +513,46 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setQuietShutdown)(TCN_STDARGS, jlong ctx,
 }
 
 TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
-                                                         jstring ciphers)
+                                                         jstring cipherList)
 {
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
-    TCN_ALLOC_CSTRING(ciphers);
+    TCN_ALLOC_CSTRING(cipherList);
     jboolean rv = JNI_TRUE;
-    int minProtoVer = 0;
-    int maxProtoVer = 0;
-    int ciphersSet = 0;
 #ifndef HAVE_EXPORT_CIPHERS
     size_t len;
     char *buf;
 #endif
-
     UNREFERENCED(o);
-    TCN_ASSERT(ctx != 0);
-    if (!J2S(ciphers))
-        return JNI_FALSE;
 
-    minProtoVer = SSL_CTX_get_min_proto_version(c->ctx);
-    maxProtoVer = SSL_CTX_get_max_proto_version(c->ctx);
+    if (c == NULL) {
+        TCN_FREE_CSTRING(cipherList);
+        tcn_ThrowException(e, "ssl context is null");
+        return JNI_FALSE;
+    }
+
+    if (!J2S(cipherList)) {
+        rv = JNI_FALSE;
+        goto free_cipherList;
+    }
 
 #ifndef HAVE_EXPORT_CIPHERS
     /*
      *  Always disable NULL and export ciphers,
      *  no matter what was given in the config.
      */
-    len = strlen(J2S(ciphers)) + strlen(SSL_CIPHERS_ALWAYS_DISABLED) + 1;
+    len = strlen(J2S(cipherList)) + strlen(SSL_CIPHERS_ALWAYS_DISABLED) + 1;
     buf = malloc(len * sizeof(char *));
-    if (buf == NULL)
-        return JNI_FALSE;
+    if (buf == NULL) {
+        rv = JNI_FALSE;
+        goto free_cipherList;
+    }
     memcpy(buf, SSL_CIPHERS_ALWAYS_DISABLED, strlen(SSL_CIPHERS_ALWAYS_DISABLED));
-    memcpy(buf + strlen(SSL_CIPHERS_ALWAYS_DISABLED), J2S(ciphers), strlen(J2S(ciphers)));
+    memcpy(buf + strlen(SSL_CIPHERS_ALWAYS_DISABLED), J2S(cipherList), strlen(J2S(cipherList)));
     buf[len - 1] = '\0';
+    if (!SSL_CTX_set_cipher_list(c->ctx, buf)) {
 #else
-    buf = (char*)J2S(ciphers);
+    if (!SSL_CTX_set_cipher_list(c->ctx, J2S(cipherList))) {
 #endif
-    /* OpenSSL will ignore any unknown cipher, but TLS 1.3 requires a call to SSL_CTX_set_ciphersuites */
-    if (minProtoVer <= TLS1_2_VERSION) {
-        if (SSL_CTX_set_cipher_list(c->ctx, buf)) {
-            ciphersSet = 1;
-        }
-    }
-    if (maxProtoVer >= TLS1_3_VERSION) {
-        if (SSL_CTX_set_ciphersuites(c->ctx, buf)) {
-            ciphersSet = 1;
-        }
-    }
-    if (!ciphersSet) {
         char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
         ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
@@ -569,7 +561,39 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
 #ifndef HAVE_EXPORT_CIPHERS
     free(buf);
 #endif
-    TCN_FREE_CSTRING(ciphers);
+free_cipherList:
+    TCN_FREE_CSTRING(cipherList);
+    return rv;
+}
+
+TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuitesEx)(TCN_STDARGS, jlong ctx,
+                                                         jstring cipherSuites)
+{
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+    TCN_ALLOC_CSTRING(cipherSuites);
+    jboolean rv = JNI_TRUE;
+    UNREFERENCED(o);
+
+    if (c == NULL) {
+        TCN_FREE_CSTRING(cipherSuites);
+        tcn_ThrowException(e, "ssl context is null");
+        return JNI_FALSE;
+    }
+
+    if (!J2S(cipherSuites)) {
+        rv = JNI_FALSE;
+        goto free_cipherSuites;
+    }
+
+    if (SSL_CTX_set_ciphersuites(c->ctx, J2S(cipherSuites))) {
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
+        tcn_Throw(e, "Unable to configure permitted SSL cipher suites (%s)", err);
+        rv = JNI_FALSE;
+    }
+
+free_cipherSuites:
+    TCN_FREE_CSTRING(cipherSuites);
     return rv;
 }
 
