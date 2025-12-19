@@ -1659,32 +1659,87 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSL, getCiphers)(TCN_STDARGS, jlong ssl)
 }
 
 TCN_IMPLEMENT_CALL(jboolean, SSL, setCipherSuites)(TCN_STDARGS, jlong ssl,
-                                                         jstring ciphers)
+                                                         jstring cipherList)
 {
-    jboolean rv = JNI_TRUE;
     SSL *ssl_ = J2P(ssl, SSL *);
-    TCN_ALLOC_CSTRING(ciphers);
-
-    UNREFERENCED_STDARGS;
+    TCN_ALLOC_CSTRING(cipherList);
+    jboolean rv = JNI_TRUE;
+    #ifndef HAVE_EXPORT_CIPHERS
+        size_t len;
+        char *buf;
+    #endif
+    UNREFERENCED(o);
 
     if (ssl_ == NULL) {
-        TCN_FREE_CSTRING(ciphers);
+        TCN_FREE_CSTRING(cipherList);
         tcn_ThrowException(e, "ssl is null");
         return JNI_FALSE;
     }
 
-    UNREFERENCED(o);
-    if (!J2S(ciphers)) {
-        TCN_FREE_CSTRING(ciphers);
-        return JNI_FALSE;
+    if (!J2S(cipherList)) {
+        rv = JNI_FALSE;
+        goto free_cipherList;
     }
-    if (!SSL_set_cipher_list(ssl_, J2S(ciphers))) {
+
+#ifndef HAVE_EXPORT_CIPHERS
+    /*
+     *  Always disable NULL and export ciphers,
+     *  no matter what was given in the config.
+     */
+    len = strlen(J2S(cipherList)) + strlen(SSL_CIPHERS_ALWAYS_DISABLED) + 1;
+    buf = malloc(len * sizeof(char *));
+    if (buf == NULL) {
+        rv = JNI_FALSE;
+        goto free_cipherList;
+    }
+    memcpy(buf, SSL_CIPHERS_ALWAYS_DISABLED, strlen(SSL_CIPHERS_ALWAYS_DISABLED));
+    memcpy(buf + strlen(SSL_CIPHERS_ALWAYS_DISABLED), J2S(cipherList), strlen(J2S(cipherList)));
+    buf[len - 1] = '\0';
+    if (!SSL_set_cipher_list(ssl_, buf)) {
+#else
+    if (!SSL_set_cipher_list(ssl_, J2S(cipherList))) {
+#endif
         char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
         ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Unable to configure permitted SSL ciphers (%s)", err);
         rv = JNI_FALSE;
     }
-    TCN_FREE_CSTRING(ciphers);
+#ifndef HAVE_EXPORT_CIPHERS
+    free(buf);
+#endif
+free_cipherList:
+    TCN_FREE_CSTRING(cipherList);
+    return rv;
+}
+
+TCN_IMPLEMENT_CALL(jboolean, SSL, setCipherSuitesEx)(TCN_STDARGS, jlong ssl,
+                                                         jstring cipherSuites)
+{
+    SSL *ssl_ = J2P(ssl, SSL *);
+    TCN_ALLOC_CSTRING(cipherSuites);
+    jboolean rv = JNI_TRUE;
+    UNREFERENCED(o);
+
+    if (ssl_ == NULL) {
+        TCN_FREE_CSTRING(cipherSuites);
+        tcn_ThrowException(e, "ssl is null");
+        return JNI_FALSE;
+    }
+
+    if (!J2S(cipherSuites)) {
+        rv = JNI_FALSE;
+        goto free_cipherSuites;
+    }
+
+    if (!SSL_set_ciphersuites(ssl_, J2S(cipherSuites))) {
+        char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
+        ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
+        tcn_Throw(e, "Unable to configure permitted SSL cipher suites (%s)", err);
+        rv = JNI_FALSE;
+    }
+
+free_cipherSuites:
+    TCN_FREE_CSTRING(cipherSuites);
     return rv;
 }
 
