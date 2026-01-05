@@ -62,7 +62,7 @@ jobs:
             curl -L -o apr.zip https://github.com/apache/apr/archive/refs/tags/$env:APR_VERSION.zip
             Expand-Archive apr.zip
             cd apr\apr-$env:APR_VERSION
-            (Get-Content .\include\apr.hw).Replace('0x0501', '0x0600') | Set-Content .\include\apr.hw 
+            (Get-Content .\include\apr.hw).Replace('0x0501', '0x0600') | Set-Content .\include\apr.hw
     - name: Build apr using Nmake
       shell: cmd
       run: |
