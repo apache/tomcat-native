@@ -11,7 +11,9 @@
 /native/build-outputs.mk
 /native/build/apr_common.m4
 /native/build/config.guess
+/native/build/config.guess~
 /native/build/config.sub
+/native/build/config.sub~
 /native/build/find_apr.m4
 /native/build/install.sh
 /native/build/install-sh
