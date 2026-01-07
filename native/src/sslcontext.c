@@ -586,7 +586,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuitesEx)(TCN_STDARGS, jlong c
         goto free_cipherSuites;
     }
 
-    if (SSL_CTX_set_ciphersuites(c->ctx, J2S(cipherSuites))) {
+    if (!SSL_CTX_set_ciphersuites(c->ctx, J2S(cipherSuites))) {
         char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
         ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Unable to configure permitted SSL cipher suites (%s)", err);

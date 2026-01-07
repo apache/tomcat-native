@@ -31,7 +31,15 @@
   started from the 1.2.39 tag.
   </p>
 </section>
-<section name="Changes in 1.3.3">
+<section name="Changes in 1.3.4">
+  <changelog>
+    <fix>
+      Correct logic error that prevented the configuration of TLS 1.3 cipher
+      suites. (markt)
+    </fix>
+  </changelog>
+</section>
+<section name="Changes in 1.3.3 (not released)">
   <changelog>
     <fix>
       Refactor the addition of TLS 1.3 cipher suite configuration to avoid a
