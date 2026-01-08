@@ -256,6 +256,9 @@ cd ${JKJNIDIST}/native
 ./buildconf --with-apr=$apr_src_dir || exit 1
 
 cd "$top"
+# Remove write permissions from all but the owner
+chmod -R go-w ${JKJNIDIST}
+
 # Create source distribution
 tar -cf - ${JKJNIDIST} | gzip -c9 > ${JKJNIDIST}.tar.gz || exit 1
 
