@@ -1001,7 +1001,7 @@ static int process_ocsp_response(OCSP_REQUEST *ocsp_req, OCSP_RESPONSE *ocsp_res
     OCSP_CERTID *certid;
     ASN1_GENERALIZEDTIME *thisupd;
     ASN1_GENERALIZEDTIME *nextupd;
-    STACK_OF(X509) *certStack;
+    const STACK_OF(X509) *certStack;
 
     r = OCSP_response_status(ocsp_resp);
 
@@ -1017,7 +1017,8 @@ static int process_ocsp_response(OCSP_REQUEST *ocsp_req, OCSP_RESPONSE *ocsp_res
     }
 
     certStack = OCSP_resp_get0_certs(bs);
-    if (OCSP_basic_verify(bs, certStack, X509_STORE_CTX_get0_store(ctx), verifyFlags) <= 0) {
+    // Cast to non-const pointer is OK here since OCSP_basic_verify does not modify the provided certs
+    if (OCSP_basic_verify(bs, (STACK_OF(X509) *)certStack, X509_STORE_CTX_get0_store(ctx), verifyFlags) <= 0) {
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_OCSP_SIGNATURE_FAILURE);
         o = OCSP_STATUS_UNKNOWN;
         goto clean_bs;
