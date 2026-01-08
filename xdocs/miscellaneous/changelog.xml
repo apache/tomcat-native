@@ -33,6 +33,10 @@
 </section>
 <section name="Changes in 1.3.5">
   <changelog>
+    <fix>
+      Remove group write permissions from the files in the tar.gz source
+      archive. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 1.3.4">
