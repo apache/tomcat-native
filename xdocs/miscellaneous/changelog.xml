@@ -37,6 +37,10 @@
       Remove group write permissions from the files in the tar.gz source
       archive. (markt)
     </fix>
+    <fix>
+      Refactor extraction of ECDH curve name from the Certificate to avoid
+      deprecated OpenSSL methods. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="Changes in 2.0.12">
