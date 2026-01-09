@@ -38,7 +38,7 @@
       archive. (markt)
     </fix>
     <fix>
-      Refcator extraction of ECDH curve name from the Certificate to avoid
+      Refactor extraction of ECDH curve name from the Certificate to avoid
       deprecated OpenSSL methods. (markt)
     </fix>
   </changelog>
