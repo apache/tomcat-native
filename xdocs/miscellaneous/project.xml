@@ -35,6 +35,8 @@
     </menu>
 
     <menu name="News">
+      <item name="2026" href="../news/2026.html"/>
+      <item name="2025" href="../news/2025.html"/>
       <item name="2024" href="../news/2024.html"/>
       <item name="2023" href="../news/2023.html"/>
       <item name="2022" href="../news/2022.html"/>
