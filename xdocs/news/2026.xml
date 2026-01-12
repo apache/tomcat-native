@@ -15,29 +15,28 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<project name="Apache Tomcat Native Documentation"
-    href="https://tomcat.apache.org/">
+<!DOCTYPE document [
+  <!ENTITY project SYSTEM "project.xml">
+]>
+<document url="2026.html">
 
-  <title>The Apache Tomcat Native Library 1.3</title>
+  &project;
 
-  <logo href="/images/tomcat.gif">
-    The Apache Tomcat Native Library
-  </logo>
+  <properties>
+    <title>2026 News and Status</title>
+  </properties>
 
   <body>
-    <menu name="Links">
-      <item name="Docs Home" href="index.html"/>
-    </menu>
 
-    <menu name="Miscellaneous Documentation">
-      <item name="Changelog"         href="miscellaneous/changelog.html"/>
-      <item name="TLS renegotiation" href="miscellaneous/tls-renegotiation.html"/>
-    </menu>
-
-    <menu name="News">
-      <item name="2026" href="news/2026.html"/>
-      <item name="2024" href="news/2024.html"/>
-    </menu>
-
+    <section name="2026 News &amp; Status">
+    
+      <subsection anchor="20260112" name="12 January 2026 - Tomcat-Native-1.3.3 released">
+        <p>The Apache Tomcat team is proud to announce the immediate
+        availability of Tomcat Native 1.3.3.</p>
+      </subsection>
+      
+    </section>
+    
   </body>
-</project>
+
+</document>
