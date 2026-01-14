@@ -31,7 +31,7 @@
   branch started from the 1.2.33 tag.
   </p>
 </section>
-<section name="Changes in 2.0.13">
+<section name="2.0.13" rtext="not released">
   <changelog>
     <fix>
       Remove group write permissions from the files in the tar.gz source
@@ -39,7 +39,7 @@
     </fix>
   </changelog>
 </section>
-<section name="Changes in 2.0.12">
+<section name="2.0.12" rtext="2026-01-12">
   <changelog>
     <fix>
       Refactor the addition of TLS 1.3 cipher suite configuration to avoid a
@@ -48,7 +48,7 @@
     </fix>
   </changelog>
 </section>
-<section name="Changes in 2.0.11 (not released)">
+<section name="2.0.11" rtext="not released">
   <changelog>
     <fix>
       Fix a reference to an uninitialized variable. (schultz)
@@ -62,7 +62,7 @@
     </update>
   </changelog>
 </section>
-<section name="Changes in 2.0.10 (not released)">
+<section name="2.0.10" rtext="not released">
   <changelog>
     <update>
       The Windows binaries are now built with OCSP support enabled by default.
@@ -101,7 +101,7 @@
     </update>
   </changelog>
 </section>
-<section name="Changes in 2.0.9">
+<section name="2.0.9" rtext="2025-05-29">
   <changelog>
     <update>
       Update the Windows build environment to use Visual Studio 2022. (markt)
@@ -114,7 +114,7 @@
     </update>
   </changelog>
 </section>
-<section name="Changes in 2.0.8">
+<section name="2.0.8" rtext="2024-07-24">
   <changelog>
     <fix>
       Fix a crash on Windows when <code>SSLContext.setCACertificate()</code>
@@ -136,7 +136,7 @@
     </update>
   </changelog>
 </section>
-<section name="Changes in 2.0.7">
+<section name="2.0.7" rtext="2024-02-08">
   <changelog>
     <add>
       <bug>67538</bug>: Make use of Ant's <code>&lt;javaversion /&gt;</code>
@@ -176,7 +176,7 @@
     </update>
   </changelog>
 </section>
-<section name="Changes in 2.0.6">
+<section name="2.0.6" rtext="2023-10-02">
   <changelog>
     <fix>
       <bug>67061</bug>: If the insecure optionalNoCA certificate verification
@@ -188,7 +188,7 @@
     </update>
   </changelog>
 </section>
-<section name="Changes in 2.0.5">
+<section name="2.0.5" rtext="2023-08-07">
   <changelog>
     <update>
       <bug>66666</bug>: Remove non-reachable functions from ssl.c. (michaelo)
@@ -216,7 +216,7 @@
     </update>
   </changelog>
 </section>
-<section name="Changes in 2.0.4">
+<section name="2.0.4" rtext="not released">
   <changelog>
     <update>
       Update the recommended minimum version of APR to 1.7.4. (markt)
@@ -226,7 +226,7 @@
     </update>
   </changelog>
 </section>
-<section name="Changes in 2.0.3">
+<section name="2.0.3" rtext="2023-02-13">
   <changelog>
     <update>
       Update the recommended minimum version of APR to 1.7.2. (markt)
@@ -236,7 +236,7 @@
     </update>
   </changelog>
 </section>
-<section name="Changes in 2.0.2">
+<section name="2.0.2" rtext="2022-11-08">
   <changelog>
     <update>
       Update the minimum supported version of LibreSSL to 3.5.2. Based on pull
@@ -249,14 +249,14 @@
   </changelog>
 </section>
 
-<section name="Changes in 2.0.1">
+<section name="2.0.1" rtext="2022-07-12">
   <changelog>
     <update>
       Update recommended OpenSSL version to 3.0.5 or later. (markt)
     </update>
   </changelog>
 </section>
-<section name="Changes in 2.0.0">
+<section name="2.0.0" rtext="not released">
   <changelog>
     <update>
       Update the minimum required version of OpenSSL to 3.0.0 and make it a
