@@ -37,6 +37,10 @@
       Remove group write permissions from the files in the tar.gz source
       archive. (markt)
     </fix>
+    <fix>
+      Clear additional error in OCSP processing that was preventing OCSP soft
+      fail working with Tomcat's APR/native connector. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="1.3.4" rtext="2026-01-12">

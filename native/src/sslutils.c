@@ -379,8 +379,12 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
                 }
                 else if (ocsp_response == OCSP_STATUS_UNKNOWN) {
                     errnum = X509_STORE_CTX_get_error(ctx);
-                    if (errnum != 0 && !(ocsp_soft_fail && errnum == X509_V_ERR_UNABLE_TO_GET_CRL))
+                    if (errnum != 0 && !(ocsp_soft_fail && errnum == X509_V_ERR_UNABLE_TO_GET_CRL)) {
                         ok = 0;
+                    } else {
+                        // Clear the store error else the handshake will fail with the APR connector
+                        X509_STORE_CTX_set_error(ctx, 0);
+                    }
                 }
             }
         }
