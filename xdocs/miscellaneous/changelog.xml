@@ -38,7 +38,7 @@
       archive. (markt)
     </fix>
     <fix>
-      Clear additional error in OCSP processing that was preventing OCSP soft
+      Clear an additional error in OCSP processing that was preventing OCSP soft
       fail working with Tomcat's APR/native connector. (markt)
     </fix>
   </changelog>
