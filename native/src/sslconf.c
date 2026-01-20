@@ -137,11 +137,7 @@ TCN_IMPLEMENT_CALL(void, SSLConf, free)(TCN_STDARGS, jlong cctx)
     tcn_ssl_conf_ctxt_t *c = J2P(cctx, tcn_ssl_conf_ctxt_t *);
     UNREFERENCED_STDARGS;
     TCN_ASSERT(c != 0);
-    if (c->cctx != NULL) {
-        SSL_CONF_CTX_free(c->cctx);
-        c->cctx = NULL;
-        c->pool = NULL;
-    }
+    apr_pool_cleanup_run(c->pool, c, ssl_ctx_config_cleanup);
 }
 
 /* Check a command for an SSL_CONF context */
