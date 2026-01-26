@@ -45,6 +45,10 @@
       Fix unnecessarily large buffer allocation when filtering out NULL and
       export ciphers. Pull request <pr>35</pr> provided by chenjp. (markt)
     </fix>
+    <fix>
+      Fix a potential memory leak if an invalid <code>OpenSSLConf</code> is
+      provided. Pull request <pr>36</pr> provided by chenjp. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.12" rtext="2026-01-12">
