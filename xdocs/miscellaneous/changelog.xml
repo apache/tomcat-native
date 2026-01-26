@@ -41,6 +41,10 @@
       Refactor the SSL_CONF_CTX clean-up to align it with SSL and SSL_CTX
       clean-up. (markt)
     </scode>
+    <fix>
+      Fix unnecessarily large buffer allocation when filtering out NULL and
+      export ciphers. Pull request <pr>35</pr> provided by chenjp. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.12" rtext="2026-01-12">
