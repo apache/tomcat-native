@@ -204,7 +204,7 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, check)(TCN_STDARGS, jlong cctx,
         char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
         ERR_error_string_n(ec, err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Could not determine SSL_CONF command type for '%s' (%s)", J2S(cmd), err);
-        rc = 0;
+        rc = SSL_THROW_RETURN;
         goto cleanup;
     }
 
