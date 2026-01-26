@@ -288,7 +288,7 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, apply)(TCN_STDARGS, jlong cctx,
          *  no matter what was given in the config.
          */
         len = strlen(J2S(value)) + strlen(SSL_CIPHERS_ALWAYS_DISABLED) + 1;
-        buf = malloc(len * sizeof(char *));
+        buf = malloc(len * sizeof(char));
         if (buf == NULL) {
             tcn_Throw(e, "Could not allocate memory to adjust cipher string");
             return SSL_THROW_RETURN;
