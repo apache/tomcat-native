@@ -542,7 +542,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
      *  no matter what was given in the config.
      */
     len = strlen(J2S(cipherList)) + strlen(SSL_CIPHERS_ALWAYS_DISABLED) + 1;
-    buf = malloc(len * sizeof(char *));
+    buf = malloc(len * sizeof(char));
     if (buf == NULL) {
         rv = JNI_FALSE;
         goto free_cipherList;
