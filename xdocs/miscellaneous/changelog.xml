@@ -43,7 +43,8 @@
     </scode>
     <fix>
       Fix unnecessarily large buffer allocation when filtering out NULL and
-      export ciphers. Pull request <pr>35</pr> provided by chenjp. (markt)
+      export ciphers. Pull requests <pr>35</pr> and <pr>37</pr> provided by
+      chenjp. (markt)
     </fix>
     <fix>
       Fix a potential memory leak if an invalid <code>OpenSSLConf</code> is
