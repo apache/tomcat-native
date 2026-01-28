@@ -415,6 +415,12 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
         stringClass = (jclass) (*e)->NewGlobalRef(e, sClazz);
     }
 
+    /* Configure OCSP defaults here in case there is no SSL_CONF_CTX used. */
+    c->no_ocsp_check     = OCSP_NO_CHECK_DEFAULT;
+    c->ocsp_soft_fail    = OCSP_SOFT_FAIL_DEFAULT;
+    c->ocsp_timeout      = OCSP_TIMEOUT_DEFAULT;
+    c->ocsp_verify_flags = OCSP_VERIFY_FLAGS_DEFAULT;
+
     return P2J(c);
 init_failed:
     return 0;
