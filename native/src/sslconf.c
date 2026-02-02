@@ -113,7 +113,24 @@ TCN_IMPLEMENT_CALL(jlong, SSLConf, make)(TCN_STDARGS, jlong pool,
     c->cctx = cctx;
     c->pool = p;
 
-    /* OCSP defaults */
+    /*
+     * Some Tomcat Native specific settings are also set via this representation
+     * of the SSL_CONF_CTX. This process is a little bit hacky. The expected
+     * call sequence is:
+     * - SSLConf.make() - create SSL_CONF_CTX and the associated Tomcat Native
+     *   object
+     * - SSLConf.check() - MUST be called for each Tomcat specific setting that
+     *   needs to be configured. May be called for OpenSSL settings in which
+     *   case the setting will be validated.
+     * - SSLConf.assign() - this actually *applies* the Tomcat Native specific
+     *   configuration to Tomcat Native as well as linking the SSL_CONF_CTX
+     *   object with the SSL_CTX object.
+     * - SSLConf.apply() - called for each OpenSSL setting. Any Tomcat specific
+     *   settings used here will be ignored.
+     * - SSLConf.finish() - MUST be called to complete the OpenSSL setting
+     *   process.
+     */
+    /* Initialise Tomcat Native specific OCSP defaults */
     c->no_ocsp_check     = OCSP_NO_CHECK_DEFAULT;
     c->ocsp_soft_fail    = OCSP_SOFT_FAIL_DEFAULT;
     c->ocsp_timeout      = OCSP_TIMEOUT_DEFAULT;
@@ -156,6 +173,10 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, check)(TCN_STDARGS, jlong cctx,
         rc = SSL_THROW_RETURN;
         goto cleanup;
     }
+    /*
+     * Although this is the check method, this sets the Tomcat specific
+     * settings.
+     */
     if (!strcmp(J2S(cmd), "NO_OCSP_CHECK")) {
         if (!strcasecmp(J2S(value), "false"))
             c->no_ocsp_check = 0;
@@ -303,39 +324,34 @@ TCN_IMPLEMENT_CALL(jint, SSLConf, apply)(TCN_STDARGS, jlong cctx,
     }
 #endif
     if (!strcmp(J2S(cmd), "NO_OCSP_CHECK")) {
-        if (!strcasecmp(J2S(value), "false"))
-            c->no_ocsp_check = 0;
-        else
-            c->no_ocsp_check = 1;
+        /*
+         * Skip as this is a Tomcat specific setting that will have been set
+         * when check() was called.
+         */
         rc = 1;
         goto cleanup;
     }
     if (!strcmp(J2S(cmd), "OCSP_SOFT_FAIL")) {
-        if (!strcasecmp(J2S(value), "false"))
-            c->ocsp_soft_fail = 0;
-        else
-            c->ocsp_soft_fail = 1;
+        /*
+         * Skip as this is a Tomcat specific setting that will have been set
+         * when check() was called.
+         */
         rc = 1;
         goto cleanup;
     }
     if (!strcmp(J2S(cmd), "OCSP_TIMEOUT")) {
-        int i;
-        errno = 0;
-        i = (int) strtol(J2S(value), NULL, 10);
-        if (!errno) {
-            // Tomcat configures timeout is millisecond. APR uses microseconds.
-            c->ocsp_timeout = i * 1000;
-        }
+        /*
+         * Skip as this is a Tomcat specific setting that will have been set
+         * when check() was called.
+         */
         rc = 1;
         goto cleanup;
     }
     if (!strcmp(J2S(cmd), "OCSP_VERIFY_FLAGS")) {
-        int i;
-        errno = 0;
-        i = (int) strtol(J2S(value), NULL, 10);
-        if (!errno) {
-            c->ocsp_verify_flags = i;
-        }
+        /*
+         * Skip as this is a Tomcat specific setting that will have been set
+         * when check() was called.
+         */
         rc = 1;
         goto cleanup;
     }
