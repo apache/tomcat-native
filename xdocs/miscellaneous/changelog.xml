@@ -58,6 +58,10 @@
       OCSP verification being enabled by default when the expected behaviour was
       disabled by default. (markt)
     </fix>
+    <scode>
+      Improve performance for the rare case of handling large OCSP responses.
+      (markt)
+    </scode>
   </changelog>
 </section>
 <section name="2.0.12" rtext="2026-01-12">
