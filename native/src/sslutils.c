@@ -912,19 +912,19 @@ err:
 
 /* Reads the response from the APR socket to a buffer, and parses the buffer to
    return the OCSP response  */
-#define ADDLEN 512
+#define BUFFER_SIZE 512
 static OCSP_RESPONSE *ocsp_get_resp(apr_pool_t *mp, apr_socket_t *sock)
 {
     int buflen;
     apr_size_t totalread = 0;
     apr_size_t readlen;
-    char *buf, tmpbuf[ADDLEN];
+    char *buf, tmpbuf[BUFFER_SIZE];
     apr_status_t rv = APR_SUCCESS;
     apr_pool_t *p;
     OCSP_RESPONSE *resp;
 
     apr_pool_create(&p, mp);
-    buflen = ADDLEN;
+    buflen = BUFFER_SIZE;
     buf = apr_palloc(p, buflen);
     if (buf == NULL) {
         apr_pool_destroy(p);
@@ -936,12 +936,12 @@ static OCSP_RESPONSE *ocsp_get_resp(apr_pool_t *mp, apr_socket_t *sock)
         rv = apr_socket_recv(sock, tmpbuf, &readlen);
         if (rv == APR_SUCCESS) { /* if we have read something .. we can put it in the buffer*/
             if ((totalread + readlen) >= buflen) {
-                buf = apr_xrealloc(buf, buflen, buflen + ADDLEN, p);
+                buf = apr_xrealloc(buf, buflen, buflen * 2, p);
                 if (buf == NULL) {
                     apr_pool_destroy(p);
                     return NULL;
                 }
-                buflen += ADDLEN; /* if needed we enlarge the buffer */
+                buflen *= 2; /* if needed we enlarge the buffer */
             }
             memcpy(buf + totalread, tmpbuf, readlen); /* the copy to the buffer */
             totalread += readlen; /* update the total bytes read */
