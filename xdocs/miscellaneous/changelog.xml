@@ -62,6 +62,10 @@
       Improve performance for the rare case of handling large OCSP responses.
       (markt)
     </scode>
+    <fix>
+      <bug>69939</bug>: Fix the cause of a crash with OpenSSL 3.0.x when a
+      certificate PEM file does not contain explicit DH parameters. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.12" rtext="2026-01-12">

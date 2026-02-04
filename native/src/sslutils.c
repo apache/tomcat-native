@@ -190,7 +190,7 @@ EVP_PKEY *SSL_dh_GetParamFromFile(const char *file)
         return NULL;
     evp = PEM_read_bio_Parameters_ex(bio, NULL, NULL, NULL);
     BIO_free(bio);
-    if (!EVP_PKEY_is_a(evp, "DH")) {
+    if (evp && !EVP_PKEY_is_a(evp, "DH")) {
         EVP_PKEY_free(evp);
         return NULL;
     }
