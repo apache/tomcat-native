@@ -73,7 +73,7 @@
     <fix>
       Refactor the native implementation of <code>SSL.getTime()</code> to avoid
       the Y2038 problem in <code>SSL_SESSION_get_time()</code> when running on a
-      verion of OpenSSL that includes the new
+      version of OpenSSL that includes the new
       <code>SSL_SESSION_get_time_ex()</code> method. (markt)
     </fix>
   </changelog>
