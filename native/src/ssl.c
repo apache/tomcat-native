@@ -990,7 +990,11 @@ TCN_IMPLEMENT_CALL(jlong, SSL, getTime)(TCN_STDARGS, jlong ssl)
 
     session  = SSL_get_session(ssl_);
     if (session) {
-        return SSL_get_time(session);
+#if (OPENSSL_VERSION_NUMBER > 0x302FFFFFL)
+        return SSL_SESSION_get_time_ex(session);
+#else
+        return SSL_SESSION_get_time(session);
+#endif
     } else {
         tcn_ThrowException(e, "ssl session is null");
         return 0;
