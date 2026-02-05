@@ -208,7 +208,7 @@ int SSL_ec_GetParamFromFile(const char *file)
         return NID_undef;
     evp = PEM_read_bio_Parameters_ex(bio, NULL, NULL, NULL);
     BIO_free(bio);
-    if (!EVP_PKEY_is_a(evp, "EC")) {
+    if (evp && !EVP_PKEY_is_a(evp, "EC")) {
         EVP_PKEY_free(evp);
         return NID_undef;
     }
