@@ -198,16 +198,41 @@ EVP_PKEY *SSL_dh_GetParamFromFile(const char *file)
 }
 
 #ifdef HAVE_ECC
-EC_GROUP *SSL_ec_GetParamFromFile(const char *file)
+int SSL_ec_GetParamFromFile(const char *file)
 {
-    EC_GROUP *group = NULL;
+    EVP_PKEY *evp = NULL;
     BIO *bio;
+    char curve_name[80];
 
     if ((bio = BIO_new_file(file, "r")) == NULL)
-        return NULL;
-    group = PEM_read_bio_ECPKParameters(bio, NULL, NULL, NULL);
+        return NID_undef;
+    evp = PEM_read_bio_Parameters_ex(bio, NULL, NULL, NULL);
     BIO_free(bio);
-    return (group);
+    if (evp && !EVP_PKEY_is_a(evp, "EC")) {
+        EVP_PKEY_free(evp);
+        return NID_undef;
+    }
+
+    OSSL_PARAM param[] = {
+        OSSL_PARAM_construct_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME, curve_name, sizeof(curve_name)),
+        OSSL_PARAM_construct_end()
+    };
+
+    /* Query the curve name from the EVP_PKEY params object */
+    if (EVP_PKEY_get_params(evp, param) <= 0) {
+        EVP_PKEY_free(evp);
+        return NID_undef; /* Failed to retrieve the curve name */
+    }
+
+    /* Convert the curve name to the NID */
+    int nid = OBJ_sn2nid(curve_name);
+    if (nid == NID_undef) {
+        /* If the short name didn't resolve, try the long name */
+        nid = OBJ_ln2nid(curve_name);
+    }
+
+    EVP_PKEY_free(evp);
+    return nid; /* Returns the curve's NID, or NID_undef on failure */
 }
 #endif
 

@@ -952,9 +952,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     const char *p;
     char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
 #ifdef HAVE_ECC
-    EC_GROUP *ecparams = NULL;
     int nid;
-    EC_KEY *eckey = NULL;
 #endif
     EVP_PKEY *evp;
 
@@ -1043,14 +1041,10 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
      */
     /* XXX Does this also work for pkcs12 or only for PEM files?
      * If only for PEM files move above to the PEM handling */
-    if ((ecparams = SSL_ec_GetParamFromFile(cert_file)) &&
-        (nid = EC_GROUP_get_curve_name(ecparams)) &&
-        (eckey = EC_KEY_new_by_curve_name(nid))) {
-        SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
+    nid = SSL_ec_GetParamFromFile(cert_file);
+    if (nid != NID_undef) {
+        SSL_CTX_set1_groups(c->ctx, &nid, 1);
     }
-    /* OpenSSL assures us that _free() is NULL-safe */
-    EC_KEY_free(eckey);
-    EC_GROUP_free(ecparams);
 #endif
     SSL_CTX_set_dh_auto(c->ctx, 1);
 

@@ -49,6 +49,7 @@
 #ifndef LIBRESSL_VERSION_NUMBER
 #include <openssl/provider.h>
 #endif
+#include <openssl/core_names.h>
 
 #ifndef RAND_MAX
 #include <limits.h>
@@ -378,7 +379,7 @@ void        SSL_BIO_doref(BIO *);
 DH         *SSL_get_dh_params(unsigned keylen);
 EVP_PKEY   *SSL_dh_GetParamFromFile(const char *);
 #ifdef HAVE_ECC
-EC_GROUP   *SSL_ec_GetParamFromFile(const char *);
+int         SSL_ec_GetParamFromFile(const char *);
 #endif
 DH         *SSL_callback_tmp_DH(SSL *, int, int);
 void        SSL_callback_handshake(const SSL *, int, int);
