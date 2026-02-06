@@ -31,7 +31,9 @@
   branch started from the 1.2.33 tag.
   </p>
 </section>
-<section name="2.0.13" rtext="in development">
+<section name="2.0.14" rtext="in development">
+</section>
+<section name="2.0.13" rtext="release in progress">
   <changelog>
     <scode>
       Due to various refactorings, the 2.0.x code no longer compiles with
