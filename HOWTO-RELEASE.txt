@@ -55,10 +55,10 @@ Tagging
 git pull
 git status
 
-# Edit files to remove / disable dev build flags and in progress description
+# Edit files to remove / disable dev build flags
 # - build.properties.default
 # - tcn_version.h
-# - changelog.xml
+# - changelog.xml (clear rtext) 
 
 # Confirm the previous edits
 git diff
