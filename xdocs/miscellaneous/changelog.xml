@@ -33,6 +33,10 @@
 </section>
 <section name="2.0.13" rtext="in development">
   <changelog>
+    <scode>
+      Due to various refactorings, the 2.0.x code no longer compiles with
+      LibreSSL. Without a volunteer to maintain LibreSSL support, the LibreSSL
+      code will be removed no earlier than 30 September 2026. (markt)</scode>
     <fix>
       Remove group write permissions from the files in the tar.gz source
       archive. (markt)
@@ -68,7 +72,7 @@
     </fix>
     <fix>
       Refactor extraction of ECDH curve name from the Certificate to avoid
-      deprecated OpenSSL methods. (markt)
+      deprecated OpenSSL methods.
     </fix>
     <fix>
       Refactor the native implementation of <code>SSL.getTime()</code> to avoid
