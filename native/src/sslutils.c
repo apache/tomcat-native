@@ -867,7 +867,7 @@ err:
 /* Reads the response from the APR socket to a buffer, and parses the buffer to
    return the OCSP response  */
 #define BUFFER_SIZE 512
-#define MAX_OCSP_RESPONSE_SIZE 16384
+#define OCSP_MAX_RESPONSE_SIZE 65536
 static OCSP_RESPONSE *ocsp_get_resp(apr_pool_t *mp, apr_socket_t *sock)
 {
     int buflen;
@@ -890,7 +890,7 @@ static OCSP_RESPONSE *ocsp_get_resp(apr_pool_t *mp, apr_socket_t *sock)
         readlen = sizeof(tmpbuf);
         rv = apr_socket_recv(sock, tmpbuf, &readlen);
         if (rv == APR_SUCCESS) { /* if we have read something .. we can put it in the buffer*/
-            if ((totalread + readlen) > MAX_OCSP_RESPONSE_SIZE) {
+            if ((totalread + readlen) > OCSP_MAX_RESPONSE_SIZE) {
                 apr_pool_destroy(p);
                 return NULL;
             } else if ((totalread + readlen) >= buflen) {
