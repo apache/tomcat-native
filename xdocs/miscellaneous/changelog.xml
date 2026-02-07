@@ -58,7 +58,7 @@
     </fix>
     <fix>
       Refactor setting of OCSP configuration defaults as they were only applied
-      if the SSL_CONF_CTX was used. While one was always used wth Tomcat
+      if the SSL_CONF_CTX was used. While one was always used with Tomcat
       versions aware of the OCSP configuration options, one was not always used
       with Tomcat versions unaware of the OCSP configuration options leading to
       OCSP verification being enabled by default when the expected behaviour was
