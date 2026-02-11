@@ -72,6 +72,10 @@ The sources and the binaries for selected platforms are available from the
 Please see the <a href="miscellaneous/changelog.html">Changelog</a> for a full
 list of changes.
 </p>
+<p>
+Note: End of support for Tomcat Native 1.3.x has been announced as 31 March
+2027.
+</p>
 </li>
 </ul>
 </section>
