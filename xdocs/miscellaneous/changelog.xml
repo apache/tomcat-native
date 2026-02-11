@@ -33,7 +33,7 @@
 </section>
 <section name="1.3.7" rtext="in develoment">
 </section>
-<section name="1.3.6" rtext="release in progress">
+<section name="1.3.6" rtext="2026-02-11">
   <changelog>
     <scode>
       Refactor the SSL_CONF_CTX clean-up to align it with SSL and SSL_CTX
