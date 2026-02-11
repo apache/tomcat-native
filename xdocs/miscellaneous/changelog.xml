@@ -33,7 +33,7 @@
 </section>
 <section name="2.0.14" rtext="in development">
 </section>
-<section name="2.0.13" rtext="release in progress">
+<section name="2.0.13" rtext="2026-02-11">
   <changelog>
     <scode>
       Due to various refactorings, the 2.0.x code no longer compiles with
