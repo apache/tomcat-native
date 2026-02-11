@@ -30,6 +30,11 @@
 
     <section name="2026 News &amp; Status">
     
+      <subsection anchor="20260211" name="11 February 2026 - Tomcat-Native-2.0.13 released">
+        <p>The Apache Tomcat team is proud to announce the immediate
+        availability of Tomcat Native 2.0.13.</p>
+      </subsection>
+
       <subsection anchor="20260112" name="12 January 2026 - Tomcat-Native-2.0.12 released">
         <p>The Apache Tomcat team is proud to announce the immediate
         availability of Tomcat Native 2.0.12.</p>
