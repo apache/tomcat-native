@@ -961,7 +961,7 @@ static OCSP_RESPONSE *ocsp_get_resp(apr_pool_t *mp, apr_socket_t *sock)
         }
     }
 
-    resp = parse_ocsp_resp(buf, buflen);
+    resp = parse_ocsp_resp(buf, totalread);
     apr_pool_destroy(p);
     return resp;
 }
