@@ -908,8 +908,7 @@ TCN_IMPLEMENT_CALL(jobjectArray, SSL, getPeerCertChain)(TCN_STDARGS,
 
         buf = NULL;
         length = i2d_X509(cert, &buf);
-        if (length < 0) {
-            OPENSSL_free(buf);
+        if (length <= 0) {
             /* In case of error just return an empty byte[][] */
             return (*e)->NewObjectArray(e, 0, byteArrayClass, NULL);
         }
@@ -952,6 +951,11 @@ TCN_IMPLEMENT_CALL(jbyteArray, SSL, getPeerCertificate)(TCN_STDARGS,
     }
 
     length = i2d_X509(cert, &buf);
+
+    if (length <= 0) {
+        X509_free(cert);
+        return NULL;
+    }
 
     bArray = (*e)->NewByteArray(e, length);
     (*e)->SetByteArrayRegion(e, bArray, 0, length, (jbyte*) buf);
