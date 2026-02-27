@@ -1754,11 +1754,9 @@ static int SSL_cert_verify(X509_STORE_CTX *ctx, void *arg) {
 
         buf = NULL;
         length = i2d_X509(cert, &buf);
-        if (length < 0) {
+        if (length <= 0) {
             // In case of error just return an empty byte[][]
             array = (*e)->NewObjectArray(e, 0, byteArrayClass, NULL);
-            // We need to delete the local references so we not leak memory as this method is called via callback.
-            OPENSSL_free(buf);
             break;
         }
         bArray = (*e)->NewByteArray(e, length);
