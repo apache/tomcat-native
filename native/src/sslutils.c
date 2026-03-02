@@ -603,42 +603,73 @@ static int parse_asn1_length(unsigned char **asn1, int *len) {
     return 0;
 }
 
-/* parses the ocsp url and updates the ocsp_urls and nocsp_urls variables
+/*
+ * Append ocsp url to the ocsp_urls array and update ocsp_urls_count variables
+   returns 0 on success, 1 on failure */
+ */
+static int append_ocsp_url(char ***ocsp_urls, int *ocsp_urls_count,
+                        const char *ocsp_url, apr_pool_t *p)
+{
+    char *copy;
+    int   new_count, ocsp_url_len;
+
+    if (ocsp_url == NULL) {
+        return 1;
+    }
+
+    ocsp_url_len = strlen(ocsp_url);
+    
+    if (!(copy = apr_palloc(p, ocsp_url_len + 1))) 
+        return 1;
+    
+    memcpy(copy, ocsp_url, ocsp_url_len);
+    copy[ocsp_url_len] = '\0';
+
+    new_count = *ocsp_urls_count + 1;
+
+    char **temp = apr_palloc(p, (new_count + 1) * sizeof(char*));
+    if (temp == NULL) {
+        return 1;
+    }
+    if (*ocsp_urls_count > 0 && *ocsp_urls != NULL) {
+        memcpy(temp, *ocsp_urls, *ocsp_urls_count * sizeof(char*));
+    }
+
+    temp[*ocsp_urls_count] = copy;
+    temp[new_count] = NULL;
+
+    *ocsp_urls = temp;
+    *ocsp_urls_count = new_count;
+    
+    return 0;
+}
+/* parses the ocsp url and updates the ocsp_urls and ocsp_urls_count variables
    returns 0 on success, 1 on failure */
 static int parse_ocsp_url(unsigned char *asn1, char ***ocsp_urls,
-                          int *nocsp_urls, apr_pool_t *p)
+                          int *ocsp_urls_count, apr_pool_t *p)
 {
     char **new_ocsp_urls, *ocsp_url;
-    int len, err = 0, new_nocsp_urls;
+    int len, err = 0;
 
     if (*asn1 == ASN1_STRING) {
         err = parse_asn1_length(&asn1, &len);
 
         if (!err) {
-            new_nocsp_urls = *nocsp_urls+1;
-            if ((new_ocsp_urls = apr_xrealloc(*ocsp_urls,*nocsp_urls, new_nocsp_urls, p)) == NULL)
-                err = 1;
-        }
-        if (!err) {
-            *ocsp_urls  = new_ocsp_urls;
-            *nocsp_urls = new_nocsp_urls;
-            *(*ocsp_urls + *nocsp_urls) = NULL;
             if ((ocsp_url = apr_palloc(p, len + 1)) == NULL) {
                 err = 1;
             }
             else {
                 memcpy(ocsp_url, asn1, len);
                 ocsp_url[len] = '\0';
-                *(*ocsp_urls + *nocsp_urls - 1) = ocsp_url;
+                err = append_ocsp_url(ocsp_urls, ocsp_urls_count, (const char *) ocsp_url, p);
             }
         }
     }
     return err;
-
 }
 
 /* parses the ANS1 OID and if it is an OCSP OID then calls the parse_ocsp_url function */
-static int parse_ASN1_OID(unsigned char *asn1, char ***ocsp_urls, int *nocsp_urls, apr_pool_t *p)
+static int parse_ASN1_OID(unsigned char *asn1, char ***ocsp_urls, int *ocsp_urls_count, apr_pool_t *p)
 {
     int len, err = 0 ;
     const unsigned char OCSP_OID[] = {0x2b, 0x06, 0x01, 0x05, 0x05, 0x07, 0x30, 0x01};
@@ -647,7 +678,7 @@ static int parse_ASN1_OID(unsigned char *asn1, char ***ocsp_urls, int *nocsp_url
 
     if (!err && len == 8 && memcmp(asn1, OCSP_OID, 8) == 0) {
         asn1+=len;
-        err = parse_ocsp_url(asn1, ocsp_urls, nocsp_urls, p);
+        err = parse_ocsp_url(asn1, ocsp_urls, ocsp_urls_count, p);
     }
     return err;
 }
@@ -660,7 +691,7 @@ static int parse_ASN1_OID(unsigned char *asn1, char ***ocsp_urls, int *nocsp_url
 
 /* This algo was developed with AIA in mind so it was tested only with this extension */
 static int parse_ASN1_Sequence(unsigned char *asn1, char ***ocsp_urls,
-                               int *nocsp_urls, apr_pool_t *p)
+                               int *ocsp_urls_count, apr_pool_t *p)
 {
     int len = 0 , err = 0;
 
@@ -669,11 +700,11 @@ static int parse_ASN1_Sequence(unsigned char *asn1, char ***ocsp_urls,
             case ASN1_SEQUENCE:
                 err = parse_asn1_length(&asn1, &len);
                 if (!err) {
-                    err = parse_ASN1_Sequence(asn1, ocsp_urls, nocsp_urls, p);
+                    err = parse_ASN1_Sequence(asn1, ocsp_urls, ocsp_urls_count, p);
                 }
             break;
             case ASN1_OID:
-                err = parse_ASN1_OID(asn1,ocsp_urls,nocsp_urls, p);
+                err = parse_ASN1_OID(asn1,ocsp_urls,ocsp_urls_count, p);
                 return err;
             break;
             default:
@@ -690,24 +721,24 @@ static int parse_ASN1_Sequence(unsigned char *asn1, char ***ocsp_urls,
    the ocsp_urls */
 static char **decode_OCSP_url(ASN1_OCTET_STRING *os, apr_pool_t *p)
 {
-    char **response = NULL;
-    unsigned char *ocsp_urls;
-    int len, numofresponses = 0 ;
+    char **ocsp_urls = NULL;
+    unsigned char *asn1;
+    int len, ocsp_urls_count = 0 ;
 
     len = ASN1_STRING_length(os);
 
-    ocsp_urls = apr_palloc(p,  len + 1);
-    memcpy(ocsp_urls,os->data, len);
-    ocsp_urls[len] = '\0';
+    asn1 = apr_palloc(p,  len + 1);
+    memcpy(asn1,os->data, len);
+    asn1[len] = '\0';
 
-    if ((response = apr_pcalloc(p, sizeof(char *))) == NULL) {
+    if ((ocsp_urls = apr_pcalloc(p, sizeof(char *))) == NULL) {
         return NULL;
     }
-    if (parse_ASN1_Sequence(ocsp_urls, &response, &numofresponses, p) ||
-            numofresponses ==0) {
-        response = NULL;
+    if (parse_ASN1_Sequence(asn1, &ocsp_urls, &ocsp_urls_count, p) ||
+            ocsp_urls_count ==0) {
+        ocsp_urls = NULL;
     }
-    return response;
+    return ocsp_urls;
 }
 
 
