@@ -603,17 +603,16 @@ static int parse_asn1_length(unsigned char **asn1, int *len) {
     return 0;
 }
 
-/*
- * Append ocsp url to the ocsp_urls array and update ocsp_urls_count variables
+/* Append ocsp url to the ocsp_urls array and update ocsp_urls_count variables
    returns 0 on success, 1 on failure */
- */
 static int append_ocsp_url(char ***ocsp_urls, int *ocsp_urls_count,
                         const char *ocsp_url, apr_pool_t *p)
 {
     char *copy;
+    char **temp;
     int   new_count, ocsp_url_len;
 
-    if (ocsp_url == NULL) {
+    if (ocsp_url == NULL || *ocsp_urls_count<0) {
         return 1;
     }
 
@@ -625,14 +624,14 @@ static int append_ocsp_url(char ***ocsp_urls, int *ocsp_urls_count,
     memcpy(copy, ocsp_url, ocsp_url_len);
     copy[ocsp_url_len] = '\0';
 
-    new_count = *ocsp_urls_count + 1;
+    new_count = (*ocsp_urls_count) + 1;
 
-    char **temp = apr_palloc(p, (new_count + 1) * sizeof(char*));
+    temp = apr_palloc(p, (new_count + 1) * sizeof(char*));
     if (temp == NULL) {
         return 1;
     }
     if (*ocsp_urls_count > 0 && *ocsp_urls != NULL) {
-        memcpy(temp, *ocsp_urls, *ocsp_urls_count * sizeof(char*));
+        memcpy(temp, *ocsp_urls, (*ocsp_urls_count) * sizeof(char*));
     }
 
     temp[*ocsp_urls_count] = copy;
@@ -648,7 +647,7 @@ static int append_ocsp_url(char ***ocsp_urls, int *ocsp_urls_count,
 static int parse_ocsp_url(unsigned char *asn1, char ***ocsp_urls,
                           int *ocsp_urls_count, apr_pool_t *p)
 {
-    char **new_ocsp_urls, *ocsp_url;
+    char *ocsp_url;
     int len, err = 0;
 
     if (*asn1 == ASN1_STRING) {
