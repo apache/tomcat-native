@@ -612,11 +612,9 @@ static int append_ocsp_url(char ***ocsp_urls, int *ocsp_urls_count,
     char **temp;
     int   new_count, ocsp_url_len;
 
-    if (ocsp_url == NULL || *ocsp_urls_count<0) {
+    if (*ocsp_urls_count<0 || ocsp_url == NULL|| (ocsp_url_len = strlen(ocsp_url)) == 0) {
         return 1;
     }
-
-    ocsp_url_len = strlen(ocsp_url);
     
     if (!(copy = apr_palloc(p, ocsp_url_len + 1))) 
         return 1;
@@ -634,7 +632,7 @@ static int append_ocsp_url(char ***ocsp_urls, int *ocsp_urls_count,
         memcpy(temp, *ocsp_urls, (*ocsp_urls_count) * sizeof(char*));
     }
 
-    temp[*ocsp_urls_count] = copy;
+    temp[new_count-1] = copy;
     temp[new_count] = NULL;
 
     *ocsp_urls = temp;
