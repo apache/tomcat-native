@@ -717,8 +717,8 @@ static char **decode_OCSP_url(ASN1_OCTET_STRING *os, apr_pool_t *p)
 
     len = ASN1_STRING_length(os);
 
-    ocsp_urls = apr_palloc(p,  len + 1);
-    memcpy(ocsp_urls,os->data, len);
+    ocsp_urls = apr_palloc(p, len + 1);
+    memcpy(ocsp_urls, ASN1_STRING_get0_data(os), len);
     ocsp_urls[len] = '\0';
 
     if ((response = apr_pcalloc(p, sizeof(char *))) == NULL) {
