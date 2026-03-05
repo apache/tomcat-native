@@ -616,7 +616,7 @@ static int parse_ocsp_url(unsigned char *asn1, char ***ocsp_urls,
 
         if (!err) {
             new_nocsp_urls = *nocsp_urls+1;
-            if ((new_ocsp_urls = apr_xrealloc(*ocsp_urls,*nocsp_urls, new_nocsp_urls, p)) == NULL)
+            if ((new_ocsp_urls = apr_xrealloc(*ocsp_urls, *nocsp_urls * sizeof(char *), new_nocsp_urls * sizeof(char *), p)) == NULL)
                 err = 1;
         }
         if (!err) {
@@ -688,11 +688,13 @@ static int parse_ASN1_Sequence(unsigned char *asn1, char ***ocsp_urls,
 /* the main function that gets the ASN1 encoding string and returns
    a pointer to a NULL terminated "array" of char *, that contains
    the ocsp_urls */
-static char **decode_OCSP_url(ASN1_OCTET_STRING *os, apr_pool_t *p)
+static char **decode_OCSP_url(ASN1_OCTET_STRING *os, int *numofresponses, apr_pool_t *p)
 {
     char **response = NULL;
     unsigned char *ocsp_urls;
-    int len, numofresponses = 0 ;
+    int len;
+
+    *numofresponses = 0 ;
 
     len = ASN1_STRING_length(os);
 
@@ -703,8 +705,8 @@ static char **decode_OCSP_url(ASN1_OCTET_STRING *os, apr_pool_t *p)
     if ((response = apr_pcalloc(p, sizeof(char *))) == NULL) {
         return NULL;
     }
-    if (parse_ASN1_Sequence(ocsp_urls, &response, &numofresponses, p) ||
-            numofresponses ==0) {
+    if (parse_ASN1_Sequence(ocsp_urls, &response, numofresponses, p) ||
+            *numofresponses ==0) {
         response = NULL;
     }
     return response;
@@ -1090,7 +1092,7 @@ clean_bs:
 static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int timeout, int verifyFlags)
 {
     char **ocsp_urls = NULL;
-    int nid;
+    int nid, numofresponses;
     int rv = OCSP_STATUS_UNKNOWN;
     X509_EXTENSION *ext;
     ASN1_OCTET_STRING *os;
@@ -1104,36 +1106,47 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int t
         ext = X509_get_ext(cert,nid);
         os = X509_EXTENSION_get_data(ext);
 
-        ocsp_urls = decode_OCSP_url(os, p);
+        ocsp_urls = decode_OCSP_url(os, &numofresponses, p);
     }
-
     /* if we find the extensions and we can parse it check
        the ocsp status. Otherwise, return OCSP_STATUS_UNKNOWN */
-    if (ocsp_urls != NULL) {
+    if (ocsp_urls != NULL && numofresponses > 0) {
         OCSP_REQUEST *req;
         OCSP_RESPONSE *resp = NULL;
-        /* for the time being just check for the fist response .. a better
-           approach is to iterate for all the possible ocsp urls */
+        int i;
+
         req = get_ocsp_request(cert, issuer);
-        if (req != NULL) {
-            resp = get_ocsp_response(p, ocsp_urls[0], req, timeout);
-            if (resp != NULL) {
-                rv = process_ocsp_response(req, resp, cert, issuer, ctx, verifyFlags);
-            } else {
-                /* Unable to send request / receive response. */
-                X509_STORE_CTX_set_error(ctx, X509_V_ERR_UNABLE_TO_GET_CRL);
-            }
-        } else {
+        if (req == NULL) {
             /* correct error code for application errors? */
             X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
-        }
+        } else {
+            /* Iterate through all the possible OCSP URLs until we get a definitive response */
+            for (i = 0; i < numofresponses; i++) {
+                if (ocsp_urls[i] == NULL) {
+                    continue;
+                }
 
-        if (req != NULL) {
+                resp = get_ocsp_response(p, ocsp_urls[i], req, timeout);
+                if (resp != NULL) {
+                    rv = process_ocsp_response(req, resp, cert, issuer, ctx, verifyFlags);
+                    OCSP_RESPONSE_free(resp);
+                    resp = NULL;
+
+                    /* If we got a definitive answer (OK or REVOKED), stop trying */
+                    if (rv == OCSP_STATUS_OK || rv == OCSP_STATUS_REVOKED) {
+                        break;
+                    }
+                    /* Otherwise (UNKNOWN), try the next URL */
+                }
+            }
+
+            /* If all URLs failed to respond or returned UNKNOWN */
+            if (rv == OCSP_STATUS_UNKNOWN) {
+                /* Unable to send request / receive response from any URL. */
+                X509_STORE_CTX_set_error(ctx, X509_V_ERR_UNABLE_TO_GET_CRL);
+            }
+
             OCSP_REQUEST_free(req);
-        }
-
-        if (resp != NULL) {
-            OCSP_RESPONSE_free(resp);
         }
     }
     apr_pool_destroy(p);
