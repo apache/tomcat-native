@@ -32,6 +32,12 @@
   </p>
 </section>
 <section name="2.0.14" rtext="in development">
+  <changelog>
+    <scode>
+      Refactor access to ASN1_OCTET_STRING to use setters to fix errors when
+      building against the latest OpenSSL 4.0.x code. (markt)
+    </scode>
+  </changelog>
 </section>
 <section name="2.0.13" rtext="2026-02-11">
   <changelog>
