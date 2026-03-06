@@ -31,7 +31,7 @@
   branch started from the 1.2.33 tag.
   </p>
 </section>
-<section name="2.0.14" rtext="in development">
+<section name="2.0.14" rtext="">
   <changelog>
     <scode>
       Refactor access to ASN1_OCTET_STRING to use setters to fix errors when
