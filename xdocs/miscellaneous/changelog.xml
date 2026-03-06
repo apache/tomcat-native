@@ -37,6 +37,13 @@
       Refactor access to ASN1_OCTET_STRING to use setters to fix errors when
       building against the latest OpenSSL 4.0.x code. (markt)
     </scode>
+    <fix>
+      Fix the handling of OCSP requests with multiple responder URIs. (jfclere)
+    </fix>
+    <fix>
+      Fix the handling of <code>TRY_AGAIN</code> responses to OCSP requests when
+      soft fail is disabled. (jfclere)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.13" rtext="2026-02-11">
