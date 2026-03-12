@@ -33,6 +33,10 @@
 </section>
 <section name="2.0.15" rtext="developement in progress">
   <changelog>
+    <fix>
+      Fix a memory leak when parsing certificates. Pull request <pr>44</pr>
+      provided by chenjp. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.14" rtext="2026-03-10">

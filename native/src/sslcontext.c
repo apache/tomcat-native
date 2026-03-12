@@ -1234,6 +1234,9 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addClientCACertificateRaw)(TCN_STDARGS,
         rv = JNI_FALSE;
     }
 
+    if (cert != NULL) {
+        X509_free(cert);
+    }
     free(charCert);
     return rv;
 }
