@@ -68,7 +68,7 @@ jobs:
       run: |
             echo on
             cd apr\apr-%APR_VERSION%
-            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
+            call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
             nmake -f Makefile.win ARCH="x64 Release" buildall PREFIX=C:\APR
             nmake -f Makefile.win ARCH="x64 Release" install PREFIX=C:\APR
             mkdir C:\APR\include\arch\win32
@@ -78,7 +78,7 @@ jobs:
       shell: cmd
       run: |
             echo on
-            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
+            call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
             cd native
             echo "Building for ${{ matrix.build-arch }}"
             nmake  -f NMAKEmakefile CPU=${{ matrix.build-arch }} WITH_APR=C:\APR WITH_OPENSSL=C:\OPENSSL APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid
