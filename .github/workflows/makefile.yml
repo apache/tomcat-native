@@ -56,13 +56,13 @@ jobs:
            dir
            cd "C:\Program Files\Microsoft Visual Studio\"
            dir
-           cd "C:\Program Files\Microsoft Visual Studio\2022\"
+           cd "C:\Program Files\Microsoft Visual Studio\18\"
            dir
-           cd "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\"
+           cd "C:\Program Files\Microsoft Visual Studio\18\Enterprise\"
            dir
-           cd "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\"
+           cd "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\"
            dir
-           cd "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\"
+           cd "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\"
            dir
     - name: Build Openssl using Nmake and nasm
       shell: cmd
