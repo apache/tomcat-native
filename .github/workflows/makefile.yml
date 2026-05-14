@@ -43,6 +43,27 @@ jobs:
             echo "https://www.nasm.us/pub/nasm/releasebuilds/$env:NASM_VERSION/win64/nasm-$env:NASM_VERSION-win64.zip"
             curl -o nasm.zip https://www.nasm.us/pub/nasm/releasebuilds/$env:NASM_VERSION/win64/nasm-$env:NASM_VERSION-win64.zip
             Expand-Archive nasm.zip -DestinationPath .
+    - name: Debug VsDEvCmd.bat errors
+      shell: cmd
+      run: |
+           echo on
+           echo %CD%
+           c:
+           dir
+           cd "C:\"
+           dir
+           "C:\Program Files\"
+           dir
+           "C:\Program Files\Microsoft Visual Studio\"
+           dir
+           "C:\Program Files\Microsoft Visual Studio\2022\"
+           dir
+           "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\"
+           dir
+           "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\"
+           dir
+           "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\"
+           dir
     - name: Build Openssl using Nmake and nasm
       shell: cmd
       run: |
