@@ -43,27 +43,6 @@ jobs:
             echo "https://www.nasm.us/pub/nasm/releasebuilds/$env:NASM_VERSION/win64/nasm-$env:NASM_VERSION-win64.zip"
             curl -o nasm.zip https://www.nasm.us/pub/nasm/releasebuilds/$env:NASM_VERSION/win64/nasm-$env:NASM_VERSION-win64.zip
             Expand-Archive nasm.zip -DestinationPath .
-    - name: Debug VsDEvCmd.bat errors
-      shell: cmd
-      run: |
-           echo on
-           echo %CD%
-           c:
-           dir
-           cd "C:\"
-           dir
-           cd "C:\Program Files\"
-           dir
-           cd "C:\Program Files\Microsoft Visual Studio\"
-           dir
-           cd "C:\Program Files\Microsoft Visual Studio\18\"
-           dir
-           cd "C:\Program Files\Microsoft Visual Studio\18\Enterprise\"
-           dir
-           cd "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\"
-           dir
-           cd "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\"
-           dir
     - name: Build Openssl using Nmake and nasm
       shell: cmd
       run: |
@@ -72,7 +51,7 @@ jobs:
             set PATH=%PATH%;%CD%\nasm-%NASM_VERSION%
             dir %CD%\nasm-%NASM_VERSION%
             cd openssl-openssl-%OPENSSL_VERSION%
-            call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
+            call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
             C:\strawberry\perl\bin\perl Configure no-shared VC-WIN64A --prefix=C:\OPENSSL
             nmake
             nmake install
