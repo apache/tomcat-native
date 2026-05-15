@@ -4,7 +4,10 @@ on:
   push:
   pull_request:
 
-env:
+permissions:
+  contents: read
+
+      env:
   OPENSSL_VERSION: 3.5.0
   APR_VERSION: 1.7.6
   NASM_VERSION: 2.16.03
