@@ -80,6 +80,7 @@ jobs:
       shell: bash
       run: |
         echo on
+        apt-get install libtool-bin
         curl -L -o apr.zip https://github.com/apache/apr/archive/refs/tags/$APR_VERSION.zip
         unzip apr.zip
         cd apr-$APR_VERSION
