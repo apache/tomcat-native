@@ -82,13 +82,13 @@ jobs:
         echo on
         curl -L -o apr.zip https://github.com/apache/apr/archive/refs/tags/$APR_VERSION.zip
         unzip apr.zip
-        cd apr/apr-$APR_VERSION
+        cd apr-$APR_VERSION
         ./buildconf
         ./configure
         make
-        cd ../../native
-        sh buildconf --with-apr=../apr/apr-$APR_VERSION
-        ./configure--with-apr=../apr/apr-$APR_VERSION
+        cd ../native
+        sh buildconf --with-apr=../apr-$APR_VERSION
+        ./configure--with-apr=../apr-$APR_VERSION
         make
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
