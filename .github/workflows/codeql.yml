@@ -80,7 +80,7 @@ jobs:
       shell: bash
       run: |
         echo on
-        curl -L -o apr.zip https://github.com/apache/apr/archive/refs/tags/$env:APR_VERSION.zip
+        curl -L -o apr.zip https://github.com/apache/apr/archive/refs/tags/$APR_VERSION.zip
         unzip apr.zip
         cd apr/apr-$env:APR_VERSION
         ./buildconf
