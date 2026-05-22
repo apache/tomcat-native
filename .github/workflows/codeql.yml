@@ -90,7 +90,7 @@ jobs:
         make
         cd ../native
         sh buildconf --with-apr=$GITHUB_WORKSPACE/apr-$APR_VERSION
-        ./configure--with-apr=$GITHUB_WORKSPACE/apr-$APR_VERSION
+        ./configure --with-apr=$GITHUB_WORKSPACE/apr-$APR_VERSION
         make
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
