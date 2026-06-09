@@ -799,7 +799,7 @@ static int ocsp_send_req(apr_socket_t *sock, BIO *req)
         do {
             apr_size_t wlen = remain;
             rv = apr_socket_send(sock, wbuf, &wlen);
-            wbuf += remain;
+            wbuf += wlen;
             remain -= wlen;
         } while (rv == APR_SUCCESS && remain > 0);
 
