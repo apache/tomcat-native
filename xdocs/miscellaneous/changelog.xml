@@ -41,6 +41,10 @@
       Fix two potential memory leaks on error paths identified by Copilot.
       (markt)
     </fix>
+    <fix>
+      <bug>70102</bug>: Correct expected size of tickets when calling
+      <code>SSLContext.setSessionTicketKeys</code>. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="1.3.7" rtext="2026-03-10">
