@@ -42,6 +42,10 @@
       (markt)
     </fix>
     <fix>
+      <bug>69988</bug>: Fix post handshake authentication when Tomcat is
+      configured with a trust store using JSSE style configuration. (markt)
+    </fix>
+    <fix>
       <bug>70102</bug>: Correct expected size of tickets when calling
       <code>SSLContext.setSessionTicketKeys</code>. (markt)
     </fix>

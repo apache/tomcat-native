@@ -1390,6 +1390,25 @@ TCN_IMPLEMENT_CALL(jint, SSL, getPostHandshakeAuthInProgress)(TCN_STDARGS,
 
 /*** End Twitter API Additions ***/
 
+TCN_IMPLEMENT_CALL(void, SSL, markPostHandshakeAuthComplete)(TCN_STDARGS,
+                                                             jlong ssl /* SSL * */) {
+#if defined(SSL_OP_NO_TLSv1_3)
+    SSL *ssl_ = J2P(ssl, SSL *);
+    tcn_ssl_conn_t *con;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return;
+    }
+
+    UNREFERENCED(o);
+
+    con = (tcn_ssl_conn_t *)SSL_get_app_data(ssl_);
+
+    con->pha_state = PHA_COMPLETE;
+#endif
+}
+
 /*** Apple API Additions ***/
 
 TCN_IMPLEMENT_CALL(jstring, SSL, getAlpnSelected)(TCN_STDARGS,
@@ -2083,6 +2102,12 @@ TCN_IMPLEMENT_CALL(jint, SSL, getPostHandshakeAuthInProgress)(TCN_STDARGS, jlong
 }
 
 /*** End Twitter 1:1 API addition ***/
+
+TCN_IMPLEMENT_CALL(jint, SSL, markPostHandshakeAuthComplete)(TCN_STDARGS, jlong ssl) {
+  UNREFERENCED(o);
+  UNREFERENCED(ssl);
+  tcn_ThrowException(e, "Not implemented");
+}
 
 /*** Begin Apple 1:1 API addition ***/
 
