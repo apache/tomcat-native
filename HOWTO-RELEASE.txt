@@ -85,4 +85,4 @@ git checkout main
 Create the binary release for Windows
 -------------------------------------
 
-See native/building
+See native/BUILDING
