@@ -33,7 +33,7 @@
 </section>
 <section name="2.0.16" rtext="developement in progress">
 </section>
-<section name="2.0.15" rtext="release in progress">
+<section name="2.0.15" rtext="2026-06-15">
   <changelog>
     <fix>
       Fix a memory leak when parsing certificates. Pull request <pr>44</pr>
