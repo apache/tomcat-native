@@ -2103,11 +2103,10 @@ TCN_IMPLEMENT_CALL(jint, SSL, getPostHandshakeAuthInProgress)(TCN_STDARGS, jlong
 
 /*** End Twitter 1:1 API addition ***/
 
-TCN_IMPLEMENT_CALL(jint, SSL, markPostHandshakeAuthComplete)(TCN_STDARGS, jlong ssl) {
+TCN_IMPLEMENT_CALL(void, SSL, markPostHandshakeAuthComplete)(TCN_STDARGS, jlong ssl) {
   UNREFERENCED(o);
   UNREFERENCED(ssl);
   tcn_ThrowException(e, "Not implemented");
-  return 0;
 }
 
 /*** Begin Apple 1:1 API addition ***/
