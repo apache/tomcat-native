@@ -53,6 +53,7 @@ DllMain(
             InitializeCriticalSection(&dll_critical_section);
             dll_instance = instance;
             break;
+
         /** The attached process creates a new thread.
          */
         case DLL_THREAD_ATTACH:
@@ -61,7 +62,6 @@ DllMain(
         /** The thread of the attached process terminates.
          */
         case DLL_THREAD_DETACH:
-            ERR_remove_thread_state(NULL);
             break;
 
         /** DLL unload due to process termination

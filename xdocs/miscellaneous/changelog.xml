@@ -32,6 +32,13 @@
   </p>
 </section>
 <section name="2.0.16" rtext="developement in progress">
+  <changelog>
+    <scode>
+      Remove call to ERR_remove_thread_state() from Windows specific code to
+      allow building with OpenSSL 4.0.x. ERR_remove_thread_state() is a no-op
+      in OpenSSL 1.1+ and got removed in OpenSSL 4. (rjung)
+    </scode>
+  </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">
   <changelog>
