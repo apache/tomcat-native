@@ -82,6 +82,7 @@ DllMain(
             }
             GetModuleFileName(instance, dll_file_name, sizeof(dll_file_name));
             break;
+
         /** The attached process creates a new thread.
          */
         case DLL_THREAD_ATTACH:
@@ -90,9 +91,6 @@ DllMain(
         /** The thread of the attached process terminates.
          */
         case DLL_THREAD_DETACH:
-#ifdef HAVE_OPENSSL
-            ERR_remove_thread_state(NULL);
-#endif
             break;
 
         /** DLL unload due to process termination
