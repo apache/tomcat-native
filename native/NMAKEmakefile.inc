@@ -29,15 +29,12 @@
 #                           PROCESSOR_ARCHITECTURE environment variable
 #                           or to the X64 if not specified.
 #                 WINVER    Compile for specified Windows version
-#                           WIN10   for Windows 10 and up
-#                           WIN81   for Windows 8.1 and up
-#                           WIN8    for Windows 8 and up
-#                           WIN7    for Windows 7 and up (default)
+#                           WIN10   for Windows 10 and up (default)
+#                           Windows 11 uses the same WIN10 WINVER.
 #                           Deprecated targets (may not even compile):
-#                               VISTA   for Windows Vista / Server 2008 and up
-#                               WIN2003 for Windows 2003 and up
-#                               WINXP   for Windows XP and up
-#                               WIN2K   for Windows 2000 and up
+#                               WIN81   for Windows 8.1 and up
+#                               WIN8    for Windows 8 and up
+#                               WIN7    for Windows 7 and up
 #                 BUILD     Build version
 #                           RETAIL or RELEASE (default)
 #                           DEBUG
@@ -141,7 +138,7 @@ TARGET=EXE
 !ENDIF
 
 !IF !DEFINED(WINVER) || "$(WINVER)" == ""
-WINVER=WIN7
+WINVER=WIN10
 !ENDIF
 
 
@@ -154,7 +151,7 @@ NMAKE_WINVER = 0x0603
 !ELSEIF "$(WINVER)" == "WIN10"
 NMAKE_WINVER = 0x0A00
 !ELSE
-!ERROR Must specify WINVER environment variable (WIN7, WIN8, WIN81, WIN10)
+!ERROR Must specify WINVER environment variable (WIN10, WIN7, WIN8, WIN81)
 !ENDIF
 
 NMAKE_WINNT = -DWINNT -D_WINNT -D_WIN32_WINNT=$(NMAKE_WINVER) -DWINVER=$(NMAKE_WINVER)

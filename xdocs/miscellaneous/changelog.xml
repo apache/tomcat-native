@@ -44,6 +44,9 @@
     <update>
       Make x64 the default architecture for Windows build. (rjung)
     </update>
+    <update>
+      Make Windows 10 / 11 the default target version for Windows builds. (rjung)
+    </update>
   </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">
