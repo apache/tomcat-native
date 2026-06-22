@@ -121,7 +121,6 @@ CPU=$(PROCESSOR_ARCHITECTURE)
 !ERROR Must specify CPU environment variable (X86, X64) $(CPU)
 !ENDIF
 !ENDIF
-!ENDIF
 
 !IF !DEFINED(TARGET) || "$(TARGET)" == ""
 TARGET=EXE
@@ -318,5 +317,6 @@ AFLAGS = /coff /Zi /c
 !ELSEIF "$(CPU)" == "X64"
 ML = ml64.exe
 AFLAGS = /Zi /c
+!ENDIF
 !ENDIF
 
