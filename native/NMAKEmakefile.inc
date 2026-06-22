@@ -43,7 +43,7 @@
 #                           GUI Windows GUI executable
 #                           DLL Dynamic Link Library
 #                           LIB Static library
-#               UNICODE     Build unicode version
+#                 UNICODE   Build unicode version
 #                           If definded and not empty -D_UNICODE is added
 #                           to CFLAGS; -D_MBCS is added otherwise
 # Environment variables  used:
@@ -290,7 +290,7 @@ RCFLAGS = $(RCFLAGS) $(EXTRA_RCFLAGS)
 !ENDIF
 
 
-# Build Target dir e.g. WINNT_I386_RELEASE_DLL
+# Build Target dir e.g. WIN10_X64_DLL_RELEASE
 !IF !DEFINED(WORKDIR) || "$(WORKDIR)" == ""
 !IF !DEFINED(WORKDIR_EXT) || "$(WORKDIR_EXT)" == ""
 WORKDIR = $(WINVER)_$(CPU)_$(TARGET)_$(BUILD)
