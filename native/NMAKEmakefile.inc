@@ -25,10 +25,9 @@
 #                 CPU       Compile for specified CPU. Supported CPU's are:
 #                           X86 (Common x86 architecture)
 #                           X64 (AMD64/EMT64 architecture)
-#                           I64 (Intel IA64 architecture)
 #                           If not specified it will default to the
 #                           PROCESSOR_ARCHITECTURE environment variable
-#                           or to the X86 if not specified.
+#                           or to the X64 if not specified.
 #                 WINVER    Compile for specified Windows version
 #                           WIN10   for Windows 10 and up
 #                           WIN81   for Windows 8.1 and up
@@ -102,15 +101,12 @@ CPU=X86
 !IF "$(BUILD_CPU)" == "amd64" || "$(BUILD_CPU)" == "x86_64" || "$(BUILD_CPU)" == "x64"
 CPU=X64
 !ENDIF
-!IF "$(BUILD_CPU)" == "ia64" || "$(BUILD_CPU)" == "i64"
-CPU=I64
-!ENDIF
 !ENDIF
 # Figure out CPU from the current host
 !IF !DEFINED(CPU) || "$(CPU)" == ""
 !IF "$(PROCESSOR_ARCHITECTURE)" == ""
 !IF "$(PROCESSOR_ARCHITEW6432)" == ""
-CPU=X86
+CPU=X64
 !ELSE
 CPU=$(PROCESSOR_ARCHITEW6432)
 !ENDIF
@@ -125,8 +121,7 @@ CPU=$(PROCESSOR_ARCHITECTURE)
 
 !IF "$(CPU)" != "X86"
 !IF "$(CPU)" != "X64"
-!IF "$(CPU)" != "I64"
-!ERROR Must specify CPU environment variable (X86, X64, I64) $(CPU)
+!ERROR Must specify CPU environment variable (X86, X64) $(CPU)
 !ENDIF
 !ENDIF
 !ENDIF
@@ -206,10 +201,6 @@ MACHINE_LC=i386
 CPU_CFLAGS = -D_AMD64_=1 -DWIN64 -D_WIN64
 MACHINE=AMD64
 MACHINE_LC=amd64
-!ELSEIF "$(CPU)" == "I64"
-CPU_CFLAGS = -D_IA64_=1 -DWIN64 -D_WIN64
-MACHINE=IA64
-MACHINE_LC=ia64
 !ENDIF
 
 !IF "$(BUILD)" == "RELEASE"
@@ -330,9 +321,5 @@ AFLAGS = /coff /Zi /c
 !ELSEIF "$(CPU)" == "X64"
 ML = ml64.exe
 AFLAGS = /Zi /c
-!ELSEIF "$(CPU)" == "I64"
-ML = ml64.exe
-AFLAGS = /coff /Zi /c
-!ENDIF
 !ENDIF
 

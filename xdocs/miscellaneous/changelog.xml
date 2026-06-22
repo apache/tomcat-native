@@ -38,6 +38,12 @@
       allow building with OpenSSL 4.0.x. ERR_remove_thread_state() is a no-op
       in OpenSSL 1.1+ and got removed in OpenSSL 4. (rjung)
     </scode>
+    <update>
+      Remove support for Windows build on IA64 architecture (Itanium). (rjung)
+    </update>
+    <update>
+      Make x64 the default architecture for Windows build. (rjung)
+    </update>
   </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">
