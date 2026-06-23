@@ -26,7 +26,7 @@ jobs:
             generator: "Ninja"
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Download Openssl using curl and Expand-Archive
       shell: pwsh
       run: |
@@ -85,7 +85,7 @@ jobs:
             cd native
             echo "Building for ${{ matrix.build-arch }}"
             nmake  -f NMAKEmakefile CPU=${{ matrix.build-arch }} WITH_APR=C:\APR WITH_OPENSSL=C:\OPENSSL APR_DECLARE_STATIC=1 STATIC_CRT=Hybrid
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: windows-artifact
         path: native\WIN10_X64_DLL_RELEASE\tcnative-2.dll
