@@ -1074,16 +1074,38 @@ TCN_IMPLEMENT_CALL(void, SSL, setOptions)(TCN_STDARGS, jlong ssl,
         return;
     }
 
-#ifndef SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION
-    /* Clear the flag if not supported */
-    if (opt & 0x00040000) {
-        opt &= ~0x00040000;
-    }
-#endif
-    SSL_set_options(ssl_, opt);
+    SSL_set_options(ssl_, ((jlong) opt) & 0xFFFFFFFFLL);
 }
 
 TCN_IMPLEMENT_CALL(jint, SSL, getOptions)(TCN_STDARGS, jlong ssl)
+{
+    SSL *ssl_ = J2P(ssl, SSL *);
+
+    UNREFERENCED_STDARGS;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return 0;
+    }
+
+    return SSL_get_options(ssl_);
+}
+
+TCN_IMPLEMENT_CALL(void, SSL, setOptionsLong)(TCN_STDARGS, jlong ssl, jlong opt)
+{
+    SSL *ssl_ = J2P(ssl, SSL *);
+
+    UNREFERENCED_STDARGS;
+
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "ssl is null");
+        return;
+    }
+
+    SSL_set_options(ssl_, opt);
+}
+
+TCN_IMPLEMENT_CALL(jlong, SSL, getOptionsLong)(TCN_STDARGS, jlong ssl)
 {
     SSL *ssl_ = J2P(ssl, SSL *);
 
