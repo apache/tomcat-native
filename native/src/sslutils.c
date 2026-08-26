@@ -497,12 +497,13 @@ int select_next_proto(SSL *ssl, const unsigned char **out, unsigned char *outlen
     }
 
     if (supported_protos_len > 0 && inlen > 0 && failure_behavior == SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL) {
-         // There were no match but we just select our last protocol and hope the other peer support it.
+         // There was no match so select our last protocol and hope the peer supports it.
          //
-         // decrement the pointer again so the pointer points to the start of the protocol.
-         p -= proto_len;
+         // Switch the pointer to our list and decrement by the length of the last entry so the pointer points to the
+         // start of the protocol.
+         p = supported_protos - target_proto_len;
          *out = p;
-         *outlen = proto_len;
+         *outlen = target_proto_len;
          return SSL_TLSEXT_ERR_OK;
     }
     // TODO: OpenSSL currently not support to fail with fatal error. Once this changes we can also support it here.
