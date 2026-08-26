@@ -481,12 +481,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setOptions)(TCN_STDARGS, jlong ctx,
 
     UNREFERENCED_STDARGS;
     TCN_ASSERT(ctx != 0);
-#ifndef SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION
-    /* Clear the flag if not supported */
-    if (opt & 0x00040000)
-        opt &= ~0x00040000;
-#endif
-    SSL_CTX_set_options(c->ctx, opt);
+    SSL_CTX_set_options(c->ctx, ((jlong) opt) & 0xFFFFFFFFLL);
 }
 
 TCN_IMPLEMENT_CALL(jint, SSLContext, getOptions)(TCN_STDARGS, jlong ctx)
@@ -501,6 +496,34 @@ TCN_IMPLEMENT_CALL(jint, SSLContext, getOptions)(TCN_STDARGS, jlong ctx)
 
 TCN_IMPLEMENT_CALL(void, SSLContext, clearOptions)(TCN_STDARGS, jlong ctx,
                                                    jint opt)
+{
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+
+    UNREFERENCED_STDARGS;
+    TCN_ASSERT(ctx != 0);
+    SSL_CTX_clear_options(c->ctx, ((jlong) opt) & 0xFFFFFFFFLL);
+}
+
+TCN_IMPLEMENT_CALL(void, SSLContext, setOptionsLong)(TCN_STDARGS, jlong ctx, jlong opt)
+{
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+
+    UNREFERENCED_STDARGS;
+    TCN_ASSERT(ctx != 0);
+    SSL_CTX_set_options(c->ctx, opt);
+}
+
+TCN_IMPLEMENT_CALL(jlong, SSLContext, getOptionsLong)(TCN_STDARGS, jlong ctx)
+{
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+
+    UNREFERENCED_STDARGS;
+    TCN_ASSERT(ctx != 0);
+
+    return SSL_CTX_get_options(c->ctx);
+}
+
+TCN_IMPLEMENT_CALL(void, SSLContext, clearOptionsLong)(TCN_STDARGS, jlong ctx, jlong opt)
 {
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
 
