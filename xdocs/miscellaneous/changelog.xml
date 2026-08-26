@@ -50,6 +50,11 @@
     <fix>
       Fix a potential crash when negotiating ALPN. (markt)
     </fix>
+    <fix>
+      If ALPN negotiation fails and failure is configured to use the last server
+      protocol in the list, use it rather than the last protocol offered by the
+      client. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">
