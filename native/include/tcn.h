@@ -51,40 +51,7 @@
 #define TCN_ASSERT(x) (void)0
 #endif
 
-#ifndef APR_MAX_IOVEC_SIZE
-#define APR_MAX_IOVEC_SIZE 1024
-#endif
-
-#define TCN_TIMEUP      APR_OS_START_USERERR + 1
-#define TCN_EAGAIN      APR_OS_START_USERERR + 2
-#define TCN_EINTR       APR_OS_START_USERERR + 3
-#define TCN_EINPROGRESS APR_OS_START_USERERR + 4
-#define TCN_ETIMEDOUT   APR_OS_START_USERERR + 5
-
-#define TCN_LOG_EMERG  1
-#define TCN_LOG_ERROR  2
-#define TCN_LOG_NOTICE 3
-#define TCN_LOG_WARN   4
-#define TCN_LOG_INFO   5
-#define TCN_LOG_DEBUG  6
-
-#define TCN_ERROR_WRAP(E)                   \
-    if (APR_STATUS_IS_TIMEUP(E))            \
-        (E) = TCN_TIMEUP;                   \
-    else if (APR_STATUS_IS_EAGAIN(E))       \
-        (E) = TCN_EAGAIN;                   \
-    else if (APR_STATUS_IS_EINTR(E))        \
-        (E) = TCN_EINTR;                    \
-    else if (APR_STATUS_IS_EINPROGRESS(E))  \
-        (E) = TCN_EINPROGRESS;              \
-    else if (APR_STATUS_IS_ETIMEDOUT(E))    \
-        (E) = TCN_ETIMEDOUT;                \
-    else                                    \
-        (E) = (E)
-
 #define TCN_CLASS_PATH  "org/apache/tomcat/jni/"
-#define TCN_FINFO_CLASS TCN_CLASS_PATH "FileInfo"
-#define TCN_AINFO_CLASS TCN_CLASS_PATH "Sockaddr"
 #define TCN_ERROR_CLASS TCN_CLASS_PATH "Error"
 #define TCN_PARENT_IDE  "TCN_PARENT_ID"
 
@@ -100,16 +67,9 @@
 /* On stack buffer size */
 #define TCN_BUFFER_SZ   8192
 #define TCN_STDARGS     JNIEnv *e, jobject o
-#define TCN_IMPARGS     JNIEnv *e, jobject o, void *sock
-#define TCN_IMPCALL(X)  e, o, X->opaque
 
 #define TCN_IMPLEMENT_CALL(RT, CL, FN)  \
     JNIEXPORT RT JNICALL Java_org_apache_tomcat_jni_##CL##_##FN
-
-#define TCN_IMPLEMENT_METHOD(RT, FN)    \
-    static RT method_##FN
-
-#define TCN_GETNET_METHOD(FN)  method_##FN
 
 /* Private helper functions */
 void            tcn_Throw(JNIEnv *, const char *, ...);
@@ -120,9 +80,6 @@ jstring         tcn_new_stringn(JNIEnv *, const char *, size_t);
 unsigned long   tcn_get_thread_id(void);
 
 #define J2S(V)  c##V
-#define J2L(V)  p##V
-
-#define J2T(T) (apr_time_t)((T))
 
 #define TCN_BEGIN_MACRO     if (1) {
 #define TCN_END_MACRO       } else (void)(0)
@@ -134,12 +91,6 @@ unsigned long   tcn_get_thread_id(void);
     if (c##V) (*e)->ReleaseStringUTFChars(e, V, c##V)
 
 #define AJP_TO_JSTRING(V)   (*e)->NewStringUTF((e), (V))
-
-#define TCN_FREE_JSTRING(V)      \
-    TCN_BEGIN_MACRO              \
-        if (c##V)                \
-            free(c##V);          \
-    TCN_END_MACRO
 
 #define TCN_THROW_IF_ERR(x, r)                  \
     TCN_BEGIN_MACRO                             \
@@ -168,9 +119,6 @@ unsigned long   tcn_get_thread_id(void);
 #define TCN_UNLOAD_CLASS(E, C)                      \
         (*(E))->DeleteGlobalRef((E), (C))
 
-#define TCN_IS_NULL(E, O)                           \
-        ((*(E))->IsSameObject((E), (O), NULL) == JNI_TRUE)
-
 #define TCN_GET_METHOD(E, C, M, N, S, R)            \
     TCN_BEGIN_MACRO                                 \
         M = (*(E))->GetMethodID((E), C, N, S);      \
@@ -178,55 +126,5 @@ unsigned long   tcn_get_thread_id(void);
             return R;                               \
         }                                           \
     TCN_END_MACRO
-
-#define TCN_MAX_METHODS 8
-
-#define TCN_MIN(a, b) ((a) < (b) ? (a) : (b))
-#define TCN_MAX(a, b) ((a) > (b) ? (a) : (b))
-
-#ifdef WIN32
-#define TCN_ALLOC_WSTRING(V)     \
-    jsize wl##V = (*e)->GetStringLength(e, V);   \
-    const jchar *ws##V = V ? (const jchar *)((*e)->GetStringChars(e, V, 0)) : NULL; \
-    jchar *w##V = NULL
-
-#define TCN_INIT_WSTRING(V)                                     \
-        w##V = (jchar *)malloc((wl##V + 1) * sizeof(jchar));    \
-        wcsncpy(w##V, ws##V, wl##V);                        \
-        w##V[wl##V] = 0
-
-#define TCN_FREE_WSTRING(V)      \
-    if (ws##V) (*e)->ReleaseStringChars(e, V, ws##V); \
-    if (ws##V) free (w##V)
-
-#define J2W(V)  w##V
-
-#endif
-
-#if  !APR_HAVE_IPV6
-#define APR_INET6 APR_INET
-#endif
-
-#ifdef APR_UNIX
-#define GET_S_FAMILY(T, F)           \
-    if (F == 0) T = APR_UNSPEC;      \
-    else if (F == 1) T = APR_INET;   \
-    else if (F == 2) T = APR_INET6;  \
-    else if (F == 3) T = APR_UNIX;   \
-    else T = F
-#else
-#define GET_S_FAMILY(T, F)           \
-    if (F == 0) T = APR_UNSPEC;      \
-    else if (F == 1) T = APR_INET;   \
-    else if (F == 2) T = APR_INET6;  \
-    else T = F
-#endif
-
-#define GET_S_TYPE(T, F)             \
-    if (F == 0) T = SOCK_STREAM;     \
-    else if (F == 1) T = SOCK_DGRAM; \
-    else T = F
-
-#define TCN_NO_SOCKET_TIMEOUT -2
 
 #endif /* TCN_H */
