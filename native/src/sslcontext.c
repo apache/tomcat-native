@@ -770,7 +770,6 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCACertificate)(TCN_STDARGS,
     c->store = SSL_CTX_get_cert_store(c->ctx);
     if (c->mode) {
         STACK_OF(X509_NAME) *ca_certs;
-        c->ca_certs++;
         ca_certs = SSL_CTX_get_client_CA_list(c->ctx);
         if (ca_certs == NULL) {
             ca_certs = SSL_load_client_CA_file(J2S(file));
