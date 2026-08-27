@@ -48,10 +48,6 @@ static apr_status_t ssl_context_cleanup(void *data)
                 c->keys[i] = NULL;
             }
         }
-        if (c->bio_is) {
-            BIO_free(c->bio_is);
-            c->bio_is = NULL;
-        }
         if (c->bio_os) {
             BIO_free(c->bio_os);
             c->bio_os = NULL;

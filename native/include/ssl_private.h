@@ -170,7 +170,6 @@ struct tcn_ssl_ctxt_t {
     apr_pool_t      *pool;
     SSL_CTX         *ctx;
     BIO             *bio_os;
-    BIO             *bio_is;
 
     /* we are one or the other */
     int             mode;
@@ -180,8 +179,6 @@ struct tcn_ssl_ctxt_t {
 
     X509            *certs[SSL_AIDX_MAX];
     EVP_PKEY        *keys[SSL_AIDX_MAX];
-
-    char            *rand_file;
 
     /* for client or downstream server authentication */
     int             verify_depth;

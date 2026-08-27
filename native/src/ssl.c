@@ -374,7 +374,7 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
 
     /* Setup verify and seed */
     SSL_set_verify_result(ssl, X509_V_OK);
-    SSL_rand_seed(c->rand_file);
+    SSL_rand_seed(NULL);
 
     /* Store for later usage in SSL_callback_SSL_verify */
     SSL_set_app_data2(ssl, c);
