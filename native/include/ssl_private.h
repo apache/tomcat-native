@@ -183,6 +183,8 @@ struct tcn_ssl_ctxt_t {
     /* for client or downstream server authentication */
     int             verify_depth;
     int             verify_mode;
+
+    /* Password callback */
     tcn_pass_cb_t   *cb_data;
 
     /* for client: List of protocols to request via ALPN.
@@ -218,8 +220,11 @@ struct tcn_ssl_conf_ctxt_t {
 #endif
 
 typedef struct {
-    apr_pool_t     *pool;
-    tcn_ssl_ctxt_t *ctx;
+    apr_pool_t      *pool;
+    tcn_ssl_ctxt_t  *ctx;
+    /* for client or downstream server authentication */
+    int             verify_depth;
+    int             verify_mode;
     enum {
         PHA_NONE = 0,   /* Before PHA */
         PHA_STARTED,    /* PHA req sent to client but no response */
