@@ -283,7 +283,6 @@ struct tcn_ssl_ctxt_t {
     int             shutdown_type;
     char            *rand_file;
 
-    const char      *cipher_suite;
     /* for client or downstream server authentication */
     int             verify_depth;
     int             verify_mode;
