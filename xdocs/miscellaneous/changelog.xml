@@ -69,6 +69,9 @@
       e.g. to support client certificate authentication, do not modify the
       certificate verification settings for other connections. (markt)
     </fix>
+    <fix>
+      Fix a potential crash when configuring raw certificates. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">

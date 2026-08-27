@@ -855,10 +855,6 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
         rv = JNI_FALSE;
         goto cleanup;
     }
-    if(c->certs[idx] != NULL) {
-        free(c->certs[idx]);
-    }
-    c->certs[idx] = certs;
 
     bio = BIO_new(BIO_s_mem());
     BIO_write(bio, key, lengthOfKey);
@@ -869,11 +865,17 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
         ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error reading private key (%s)", err);
         rv = JNI_FALSE;
+        X509_free(certs);
         goto cleanup;
     }
     BIO_free(bio);
+
+    if(c->certs[idx] != NULL) {
+        X509_free(c->certs[idx]);
+    }
+    c->certs[idx] = certs;
     if(c->keys[idx] != NULL) {
-        free(c->keys[idx]);
+        EVP_PKEY_free(c->keys[idx]);
     }
     c->keys[idx] = evp;
 
@@ -881,20 +883,20 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
         ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error setting certificate (%s)", err);
         rv = JNI_FALSE;
-        goto cleanup;
+        goto cleanup_openssl;
     }
     if (SSL_CTX_use_PrivateKey(c->ctx, c->keys[idx]) <= 0) {
         ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Error setting private key (%s)", err);
         rv = JNI_FALSE;
-        goto cleanup;
+        goto cleanup_openssl;
     }
     if (SSL_CTX_check_private_key(c->ctx) <= 0) {
         ERR_error_string_n(SSL_ERR_get(), err, TCN_OPENSSL_ERROR_STRING_LENGTH);
         tcn_Throw(e, "Private key does not match the certificate public key (%s)",
                   err);
         rv = JNI_FALSE;
-        goto cleanup;
+        goto cleanup_openssl;
     }
 
     /*
@@ -907,6 +909,13 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
      */
 #endif
     SSL_CTX_set_dh_auto(c->ctx, 1);
+    goto cleanup;
+
+cleanup_openssl:
+    X509_free(certs);
+    EVP_PKEY_free(evp);
+    c->certs[idx] = NULL;
+    c->keys[idx] = NULL;
 cleanup:
     free(key);
     free(cert);
