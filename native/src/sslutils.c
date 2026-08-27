@@ -456,7 +456,7 @@ void SSL_callback_handshake(const SSL *ssl, int where, int rc)
 /* The code here is inspired by nghttp2
  *
  * See https://github.com/tatsuhiro-t/nghttp2/blob/ae0100a9abfcf3149b8d9e62aae216e946b517fb/src/shrpx_ssl.cc#L244 */
-int select_next_proto(SSL *ssl, const unsigned char **out, unsigned char *outlen,
+static int select_next_proto(const unsigned char **out, unsigned char *outlen,
         const unsigned char *in, unsigned int inlen, unsigned char *supported_protos,
         unsigned int supported_protos_len, int failure_behavior) {
 
@@ -515,7 +515,7 @@ int select_next_proto(SSL *ssl, const unsigned char **out, unsigned char *outlen
 int SSL_callback_alpn_select_proto(SSL* ssl, const unsigned char **out, unsigned char *outlen,
         const unsigned char *in, unsigned int inlen, void *arg) {
     tcn_ssl_ctxt_t *ssl_ctxt = arg;
-    return select_next_proto(ssl, out, outlen, in, inlen, ssl_ctxt->alpn_proto_data, ssl_ctxt->alpn_proto_len, ssl_ctxt->alpn_selector_failure_behavior);
+    return select_next_proto(out, outlen, in, inlen, ssl_ctxt->alpn_proto_data, ssl_ctxt->alpn_proto_len, ssl_ctxt->alpn_selector_failure_behavior);
 }
 #ifdef HAVE_OCSP
 
