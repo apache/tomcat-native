@@ -41,7 +41,7 @@ static volatile apr_uint32_t ntp_accepted = 0;
 
 void ntp_network_dump_statistics()
 {
-    fprintf(stderr, "NT Network Statistics ..\n");
+    fprintf(stderr, "Windows Network Statistics ..\n");
     fprintf(stderr, "Sockets created         : %d\n", ntp_created);
     fprintf(stderr, "Sockets accepted        : %d\n", ntp_accepted);
     fprintf(stderr, "Sockets closed          : %d\n", ntp_closed);

@@ -36,7 +36,7 @@ static volatile apr_uint32_t uxp_accepted = 0;
 
 void uxp_network_dump_statistics()
 {
-    fprintf(stderr, "NT Network Statistics ..\n");
+    fprintf(stderr, "Unix Network Statistics ..\n");
     fprintf(stderr, "Sockets created         : %d\n", uxp_created);
     fprintf(stderr, "Sockets accepted        : %d\n", uxp_accepted);
     fprintf(stderr, "Sockets closed          : %d\n", uxp_closed);
