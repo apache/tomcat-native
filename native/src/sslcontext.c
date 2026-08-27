@@ -67,12 +67,6 @@ static apr_status_t ssl_context_cleanup(void *data)
         }
         c->verifier_method = NULL;
 
-        if (c->next_proto_data) {
-            free(c->next_proto_data);
-            c->next_proto_data = NULL;
-        }
-        c->next_proto_len = 0;
-
         if (c->alpn_proto_data) {
             free(c->alpn_proto_data);
             c->alpn_proto_data = NULL;
