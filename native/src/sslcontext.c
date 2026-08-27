@@ -202,10 +202,6 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
     /* Longer session timeout */
     SSL_CTX_set_timeout(c->ctx, 14400);
 
-    EVP_Digest((const unsigned char *)SSL_DEFAULT_VHOST_NAME,
-               (unsigned long)((sizeof SSL_DEFAULT_VHOST_NAME) - 1),
-               &(c->context_id[0]), NULL, EVP_sha1(), NULL);
-
     /* Set default Certificate verification level
      * and depth for the Client Authentication
      */
@@ -251,22 +247,6 @@ TCN_IMPLEMENT_CALL(jint, SSLContext, free)(TCN_STDARGS, jlong ctx)
     TCN_ASSERT(ctx != 0);
     /* Run and destroy the cleanup callback */
     return apr_pool_cleanup_run(c->pool, c, ssl_context_cleanup);
-}
-
-TCN_IMPLEMENT_CALL(void, SSLContext, setContextId)(TCN_STDARGS, jlong ctx,
-                                                   jstring id)
-{
-    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
-    TCN_ALLOC_CSTRING(id);
-
-    TCN_ASSERT(ctx != 0);
-    UNREFERENCED(o);
-    if (J2S(id)) {
-        EVP_Digest((const unsigned char *)J2S(id),
-                   (unsigned long)strlen(J2S(id)),
-                   &(c->context_id[0]), NULL, EVP_sha1(), NULL);
-    }
-    TCN_FREE_CSTRING(id);
 }
 
 TCN_IMPLEMENT_CALL(void, SSLContext, setBIO)(TCN_STDARGS, jlong ctx,

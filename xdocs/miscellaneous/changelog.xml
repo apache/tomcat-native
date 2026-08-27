@@ -61,6 +61,9 @@
       Java long) rather than a 32-bit unsigned int (represented by a Java int). 
       (markt)
     </fix>
+    <scode>
+      Remove unused code. (markt)
+    </scode>
   </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">
