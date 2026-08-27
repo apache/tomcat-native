@@ -163,8 +163,6 @@ void            tcn_ThrowException(JNIEnv *, const char *);
 void            tcn_ThrowAPRException(JNIEnv *, apr_status_t);
 jstring         tcn_new_string(JNIEnv *, const char *);
 jstring         tcn_new_stringn(JNIEnv *, const char *, size_t);
-apr_status_t    tcn_load_finfo_class(JNIEnv *, jclass);
-apr_status_t    tcn_load_ainfo_class(JNIEnv *, jclass);
 unsigned long   tcn_get_thread_id(void);
 
 #define J2S(V)  c##V
