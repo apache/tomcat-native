@@ -386,48 +386,6 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
     return ok;
 }
 
-/*
- * This callback function is executed while OpenSSL processes the SSL
- * handshake and does SSL record layer stuff.  It's used to trap
- * client-initiated renegotiations, and for dumping everything to the
- * log.
- */
-void SSL_callback_handshake(const SSL *ssl, int where, int rc)
-{
-    tcn_ssl_conn_t *con = (tcn_ssl_conn_t *)SSL_get_app_data(ssl);
-#ifdef HAVE_TLSV1_3
-    const SSL_SESSION *session = SSL_get_session(ssl);
-#endif
-
-    /* Retrieve the conn_rec and the associated SSLConnRec. */
-    if (con == NULL) {
-        return;
-    }
-
-#ifdef HAVE_TLSV1_3
-    /* TLS 1.3 does not use renegotiation so do not update the renegotiation
-     * state once we know we are using TLS 1.3. */
-    if (session != NULL) {
-        if (SSL_SESSION_get_protocol_version(session) == TLS1_3_VERSION) {
-            return;
-        }
-    }
-#endif
-
-    /* If the reneg state is to reject renegotiations, check the SSL
-     * state machine and move to ABORT if a Client Hello is being
-     * read. */
-    if ((where & SSL_CB_HANDSHAKE_START) &&
-         con->reneg_state == RENEG_REJECT) {
-        con->reneg_state = RENEG_ABORT;
-    }
-    /* If the first handshake is complete, change state to reject any
-     * subsequent client-initated renegotiation. */
-    else if ((where & SSL_CB_HANDSHAKE_DONE) && con->reneg_state == RENEG_INIT) {
-        con->reneg_state = RENEG_REJECT;
-    }
-}
-
 /* The code here is inspired by nghttp2
  *
  * See https://github.com/tatsuhiro-t/nghttp2/blob/ae0100a9abfcf3149b8d9e62aae216e946b517fb/src/shrpx_ssl.cc#L244 */

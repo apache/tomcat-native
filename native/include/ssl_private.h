@@ -307,22 +307,6 @@ struct tcn_ssl_conf_ctxt_t {
 typedef struct {
     apr_pool_t     *pool;
     tcn_ssl_ctxt_t *ctx;
-    /* Track the handshake/renegotiation state for the connection so
-     * that all client-initiated renegotiations can be rejected, as a
-     * partial fix for CVE-2009-3555.
-     */
-    enum {
-        RENEG_INIT = 0, /* Before initial handshake */
-        RENEG_REJECT,   /* After initial handshake; any client-initiated
-                         * renegotiation should be rejected
-                         */
-        RENEG_ALLOW,    /* A server-initated renegotiation is taking
-                         * place (as dictated by configuration)
-                         */
-        RENEG_ABORT     /* Renegotiation initiated by client, abort the
-                         * connection
-                         */
-    } reneg_state;
     enum {
         PHA_NONE = 0,   /* Before PHA */
         PHA_STARTED,    /* PHA req sent to client but no response */
@@ -356,7 +340,6 @@ EVP_PKEY   *SSL_dh_GetParamFromFile(const char *);
 int         SSL_ec_GetParamFromFile(const char *);
 #endif
 DH         *SSL_callback_tmp_DH(SSL *, int, int);
-void        SSL_callback_handshake(const SSL *, int, int);
 int         SSL_CTX_use_certificate_chain(SSL_CTX *, const char *, int);
 int         SSL_callback_SSL_verify(int, X509_STORE_CTX *);
 int         SSL_rand_seed(const char *file);
