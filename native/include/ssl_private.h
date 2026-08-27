@@ -271,7 +271,6 @@ struct tcn_ssl_ctxt_t {
     X509            *certs[SSL_AIDX_MAX];
     EVP_PKEY        *keys[SSL_AIDX_MAX];
 
-    int             ca_certs;
     int             shutdown_type;
     char            *rand_file;
 
