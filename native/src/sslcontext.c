@@ -239,29 +239,6 @@ TCN_IMPLEMENT_CALL(jint, SSLContext, free)(TCN_STDARGS, jlong ctx)
     return apr_pool_cleanup_run(c->pool, c, ssl_context_cleanup);
 }
 
-TCN_IMPLEMENT_CALL(void, SSLContext, setBIO)(TCN_STDARGS, jlong ctx,
-                                             jlong bio, jint dir)
-{
-    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
-    BIO *bio_handle   = J2P(bio, BIO *);
-
-    UNREFERENCED_STDARGS;
-    TCN_ASSERT(ctx != 0);
-    if (dir == 0) {
-        if (c->bio_os && c->bio_os != bio_handle)
-            SSL_BIO_close(c->bio_os);
-        c->bio_os = bio_handle;
-    }
-    else if (dir == 1) {
-        if (c->bio_is && c->bio_is != bio_handle)
-            SSL_BIO_close(c->bio_is);
-        c->bio_is = bio_handle;
-    }
-    else
-        return;
-    SSL_BIO_doref(bio_handle);
-}
-
 TCN_IMPLEMENT_CALL(void, SSLContext, setOptions)(TCN_STDARGS, jlong ctx,
                                                  jint opt)
 {
@@ -318,16 +295,6 @@ TCN_IMPLEMENT_CALL(void, SSLContext, clearOptionsLong)(TCN_STDARGS, jlong ctx, j
     UNREFERENCED_STDARGS;
     TCN_ASSERT(ctx != 0);
     SSL_CTX_clear_options(c->ctx, opt);
-}
-
-TCN_IMPLEMENT_CALL(void, SSLContext, setQuietShutdown)(TCN_STDARGS, jlong ctx,
-                                                       jboolean mode)
-{
-    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
-
-    UNREFERENCED_STDARGS;
-    TCN_ASSERT(ctx != 0);
-    SSL_CTX_set_quiet_shutdown(c->ctx, mode ? 1 : 0);
 }
 
 TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCipherSuite)(TCN_STDARGS, jlong ctx,
@@ -724,19 +691,6 @@ cleanup:
     return rc;
 }
 
-TCN_IMPLEMENT_CALL(void, SSLContext, setRandom)(TCN_STDARGS, jlong ctx,
-                                                jstring file)
-{
-    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
-    TCN_ALLOC_CSTRING(file);
-
-    TCN_ASSERT(ctx != 0);
-    UNREFERENCED(o);
-    if (J2S(file))
-        c->rand_file = apr_pstrdup(c->pool, J2S(file));
-    TCN_FREE_CSTRING(file);
-}
-
 TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
                                                          jstring cert, jstring key,
                                                          jstring password, jint idx)
@@ -1038,149 +992,6 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addClientCACertificateRaw)(TCN_STDARGS,
     }
     free(charCert);
     return rv;
-}
-
-static int ssl_array_index(apr_array_header_t *array,
-                           const char *s)
-{
-    int i;
-    for (i = 0; i < array->nelts; i++) {
-        const char *p = APR_ARRAY_IDX(array, i, const char*);
-        if (!strcmp(p, s)) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-static int ssl_cmp_alpn_protos(apr_array_header_t *array,
-                               const char *proto1,
-                               const char *proto2)
-{
-    int index1 = ssl_array_index(array, proto1);
-    int index2 = ssl_array_index(array, proto2);
-    if (index2 > index1) {
-        return (index1 >= 0)? 1 : -1;
-    }
-    else if (index1 > index2) {
-        return (index2 >= 0)? -1 : 1;
-    }
-
-    /* Both have the same index (-1 so neither listed by cient) compare
-     * the names so that spdy3 gets precedence over spdy2. That makes
-     * the outcome at least deterministic. */
-    return strcmp((const char *)proto1, (const char *)proto2);
-}
-
-/*
- * This callback function is executed when the TLS Application Layer
- * Protocol Negotiate Extension (ALPN, RFC 7301) is triggered by the client
- * hello, giving a list of desired protocol names (in descending preference)
- * to the server.
- * The callback has to select a protocol name or return an error if none of
- * the clients preferences is supported.
- * The selected protocol does not have to be on the client list, according
- * to RFC 7301, so no checks are performed.
- * The client protocol list is serialized as length byte followed by ascii
- * characters (not null-terminated), followed by the next protocol name.
- */
-int cb_server_alpn(SSL *ssl,
-                   const unsigned char **out, unsigned char *outlen,
-                   const unsigned char *in, unsigned int inlen, void *arg)
-{
-    tcn_ssl_ctxt_t *tcsslctx = (tcn_ssl_ctxt_t *)arg;
-    tcn_ssl_conn_t *con = (tcn_ssl_conn_t *)SSL_get_app_data(ssl);
-    apr_array_header_t *client_protos;
-    apr_array_header_t *proposed_protos;
-    int i;
-    size_t len;
-
-    if (inlen == 0) {
-        // Client specified an empty protocol list. Nothing to negotiate.
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
-    }
-
-    client_protos = apr_array_make(con->pool , 0, sizeof(char *));
-    for (i = 0; i < inlen; /**/) {
-        /* Grab length of next item from leading length byte */
-        unsigned int plen = in[i++];
-        if (plen + i > inlen) {
-            // The protocol name extends beyond the declared length
-            // of the protocol list.
-            return SSL_TLSEXT_ERR_ALERT_FATAL;
-        }
-        APR_ARRAY_PUSH(client_protos, char*) = apr_pstrndup(con->pool, (const char *)in+i, plen);
-        i += plen;
-    }
-
-    if (tcsslctx->alpn == NULL) {
-        // Server supported protocol names not set.
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
-    }
-
-    if (tcsslctx->alpnlen == 0) {
-        // Server supported protocols is an empty list
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
-    }
-
-    proposed_protos = apr_array_make(con->pool, 0, sizeof(char *));
-    for (i = 0; i < tcsslctx->alpnlen; /**/) {
-        /* Grab length of next item from leading length byte */
-        unsigned int plen = tcsslctx->alpn[i++];
-        if (plen + i > tcsslctx->alpnlen) {
-            // The protocol name extends beyond the declared length
-            // of the protocol list.
-            return SSL_TLSEXT_ERR_ALERT_FATAL;
-        }
-        APR_ARRAY_PUSH(proposed_protos, char*) = apr_pstrndup(con->pool, (const char *)tcsslctx->alpn+i, plen);
-        i += plen;
-    }
-
-    if (proposed_protos->nelts <= 0) {
-        // Should never happen. The server did not specify any protocols.
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
-    }
-
-    /* Now select the most preferred protocol from the proposals. */
-    *out = APR_ARRAY_IDX(proposed_protos, 0, const unsigned char *);
-    for (i = 1; i < proposed_protos->nelts; ++i) {
-        const char *proto = APR_ARRAY_IDX(proposed_protos, i, const char*);
-        /* Do we prefer it over existing candidate? */
-        if (ssl_cmp_alpn_protos(client_protos, (const char *)*out, proto) < 0) {
-            *out = (const unsigned char*)proto;
-        }
-    }
-
-    len = strlen((const char*)*out);
-    if (len > 255) {
-        // Agreed protocol name too long
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
-    }
-
-    *outlen = (unsigned char)len;
-
-    return SSL_TLSEXT_ERR_OK;
-}
-
-TCN_IMPLEMENT_CALL(jint, SSLContext, setALPN)(TCN_STDARGS, jlong ctx,
-                                              jbyteArray buf, jint len)
-{
-    tcn_ssl_ctxt_t *sslctx = J2P(ctx, tcn_ssl_ctxt_t *);
-
-    sslctx->alpn = apr_pcalloc(sslctx->pool, len);
-    (*e)->GetByteArrayRegion(e, buf, 0, len, (jbyte *)sslctx->alpn);
-    sslctx->alpnlen = len;
-
-    if (sslctx->mode == SSL_MODE_SERVER) {
-        SSL_CTX_set_alpn_select_cb(sslctx->ctx, cb_server_alpn, sslctx);
-    } else {
-        /*
-         * TODO: Implement client side call-back
-         * SSL_CTX_set_next_proto_select_cb(sslctx->ctx, cb_request_alpn, sslctx);
-         */
-        return APR_ENOTIMPL;
-    }
-    return 0;
 }
 
 /* Start of netty-tc-native add */
