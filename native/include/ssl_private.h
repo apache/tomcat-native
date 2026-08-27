@@ -107,11 +107,6 @@
 #define SSL_CVERIFY_OPTIONAL_NO_CA  (3)
 #define SSL_VERIFY_PEER_STRICT      (SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
 
-#define SSL_SHUTDOWN_TYPE_UNSET     (0)
-#define SSL_SHUTDOWN_TYPE_STANDARD  (1)
-#define SSL_SHUTDOWN_TYPE_UNCLEAN   (2)
-#define SSL_SHUTDOWN_TYPE_ACCURATE  (3)
-
 #define SSL_TO_APR_ERROR(X)         (APR_OS_START_USERERR + 1000 + X)
 
 #define SSL_INFO_SESSION_ID                 (0x0001)
@@ -263,7 +258,6 @@ struct tcn_ssl_ctxt_t {
     X509            *certs[SSL_AIDX_MAX];
     EVP_PKEY        *keys[SSL_AIDX_MAX];
 
-    int             shutdown_type;
     char            *rand_file;
 
     /* for client or downstream server authentication */
@@ -315,7 +309,6 @@ typedef struct {
     tcn_ssl_ctxt_t *ctx;
     SSL            *ssl;
     X509           *peer;
-    int             shutdown_type;
     /* Track the handshake/renegotiation state for the connection so
      * that all client-initiated renegotiations can be rejected, as a
      * partial fix for CVE-2009-3555.

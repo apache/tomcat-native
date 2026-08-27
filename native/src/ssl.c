@@ -570,7 +570,6 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     con->pool = p;
     con->ctx  = c;
     con->ssl  = ssl;
-    con->shutdown_type = c->shutdown_type;
 
     /* Store the handshakeCount in the SSL instance. */
     *handshakeCount = 0;
