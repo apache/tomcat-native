@@ -102,9 +102,6 @@ unsigned long   tcn_get_thread_id(void);
         }                                       \
     TCN_END_MACRO
 
-#define TCN_THROW_OS_ERROR(E)   \
-    tcn_ThrowAPRException((E), apr_get_os_error())
-
 #define TCN_LOAD_CLASS(E, C, N, R)                  \
     TCN_BEGIN_MACRO                                 \
         jclass _##C = (*(E))->FindClass((E), N);    \

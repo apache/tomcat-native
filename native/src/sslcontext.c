@@ -993,8 +993,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, addClientCACertificateRaw)(TCN_STDARGS,
 /* Start of netty-tc-native add */
 
 /* Convert protos to wire format */
-static int initProtocols(JNIEnv *e, const tcn_ssl_ctxt_t *c, unsigned char **proto_data,
-            unsigned int *proto_len, jobjectArray protos) {
+static int initProtocols(JNIEnv *e, unsigned char **proto_data, unsigned int *proto_len, jobjectArray protos) {
     int i;
     unsigned char *p_data;
     /*
@@ -1089,7 +1088,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setAlpnProtos)(TCN_STDARGS, jlong ctx, jobj
     TCN_ASSERT(ctx != 0);
     UNREFERENCED(o);
 
-    if (initProtocols(e, c, &c->alpn_proto_data, &c->alpn_proto_len, alpn_protos) == 0) {
+    if (initProtocols(e, &c->alpn_proto_data, &c->alpn_proto_len, alpn_protos) == 0) {
         c->alpn_selector_failure_behavior = selectorFailureBehavior;
 
         // depending on if it's client mode or not we need to call different functions.

@@ -176,17 +176,13 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     jclass clazz;
     jclass sClazz;
 
-    TCN_ALLOC_CSTRING(engine);
-
     UNREFERENCED(o);
     if (!tcn_global_pool) {
-        TCN_FREE_CSTRING(engine);
         tcn_ThrowAPRException(e, APR_EINVAL);
         return (jint)APR_EINVAL;
     }
     /* Check if already initialized */
     if (ssl_initialized++) {
-        TCN_FREE_CSTRING(engine);
         return (jint)APR_SUCCESS;
     }
 
@@ -205,7 +201,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     apr_pool_cleanup_register(tcn_global_pool, NULL,
                               ssl_init_cleanup,
                               apr_pool_cleanup_null);
-    TCN_FREE_CSTRING(engine);
 
     /* Cache the byte[].class for performance reasons */
     clazz = (*e)->FindClass(e, "[B");
