@@ -131,28 +131,6 @@ jstring tcn_new_stringn(JNIEnv *env, const char *str, size_t l)
     return NULL;
 }
 
-jbyteArray tcn_new_arrayb(JNIEnv *env, const unsigned char *data, size_t len)
-{
-    jbyteArray bytes = 0;
-    
-    if ((*env)->EnsureLocalCapacity(env, 1) < 0) {
-        return NULL; /* out of memory error */
-    }
-    bytes = (*env)->NewByteArray(env, (jsize)len);
-    if (bytes != NULL) {
-        (*env)->SetByteArrayRegion(env, bytes, 0, (jint)len, (jbyte *)data);
-    }
-    return bytes;
-}
-
-jobjectArray tcn_new_arrays(JNIEnv *env, size_t len)
-{
-    if ((*env)->EnsureLocalCapacity(env, 1) < 0) {
-        return NULL; /* out of memory error */
-    }
-    return (*env)->NewObjectArray(env, (jsize)len, jString_class, NULL);
-}
-
 jstring tcn_new_string(JNIEnv *env, const char *str)
 {
     if (!str) {

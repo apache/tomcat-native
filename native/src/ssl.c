@@ -49,9 +49,6 @@ void SSL_callback_add_keylog(SSL_CTX *ctx)
     }
 }
 
-static void init_bio_methods(void);
-static void free_bio_methods(void);
-
 TCN_IMPLEMENT_CALL(jint, SSL, version)(TCN_STDARGS)
 {
     UNREFERENCED_STDARGS;
@@ -74,8 +71,6 @@ static apr_status_t ssl_init_cleanup(void *data)
     if (!ssl_initialized)
         return APR_SUCCESS;
     ssl_initialized = 0;
-
-    free_bio_methods();
 
     /* Openssl v1.1+ handles all termination automatically. */
 
@@ -204,8 +199,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     /* For SSL_get_app_data2(), SSL_get_app_data3() and SSL_get_app_data4() at request time */
     SSL_init_app_data_idx();
 
-    init_bio_methods();
-
     /*
      * Let us cleanup the ssl library when the library is unloaded
      */
@@ -287,214 +280,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, fipsModeSet)(TCN_STDARGS, jint mode)
     tcn_ThrowException(e, "fipsModeSet is not supported in Tomcat Native 2.x onwards.");
 
     return r;
-}
-
-/* OpenSSL Java Stream BIO */
-
-typedef struct  {
-    int            refcount;
-    apr_pool_t     *pool;
-    tcn_callback_t cb;
-} BIO_JAVA;
-
-
-static apr_status_t generic_bio_cleanup(void *data)
-{
-    BIO *b = (BIO *)data;
-
-    if (b) {
-        BIO_free(b);
-    }
-    return APR_SUCCESS;
-}
-
-void SSL_BIO_close(BIO *bi)
-{
-    BIO_JAVA *j;
-    if (bi == NULL)
-        return;
-    j = (BIO_JAVA *)BIO_get_data(bi);
-    if (j != NULL && BIO_test_flags(bi, SSL_BIO_FLAG_CALLBACK)) {
-        j->refcount--;
-        if (j->refcount == 0) {
-            if (j->pool)
-                apr_pool_cleanup_run(j->pool, bi, generic_bio_cleanup);
-            else
-                BIO_free(bi);
-        }
-    }
-    else
-        BIO_free(bi);
-}
-
-void SSL_BIO_doref(BIO *bi)
-{
-    BIO_JAVA *j;
-    if (bi == NULL)
-        return;
-    j = (BIO_JAVA *)BIO_get_data(bi);
-    if (j != NULL && BIO_test_flags(bi, SSL_BIO_FLAG_CALLBACK)) {
-        j->refcount++;
-    }
-}
-
-
-static int jbs_new(BIO *bi)
-{
-    BIO_JAVA *j;
-
-    if ((j = OPENSSL_malloc(sizeof(BIO_JAVA))) == NULL)
-        return 0;
-    j->pool      = NULL;
-    j->refcount  = 1;
-    BIO_set_shutdown(bi, 1);
-    BIO_set_init(bi, 0);
-    BIO_set_data(bi, (void *)j);
-
-    return 1;
-}
-
-static int jbs_free(BIO *bi)
-{
-    BIO_JAVA *j;
-    if (bi == NULL)
-        return 0;
-    j = (BIO_JAVA *)BIO_get_data(bi);
-    if (j != NULL) {
-        if (BIO_get_init(bi)) {
-            JNIEnv   *e = NULL;
-            BIO_set_init(bi, 0);
-            tcn_get_java_env(&e);
-            TCN_UNLOAD_CLASS(e, j->cb.obj);
-        }
-        OPENSSL_free(j);
-    }
-    BIO_set_data(bi, NULL);
-    return 1;
-}
-
-static int jbs_write(BIO *b, const char *in, int inl)
-{
-    jint ret = -1;
-    if (BIO_get_init(b) && in != NULL) {
-        BIO_JAVA *j = (BIO_JAVA *)BIO_get_data(b);
-        JNIEnv   *e = NULL;
-        jbyteArray jb;
-        tcn_get_java_env(&e);
-        jb = (*e)->NewByteArray(e, inl);
-        if (!(*e)->ExceptionOccurred(e)) {
-            BIO_clear_retry_flags(b);
-            (*e)->SetByteArrayRegion(e, jb, 0, inl, (jbyte *)in);
-            ret = (*e)->CallIntMethod(e, j->cb.obj,
-                                      j->cb.mid[0], jb);
-            (*e)->ReleaseByteArrayElements(e, jb, (jbyte *)in, JNI_ABORT);
-            (*e)->DeleteLocalRef(e, jb);
-        }
-    }
-    /* From netty-tc-native, in the AF we were returning 0 */
-    if (ret == 0) {
-        BIO_set_retry_write(b);
-        ret = -1;
-    }
-    return ret;
-}
-
-static int jbs_read(BIO *b, char *out, int outl)
-{
-    jint ret = 0;
-    if (BIO_get_init(b) && out != NULL) {
-        BIO_JAVA *j = (BIO_JAVA *)BIO_get_data(b);
-        JNIEnv   *e = NULL;
-        jbyteArray jb;
-        tcn_get_java_env(&e);
-        jb = (*e)->NewByteArray(e, outl);
-        if (!(*e)->ExceptionOccurred(e)) {
-            BIO_clear_retry_flags(b);
-            ret = (*e)->CallIntMethod(e, j->cb.obj,
-                                      j->cb.mid[1], jb);
-            if (ret > 0) {
-                jbyte *jout = (*e)->GetPrimitiveArrayCritical(e, jb, NULL);
-                memcpy(out, jout, ret);
-                (*e)->ReleasePrimitiveArrayCritical(e, jb, jout, 0);
-            } else if (outl != 0) {
-                ret = -1;
-                BIO_set_retry_read(b);
-            }
-            (*e)->DeleteLocalRef(e, jb);
-        }
-    }
-    return ret;
-}
-
-static int jbs_puts(BIO *b, const char *in)
-{
-    int ret = 0;
-    if (BIO_get_init(b) && in != NULL) {
-        BIO_JAVA *j = (BIO_JAVA *)BIO_get_data(b);
-        JNIEnv   *e = NULL;
-        tcn_get_java_env(&e);
-        ret = (*e)->CallIntMethod(e, j->cb.obj,
-                                  j->cb.mid[2],
-                                  tcn_new_string(e, in));
-    }
-    return ret;
-}
-
-static int jbs_gets(BIO *b, char *out, int outl)
-{
-    int ret = 0;
-    if (BIO_get_init(b) && out != NULL) {
-        BIO_JAVA *j = (BIO_JAVA *)BIO_get_data(b);
-        JNIEnv   *e = NULL;
-        jobject  o;
-        tcn_get_java_env(&e);
-        if ((o = (*e)->CallObjectMethod(e, j->cb.obj,
-                            j->cb.mid[3], (jint)(outl - 1)))) {
-            TCN_ALLOC_CSTRING(o);
-            if (J2S(o)) {
-                int l = (int)strlen(J2S(o));
-                if (l < outl) {
-                    strcpy(out, J2S(o));
-                    ret = outl;
-                }
-            }
-            TCN_FREE_CSTRING(o);
-        }
-    }
-    return ret;
-}
-
-static long jbs_ctrl(BIO *b, int cmd, long num, void *ptr)
-{
-    int ret = 0;
-    switch (cmd) {
-        case BIO_CTRL_FLUSH:
-            ret = 1;
-            break;
-        default:
-            ret = 0;
-            break;
-    }
-    return ret;
-}
-
-static BIO_METHOD *jbs_methods = NULL;
-
-static void init_bio_methods(void)
-{
-    jbs_methods = BIO_meth_new(BIO_TYPE_FILE, "Java Callback");
-    BIO_meth_set_write(jbs_methods, &jbs_write);
-    BIO_meth_set_read(jbs_methods, &jbs_read);
-    BIO_meth_set_puts(jbs_methods, &jbs_puts);
-    BIO_meth_set_gets(jbs_methods, &jbs_gets);
-    BIO_meth_set_ctrl(jbs_methods, &jbs_ctrl);
-    BIO_meth_set_create(jbs_methods, &jbs_new);
-    BIO_meth_set_destroy(jbs_methods, &jbs_free);
-}
-
-static void free_bio_methods(void)
-{
-    BIO_meth_free(jbs_methods);
 }
 
 /*** Begin Twitter 1:1 API addition ***/

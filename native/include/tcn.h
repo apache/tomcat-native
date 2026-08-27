@@ -164,8 +164,6 @@ void            tcn_ThrowMemoryException(JNIEnv *, const char *, int, const char
 void            tcn_ThrowAPRException(JNIEnv *, apr_status_t);
 jstring         tcn_new_string(JNIEnv *, const char *);
 jstring         tcn_new_stringn(JNIEnv *, const char *, size_t);
-jbyteArray      tcn_new_arrayb(JNIEnv *, const unsigned char *, size_t);
-jobjectArray    tcn_new_arrays(JNIEnv *env, size_t len);
 char           *tcn_get_string(JNIEnv *, jstring);
 char           *tcn_strdup(JNIEnv *, jstring);
 char           *tcn_pstrdup(JNIEnv *, jstring, apr_pool_t *);
@@ -244,12 +242,6 @@ unsigned long   tcn_get_thread_id(void);
     TCN_END_MACRO
 
 #define TCN_MAX_METHODS 8
-
-typedef struct {
-    jobject     obj;
-    jmethodID   mid[TCN_MAX_METHODS];
-    void        *opaque;
-} tcn_callback_t;
 
 #define TCN_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define TCN_MAX(a, b) ((a) > (b) ? (a) : (b))

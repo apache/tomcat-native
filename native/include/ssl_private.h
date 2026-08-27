@@ -81,8 +81,6 @@
 #define SSL_MODE_SERVER         (1)
 #define SSL_MODE_COMBINED       (2)
 
-#define SSL_BIO_FLAG_RDONLY     (1<<0)
-#define SSL_BIO_FLAG_CALLBACK   (1<<1)
 #define SSL_DEFAULT_CACHE_SIZE  (256)
 #define SSL_DEFAULT_VHOST_NAME  ("_default_:443")
 #define SSL_MAX_STR_LEN         (2048)
@@ -311,8 +309,6 @@ void       *SSL_get_app_data4(const SSL *);
 void        SSL_set_app_data4(SSL *, void *);
 int         SSL_password_prompt(tcn_pass_cb_t *);
 int         SSL_password_callback(char *, int, int, void *);
-void        SSL_BIO_close(BIO *);
-void        SSL_BIO_doref(BIO *);
 DH         *SSL_get_dh_params(unsigned keylen);
 EVP_PKEY   *SSL_dh_GetParamFromFile(const char *);
 #ifdef HAVE_ECC
