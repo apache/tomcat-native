@@ -73,18 +73,6 @@ extern ENGINE *tcn_ssl_engine;
 #define TCN_OPENSSL_ERROR_STRING_LENGTH 256
 
 /*
- * Define the SSL options
- */
-#define SSL_OPT_NONE            (0)
-#define SSL_OPT_RELSET          (1<<0)
-#define SSL_OPT_STDENVVARS      (1<<1)
-#define SSL_OPT_EXPORTCERTDATA  (1<<3)
-#define SSL_OPT_FAKEBASICAUTH   (1<<4)
-#define SSL_OPT_STRICTREQUIRE   (1<<5)
-#define SSL_OPT_OPTRENEGOTIATE  (1<<6)
-#define SSL_OPT_ALL             (SSL_OPT_STDENVVARS|SSL_OPT_EXPORTCERTDATA|SSL_OPT_FAKEBASICAUTH|SSL_OPT_STRICTREQUIRE|SSL_OPT_OPTRENEGOTIATE)
-
-/*
  * Define the SSL Protocol options
  */
 #define SSL_PROTOCOL_NONE       (0)
