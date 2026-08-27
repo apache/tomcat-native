@@ -35,7 +35,6 @@ static apr_status_t ssl_context_cleanup(void *data)
     if (c) {
         int i;
         c->crl = NULL;
-        c->store = NULL;
         if (c->ctx)
             SSL_CTX_free(c->ctx);
         c->ctx = NULL;
@@ -559,7 +558,6 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCACertificate)(TCN_STDARGS,
         rv = JNI_FALSE;
         goto cleanup;
     }
-    c->store = SSL_CTX_get_cert_store(c->ctx);
     if (c->mode) {
         STACK_OF(X509_NAME) *ca_certs;
         ca_certs = SSL_CTX_get_client_CA_list(c->ctx);
@@ -630,8 +628,6 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setVerify)(TCN_STDARGS, jlong ctx,
     if ((c->verify_mode == SSL_CVERIFY_OPTIONAL) ||
         (c->verify_mode == SSL_CVERIFY_OPTIONAL_NO_CA))
         verify |= SSL_VERIFY_PEER;
-    if (!c->store)
-        c->store = SSL_CTX_get_cert_store(c->ctx);
 
     SSL_CTX_set_verify(c->ctx, verify, SSL_callback_SSL_verify);
 }
