@@ -160,13 +160,9 @@ struct tcn_socket_t {
 /* Private helper functions */
 void            tcn_Throw(JNIEnv *, const char *, ...);
 void            tcn_ThrowException(JNIEnv *, const char *);
-void            tcn_ThrowMemoryException(JNIEnv *, const char *, int, const char *);
 void            tcn_ThrowAPRException(JNIEnv *, apr_status_t);
 jstring         tcn_new_string(JNIEnv *, const char *);
 jstring         tcn_new_stringn(JNIEnv *, const char *, size_t);
-char           *tcn_get_string(JNIEnv *, jstring);
-char           *tcn_strdup(JNIEnv *, jstring);
-char           *tcn_pstrdup(JNIEnv *, jstring, apr_pool_t *);
 apr_status_t    tcn_load_finfo_class(JNIEnv *, jclass);
 apr_status_t    tcn_load_ainfo_class(JNIEnv *, jclass);
 unsigned long   tcn_get_thread_id(void);
@@ -185,9 +181,6 @@ unsigned long   tcn_get_thread_id(void);
 #define TCN_FREE_CSTRING(V)      \
     if (c##V) (*e)->ReleaseStringUTFChars(e, V, c##V)
 
-#define TCN_ALLOC_JSTRING(V)     \
-    char *c##V = tcn_get_string(e, (V))
-
 #define AJP_TO_JSTRING(V)   (*e)->NewStringUTF((e), (V))
 
 #define TCN_FREE_JSTRING(V)      \
@@ -195,13 +188,6 @@ unsigned long   tcn_get_thread_id(void);
         if (c##V)                \
             free(c##V);          \
     TCN_END_MACRO
-
-#define TCN_CHECK_ALLOCATED(x)                              \
-        if (x == NULL) {                                    \
-            tcn_ThrowMemoryException(e, __FILE__, __LINE__, \
-            "APR memory allocation failed");                \
-            goto cleanup;                                   \
-        } else (void)(0)
 
 #define TCN_THROW_IF_ERR(x, r)                  \
     TCN_BEGIN_MACRO                             \

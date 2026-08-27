@@ -43,7 +43,6 @@ static JavaVM     *tcn_global_vm = NULL;
 
 static jclass    jString_class;
 static jmethodID jString_init;
-static jmethodID jString_getBytes;
 
 int tcn_parent_pid = 0;
 
@@ -76,8 +75,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
     TCN_LOAD_CLASS(env, jString_class, "java/lang/String", JNI_ERR);
     TCN_GET_METHOD(env, jString_class, jString_init,
                    "<init>", "([B)V", JNI_ERR);
-    TCN_GET_METHOD(env, jString_class, jString_getBytes,
-                   "getBytes", "()[B", JNI_ERR);
 
 #ifdef WIN32
     {
@@ -141,62 +138,6 @@ jstring tcn_new_string(JNIEnv *env, const char *str)
         }
         return (*env)->NewStringUTF(env, str);
     }
-}
-
-char *tcn_get_string(JNIEnv *env, jstring jstr)
-{
-    jbyteArray bytes = NULL;
-    jthrowable exc;
-    char *result = NULL;
-
-    if ((*env)->EnsureLocalCapacity(env, 2) < 0) {
-        return NULL; /* out of memory error */
-    }
-    bytes = (*env)->CallObjectMethod(env, jstr, jString_getBytes);
-    exc = (*env)->ExceptionOccurred(env);
-    if (!exc) {
-        jint len = (*env)->GetArrayLength(env, bytes);
-        result = (char *)malloc(len + 1);
-        if (result == NULL) {
-            TCN_THROW_OS_ERROR(env);
-            (*env)->DeleteLocalRef(env, bytes);
-            return 0;
-        }
-        (*env)->GetByteArrayRegion(env, bytes, 0, len, (jbyte *)result);
-        result[len] = '\0'; /* NULL-terminate */
-    }
-    else {
-        (*env)->DeleteLocalRef(env, exc);
-    }
-    (*env)->DeleteLocalRef(env, bytes);
-
-    return result;
-}
-
-char *tcn_strdup(JNIEnv *env, jstring jstr)
-{
-    char *result = NULL;
-    const char *cjstr;
-
-    cjstr = (const char *)((*env)->GetStringUTFChars(env, jstr, 0));
-    if (cjstr) {
-        result = strdup(cjstr);
-        (*env)->ReleaseStringUTFChars(env, jstr, cjstr);
-    }
-    return result;
-}
-
-char *tcn_pstrdup(JNIEnv *env, jstring jstr, apr_pool_t *pool)
-{
-    char *result = NULL;
-    const char *cjstr;
-
-    cjstr = (const char *)((*env)->GetStringUTFChars(env, jstr, 0));
-    if (cjstr) {
-        result = apr_pstrdup(pool, cjstr);
-        (*env)->ReleaseStringUTFChars(env, jstr, cjstr);
-    }
-    return result;
 }
 
 TCN_IMPLEMENT_CALL(jboolean, Library, initialize)(TCN_STDARGS)
