@@ -76,7 +76,7 @@
       Avoid a potential crash with very long ALPN protocol names. (markt)
     </fix>
     <fix>
-      Make the call to a CertficateVerifier more robust. (markt)
+      Make the call to a CertificateVerifier more robust. (markt)
     </fix>
   </changelog>
 </section>
