@@ -111,52 +111,6 @@
 
 #define TCN_GETNET_METHOD(FN)  method_##FN
 
-#define TCN_SOCKET_UNKNOWN  0
-#define TCN_SOCKET_APR      1
-#define TCN_SOCKET_SSL      2
-#define TCN_SOCKET_UNIX     3
-#define TCN_SOCKET_NTPIPE   4
-
-#define TCN_SOCKET_GET_POOL 0
-#define TCN_SOCKET_GET_IMPL 1
-#define TCN_SOCKET_GET_APRS 2
-#define TCN_SOCKET_GET_TYPE 3
-
-typedef struct {
-    int type;
-    apr_status_t (*cleanup)(void *);
-    apr_status_t (APR_THREAD_FUNC *close) (apr_socket_t *);
-    apr_status_t (APR_THREAD_FUNC *shutdown) (apr_socket_t *, apr_shutdown_how_e);
-    apr_status_t (APR_THREAD_FUNC *opt_get)(apr_socket_t *, apr_int32_t, apr_int32_t *);
-    apr_status_t (APR_THREAD_FUNC *opt_set)(apr_socket_t *, apr_int32_t, apr_int32_t);
-    apr_status_t (APR_THREAD_FUNC *timeout_get)(apr_socket_t *, apr_interval_time_t *);
-    apr_status_t (APR_THREAD_FUNC *timeout_set)(apr_socket_t *, apr_interval_time_t);
-    apr_status_t (APR_THREAD_FUNC *send) (apr_socket_t *, const char *, apr_size_t *);
-    apr_status_t (APR_THREAD_FUNC *sendv)(apr_socket_t *, const struct iovec *, apr_int32_t, apr_size_t *);
-    apr_status_t (APR_THREAD_FUNC *recv) (apr_socket_t *, char *, apr_size_t *);
-} tcn_nlayer_t;
-
-typedef struct tcn_socket_t tcn_socket_t;
-typedef struct tcn_pfde_t   tcn_pfde_t;
-
-struct tcn_pfde_t {
-    APR_RING_ENTRY(tcn_pfde_t) link;
-    apr_pollfd_t fd;
-};
-
-struct tcn_socket_t {
-    apr_pool_t   *pool;
-    apr_pool_t   *child;
-    apr_socket_t *sock;
-    void         *opaque;
-    char         *jsbbuff;
-    char         *jrbbuff;
-    tcn_nlayer_t *net;
-    tcn_pfde_t   *pe;
-    apr_time_t          last_active;
-    apr_interval_time_t timeout;
-};
-
 /* Private helper functions */
 void            tcn_Throw(JNIEnv *, const char *, ...);
 void            tcn_ThrowException(JNIEnv *, const char *);
