@@ -270,7 +270,6 @@ struct tcn_ssl_ctxt_t {
 
     unsigned char   context_id[SHA_DIGEST_LENGTH];
 
-    int             protocol;
     /* we are one or the other */
     int             mode;
 

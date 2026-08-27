@@ -276,7 +276,6 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jlong pool,
 
     SSL_callback_add_keylog(ctx);
 
-    c->protocol = protocol;
     c->mode     = mode;
     c->ctx      = ctx;
     c->pool     = p;
