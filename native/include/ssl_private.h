@@ -307,7 +307,6 @@ struct tcn_ssl_conf_ctxt_t {
 typedef struct {
     apr_pool_t     *pool;
     tcn_ssl_ctxt_t *ctx;
-    X509           *peer;
     /* Track the handshake/renegotiation state for the connection so
      * that all client-initiated renegotiations can be rejected, as a
      * partial fix for CVE-2009-3555.
