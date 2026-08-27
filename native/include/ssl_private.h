@@ -239,13 +239,6 @@
 #define MAX_ALPN_PROTO_SIZE 65535
 #define SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL            1
 
-typedef struct {
-    /* client can have any number of cert/key pairs */
-    const char  *cert_file;
-    const char  *cert_path;
-    STACK_OF(X509_INFO) *certs;
-} ssl_pkc_t;
-
 typedef struct tcn_ssl_ctxt_t tcn_ssl_ctxt_t;
 
 typedef struct {
