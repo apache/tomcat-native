@@ -137,6 +137,8 @@ static tcn_ssl_conn_t *ssl_create(JNIEnv *env, tcn_ssl_ctxt_t *ctx, apr_pool_t *
     con->ctx  = ctx;
     con->ssl  = ssl;
     con->shutdown_type = ctx->shutdown_type;
+    con->verify_mode = SSL_CVERIFY_UNSET;
+    con->verify_depth = ctx->verify_depth;
     apr_pollset_create(&(con->pollset), 1, pool, 0);
 
     SSL_set_app_data(ssl, (void *)con);
@@ -311,6 +313,7 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, handshake)(TCN_STDARGS, jlong sock)
     long vr;
     apr_status_t rv;
     X509 *peer;
+    int verify;
 
     UNREFERENCED_STDARGS;
     TCN_ASSERT(sock != 0);
@@ -364,11 +367,16 @@ TCN_IMPLEMENT_CALL(jint, SSLSocket, handshake)(TCN_STDARGS, jlong sock)
         /*
         * Check for failed client authentication
         */
-        if (con->ctx->verify_mode != SSL_VERIFY_NONE &&
+        if (con->verify_mode == SSL_CVERIFY_UNSET) {
+            verify = con->ctx->verify_mode;
+        } else {
+            verify = con->verify_mode;
+        }
+        if (verify != SSL_VERIFY_NONE &&
                 (vr = SSL_get_verify_result(con->ssl)) != X509_V_OK) {
 
             if (SSL_VERIFY_ERROR_IS_OPTIONAL(vr) &&
-                    con->ctx->verify_mode == SSL_CVERIFY_OPTIONAL_NO_CA) {
+                    verify == SSL_CVERIFY_OPTIONAL_NO_CA) {
                 /* TODO: Log optionalNoCA */
             } else {
                 /* TODO: Log SSL client authentication failed */
@@ -743,20 +751,27 @@ TCN_IMPLEMENT_CALL(void, SSLSocket, setVerify)(TCN_STDARGS,
     tcn_socket_t *s   = J2P(sock, tcn_socket_t *);
     tcn_ssl_conn_t *con;
     int verify = SSL_VERIFY_NONE;
-
     UNREFERENCED_STDARGS;
-    TCN_ASSERT(sock != 0);
+
+    if (sock == NULL) {
+        tcn_ThrowException(e, "SSLSocket is null");
+        return;
+    }
+
     con = (tcn_ssl_conn_t *)s->opaque;
 
-    if (cverify == SSL_CVERIFY_UNSET)
-        cverify = SSL_CVERIFY_NONE;
-    if (depth > 0)
-        SSL_set_verify_depth(con->ssl, depth);
+    con->verify_mode = cverify;
 
-    if (cverify == SSL_CVERIFY_REQUIRE)
+    if (con->verify_mode == SSL_CVERIFY_UNSET)
+        con->verify_mode = SSL_CVERIFY_NONE;
+    if (depth > 0) {
+        con->verify_depth = depth;
+        SSL_set_verify_depth(con->ssl, depth);
+    }
+    if (con->verify_mode == SSL_CVERIFY_REQUIRE)
         verify |= SSL_VERIFY_PEER_STRICT;
-    if ((cverify == SSL_CVERIFY_OPTIONAL) ||
-        (cverify == SSL_CVERIFY_OPTIONAL_NO_CA))
+    if ((con->verify_mode == SSL_CVERIFY_OPTIONAL) ||
+        (con->verify_mode == SSL_CVERIFY_OPTIONAL_NO_CA))
         verify |= SSL_VERIFY_PEER;
 
     SSL_set_verify(con->ssl, verify, NULL);

@@ -55,6 +55,11 @@
     <scode>
       Remove unused code. (markt)
     </scode>
+    <fix>
+      Ensure that per connection changes to certificate verification settings,
+      e.g. to support client certificate authentication, do not modify the
+      certificate verification settings for other connections. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="1.3.8" rtext="2026-06-15">

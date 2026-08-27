@@ -900,14 +900,17 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setShutdownType)(TCN_STDARGS, jlong ctx,
     c->shutdown_type = type;
 }
 
-TCN_IMPLEMENT_CALL(void, SSLContext, setVerify)(TCN_STDARGS, jlong ctx,
-                                                jint level, jint depth)
+TCN_IMPLEMENT_CALL(void, SSLContext, setVerify)(TCN_STDARGS, jlong ctx, jint level, jint depth)
 {
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     int verify = SSL_VERIFY_NONE;
-
     UNREFERENCED(o);
-    TCN_ASSERT(ctx != 0);
+
+    if (c == NULL) {
+        tcn_ThrowException(e, "SSLContext is null");
+        return;
+    }
+
     c->verify_mode = level;
 
     if (c->verify_mode == SSL_CVERIFY_UNSET)

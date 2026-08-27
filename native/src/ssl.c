@@ -1085,6 +1085,8 @@ TCN_IMPLEMENT_CALL(jlong /* SSL * */, SSL, newSSL)(TCN_STDARGS,
     con->ctx  = c;
     con->ssl  = ssl;
     con->shutdown_type = c->shutdown_type;
+    con->verify_mode = SSL_CVERIFY_UNSET;
+    con->verify_depth = c->verify_depth;
 
     /* Store the handshakeCount in the SSL instance. */
     *handshakeCount = 0;
@@ -1555,41 +1557,32 @@ TCN_IMPLEMENT_CALL(jlong, SSL, getTime)(TCN_STDARGS, jlong ssl)
     }
 }
 
-TCN_IMPLEMENT_CALL(void, SSL, setVerify)(TCN_STDARGS, jlong ssl,
-                                                jint level, jint depth)
+TCN_IMPLEMENT_CALL(void, SSL, setVerify)(TCN_STDARGS, jlong ssl, jint level, jint depth)
 {
-    tcn_ssl_ctxt_t *c;
-    int verify;
     SSL *ssl_ = J2P(ssl, SSL *);
-
-    if (ssl_ == NULL) {
-        tcn_ThrowException(e, "ssl is null");
-        return;
-    }
-
-    c = SSL_get_app_data2(ssl_);
-
-    verify = SSL_VERIFY_NONE;
-
+    int verify = SSL_VERIFY_NONE;
     UNREFERENCED(o);
 
-    if (c == NULL) {
-        tcn_ThrowException(e, "context is null");
+    if (ssl_ == NULL) {
+        tcn_ThrowException(e, "SSL is null");
         return;
     }
-    c->verify_mode = level;
 
-    if (c->verify_mode == SSL_CVERIFY_UNSET)
-        c->verify_mode = SSL_CVERIFY_NONE;
+    tcn_ssl_conn_t *con = SSL_get_app_data(ssl_);
+
+    con->verify_mode = level;
+
+    if (con->verify_mode == SSL_CVERIFY_UNSET)
+        con->verify_mode = SSL_CVERIFY_NONE;
     if (depth > 0)
-        c->verify_depth = depth;
+        con->verify_depth = depth;
     /*
-     *  Configure callbacks for SSL context
+     *  Configure callbacks for SSL
      */
-    if (c->verify_mode == SSL_CVERIFY_REQUIRE)
+    if (con->verify_mode == SSL_CVERIFY_REQUIRE)
         verify |= SSL_VERIFY_PEER_STRICT;
-    if ((c->verify_mode == SSL_CVERIFY_OPTIONAL) ||
-        (c->verify_mode == SSL_CVERIFY_OPTIONAL_NO_CA))
+    if ((con->verify_mode == SSL_CVERIFY_OPTIONAL) ||
+        (con->verify_mode == SSL_CVERIFY_OPTIONAL_NO_CA))
         verify |= SSL_VERIFY_PEER;
 
     SSL_set_verify(ssl_, verify, SSL_callback_SSL_verify);

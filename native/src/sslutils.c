@@ -315,10 +315,10 @@ int SSL_CTX_use_certificate_chain(SSL_CTX *ctx, const char *file,
 int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
 {
    /* Get Apache context back through OpenSSL context */
-    SSL *ssl = X509_STORE_CTX_get_ex_data(ctx,
-                                          SSL_get_ex_data_X509_STORE_CTX_idx());
+    SSL *ssl = X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
     tcn_ssl_conn_t *con = (tcn_ssl_conn_t *)SSL_get_app_data(ssl);
-    /* Get verify ingredients */
+
+    /* Set verify defaults from SSL Context */
     int errnum            = X509_STORE_CTX_get_error(ctx);
     int errdepth          = X509_STORE_CTX_get_error_depth(ctx);
     int verify            = con->ctx->verify_mode;
@@ -327,6 +327,12 @@ int SSL_callback_SSL_verify(int ok, X509_STORE_CTX *ctx)
     int ocsp_soft_fail    = con->ctx->ocsp_soft_fail;
     int ocsp_timeout      = con->ctx->ocsp_timeout;
     int ocsp_verify_flags = con->ctx->ocsp_verify_flags;
+
+    /* Check for SSL specific configuration */
+    if (con->verify_mode != SSL_CVERIFY_UNSET) {
+        verify = con->verify_mode;
+        depth = con->verify_depth;
+    }
 
 #if defined(SSL_OP_NO_TLSv1_3)
     con->pha_state = PHA_COMPLETE;
