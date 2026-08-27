@@ -50,16 +50,6 @@ cleanup:
     return P2J(n);
 }
 
-TCN_IMPLEMENT_CALL(jlong, Pool, unmanaged)(TCN_STDARGS)
-{
-    apr_pool_t *n;
-
-    UNREFERENCED(o);
-    TCN_THROW_IF_ERR(apr_pool_create_unmanaged(&n), n);
-cleanup:
-    return P2J(n);
-}
-
 TCN_IMPLEMENT_CALL(void, Pool, clear)(TCN_STDARGS, jlong pool)
 {
     apr_pool_t *p = J2P(pool, apr_pool_t *);
@@ -91,20 +81,6 @@ TCN_IMPLEMENT_CALL(jboolean, Pool, isAncestor)(TCN_STDARGS, jlong a, jlong b)
     apr_pool_t *pb = J2P(b, apr_pool_t *);
     UNREFERENCED_STDARGS;
     return apr_pool_is_ancestor(pa, pb) ? JNI_TRUE : JNI_FALSE;
-}
-
-TCN_IMPLEMENT_CALL(jlong, Pool, palloc)(TCN_STDARGS, jlong pool, jint size)
-{
-    apr_pool_t *p = J2P(pool, apr_pool_t *);
-    UNREFERENCED_STDARGS;
-    return P2J(apr_palloc(p, (apr_size_t)size));
-}
-
-TCN_IMPLEMENT_CALL(jlong, Pool, pcalloc)(TCN_STDARGS, jlong pool, jint size)
-{
-    apr_pool_t *p = J2P(pool, apr_pool_t *);
-    UNREFERENCED_STDARGS;
-    return P2J(apr_pcalloc(p, (apr_size_t)size));
 }
 
 TCN_IMPLEMENT_CALL(jlong, Pool, cleanupRegister)(TCN_STDARGS, jlong pool,

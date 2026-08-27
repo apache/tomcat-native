@@ -113,30 +113,6 @@ DllMain(
 }
 
 
-TCN_IMPLEMENT_CALL(jstring, OS, syserror)(TCN_STDARGS, jint err)
-{
-    jstring str;
-    void *buf;
-
-    UNREFERENCED(o);
-    if (!FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                       FORMAT_MESSAGE_FROM_SYSTEM |
-                       FORMAT_MESSAGE_IGNORE_INSERTS,
-                       NULL,
-                       err,
-                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                       (LPTSTR)&buf,
-                       0,
-                       NULL)) {
-        str = AJP_TO_JSTRING("Unknown Error");
-    }
-    else {
-        str = AJP_TO_JSTRING((const char *)buf);
-        LocalFree(buf);
-    }
-    return str;
-}
-
 TCN_IMPLEMENT_CALL(jstring, OS, expand)(TCN_STDARGS, jstring val)
 {
     jstring str;
