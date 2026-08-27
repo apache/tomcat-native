@@ -104,16 +104,9 @@
 /* On stack buffer size */
 #define TCN_BUFFER_SZ   8192
 #define TCN_STDARGS     JNIEnv *e, jobject o
-#define TCN_IMPARGS     JNIEnv *e, jobject o, void *sock
-#define TCN_IMPCALL(X)  e, o, X->opaque
 
 #define TCN_IMPLEMENT_CALL(RT, CL, FN)  \
     JNIEXPORT RT JNICALL Java_org_apache_tomcat_jni_##CL##_##FN
-
-#define TCN_IMPLEMENT_METHOD(RT, FN)    \
-    static RT method_##FN
-
-#define TCN_GETNET_METHOD(FN)  method_##FN
 
 #define TCN_SOCKET_UNKNOWN  0
 #define TCN_SOCKET_APR      1
@@ -178,7 +171,6 @@ apr_status_t    tcn_load_ainfo_class(JNIEnv *, jclass);
 unsigned long   tcn_get_thread_id(void);
 
 #define J2S(V)  c##V
-#define J2L(V)  p##V
 
 #define J2T(T) (apr_time_t)((T))
 
@@ -191,16 +183,7 @@ unsigned long   tcn_get_thread_id(void);
 #define TCN_FREE_CSTRING(V)      \
     if (c##V) (*e)->ReleaseStringUTFChars(e, V, c##V)
 
-#define TCN_ALLOC_JSTRING(V)     \
-    char *c##V = tcn_get_string(e, (V))
-
 #define AJP_TO_JSTRING(V)   (*e)->NewStringUTF((e), (V))
-
-#define TCN_FREE_JSTRING(V)      \
-    TCN_BEGIN_MACRO              \
-        if (c##V)                \
-            free(c##V);          \
-    TCN_END_MACRO
 
 #define TCN_CHECK_ALLOCATED(x)                              \
         if (x == NULL) {                                    \
