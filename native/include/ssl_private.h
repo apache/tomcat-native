@@ -91,7 +91,6 @@ extern ENGINE *tcn_ssl_engine;
 #define SSL_BIO_FLAG_CALLBACK   (1<<1)
 #define SSL_DEFAULT_CACHE_SIZE  (256)
 #define SSL_DEFAULT_VHOST_NAME  ("_default_:443")
-#define SSL_MAX_STR_LEN         (2048)
 #define SSL_MAX_PASSWORD_LEN    (256)
 
 #define SSL_CVERIFY_UNSET           (-1)
@@ -170,14 +169,6 @@ extern ENGINE *tcn_ssl_engine;
 
 #define SSL_CIPHERS_ALWAYS_DISABLED         ("!aNULL:!eNULL:!EXP:")
 
-#if defined(SSL_OP_NO_TLSv1_1)
-#define HAVE_TLSV1_1
-#endif
-
-#if defined(SSL_OP_NO_TLSv1_2)
-#define HAVE_TLSV1_2
-#endif
-
 #if defined(SSL_OP_NO_TLSv1_3)
 #define HAVE_TLSV1_3
 #endif
@@ -192,8 +183,6 @@ extern ENGINE *tcn_ssl_engine;
  * Within this block, check again for features (not version numbers).
  */
 #if !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name)
-
-#define HAVE_TLSEXT
 
 /* ECC */
 #if !defined(OPENSSL_NO_EC) && defined(TLSEXT_ECPOINTFORMAT_uncompressed)
