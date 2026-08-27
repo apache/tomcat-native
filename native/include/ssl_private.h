@@ -312,8 +312,6 @@ typedef struct {
         PHA_STARTED,    /* PHA req sent to client but no response */
         PHA_COMPLETE    /* Client has returned cert */
     } pha_state;
-    apr_socket_t   *sock;
-    apr_pollset_t  *pollset;
 } tcn_ssl_conn_t;
 
 
