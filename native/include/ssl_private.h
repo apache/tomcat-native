@@ -261,7 +261,6 @@ struct tcn_ssl_ctxt_t {
     BIO             *bio_os;
     BIO             *bio_is;
 
-    int             protocol;
     /* we are one or the other */
     int             mode;
 
