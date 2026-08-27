@@ -2161,6 +2161,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setNpnProtos)(TCN_STDARGS, jlong ctx, jobje
     UNREFERENCED_STDARGS;
     UNREFERENCED(ctx);
     UNREFERENCED(next_protos);
+    UNREFERENCED(selectorFailureBehavior);
 }
 
 
@@ -2170,6 +2171,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setAlpnProtos)(TCN_STDARGS, jlong ctx, jobj
     UNREFERENCED_STDARGS;
     UNREFERENCED(ctx);
     UNREFERENCED(alpn_protos);
+    UNREFERENCED(selectorFailureBehavior);
 }
 
 TCN_IMPLEMENT_CALL(jlong, SSLContext, setSessionCacheMode)(TCN_STDARGS, jlong ctx, jlong mode)

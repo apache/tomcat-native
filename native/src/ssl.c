@@ -1865,6 +1865,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSL, randLoad)(TCN_STDARGS, jstring file)
 TCN_IMPLEMENT_CALL(jboolean, SSL, randSave)(TCN_STDARGS, jstring file)
 {
     UNREFERENCED_STDARGS;
+    UNREFERENCED(file);
     return JNI_FALSE;
 }
 
@@ -2167,6 +2168,8 @@ TCN_IMPLEMENT_CALL(void, SSL, setVerify)(TCN_STDARGS, jlong ssl,
 {
     UNREFERENCED(o);
     UNREFERENCED(ssl);
+    UNREFERENCED(level);
+    UNREFERENCED(depth);
     tcn_ThrowException(e, "Not implemented");
 }
 
