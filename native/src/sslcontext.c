@@ -1359,57 +1359,98 @@ static int SSL_cert_verify(X509_STORE_CTX *ctx, void *arg) {
 
     // Get a stack of all certs in the chain
     STACK_OF(X509) *sk = X509_STORE_CTX_get0_untrusted(ctx);
+    if (sk == NULL) {
+        return 0;
+    }
 
     int len = sk_X509_num(sk);
     unsigned i;
     X509 *cert;
     int length;
-    unsigned char *buf;
+    unsigned char *buf = NULL;
     JNIEnv *e;
-    jbyteArray array;
-    jbyteArray bArray;
+    jbyteArray array = NULL;
+    jbyteArray bArray = NULL;
     const char *authMethod;
-    jstring authMethodString;
+    jstring authMethodString = NULL;
     jboolean result;
     int r;
-    tcn_get_java_env(&e);
+
+    if (tcn_get_java_env(&e) != JNI_OK) {
+        // Fail verification if JNI environment is not avilable.
+        return 0;
+    }
 
     // Create the byte[][] array that holds all the certs
     array = (*e)->NewObjectArray(e, len, byteArrayClass, NULL);
+    if (array == NULL) {
+        goto failure;
+    }
 
     for(i = 0; i < len; i++) {
         cert = (X509*) sk_X509_value(sk, i);
 
-        buf = NULL;
         length = i2d_X509(cert, &buf);
         if (length < 0) {
-            // In case of error just return an empty byte[][]
-            array = (*e)->NewObjectArray(e, 0, byteArrayClass, NULL);
-            // We need to delete the local references so we not leak memory as this method is called via callback.
-            OPENSSL_free(buf);
-            break;
+            goto failure;
         }
         bArray = (*e)->NewByteArray(e, length);
+        if (bArray == NULL) {
+            goto failure;
+        }
         (*e)->SetByteArrayRegion(e, bArray, 0, length, (jbyte*) buf);
+        if ((*e)->ExceptionCheck(e)) {
+            goto failure;
+        }
         (*e)->SetObjectArrayElement(e, array, i, bArray);
+        if ((*e)->ExceptionCheck(e)) {
+            goto failure;
+        }
 
         // Delete the local reference as we not know how long the chain is and local references are otherwise
         // only freed once jni method returns.
         (*e)->DeleteLocalRef(e, bArray);
+        bArray = NULL;
         OPENSSL_free(buf);
+        buf = NULL;
     }
 
     authMethod = SSL_authentication_method(ssl);
     authMethodString = (*e)->NewStringUTF(e, authMethod);
+    if (authMethodString == NULL) {
+        goto failure;
+    }
 
-    result = (*e)->CallBooleanMethod(e, c->verifier, c->verifier_method, P2J(ssl), array,
-            authMethodString);
+    result = (*e)->CallBooleanMethod(e, c->verifier, c->verifier_method, P2J(ssl), array, authMethodString);
+    if ((*e)->ExceptionCheck(e)) {
+        goto failure;
+    }
 
     r = result == JNI_TRUE ? 1 : 0;
 
+    goto cleanup;
+
+failure:
+    if ((*e)->ExceptionCheck(e)) {
+        (*e)->ExceptionClear(e);
+    }
+    if (buf != NULL) {
+        OPENSSL_free(buf);
+    }
+    if (bArray != NULL) {
+        (*e)->DeleteLocalRef(e, bArray);
+    }
+    r = 0;
+
+cleanup:
     // We need to delete the local references so we not leak memory as this method is called via callback.
-    (*e)->DeleteLocalRef(e, authMethodString);
-    (*e)->DeleteLocalRef(e, array);
+    if (authMethodString != NULL) {
+        (*e)->DeleteLocalRef(e, authMethodString);
+    }
+    if (array != NULL) {
+        (*e)->DeleteLocalRef(e, array);
+    }
+
     return r;
 }
 

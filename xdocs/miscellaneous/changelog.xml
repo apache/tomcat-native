@@ -75,6 +75,9 @@
     <fix>
       Avoid a potential crash with very long ALPN protocol names. (markt)
     </fix>
+    <fix>
+      Make the call to a CertficateVerifier more robust. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">
