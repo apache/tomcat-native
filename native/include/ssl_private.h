@@ -219,7 +219,7 @@ extern ENGINE *tcn_ssl_engine;
 
 #endif /* !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name) */
 
-#define MAX_ALPN_PROTO_SIZE 65535
+#define MAX_ALPN_PROTO_SIZE 255
 #define SSL_SELECTOR_FAILURE_CHOOSE_MY_LAST_PROTOCOL            1
 
 typedef struct tcn_ssl_ctxt_t tcn_ssl_ctxt_t;
