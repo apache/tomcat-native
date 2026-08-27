@@ -72,6 +72,9 @@
     <fix>
       Fix a potential crash when configuring raw certificates. (markt)
     </fix>
+    <fix>
+      Avoid a potential crash with very long ALPN protocol names. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">

@@ -1051,8 +1051,9 @@ static int initProtocols(JNIEnv *e, unsigned char **proto_data, unsigned int *pr
                 // Find start of buffer
                 unsigned char *p_data_start = p_data - (p_data_len - (1 + proto_chars_len));
                 unsigned char *p_data_tmp;
-                // double size
-                p_data_size <<= 1;
+                // double size until sufficient space is available
+                while (p_data_len > p_data_size)
+                    p_data_size <<= 1;
                 p_data_tmp = realloc(p_data_start, p_data_size);
                 if (p_data_tmp == NULL) {
                     // Not enough memory? Free the original buffer.
