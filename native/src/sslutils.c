@@ -1096,6 +1096,10 @@ static int process_ocsp_response(OCSP_REQUEST *ocsp_req, OCSP_RESPONSE *ocsp_res
     }
 
     bs = OCSP_response_get1_basic(ocsp_resp);
+    if (bs == NULL) {
+        X509_STORE_CTX_set_error(ctx, X509_V_ERR_OCSP_RESP_INVALID);
+        return OCSP_STATUS_UNKNOWN;
+    }
     if (OCSP_check_nonce(ocsp_req, bs) == 0) {
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_OCSP_RESP_INVALID);
         o = OCSP_STATUS_UNKNOWN;
