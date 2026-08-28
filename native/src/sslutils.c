@@ -1056,6 +1056,11 @@ static int process_ocsp_response(OCSP_REQUEST *ocsp_req, OCSP_RESPONSE *ocsp_res
 
     ss = OCSP_resp_get0(bs, OCSP_resp_find(bs, certid, -1)); /* find by serial number and get the matching response */
     i = OCSP_single_get0_status(ss, NULL, NULL, &thisupd, &nextupd);
+    if (i == -1) {
+        X509_STORE_CTX_set_error(ctx, X509_V_ERR_OCSP_RESP_INVALID);
+        o = OCSP_STATUS_UNKNOWN;
+        goto clean_certid;
+    }
     if (OCSP_check_validity(thisupd, nextupd, OCSP_MAX_SKEW, -1) <= 0) {
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_OCSP_NOT_YET_VALID);
         o = OCSP_STATUS_UNKNOWN;
