@@ -583,7 +583,6 @@ static int parse_ocsp_url(unsigned char *asn1, char ***ocsp_urls,
         if (!err) {
             *ocsp_urls  = new_ocsp_urls;
             *nocsp_urls = new_nocsp_urls;
-            *(*ocsp_urls + *nocsp_urls) = NULL;
             if ((ocsp_url = apr_palloc(p, len + 1)) == NULL) {
                 err = 1;
             }
@@ -646,9 +645,10 @@ static int parse_ASN1_Sequence(unsigned char *asn1, char ***ocsp_urls,
     return err;
 }
 
-/* the main function that gets the ASN1 encoding string and returns
-   a pointer to a NULL terminated "array" of char *, that contains
-   the ocsp_urls */
+/*
+ * The main function that gets the ASN1 encoding string and returns a pointer to an "array" of char *, that contains the
+ * ocsp_urls. The array is not NULL terminated since the length is tracked.
+ */
 static char **decode_OCSP_url(ASN1_OCTET_STRING *os, int *numofresponses, apr_pool_t *p)
 {
     char **response = NULL;

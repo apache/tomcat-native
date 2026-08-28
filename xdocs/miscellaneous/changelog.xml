@@ -78,6 +78,9 @@
     <fix>
       Make the call to a CertificateVerifier more robust. (markt)
     </fix>
+    <fix>
+      Avoid a potential crash when processing OCSP URLs. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">
