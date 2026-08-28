@@ -91,6 +91,9 @@
       Harden against the mis-use of <code>Buffer.address(ByteBuffer)</code>.
       (markt)
     </fix>
+    <fix>
+      Harden against the mis-use of <code>Pool.destroy(long)</code>. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">
