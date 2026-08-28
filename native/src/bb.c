@@ -118,8 +118,19 @@ TCN_IMPLEMENT_CALL(void, Buffer, free)(TCN_STDARGS, jobject bb)
 
 TCN_IMPLEMENT_CALL(jlong, Buffer, address)(TCN_STDARGS, jobject bb)
 {
+    void *address;
+
     UNREFERENCED(o);
-    return P2J((*e)->GetDirectBufferAddress(e, bb));
+    address = (*e)->GetDirectBufferAddress(e, bb);
+    if (address == NULL) {
+        jclass npe = (*e)->FindClass(e, "java/lang/NullPointerException");
+        if (npe != NULL) {
+            (*e)->ThrowNew(e, npe, "ByteBuffer is null or not direct");
+            (*e)->DeleteLocalRef(e, npe);
+        }
+        return 0;
+    }
+    return P2J(address);
 }
 
 TCN_IMPLEMENT_CALL(jlong, Buffer, size)(TCN_STDARGS, jobject bb)
