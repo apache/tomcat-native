@@ -1207,6 +1207,9 @@ static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int t
 
             OCSP_REQUEST_free(req);
         }
+    } else {
+        /* The AIA extension is not present or no URLs were found. */
+        X509_STORE_CTX_set_error(ctx, X509_V_ERR_UNABLE_TO_GET_CRL);
     }
     apr_pool_destroy(p);
     return rv;
