@@ -62,7 +62,16 @@ TCN_IMPLEMENT_CALL(void, Pool, destroy)(TCN_STDARGS, jlong pool)
 {
     apr_pool_t *p = J2P(pool, apr_pool_t *);
     UNREFERENCED_STDARGS;
-    TCN_ASSERT(pool != 0);
+
+    if (pool == 0) {
+        jclass npe = (*e)->FindClass(e, "java/lang/NullPointerException");
+        if (npe != NULL) {
+            (*e)->ThrowNew(e, npe, "Pool must not be zero");
+            (*e)->DeleteLocalRef(e, npe);
+        }
+        return;
+    }
+
     if (tcn_global_pool)
         apr_pool_destroy(p);
 }
