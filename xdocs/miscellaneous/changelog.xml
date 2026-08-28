@@ -81,6 +81,9 @@
     <fix>
       Avoid a potential crash when processing OCSP URLs. (markt)
     </fix>
+    <fix>
+      Make the processing of OCSP responses more robust. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.15" rtext="2026-06-15">
