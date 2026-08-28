@@ -30,9 +30,10 @@ extern int WIN32_SSL_password_prompt(tcn_pass_cb_t *data);
 #include <openssl/bio.h>
 #include <openssl/ocsp.h>
 /* defines with the values as seen by the asn1parse -dump openssl command */
-#define ASN1_SEQUENCE 0x30
-#define ASN1_OID      0x06
-#define ASN1_STRING   0x86
+#define ASN1_SEQUENCE           0x30
+#define ASN1_OID                0x06
+#define ASN1_STRING             0x86
+#define MAX_AIA_SEQUENCE_DEPTH  2
 static int ssl_verify_OCSP(X509_STORE_CTX *ctx, int timeout, int verifyFlags);
 static int ssl_ocsp_request(X509 *cert, X509 *issuer, X509_STORE_CTX *ctx, int timeout, int verifyFlags);
 #endif
@@ -517,12 +518,16 @@ static void *apr_xrealloc(void *buf, size_t oldlen, size_t len, apr_pool_t *p)
  * Updates the pointer to the ASN.1 structure to point to the start of the data.
  * Returns 0 on success, 1 on failure.
  */
-static int parse_asn1_length(unsigned char **asn1, int *len) {
+static int parse_asn1_length(unsigned char **asn1, int *remaining, int *len) {
 
     /* Length immediately follows tag so increment before reading first (and
      * possibly only) length byte.
      */
     (*asn1)++;
+    (*remaining)--;
+    if (*remaining < 0) {
+        return 1;
+    }
 
     if (**asn1 & 0x80) {
         // MSB set. Remaining bits are number of bytes used to store the length.
@@ -550,6 +555,10 @@ static int parse_asn1_length(unsigned char **asn1, int *len) {
         while (i > 0) {
             l <<= 8;
             (*asn1)++;
+            (*remaining)--;
+            if (*remaining < 0) {
+                return 1;
+            }
             l += **asn1;
             i--;
         }
@@ -560,21 +569,27 @@ static int parse_asn1_length(unsigned char **asn1, int *len) {
     }
 
     (*asn1)++;
+    (*remaining)--;
+    if (*remaining < 0) {
+        return 1;
+    }
 
     return 0;
 }
 
 /* parses the ocsp url and updates the ocsp_urls and nocsp_urls variables
    returns 0 on success, 1 on failure */
-static int parse_ocsp_url(unsigned char *asn1, char ***ocsp_urls,
+static int parse_ocsp_url(unsigned char *asn1, int remaining, char ***ocsp_urls,
                           int *nocsp_urls, apr_pool_t *p)
 {
     char **new_ocsp_urls, *ocsp_url;
     int len, err = 0, new_nocsp_urls;
 
     if (*asn1 == ASN1_STRING) {
-        err = parse_asn1_length(&asn1, &len);
-
+        err = parse_asn1_length(&asn1, &remaining, &len);
+        if (!err && len > remaining) {
+            err = 1;
+        }
         if (!err) {
             new_nocsp_urls = *nocsp_urls+1;
             if ((new_ocsp_urls = apr_xrealloc(*ocsp_urls, *nocsp_urls * sizeof(char *), new_nocsp_urls * sizeof(char *), p)) == NULL)
@@ -598,16 +613,19 @@ static int parse_ocsp_url(unsigned char *asn1, char ***ocsp_urls,
 }
 
 /* parses the ANS1 OID and if it is an OCSP OID then calls the parse_ocsp_url function */
-static int parse_ASN1_OID(unsigned char *asn1, char ***ocsp_urls, int *nocsp_urls, apr_pool_t *p)
+static int parse_ASN1_OID(unsigned char *asn1, int remaining, char ***ocsp_urls, int *nocsp_urls, apr_pool_t *p)
 {
     int len, err = 0 ;
     const unsigned char OCSP_OID[] = {0x2b, 0x06, 0x01, 0x05, 0x05, 0x07, 0x30, 0x01};
 
-    err = parse_asn1_length(&asn1, &len);
-
+    err = parse_asn1_length(&asn1, &remaining, &len);
+    if (!err && len > remaining) {
+        err = 1;
+    }
     if (!err && len == 8 && memcmp(asn1, OCSP_OID, 8) == 0) {
-        asn1+=len;
-        err = parse_ocsp_url(asn1, ocsp_urls, nocsp_urls, p);
+        asn1 += len;
+        remaining -= len;
+        err = parse_ocsp_url(asn1, remaining, ocsp_urls, nocsp_urls, p);
     }
     return err;
 }
@@ -619,21 +637,29 @@ static int parse_ASN1_OID(unsigned char *asn1, char ***ocsp_urls, int *nocsp_url
    the same sequence the while loop parses the sequences */
 
 /* This algo was developed with AIA in mind so it was tested only with this extension */
-static int parse_ASN1_Sequence(unsigned char *asn1, char ***ocsp_urls,
+static int parse_ASN1_Sequence(unsigned char *asn1, int remaining, int depth, char ***ocsp_urls,
                                int *nocsp_urls, apr_pool_t *p)
 {
     int len = 0 , err = 0;
 
-    while (!err && *asn1 != '\0') {
+    while (!err && *asn1 != '\0' && remaining > 0) {
         switch(*asn1) {
             case ASN1_SEQUENCE:
-                err = parse_asn1_length(&asn1, &len);
+                /* Initial call uses depth 0. */
+                if (depth >= MAX_AIA_SEQUENCE_DEPTH) {
+                    return 1;
+                }
+                err = parse_asn1_length(&asn1, &remaining, &len);
                 if (!err) {
-                    err = parse_ASN1_Sequence(asn1, ocsp_urls, nocsp_urls, p);
+                    if (len > remaining) {
+                        err = 1;
+                    } else {
+                        err = parse_ASN1_Sequence(asn1, len, depth + 1, ocsp_urls, nocsp_urls, p);
+                    }
                 }
             break;
             case ASN1_OID:
-                err = parse_ASN1_OID(asn1,ocsp_urls,nocsp_urls, p);
+                err = parse_ASN1_OID(asn1, remaining, ocsp_urls, nocsp_urls, p);
                 return err;
             break;
             default:
@@ -641,6 +667,7 @@ static int parse_ASN1_Sequence(unsigned char *asn1, char ***ocsp_urls,
             break;
         }
         asn1+=len;
+        remaining -= len;
     }
     return err;
 }
@@ -666,7 +693,7 @@ static char **decode_OCSP_url(ASN1_OCTET_STRING *os, int *numofresponses, apr_po
     if ((response = apr_pcalloc(p, sizeof(char *))) == NULL) {
         return NULL;
     }
-    if (parse_ASN1_Sequence(ocsp_urls, &response, numofresponses, p) ||
+    if (parse_ASN1_Sequence(ocsp_urls, len, 0, &response, numofresponses, p) ||
             *numofresponses ==0) {
         response = NULL;
     }
