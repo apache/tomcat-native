@@ -1,5 +1,5 @@
 The current minimum versions are:
-- OpenSSL 1.1.1 
+- OpenSSL 3.0.0 
 - APR 1.6.3
 
 The following version of the libraries are recommended:

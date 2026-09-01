@@ -85,6 +85,12 @@
     <fix>
       Harden against the mis-use of <code>Pool.destroy(long)</code>. (markt)
     </fix>
+    <scode>
+      The minimum supported OpenSSL version is now 3.0.x. OpenSSL 1.1.1 support
+      was accidentally broken in 1.3.8. As no bug reports were receive for that
+      failure and since both Debian and Ubuntu versions that used OpenSSL 1.1.1
+      have reached end of support, OpenSSL 1.1.1 is no longer supported. (markt)
+    </scode>
   </changelog>
 </section>
 <section name="1.3.8" rtext="2026-06-15">
