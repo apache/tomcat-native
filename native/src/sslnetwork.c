@@ -753,7 +753,7 @@ TCN_IMPLEMENT_CALL(void, SSLSocket, setVerify)(TCN_STDARGS,
     int verify = SSL_VERIFY_NONE;
     UNREFERENCED_STDARGS;
 
-    if (sock == NULL) {
+    if (s == NULL) {
         tcn_ThrowException(e, "SSLSocket is null");
         return;
     }
