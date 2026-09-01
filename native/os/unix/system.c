@@ -434,7 +434,10 @@ TCN_IMPLEMENT_CALL(void, OS, syslog)(TCN_STDARGS, jint level,
             id = LOG_INFO;
         break;
     }
-    syslog (id, "%s", J2S(msg));
+    
+    if (J2S(msg) != NULL) {
+        syslog (id, "%s", J2S(msg));
+    }
 
     TCN_FREE_CSTRING(msg);
 }
