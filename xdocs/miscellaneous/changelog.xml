@@ -91,6 +91,11 @@
       failure and since both Debian and Ubuntu versions that used OpenSSL 1.1.1
       have reached end of support, OpenSSL 1.1.1 is no longer supported. (markt)
     </scode>
+    <update>
+      OpenSSL 3.0.x is approaching end of support so the recommended version of
+      OpenSSL (and the version that windows binaries will be built with) now
+      follows the 3.5.x LTS branch. (markt)
+    </update>
   </changelog>
 </section>
 <section name="1.3.8" rtext="2026-06-15">
