@@ -1164,7 +1164,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     EC_KEY_free(eckey);
     EC_GROUP_free(ecparams);
 #endif
-    SSL_CTX_set_tmp_dh_callback(c->ctx, SSL_callback_tmp_DH);
+    SSL_CTX_set_dh_auto(c->ctx, 1);
 
 cleanup:
     TCN_FREE_CSTRING(cert);
@@ -1275,7 +1275,7 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificateRaw)(TCN_STDARGS, jlong c
      * TODO try to read the ECDH curve name from somewhere...
      */
 #endif
-    SSL_CTX_set_tmp_dh_callback(c->ctx, SSL_callback_tmp_DH);
+    SSL_CTX_set_dh_auto(c->ctx, 1);
     goto cleanup;
 
 cleanup_openssl:
