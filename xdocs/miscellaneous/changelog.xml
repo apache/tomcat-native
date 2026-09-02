@@ -31,7 +31,7 @@
   branch started from the 1.2.33 tag.
   </p>
 </section>
-<section name="2.0.16" rtext="developement in progress">
+<section name="2.0.16" rtext="">
   <changelog>
     <scode>
       Remove call to ERR_remove_thread_state() from Windows specific code to
