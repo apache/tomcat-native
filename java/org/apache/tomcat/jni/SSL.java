@@ -116,35 +116,59 @@ public final class SSL {
      */
     /**
      * No SSL options.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_OPT_NONE = 0;
     /**
      * SSL option for relative settings.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_OPT_RELSET = (1 << 0);
     /**
      * SSL option for standard environment variables.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_OPT_STDENVVARS = (1 << 1);
     /**
      * SSL option for exporting certificate data.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_OPT_EXPORTCERTDATA = (1 << 3);
     /**
      * SSL option for fake basic authentication.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_OPT_FAKEBASICAUTH = (1 << 4);
     /**
      * SSL option for strict require.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_OPT_STRICTREQUIRE = (1 << 5);
     /**
      * SSL option for optional renegotiation.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_OPT_OPTRENEGOTIATE = (1 << 6);
     /**
      * All SSL options combined.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_OPT_ALL = (SSL_OPT_STDENVVARS | SSL_OPT_EXPORTCERTDATA | SSL_OPT_FAKEBASICAUTH |
             SSL_OPT_STRICTREQUIRE | SSL_OPT_OPTRENEGOTIATE);
 
@@ -240,134 +264,164 @@ public final class SSL {
      */
     public static final int SSL_VERIFY_PEER_STRICT = (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT);
 
-    /**
-     * Workaround for Microsoft session ID bug.
+    /*
+     * Option values are synchronized with OpenSSL master as of 2026-08-26. They are also confirmed valid for the final
+     * OpenSSL 1.1.1 release so the values can be consistent for all Tomcat versions.
      */
-    public static final int SSL_OP_MICROSOFT_SESS_ID_BUG = 0x00000001;
-    /**
-     * Workaround for Netscape challenge bug.
-     */
-    public static final int SSL_OP_NETSCAPE_CHALLENGE_BUG = 0x00000002;
-    /**
-     * Workaround for Netscape cipher change bug.
-     */
-    public static final int SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG = 0x00000008;
-    /**
-     * Workaround for SSLREF2 certificate type reuse bug.
-     */
-    public static final int SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG = 0x00000010;
-    /**
-     * Workaround for Microsoft SSLv3 buffer bug.
-     */
-    public static final int SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER = 0x00000020;
-    /**
-     * Workaround for MSIE SSLv2 RSA padding bug.
-     */
-    public static final int SSL_OP_MSIE_SSLV2_RSA_PADDING = 0x00000040;
-    /**
-     * Workaround for SSLeay 0.8.0 client DH bug.
-     */
-    public static final int SSL_OP_SSLEAY_080_CLIENT_DH_BUG = 0x00000080;
-    /**
-     * Workaround for TLS D5 bug.
-     */
-    public static final int SSL_OP_TLS_D5_BUG = 0x00000100;
-    /**
-     * Workaround for TLS block padding bug.
-     */
-    public static final int SSL_OP_TLS_BLOCK_PADDING_BUG = 0x00000200;
 
-    /*
-     * Disable SSL 3.0/TLS 1.0 CBC vulnerability workaround that was added in OpenSSL 0.9.6d. Usually (depending on the
-     * application protocol) the workaround is not needed. Unfortunately some broken SSL/TLS implementations cannot
-     * handle it at all, which is why we include it in SSL_OP_ALL.
-     */
     /**
-     * Disable empty fragment insertion for CBC vulnerability workaround.
+     * Disable Extended master secret.
      */
-    public static final int SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS = 0x00000800;
+    public static final long SSL_OP_NO_EXTENDED_MASTER_SECRET = 0x1L;
+    /**
+     * Cleanse plaintext copies of data delivered to the application.
+     */
+    public static final long SSL_OP_CLEANSE_PLAINTEXT = 0x2L;
+    /**
+     * Allow initial connection to servers that don't support RI.
+     */
+    public static final long SSL_OP_LEGACY_SERVER_CONNECT = 0x4L;
+    /**
+     * Enable support for Kernel TLS.
+     */
+    public static final long SSL_OP_ENABLE_KTLS = 0x8L;
+    public static final long SSL_OP_TLSEXT_PADDING = 0x10L;
+    // Unused = 0x20L
+    public static final long SSL_OP_SAFARI_ECDHE_ECDSA_BUG = 0x40L;
+    public static final long SSL_OP_IGNORE_UNEXPECTED_EOF = 0x80L;
+    public static final long SSL_OP_ALLOW_CLIENT_RENEGOTIATION = 0x100L;
+    public static final long SSL_OP_DISABLE_TLSEXT_CA_NAMES = 0x200L;
+    public static final long SSL_OP_ALLOW_NO_DHE_KEX = 0x400L;
 
-    /*
-     * SSL_OP_ALL: various bug workarounds that should be rather harmless. This used to be 0x000FFFFFL before 0.9.7.
-     */
     /**
-     * All bug workaround options combined.
+     * Disable TLS 1.0 CBC vulnerability workaround. Usually (depending on the application protocol) the workaround is
+     * not needed. Unfortunately some broken SSL/TLS implementations cannot handle it at all, which is why we include it
+     * in SSL_OP_ALL.
      */
-    public static final int SSL_OP_ALL = 0x00000FFF;
-/* As server, disallow session resumption on renegotiation */
+    public static final long SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS = 0x800L;
     /**
-     * Disallow session resumption on renegotiation.
+     * DTLS options.
      */
-    public static final int SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION = 0x00010000;
-    /* Don't use compression even if supported */
+    public static final long SSL_OP_NO_QUERY_MTU = 0x1000L;
     /**
-     * Disable compression.
+     * Turn on Cookie Exchange (on relevant for servers).
      */
-    public static final int SSL_OP_NO_COMPRESSION = 0x00020000;
-    /* Permit unsafe legacy renegotiation */
+    public static final long SSL_OP_COOKIE_EXCHANGE = 0x2000L;
     /**
-     * Allow unsafe legacy renegotiation.
+     * Don't use RFC4507 ticket extension.
      */
-    public static final int SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION = 0x00040000;
-    /* If set, always create a new key when using tmp_eddh parameters */
+    public static final long SSL_OP_NO_TICKET = 0x4000L;
     /**
-     * Always create a new key when using ECDH parameters.
+     * Use Cisco's version identifier of DTLS_BAD_VER (only with deprecated DTLSv1_client_method()).
      */
-    public static final int SSL_OP_SINGLE_ECDH_USE = 0x00080000;
-    /* If set, always create a new key when using tmp_dh parameters */
+    public static final long SSL_OP_CISCO_ANYCONNECT = 0x8000L;
     /**
-     * Always create a new key when using DH parameters.
+     * As server, disallow session resumption on renegotiation.
      */
-    public static final int SSL_OP_SINGLE_DH_USE = 0x00100000;
-    /*
-     * Set to always use the tmp_rsa key when doing RSA operations, even when this violates protocol specs
-     */
+    public static final long SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION = 0x10000L;
     /**
-     * Always use ephemeral RSA key for RSA operations.
+     * Don't use compression even if supported.
      */
-    public static final int SSL_OP_EPHEMERAL_RSA = 0x00200000;
-    /*
-     * Set on servers to choose the cipher according to the server's preferences
-     */
+    public static final long SSL_OP_NO_COMPRESSION = 0x20000L;
     /**
-     * Server prefers its own cipher order.
+     * Permit unsafe legacy renegotiation.
      */
-    public static final int SSL_OP_CIPHER_SERVER_PREFERENCE = 0x00400000;
-    /*
+    public static final long SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION = 0x40000L;
+    /**
+     * Disable encrypt-then-mac.
+     */
+    public static final long SSL_OP_NO_ENCRYPT_THEN_MAC = 0x80000L;
+    /**
+     * Enable TLSv1.3 Compatibility mode. This is on by default. A future version of OpenSSL may have this disabled by
+     * default.
+     */
+    public static final long SSL_OP_ENABLE_MIDDLEBOX_COMPAT = 0x100000L;
+    /**
+     * Prioritize Chacha20Poly1305 when client does. Modifies SSL_OP_SERVER_PREFERENCE.
+     */
+    public static final long SSL_OP_PRIORITIZE_CHACHA = 0x200000L;
+    /**
+     * Set on servers to choose cipher, curve or group according to server's preferences.
+     */
+    public static final long SSL_OP_SERVER_PREFERENCE = 0x400000L;
+    /**
+     * Equivalent definition for backwards compatibility:
+     */
+    public static final long SSL_OP_CIPHER_SERVER_PREFERENCE = SSL_OP_SERVER_PREFERENCE;
+    /**
      * If set, a server will allow a client to issue an SSLv3.0 version number as latest version supported in the
      * premaster secret, even when TLSv1.0 (version 3.1) was announced in the client hello. Normally this is forbidden
      * to prevent version rollback attacks.
      */
+    public static final long SSL_OP_TLS_ROLLBACK_BUG = 0x800000L;
     /**
-     * Allow TLS rollback bug workaround.
+     * Switches off automatic TLSv1.3 anti-replay protection for early data. This is a server-side option only (no effect
+     * on the client).
      */
-    public static final int SSL_OP_TLS_ROLLBACK_BUG = 0x00800000;
-
-    /**
-     * Disable SSLv2 protocol.
-     */
-    public static final int SSL_OP_NO_SSLv2 = 0x01000000;
+    public static final long SSL_OP_NO_ANTI_REPLAY = 0x1000000L;
     /**
      * Disable SSLv3 protocol.
      */
-    public static final int SSL_OP_NO_SSLv3 = 0x02000000;
+    public static final long SSL_OP_NO_SSLv3 = 0x2000000L;
     /**
      * Disable TLSv1.0 protocol.
      */
-    public static final int SSL_OP_NO_TLSv1 = 0x04000000;
+    public static final long SSL_OP_NO_TLSv1 = 0x4000000L;
     /**
      * Disable TLSv1.2 protocol.
      */
-    public static final int SSL_OP_NO_TLSv1_2 = 0x08000000;
+    public static final long SSL_OP_NO_TLSv1_2 = 0x8000000L;
     /**
      * Disable TLSv1.1 protocol.
      */
-    public static final int SSL_OP_NO_TLSv1_1 = 0x10000000;
+    public static final long SSL_OP_NO_TLSv1_1 = 0x10000000L;
+    public static final long SSL_OP_NO_TLSv1_3 = 0x20000000L;
+    public static final long SSL_OP_NO_DTLSv1 = SSL_OP_NO_TLSv1;
+    public static final long SSL_OP_NO_DTLSv1_2 = SSL_OP_NO_TLSv1_2;
+    public static final long SSL_OP_NO_DTLSv1_3 = SSL_OP_NO_TLSv1_3;
+    /**
+     * Disallow all renegotiation.
+     */
+    public static final long SSL_OP_NO_RENEGOTIATION = 0x40000000L;
+    /**
+     * Make server add server-hello extension from early version of cryptopro draft, when GOST ciphersuite is
+     * negotiated. Required for interoperability with CryptoPro CSP 3.x
+     */
+    public static final long SSL_OP_CRYPTOPRO_TLSEXT_BUG = 0x80000000L;
+    /**
+     * Disable RFC8879 certificate compression. Don't send compressed certificates, and ignore the extension when
+     * received.
+     */
+    public static final long SSL_OP_NO_TX_CERTIFICATE_COMPRESSION = 0x100000000L;
+    /**
+     * Disable RFC8879 certificate compression. Don't send the extension, and subsequently indicating that receiving is
+     * not supported.
+     */
+    public static final long SSL_OP_NO_RX_CERTIFICATE_COMPRESSION = 0x200000000L;
+    /**
+     * Enable KTLS TX zerocopy on Linux.
+     */
+    public static final long SSL_OP_ENABLE_KTLS_TX_ZEROCOPY_SENDFILE = 0x400000000L;
+    public static final long SSL_OP_PREFER_NO_DHE_KEX = 0x800000000L;
+    public static final long SSL_OP_LEGACY_EC_POINT_FORMATS = 0x1000000000L;
 
     /**
-     * Disable TLS session tickets.
+     * Set this to tell client to emit greased ECH values.
      */
-    public static final int SSL_OP_NO_TICKET = 0x00004000;
+    public static final long SSL_OP_ECH_GREASE = 0x2000000000L;
+    /**
+     * If this is set then the server side will attempt trial decryption of ECHs even if there is no matching ECH
+     * config_id. That's a bit inefficient, but more privacy friendly.
+     */
+    public static final long SSL_OP_ECH_TRIALDECRYPT = 0x4000000000L;
+    /**
+     * If set, clients will ignore the supplied ECH config_id and replace that with a random value.
+     */
+    public static final long SSL_OP_ECH_IGNORE_CID = 0x8000000000L;
+    /**
+     * If set, servers will add GREASEy ECHConfig values to those sent in retry_configs.
+     */
+    public static final long SSL_OP_ECH_GREASE_RETRY_CONFIG = 0x10000000000L;
 
     // SSL_OP_PKCS1_CHECK_1 and SSL_OP_PKCS1_CHECK_2 flags are unsupported
     // in the current version of OpenSSL library. See ssl.h changes in commit
@@ -383,13 +437,59 @@ public final class SSL {
     @Deprecated
     public static final int SSL_OP_PKCS1_CHECK_2 = 0x10000000;
     /**
-     * Workaround for Netscape CA DN bug.
+     * RFC 8701: Send GREASE values in ClientHello.
      */
-    public static final int SSL_OP_NETSCAPE_CA_DN_BUG = 0x20000000;
+    public static final long SSL_OP_GREASE = 0x20000000000L;
+
+    /*
+     * Option "collections."
+     */
+    public static final long SSL_OP_NO_SSL_MASK =
+            SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3;
+
+    public static final long SSL_OP_NO_DTLS_MASK = SSL_OP_NO_DTLSv1 | SSL_OP_NO_DTLSv1_2;
+
     /**
-     * Workaround for Netscape demo cipher change bug.
+     * Various bug workarounds that should be rather harmless.
      */
-    public static final int SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG = 0x40000000;
+    public static final long SSL_OP_ALL =
+            SSL_OP_CRYPTOPRO_TLSEXT_BUG | SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS | SSL_OP_SAFARI_ECDHE_ECDSA_BUG;
+
+
+    /*
+     * OBSOLETE OPTIONS retained for compatibility.
+     */
+    @Deprecated
+    public static final long SSL_OP_MICROSOFT_SESS_ID_BUG = 0x0;
+    @Deprecated
+    public static final long SSL_OP_NETSCAPE_CHALLENGE_BUG = 0x0;
+    @Deprecated
+    public static final long SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG = 0x0;
+    @Deprecated
+    public static final long SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG = 0x0;
+    @Deprecated
+    public static final long SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER = 0x0;
+    @Deprecated
+    public static final long SSL_OP_MSIE_SSLV2_RSA_PADDING = 0x0;
+    @Deprecated
+    public static final long SSL_OP_SSLEAY_080_CLIENT_DH_BUG = 0x0;
+    @Deprecated
+    public static final long SSL_OP_TLS_D5_BUG = 0x0;
+    @Deprecated
+    public static final long SSL_OP_TLS_BLOCK_PADDING_BUG = 0x0;
+    @Deprecated
+    public static final long SSL_OP_SINGLE_ECDH_USE = 0x0;
+    @Deprecated
+    public static final long SSL_OP_SINGLE_DH_USE = 0x0;
+    @Deprecated
+    public static final long SSL_OP_EPHEMERAL_RSA = 0x0;
+    @Deprecated
+    public static final long SSL_OP_NO_SSLv2 = 0x0;
+    @Deprecated
+    public static final long SSL_OP_NETSCAPE_CA_DN_BUG = 0x0;
+    @Deprecated
+    public static final long SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG = 0x0;
+
 
     /**
      * Undefined certificate format.
@@ -481,48 +581,89 @@ public final class SSL {
 
     /**
      * Shutdown type unset.
+     *
+     * @deprecated The scope of the APR/Native Library will be reduced in Tomcat 9.1.x / Tomcat Native 2.x and has been
+     *                 reduced in Tomcat 10.1.x / Tomcat Native 2.x onwards to only include those components required to
+     *                 provide OpenSSL integration with the NIO and NIO2 connectors.
      */
+    @Deprecated
     public static final int SSL_SHUTDOWN_TYPE_UNSET = 0;
     /**
      * Standard shutdown type.
+     *
+     * @deprecated The scope of the APR/Native Library will be reduced in Tomcat 9.1.x / Tomcat Native 2.x and has been
+     *                 reduced in Tomcat 10.1.x / Tomcat Native 2.x onwards to only include those components required to
+     *                 provide OpenSSL integration with the NIO and NIO2 connectors.
      */
+    @Deprecated
     public static final int SSL_SHUTDOWN_TYPE_STANDARD = 1;
     /**
      * Unclean shutdown type.
+     *
+     * @deprecated The scope of the APR/Native Library will be reduced in Tomcat 9.1.x / Tomcat Native 2.x and has been
+     *                 reduced in Tomcat 10.1.x / Tomcat Native 2.x onwards to only include those components required to
+     *                 provide OpenSSL integration with the NIO and NIO2 connectors.
      */
+    @Deprecated
     public static final int SSL_SHUTDOWN_TYPE_UNCLEAN = 2;
     /**
      * Accurate shutdown type.
+     *
+     * @deprecated The scope of the APR/Native Library will be reduced in Tomcat 9.1.x / Tomcat Native 2.x and has been
+     *                 reduced in Tomcat 10.1.x / Tomcat Native 2.x onwards to only include those components required to
+     *                 provide OpenSSL integration with the NIO and NIO2 connectors.
      */
+    @Deprecated
     public static final int SSL_SHUTDOWN_TYPE_ACCURATE = 3;
 
     /**
      * Info flag for session ID.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_SESSION_ID = 0x0001;
     /**
      * Info flag for cipher name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CIPHER = 0x0002;
     /**
      * Info flag for cipher effective key size.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CIPHER_USEKEYSIZE = 0x0003;
     /**
      * Info flag for cipher algorithm key size.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CIPHER_ALGKEYSIZE = 0x0004;
     /**
      * Info flag for cipher version.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CIPHER_VERSION = 0x0005;
     /**
      * Info flag for cipher description.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CIPHER_DESCRIPTION = 0x0006;
     /**
      * Info flag for protocol version.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_PROTOCOL = 0x0007;
 
     /*
@@ -530,141 +671,240 @@ public final class SSL {
      */
     /**
      * Info flag for client subject distinguished name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_S_DN = 0x0010;
     /**
      * Info flag for client issuer distinguished name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_I_DN = 0x0020;
     /**
      * Info flag for server subject distinguished name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_SERVER_S_DN = 0x0040;
     /**
      * Info flag for server issuer distinguished name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_SERVER_I_DN = 0x0080;
 
     /**
      * DN field for country name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_COUNTRYNAME = 0x0001;
     /**
      * DN field for state or province name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_STATEORPROVINCENAME = 0x0002;
     /**
      * DN field for locality name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_LOCALITYNAME = 0x0003;
     /**
      * DN field for organization name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_ORGANIZATIONNAME = 0x0004;
     /**
      * DN field for organizational unit name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_ORGANIZATIONALUNITNAME = 0x0005;
     /**
      * DN field for common name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_COMMONNAME = 0x0006;
     /**
      * DN field for title.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_TITLE = 0x0007;
     /**
      * DN field for initials.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_INITIALS = 0x0008;
     /**
      * DN field for given name.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_GIVENNAME = 0x0009;
     /**
      * DN field for surname.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_SURNAME = 0x000A;
     /**
      * DN field for description.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_DESCRIPTION = 0x000B;
     /**
      * DN field for unique identifier.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_UNIQUEIDENTIFIER = 0x000C;
     /**
      * DN field for email address.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_DN_EMAILADDRESS = 0x000D;
 
     /**
      * Info flag for client certificate version.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_M_VERSION = 0x0101;
     /**
      * Info flag for client certificate serial number.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_M_SERIAL = 0x0102;
     /**
      * Info flag for client certificate validity start.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_V_START = 0x0103;
     /**
      * Info flag for client certificate validity end.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_V_END = 0x0104;
     /**
      * Info flag for client certificate signature algorithm.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_A_SIG = 0x0105;
     /**
      * Info flag for client certificate public key algorithm.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_A_KEY = 0x0106;
     /**
      * Info flag for client certificate data.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_CERT = 0x0107;
     /**
      * Info flag for client certificate validity remaining.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_V_REMAIN = 0x0108;
 
     /**
      * Info flag for server certificate version.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_SERVER_M_VERSION = 0x0201;
     /**
      * Info flag for server certificate serial number.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_SERVER_M_SERIAL = 0x0202;
     /**
      * Info flag for server certificate validity start.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_SERVER_V_START = 0x0203;
     /**
      * Info flag for server certificate validity end.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_SERVER_V_END = 0x0204;
     /**
      * Info flag for server certificate signature algorithm.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_SERVER_A_SIG = 0x0205;
     /**
      * Info flag for server certificate public key algorithm.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_SERVER_A_KEY = 0x0206;
     /**
      * Info flag for server certificate data.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_SERVER_CERT = 0x0207;
     /*
      * Return client certificate chain. Add certificate chain number to that flag (0 ... verify depth)
      */
     /**
      * Info flag for client certificate chain.
+     *
+     * @deprecated Unused. Will be removed in Tomcat 12 onwards.
      */
+    @Deprecated
     public static final int SSL_INFO_CLIENT_CERT_CHAIN = 0x0400;
 
     /* Only support OFF and SERVER for now */
@@ -1141,6 +1381,12 @@ public final class SSL {
      */
     public static native int getPostHandshakeAuthInProgress(long ssl);
 
+    /**
+     * Marks post handshake authentication complete for the connection. Used when JSSE is performing certificate
+     * verification for OpenSSL.
+     *
+     * @param ssl the SSL instance (SSL *)
+     */
     public static native void markPostHandshakeAuthComplete(long ssl);
 
     /**
@@ -1249,7 +1495,10 @@ public final class SSL {
      *
      * @param ssl     the SSL instance (SSL *)
      * @param options See SSL.SSL_OP_* for option flags.
+     *
+     * @deprecated Use {@link #setOptionsLong(long, long)}
      */
+    @Deprecated
     public static native void setOptions(long ssl, int options);
 
     /**
@@ -1258,8 +1507,28 @@ public final class SSL {
      * @param ssl the SSL instance (SSL *)
      *
      * @return options See SSL.SSL_OP_* for option flags.
+     *
+     * @deprecated Use {@link SSL#getOptionsLong(long)}
      */
+    @Deprecated
     public static native int getOptions(long ssl);
+
+    /**
+     * Set OpenSSL Option.
+     *
+     * @param ssl     the SSL instance (SSL *)
+     * @param options See SSL.SSL_OP_* for option flags.
+     */
+    public static native void setOptionsLong(long ssl, long options);
+
+    /**
+     * Get OpenSSL Option.
+     *
+     * @param ssl the SSL instance (SSL *)
+     *
+     * @return options See SSL.SSL_OP_* for option flags.
+     */
+    public static native long getOptionsLong(long ssl);
 
     /**
      * Returns all cipher suites that are enabled for negotiation in an SSL handshake.

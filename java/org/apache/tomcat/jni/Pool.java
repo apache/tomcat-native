@@ -19,8 +19,8 @@ package org.apache.tomcat.jni;
 import java.nio.ByteBuffer;
 
 /**
-  * Provides access to APR memory pools which are used to manage memory allocations for natively created instances.
-  */
+ * Provides access to APR memory pools which are used to manage memory allocations for natively created instances.
+ */
 public class Pool {
 
     /**
@@ -52,7 +52,7 @@ public class Pool {
 
     /**
      * Destroy the pool. This takes similar action as apr_pool_clear() and then frees all the memory. This will actually
-     * free the memory.
+     * free the memory. Calling this more than once for a pool will trigger a JVM crash.
      *
      * @param pool The pool to destroy
      */
