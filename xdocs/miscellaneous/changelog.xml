@@ -35,7 +35,7 @@
   <changelog>
   </changelog>
 </section>
-<section name="2.0.16" rtext="release in progress">
+<section name="2.0.16" rtext="2026-09-07">
   <changelog>
     <scode>
       Remove call to ERR_remove_thread_state() from Windows specific code to
