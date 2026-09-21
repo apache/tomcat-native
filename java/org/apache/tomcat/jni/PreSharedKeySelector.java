@@ -17,7 +17,8 @@
 package org.apache.tomcat.jni;
 
 /**
- * Is called during a TLSv1.2 handshake and hooked into OpenSSL via {@code SSL_CTX_set_psk_server_callback}.
+ * Is called during a TLS handshake and hooked into OpenSSL via {@code SSL_CTX_set_psk_server_callback} for TLSv1.2 and
+ * {@code SSL_CTX_set_psk_find_session_callback} for TLSv1.3.
  */
 public interface PreSharedKeySelector {
 
@@ -30,4 +31,15 @@ public interface PreSharedKeySelector {
      * @return the pre-shared key, or {@code null} if the identity is not recognized
      */
     byte[] select(long ssl, String identity);
+
+    /**
+     * Selects the TLSv1.3 pre-shared key and cipher suite for the provided identity.
+     *
+     * @param ssl         the SSL instance
+     * @param identity    the PSK identity provided by the client
+     * @param cipherSuite a single-element array that must be populated with the IANA cipher suite identifier
+     *
+     * @return the pre-shared key, or {@code null} if the identity is not recognized
+     */
+    byte[] select(long ssl, byte[] identity, int[] cipherSuite);
 }

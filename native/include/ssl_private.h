@@ -199,6 +199,10 @@ struct tcn_ssl_ctxt_t {
     jobject psk_selector;
     jmethodID psk_selector_method;
 
+    /* TLSv1.3 server-side pre-shared key selector */
+    jobject psk_find_session_selector;
+    jmethodID psk_find_session_selector_method;
+
     /* Holds the alpn protocols, each of them prefixed with the len of the protocol */
     unsigned char   *alpn_proto_data;
     unsigned int    alpn_proto_len;
