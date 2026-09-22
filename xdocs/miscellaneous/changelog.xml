@@ -33,6 +33,10 @@
 </section>
 <section name="2.0.17" rtext="development in progress">
   <changelog>
+    <add>
+      Add support for configuring server-side TLSv1.2 and TLSv1.3 pre-shared
+      key callbacks. (markt)
+    </add>
   </changelog>
 </section>
 <section name="2.0.16" rtext="2026-09-07">
@@ -51,10 +55,6 @@
     <update>
       Make Windows 10 / 11 the default target version for Windows builds. (rjung)
     </update>
-    <add>
-      Add support for configuring server-side TLSv1.2 and TLSv1.3 pre-shared
-      key callbacks. (markt)
-    </add>
     <fix>
       Fix a potential crash when negotiating ALPN. (markt)
     </fix>
