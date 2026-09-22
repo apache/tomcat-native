@@ -37,6 +37,10 @@
       Add support for configuring server-side TLSv1.2 and TLSv1.3 pre-shared
       key callbacks. (markt)
     </add>
+    <add>
+      Add support for configuring client-side TLSv1.2 pre-shared key callback.
+      (markt)
+    </add>
   </changelog>
 </section>
 <section name="2.0.16" rtext="2026-09-07">

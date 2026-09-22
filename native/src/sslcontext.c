@@ -69,6 +69,14 @@ static apr_status_t ssl_context_cleanup(void *data)
         }
         c->psk_selector_method = NULL;
 
+        if (c->psk_client_selector) {
+            JNIEnv *e;
+            tcn_get_java_env(&e);
+            (*e)->DeleteGlobalRef(e, c->psk_client_selector);
+            c->psk_client_selector = NULL;
+        }
+        c->psk_client_selector_method = NULL;
+
         if (c->psk_find_session_selector) {
             JNIEnv *e;
             tcn_get_java_env(&e);
@@ -1547,6 +1555,109 @@ cleanup:
     return result;
 }
 #endif
+
+#ifndef OPENSSL_NO_PSK
+static unsigned int SSL_psk_client(SSL *ssl, const char *hint, char *identity, unsigned int max_identity_len,
+                                   unsigned char *psk, unsigned int max_psk_len)
+{
+    tcn_ssl_ctxt_t *c = SSL_get_app_data2(ssl);
+    JNIEnv *e;
+    jobjectArray identity_array = NULL;
+    jstring identity_string = NULL;
+    jbyteArray key = NULL;
+    const char *identity_utf = NULL;
+    jsize key_len;
+    size_t identity_len;
+    unsigned int result = 0;
+
+    UNREFERENCED(hint);
+    if (c == NULL || c->psk_client_selector == NULL || c->psk_client_selector_method == NULL ||
+            tcn_get_java_env(&e) != JNI_OK) {
+        return 0;
+    }
+
+    identity_array = (*e)->NewObjectArray(e, 1, (*e)->FindClass(e, "java/lang/String"), NULL);
+    if (identity_array == NULL) {
+        goto cleanup;
+    }
+    key = (*e)->CallObjectMethod(e, c->psk_client_selector, c->psk_client_selector_method, P2J(ssl), identity_array);
+    if ((*e)->ExceptionCheck(e) || key == NULL) {
+        goto cleanup;
+    }
+    identity_string = (*e)->GetObjectArrayElement(e, identity_array, 0);
+    if (identity_string == NULL) {
+        goto cleanup;
+    }
+    identity_utf = (*e)->GetStringUTFChars(e, identity_string, NULL);
+    if (identity_utf == NULL) {
+        goto cleanup;
+    }
+    identity_len = strlen(identity_utf);
+    key_len = (*e)->GetArrayLength(e, key);
+    if (identity_len + 1 > max_identity_len || key_len <= 0 || (unsigned int) key_len > max_psk_len) {
+        goto cleanup;
+    }
+    memcpy(identity, identity_utf, identity_len + 1);
+    (*e)->GetByteArrayRegion(e, key, 0, key_len, (jbyte *)psk);
+    if (!(*e)->ExceptionCheck(e)) {
+        result = (unsigned int) key_len;
+    }
+
+cleanup:
+    if (identity_utf != NULL) {
+        (*e)->ReleaseStringUTFChars(e, identity_string, identity_utf);
+    }
+    if ((*e)->ExceptionCheck(e)) {
+        (*e)->ExceptionClear(e);
+    }
+    if (key != NULL) {
+        (*e)->DeleteLocalRef(e, key);
+    }
+    if (identity_string != NULL) {
+        (*e)->DeleteLocalRef(e, identity_string);
+    }
+    if (identity_array != NULL) {
+        (*e)->DeleteLocalRef(e, identity_array);
+    }
+    return result;
+}
+#endif
+
+TCN_IMPLEMENT_CALL(void, SSLContext, setPskClientCallback)(TCN_STDARGS, jlong ctx, jobject selector)
+{
+#ifdef OPENSSL_NO_PSK
+    UNREFERENCED(o);
+    UNREFERENCED(ctx);
+    UNREFERENCED(selector);
+    tcn_Throw(e, "OpenSSL does not support PSK");
+#else
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+    jobject new_selector = NULL;
+    jmethodID new_method = NULL;
+
+    UNREFERENCED(o);
+    TCN_ASSERT(ctx != 0);
+
+    if (selector != NULL) {
+        jclass selector_class = (*e)->GetObjectClass(e, selector);
+        new_method = (*e)->GetMethodID(e, selector_class, "selectClient", "(J[Ljava/lang/String;)[B");
+        (*e)->DeleteLocalRef(e, selector_class);
+        if (new_method == NULL) {
+            return;
+        }
+        new_selector = (*e)->NewGlobalRef(e, selector);
+        if (new_selector == NULL) {
+            return;
+        }
+    }
+    SSL_CTX_set_psk_client_callback(c->ctx, selector == NULL ? NULL : SSL_psk_client);
+    if (c->psk_client_selector != NULL) {
+        (*e)->DeleteGlobalRef(e, c->psk_client_selector);
+    }
+    c->psk_client_selector = new_selector;
+    c->psk_client_selector_method = new_method;
+#endif
+}
 
 TCN_IMPLEMENT_CALL(void, SSLContext, setPskServerCallback)(TCN_STDARGS, jlong ctx, jobject selector)
 {
