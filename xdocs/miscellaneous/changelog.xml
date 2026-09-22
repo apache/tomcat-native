@@ -41,6 +41,13 @@
       Add support for configuring client-side TLSv1.2 pre-shared key callback.
       (markt)
     </add>
+    <fix>
+      Align the OCSP checking performed by <code>ssl_verify_OCSP()</code> with
+      the behaviour of Tomcat's JSSE based <code>SSLEngine</code>
+      implementation so that a certificate that is itself a trust anchor
+      (whether a self-signed root or a certificate trusted directly via the
+      configured trust store) is not subject to OCSP checking. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.16" rtext="2026-09-07">

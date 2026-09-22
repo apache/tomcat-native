@@ -476,8 +476,14 @@ static int ssl_verify_OCSP(X509_STORE_CTX *ctx, int timeout, int verifyFlags)
      * is called if OpenSSL already successfully verified the certificate
      * (parameter "ok" in SSL_callback_SSL_verify() must be true).
      */
-    else if (X509_check_issued(cert,cert) == X509_V_OK) {
-        /* don't do OCSP checking for valid self-issued certs */
+    else if (X509_check_issued(cert,cert) == X509_V_OK
+            || X509_STORE_CTX_get_error_depth(ctx) >= X509_STORE_CTX_get_num_untrusted(ctx)) {
+        /* Don't do OCSP checking for valid self-issued certs, nor for a certificate that is itself
+         * a trust anchor (present directly in the configured trust store rather than supplied by the
+         * peer). A trust anchor is trusted unconditionally, so its own revocation status is not
+         * checked. This aligns with JSSE's PKIXRevocationChecker, which excludes the trust anchor
+         * of the certification path from revocation checking regardless of whether it is self-signed.
+         */
         X509_STORE_CTX_set_error(ctx, X509_V_OK);
         return OCSP_STATUS_UNKNOWN;
     }
