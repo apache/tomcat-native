@@ -490,12 +490,22 @@ public final class SSLContext {
     public static native void setPskFindSessionCallback(long ctx, PreSharedKeySelector selector);
 
     /**
-     * Sets the TLSv1.2 client-side pre-shared key callback.
+     * Sets the TLSv1.2 client-side pre-shared key callback to a {@link PreSharedKeySelector} instance. This will call
+     * {@code SSL_CTX_set_psk_client_callback}.
      *
      * @param ctx      Client context to use
      * @param selector pre-shared key selector
      */
     public static native void setPskClientCallback(long ctx, PreSharedKeySelector selector);
+
+    /**
+     * Sets the TLSv1.3 client-side pre-shared key callback to a {@link PreSharedKeySelector} instance. This will call
+     * {@code SSL_CTX_set_psk_use_session_callback}.
+     *
+     * @param ctx      Client context to use
+     * @param selector pre-shared key selector
+     */
+    public static native void setPskUseSessionCallback(long ctx, PreSharedKeySelector selector);
 
     /**
      * Set application layer protocol for application layer protocol negotiation extension

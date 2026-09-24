@@ -21,6 +21,7 @@
 
 #include "apr_file_io.h"
 #include "apr_thread_mutex.h"
+#include "apr_hash.h"
 #include "apr_poll.h"
 #include "apr_pools.h"
 
@@ -76,6 +77,14 @@ static apr_status_t ssl_context_cleanup(void *data)
             c->psk_client_selector = NULL;
         }
         c->psk_client_selector_method = NULL;
+
+        if (c->psk_use_session_selector) {
+            JNIEnv *e;
+            tcn_get_java_env(&e);
+            (*e)->DeleteGlobalRef(e, c->psk_use_session_selector);
+            c->psk_use_session_selector = NULL;
+        }
+        c->psk_use_session_selector_method = NULL;
 
         if (c->psk_find_session_selector) {
             JNIEnv *e;
@@ -1656,6 +1665,191 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setPskClientCallback)(TCN_STDARGS, jlong ct
     }
     c->psk_client_selector = new_selector;
     c->psk_client_selector_method = new_method;
+#endif
+}
+
+#if defined(HAVE_TLSV1_3) && !defined(LIBRESSL_VERSION_NUMBER)
+static int SSL_psk_use_session(SSL *ssl, const EVP_MD *md, const unsigned char **identity, size_t *identity_len,
+                               SSL_SESSION **sess)
+{
+    tcn_ssl_ctxt_t *c = SSL_get_app_data2(ssl);
+    JNIEnv *e;
+    jobjectArray identity_array = NULL;
+    jstring identity_string = NULL;
+    const char *identity_utf = NULL;
+    jintArray cipher_suite_array = NULL;
+    jbyteArray key = NULL;
+    jint cipher_suite;
+    jsize key_len = 0;
+    unsigned char cipher_id[2];
+    unsigned char *key_data = NULL;
+    const unsigned char *cached_identity = NULL;
+    const SSL_CIPHER *cipher;
+    const EVP_MD *cipher_md;
+    SSL_SESSION *session = NULL;
+    int result = 0;
+
+    *identity = NULL;
+    *identity_len = 0;
+    *sess = NULL;
+    if (c == NULL || c->psk_use_session_selector == NULL || c->psk_use_session_selector_method == NULL ||
+            tcn_get_java_env(&e) != JNI_OK) {
+        return 0;
+    }
+
+    identity_array = (*e)->NewObjectArray(e, 1, stringClass, NULL);
+    cipher_suite_array = (*e)->NewIntArray(e, 1);
+    if (identity_array == NULL || cipher_suite_array == NULL) {
+        goto cleanup;
+    }
+
+    key = (*e)->CallObjectMethod(e, c->psk_use_session_selector, c->psk_use_session_selector_method, P2J(ssl),
+            identity_array, cipher_suite_array);
+    if ((*e)->ExceptionCheck(e)) {
+        goto cleanup;
+    }
+    if (key == NULL) {
+        result = 1;
+        goto cleanup;
+    }
+
+    identity_string = (*e)->GetObjectArrayElement(e, identity_array, 0);
+    if (identity_string == NULL) {
+        goto cleanup;
+    }
+    identity_utf = (*e)->GetStringUTFChars(e, identity_string, NULL);
+    if (identity_utf == NULL) {
+        goto cleanup;
+    }
+    *identity_len = strlen(identity_utf);
+
+    (*e)->GetIntArrayRegion(e, cipher_suite_array, 0, 1, &cipher_suite);
+    if ((*e)->ExceptionCheck(e) || cipher_suite <= 0 || cipher_suite > 0xffff) {
+        goto cleanup;
+    }
+    cipher_id[0] = (unsigned char)(cipher_suite >> 8);
+    cipher_id[1] = (unsigned char)cipher_suite;
+    cipher = SSL_CIPHER_find(ssl, cipher_id);
+    if (cipher == NULL || strcmp(SSL_CIPHER_get_version(cipher), "TLSv1.3") != 0) {
+        goto cleanup;
+    }
+    cipher_md = SSL_CIPHER_get_handshake_digest(cipher);
+    if (md != NULL && (cipher_md == NULL || EVP_MD_type(md) != EVP_MD_type(cipher_md))) {
+        goto cleanup;
+    }
+
+    key_len = (*e)->GetArrayLength(e, key);
+    if (key_len <= 0) {
+        goto cleanup;
+    }
+    key_data = OPENSSL_malloc((size_t)key_len);
+    if (key_data == NULL) {
+        goto cleanup;
+    }
+    (*e)->GetByteArrayRegion(e, key, 0, key_len, (jbyte *)key_data);
+    if ((*e)->ExceptionCheck(e)) {
+        goto cleanup;
+    }
+
+    session = SSL_SESSION_new();
+    if (session == NULL || !SSL_SESSION_set1_master_key(session, key_data, (size_t)key_len) ||
+            !SSL_SESSION_set_cipher(session, cipher) ||
+            !SSL_SESSION_set_protocol_version(session, TLS1_3_VERSION)) {
+        goto cleanup;
+    }
+
+    if (apr_thread_mutex_lock(c->psk_use_session_identities_lock) != APR_SUCCESS) {
+        goto cleanup;
+    }
+    cached_identity = apr_hash_get(c->psk_use_session_identities, identity_utf, (apr_ssize_t)*identity_len);
+    if (cached_identity == NULL) {
+        cached_identity = (const unsigned char *)apr_pstrmemdup(c->pool, identity_utf, *identity_len);
+        if (cached_identity != NULL) {
+            apr_hash_set(c->psk_use_session_identities, cached_identity, (apr_ssize_t)*identity_len, cached_identity);
+        }
+    }
+    apr_thread_mutex_unlock(c->psk_use_session_identities_lock);
+    if (cached_identity == NULL) {
+        goto cleanup;
+    }
+
+    *identity = cached_identity;
+    *sess = session;
+    session = NULL;
+    result = 1;
+
+cleanup:
+    if ((*e)->ExceptionCheck(e)) {
+        (*e)->ExceptionClear(e);
+    }
+    SSL_SESSION_free(session);
+    if (key_data != NULL) {
+        OPENSSL_clear_free(key_data, (size_t)key_len);
+    }
+    if (key != NULL) {
+        (*e)->DeleteLocalRef(e, key);
+    }
+    if (cipher_suite_array != NULL) {
+        (*e)->DeleteLocalRef(e, cipher_suite_array);
+    }
+    if (identity_utf != NULL) {
+        (*e)->ReleaseStringUTFChars(e, identity_string, identity_utf);
+    }
+    if (identity_string != NULL) {
+        (*e)->DeleteLocalRef(e, identity_string);
+    }
+    if (identity_array != NULL) {
+        (*e)->DeleteLocalRef(e, identity_array);
+    }
+    return result;
+}
+#endif
+
+TCN_IMPLEMENT_CALL(void, SSLContext, setPskUseSessionCallback)(TCN_STDARGS, jlong ctx, jobject selector)
+{
+#if defined(HAVE_TLSV1_3) && !defined(LIBRESSL_VERSION_NUMBER)
+    tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
+    jobject new_selector = NULL;
+    jmethodID new_method = NULL;
+
+    UNREFERENCED(o);
+    TCN_ASSERT(ctx != 0);
+
+    if (selector != NULL) {
+        jclass selector_class = (*e)->GetObjectClass(e, selector);
+        new_method = (*e)->GetMethodID(e, selector_class, "selectClient", "(J[Ljava/lang/String;[I)[B");
+        (*e)->DeleteLocalRef(e, selector_class);
+        if (new_method == NULL) {
+            return;
+        }
+        new_selector = (*e)->NewGlobalRef(e, selector);
+        if (new_selector == NULL) {
+            return;
+        }
+        if (c->psk_use_session_identities == NULL) {
+            c->psk_use_session_identities = apr_hash_make(c->pool);
+            if (c->psk_use_session_identities == NULL ||
+                    apr_thread_mutex_create(&c->psk_use_session_identities_lock, APR_THREAD_MUTEX_DEFAULT,
+                            c->pool) != APR_SUCCESS) {
+                (*e)->DeleteGlobalRef(e, new_selector);
+                tcn_ThrowException(e, "Unable to initialize TLSv1.3 PSK identity cache");
+                return;
+            }
+        }
+    }
+
+    SSL_CTX_set_psk_use_session_callback(c->ctx, selector == NULL ? NULL : SSL_psk_use_session);
+
+    if (c->psk_use_session_selector != NULL) {
+        (*e)->DeleteGlobalRef(e, c->psk_use_session_selector);
+    }
+    c->psk_use_session_selector = new_selector;
+    c->psk_use_session_selector_method = new_method;
+#else
+    UNREFERENCED(o);
+    UNREFERENCED(ctx);
+    UNREFERENCED(selector);
+    tcn_Throw(e, "OpenSSL does not support TLSv1.3 PSK");
 #endif
 }
 

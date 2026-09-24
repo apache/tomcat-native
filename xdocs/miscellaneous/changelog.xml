@@ -38,8 +38,8 @@
       key callbacks. (markt)
     </add>
     <add>
-      Add support for configuring client-side TLSv1.2 pre-shared key callback.
-      (markt)
+      Add support for configuring client-side TLSv1.2 and TLSv1.3 pre-shared
+      key callbacks. (markt)
     </add>
     <fix>
       Align the OCSP checking performed by <code>ssl_verify_OCSP()</code> with
