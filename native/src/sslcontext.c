@@ -1669,6 +1669,14 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setPskClientCallback)(TCN_STDARGS, jlong ct
 }
 
 #if defined(HAVE_TLSV1_3) && !defined(LIBRESSL_VERSION_NUMBER)
+/*
+ * Tomcat always configures SSL_CTX_set_session_id_context() with this value (see
+ * org.apache.tomcat.jni.SSLContext.DEFAULT_SESSION_ID_CONTEXT). A synthetic SSL_SESSION built by the TLSv1.3 PSK
+ * callbacks must carry a matching id context, otherwise OpenSSL rejects it internally with
+ * SSL_R_ATTEMPT_TO_REUSE_SESSION_IN_DIFFERENT_CONTEXT ("attempt to reuse session in different context").
+ */
+static const unsigned char TCN_PSK_SESSION_ID_CONTEXT[] = { 'd', 'e', 'f', 'a', 'u', 'l', 't' };
+
 static int SSL_psk_use_session(SSL *ssl, const EVP_MD *md, const unsigned char **identity, size_t *identity_len,
                                SSL_SESSION **sess)
 {
@@ -1754,7 +1762,9 @@ static int SSL_psk_use_session(SSL *ssl, const EVP_MD *md, const unsigned char *
     session = SSL_SESSION_new();
     if (session == NULL || !SSL_SESSION_set1_master_key(session, key_data, (size_t)key_len) ||
             !SSL_SESSION_set_cipher(session, cipher) ||
-            !SSL_SESSION_set_protocol_version(session, TLS1_3_VERSION)) {
+            !SSL_SESSION_set_protocol_version(session, TLS1_3_VERSION) ||
+            !SSL_SESSION_set1_id_context(session, TCN_PSK_SESSION_ID_CONTEXT,
+                    (unsigned int)sizeof(TCN_PSK_SESSION_ID_CONTEXT))) {
         goto cleanup;
     }
 
@@ -1965,7 +1975,9 @@ static int SSL_psk_find_session(SSL *ssl, const unsigned char *identity, size_t 
     session = SSL_SESSION_new();
     if (session == NULL || !SSL_SESSION_set1_master_key(session, key_data, (size_t)key_len) ||
             !SSL_SESSION_set_cipher(session, cipher) ||
-            !SSL_SESSION_set_protocol_version(session, TLS1_3_VERSION)) {
+            !SSL_SESSION_set_protocol_version(session, TLS1_3_VERSION) ||
+            !SSL_SESSION_set1_id_context(session, TCN_PSK_SESSION_ID_CONTEXT,
+                    (unsigned int)sizeof(TCN_PSK_SESSION_ID_CONTEXT))) {
         goto cleanup;
     }
 
