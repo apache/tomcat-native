@@ -1,5 +1,5 @@
 The current minimum versions are:
-- OpenSSL 3.0.0 
+- OpenSSL 1.1.1
 - APR 1.6.3
 
 The following version of the libraries are recommended:
@@ -22,6 +22,9 @@ And in Ubuntu:
 - OpenSSL 3.0.2  in Ubuntu 22.04 LTS (EOL in April 2027)
 - OpenSSL 3.0.13 in Ubuntu 24.04 LTS (EOL in April 2029)
 - OpenSSL 3.5.5  in Ubuntu 26.04 LTS (EOL in April 2031)
+
+And in SUSE:
+- OpenSSL 1.1.1  in SUSE Linux Enterprise 15 (LTSS through 2031)
 
 The minimum version of APR is driven by the version of APR used by
 downstream distributions.

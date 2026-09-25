@@ -985,9 +985,19 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
     const char *p;
     char err[TCN_OPENSSL_ERROR_STRING_LENGTH];
 #ifdef HAVE_ECC
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+    EC_GROUP *ecparams = NULL;
+    int nid;
+    EC_KEY *eckey = NULL;
+#else
     int nid;
 #endif
+#endif
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+    DH *dhparams;
+#else
     EVP_PKEY *evp;
+#endif
 
     UNREFERENCED(o);
     TCN_ASSERT(ctx != 0);
@@ -1062,10 +1072,17 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
      */
     /* XXX Does this also work for pkcs12 or only for PEM files?
      * If only for PEM files move above to the PEM handling */
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+    if ((idx == 0) && (dhparams = SSL_dh_GetParamFromFile(cert_file))) {
+        SSL_CTX_set_tmp_dh(c->ctx, dhparams);
+        DH_free(dhparams);
+    }
+#else
     if ((idx == 0) && (evp = SSL_dh_GetParamFromFile(cert_file))) {
         SSL_CTX_set0_tmp_dh_pkey(c->ctx, evp);
         EVP_PKEY_free(evp);
     }
+#endif
 
 #ifdef HAVE_ECC
     /*
@@ -1073,10 +1090,21 @@ TCN_IMPLEMENT_CALL(jboolean, SSLContext, setCertificate)(TCN_STDARGS, jlong ctx,
      */
     /* XXX Does this also work for pkcs12 or only for PEM files?
      * If only for PEM files move above to the PEM handling */
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+    if ((ecparams = SSL_ec_GetParamFromFile(cert_file)) &&
+        (nid = EC_GROUP_get_curve_name(ecparams)) &&
+        (eckey = EC_KEY_new_by_curve_name(nid))) {
+        SSL_CTX_set_tmp_ecdh(c->ctx, eckey);
+    }
+    /* OpenSSL assures us that _free() is NULL-safe */
+    EC_KEY_free(eckey);
+    EC_GROUP_free(ecparams);
+#else
     nid = SSL_ec_GetParamFromFile(cert_file);
     if (nid != NID_undef) {
         SSL_CTX_set1_groups(c->ctx, &nid, 1);
     }
+#endif
 #endif
     SSL_CTX_set_dh_auto(c->ctx, 1);
 
@@ -1667,13 +1695,19 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, sessionCacheFull)(TCN_STDARGS, jlong ctx)
     return rv;
 }
 
-#define TICKET_KEYS_SIZE 80
+#define TICKET_KEYS_SIZE_1_1 48
+#define TICKET_KEYS_SIZE_3_0 80
 TCN_IMPLEMENT_CALL(void, SSLContext, setSessionTicketKeys)(TCN_STDARGS, jlong ctx, jbyteArray keys)
 {
     tcn_ssl_ctxt_t *c = J2P(ctx, tcn_ssl_ctxt_t *);
     jbyte* b;
+    int len = (*e)->GetArrayLength(e, keys);
 
-    if ((*e)->GetArrayLength(e, keys) != TICKET_KEYS_SIZE) {
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+    if (len != TICKET_KEYS_SIZE_1_1) {
+#else
+    if (len != TICKET_KEYS_SIZE_1_1 && len != TICKET_KEYS_SIZE_3_0) {
+#endif
         if (c->bio_os) {
             BIO_printf(c->bio_os, "[ERROR] Session ticket keys provided were wrong size.\n");
         }
@@ -1684,7 +1718,7 @@ TCN_IMPLEMENT_CALL(void, SSLContext, setSessionTicketKeys)(TCN_STDARGS, jlong ct
     }
 
     b = (*e)->GetByteArrayElements(e, keys, NULL);
-    SSL_CTX_set_tlsext_ticket_keys(c->ctx, b, TICKET_KEYS_SIZE);
+    SSL_CTX_set_tlsext_ticket_keys(c->ctx, b, len);
     (*e)->ReleaseByteArrayElements(e, keys, b, 0);
 }
 
