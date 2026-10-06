@@ -202,6 +202,19 @@ int SSL_password_callback(char *buf, int bufsiz, int verify,
 **  Custom (EC)DH parameter support
 **  _________________________________________________________________
 */
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+DH *SSL_dh_GetParamFromFile(const char *file)
+{
+    DH *dh = NULL;
+    BIO *bio;
+
+    if ((bio = BIO_new_file(file, "r")) == NULL)
+        return NULL;
+    dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+    BIO_free(bio);
+    return dh;
+}
+#else
 EVP_PKEY *SSL_dh_GetParamFromFile(const char *file)
 {
     EVP_PKEY *evp = NULL;
@@ -217,8 +230,22 @@ EVP_PKEY *SSL_dh_GetParamFromFile(const char *file)
     }
     return evp;
 }
+#endif
 
 #ifdef HAVE_ECC
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+EC_GROUP *SSL_ec_GetParamFromFile(const char *file)
+{
+    EC_GROUP *group = NULL;
+    BIO *bio;
+
+    if ((bio = BIO_new_file(file, "r")) == NULL)
+        return NULL;
+    group = PEM_read_bio_ECPKParameters(bio, NULL, NULL, NULL);
+    BIO_free(bio);
+    return (group);
+}
+#else
 int SSL_ec_GetParamFromFile(const char *file)
 {
     EVP_PKEY *evp = NULL;
@@ -255,6 +282,7 @@ int SSL_ec_GetParamFromFile(const char *file)
     EVP_PKEY_free(evp);
     return nid; /* Returns the curve's NID, or NID_undef on failure */
 }
+#endif
 #endif
 
 /*

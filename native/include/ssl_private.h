@@ -48,8 +48,8 @@
 #include <openssl/bn.h>
 #if OPENSSL_VERSION_NUMBER > 0x2FFFFFFFL && !defined(LIBRESSL_VERSION_NUMBER)
 #include <openssl/provider.h>
-#endif
 #include <openssl/core_names.h>
+#endif
 
 #ifndef RAND_MAX
 #include <limits.h>
@@ -345,9 +345,17 @@ int         SSL_password_callback(char *, int, int, void *);
 void        SSL_BIO_close(BIO *);
 void        SSL_BIO_doref(BIO *);
 DH         *SSL_get_dh_params(unsigned keylen);
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+DH         *SSL_dh_GetParamFromFile(const char *);
+#else
 EVP_PKEY   *SSL_dh_GetParamFromFile(const char *);
+#endif
 #ifdef HAVE_ECC
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+EC_GROUP   *SSL_ec_GetParamFromFile(const char *);
+#else
 int         SSL_ec_GetParamFromFile(const char *);
+#endif
 #endif
 DH         *SSL_callback_tmp_DH(SSL *, int, int);
 void        SSL_callback_handshake(const SSL *, int, int);
