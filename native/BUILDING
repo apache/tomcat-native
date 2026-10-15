@@ -36,10 +36,10 @@ Linux / Unix / OSX (dynamic linking)
 
 3. Build
 
-   >  configure --with-apr=apr_install_location --with-ssl=openssl_install_location
+   >  ./configure --with-apr=apr_install_location --with-ssl=openssl_install_location --with-java-home=java_home
    >  make
 
-   This should produce a file named libtcnative-2.so
+   This should produce files in .libs/ named libtcnative-2.so or libtcnative-2.dylib, etc.
 
 
 Linux / Unix / OSX (static linking)
