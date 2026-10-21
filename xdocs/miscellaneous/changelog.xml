@@ -55,6 +55,9 @@
     <update>
       Update the recommended minimum version of OpenSSL to 3.5.9. (markt)
     </update>
+    <fix>
+      Generate the HTML changelog as UTF-8. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.16" rtext="2026-09-07">

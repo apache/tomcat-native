@@ -91,9 +91,9 @@ if [ "x$JKJNIEXT" = "x" ]; then
 fi
 
 # Check for links, elinks or w3m
-w3m_opts="-dump -cols 80 -t 4 -S -O iso-8859-1 -T text/html"
-elinks_opts="-dump -dump-width 80 -dump-charset iso-8859-1 -no-numbering -no-references -no-home"
-links_opts="-dump -width 80 -codepage iso-8859-1 -no-g -html-numbered-links 0"
+w3m_opts="-dump -cols 80 -t 4 -S -O utf-8 -T text/html"
+elinks_opts="-dump -dump-width 80 -dump-charset utf-8 -no-numbering -no-references -no-home"
+links_opts="-dump -width 80 -codepage utf-8 -no-g -html-numbered-links 0"
 EXPTOOL=""
 EXPOPTS=""
 for i in w3m elinks links
@@ -244,7 +244,7 @@ if [ $? -ne 0 ]; then
 fi
 # Remove page navigation data from converted file.
 cp -p ../CHANGELOG.txt ../CHANGELOG.txt.tmp
-awk '/Preface/ {o=1} o>0' ../CHANGELOG.txt.tmp > ../CHANGELOG.txt
+LC_ALL=C.UTF-8 awk '/Preface/ {o=1} o>0' ../CHANGELOG.txt.tmp > ../CHANGELOG.txt
 rm ../CHANGELOG.txt.tmp
 
 cd "$top"
