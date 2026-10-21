@@ -52,6 +52,9 @@
       Limit read and write access to a newly created <code>SSLKEYLOGFILE</code>
       (if any) to the user under which Tomcat Native is running. (markt)
     </fix>
+    <update>
+      Update the recommended minimum version of OpenSSL to 3.5.9. (markt)
+    </update>
   </changelog>
 </section>
 <section name="2.0.16" rtext="2026-09-07">
