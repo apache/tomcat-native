@@ -29,13 +29,13 @@ extern apr_pool_t *tcn_global_pool;
 
 tcn_pass_cb_t tcn_password_callback;
 
-static BIO *key_log_file = NULL;
+static apr_file_t *key_log_file = NULL;
 
 static void ssl_keylog_callback(const SSL *ssl, const char *line)
 {
     if (key_log_file && line && *line) {
-        BIO_puts(key_log_file, line);
-        BIO_puts(key_log_file, "\n");
+        apr_file_puts(line, key_log_file);
+        apr_file_puts("\n", key_log_file);
     }
 }
 
@@ -234,7 +234,7 @@ static apr_status_t ssl_init_cleanup(void *data)
     /* Openssl v1.1+ handles all termination automatically. */
 
     if (key_log_file) {
-        BIO_free(key_log_file);
+        apr_file_close(key_log_file);
         key_log_file = NULL;
     }
 
@@ -424,12 +424,6 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
 
     init_bio_methods();
 
-    /*
-     * Let us cleanup the ssl library when the library is unloaded
-     */
-    apr_pool_cleanup_register(tcn_global_pool, NULL,
-                              ssl_init_cleanup,
-                              apr_pool_cleanup_null);
     TCN_FREE_CSTRING(engine);
 
     /* Cache the byte[].class for performance reasons */
@@ -443,16 +437,22 @@ TCN_IMPLEMENT_CALL(jint, SSL, initialize)(TCN_STDARGS, jstring engine)
     if (!key_log_file) {
         char *key_log_file_name = getenv("SSLKEYLOGFILE");
         if (key_log_file_name) {
-            FILE *file = fopen(key_log_file_name, "a");
-            if (file) {
-                if (setvbuf(file, NULL, _IONBF, 0)) {
-                    fclose(file);
-                } else {
-                    key_log_file = BIO_new_fp(file, BIO_CLOSE);
-                }
+            /* Create the unbuffered log with owner-only read/write permissions. */
+            if (apr_file_open(&key_log_file, key_log_file_name,
+                              APR_FOPEN_WRITE | APR_FOPEN_CREATE | APR_FOPEN_APPEND,
+                              APR_FPROT_UREAD | APR_FPROT_UWRITE, tcn_global_pool) != APR_SUCCESS) {
+                key_log_file = NULL;
             }
         }
     }
+
+    /*
+     * Register after opening the log so ssl_init_cleanup() closes it before
+     * the file's pool cleanup runs when the library is unloaded.
+     */
+    apr_pool_cleanup_register(tcn_global_pool, NULL,
+                              ssl_init_cleanup,
+                              apr_pool_cleanup_null);
 
     return (jint)APR_SUCCESS;
 }
