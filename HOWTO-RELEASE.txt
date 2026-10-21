@@ -32,6 +32,8 @@ Preparation
 Review the open issues in Bugzilla.
 Review open PRs in GitHub.
 
+Check the versions in native/srclib/VERSIONS
+
 If you haven't already, add your public PGP key to KEYS.
 
 Ensure dates and/or version numbers are up to date:
