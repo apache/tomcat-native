@@ -31,7 +31,9 @@
   branch started from the 1.2.33 tag.
   </p>
 </section>
-<section name="2.0.17" rtext="development in progress">
+<section name="2.0.18" rtext="development in progress">
+</section>
+<section name="2.0.17" rtext="release in progress">
   <changelog>
     <add>
       Add support for configuring server-side TLSv1.2 and TLSv1.3 pre-shared
