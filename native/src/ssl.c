@@ -198,6 +198,7 @@ void SSL_callback_add_keylog(SSL_CTX *ctx)
 
 static void init_bio_methods(void);
 static void free_bio_methods(void);
+static BIO_METHOD *BIO_jbs();
 
 TCN_IMPLEMENT_CALL(jint, SSL, version)(TCN_STDARGS)
 {
