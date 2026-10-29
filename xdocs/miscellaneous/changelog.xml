@@ -33,7 +33,7 @@
 </section>
 <section name="2.0.18" rtext="development in progress">
 </section>
-<section name="2.0.17" rtext="release in progress">
+<section name="2.0.17" rtext="2026-10-29">
   <changelog>
     <add>
       Add support for configuring server-side TLSv1.2 and TLSv1.3 pre-shared
