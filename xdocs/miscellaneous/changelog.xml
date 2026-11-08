@@ -38,6 +38,11 @@
       the OCSP responder. Previously, the timeout was only applied once the
       connection had been established. (markt)
     </fix>
+    <fix>
+      On Windows, ensure that a refused connection to an OCSP responder on a
+      loopback address fails immediately rather than after approximately two
+      seconds of connection retries. (markt)
+    </fix>
   </changelog>
 </section>
 <section name="2.0.17" rtext="2026-10-29">
