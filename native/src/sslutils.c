@@ -728,9 +728,10 @@ static int add_ocsp_cert(OCSP_REQUEST *req, X509 *cert, X509 *issuer)
 
 
 /* Creates the APR socket and connect to the hostname. Returns the
-   socket or NULL if there is an error.
+   socket or NULL if there is an error. The timeout (in microseconds)
+   applies to the connection attempt as well as subsequent I/O.
 */
-static apr_socket_t *make_socket(char *hostname, int port, apr_pool_t *mp)
+static apr_socket_t *make_socket(char *hostname, int port, int timeout, apr_pool_t *mp)
 {
     apr_sockaddr_t *sa_in;
     apr_status_t status;
@@ -741,6 +742,9 @@ static apr_socket_t *make_socket(char *hostname, int port, apr_pool_t *mp)
 
     if (status == APR_SUCCESS)
         status = apr_socket_create(&sock, sa_in->family, SOCK_STREAM, APR_PROTO_TCP, mp);
+    /* Set the timeout before connecting so it also limits the connection attempt */
+    if (status == APR_SUCCESS)
+        status = apr_socket_timeout_set(sock, timeout);
     if (status == APR_SUCCESS)
         status = apr_socket_connect(sock, sa_in);
 
@@ -989,12 +993,10 @@ static OCSP_RESPONSE *get_ocsp_response(apr_pool_t *p, char *url, OCSP_REQUEST *
     }
 
     apr_pool_create(&mp, p);
-    apr_sock = make_socket(hostname, port, mp);
+    apr_sock = make_socket(hostname, port, timeout, mp);
     if (apr_sock == NULL) {
         goto free_bio;
     }
-
-    apr_socket_timeout_set(apr_sock, timeout);
 
     ok = ocsp_send_req(apr_sock, bio_req);
     if (ok) {

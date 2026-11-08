@@ -32,6 +32,13 @@
   </p>
 </section>
 <section name="2.0.18" rtext="development in progress">
+  <changelog>
+    <fix>
+      Ensure that the configured OCSP timeout also applies when connecting to
+      the OCSP responder. Previously, the timeout was only applied once the
+      connection had been established. (markt)
+    </fix>
+  </changelog>
 </section>
 <section name="2.0.17" rtext="2026-10-29">
   <changelog>
